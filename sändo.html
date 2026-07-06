@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sändo — Skicka. Skapa. Samarbeta.</title>
+<style>
+  :root {
+    --bg: #f6f7fb;
+    --panel: #ffffff;
+    --ink: #1c2333;
+    --muted: #6b7280;
+    --brand: #4f46e5;
+    --brand-dark: #4338ca;
+    --brand-soft: #eef2ff;
+    --accent: #06b6d4;
+    --ok: #16a34a;
+    --danger: #dc2626;
+    --border: #e5e7eb;
+    --radius: 14px;
+    --shadow: 0 4px 20px rgba(28, 35, 51, .07);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--ink); height: 100vh; display: flex; overflow: hidden;
+  }
+
+  /* ---------- Sidomeny ---------- */
+  aside {
+    width: 240px; background: var(--panel); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 20px 14px; flex-shrink: 0;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; padding: 6px 10px 22px; }
+  .logo-mark {
+    width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--brand), var(--accent));
+    display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 20px;
+  }
+  .logo h1 { font-size: 21px; letter-spacing: -.5px; }
+  .logo small { display: block; color: var(--muted); font-size: 11px; font-weight: 400; }
+  nav button {
+    display: flex; align-items: center; gap: 11px; width: 100%; padding: 11px 12px;
+    border: none; background: none; border-radius: 10px; cursor: pointer;
+    font-size: 14.5px; color: var(--ink); text-align: left; margin-bottom: 3px; font-family: inherit;
+  }
+  nav button:hover { background: var(--bg); }
+  nav button.active { background: var(--brand-soft); color: var(--brand); font-weight: 600; }
+  nav .icon { width: 20px; text-align: center; font-size: 16px; }
+  .nav-section { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 16px 12px 6px; }
+  .plan-chip {
+    margin-top: auto; background: var(--brand-soft); border-radius: var(--radius); padding: 14px;
+    font-size: 13px;
+  }
+  .plan-chip b { color: var(--brand); }
+  .plan-chip button {
+    margin-top: 8px; width: 100%; padding: 8px; border: none; border-radius: 8px;
+    background: var(--brand); color: #fff; font-weight: 600; cursor: pointer; font-size: 13px; font-family: inherit;
+  }
+
+  /* ---------- Huvudyta ---------- */
+  main { flex: 1; overflow-y: auto; padding: 32px 40px; }
+  .view { display: none; max-width: 1050px; margin: 0 auto; }
+  .view.active { display: block; }
+  .view-head { margin-bottom: 24px; }
+  .view-head h2 { font-size: 26px; letter-spacing: -.5px; }
+  .view-head p { color: var(--muted); margin-top: 4px; font-size: 14.5px; }
+
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; }
+  .grid { display: grid; gap: 18px; }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+  .btn {
+    padding: 10px 18px; border: none; border-radius: 10px; background: var(--brand); color: #fff;
+    font-weight: 600; cursor: pointer; font-size: 14px; font-family: inherit;
+  }
+  .btn:hover { background: var(--brand-dark); }
+  .btn.ghost { background: var(--panel); color: var(--ink); border: 1px solid var(--border); }
+  .btn.ghost:hover { background: var(--bg); }
+  .btn.small { padding: 6px 12px; font-size: 13px; }
+  .btn.danger { background: #fee2e2; color: var(--danger); }
+
+  /* ---------- Hem ---------- */
+  .stat { text-align: left; }
+  .stat .num { font-size: 30px; font-weight: 700; letter-spacing: -1px; }
+  .stat .lbl { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .quick { display: flex; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
+
+  /* ---------- Skicka filer ---------- */
+  .dropzone {
+    border: 2px dashed #c7cbe0; border-radius: var(--radius); padding: 48px; text-align: center;
+    background: var(--panel); cursor: pointer; transition: all .15s;
+  }
+  .dropzone.drag { border-color: var(--brand); background: var(--brand-soft); }
+  .dropzone .big { font-size: 40px; }
+  .dropzone p { color: var(--muted); margin-top: 8px; font-size: 14px; }
+  .file-row {
+    display: flex; align-items: center; gap: 14px; padding: 14px 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .file-row:last-child { border-bottom: none; }
+  .file-ico { width: 40px; height: 40px; border-radius: 10px; background: var(--brand-soft); display: grid; place-items: center; font-size: 18px; flex-shrink: 0; }
+  .file-meta { flex: 1; min-width: 0; }
+  .file-meta .name { font-weight: 600; font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-meta .sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .file-link { font-size: 12.5px; color: var(--brand); font-family: ui-monospace, monospace; }
+  .send-form { display: flex; gap: 10px; margin-top: 16px; }
+  .send-form input { flex: 1; }
+  input[type=text], input[type=email], textarea, select {
+    padding: 10px 13px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px;
+    font-family: inherit; background: var(--panel); color: var(--ink); width: 100%;
+  }
+  input:focus, textarea:focus { outline: 2px solid var(--brand-soft); border-color: var(--brand); }
+
+  /* ---------- Office / dokumentlistor ---------- */
+  .doc-card { cursor: pointer; transition: transform .1s; position: relative; }
+  .doc-card:hover { transform: translateY(-2px); }
+  .doc-card .type-badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; display: inline-block; }
+  .badge-doc  { background: #dbeafe; color: #1d4ed8; }
+  .badge-cal  { background: #dcfce7; color: #15803d; }
+  .badge-pres { background: #fef3c7; color: #b45309; }
+  .doc-card h4 { margin-top: 10px; font-size: 15.5px; }
+  .doc-card .sub { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+  .doc-card .del { position: absolute; top: 12px; right: 12px; background: none; border: none; cursor: pointer; color: var(--muted); font-size: 15px; }
+  .doc-card .del:hover { color: var(--danger); }
+
+  /* ---------- Dokumentredigerare ---------- */
+  .editor-bar {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px 12px 0 0;
+    padding: 8px 10px;
+  }
+  .editor-bar button {
+    min-width: 34px; height: 32px; border: none; background: none; border-radius: 7px;
+    cursor: pointer; font-size: 14px; font-family: inherit; padding: 0 8px;
+  }
+  .editor-bar button:hover { background: var(--bg); }
+  .editor-bar .sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+  .editor-title { border: none !important; font-size: 18px !important; font-weight: 700; padding: 14px 4px !important; background: transparent !important; }
+  .editor-title:focus { outline: none !important; }
+  #docBody {
+    background: var(--panel); border: 1px solid var(--border); border-top: none;
+    border-radius: 0 0 12px 12px; min-height: 480px; padding: 40px 56px;
+    font-size: 15.5px; line-height: 1.7; outline: none;
+  }
+  #docBody h1 { font-size: 28px; margin: .6em 0 .3em; }
+  #docBody h2 { font-size: 21px; margin: .6em 0 .3em; }
+  #docBody ul, #docBody ol { padding-left: 1.6em; margin: .4em 0; }
+  #docBody p { margin: .4em 0; }
+
+  /* ---------- Kalkylark ---------- */
+  .sheet-wrap { overflow: auto; background: var(--panel); border: 1px solid var(--border); border-radius: 0 0 12px 12px; }
+  table.sheet { border-collapse: collapse; width: 100%; }
+  table.sheet th {
+    background: var(--bg); border: 1px solid var(--border); font-size: 12px; color: var(--muted);
+    padding: 6px; min-width: 92px; font-weight: 600;
+  }
+  table.sheet th.rowhead { min-width: 38px; }
+  table.sheet td { border: 1px solid var(--border); padding: 0; }
+  table.sheet td input {
+    border: none; border-radius: 0; width: 100%; padding: 8px; font-size: 13.5px; background: transparent;
+  }
+  table.sheet td input:focus { outline: 2px solid var(--brand); outline-offset: -2px; }
+  .formula-hint { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+
+  /* ---------- Presentation ---------- */
+  .slides-layout { display: grid; grid-template-columns: 190px 1fr; gap: 16px; }
+  .slide-list { display: flex; flex-direction: column; gap: 10px; max-height: 560px; overflow-y: auto; }
+  .slide-thumb {
+    background: var(--panel); border: 2px solid var(--border); border-radius: 10px;
+    padding: 10px; cursor: pointer; font-size: 11px; min-height: 74px; position: relative;
+  }
+  .slide-thumb.active { border-color: var(--brand); }
+  .slide-thumb .n { position: absolute; top: 6px; left: 8px; color: var(--muted); font-weight: 700; }
+  .slide-thumb b { display: block; margin-left: 18px; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .slide-canvas {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    aspect-ratio: 16/9; padding: 44px 52px; display: flex; flex-direction: column; box-shadow: var(--shadow);
+  }
+  .slide-canvas input {
+    border: none; font-size: 30px; font-weight: 700; background: transparent; padding: 0 0 14px; letter-spacing: -.5px;
+  }
+  .slide-canvas input:focus { outline: none; }
+  .slide-canvas textarea {
+    border: none; flex: 1; resize: none; font-size: 17px; line-height: 1.7; background: transparent; padding: 0;
+  }
+  .slide-canvas textarea:focus { outline: none; }
+
+  /* Presentationsläge */
+  #presentMode {
+    position: fixed; inset: 0; background: #0f1222; color: #fff; z-index: 100;
+    display: none; flex-direction: column; justify-content: center; padding: 7vw;
+  }
+  #presentMode.on { display: flex; }
+  #presentMode h1 { font-size: 4.5vw; letter-spacing: -1px; margin-bottom: 3vh; }
+  #presentMode .body { font-size: 2vw; line-height: 1.8; white-space: pre-wrap; color: #cdd3f0; }
+  #presentMode .pager { position: absolute; bottom: 24px; right: 32px; color: #8b91b5; font-size: 14px; }
+  #presentMode .exit { position: absolute; top: 20px; right: 24px; background: rgba(255,255,255,.1); color: #fff; border: none; border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+
+  /* ---------- Prenumeration ---------- */
+  .price-card { position: relative; display: flex; flex-direction: column; }
+  .price-card.popular { border-color: var(--brand); border-width: 2px; }
+  .pop-tag {
+    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+    background: var(--brand); color: #fff; font-size: 11px; font-weight: 700;
+    padding: 4px 14px; border-radius: 20px; white-space: nowrap;
+  }
+  .price-card h3 { font-size: 18px; }
+  .price-card .price { font-size: 34px; font-weight: 800; letter-spacing: -1px; margin: 12px 0 2px; }
+  .price-card .per { color: var(--muted); font-size: 13px; }
+  .price-card ul { list-style: none; margin: 18px 0 22px; flex: 1; }
+  .price-card li { padding: 6px 0; font-size: 13.8px; display: flex; gap: 9px; }
+  .price-card li::before { content: "✓"; color: var(--ok); font-weight: 700; }
+  .current-tag { text-align: center; color: var(--ok); font-weight: 700; font-size: 14px; padding: 10px; }
+
+  /* ---------- Toast ---------- */
+  #toast {
+    position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--ink); color: #fff; padding: 12px 22px; border-radius: 12px; font-size: 14px;
+    transition: transform .25s; z-index: 200; box-shadow: 0 8px 30px rgba(0,0,0,.25);
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  .empty { text-align: center; color: var(--muted); padding: 36px; font-size: 14px; }
+  @media (max-width: 1100px) {
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+    main { padding: 24px; }
+  }
+  @media (max-width: 820px) {
+    .grid-3 { grid-template-columns: 1fr; }
+    .slides-layout { grid-template-columns: 1fr; }
+    .slide-list { flex-direction: row; max-height: none; overflow-x: auto; }
+    .slide-thumb { min-width: 130px; }
+    aside { width: 200px; }
+  }
+  .toolbar-row { display: flex; gap: 10px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+  .toolbar-row .spacer { flex: 1; }
+</style>
+</head>
+<body>
+
+<aside>
+  <div class="logo">
+    <div class="logo-mark">S</div>
+    <div><h1>Sändo</h1><small>Skicka · Skapa · Samarbeta</small></div>
+  </div>
+  <nav id="nav">
+    <button data-view="home" class="active"><span class="icon">🏠</span> Hem</button>
+    <div class="nav-section">Skicka</div>
+    <button data-view="send"><span class="icon">📤</span> Skicka filer</button>
+    <div class="nav-section">Office</div>
+    <button data-view="docs"><span class="icon">📄</span> Dokument</button>
+    <button data-view="sheets"><span class="icon">📊</span> Kalkylark</button>
+    <button data-view="slides"><span class="icon">🎞️</span> Presentationer</button>
+    <div class="nav-section">Konto</div>
+    <button data-view="plans"><span class="icon">⭐</span> Prenumeration</button>
+  </nav>
+  <div class="plan-chip">
+    Din plan: <b id="chipPlan">Gratis</b>
+    <button onclick="go('plans')">Uppgradera</button>
+  </div>
+</aside>
+
+<main>
+
+  <!-- ============ HEM ============ -->
+  <section class="view active" id="view-home">
+    <div class="view-head">
+      <h2>Välkommen till Sändo 👋</h2>
+      <p>Allt du behöver på ett ställe — skicka filer, skapa dokument, kalkylark och presentationer.</p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card stat"><div class="num" id="statFiles">0</div><div class="lbl">Skickade filer</div></div>
+      <div class="card stat"><div class="num" id="statDocs">0</div><div class="lbl">Office-filer</div></div>
+      <div class="card stat"><div class="num" id="statPlan">Gratis</div><div class="lbl">Aktiv plan</div></div>
+    </div>
+    <div class="quick">
+      <button class="btn" onclick="go('send')">📤 Skicka en fil</button>
+      <button class="btn ghost" onclick="newDoc()">📄 Nytt dokument</button>
+      <button class="btn ghost" onclick="newSheet()">📊 Nytt kalkylark</button>
+      <button class="btn ghost" onclick="newPres()">🎞️ Ny presentation</button>
+    </div>
+  </section>
+
+  <!-- ============ SKICKA FILER ============ -->
+  <section class="view" id="view-send">
+    <div class="view-head">
+      <h2>Skicka filer</h2>
+      <p>Dra och släpp filer eller klicka för att välja. Du får en delningslänk direkt. Gräns per fil: <b id="sizeLimit">100 MB</b>.</p>
+    </div>
+    <div class="dropzone" id="dropzone">
+      <div class="big">📦</div>
+      <h3>Släpp filer här</h3>
+      <p>eller klicka för att bläddra</p>
+      <input type="file" id="fileInput" multiple hidden>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <h3 style="font-size:16px;margin-bottom:6px">Skickade filer</h3>
+      <div id="fileList"><div class="empty">Inga filer ännu — släpp något ovan! 🚀</div></div>
+      <div class="send-form">
+        <input type="email" id="sendEmail" placeholder="mottagare@exempel.se">
+        <button class="btn" onclick="sendByEmail()">Skicka via e‑post</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DOKUMENT-LISTA ============ -->
+  <section class="view" id="view-docs">
+    <div class="view-head"><h2>Dokument</h2><p>Skapa och redigera textdokument — som Word, fast i Sändo.</p></div>
+    <div class="toolbar-row"><button class="btn" onclick="newDoc()">＋ Nytt dokument</button></div>
+    <div class="grid grid-3" id="docList"></div>
+  </section>
+
+  <!-- ============ DOKUMENT-REDIGERARE ============ -->
+  <section class="view" id="view-doc-edit">
+    <div class="toolbar-row">
+      <button class="btn ghost small" onclick="go('docs')">← Tillbaka</button>
+      <div class="spacer"></div>
+      <button class="btn ghost small" onclick="exportDoc()">⬇︎ Ladda ned (.doc)</button>
+      <button class="btn small" onclick="saveDoc()">Spara</button>
+    </div>
+    <input type="text" id="docTitle" class="editor-title" placeholder="Namnlöst dokument" style="width:100%">
+    <div class="editor-bar">
+      <button onclick="fmt('bold')"><b>F</b></button>
+      <button onclick="fmt('italic')"><i>K</i></button>
+      <button onclick="fmt('underline')"><u>U</u></button>
+      <span class="sep"></span>
+      <button onclick="fmt('formatBlock','h1')">H1</button>
+      <button onclick="fmt('formatBlock','h2')">H2</button>
+      <button onclick="fmt('formatBlock','p')">Text</button>
+      <span class="sep"></span>
+      <button onclick="fmt('insertUnorderedList')">• Lista</button>
+      <button onclick="fmt('insertOrderedList')">1. Lista</button>
+      <span class="sep"></span>
+      <button onclick="fmt('justifyLeft')">⇤</button>
+      <button onclick="fmt('justifyCenter')">⇹</button>
+      <button onclick="fmt('removeFormat')">Rensa</button>
+    </div>
+    <div id="docBody" contenteditable="true"></div>
+  </section>
+
+  <!-- ============ KALKYLARK-LISTA ============ -->
+  <section class="view" id="view-sheets">
+    <div class="view-head"><h2>Kalkylark</h2><p>Räkna, budgetera och planera — med formler som =SUMMA(A1:A5).</p></div>
+    <div class="toolbar-row"><button class="btn" onclick="newSheet()">＋ Nytt kalkylark</button></div>
+    <div class="grid grid-3" id="sheetList"></div>
+  </section>
+
+  <!-- ============ KALKYLARK-REDIGERARE ============ -->
+  <section class="view" id="view-sheet-edit">
+    <div class="toolbar-row">
+      <button class="btn ghost small" onclick="go('sheets')">← Tillbaka</button>
+      <div class="spacer"></div>
+      <button class="btn ghost small" onclick="exportSheet()">⬇︎ Ladda ned (.csv)</button>
+      <button class="btn small" onclick="saveSheet()">Spara</button>
+    </div>
+    <input type="text" id="sheetTitle" class="editor-title" placeholder="Namnlöst kalkylark" style="width:100%">
+    <div class="sheet-wrap"><table class="sheet" id="sheetTable"></table></div>
+    <p class="formula-hint">💡 Formler: börja med <b>=</b>, t.ex. <b>=A1+B1</b>, <b>=A1*2</b> eller <b>=SUMMA(A1:A5)</b>. Tryck Enter för att räkna ut.</p>
+  </section>
+
+  <!-- ============ PRESENTATIONS-LISTA ============ -->
+  <section class="view" id="view-slides">
+    <div class="view-head"><h2>Presentationer</h2><p>Bygg snygga bildspel och presentera i helskärm.</p></div>
+    <div class="toolbar-row"><button class="btn" onclick="newPres()">＋ Ny presentation</button></div>
+    <div class="grid grid-3" id="presList"></div>
+  </section>
+
+  <!-- ============ PRESENTATIONS-REDIGERARE ============ -->
+  <section class="view" id="view-pres-edit">
+    <div class="toolbar-row">
+      <button class="btn ghost small" onclick="go('slides')">← Tillbaka</button>
+      <input type="text" id="presTitle" class="editor-title" placeholder="Namnlös presentation" style="flex:1">
+      <button class="btn ghost small" onclick="addSlide()">＋ Bild</button>
+      <button class="btn ghost small" onclick="delSlide()">🗑 Ta bort bild</button>
+      <button class="btn small" onclick="savePres()">Spara</button>
+      <button class="btn small" onclick="startPresent()">▶ Presentera</button>
+    </div>
+    <div class="slides-layout">
+      <div class="slide-list" id="slideList"></div>
+      <div class="slide-canvas">
+        <input type="text" id="slideTitle" placeholder="Rubrik…">
+        <textarea id="slideBody" placeholder="Skriv ditt innehåll här…"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PRENUMERATION ============ -->
+  <section class="view" id="view-plans">
+    <div class="view-head"><h2>Prenumeration</h2><p>Välj planen som passar dig. Byt eller avsluta när du vill.</p></div>
+    <div class="grid grid-3">
+      <div class="card price-card" data-plan="Gratis">
+        <h3>Gratis</h3>
+        <div class="price">0 kr</div><div class="per">per månad</div>
+        <ul>
+          <li>Skicka filer upp till 100 MB</li>
+          <li>5 office-filer</li>
+          <li>Länkar giltiga i 7 dagar</li>
+          <li>Sändo-vattenstämpel</li>
+        </ul>
+        <button class="btn ghost" onclick="choosePlan('Gratis')">Välj Gratis</button>
+      </div>
+      <div class="card price-card popular" data-plan="Plus">
+        <div class="pop-tag">Populärast</div>
+        <h3>Plus</h3>
+        <div class="price">79 kr</div><div class="per">per månad</div>
+        <ul>
+          <li>Skicka filer upp till 2 GB</li>
+          <li>Obegränsat antal office-filer</li>
+          <li>Länkar giltiga i 30 dagar</li>
+          <li>Lösenordsskyddade länkar</li>
+          <li>Ingen vattenstämpel</li>
+        </ul>
+        <button class="btn" onclick="choosePlan('Plus')">Välj Plus</button>
+      </div>
+      <div class="card price-card" data-plan="Pro">
+        <h3>Pro</h3>
+        <div class="price">199 kr</div><div class="per">per månad</div>
+        <ul>
+          <li>Obegränsad filstorlek</li>
+          <li>Obegränsat antal office-filer</li>
+          <li>Länkar utan utgångsdatum</li>
+          <li>Eget varumärke på delningssidor</li>
+          <li>Prioriterad support</li>
+          <li>Team på upp till 10 personer</li>
+        </ul>
+        <button class="btn ghost" onclick="choosePlan('Pro')">Välj Pro</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Presentationsläge (helskärm) -->
+<div id="presentMode">
+  <button class="exit" onclick="stopPresent()">Avsluta ✕</button>
+  <h1 id="pmTitle"></h1>
+  <div class="body" id="pmBody"></div>
+  <div class="pager" id="pmPager"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ================= Lagring & tillstånd ================= */
+const store = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem('sando:' + k)) ?? d; } catch { return d; } },
+  set(k, v) { localStorage.setItem('sando:' + k, JSON.stringify(v)); }
+};
+let state = {
+  plan: store.get('plan', 'Gratis'),
+  files: store.get('files', []),
+  docs: store.get('docs', []),
+  sheets: store.get('sheets', []),
+  press: store.get('press', [])
+};
+const PLAN_LIMITS = { 'Gratis': 100 * 1024 * 1024, 'Plus': 2 * 1024 * 1024 * 1024, 'Pro': Infinity };
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2600);
+}
+const uid = () => Math.random().toString(36).slice(2, 9);
+const fmtSize = b => b >= 1e9 ? (b / 1e9).toFixed(1) + ' GB' : b >= 1e6 ? (b / 1e6).toFixed(1) + ' MB' : b >= 1e3 ? (b / 1e3).toFixed(0) + ' kB' : b + ' B';
+const today = () => new Date().toLocaleDateString('sv-SE');
+
+/* ================= Navigering ================= */
+function go(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  if (view === 'home') renderHome();
+  if (view === 'docs') renderDocList();
+  if (view === 'sheets') renderSheetList();
+  if (view === 'slides') renderPresList();
+}
+document.querySelectorAll('#nav button').forEach(b => b.addEventListener('click', () => go(b.dataset.view)));
+
+function renderHome() {
+  document.getElementById('statFiles').textContent = state.files.length;
+  document.getElementById('statDocs').textContent = state.docs.length + state.sheets.length + state.press.length;
+  document.getElementById('statPlan').textContent = state.plan;
+}
+
+/* ================= Skicka filer ================= */
+const dz = document.getElementById('dropzone');
+const fi = document.getElementById('fileInput');
+dz.addEventListener('click', () => fi.click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); addFiles(e.dataTransfer.files); });
+fi.addEventListener('change', () => { addFiles(fi.files); fi.value = ''; });
+
+function addFiles(list) {
+  const limit = PLAN_LIMITS[state.plan];
+  let added = 0;
+  for (const f of list) {
+    if (f.size > limit) { toast(`”${f.name}” är för stor för din ${state.plan}-plan. Uppgradera för större filer!`); continue; }
+    state.files.unshift({ id: uid(), name: f.name, size: f.size, date: today(), link: 'https://sando.app/f/' + uid() });
+    added++;
+  }
+  if (added) { store.set('files', state.files); renderFiles(); toast(`${added} fil${added > 1 ? 'er' : ''} uppladdad${added > 1 ? 'e' : ''} ✓`); }
+}
+function renderFiles() {
+  const el = document.getElementById('fileList');
+  if (!state.files.length) { el.innerHTML = '<div class="empty">Inga filer ännu — släpp något ovan! 🚀</div>'; return; }
+  el.innerHTML = state.files.map(f => `
+    <div class="file-row">
+      <div class="file-ico">📎</div>
+      <div class="file-meta">
+        <div class="name">${esc(f.name)}</div>
+        <div class="sub">${fmtSize(f.size)} · ${f.date} · <span class="file-link">${f.link}</span></div>
+      </div>
+      <button class="btn ghost small" onclick="copyLink('${f.id}')">Kopiera länk</button>
+      <button class="btn danger small" onclick="delFile('${f.id}')">Ta bort</button>
+    </div>`).join('');
+}
+function copyLink(id) {
+  const f = state.files.find(x => x.id === id);
+  navigator.clipboard?.writeText(f.link).catch(() => {});
+  toast('Länk kopierad: ' + f.link);
+}
+function delFile(id) {
+  state.files = state.files.filter(x => x.id !== id);
+  store.set('files', state.files); renderFiles();
+}
+function sendByEmail() {
+  const em = document.getElementById('sendEmail').value.trim();
+  if (!em.includes('@')) return toast('Ange en giltig e‑postadress.');
+  if (!state.files.length) return toast('Ladda upp minst en fil först.');
+  toast(`✉️ ${state.files.length} fil${state.files.length > 1 ? 'er' : ''} skickade till ${em}!`);
+  document.getElementById('sendEmail').value = '';
+}
+function esc(s) { return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+/* ================= Office: gemensamt ================= */
+function officeLimitOk() {
+  if (state.plan !== 'Gratis') return true;
+  const total = state.docs.length + state.sheets.length + state.press.length;
+  if (total >= 5) { toast('Gratis-planen tillåter max 5 office-filer. Uppgradera till Plus!'); go('plans'); return false; }
+  return true;
+}
+function download(name, content, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = name; a.click(); URL.revokeObjectURL(a.href);
+}
+function cardTpl(item, badgeCls, badgeTxt, openFn, delFn) {
+  return `<div class="card doc-card" onclick="${openFn}('${item.id}')">
+    <button class="del" onclick="event.stopPropagation();${delFn}('${item.id}')">✕</button>
+    <span class="type-badge ${badgeCls}">${badgeTxt}</span>
+    <h4>${esc(item.title || 'Namnlös')}</h4>
+    <div class="sub">Ändrad ${item.date}</div>
+  </div>`;
+}
+
+/* ================= Dokument ================= */
+let curDoc = null;
+function renderDocList() {
+  const el = document.getElementById('docList');
+  el.innerHTML = state.docs.length
+    ? state.docs.map(d => cardTpl(d, 'badge-doc', 'DOKUMENT', 'openDoc', 'delDoc')).join('')
+    : '<div class="empty" style="grid-column:1/-1">Inga dokument ännu.</div>';
+}
+function newDoc() {
+  if (!officeLimitOk()) return;
+  curDoc = { id: uid(), title: '', html: '', date: today() };
+  document.getElementById('docTitle').value = '';
+  document.getElementById('docBody').innerHTML = '<p>Skriv här…</p>';
+  go('doc-edit');
+}
+function openDoc(id) {
+  curDoc = state.docs.find(d => d.id === id);
+  document.getElementById('docTitle').value = curDoc.title;
+  document.getElementById('docBody').innerHTML = curDoc.html;
+  go('doc-edit');
+}
+function saveDoc() {
+  curDoc.title = document.getElementById('docTitle').value || 'Namnlöst dokument';
+  curDoc.html = document.getElementById('docBody').innerHTML;
+  curDoc.date = today();
+  const i = state.docs.findIndex(d => d.id === curDoc.id);
+  i >= 0 ? state.docs[i] = curDoc : state.docs.unshift(curDoc);
+  store.set('docs', state.docs); toast('Dokument sparat ✓');
+}
+function delDoc(id) { state.docs = state.docs.filter(d => d.id !== id); store.set('docs', state.docs); renderDocList(); }
+function fmt(cmd, val) { document.execCommand(cmd, false, val); document.getElementById('docBody').focus(); }
+function exportDoc() {
+  const title = document.getElementById('docTitle').value || 'dokument';
+  const html = `<html><head><meta charset="utf-8"><title>${esc(title)}</title></head><body>${document.getElementById('docBody').innerHTML}</body></html>`;
+  download(title + '.doc', html, 'application/msword');
+  toast('Dokumentet laddas ned ⬇︎');
+}
+
+/* ================= Kalkylark ================= */
+const COLS = 8, ROWS = 15;
+const COL_NAMES = 'ABCDEFGH'.split('');
+let curSheet = null;
+
+function renderSheetList() {
+  const el = document.getElementById('sheetList');
+  el.innerHTML = state.sheets.length
+    ? state.sheets.map(s => cardTpl(s, 'badge-cal', 'KALKYLARK', 'openSheet', 'delSheet')).join('')
+    : '<div class="empty" style="grid-column:1/-1">Inga kalkylark ännu.</div>';
+}
+function newSheet() {
+  if (!officeLimitOk()) return;
+  curSheet = { id: uid(), title: '', cells: {}, date: today() };
+  document.getElementById('sheetTitle').value = '';
+  buildSheet(); go('sheet-edit');
+}
+function openSheet(id) {
+  curSheet = state.sheets.find(s => s.id === id);
+  document.getElementById('sheetTitle').value = curSheet.title;
+  buildSheet(); go('sheet-edit');
+}
+function buildSheet() {
+  const t = document.getElementById('sheetTable');
+  let h = '<tr><th class="rowhead"></th>' + COL_NAMES.map(c => `<th>${c}</th>`).join('') + '</tr>';
+  for (let r = 1; r <= ROWS; r++) {
+    h += `<tr><th class="rowhead">${r}</th>`;
+    for (const c of COL_NAMES) {
+      const ref = c + r;
+      const raw = curSheet.cells[ref] || '';
+      h += `<td><input data-ref="${ref}" value="${esc(displayVal(raw))}"></td>`;
+    }
+    h += '</tr>';
+  }
+  t.innerHTML = h;
+  t.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('focus', () => { inp.value = curSheet.cells[inp.dataset.ref] || ''; });
+    inp.addEventListener('blur', () => { commitCell(inp); });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
+  });
+}
+function commitCell(inp) {
+  const ref = inp.dataset.ref, v = inp.value.trim();
+  if (v) curSheet.cells[ref] = v; else delete curSheet.cells[ref];
+  refreshSheet();
+}
+function refreshSheet() {
+  document.querySelectorAll('#sheetTable input').forEach(inp => {
+    if (document.activeElement === inp) return;
+    inp.value = displayVal(curSheet.cells[inp.dataset.ref] || '');
+  });
+}
+function displayVal(raw) {
+  if (typeof raw !== 'string' || !raw.startsWith('=')) return raw;
+  try { const v = evalFormula(raw.slice(1)); return (v === null || isNaN(v)) ? '#FEL' : String(Math.round(v * 1e6) / 1e6); }
+  catch { return '#FEL'; }
+}
+function cellNum(ref) {
+  const raw = curSheet.cells[ref.toUpperCase()] || '';
+  const v = typeof raw === 'string' && raw.startsWith('=') ? evalFormula(raw.slice(1)) : parseFloat(String(raw).replace(',', '.'));
+  return isNaN(v) ? 0 : v;
+}
+function evalFormula(expr) {
+  // SUMMA(A1:A5) / SUM(A1:A5)
+  expr = expr.replace(/(SUMMA|SUM)\(([A-H])(\d+):([A-H])(\d+)\)/gi, (_, __, c1, r1, c2, r2) => {
+    let s = 0;
+    const ci1 = COL_NAMES.indexOf(c1.toUpperCase()), ci2 = COL_NAMES.indexOf(c2.toUpperCase());
+    for (let ci = Math.min(ci1, ci2); ci <= Math.max(ci1, ci2); ci++)
+      for (let r = Math.min(+r1, +r2); r <= Math.max(+r1, +r2); r++)
+        s += cellNum(COL_NAMES[ci] + r);
+    return String(s);
+  });
+  // Cellreferenser A1..H15
+  expr = expr.replace(/\b([A-H])(\d{1,2})\b/gi, (_, c, r) => String(cellNum(c + r)));
+  expr = expr.replace(/,/g, '.');
+  if (!/^[-+*/().\d\s%]+$/.test(expr)) return null;
+  return Function('"use strict";return (' + expr + ')')();
+}
+function saveSheet() {
+  document.querySelectorAll('#sheetTable input').forEach(inp => { if (document.activeElement === inp) inp.blur(); });
+  curSheet.title = document.getElementById('sheetTitle').value || 'Namnlöst kalkylark';
+  curSheet.date = today();
+  const i = state.sheets.findIndex(s => s.id === curSheet.id);
+  i >= 0 ? state.sheets[i] = curSheet : state.sheets.unshift(curSheet);
+  store.set('sheets', state.sheets); toast('Kalkylark sparat ✓');
+}
+function delSheet(id) { state.sheets = state.sheets.filter(s => s.id !== id); store.set('sheets', state.sheets); renderSheetList(); }
+function exportSheet() {
+  let csv = '';
+  for (let r = 1; r <= ROWS; r++)
+    csv += COL_NAMES.map(c => '"' + displayVal(curSheet.cells[c + r] || '').replace(/"/g, '""') + '"').join(';') + '\n';
+  download((document.getElementById('sheetTitle').value || 'kalkylark') + '.csv', '﻿' + csv, 'text/csv');
+  toast('Kalkylarket laddas ned ⬇︎');
+}
+
+/* ================= Presentationer ================= */
+let curPres = null, curSlideIx = 0;
+function renderPresList() {
+  const el = document.getElementById('presList');
+  el.innerHTML = state.press.length
+    ? state.press.map(p => cardTpl(p, 'badge-pres', 'PRESENTATION', 'openPres', 'delPres')).join('')
+    : '<div class="empty" style="grid-column:1/-1">Inga presentationer ännu.</div>';
+}
+function newPres() {
+  if (!officeLimitOk()) return;
+  curPres = { id: uid(), title: '', slides: [{ title: 'Välkommen', body: '' }], date: today() };
+  curSlideIx = 0;
+  document.getElementById('presTitle').value = '';
+  renderSlides(); go('pres-edit');
+}
+function openPres(id) {
+  curPres = state.press.find(p => p.id === id);
+  curSlideIx = 0;
+  document.getElementById('presTitle').value = curPres.title;
+  renderSlides(); go('pres-edit');
+}
+function renderSlides() {
+  const el = document.getElementById('slideList');
+  el.innerHTML = curPres.slides.map((s, i) =>
+    `<div class="slide-thumb ${i === curSlideIx ? 'active' : ''}" onclick="selSlide(${i})">
+       <span class="n">${i + 1}</span><b>${esc(s.title || 'Utan rubrik')}</b>
+     </div>`).join('');
+  const s = curPres.slides[curSlideIx];
+  document.getElementById('slideTitle').value = s.title;
+  document.getElementById('slideBody').value = s.body;
+}
+function selSlide(i) { syncSlide(); curSlideIx = i; renderSlides(); }
+function syncSlide() {
+  const s = curPres.slides[curSlideIx];
+  s.title = document.getElementById('slideTitle').value;
+  s.body = document.getElementById('slideBody').value;
+}
+function addSlide() { syncSlide(); curPres.slides.push({ title: '', body: '' }); curSlideIx = curPres.slides.length - 1; renderSlides(); }
+function delSlide() {
+  if (curPres.slides.length === 1) return toast('Presentationen måste ha minst en bild.');
+  curPres.slides.splice(curSlideIx, 1);
+  curSlideIx = Math.max(0, curSlideIx - 1); renderSlides();
+}
+document.getElementById('slideTitle').addEventListener('input', () => { syncSlide();
+  document.querySelectorAll('.slide-thumb b')[curSlideIx].textContent = document.getElementById('slideTitle').value || 'Utan rubrik'; });
+document.getElementById('slideBody').addEventListener('input', syncSlide);
+function savePres() {
+  syncSlide();
+  curPres.title = document.getElementById('presTitle').value || 'Namnlös presentation';
+  curPres.date = today();
+  const i = state.press.findIndex(p => p.id === curPres.id);
+  i >= 0 ? state.press[i] = curPres : state.press.unshift(curPres);
+  store.set('press', state.press); toast('Presentation sparad ✓');
+}
+function delPres(id) { state.press = state.press.filter(p => p.id !== id); store.set('press', state.press); renderPresList(); }
+
+/* Presentationsläge */
+let pmIx = 0;
+function startPresent() { syncSlide(); pmIx = 0; document.getElementById('presentMode').classList.add('on'); showPm(); }
+function stopPresent() { document.getElementById('presentMode').classList.remove('on'); }
+function showPm() {
+  const s = curPres.slides[pmIx];
+  document.getElementById('pmTitle').textContent = s.title || ' ';
+  document.getElementById('pmBody').textContent = s.body;
+  document.getElementById('pmPager').textContent = (pmIx + 1) + ' / ' + curPres.slides.length;
+}
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('presentMode').classList.contains('on')) return;
+  if (e.key === 'ArrowRight' || e.key === ' ') { pmIx = Math.min(pmIx + 1, curPres.slides.length - 1); showPm(); }
+  if (e.key === 'ArrowLeft') { pmIx = Math.max(pmIx - 1, 0); showPm(); }
+  if (e.key === 'Escape') stopPresent();
+});
+document.getElementById('presentMode').addEventListener('click', e => {
+  if (e.target.closest('.exit')) return;
+  pmIx = Math.min(pmIx + 1, curPres.slides.length - 1); showPm();
+});
+
+/* ================= Prenumeration ================= */
+function choosePlan(p) {
+  state.plan = p; store.set('plan', p);
+  applyPlan();
+  toast(p === 'Gratis' ? 'Du använder nu Gratis-planen.' : `🎉 Välkommen till Sändo ${p}!`);
+}
+function applyPlan() {
+  document.getElementById('chipPlan').textContent = state.plan;
+  document.getElementById('statPlan').textContent = state.plan;
+  document.getElementById('sizeLimit').textContent =
+    state.plan === 'Pro' ? 'obegränsad' : state.plan === 'Plus' ? '2 GB' : '100 MB';
+  document.querySelectorAll('.price-card').forEach(c => {
+    const btn = c.querySelector('.btn');
+    const mine = c.dataset.plan === state.plan;
+    btn.textContent = mine ? '✓ Din nuvarande plan' : 'Välj ' + c.dataset.plan;
+    btn.disabled = mine;
+    btn.style.opacity = mine ? .6 : 1;
+  });
+}
+
+/* ================= Init ================= */
+renderFiles(); renderHome(); applyPlan();
+</script>
+</body>
+</html>
