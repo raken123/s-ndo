@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="io.github.raken123.snakefps" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>Snake FPS</name>
+    <description>First-person snake: roam the arena and eat the red apples before you bite yourself.</description>
+    <author>raken123</author>
+    <content src="index.html" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <preference name="Fullscreen" value="true" />
+    <preference name="Orientation" value="landscape" />
+    <preference name="DisallowOverscroll" value="true" />
+    <preference name="BackgroundColor" value="0xff052e16" />
+    <preference name="AndroidWindowSplashScreenBackground" value="#052e16" />
+    <icon src="res/icon/icon.png" />
+    <platform name="android">
+        <preference name="AndroidWindowSplashScreenAnimatedIcon" value="res/icon/android/icon-192.png" />
+        <icon density="ldpi" src="res/icon/android/icon-36.png" />
+        <icon density="mdpi" src="res/icon/android/icon-48.png" />
+        <icon density="hdpi" src="res/icon/android/icon-72.png" />
+        <icon density="xhdpi" src="res/icon/android/icon-96.png" />
+        <icon density="xxhdpi" src="res/icon/android/icon-144.png" />
+        <icon density="xxxhdpi" src="res/icon/android/icon-192.png" />
+    </platform>
+</widget>

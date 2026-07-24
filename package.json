@@ -1,0 +1,19 @@
+{
+  "name": "snake-fps",
+  "displayName": "Snake FPS",
+  "version": "1.0.0",
+  "description": "First-person snake game — eat the red apples.",
+  "scripts": {
+    "build:android": "cordova prepare && cordova build android",
+    "build:apk": "cordova prepare && cordova build android --release"
+  },
+  "devDependencies": {
+    "cordova-android": "^13.0.0"
+  },
+  "cordova": {
+    "platforms": [
+      "android"
+    ],
+    "plugins": {}
+  }
+}
