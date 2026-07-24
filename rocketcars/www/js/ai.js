@@ -75,7 +75,6 @@
     var fwd = _a.copy(c.fwd); fwd.y = 0;
     if (fwd.lengthSq() < 1e-4) fwd.set(0, 0, ai.sign); else fwd.normalize();
     var ang = Math.atan2(fwd.x * to.z - fwd.z * to.x, fwd.x * to.x + fwd.z * to.z);
-    ang = -ang;
 
     var steer = RC.clamp(ang * 2.2 + noise, -1, 1);
     var back = Math.abs(ang) > 2.15 && dist2 < 26;
@@ -125,7 +124,7 @@
         // recover: get the wheels back under us
         inp.pitch = RC.clamp(c.fwd.y * 2.0, -1, 1) * (RC.invertPitch ? -1 : 1);
         inp.roll = true;
-        inp.steer = RC.clamp(-c.right.y * 2.0, -1, 1);
+        inp.steer = RC.clamp(c.right.y * 2.0, -1, 1);
       }
     }
     return inp;

@@ -62,7 +62,7 @@
       team: team, isAI: !!isAI,
       pos: new T.Vector3(), vel: new T.Vector3(),
       quat: new T.Quaternion(), omega: new T.Vector3(),
-      fwd: new T.Vector3(0, 0, 1), up: new T.Vector3(0, 1, 0), right: new T.Vector3(1, 0, 0),
+      fwd: new T.Vector3(0, 0, 1), up: new T.Vector3(0, 1, 0), right: new T.Vector3(-1, 0, 0),
       boost: CFG.BOOST_START,
       grounded: false, groundN: new T.Vector3(0, 1, 0), onFloor: true,
       climbN: new T.Vector3(0, 1, 0), climbT: 0,
@@ -77,7 +77,11 @@
   function updateBasis(c) {
     c.fwd.set(0, 0, 1).applyQuaternion(c.quat);
     c.up.set(0, 1, 0).applyQuaternion(c.quat);
-    c.right.set(1, 0, 0).applyQuaternion(c.quat);
+    // NOTE: the car's nose is local +Z and its up is local +Y, so its right-hand
+    // side is local -X. Left/right inputs are signed against that, not against
+    // the +X axis (which is the car's LEFT and renders on the left of the chase
+    // camera). Pitch uses the -X axis directly, hence the negation here.
+    c.right.set(-1, 0, 0).applyQuaternion(c.quat);
   }
   RC.updateBasis = updateBasis;
 
@@ -137,9 +141,9 @@
 
       // flat basis on the driving surface
       var fwdF = _v1.copy(c.fwd).addScaledVector(n, -c.fwd.dot(n));
-      if (fwdF.lengthSq() < 1e-6) fwdF.copy(c.right).cross(n);
+      if (fwdF.lengthSq() < 1e-6) fwdF.copy(n).cross(c.right);
       fwdF.normalize();
-      var rgtF = _v2.copy(fwdF).cross(n).multiplyScalar(-1).normalize();
+      var rgtF = _v2.copy(fwdF).cross(n).normalize();
 
       var vF = c.vel.dot(fwdF), vR = c.vel.dot(rgtF);
       var throttle = inp.gas - inp.rev;
@@ -165,7 +169,7 @@
       if (inp.roll) rate *= 1.45;
       var dir = vF < -0.5 ? -1 : 1;
       if (Math.abs(inp.steer) > 0.02) {
-        _q1.setFromAxisAngle(n, inp.steer * rate * dir * dt);
+        _q1.setFromAxisAngle(n, -inp.steer * rate * dir * dt);
         c.quat.premultiply(_q1).normalize();
         updateBasis(c);
       }
@@ -199,10 +203,10 @@
       } else {
         var torque = _v3.set(0, 0, 0);
         if (Math.abs(inp.pitch) > 0.03)
-          torque.addScaledVector(c.right, inp.pitch * CFG.AIR_PITCH * (RC.invertPitch ? -1 : 1));
+          torque.addScaledVector(c.right, -inp.pitch * CFG.AIR_PITCH * (RC.invertPitch ? -1 : 1));
         if (Math.abs(inp.steer) > 0.03) {
-          if (inp.roll) torque.addScaledVector(c.fwd, -inp.steer * CFG.AIR_ROLL);
-          else torque.addScaledVector(c.up, inp.steer * CFG.AIR_YAW);
+          if (inp.roll) torque.addScaledVector(c.fwd, inp.steer * CFG.AIR_ROLL);
+          else torque.addScaledVector(c.up, -inp.steer * CFG.AIR_YAW);
         }
         c.omega.addScaledVector(torque, dt);
         var damp = (torque.lengthSq() < 1e-6) ? CFG.AIR_DAMP : 1.0;
@@ -243,7 +247,7 @@
           c.dodge.set(dx, dy);
           var fh = _v1.copy(c.fwd); fh.y = 0;
           if (fh.lengthSq() < 1e-4) fh.set(0, 0, 1); else fh.normalize();
-          var rh = _v2.set(fh.z, 0, -fh.x);
+          var rh = _v2.set(-fh.z, 0, fh.x);
           var dirW = _v4.copy(fh).multiplyScalar(dy).addScaledVector(rh, dx).normalize();
 
           var hv = _v3.set(c.vel.x, 0, c.vel.z);
@@ -252,7 +256,7 @@
           c.vel.x = newH.x; c.vel.z = newH.z;
           if (dy > 0.35 && c.vel.y < 0) c.vel.y *= 0.55;   // forward flick keeps you low
 
-          c.flipAxis.copy(c.right).multiplyScalar(dy).addScaledVector(c.fwd, -dx).normalize();
+          c.flipAxis.copy(c.right).multiplyScalar(-dy).addScaledVector(c.fwd, dx).normalize();
           c.omega.copy(c.flipAxis).multiplyScalar(CFG.FLIP_OMEGA);
           c.flipping = CFG.FLIP_T;
           c.flipAvail = false;
