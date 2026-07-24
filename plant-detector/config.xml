@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="se.sando.plantdetector" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>Växtdetektor</name>
+    <description>
+        Detektera växter, analysera deras hälsa och känn igen sjukdomar — direkt i mobilen.
+    </description>
+    <author>Sändo</author>
+    <content src="index.html" />
+    <preference name="AndroidXEnabled" value="true" />
+    <preference name="BackgroundColor" value="#f3f7f3" />
+    <platform name="android">
+        <preference name="android-minSdkVersion" value="24" />
+    </platform>
+</widget>

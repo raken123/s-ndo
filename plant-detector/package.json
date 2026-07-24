@@ -1,0 +1,23 @@
+{
+  "name": "se.sando.plantdetector",
+  "displayName": "Växtdetektor",
+  "version": "1.0.0",
+  "description": "Detektera växter, analysera deras hälsa och känn igen sjukdomar — direkt i mobilen.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ecosystem:cordova"
+  ],
+  "author": "Sändo",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "cordova-android": "^15.1.0"
+  },
+  "cordova": {
+    "platforms": [
+      "android"
+    ]
+  }
+}

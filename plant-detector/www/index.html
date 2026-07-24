@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: content:; media-src 'self' blob:;">
+<meta name="format-detection" content="telephone=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>Växtdetektor</title>
+<link rel="stylesheet" href="css/index.css">
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">🌿</div>
+  <div>
+    <h1>Växtdetektor</h1>
+    <small>Detektera växter · sjukdomar · och mycket mer</small>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ============ ANALYSERA ============ -->
+  <section class="view active" id="view-scan">
+    <div class="hero card">
+      <div class="hero-emoji">🪴</div>
+      <h2>Hur mår din växt?</h2>
+      <p>Fota eller välj en bild så analyserar appen den direkt på din mobil — är det en växt, hur frisk är den och vilka symptom syns?</p>
+      <div class="btn-row">
+        <button class="btn" id="cameraBtn">📷 Ta bild</button>
+        <button class="btn ghost" id="galleryBtn">🖼️ Välj bild</button>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" hidden>
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
+    </div>
+
+    <div class="card preview-card" id="previewCard" hidden>
+      <img id="previewImg" alt="Vald växtbild">
+      <div class="scan-overlay" id="scanOverlay" hidden><span>🔎 Analyserar…</span></div>
+    </div>
+
+    <div class="card" id="resultCard" hidden></div>
+  </section>
+
+  <!-- ============ HISTORIK ============ -->
+  <section class="view" id="view-history">
+    <h2 class="view-title">Historik 🕘</h2>
+    <p class="view-sub">Dina tidigare analyser sparas lokalt på enheten.</p>
+    <div class="card" id="historyList"></div>
+  </section>
+
+  <!-- ============ BIBLIOTEK ============ -->
+  <section class="view" id="view-library">
+    <h2 class="view-title">Växtbibliotek 📖</h2>
+    <p class="view-sub">Skötselråd för populära växter.</p>
+    <input type="search" id="plantSearch" placeholder="🔍 Sök växt — t.ex. monstera, orkidé…">
+    <div id="libraryList"></div>
+  </section>
+
+  <!-- ============ GUIDE ============ -->
+  <section class="view" id="view-guide">
+    <h2 class="view-title">Sjukdomsguide 🔬</h2>
+    <p class="view-sub">Känn igen vanliga sjukdomar och skadedjur — och åtgärda i tid.</p>
+    <div class="card" id="guideList"></div>
+  </section>
+
+</main>
+
+<nav id="tabbar">
+  <button data-view="scan" class="active"><span>🌿</span>Analysera</button>
+  <button data-view="history"><span>🕘</span>Historik</button>
+  <button data-view="library"><span>📖</span>Bibliotek</button>
+  <button data-view="guide"><span>🔬</span>Guide</button>
+</nav>
+
+<div id="toast"></div>
+
+<script src="cordova.js"></script>
+<script src="js/data.js"></script>
+<script src="js/analyzer.js"></script>
+<script src="js/index.js"></script>
+</body>
+</html>
