@@ -1,0 +1,26 @@
+{
+  "name": "mattenite",
+  "displayName": "Mattenite",
+  "version": "1.0.0",
+  "description": "Mattespelet där du svarar på en fråga och kastar bomben vidare till nästa spelare.",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "icons": "python3 tools/make-icons.py",
+    "bundle": "node tools/bundle.js",
+    "serve": "node tools/serve.js",
+    "prepare:android": "cordova platform add android@13.0.0",
+    "build": "npm run bundle && cordova build android",
+    "build:release": "npm run bundle && cordova build android --release"
+  },
+  "devDependencies": {
+    "cordova": "^12.0.0",
+    "cordova-android": "^13.0.0"
+  },
+  "cordova": {
+    "platforms": [
+      "android"
+    ],
+    "plugins": {}
+  }
+}

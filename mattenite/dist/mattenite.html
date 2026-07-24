@@ -1,0 +1,2695 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<meta name="msapplication-tap-highlight" content="no">
+<meta name="theme-color" content="#0d0f1e">
+<title>Mattenite</title>
+<style>
+/* ==========================================================================
+   Mattenite — mattespelet där bomben går vidare
+   ========================================================================== */
+
+:root {
+  --bg: #0d0f1e;
+  --bg-2: #141833;
+  --panel: #1a1f3d;
+  --panel-2: #222850;
+  --ink: #f2f4ff;
+  --muted: #9aa3cf;
+  --brand: #7c5cff;
+  --brand-2: #00e5c8;
+  --danger: #ff4d6d;
+  --warn: #ffc73a;
+  --ok: #3ddc84;
+  --border: rgba(255, 255, 255, .09);
+  --radius: 16px;
+  --shadow: 0 10px 34px rgba(0, 0, 0, .38);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Teman låses upp i butiken */
+body[data-theme="mint"]   { --brand: #14b8a6; --brand-2: #a3e635; --bg: #071a17; --bg-2: #0b2723; --panel: #0f302b; --panel-2: #16413a; }
+body[data-theme="sunset"] { --brand: #f97316; --brand-2: #ec4899; --bg: #1c0a15; --bg-2: #2a0f1e; --panel: #351427; --panel-2: #451a33; }
+body[data-theme="ocean"]  { --brand: #3b82f6; --brand-2: #22d3ee; --bg: #061426; --bg-2: #0a2038; --panel: #0e2b48; --panel-2: #14385c; }
+body[data-theme="light"]  { --brand: #6d43ff; --brand-2: #0891b2; --bg: #eef1fb; --bg-2: #e3e8f7; --panel: #ffffff; --panel-2: #f3f5fd; --ink: #16192b; --muted: #5b6486; --border: rgba(16, 20, 45, .12); --shadow: 0 8px 26px rgba(30, 35, 70, .12); }
+body[data-theme="matrix"] { --brand: #22c55e; --brand-2: #86efac; --bg: #04120a; --bg-2: #07200f; --panel: #0a2b15; --panel-2: #0e3a1d; }
+body[data-theme="gold"]   { --brand: #d4a017; --brand-2: #fde68a; --bg: #16120a; --bg-2: #211a0e; --panel: #2b2213; --panel-2: #3a2e1a; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(760px 420px at 12% -8%, color-mix(in srgb, var(--brand) 32%, transparent), transparent 70%),
+    radial-gradient(680px 380px at 96% 4%, color-mix(in srgb, var(--brand-2) 20%, transparent), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body.no-anim *, body.no-anim *::before, body.no-anim *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* ---------- Topplist ---------- */
+.topbar {
+  position: relative;
+  z-index: 3;
+  padding: calc(var(--safe-top) + 12px) 16px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: color-mix(in srgb, var(--bg-2) 88%, transparent);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.brand { display: flex; align-items: center; gap: 10px; margin-right: auto; min-width: 0; }
+.brand-mark {
+  width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0;
+  background: linear-gradient(140deg, var(--brand), var(--brand-2));
+  display: grid; place-items: center; font-size: 19px; font-weight: 800; color: #fff;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--brand) 45%, transparent);
+}
+.brand-txt h1 { font-size: 17px; letter-spacing: -.3px; line-height: 1.1; }
+.brand-txt span { font-size: 11px; color: var(--muted); }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--panel); border: 1px solid var(--border);
+  padding: 6px 10px; border-radius: 999px; font-size: 13px; font-weight: 700;
+  white-space: nowrap;
+}
+.chip.coins { color: var(--warn); }
+.chip.lvl { color: var(--brand-2); }
+
+/* ---------- Vyer ---------- */
+main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; position: relative; z-index: 1; padding: 16px 16px 24px; }
+.view { display: none; animation: fade .22s ease; }
+.view.active { display: block; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.view-head { margin-bottom: 14px; }
+.view-head h2 { font-size: 22px; letter-spacing: -.4px; }
+.view-head p { color: var(--muted); font-size: 13px; margin-top: 3px; }
+
+.card {
+  background: linear-gradient(160deg, var(--panel), var(--panel-2));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  margin-bottom: 14px;
+}
+.card h3 { font-size: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.card .sub { color: var(--muted); font-size: 12.5px; }
+
+.row { display: flex; align-items: center; gap: 10px; }
+.row.between { justify-content: space-between; }
+.row.wrap { flex-wrap: wrap; }
+.grid { display: grid; gap: 10px; }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.mt { margin-top: 12px; }
+.center { text-align: center; }
+
+/* ---------- Knappar ---------- */
+.btn {
+  border: none; border-radius: 12px; padding: 13px 18px;
+  background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 55%, var(--brand-2)));
+  color: #fff; font-weight: 700; font-size: 15px; font-family: inherit;
+  cursor: pointer; transition: transform .12s ease, filter .12s ease;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--brand) 32%, transparent);
+}
+.btn:active { transform: scale(.96); filter: brightness(1.1); }
+.btn:disabled { opacity: .45; box-shadow: none; }
+.btn.block { display: block; width: 100%; }
+.btn.ghost { background: var(--panel-2); color: var(--ink); border: 1px solid var(--border); box-shadow: none; }
+.btn.small { padding: 8px 13px; font-size: 13px; border-radius: 10px; }
+.btn.danger { background: linear-gradient(135deg, var(--danger), #b91c3c); box-shadow: none; }
+.btn.ok { background: linear-gradient(135deg, var(--ok), #16a34a); box-shadow: none; }
+
+input[type="text"], input[type="number"], select {
+  width: 100%; padding: 12px; border-radius: 11px; font-size: 15px; font-family: inherit;
+  background: var(--bg-2); color: var(--ink); border: 1px solid var(--border);
+}
+label.field { display: block; margin-bottom: 10px; }
+label.field span { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
+
+.seg { display: flex; gap: 6px; background: var(--bg-2); padding: 4px; border-radius: 12px; border: 1px solid var(--border); }
+.seg button {
+  flex: 1; border: none; background: none; color: var(--muted); font-family: inherit;
+  padding: 9px 4px; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.seg button.on { background: var(--brand); color: #fff; }
+
+/* ---------- Hem ---------- */
+.hero {
+  background: linear-gradient(140deg, color-mix(in srgb, var(--brand) 42%, var(--panel)), var(--panel-2));
+  border: 1px solid var(--border); border-radius: 20px; padding: 20px; margin-bottom: 14px;
+  position: relative; overflow: hidden;
+}
+.hero h2 { font-size: 24px; letter-spacing: -.6px; }
+.hero p { color: var(--muted); font-size: 13.5px; margin: 6px 0 14px; }
+.hero .bomb-deco { position: absolute; right: -6px; top: -10px; font-size: 92px; opacity: .16; transform: rotate(12deg); }
+
+.stat-tile { background: var(--bg-2); border: 1px solid var(--border); border-radius: 13px; padding: 12px; }
+.stat-tile .num { font-size: 20px; font-weight: 800; letter-spacing: -.5px; }
+.stat-tile .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.xpbar { height: 9px; border-radius: 99px; background: var(--bg-2); overflow: hidden; border: 1px solid var(--border); }
+.xpbar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand-2)); transition: width .5s ease; }
+
+.mode-card {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 14px;
+  padding: 13px; color: var(--ink); font-family: inherit; cursor: pointer; margin-bottom: 9px;
+}
+.mode-card:active { transform: scale(.985); }
+.mode-card .ico { font-size: 26px; width: 42px; text-align: center; flex-shrink: 0; }
+.mode-card b { font-size: 15px; display: block; }
+.mode-card small { color: var(--muted); font-size: 12px; }
+.mode-card .lock { margin-left: auto; font-size: 12px; color: var(--muted); }
+
+/* ---------- Lobbies ---------- */
+.lobby-item {
+  display: flex; align-items: center; gap: 12px; padding: 13px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 9px;
+  cursor: pointer;
+}
+.lobby-item:active { transform: scale(.99); }
+.lobby-item .flag { font-size: 24px; width: 38px; text-align: center; }
+.lobby-item .meta { flex: 1; min-width: 0; }
+.lobby-item .meta b { font-size: 14.5px; display: flex; align-items: center; gap: 6px; }
+.lobby-item .meta small { color: var(--muted); font-size: 12px; display: block; margin-top: 2px; }
+.pill { font-size: 10.5px; padding: 2px 7px; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); font-weight: 700; }
+.pill.d1 { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
+.pill.d2 { color: var(--brand-2); border-color: color-mix(in srgb, var(--brand-2) 45%, transparent); }
+.pill.d3 { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); }
+.pill.d4 { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
+.pill.live { color: var(--ok); }
+.lobby-item .cnt { text-align: right; font-size: 13px; font-weight: 800; }
+.lobby-item .cnt small { display: block; font-size: 10px; color: var(--muted); font-weight: 600; }
+.lobby-item.full { opacity: .5; }
+
+.player-row {
+  display: flex; align-items: center; gap: 11px; padding: 10px 12px;
+  background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 7px;
+}
+.player-row .av { font-size: 22px; width: 34px; height: 34px; display: grid; place-items: center; background: var(--panel-2); border-radius: 10px; }
+.player-row .nm { flex: 1; font-size: 14px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.player-row .st { font-size: 11.5px; font-weight: 700; color: var(--muted); }
+.player-row .st.ready { color: var(--ok); }
+.player-row.you { border-color: color-mix(in srgb, var(--brand) 60%, transparent); }
+
+.chatbox { height: 150px; overflow-y: auto; background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; padding: 10px; margin-bottom: 8px; }
+.chat-msg { font-size: 12.5px; margin-bottom: 6px; line-height: 1.4; }
+.chat-msg b { color: var(--brand-2); }
+.chat-msg.sys { color: var(--muted); font-style: italic; }
+
+/* ---------- Spel ---------- */
+#view-game { display: none; }
+#view-game.active { display: flex; flex-direction: column; min-height: 100%; }
+
+.game-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.timer-wrap { flex: 1; }
+.timer-bar { height: 12px; border-radius: 99px; background: var(--bg-2); overflow: hidden; border: 1px solid var(--border); }
+.timer-bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--ok), var(--warn)); width: 100%; transition: width .1s linear; }
+.timer-bar.danger > i { background: linear-gradient(90deg, var(--danger), #ff8fa3); }
+.timer-num { font-size: 12px; color: var(--muted); margin-top: 4px; display: flex; justify-content: space-between; font-weight: 700; }
+
+.holder-banner {
+  border-radius: 14px; padding: 12px; text-align: center; margin-bottom: 12px;
+  border: 1px solid var(--border); background: var(--panel);
+  font-size: 14px; font-weight: 700;
+}
+.holder-banner.mine { background: linear-gradient(135deg, color-mix(in srgb, var(--danger) 34%, var(--panel)), var(--panel)); border-color: color-mix(in srgb, var(--danger) 55%, transparent); }
+.holder-banner .big { font-size: 30px; display: block; margin-bottom: 4px; }
+.holder-banner.mine .big { animation: shake .5s infinite; }
+@keyframes shake { 0%,100% { transform: rotate(-7deg) } 50% { transform: rotate(7deg) } }
+
+.q-card {
+  background: linear-gradient(160deg, var(--panel), var(--panel-2));
+  border: 1px solid var(--border); border-radius: 18px; padding: 22px 16px; text-align: center; margin-bottom: 12px;
+}
+.q-cat { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; font-weight: 800; }
+.q-text { font-size: 30px; font-weight: 800; letter-spacing: -.6px; margin: 8px 0 2px; line-height: 1.2; }
+.q-streak { font-size: 12px; color: var(--warn); font-weight: 700; min-height: 16px; }
+
+.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.opt {
+  padding: 18px 8px; border-radius: 14px; border: 1px solid var(--border);
+  background: var(--panel-2); color: var(--ink); font-size: 21px; font-weight: 800;
+  font-family: inherit; cursor: pointer; transition: transform .1s;
+}
+.opt:active { transform: scale(.96); }
+.opt.right { background: linear-gradient(135deg, var(--ok), #16a34a); color: #06210f; border-color: transparent; }
+.opt.wrong { background: linear-gradient(135deg, var(--danger), #b91c3c); color: #fff; border-color: transparent; }
+.opt:disabled { opacity: .75; }
+
+.throw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.throw-btn {
+  display: flex; align-items: center; gap: 9px; padding: 12px; border-radius: 13px;
+  background: var(--panel-2); border: 1px solid var(--border); color: var(--ink);
+  font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; text-align: left;
+}
+.throw-btn:active { transform: scale(.97); }
+.throw-btn .av { font-size: 20px; }
+.throw-btn .hearts { margin-left: auto; font-size: 10px; }
+.throw-btn.shielded { border-color: color-mix(in srgb, var(--brand-2) 60%, transparent); }
+
+.pw-bar { display: flex; gap: 8px; margin-bottom: 10px; }
+.pw {
+  flex: 1; padding: 10px 4px; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--panel); color: var(--ink); font-family: inherit; cursor: pointer; text-align: center;
+}
+.pw .ic { font-size: 19px; display: block; }
+.pw .nm { font-size: 9.5px; color: var(--muted); font-weight: 700; margin-top: 2px; }
+.pw:disabled { opacity: .3; }
+.pw.armed { border-color: var(--brand-2); background: color-mix(in srgb, var(--brand-2) 18%, var(--panel)); }
+
+.feed { margin-top: 12px; font-size: 12.5px; color: var(--muted); max-height: 96px; overflow-y: auto; }
+.feed div { padding: 3px 0; border-bottom: 1px dashed var(--border); }
+
+.player-strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px; }
+.pstrip {
+  flex-shrink: 0; width: 72px; text-align: center; padding: 9px 4px; border-radius: 13px;
+  background: var(--panel); border: 1px solid var(--border); position: relative;
+}
+.pstrip.holding { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 22%, var(--panel)); }
+.pstrip.out { opacity: .32; }
+.pstrip .av { font-size: 22px; }
+.pstrip .nm { font-size: 10px; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.pstrip .hp { font-size: 9px; margin-top: 2px; }
+.pstrip .bomb-tag { position: absolute; top: -8px; right: -4px; font-size: 16px; }
+
+/* ---------- Prestationer ---------- */
+.ach-filter { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 10px; }
+.ach-filter button {
+  flex-shrink: 0; padding: 7px 12px; border-radius: 99px; border: 1px solid var(--border);
+  background: var(--panel); color: var(--muted); font-family: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
+}
+.ach-filter button.on { background: var(--brand); color: #fff; border-color: transparent; }
+
+.ach {
+  display: flex; gap: 12px; align-items: center; padding: 12px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 8px;
+}
+.ach.locked { opacity: .62; }
+.ach .ico { font-size: 25px; width: 42px; height: 42px; display: grid; place-items: center; background: var(--bg-2); border-radius: 12px; flex-shrink: 0; }
+.ach.done .ico { background: linear-gradient(135deg, var(--brand), var(--brand-2)); }
+.ach .body { flex: 1; min-width: 0; }
+.ach .body b { font-size: 14px; display: flex; align-items: center; gap: 6px; }
+.ach .body p { font-size: 12px; color: var(--muted); margin: 2px 0 6px; }
+.ach .prog { height: 6px; border-radius: 99px; background: var(--bg-2); overflow: hidden; }
+.ach .prog > i { display: block; height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand-2)); }
+.ach .pnum { font-size: 10.5px; color: var(--muted); margin-top: 3px; font-weight: 700; }
+.rar { font-size: 9.5px; padding: 2px 6px; border-radius: 99px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.rar.vanlig { background: #4b5563; color: #e5e7eb; }
+.rar.ovanlig { background: #0e7490; color: #cffafe; }
+.rar.sallsynt { background: #4338ca; color: #e0e7ff; }
+.rar.episk { background: #7e22ce; color: #f3e8ff; }
+.rar.legendarisk { background: #b45309; color: #fef3c7; }
+.rar.hemlig { background: #831843; color: #fce7f3; }
+
+/* ---------- Butik / profil ---------- */
+.shop-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 8px; }
+.shop-item .ico { font-size: 24px; width: 40px; text-align: center; }
+.shop-item .body { flex: 1; min-width: 0; }
+.shop-item .body b { font-size: 14px; }
+.shop-item .body small { display: block; color: var(--muted); font-size: 11.5px; }
+
+.lb-row { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.lb-row .pos { width: 26px; font-weight: 800; font-size: 14px; color: var(--muted); }
+.lb-row.you { background: color-mix(in srgb, var(--brand) 16%, transparent); border-radius: 10px; }
+.lb-row .sc { margin-left: auto; font-weight: 800; font-size: 14px; }
+
+/* ---------- Navigering ---------- */
+.tabbar {
+  display: flex; background: color-mix(in srgb, var(--bg-2) 96%, transparent);
+  border-top: 1px solid var(--border); padding-bottom: var(--safe-bottom);
+  flex-shrink: 0; position: relative; z-index: 3;
+}
+.tabbar button {
+  flex: 1; border: none; background: none; color: var(--muted); font-family: inherit;
+  padding: 9px 2px 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  position: relative;
+}
+.tabbar button .ic { font-size: 20px; }
+.tabbar button .lb { font-size: 10px; font-weight: 700; }
+.tabbar button.on { color: var(--brand-2); }
+.tabbar .dot { position: absolute; top: 6px; right: 50%; margin-right: -18px; width: 8px; height: 8px; border-radius: 99px; background: var(--danger); display: none; }
+.tabbar .dot.show { display: block; }
+
+/* ---------- Overlays ---------- */
+.toast-wrap { position: fixed; left: 0; right: 0; top: calc(var(--safe-top) + 10px); z-index: 50; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; padding: 0 12px; }
+.toast {
+  background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: #fff;
+  padding: 11px 16px; border-radius: 13px; font-size: 13.5px; font-weight: 700;
+  box-shadow: var(--shadow); max-width: 420px; width: 100%;
+  display: flex; align-items: center; gap: 10px; animation: pop .3s ease;
+}
+.toast .ic { font-size: 22px; }
+.toast small { display: block; font-weight: 500; opacity: .9; font-size: 11.5px; }
+@keyframes pop { from { opacity: 0; transform: translateY(-14px) scale(.94); } to { opacity: 1; transform: none; } }
+
+.modal { position: fixed; inset: 0; background: rgba(4, 6, 18, .78); z-index: 60; display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal.open { display: flex; }
+.modal-box {
+  background: linear-gradient(160deg, var(--panel), var(--panel-2)); border: 1px solid var(--border);
+  border-radius: 20px; padding: 22px; width: 100%; max-width: 420px; box-shadow: var(--shadow);
+  max-height: 88vh; overflow-y: auto; animation: pop .25s ease;
+}
+.modal-box h3 { font-size: 19px; margin-bottom: 10px; }
+
+.confetti { position: fixed; inset: 0; pointer-events: none; z-index: 55; }
+.confetti i {
+  position: absolute; width: 9px; height: 14px; opacity: .95;
+  animation: fall linear forwards;
+}
+@keyframes fall { to { transform: translateY(105vh) rotate(720deg); opacity: 0; } }
+
+.empty { text-align: center; padding: 30px 10px; color: var(--muted); font-size: 13.5px; }
+.empty .big { font-size: 40px; display: block; margin-bottom: 8px; opacity: .7; }
+
+@media (min-width: 720px) {
+  main { padding: 22px 26px 30px; }
+  .view { max-width: 720px; margin: 0 auto; }
+  .opts { grid-template-columns: repeat(4, 1fr); }
+  .throw-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+</style>
+</head>
+<body data-theme="default">
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">M</div>
+    <div class="brand-txt">
+      <h1>Mattenite</h1>
+      <span>Svara. Kasta. Överlev.</span>
+    </div>
+  </div>
+  <span class="chip coins" id="chip-coins">🪙 0</span>
+  <span class="chip lvl" id="chip-level">⭐ Nivå 1</span>
+</header>
+
+<main>
+  <section class="view active" id="view-home"></section>
+  <section class="view" id="view-lobbies"></section>
+  <section class="view" id="view-play"></section>
+  <section class="view" id="view-game"></section>
+  <section class="view" id="view-ach"></section>
+  <section class="view" id="view-profile"></section>
+</main>
+
+<nav class="tabbar">
+  <button data-tab="home" class="on"><span class="ic">🏠</span><span class="lb">Hem</span></button>
+  <button data-tab="lobbies"><span class="ic">🚪</span><span class="lb">Lobbies</span></button>
+  <button data-tab="play"><span class="ic">🎮</span><span class="lb">Spela</span></button>
+  <button data-tab="ach"><span class="ic">🏆</span><span class="lb">Prestationer</span><span class="dot" id="ach-dot"></span></button>
+  <button data-tab="profile"><span class="ic">👤</span><span class="lb">Profil</span></button>
+</nav>
+
+<div class="toast-wrap" id="toasts"></div>
+<div class="confetti" id="confetti"></div>
+<div class="modal" id="modal"><div class="modal-box" id="modal-box"></div></div>
+
+<script>
+/* ==========================================================================
+   data.js — frågegenerator, kategorier, prestationer, butik, lobbydata
+   ========================================================================== */
+(function (M) {
+  'use strict';
+
+  var rnd = function (a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; };
+  var pick = function (arr) { return arr[Math.floor(Math.random() * arr.length)]; };
+  M.rnd = rnd;
+  M.pick = pick;
+
+  M.DIFFS = [
+    { id: 1, name: 'Lätt', time: 26 },
+    { id: 2, name: 'Medel', time: 21 },
+    { id: 3, name: 'Svår', time: 17 },
+    { id: 4, name: 'Extrem', time: 13 }
+  ];
+
+  M.CATEGORIES = [
+    { id: 'add', name: 'Addition', icon: '➕' },
+    { id: 'sub', name: 'Subtraktion', icon: '➖' },
+    { id: 'mul', name: 'Multiplikation', icon: '✖️' },
+    { id: 'div', name: 'Division', icon: '➗' },
+    { id: 'pow', name: 'Potenser & rötter', icon: '🔢' },
+    { id: 'pct', name: 'Procent', icon: '％' },
+    { id: 'frac', name: 'Bråk', icon: '🍰' },
+    { id: 'eq', name: 'Ekvationer', icon: '🧮' },
+    { id: 'geo', name: 'Geometri', icon: '📐' },
+    { id: 'neg', name: 'Negativa tal', icon: '🧊' },
+    { id: 'seq', name: 'Talföljder', icon: '🔗' },
+    { id: 'prime', name: 'Primtal', icon: '🔍' }
+  ];
+
+  M.catName = function (id) {
+    for (var i = 0; i < M.CATEGORIES.length; i++) if (M.CATEGORIES[i].id === id) return M.CATEGORIES[i].name;
+    return 'Blandat';
+  };
+
+  /* ---------- Frågegenerator ---------------------------------------------- */
+
+  function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+
+  function makeQuestion(cat, d) {
+    var a, b, c, x, ans, text, opts;
+
+    switch (cat) {
+      case 'add':
+        if (d === 1) { a = rnd(2, 20); b = rnd(2, 19); }
+        else if (d === 2) { a = rnd(12, 89); b = rnd(12, 89); }
+        else if (d === 3) { a = rnd(120, 899); b = rnd(120, 899); }
+        else { a = rnd(1200, 8999); b = rnd(1200, 8999); }
+        ans = a + b; text = a + ' + ' + b;
+        if (d === 4 && Math.random() < .5) { c = rnd(100, 999); ans += c; text += ' + ' + c; }
+        break;
+
+      case 'sub':
+        if (d === 1) { a = rnd(8, 25); b = rnd(1, a); }
+        else if (d === 2) { a = rnd(30, 99); b = rnd(10, a); }
+        else if (d === 3) { a = rnd(150, 900); b = rnd(50, 850); }
+        else { a = rnd(1000, 9000); b = rnd(500, 8000); }
+        ans = a - b; text = a + ' − ' + b;
+        break;
+
+      case 'mul':
+        if (d === 1) { a = rnd(2, 10); b = rnd(2, 10); }
+        else if (d === 2) { a = rnd(3, 12); b = rnd(4, 19); }
+        else if (d === 3) { a = rnd(12, 39); b = rnd(11, 29); }
+        else { a = rnd(21, 99); b = rnd(21, 99); }
+        ans = a * b; text = a + ' × ' + b;
+        break;
+
+      case 'div':
+        if (d === 1) { b = rnd(2, 9); ans = rnd(2, 10); }
+        else if (d === 2) { b = rnd(3, 12); ans = rnd(4, 15); }
+        else if (d === 3) { b = rnd(6, 19); ans = rnd(6, 25); }
+        else { b = rnd(12, 29); ans = rnd(11, 44); }
+        a = b * ans; text = a + ' ÷ ' + b;
+        break;
+
+      case 'pow':
+        if (d === 1) { a = rnd(2, 12); ans = a * a; text = a + '²'; }
+        else if (d === 2) {
+          if (Math.random() < .5) { a = rnd(2, 6); ans = a * a * a; text = a + '³'; }
+          else { a = rnd(4, 15); ans = a; text = '√' + (a * a); }
+        } else if (d === 3) {
+          if (Math.random() < .5) { a = rnd(13, 25); ans = a * a; text = a + '²'; }
+          else { a = rnd(2, 4); b = rnd(3, 6); ans = Math.pow(a, b); text = a + '^' + b; }
+        } else {
+          if (Math.random() < .5) { a = rnd(2, 5); b = rnd(4, 8); ans = Math.pow(a, b); text = a + '^' + b; }
+          else { a = rnd(16, 40); ans = a; text = '√' + (a * a); }
+        }
+        break;
+
+      case 'pct':
+        if (d === 1) { a = pick([10, 25, 50, 100]); b = pick([20, 40, 60, 80, 200]); }
+        else if (d === 2) { a = pick([5, 15, 20, 30, 75]); b = pick([40, 60, 120, 200, 300]); }
+        else { a = pick([12, 18, 35, 45, 65]); b = pick([80, 140, 220, 360, 500]); }
+        if (d === 4) { a = rnd(3, 97); b = pick([200, 400, 800, 1200]); }
+        ans = Math.round(a * b / 100); text = a + '% av ' + b;
+        break;
+
+      case 'frac':
+        if (d <= 2) {
+          b = pick([4, 5, 6, 8, 10, 12]);
+          a = rnd(1, b - 1); c = rnd(1, b - a);
+          ans = Math.round((a + c) / b * 100);
+          text = a + '/' + b + ' + ' + c + '/' + b + ' i %';
+        } else {
+          b = pick([2, 4, 5, 8]); c = pick([3, 6, 10, 20]);
+          a = rnd(1, b - 1); x = rnd(1, c - 1);
+          ans = Math.round((a / b + x / c) * 100);
+          text = a + '/' + b + ' + ' + x + '/' + c + ' i %';
+        }
+        break;
+
+      case 'eq':
+        if (d === 1) { a = 1; x = rnd(2, 15); b = rnd(1, 20); }
+        else if (d === 2) { a = rnd(2, 6); x = rnd(2, 12); b = rnd(1, 25); }
+        else if (d === 3) { a = rnd(3, 11); x = rnd(3, 20); b = rnd(-30, 40); }
+        else { a = rnd(4, 15); x = rnd(-12, 25); b = rnd(-60, 80); }
+        ans = x;
+        text = (a === 1 ? 'x' : a + 'x') + (b < 0 ? ' − ' + Math.abs(b) : ' + ' + b) + ' = ' + (a * x + b);
+        break;
+
+      case 'geo':
+        c = rnd(1, d >= 3 ? 4 : 3);
+        if (c === 1) { a = rnd(3, d * 9); b = rnd(3, d * 9); ans = a * b; text = 'Area av rektangel ' + a + '×' + b; }
+        else if (c === 2) { a = rnd(4, d * 8) * 2; b = rnd(3, d * 8); ans = a * b / 2; text = 'Area av triangel b=' + a + ' h=' + b; }
+        else if (c === 3) { a = rnd(3, d * 9); b = rnd(3, d * 9); ans = 2 * (a + b); text = 'Omkrets av rektangel ' + a + '×' + b; }
+        else { a = rnd(2, 9); ans = a * a * a; text = 'Volym av kub med sidan ' + a; }
+        break;
+
+      case 'neg':
+        if (d <= 2) { a = rnd(-20, -1); b = rnd(-15, 15); ans = a + b; text = '(' + a + ') + (' + b + ')'; }
+        else if (d === 3) { a = rnd(-30, -2); b = rnd(2, 12); ans = a * b; text = '(' + a + ') × ' + b; }
+        else { a = rnd(-14, -2); b = rnd(-14, -2); ans = a * b; text = '(' + a + ') × (' + b + ')'; }
+        break;
+
+      case 'seq':
+        c = rnd(1, d >= 3 ? 3 : 2);
+        a = rnd(1, 12);
+        if (c === 1) { b = rnd(2, d * 4); ans = a + b * 4; text = [a, a + b, a + 2 * b, a + 3 * b, '?'].join(', '); }
+        else if (c === 2) { b = rnd(2, 3); ans = a * Math.pow(b, 4); text = [a, a * b, a * b * b, a * b * b * b, '?'].join(', '); }
+        else { ans = (a + 4) * (a + 4); text = [a * a, (a + 1) * (a + 1), (a + 2) * (a + 2), (a + 3) * (a + 3), '?'].join(', '); }
+        break;
+
+      case 'prime':
+      default:
+        var primes = [11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97];
+        if (d >= 3) primes = primes.concat([101, 103, 107, 109, 113, 127, 131, 137, 139, 149]);
+        ans = pick(primes);
+        text = 'Vilket tal är ett primtal?';
+        var fake = [];
+        while (fake.length < 3) {
+          var f = rnd(ans - 12, ans + 12);
+          if (f > 3 && f !== ans && !isPrime(f) && fake.indexOf(f) < 0) fake.push(f);
+        }
+        opts = fake.concat([ans]);
+        break;
+    }
+
+    if (!opts) opts = distractors(ans, cat, d);
+    opts = shuffle(opts);
+
+    return {
+      cat: cat,
+      diff: d,
+      text: text,
+      answer: ans,
+      options: opts.map(String),
+      correct: opts.indexOf(ans)
+    };
+  }
+
+  function isPrime(n) {
+    if (n < 2) return false;
+    for (var i = 2; i * i <= n; i++) if (n % i === 0) return false;
+    return true;
+  }
+
+  function distractors(ans, cat, d) {
+    var out = [ans], guard = 0;
+    var span = Math.max(2, Math.round(Math.abs(ans) * (cat === 'mul' || cat === 'pow' ? .12 : .2)) + d);
+    while (out.length < 4 && guard++ < 200) {
+      var cand;
+      var roll = Math.random();
+      if (roll < .3) cand = ans + (Math.random() < .5 ? 1 : -1) * rnd(1, 3);
+      else if (roll < .55) cand = ans + (Math.random() < .5 ? 1 : -1) * rnd(1, span);
+      else if (roll < .7 && Math.abs(ans) > 9) cand = ans + (Math.random() < .5 ? 10 : -10);
+      else cand = ans + (Math.random() < .5 ? 1 : -1) * rnd(2, span + 6);
+      if (cand !== ans && out.indexOf(cand) < 0) out.push(cand);
+    }
+    while (out.length < 4) out.push(ans + out.length * 7 + 1);
+    return out;
+  }
+
+  function shuffle(a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  M.shuffle = shuffle;
+
+  M.question = function (cat, diff) {
+    var c = (!cat || cat === 'mix') ? pick(M.CATEGORIES).id : cat;
+    return makeQuestion(c, diff || 1);
+  };
+
+  /* ---------- Botar & lobbies -------------------------------------------- */
+
+  M.BOT_NAMES = [
+    'Ludvig', 'Vera', 'Milo', 'Saga', 'Nour', 'Elvin', 'Alma', 'Kian', 'Freja', 'Osman',
+    'Tindra', 'Hugo', 'Liv', 'Malte', 'Sanna', 'Aron', 'Ester', 'Zaid', 'Nova', 'Ines',
+    'Vidar', 'Juni', 'Elias', 'Wilma', 'Sixten', 'Maja', 'Theo', 'Ronja', 'Ali', 'Signe'
+  ];
+
+  M.AVATARS = ['🦊', '🐼', '🐸', '🦉', '🐯', '🐨', '🐺', '🦄', '🐧', '🦁', '🐙', '🦖', '🐝', '🦈', '🐳', '🦩'];
+
+  M.LOBBY_TEMPLATES = [
+    { name: 'Nybörjarhörnan', flag: '🌱', diff: 1, cat: 'mix', mode: 'potato', max: 6 },
+    { name: 'Gångertabellen', flag: '✖️', diff: 2, cat: 'mul', mode: 'potato', max: 6 },
+    { name: 'Snabba Ryck', flag: '⚡', diff: 2, cat: 'mix', mode: 'blitz', max: 5 },
+    { name: 'Ekvationsklubben', flag: '🧮', diff: 3, cat: 'eq', mode: 'potato', max: 5 },
+    { name: 'Procentpartyt', flag: '％', diff: 2, cat: 'pct', mode: 'potato', max: 6 },
+    { name: 'Kaosbomben', flag: '💣', diff: 4, cat: 'mix', mode: 'potato', max: 8 },
+    { name: 'Bråkbaren', flag: '🍰', diff: 3, cat: 'frac', mode: 'potato', max: 4 },
+    { name: 'Geometrigänget', flag: '📐', diff: 2, cat: 'geo', mode: 'potato', max: 6 },
+    { name: 'Primtalsjakten', flag: '🔍', diff: 3, cat: 'prime', mode: 'potato', max: 5 },
+    { name: 'Duellarenan', flag: '⚔️', diff: 3, cat: 'mix', mode: 'duel', max: 2 },
+    { name: 'Nattugglorna', flag: '🦉', diff: 3, cat: 'mix', mode: 'potato', max: 6 },
+    { name: 'Potensfabriken', flag: '🔢', diff: 4, cat: 'pow', mode: 'potato', max: 5 },
+    { name: 'Minusträsket', flag: '🧊', diff: 3, cat: 'neg', mode: 'potato', max: 6 },
+    { name: 'Talföljdslabbet', flag: '🔗', diff: 4, cat: 'seq', mode: 'potato', max: 4 },
+    { name: 'Familjekvarten', flag: '🏠', diff: 1, cat: 'mix', mode: 'potato', max: 8 }
+  ];
+
+  M.MODES = {
+    potato: { name: 'Het bomb', icon: '💣', desc: 'Svara rätt och kasta bomben vidare. Sist kvar vinner.' },
+    blitz: { name: 'Blixt', icon: '⚡', desc: '60 sekunder — flest rätta svar vinner.' },
+    survival: { name: 'Överlevnad', icon: '🛡️', desc: 'Ensam mot klockan som blir snabbare för varje svar.' },
+    duel: { name: 'Duell', icon: '⚔️', desc: '1 mot 1. Bomben studsar tills någon faller.' },
+    practice: { name: 'Träning', icon: '🎯', desc: 'Ingen klocka, ingen press. Öva fritt.' },
+    daily: { name: 'Dagens utmaning', icon: '📅', desc: '10 frågor. Samma för alla varje dag.' }
+  };
+
+  M.POWERUPS = {
+    freeze: { name: 'Frys', icon: '⏸️', desc: 'Pausar bomben i 4 sekunder.' },
+    skip: { name: 'Hoppa', icon: '⏭️', desc: 'Byter ut frågan mot en ny.' },
+    shield: { name: 'Sköld', icon: '🛡️', desc: 'Studsar tillbaka nästa bomb som kastas på dig.' },
+    swap: { name: 'Kasta', icon: '🔀', desc: 'Kastar bomben direkt utan att svara.' },
+    x2: { name: 'Dubbel', icon: '💎', desc: 'Dubbel XP resten av matchen.' }
+  };
+
+  /* ---------- Butik ------------------------------------------------------- */
+
+  M.SHOP = [
+    { id: 'av_unicorn', type: 'avatar', name: 'Enhörning', icon: '🦄', cost: 120 },
+    { id: 'av_dino', type: 'avatar', name: 'Dino', icon: '🦖', cost: 150 },
+    { id: 'av_shark', type: 'avatar', name: 'Haj', icon: '🦈', cost: 180 },
+    { id: 'av_octo', type: 'avatar', name: 'Bläckfisk', icon: '🐙', cost: 200 },
+    { id: 'av_alien', type: 'avatar', name: 'Rymdis', icon: '👾', cost: 260 },
+    { id: 'av_robot', type: 'avatar', name: 'Robot', icon: '🤖', cost: 300 },
+    { id: 'av_ninja', type: 'avatar', name: 'Ninja', icon: '🥷', cost: 420 },
+    { id: 'av_wizard', type: 'avatar', name: 'Trollkarl', icon: '🧙', cost: 500 },
+    { id: 'th_mint', type: 'theme', name: 'Mynta', icon: '🌿', cost: 200, theme: 'mint' },
+    { id: 'th_sunset', type: 'theme', name: 'Solnedgång', icon: '🌇', cost: 250, theme: 'sunset' },
+    { id: 'th_ocean', type: 'theme', name: 'Ocean', icon: '🌊', cost: 250, theme: 'ocean' },
+    { id: 'th_light', type: 'theme', name: 'Dagsljus', icon: '☀️', cost: 300, theme: 'light' },
+    { id: 'th_matrix', type: 'theme', name: 'Matrix', icon: '🟩', cost: 600, theme: 'matrix' },
+    { id: 'th_gold', type: 'theme', name: 'Guldkant', icon: '👑', cost: 900, theme: 'gold' },
+    { id: 'bo_bomb', type: 'bomb', name: 'Klassisk bomb', icon: '💣', cost: 0 },
+    { id: 'bo_fire', type: 'bomb', name: 'Eldklot', icon: '🔥', cost: 150 },
+    { id: 'bo_ice', type: 'bomb', name: 'Isklump', icon: '🧊', cost: 150 },
+    { id: 'bo_star', type: 'bomb', name: 'Stjärnfall', icon: '🌟', cost: 320 },
+    { id: 'bo_skull', type: 'bomb', name: 'Dödskallen', icon: '💀', cost: 480 },
+    { id: 'bo_atom', type: 'bomb', name: 'Atomen', icon: '⚛️', cost: 750 }
+  ];
+
+  /* ---------- Prestationer ------------------------------------------------
+     stat: nyckel i profile.stats, goal: mål, r: sällsynthet, c: belöning
+     ---------------------------------------------------------------------- */
+
+  M.ACHIEVEMENTS = [
+    // Första stegen
+    { id: 'first_game', g: 'start', n: 'Första matchen', d: 'Spela din första match.', i: '🎬', stat: 'gamesPlayed', goal: 1, r: 'vanlig', c: 20 },
+    { id: 'first_correct', g: 'start', n: 'Ett rätt är ett rätt', d: 'Svara rätt på din första fråga.', i: '✅', stat: 'correct', goal: 1, r: 'vanlig', c: 10 },
+    { id: 'first_win', g: 'start', n: 'Vinnarskalle', d: 'Vinn din första match.', i: '🥇', stat: 'wins', goal: 1, r: 'vanlig', c: 40 },
+    { id: 'first_throw', g: 'start', n: 'Här får du!', d: 'Kasta bomben vidare en gång.', i: '🤾', stat: 'throws', goal: 1, r: 'vanlig', c: 15 },
+    { id: 'first_lobby', g: 'start', n: 'Sällskapssjuk', d: 'Gå med i en lobby.', i: '🚪', stat: 'lobbiesJoined', goal: 1, r: 'vanlig', c: 15 },
+
+    // Rätta svar
+    { id: 'correct_25', g: 'svar', n: 'Räknenisse', d: 'Svara rätt 25 gånger.', i: '🧠', stat: 'correct', goal: 25, r: 'vanlig', c: 30 },
+    { id: 'correct_100', g: 'svar', n: 'Hundra rätt', d: 'Svara rätt 100 gånger.', i: '💯', stat: 'correct', goal: 100, r: 'ovanlig', c: 70 },
+    { id: 'correct_500', g: 'svar', n: 'Mattemaskin', d: 'Svara rätt 500 gånger.', i: '⚙️', stat: 'correct', goal: 500, r: 'sallsynt', c: 200 },
+    { id: 'correct_1000', g: 'svar', n: 'Tusenkonstnär', d: 'Svara rätt 1000 gånger.', i: '🏛️', stat: 'correct', goal: 1000, r: 'episk', c: 400 },
+    { id: 'correct_2500', g: 'svar', n: 'Räknesnille', d: 'Svara rätt 2500 gånger.', i: '🦾', stat: 'correct', goal: 2500, r: 'episk', c: 800 },
+    { id: 'correct_5000', g: 'svar', n: 'Mattenitmästare', d: 'Svara rätt 5000 gånger.', i: '🌌', stat: 'correct', goal: 5000, r: 'legendarisk', c: 1500 },
+    { id: 'wrong_50', g: 'svar', n: 'Lärt av misstagen', d: 'Svara fel 50 gånger — och fortsätt ändå.', i: '🩹', stat: 'wrong', goal: 50, r: 'vanlig', c: 40 },
+    { id: 'answers_2000', g: 'svar', n: 'Uthållig', d: 'Besvara 2000 frågor totalt.', i: '📚', stat: 'answers', goal: 2000, r: 'episk', c: 350 },
+
+    // Svit
+    { id: 'streak_5', g: 'svit', n: 'Varm', d: 'Få 5 rätt i rad.', i: '🔥', stat: 'bestStreak', goal: 5, r: 'vanlig', c: 25 },
+    { id: 'streak_10', g: 'svit', n: 'Glödhet', d: 'Få 10 rätt i rad.', i: '🌋', stat: 'bestStreak', goal: 10, r: 'ovanlig', c: 60 },
+    { id: 'streak_20', g: 'svit', n: 'Obruten', d: 'Få 20 rätt i rad.', i: '⛓️', stat: 'bestStreak', goal: 20, r: 'sallsynt', c: 140 },
+    { id: 'streak_35', g: 'svit', n: 'Osannolik', d: 'Få 35 rätt i rad.', i: '☄️', stat: 'bestStreak', goal: 35, r: 'episk', c: 300 },
+    { id: 'streak_50', g: 'svit', n: 'Femtio i följd', d: 'Få 50 rätt i rad.', i: '🪐', stat: 'bestStreak', goal: 50, r: 'legendarisk', c: 800 },
+
+    // Segrar
+    { id: 'wins_5', g: 'seger', n: 'Fempoängaren', d: 'Vinn 5 matcher.', i: '🏅', stat: 'wins', goal: 5, r: 'vanlig', c: 50 },
+    { id: 'wins_25', g: 'seger', n: 'Lobbyns skräck', d: 'Vinn 25 matcher.', i: '👑', stat: 'wins', goal: 25, r: 'ovanlig', c: 150 },
+    { id: 'wins_50', g: 'seger', n: 'Femtio segrar', d: 'Vinn 50 matcher.', i: '🎗️', stat: 'wins', goal: 50, r: 'sallsynt', c: 250 },
+    { id: 'wins_100', g: 'seger', n: 'Hundra segrar', d: 'Vinn 100 matcher.', i: '🏆', stat: 'wins', goal: 100, r: 'episk', c: 500 },
+    { id: 'win_streak_3', g: 'seger', n: 'Hattrick', d: 'Vinn 3 matcher i rad.', i: '🎩', stat: 'bestWinStreak', goal: 3, r: 'ovanlig', c: 80 },
+    { id: 'win_streak_7', g: 'seger', n: 'Veckans kung', d: 'Vinn 7 matcher i rad.', i: '📈', stat: 'bestWinStreak', goal: 7, r: 'sallsynt', c: 200 },
+    { id: 'perfect_game', g: 'seger', n: 'Felfri', d: 'Vinn en match utan ett enda fel.', i: '💎', stat: 'perfectGames', goal: 1, r: 'sallsynt', c: 120 },
+    { id: 'perfect_5', g: 'seger', n: 'Kirurgen', d: 'Vinn 5 felfria matcher.', i: '🔬', stat: 'perfectGames', goal: 5, r: 'episk', c: 300 },
+    { id: 'flawless_lives', g: 'seger', n: 'Utan en skråma', d: 'Vinn en match med alla liv kvar.', i: '❤️', stat: 'fullLifeWins', goal: 1, r: 'ovanlig', c: 90 },
+    { id: 'comeback', g: 'seger', n: 'Comeback', d: 'Vinn en match med bara ett liv kvar.', i: '🫀', stat: 'comebacks', goal: 1, r: 'sallsynt', c: 130 },
+    { id: 'comeback_5', g: 'seger', n: 'Kung av kanten', d: 'Gör 5 comebacks.', i: '🧗', stat: 'comebacks', goal: 5, r: 'episk', c: 320 },
+    { id: 'win_hard', g: 'seger', n: 'Svårt värre', d: 'Vinn en match på Svår.', i: '🥊', stat: 'hardWins', goal: 1, r: 'ovanlig', c: 80 },
+    { id: 'win_extreme', g: 'seger', n: 'Extremist', d: 'Vinn en match på Extrem.', i: '☢️', stat: 'extremeWins', goal: 1, r: 'sallsynt', c: 180 },
+    { id: 'win_extreme_10', g: 'seger', n: 'Bombexpert', d: 'Vinn 10 matcher på Extrem.', i: '🧨', stat: 'extremeWins', goal: 10, r: 'legendarisk', c: 700 },
+    { id: 'win_big_lobby', g: 'seger', n: 'Folkmassan', d: 'Vinn en match med minst 6 spelare.', i: '👥', stat: 'bigLobbyWins', goal: 1, r: 'sallsynt', c: 160 },
+    { id: 'win_no_pw', g: 'seger', n: 'Purist', d: 'Vinn utan att använda en enda power-up.', i: '🧘', stat: 'pureWins', goal: 1, r: 'sallsynt', c: 150 },
+
+    // Bomb & kast
+    { id: 'throws_50', g: 'bomb', n: 'Kastarmen', d: 'Kasta bomben 50 gånger.', i: '🎯', stat: 'throws', goal: 50, r: 'vanlig', c: 40 },
+    { id: 'throws_250', g: 'bomb', n: 'Heta potatisen', d: 'Kasta bomben 250 gånger.', i: '🥔', stat: 'throws', goal: 250, r: 'ovanlig', c: 120 },
+    { id: 'throws_500', g: 'bomb', n: 'Rutinerad kastare', d: 'Kasta bomben 500 gånger.', i: '🌪️', stat: 'throws', goal: 500, r: 'sallsynt', c: 220 },
+    { id: 'throws_1000', g: 'bomb', n: 'Kastmästaren', d: 'Kasta bomben 1000 gånger.', i: '🌀', stat: 'throws', goal: 1000, r: 'episk', c: 400 },
+    { id: 'clutch', g: 'bomb', n: 'På sista sekunden', d: 'Kasta bomben med under 1 sekund kvar.', i: '⏱️', stat: 'clutchThrows', goal: 1, r: 'sallsynt', c: 110 },
+    { id: 'clutch_10', g: 'bomb', n: 'Nervstark', d: 'Gör 10 räddningar på sista sekunden.', i: '😰', stat: 'clutchThrows', goal: 10, r: 'episk', c: 300 },
+    { id: 'boom_10', g: 'bomb', n: 'Sprängd', d: 'Håll i bomben när den smäller 10 gånger.', i: '💥', stat: 'booms', goal: 10, r: 'vanlig', c: 40 },
+    { id: 'boom_100', g: 'bomb', n: 'Rökskadad', d: 'Bli sprängd 100 gånger.', i: '🌫️', stat: 'booms', goal: 100, r: 'sallsynt', c: 180 },
+    { id: 'ko_3', g: 'bomb', n: 'Utslagsgivare', d: 'Kasta bomben till någon som åker ut, 3 gånger.', i: '🪦', stat: 'knockouts', goal: 3, r: 'ovanlig', c: 90 },
+    { id: 'ko_25', g: 'bomb', n: 'Domedagsbud', d: 'Slå ut 25 spelare med ett kast.', i: '⚰️', stat: 'knockouts', goal: 25, r: 'episk', c: 350 },
+
+    // Fart
+    { id: 'fast_3', g: 'fart', n: 'Kvickt', d: 'Svara rätt på under 3 sekunder.', i: '🐇', stat: 'fastAnswers3', goal: 1, r: 'vanlig', c: 25 },
+    { id: 'fast_15', g: 'fart', n: 'Blixtfingrar', d: 'Svara rätt på under 1,5 sekunder.', i: '⚡', stat: 'fastAnswers15', goal: 1, r: 'ovanlig', c: 70 },
+    { id: 'fast_15_50', g: 'fart', n: 'Ljusets hastighet', d: '50 svar under 1,5 sekunder.', i: '💫', stat: 'fastAnswers15', goal: 50, r: 'episk', c: 320 },
+    { id: 'blitz_15', g: 'fart', n: 'Blixtnedslag', d: 'Få 15 rätt i en blixtmatch.', i: '🌩️', stat: 'blitzBest', goal: 15, r: 'ovanlig', c: 90 },
+    { id: 'blitz_25', g: 'fart', n: 'Åskgud', d: 'Få 25 rätt i en blixtmatch.', i: '⛈️', stat: 'blitzBest', goal: 25, r: 'episk', c: 260 },
+
+    // Överlevnad
+    { id: 'surv_10', g: 'lage', n: 'Härdad', d: 'Nå 10 poäng i Överlevnad.', i: '🛡️', stat: 'survivalBest', goal: 10, r: 'vanlig', c: 40 },
+    { id: 'surv_30', g: 'lage', n: 'Överlevare', d: 'Nå 30 poäng i Överlevnad.', i: '🏔️', stat: 'survivalBest', goal: 30, r: 'sallsynt', c: 170 },
+    { id: 'surv_45', g: 'lage', n: 'Segt motstånd', d: 'Nå 45 poäng i Överlevnad.', i: '🪨', stat: 'survivalBest', goal: 45, r: 'episk', c: 340 },
+    { id: 'surv_60', g: 'lage', n: 'Odödlig', d: 'Nå 60 poäng i Överlevnad.', i: '♾️', stat: 'survivalBest', goal: 60, r: 'legendarisk', c: 600 },
+    { id: 'duel_5', g: 'lage', n: 'Duellant', d: 'Vinn 5 dueller.', i: '⚔️', stat: 'duelWins', goal: 5, r: 'ovanlig', c: 110 },
+    { id: 'duel_25', g: 'lage', n: 'Envig', d: 'Vinn 25 dueller.', i: '🗡️', stat: 'duelWins', goal: 25, r: 'episk', c: 330 },
+    { id: 'practice_200', g: 'lage', n: 'Flitig', d: 'Svara på 200 frågor i träningsläget.', i: '🎯', stat: 'practiceAnswers', goal: 200, r: 'ovanlig', c: 100 },
+
+    // Kategorier
+    { id: 'cat_add', g: 'amne', n: 'Additionsmästare', d: '100 rätt i addition.', i: '➕', stat: 'cat_add', goal: 100, r: 'ovanlig', c: 80 },
+    { id: 'cat_sub', g: 'amne', n: 'Subtraktionsproffs', d: '100 rätt i subtraktion.', i: '➖', stat: 'cat_sub', goal: 100, r: 'ovanlig', c: 80 },
+    { id: 'cat_mul', g: 'amne', n: 'Tabellkungen', d: '100 rätt i multiplikation.', i: '✖️', stat: 'cat_mul', goal: 100, r: 'ovanlig', c: 80 },
+    { id: 'cat_div', g: 'amne', n: 'Delaren', d: '100 rätt i division.', i: '➗', stat: 'cat_div', goal: 100, r: 'ovanlig', c: 80 },
+    { id: 'cat_pow', g: 'amne', n: 'Potensiell', d: '75 rätt i potenser & rötter.', i: '🔢', stat: 'cat_pow', goal: 75, r: 'sallsynt', c: 110 },
+    { id: 'cat_pct', g: 'amne', n: 'Procentaren', d: '75 rätt i procent.', i: '％', stat: 'cat_pct', goal: 75, r: 'sallsynt', c: 110 },
+    { id: 'cat_frac', g: 'amne', n: 'Bråkmakaren', d: '75 rätt i bråk.', i: '🍰', stat: 'cat_frac', goal: 75, r: 'sallsynt', c: 110 },
+    { id: 'cat_eq', g: 'amne', n: 'X-faktorn', d: '75 rätt i ekvationer.', i: '🧮', stat: 'cat_eq', goal: 75, r: 'sallsynt', c: 110 },
+    { id: 'cat_geo', g: 'amne', n: 'Formstark', d: '75 rätt i geometri.', i: '📐', stat: 'cat_geo', goal: 75, r: 'sallsynt', c: 110 },
+    { id: 'cat_neg', g: 'amne', n: 'Under noll', d: '50 rätt i negativa tal.', i: '🧊', stat: 'cat_neg', goal: 50, r: 'sallsynt', c: 110 },
+    { id: 'cat_seq', g: 'amne', n: 'Mönsterseendet', d: '50 rätt i talföljder.', i: '🔗', stat: 'cat_seq', goal: 50, r: 'sallsynt', c: 110 },
+    { id: 'cat_prime', g: 'amne', n: 'Primtalsjägare', d: '50 rätt i primtal.', i: '🔍', stat: 'cat_prime', goal: 50, r: 'sallsynt', c: 110 },
+    { id: 'all_cats', g: 'amne', n: 'Allätaren', d: 'Få minst 10 rätt i varje kategori.', i: '🌈', stat: 'allCats10', goal: 1, r: 'episk', c: 400 },
+
+    // Nivå & ekonomi
+    { id: 'lvl_5', g: 'nivå', n: 'Nivå 5', d: 'Nå nivå 5.', i: '⭐', stat: 'level', goal: 5, r: 'vanlig', c: 50 },
+    { id: 'lvl_10', g: 'nivå', n: 'Nivå 10', d: 'Nå nivå 10.', i: '🌟', stat: 'level', goal: 10, r: 'ovanlig', c: 120 },
+    { id: 'lvl_15', g: 'nivå', n: 'Nivå 15', d: 'Nå nivå 15.', i: '💫', stat: 'level', goal: 15, r: 'sallsynt', c: 220 },
+    { id: 'lvl_25', g: 'nivå', n: 'Nivå 25', d: 'Nå nivå 25.', i: '✨', stat: 'level', goal: 25, r: 'episk', c: 400 },
+    { id: 'lvl_50', g: 'nivå', n: 'Nivå 50', d: 'Nå nivå 50.', i: '🎆', stat: 'level', goal: 50, r: 'legendarisk', c: 1200 },
+    { id: 'coins_500', g: 'nivå', n: 'Sparbössan', d: 'Tjäna 500 mynt totalt.', i: '🪙', stat: 'coinsEarned', goal: 500, r: 'vanlig', c: 50 },
+    { id: 'coins_5000', g: 'nivå', n: 'Miljonär (nästan)', d: 'Tjäna 5000 mynt totalt.', i: '💰', stat: 'coinsEarned', goal: 5000, r: 'episk', c: 400 },
+    { id: 'shop_1', g: 'nivå', n: 'Första köpet', d: 'Köp något i butiken.', i: '🛒', stat: 'purchases', goal: 1, r: 'vanlig', c: 20 },
+    { id: 'shop_5', g: 'nivå', n: 'Samlare', d: 'Köp 5 saker i butiken.', i: '📦', stat: 'purchases', goal: 5, r: 'ovanlig', c: 100 },
+    { id: 'shop_all_themes', g: 'nivå', n: 'Färgsprakande', d: 'Lås upp alla teman.', i: '🎨', stat: 'themesOwned', goal: 6, r: 'legendarisk', c: 600 },
+
+    // Power-ups & lobby
+    { id: 'pw_1', g: 'social', n: 'Fusklappen', d: 'Använd din första power-up.', i: '🎁', stat: 'powerupsUsed', goal: 1, r: 'vanlig', c: 20 },
+    { id: 'pw_50', g: 'social', n: 'Taktikern', d: 'Använd 50 power-ups.', i: '🧩', stat: 'powerupsUsed', goal: 50, r: 'ovanlig', c: 120 },
+    { id: 'pw_shield_10', g: 'social', n: 'Sköldbärare', d: 'Studsa tillbaka 10 bomber med sköld.', i: '🛡️', stat: 'shieldBlocks', goal: 10, r: 'sallsynt', c: 160 },
+    { id: 'lobby_10', g: 'social', n: 'Lobbyluffare', d: 'Gå med i 10 lobbyer.', i: '🚪', stat: 'lobbiesJoined', goal: 10, r: 'ovanlig', c: 80 },
+    { id: 'host_1', g: 'social', n: 'Värden', d: 'Skapa en egen lobby.', i: '🏗️', stat: 'lobbiesCreated', goal: 1, r: 'vanlig', c: 30 },
+    { id: 'host_10', g: 'social', n: 'Arrangören', d: 'Skapa 10 lobbyer.', i: '🎪', stat: 'lobbiesCreated', goal: 10, r: 'sallsynt', c: 150 },
+    { id: 'chat_20', g: 'social', n: 'Pratkvarn', d: 'Skicka 20 meddelanden i lobbychatten.', i: '💬', stat: 'chatSent', goal: 20, r: 'ovanlig', c: 60 },
+
+    // Daglig & tid
+    { id: 'daily_1', g: 'daglig', n: 'Dagens dos', d: 'Klara dagens utmaning.', i: '📅', stat: 'dailyDone', goal: 1, r: 'vanlig', c: 40 },
+    { id: 'daily_7', g: 'daglig', n: 'Veckovana', d: 'Klara dagens utmaning 7 dagar i rad.', i: '🗓️', stat: 'bestDailyStreak', goal: 7, r: 'sallsynt', c: 220 },
+    { id: 'daily_30', g: 'daglig', n: 'Månadsmaskin', d: 'Klara dagens utmaning 30 dagar i rad.', i: '📆', stat: 'bestDailyStreak', goal: 30, r: 'legendarisk', c: 900 },
+    { id: 'daily_perfect', g: 'daglig', n: 'Dagens hjälte', d: 'Få 10/10 i dagens utmaning.', i: '🦸', stat: 'dailyPerfect', goal: 1, r: 'sallsynt', c: 180 },
+    { id: 'games_50', g: 'daglig', n: 'Stammis', d: 'Spela 50 matcher.', i: '🎮', stat: 'gamesPlayed', goal: 50, r: 'ovanlig', c: 120 },
+    { id: 'games_250', g: 'daglig', n: 'Veteran', d: 'Spela 250 matcher.', i: '🎖️', stat: 'gamesPlayed', goal: 250, r: 'episk', c: 450 },
+    { id: 'time_60', g: 'daglig', n: 'En timme senare', d: 'Spela i totalt 60 minuter.', i: '⌛', stat: 'minutesPlayed', goal: 60, r: 'ovanlig', c: 100 },
+    { id: 'time_600', g: 'daglig', n: 'Tio timmar', d: 'Spela i totalt 600 minuter.', i: '🕰️', stat: 'minutesPlayed', goal: 600, r: 'legendarisk', c: 700 },
+
+    // Hemliga
+    { id: 'night_owl', g: 'hemlig', n: 'Nattuggla', d: 'Spela en match mellan 00 och 05.', i: '🦉', stat: 'nightGames', goal: 1, r: 'hemlig', c: 150, secret: true },
+    { id: 'early_bird', g: 'hemlig', n: 'Morgonpigg', d: 'Spela en match före klockan 07.', i: '🌅', stat: 'morningGames', goal: 1, r: 'hemlig', c: 150, secret: true },
+    { id: 'lucky_42', g: 'hemlig', n: 'Svaret på allt', d: 'Svara rätt när svaret är exakt 42.', i: '🐬', stat: 'answer42', goal: 1, r: 'hemlig', c: 142, secret: true },
+    { id: 'unlucky', g: 'hemlig', n: 'Otur i spel', d: 'Bli sprängd tre gånger i samma match.', i: '🎰', stat: 'tripleBoom', goal: 1, r: 'hemlig', c: 130, secret: true },
+    { id: 'pacifist', g: 'hemlig', n: 'Pacifisten', d: 'Kasta hela matchen till samma spelare.', i: '🕊️', stat: 'pacifist', goal: 1, r: 'hemlig', c: 200, secret: true },
+    { id: 'completionist', g: 'hemlig', n: 'Fullständig', d: 'Lås upp 50 andra prestationer.', i: '🏵️', stat: 'achUnlocked', goal: 50, r: 'hemlig', c: 1000, secret: true }
+  ];
+
+  M.ACH_GROUPS = [
+    { id: 'alla', name: 'Alla' },
+    { id: 'start', name: 'Första stegen' },
+    { id: 'svar', name: 'Svar' },
+    { id: 'svit', name: 'Sviter' },
+    { id: 'seger', name: 'Segrar' },
+    { id: 'bomb', name: 'Bomben' },
+    { id: 'fart', name: 'Fart' },
+    { id: 'lage', name: 'Spellägen' },
+    { id: 'amne', name: 'Ämnen' },
+    { id: 'nivå', name: 'Nivå & mynt' },
+    { id: 'social', name: 'Socialt' },
+    { id: 'daglig', name: 'Vanor' },
+    { id: 'hemlig', name: 'Hemliga' }
+  ];
+
+})(window.MATTENITE = window.MATTENITE || {});
+
+</script>
+<script>
+/* ==========================================================================
+   state.js — profil, sparning, XP/nivåer, statistik och prestationsmotor
+   ========================================================================== */
+(function (M) {
+  'use strict';
+
+  var KEY = 'mattenite.profile.v1';
+
+  var DEFAULT_STATS = {
+    gamesPlayed: 0, wins: 0, answers: 0, correct: 0, wrong: 0,
+    bestStreak: 0, winStreak: 0, bestWinStreak: 0,
+    throws: 0, booms: 0, knockouts: 0, clutchThrows: 0,
+    perfectGames: 0, fullLifeWins: 0, comebacks: 0, pureWins: 0,
+    hardWins: 0, extremeWins: 0, bigLobbyWins: 0, duelWins: 0,
+    fastAnswers3: 0, fastAnswers15: 0, fastestMs: 0,
+    blitzBest: 0, survivalBest: 0, practiceAnswers: 0,
+    powerupsUsed: 0, shieldBlocks: 0,
+    lobbiesJoined: 0, lobbiesCreated: 0, chatSent: 0,
+    coinsEarned: 0, purchases: 0,
+    dailyDone: 0, dailyPerfect: 0, dailyStreak: 0, bestDailyStreak: 0,
+    minutesPlayed: 0, secondsPlayed: 0,
+    nightGames: 0, morningGames: 0, answer42: 0, tripleBoom: 0, pacifist: 0
+  };
+
+  M.CATEGORIES.forEach(function (c) { DEFAULT_STATS['cat_' + c.id] = 0; });
+
+  function defaults() {
+    return {
+      v: 1,
+      name: 'Du',
+      avatar: '🦊',
+      theme: 'default',
+      bomb: '💣',
+      coins: 60,
+      xp: 0,
+      level: 1,
+      owned: ['bo_bomb'],
+      settings: { sound: true, vibrate: true, anim: true },
+      stats: JSON.parse(JSON.stringify(DEFAULT_STATS)),
+      unlocked: {},
+      daily: { date: '', score: 0, best: 0, streak: 0 },
+      history: [],
+      createdAt: Date.now()
+    };
+  }
+
+  var profile = defaults();
+  M.profile = profile;
+
+  M.load = function () {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var saved = JSON.parse(raw);
+        var base = defaults();
+        Object.keys(base).forEach(function (k) {
+          if (saved[k] === undefined) saved[k] = base[k];
+        });
+        Object.keys(DEFAULT_STATS).forEach(function (k) {
+          if (typeof saved.stats[k] !== 'number') saved.stats[k] = DEFAULT_STATS[k];
+        });
+        Object.keys(base.settings).forEach(function (k) {
+          if (saved.settings[k] === undefined) saved.settings[k] = base.settings[k];
+        });
+        profile = saved;
+      }
+    } catch (e) { /* korrupt data — börja om */ }
+    M.profile = profile;
+    return profile;
+  };
+
+  M.save = function () {
+    try { localStorage.setItem(KEY, JSON.stringify(profile)); } catch (e) { /* full disk */ }
+  };
+
+  M.reset = function () {
+    profile = defaults();
+    M.profile = profile;
+    M.save();
+  };
+
+  /* ---------- XP & nivåer -------------------------------------------------- */
+
+  M.xpForLevel = function (lvl) { return 90 + (lvl - 1) * 55; };
+
+  M.addXp = function (amount) {
+    if (amount <= 0) return { levels: 0 };
+    profile.xp += amount;
+    var levels = 0;
+    while (profile.xp >= M.xpForLevel(profile.level)) {
+      profile.xp -= M.xpForLevel(profile.level);
+      profile.level++;
+      levels++;
+      M.addCoins(25 + profile.level * 5, true);
+    }
+    return { levels: levels };
+  };
+
+  M.addCoins = function (n, silent) {
+    if (n <= 0) return;
+    profile.coins += n;
+    profile.stats.coinsEarned += n;
+    if (!silent && M.ui) M.ui.coinFlash();
+  };
+
+  /* ---------- Statistik ---------------------------------------------------- */
+
+  M.bump = function (key, by) {
+    if (typeof profile.stats[key] !== 'number') profile.stats[key] = 0;
+    profile.stats[key] += (by === undefined ? 1 : by);
+  };
+
+  M.setMax = function (key, val) {
+    if (typeof profile.stats[key] !== 'number') profile.stats[key] = 0;
+    if (val > profile.stats[key]) profile.stats[key] = val;
+  };
+
+  M.accuracy = function () {
+    var s = profile.stats;
+    if (!s.answers) return 0;
+    return Math.round(s.correct / s.answers * 100);
+  };
+
+  /* ---------- Prestationer -------------------------------------------------- */
+
+  function statValue(key) {
+    var s = profile.stats;
+    if (key === 'level') return profile.level;
+    if (key === 'achUnlocked') return Object.keys(profile.unlocked).length;
+    if (key === 'themesOwned') {
+      return M.SHOP.filter(function (it) {
+        return it.type === 'theme' && profile.owned.indexOf(it.id) >= 0;
+      }).length;
+    }
+    if (key === 'allCats10') {
+      return M.CATEGORIES.every(function (c) { return s['cat_' + c.id] >= 10; }) ? 1 : 0;
+    }
+    if (key === 'minutesPlayed') return Math.floor(s.secondsPlayed / 60);
+    return s[key] || 0;
+  }
+  M.statValue = statValue;
+
+  M.achProgress = function (a) {
+    var v = statValue(a.stat);
+    return { value: Math.min(v, a.goal), goal: a.goal, done: !!profile.unlocked[a.id], pct: Math.min(100, Math.round(v / a.goal * 100)) };
+  };
+
+  /* Kollar alla prestationer, låser upp nya och returnerar dem. */
+  M.checkAchievements = function () {
+    var fresh = [];
+    for (var pass = 0; pass < 2; pass++) {
+      M.ACHIEVEMENTS.forEach(function (a) {
+        if (profile.unlocked[a.id]) return;
+        if (statValue(a.stat) >= a.goal) {
+          profile.unlocked[a.id] = Date.now();
+          profile.coins += a.c;
+          profile.stats.coinsEarned += a.c;
+          fresh.push(a);
+        }
+      });
+      // andra varvet fångar prestationer som utlöses av antalet upplåsta
+    }
+    if (fresh.length) M.save();
+    return fresh;
+  };
+
+  M.unlockedCount = function () { return Object.keys(profile.unlocked).length; };
+
+  M.achPoints = function () {
+    var pts = { vanlig: 5, ovanlig: 10, sallsynt: 20, episk: 40, legendarisk: 80, hemlig: 50 };
+    return M.ACHIEVEMENTS.reduce(function (sum, a) {
+      return sum + (profile.unlocked[a.id] ? (pts[a.r] || 5) : 0);
+    }, 0);
+  };
+
+  /* ---------- Historik ------------------------------------------------------ */
+
+  M.pushHistory = function (entry) {
+    entry.at = Date.now();
+    profile.history.unshift(entry);
+    if (profile.history.length > 40) profile.history.length = 40;
+  };
+
+  /* ---------- Dagens utmaning ----------------------------------------------- */
+
+  M.todayKey = function () {
+    var d = new Date();
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  };
+
+  M.dailyDoneToday = function () { return profile.daily.date === M.todayKey(); };
+
+  /* Deterministisk slump så att dagens frågor blir samma för alla. */
+  M.seededRandom = function (seedStr) {
+    var h = 2166136261;
+    for (var i = 0; i < seedStr.length; i++) {
+      h ^= seedStr.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return function () {
+      h += 0x6D2B79F5;
+      var t = h;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  };
+
+  /* ---------- Ägande -------------------------------------------------------- */
+
+  M.owns = function (id) { return profile.owned.indexOf(id) >= 0; };
+
+  M.buy = function (id) {
+    var item = null;
+    M.SHOP.forEach(function (it) { if (it.id === id) item = it; });
+    if (!item || M.owns(id) || profile.coins < item.cost) return false;
+    profile.coins -= item.cost;
+    profile.owned.push(id);
+    M.bump('purchases');
+    M.save();
+    return true;
+  };
+
+})(window.MATTENITE = window.MATTENITE || {});
+
+</script>
+<script>
+/* ==========================================================================
+   ui.js — navigering, vyer, ljud, toasts, butik, lobbylistan
+   ========================================================================== */
+(function (M) {
+  'use strict';
+
+  var ui = {};
+  M.ui = ui;
+
+  var $ = function (sel, root) { return (root || document).querySelector(sel); };
+  var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+  ui.$ = $; ui.$$ = $$;
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  ui.esc = esc;
+
+  /* ---------- Ljud & vibration --------------------------------------------- */
+
+  var actx = null;
+  function audio() {
+    if (!M.profile.settings.sound) return null;
+    try {
+      if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+      if (actx.state === 'suspended') actx.resume();
+      return actx;
+    } catch (e) { return null; }
+  }
+
+  function tone(freq, dur, type, vol, delay) {
+    var ctx = audio();
+    if (!ctx) return;
+    var t0 = ctx.currentTime + (delay || 0);
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(vol || 0.16, t0 + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  }
+
+  ui.sfx = {
+    right: function () { tone(660, .1, 'triangle'); tone(990, .16, 'triangle', .14, .07); },
+    wrong: function () { tone(180, .22, 'sawtooth', .12); },
+    throwIt: function () { tone(520, .07, 'square', .1); tone(300, .1, 'square', .09, .06); },
+    tick: function () { tone(1200, .03, 'square', .05); },
+    boom: function () { tone(90, .45, 'sawtooth', .2); tone(60, .5, 'square', .14, .04); },
+    win: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, .22, 'triangle', .15, i * .11); }); },
+    lose: function () { [400, 330, 260, 190].forEach(function (f, i) { tone(f, .2, 'sine', .13, i * .1); }); },
+    unlock: function () { [784, 988, 1319].forEach(function (f, i) { tone(f, .2, 'sine', .13, i * .09); }); },
+    coin: function () { tone(1050, .07, 'square', .09); tone(1400, .09, 'square', .08, .05); }
+  };
+
+  ui.buzz = function (ms) {
+    if (!M.profile.settings.vibrate) return;
+    if (navigator.vibrate) { try { navigator.vibrate(ms || 30); } catch (e) {} }
+  };
+
+  /* ---------- Toasts, modal, konfetti -------------------------------------- */
+
+  ui.toast = function (icon, title, sub, ms) {
+    var wrap = $('#toasts');
+    var el = document.createElement('div');
+    el.className = 'toast';
+    el.innerHTML = '<span class="ic">' + icon + '</span><div><div>' + esc(title) + '</div>' +
+      (sub ? '<small>' + esc(sub) + '</small>' : '') + '</div>';
+    wrap.appendChild(el);
+    setTimeout(function () {
+      el.style.transition = 'opacity .3s, transform .3s';
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(-10px)';
+      setTimeout(function () { el.remove(); }, 320);
+    }, ms || 2600);
+  };
+
+  ui.achToast = function (list) {
+    list.forEach(function (a, i) {
+      setTimeout(function () {
+        ui.sfx.unlock();
+        ui.buzz([25, 40, 25]);
+        ui.toast(a.i, 'Prestation upplåst: ' + a.n, a.d + '  +' + a.c + ' mynt', 3400);
+        ui.refreshChips();
+        ui.markAchDot(true);
+      }, i * 700);
+    });
+  };
+
+  ui.modal = function (html, onOpen) {
+    var box = $('#modal-box');
+    box.innerHTML = html;
+    $('#modal').classList.add('open');
+    if (onOpen) onOpen(box);
+  };
+  ui.closeModal = function () { $('#modal').classList.remove('open'); };
+
+  ui.confetti = function (n) {
+    if (!M.profile.settings.anim) return;
+    var wrap = $('#confetti');
+    var colors = ['#7c5cff', '#00e5c8', '#ffc73a', '#ff4d6d', '#3ddc84'];
+    for (var i = 0; i < (n || 60); i++) {
+      var p = document.createElement('i');
+      p.style.left = Math.random() * 100 + '%';
+      p.style.top = '-20px';
+      p.style.background = colors[i % colors.length];
+      p.style.animationDuration = (1.1 + Math.random() * 1.3) + 's';
+      p.style.animationDelay = (Math.random() * .4) + 's';
+      wrap.appendChild(p);
+      (function (el) { setTimeout(function () { el.remove(); }, 3000); })(p);
+    }
+  };
+
+  ui.coinFlash = function () { ui.sfx.coin(); ui.refreshChips(); };
+
+  /* ---------- Navigering ---------------------------------------------------- */
+
+  ui.current = 'home';
+
+  ui.show = function (name) {
+    if (M.game && M.game.running && name !== 'game') {
+      if (!confirm('Lämna matchen?')) return;
+      M.game.abort();
+    }
+    ui.current = name;
+    $$('.view').forEach(function (v) { v.classList.toggle('active', v.id === 'view-' + name); });
+    $$('.tabbar button').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === name); });
+    document.querySelector('main').scrollTop = 0;
+    if (name === 'home') ui.renderHome();
+    if (name === 'lobbies') ui.renderLobbies();
+    if (name === 'play') ui.renderPlay();
+    if (name === 'ach') { ui.renderAch(); ui.markAchDot(false); }
+    if (name === 'profile') ui.renderProfile();
+    ui.refreshChips();
+  };
+
+  ui.markAchDot = function (on) { $('#ach-dot').classList.toggle('show', !!on); };
+
+  ui.refreshChips = function () {
+    var p = M.profile;
+    $('#chip-coins').textContent = '🪙 ' + p.coins;
+    $('#chip-level').textContent = '⭐ Nivå ' + p.level;
+    document.body.dataset.theme = p.theme;
+    document.body.classList.toggle('no-anim', !p.settings.anim);
+  };
+
+  /* ---------- Hem ----------------------------------------------------------- */
+
+  ui.renderHome = function () {
+    var p = M.profile, s = p.stats;
+    var need = M.xpForLevel(p.level);
+    var pct = Math.min(100, Math.round(p.xp / need * 100));
+    var dailyDone = M.dailyDoneToday();
+
+    $('#view-home').innerHTML =
+      '<div class="hero">' +
+        '<span class="bomb-deco">' + p.bomb + '</span>' +
+        '<h2>Hej ' + esc(p.name) + ' ' + p.avatar + '</h2>' +
+        '<p>Svara rätt. Kasta bomben vidare. Var inte den som håller i den när den smäller.</p>' +
+        '<div class="row" style="gap:8px"><b style="font-size:13px">Nivå ' + p.level + '</b>' +
+          '<span class="sub" style="margin-left:auto">' + p.xp + ' / ' + need + ' XP</span></div>' +
+        '<div class="xpbar mt" style="margin-top:6px"><i style="width:' + pct + '%"></i></div>' +
+        '<div class="row mt" style="gap:8px">' +
+          '<button class="btn" data-act="quick">💣 Snabbmatch</button>' +
+          '<button class="btn ghost" data-act="lobbies">🚪 Lobbies</button>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="card" style="' + (dailyDone ? 'opacity:.85' : '') + '">' +
+        '<h3>📅 Dagens utmaning</h3>' +
+        '<p class="sub">10 frågor, samma för alla i hela världen. Svit: ' + p.daily.streak + ' dagar 🔥</p>' +
+        (dailyDone
+          ? '<div class="row mt between"><b>Klart idag — ' + p.daily.score + '/10</b><button class="btn ghost small" data-act="daily">Spela igen</button></div>'
+          : '<button class="btn block mt" data-act="daily">Starta dagens utmaning</button>') +
+      '</div>' +
+
+      '<div class="grid grid-3">' +
+        tile(s.wins, 'Segrar') + tile(s.gamesPlayed, 'Matcher') + tile(M.accuracy() + '%', 'Träffsäkerhet') +
+        tile(s.bestStreak, 'Bästa svit') + tile(M.unlockedCount() + '/' + M.ACHIEVEMENTS.length, 'Prestationer') + tile(s.correct, 'Rätta svar') +
+      '</div>' +
+
+      '<div class="card mt"><h3>🕘 Senaste matcherna</h3>' +
+        (p.history.length
+          ? p.history.slice(0, 6).map(function (h) {
+              return '<div class="row between" style="padding:7px 0;border-bottom:1px solid var(--border);font-size:13px">' +
+                '<span>' + (M.MODES[h.mode] ? M.MODES[h.mode].icon + ' ' + M.MODES[h.mode].name : h.mode) + '</span>' +
+                '<span style="color:' + (h.win ? 'var(--ok)' : 'var(--muted)') + ';font-weight:700">' + esc(h.result) + '</span></div>';
+            }).join('')
+          : '<div class="empty"><span class="big">🫥</span>Inga matcher än. Kör en snabbmatch!</div>') +
+      '</div>';
+
+    $$('#view-home [data-act]').forEach(function (b) {
+      b.onclick = function () {
+        var a = b.dataset.act;
+        if (a === 'quick') M.game.start({ mode: 'potato', diff: 2, cat: 'mix', bots: 3, lobbyName: 'Snabbmatch' });
+        if (a === 'lobbies') ui.show('lobbies');
+        if (a === 'daily') M.game.start({ mode: 'daily', diff: 2, cat: 'mix', bots: 0, lobbyName: 'Dagens utmaning' });
+      };
+    });
+  };
+
+  function tile(num, lbl) {
+    return '<div class="stat-tile"><div class="num">' + num + '</div><div class="lbl">' + lbl + '</div></div>';
+  }
+
+  /* ---------- Lobbies ------------------------------------------------------- */
+
+  var lobbies = [];
+  var currentLobby = null;
+  ui.getLobby = function () { return currentLobby; };
+
+  function makeCode() {
+    var s = '', c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    for (var i = 0; i < 5; i++) s += c[Math.floor(Math.random() * c.length)];
+    return s;
+  }
+
+  function buildLobbies() {
+    lobbies = M.LOBBY_TEMPLATES.map(function (t, i) {
+      var players = M.rnd(1, t.max - 1);
+      return {
+        id: 'lb' + i, name: t.name, flag: t.flag, diff: t.diff, cat: t.cat,
+        mode: t.mode, max: t.max, players: players, code: makeCode(),
+        host: M.pick(M.BOT_NAMES), ping: M.rnd(12, 90), live: Math.random() < .35
+      };
+    });
+  }
+  buildLobbies();
+
+  ui.renderLobbies = function () {
+    if (currentLobby) return ui.renderRoom();
+    var filter = ui.lobbyFilter || 'alla';
+    var list = lobbies.filter(function (l) {
+      if (filter === 'alla') return true;
+      if (filter === 'ledig') return l.players < l.max;
+      return String(l.diff) === filter;
+    });
+
+    $('#view-lobbies').innerHTML =
+      '<div class="view-head"><h2>Lobbies</h2><p>Välj en lobby och tryck för att gå med. Bomben väntar inte.</p></div>' +
+      '<div class="row" style="gap:8px;margin-bottom:12px">' +
+        '<button class="btn" style="flex:1" data-act="create">➕ Skapa lobby</button>' +
+        '<button class="btn ghost" data-act="code">🔑 Kod</button>' +
+        '<button class="btn ghost" data-act="refresh">🔄</button>' +
+      '</div>' +
+      '<div class="ach-filter">' +
+        ['alla', 'ledig', '1', '2', '3', '4'].map(function (f) {
+          var lbl = f === 'alla' ? 'Alla' : f === 'ledig' ? 'Lediga platser' : M.DIFFS[+f - 1].name;
+          return '<button data-f="' + f + '" class="' + (filter === f ? 'on' : '') + '">' + lbl + '</button>';
+        }).join('') +
+      '</div>' +
+      (list.length ? list.map(lobbyRow).join('') : '<div class="empty"><span class="big">🕸️</span>Inga lobbyer matchar filtret.</div>');
+
+    $$('#view-lobbies [data-f]').forEach(function (b) {
+      b.onclick = function () { ui.lobbyFilter = b.dataset.f; ui.renderLobbies(); };
+    });
+    $$('#view-lobbies [data-lobby]').forEach(function (el) {
+      el.onclick = function () { joinLobby(el.dataset.lobby); };
+    });
+    $$('#view-lobbies [data-act]').forEach(function (b) {
+      b.onclick = function () {
+        if (b.dataset.act === 'create') createLobbyDialog();
+        if (b.dataset.act === 'refresh') { buildLobbies(); ui.renderLobbies(); ui.toast('🔄', 'Listan uppdaterad'); }
+        if (b.dataset.act === 'code') codeDialog();
+      };
+    });
+  };
+
+  function lobbyRow(l) {
+    var full = l.players >= l.max;
+    return '<div class="lobby-item ' + (full ? 'full' : '') + '" data-lobby="' + l.id + '">' +
+      '<span class="flag">' + l.flag + '</span>' +
+      '<div class="meta"><b>' + esc(l.name) + ' ' +
+        '<span class="pill d' + l.diff + '">' + M.DIFFS[l.diff - 1].name + '</span>' +
+        (l.live ? '<span class="pill live">● pågår</span>' : '') + '</b>' +
+        '<small>' + M.MODES[l.mode].icon + ' ' + M.MODES[l.mode].name + ' · ' + M.catName(l.cat) + ' · värd ' + esc(l.host) + ' · ' + l.ping + ' ms</small></div>' +
+      '<div class="cnt">' + l.players + '/' + l.max + '<small>' + (full ? 'full' : 'gå med') + '</small></div>' +
+    '</div>';
+  }
+
+  function joinLobby(id) {
+    var l = null;
+    lobbies.forEach(function (x) { if (x.id === id) l = x; });
+    if (!l) return;
+    if (l.players >= l.max) { ui.toast('🚫', 'Lobbyn är full', 'Prova en annan eller skapa en egen.'); return; }
+    enterRoom(l, false);
+  }
+
+  function enterRoom(l, isHost) {
+    currentLobby = {
+      base: l, isHost: isHost, code: l.code, chat: [], countdown: 0,
+      players: [{ id: 'you', name: M.profile.name, av: M.profile.avatar, you: true, ready: isHost, host: isHost, skill: 1 }]
+    };
+    var n = Math.max(1, l.players);
+    for (var i = 0; i < n; i++) addBotToRoom();
+    if (!isHost) currentLobby.players[1].host = true;
+    M.bump('lobbiesJoined');
+    if (isHost) M.bump('lobbiesCreated');
+    M.save();
+    ui.achToast(M.checkAchievements());
+    pushChat(null, 'Du gick med i lobbyn.');
+    ui.renderRoom();
+    startRoomLoop();
+  }
+
+  function addBotToRoom() {
+    var r = currentLobby;
+    if (!r || r.players.length >= r.base.max) return null;
+    var used = r.players.map(function (p) { return p.name; });
+    var name = M.pick(M.BOT_NAMES.filter(function (n) { return used.indexOf(n) < 0; }) || M.BOT_NAMES);
+    if (!name) return null;
+    var bot = {
+      id: 'b' + Math.random().toString(36).slice(2, 7),
+      name: name, av: M.pick(M.AVATARS), you: false,
+      ready: Math.random() < .5, host: false,
+      skill: 0.55 + Math.random() * 0.4
+    };
+    r.players.push(bot);
+    return bot;
+  }
+
+  var roomTimer = null;
+  function startRoomLoop() {
+    clearInterval(roomTimer);
+    roomTimer = setInterval(function () {
+      var r = currentLobby;
+      if (!r) { clearInterval(roomTimer); return; }
+      if (Math.random() < .35 && r.players.length < r.base.max) {
+        var b = addBotToRoom();
+        if (b) pushChat(null, b.name + ' gick med.');
+      }
+      r.players.forEach(function (p) {
+        if (!p.you && !p.ready && Math.random() < .4) {
+          p.ready = true;
+          if (Math.random() < .35) pushChat(p, M.pick(['redo!', 'kör då', 'nu kör vi', 'klar 👍', 'jag är peppad']));
+        }
+      });
+      if (Math.random() < .22) pushChat(M.pick(r.players.filter(function (p) { return !p.you; })), M.pick([
+        'någon som är bra på bråk?', 'jag suger på division 😅', 'senast höll jag i bomben i 3 sek',
+        'lycka till alla', 'vem vinner?', 'kasta inte till mig 🙏', 'hej!', 'gl hf',
+        'jag tränade hela igår', 'extrem är omöjligt', 'sista gången kom jag tvåa'
+      ]));
+      if (ui.current === 'lobbies' && currentLobby) ui.renderRoom(true);
+    }, 2600);
+  }
+
+  function pushChat(who, text) {
+    if (!currentLobby || !text) return;
+    currentLobby.chat.push({ who: who ? who.name : null, text: text, you: who && who.you });
+    if (currentLobby.chat.length > 60) currentLobby.chat.shift();
+  }
+
+  ui.renderRoom = function (soft) {
+    var r = currentLobby;
+    if (!r) return ui.renderLobbies();
+    var readyCount = r.players.filter(function (p) { return p.ready; }).length;
+    var me = r.players[0];
+
+    var html =
+      '<div class="view-head"><h2>' + r.base.flag + ' ' + esc(r.base.name) + '</h2>' +
+        '<p>Kod <b>' + r.code + '</b> · ' + M.MODES[r.base.mode].icon + ' ' + M.MODES[r.base.mode].name +
+        ' · ' + M.DIFFS[r.base.diff - 1].name + ' · ' + M.catName(r.base.cat) + '</p></div>' +
+
+      '<div class="card"><h3>👥 Spelare ' + r.players.length + '/' + r.base.max + '</h3>' +
+        r.players.map(function (p) {
+          return '<div class="player-row ' + (p.you ? 'you' : '') + '">' +
+            '<span class="av">' + p.av + '</span>' +
+            '<span class="nm">' + esc(p.name) + (p.host ? ' 👑' : '') + (p.you ? ' (du)' : '') + '</span>' +
+            '<span class="st ' + (p.ready ? 'ready' : '') + '">' + (p.ready ? 'Redo' : 'Väntar…') + '</span></div>';
+        }).join('') +
+      '</div>' +
+
+      '<div class="card"><h3>💬 Lobbychatt</h3>' +
+        '<div class="chatbox" id="chatbox">' +
+          r.chat.map(function (c) {
+            return c.who
+              ? '<div class="chat-msg"><b>' + esc(c.who) + ':</b> ' + esc(c.text) + '</div>'
+              : '<div class="chat-msg sys">' + esc(c.text) + '</div>';
+          }).join('') +
+        '</div>' +
+        '<div class="row" style="gap:8px">' +
+          '<input type="text" id="chat-input" placeholder="Skriv något…" maxlength="80">' +
+          '<button class="btn small" data-act="send">Skicka</button>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="row" style="gap:8px">' +
+        '<button class="btn ghost" data-act="leave">← Lämna</button>' +
+        '<button class="btn ' + (me.ready ? 'ghost' : '') + '" data-act="ready">' + (me.ready ? '✓ Redo' : 'Bli redo') + '</button>' +
+        '<button class="btn" style="flex:1" data-act="start" ' + (readyCount < 2 ? 'disabled' : '') + '>▶ Starta (' + readyCount + ' redo)</button>' +
+      '</div>';
+
+    var el = $('#view-lobbies');
+    var input = soft ? $('#chat-input') : null;
+    var keep = input ? input.value : '';
+    el.innerHTML = html;
+    if (keep) $('#chat-input').value = keep;
+    var cb = $('#chatbox');
+    if (cb) cb.scrollTop = cb.scrollHeight;
+
+    $$('#view-lobbies [data-act]').forEach(function (b) {
+      b.onclick = function () {
+        var a = b.dataset.act;
+        if (a === 'leave') { leaveRoom(); }
+        if (a === 'ready') { me.ready = !me.ready; ui.renderRoom(); }
+        if (a === 'send') sendChat();
+        if (a === 'start') startFromRoom();
+      };
+    });
+    var ci = $('#chat-input');
+    if (ci) ci.onkeydown = function (e) { if (e.key === 'Enter') sendChat(); };
+  };
+
+  function sendChat() {
+    var ci = $('#chat-input');
+    if (!ci || !ci.value.trim()) return;
+    pushChat(currentLobby.players[0], ci.value.trim().slice(0, 80));
+    ci.value = '';
+    M.bump('chatSent');
+    M.save();
+    ui.achToast(M.checkAchievements());
+    ui.renderRoom();
+    setTimeout(function () {
+      var bots = currentLobby ? currentLobby.players.filter(function (p) { return !p.you; }) : [];
+      if (bots.length && Math.random() < .6) {
+        pushChat(M.pick(bots), M.pick(['haha', 'sant', 'kör vi snart?', '👍', 'jag är redo', 'okej!', 'nice']));
+        if (ui.current === 'lobbies') ui.renderRoom();
+      }
+    }, 1200);
+  }
+
+  function leaveRoom() {
+    clearInterval(roomTimer);
+    currentLobby = null;
+    ui.renderLobbies();
+  }
+
+  function startFromRoom() {
+    var r = currentLobby;
+    var bots = r.players.filter(function (p) { return !p.you && p.ready; });
+    if (!bots.length) bots = r.players.filter(function (p) { return !p.you; }).slice(0, 1);
+    clearInterval(roomTimer);
+    M.game.start({
+      mode: r.base.mode, diff: r.base.diff, cat: r.base.cat,
+      bots: bots.length, botDefs: bots, lobbyName: r.base.name
+    });
+  }
+  ui.leaveRoomSilently = function () { clearInterval(roomTimer); currentLobby = null; };
+
+  function createLobbyDialog() {
+    ui.modal(
+      '<h3>➕ Skapa lobby</h3>' +
+      '<label class="field"><span>Namn</span><input type="text" id="cl-name" value="' + esc(M.profile.name) + 's lobby" maxlength="24"></label>' +
+      '<label class="field"><span>Spelläge</span><select id="cl-mode">' +
+        ['potato', 'blitz', 'duel'].map(function (m) { return '<option value="' + m + '">' + M.MODES[m].icon + ' ' + M.MODES[m].name + '</option>'; }).join('') +
+      '</select></label>' +
+      '<label class="field"><span>Svårighet</span><select id="cl-diff">' +
+        M.DIFFS.map(function (d) { return '<option value="' + d.id + '"' + (d.id === 2 ? ' selected' : '') + '>' + d.name + '</option>'; }).join('') +
+      '</select></label>' +
+      '<label class="field"><span>Kategori</span><select id="cl-cat"><option value="mix">🎲 Blandat</option>' +
+        M.CATEGORIES.map(function (c) { return '<option value="' + c.id + '">' + c.icon + ' ' + c.name + '</option>'; }).join('') +
+      '</select></label>' +
+      '<label class="field"><span>Max antal spelare</span><select id="cl-max">' +
+        [2, 3, 4, 5, 6, 8].map(function (n) { return '<option value="' + n + '"' + (n === 5 ? ' selected' : '') + '>' + n + '</option>'; }).join('') +
+      '</select></label>' +
+      '<div class="row" style="gap:8px"><button class="btn ghost" data-x="close">Avbryt</button>' +
+      '<button class="btn" style="flex:1" data-x="make">Skapa</button></div>',
+      function (box) {
+        $$('[data-x]', box).forEach(function (b) {
+          b.onclick = function () {
+            if (b.dataset.x === 'close') return ui.closeModal();
+            var mode = $('#cl-mode').value;
+            var l = {
+              id: 'own' + Date.now(), name: $('#cl-name').value.trim() || 'Min lobby', flag: '🏠',
+              diff: +$('#cl-diff').value, cat: $('#cl-cat').value, mode: mode,
+              max: mode === 'duel' ? 2 : +$('#cl-max').value, players: 0, code: makeCode(),
+              host: M.profile.name, ping: 8, live: false
+            };
+            lobbies.unshift(l);
+            ui.closeModal();
+            enterRoom(l, true);
+          };
+        });
+      }
+    );
+  }
+
+  function codeDialog() {
+    ui.modal(
+      '<h3>🔑 Gå med via kod</h3><p class="sub">Skriv in en lobbykod från en kompis.</p>' +
+      '<label class="field" style="margin-top:10px"><span>Kod</span><input type="text" id="jc" placeholder="T.ex. K4M9Z" maxlength="5"></label>' +
+      '<div class="row" style="gap:8px"><button class="btn ghost" data-x="close">Avbryt</button>' +
+      '<button class="btn" style="flex:1" data-x="join">Gå med</button></div>',
+      function (box) {
+        $$('[data-x]', box).forEach(function (b) {
+          b.onclick = function () {
+            if (b.dataset.x === 'close') return ui.closeModal();
+            var code = ($('#jc').value || '').toUpperCase().trim();
+            if (code.length < 3) return ui.toast('⚠️', 'Ogiltig kod');
+            var found = null;
+            lobbies.forEach(function (l) { if (l.code === code) found = l; });
+            if (!found) {
+              found = { id: 'code' + Date.now(), name: 'Lobby ' + code, flag: '🔑', diff: 2, cat: 'mix', mode: 'potato', max: 6, players: M.rnd(1, 3), code: code, host: M.pick(M.BOT_NAMES), ping: M.rnd(20, 70), live: false };
+              lobbies.unshift(found);
+            }
+            ui.closeModal();
+            enterRoom(found, false);
+          };
+        });
+      }
+    );
+  }
+
+  /* ---------- Spela --------------------------------------------------------- */
+
+  ui.playCfg = { diff: 2, cat: 'mix', bots: 3 };
+
+  ui.renderPlay = function () {
+    var c = ui.playCfg;
+    var modes = [
+      { id: 'potato', lock: 0 },
+      { id: 'blitz', lock: 0 },
+      { id: 'survival', lock: 0 },
+      { id: 'duel', lock: 0 },
+      { id: 'practice', lock: 0 },
+      { id: 'daily', lock: 0 }
+    ];
+    $('#view-play').innerHTML =
+      '<div class="view-head"><h2>Spela</h2><p>Välj läge, svårighet och kategori.</p></div>' +
+      '<div class="card"><h3>⚙️ Inställningar för matchen</h3>' +
+        '<div class="sub" style="margin-bottom:6px">Svårighet</div>' +
+        '<div class="seg" id="seg-diff">' + M.DIFFS.map(function (d) {
+          return '<button data-d="' + d.id + '" class="' + (c.diff === d.id ? 'on' : '') + '">' + d.name + '</button>';
+        }).join('') + '</div>' +
+        '<div class="sub" style="margin:12px 0 6px">Antal motståndare</div>' +
+        '<div class="seg" id="seg-bots">' + [1, 2, 3, 5, 7].map(function (n) {
+          return '<button data-b="' + n + '" class="' + (c.bots === n ? 'on' : '') + '">' + n + '</button>';
+        }).join('') + '</div>' +
+        '<label class="field" style="margin-top:12px"><span>Kategori</span><select id="sel-cat">' +
+          '<option value="mix">🎲 Blandat</option>' +
+          M.CATEGORIES.map(function (x) { return '<option value="' + x.id + '"' + (c.cat === x.id ? ' selected' : '') + '>' + x.icon + ' ' + x.name + '</option>'; }).join('') +
+        '</select></label>' +
+      '</div>' +
+      modes.map(function (m) {
+        var mm = M.MODES[m.id];
+        return '<button class="mode-card" data-mode="' + m.id + '"><span class="ico">' + mm.icon + '</span>' +
+          '<span><b>' + mm.name + '</b><small>' + mm.desc + '</small></span></button>';
+      }).join('');
+
+    $$('#seg-diff button').forEach(function (b) {
+      b.onclick = function () { c.diff = +b.dataset.d; ui.renderPlay(); };
+    });
+    $$('#seg-bots button').forEach(function (b) {
+      b.onclick = function () { c.bots = +b.dataset.b; ui.renderPlay(); };
+    });
+    $('#sel-cat').onchange = function () { c.cat = this.value; };
+    $$('#view-play [data-mode]').forEach(function (b) {
+      b.onclick = function () {
+        var mode = b.dataset.mode;
+        M.game.start({
+          mode: mode, diff: c.diff, cat: c.cat,
+          bots: mode === 'duel' ? 1 : (mode === 'survival' || mode === 'practice' || mode === 'daily' ? 0 : c.bots),
+          lobbyName: M.MODES[mode].name
+        });
+      };
+    });
+  };
+
+  /* ---------- Prestationer --------------------------------------------------- */
+
+  ui.achFilter = 'alla';
+
+  ui.renderAch = function () {
+    var f = ui.achFilter;
+    var list = M.ACHIEVEMENTS.filter(function (a) { return f === 'alla' || a.g === f; });
+    var done = M.unlockedCount();
+    var pct = Math.round(done / M.ACHIEVEMENTS.length * 100);
+
+    $('#view-ach').innerHTML =
+      '<div class="view-head"><h2>Prestationer</h2><p>' + done + ' av ' + M.ACHIEVEMENTS.length + ' upplåsta · ' + M.achPoints() + ' poäng</p></div>' +
+      '<div class="card"><div class="row between"><b>Total framgång</b><span class="sub">' + pct + '%</span></div>' +
+        '<div class="xpbar" style="margin-top:8px"><i style="width:' + pct + '%"></i></div></div>' +
+      '<div class="ach-filter">' + M.ACH_GROUPS.map(function (g) {
+        return '<button data-g="' + g.id + '" class="' + (f === g.id ? 'on' : '') + '">' + g.name + '</button>';
+      }).join('') + '</div>' +
+      list.map(achRow).join('');
+
+    $$('#view-ach [data-g]').forEach(function (b) {
+      b.onclick = function () { ui.achFilter = b.dataset.g; ui.renderAch(); };
+    });
+  };
+
+  function achRow(a) {
+    var p = M.achProgress(a);
+    var hidden = a.secret && !p.done;
+    return '<div class="ach ' + (p.done ? 'done' : 'locked') + '">' +
+      '<span class="ico">' + (hidden ? '❔' : a.i) + '</span>' +
+      '<div class="body"><b>' + (hidden ? 'Hemlig prestation' : esc(a.n)) +
+        '<span class="rar ' + a.r + '">' + a.r + '</span>' + (p.done ? ' ✓' : '') + '</b>' +
+        '<p>' + (hidden ? 'Lås upp den för att se vad den kräver.' : esc(a.d)) + '</p>' +
+        '<div class="prog"><i style="width:' + (p.done ? 100 : p.pct) + '%"></i></div>' +
+        '<div class="pnum">' + (p.done ? 'Klar · +' + a.c + ' mynt' : p.value + ' / ' + p.goal + ' · ' + a.c + ' mynt') + '</div>' +
+      '</div></div>';
+  }
+
+  /* ---------- Profil, butik, topplista, inställningar ------------------------ */
+
+  ui.profileTab = 'stats';
+
+  ui.renderProfile = function () {
+    var p = M.profile, s = p.stats;
+    var tab = ui.profileTab;
+
+    var head =
+      '<div class="card"><div class="row">' +
+        '<span style="font-size:40px">' + p.avatar + '</span>' +
+        '<div style="flex:1;min-width:0"><b style="font-size:17px">' + esc(p.name) + '</b>' +
+        '<div class="sub">Nivå ' + p.level + ' · ' + M.unlockedCount() + ' prestationer · 🪙 ' + p.coins + '</div></div>' +
+        '<button class="btn ghost small" data-act="edit">Ändra</button>' +
+      '</div></div>' +
+      '<div class="seg" style="margin-bottom:12px">' +
+        [['stats', '📊 Statistik'], ['shop', '🛒 Butik'], ['lb', '🏅 Topplista'], ['set', '⚙️ Inställningar']].map(function (t) {
+          return '<button data-t="' + t[0] + '" class="' + (tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>';
+        }).join('') +
+      '</div>';
+
+    var body = '';
+
+    if (tab === 'stats') {
+      body =
+        '<div class="grid grid-3">' +
+          tile(s.gamesPlayed, 'Matcher') + tile(s.wins, 'Segrar') +
+          tile((s.gamesPlayed ? Math.round(s.wins / s.gamesPlayed * 100) : 0) + '%', 'Vinstandel') +
+          tile(s.correct, 'Rätt') + tile(s.wrong, 'Fel') + tile(M.accuracy() + '%', 'Träffsäkerhet') +
+          tile(s.bestStreak, 'Bästa svit') + tile(s.throws, 'Kast') + tile(s.booms, 'Smällar') +
+          tile(s.blitzBest, 'Blixtrekord') + tile(s.survivalBest, 'Överlevnad') + tile(Math.floor(s.secondsPlayed / 60) + 'm', 'Speltid') +
+        '</div>' +
+        '<div class="card mt"><h3>📚 Rätt per kategori</h3>' +
+          M.CATEGORIES.map(function (c) {
+            var v = s['cat_' + c.id] || 0;
+            var max = Math.max(10, Math.max.apply(null, M.CATEGORIES.map(function (x) { return s['cat_' + x.id] || 0; })));
+            return '<div style="margin-bottom:8px"><div class="row between" style="font-size:12.5px">' +
+              '<span>' + c.icon + ' ' + c.name + '</span><b>' + v + '</b></div>' +
+              '<div class="prog" style="height:6px;border-radius:99px;background:var(--bg-2);overflow:hidden;margin-top:3px">' +
+              '<i style="display:block;height:100%;width:' + Math.round(v / max * 100) + '%;background:linear-gradient(90deg,var(--brand),var(--brand-2))"></i></div></div>';
+          }).join('') +
+        '</div>';
+    }
+
+    if (tab === 'shop') {
+      body = '<div class="card"><div class="row between"><b>Dina mynt</b><b style="color:var(--warn)">🪙 ' + p.coins + '</b></div>' +
+        '<p class="sub" style="margin-top:4px">Tjäna mynt genom att vinna matcher och låsa upp prestationer.</p></div>' +
+        ['avatar', 'theme', 'bomb'].map(function (type) {
+          var title = type === 'avatar' ? '🙂 Avatarer' : type === 'theme' ? '🎨 Teman' : '💣 Bombskinn';
+          return '<div class="card"><h3>' + title + '</h3>' +
+            M.SHOP.filter(function (i) { return i.type === type; }).map(shopRow).join('') + '</div>';
+        }).join('');
+    }
+
+    if (tab === 'lb') {
+      body = '<div class="card"><h3>🏅 Topplista — den här veckan</h3>' + leaderboardHtml() + '</div>';
+    }
+
+    if (tab === 'set') {
+      body =
+        '<div class="card"><h3>⚙️ Inställningar</h3>' +
+          toggleRow('sound', '🔊 Ljudeffekter') +
+          toggleRow('vibrate', '📳 Vibration') +
+          toggleRow('anim', '✨ Animationer') +
+        '</div>' +
+        '<div class="card"><h3>🎨 Tema</h3><div class="grid grid-3">' +
+          [{ id: 'default', name: 'Mattenite', icon: '🟣' }].concat(
+            M.SHOP.filter(function (i) { return i.type === 'theme'; }).map(function (i) { return { id: i.theme, name: i.name, icon: i.icon, req: i.id }; })
+          ).map(function (t) {
+            var owned = !t.req || M.owns(t.req);
+            return '<button class="btn ' + (p.theme === t.id ? '' : 'ghost') + ' small" data-theme="' + t.id + '" ' + (owned ? '' : 'disabled') + '>' +
+              t.icon + ' ' + t.name + '</button>';
+          }).join('') +
+        '</div></div>' +
+        '<div class="card"><h3>ℹ️ Om Mattenite</h3><p class="sub">Version 1.0.0 · byggd med Apache Cordova.<br>' +
+          'Spelet fungerar helt offline och all data sparas lokalt på din enhet.</p>' +
+          '<button class="btn danger block mt" data-act="reset">Nollställ all data</button></div>';
+    }
+
+    $('#view-profile').innerHTML = head + body;
+
+    $$('#view-profile [data-t]').forEach(function (b) {
+      b.onclick = function () { ui.profileTab = b.dataset.t; ui.renderProfile(); };
+    });
+    $$('#view-profile [data-buy]').forEach(function (b) {
+      b.onclick = function () { buyItem(b.dataset.buy); };
+    });
+    $$('#view-profile [data-use]').forEach(function (b) {
+      b.onclick = function () { useItem(b.dataset.use); };
+    });
+    $$('#view-profile [data-theme]').forEach(function (b) {
+      b.onclick = function () { p.theme = b.dataset.theme; M.save(); ui.refreshChips(); ui.renderProfile(); };
+    });
+    $$('#view-profile [data-toggle]').forEach(function (b) {
+      b.onclick = function () {
+        p.settings[b.dataset.toggle] = !p.settings[b.dataset.toggle];
+        M.save(); ui.refreshChips(); ui.renderProfile();
+      };
+    });
+    $$('#view-profile [data-act]').forEach(function (b) {
+      b.onclick = function () {
+        if (b.dataset.act === 'edit') editProfileDialog();
+        if (b.dataset.act === 'reset') {
+          ui.modal('<h3>⚠️ Nollställ allt?</h3><p class="sub">All statistik, mynt och prestationer försvinner. Det går inte att ångra.</p>' +
+            '<div class="row mt" style="gap:8px"><button class="btn ghost" data-x="close">Avbryt</button>' +
+            '<button class="btn danger" style="flex:1" data-x="yes">Ja, nollställ</button></div>', function (box) {
+              $$('[data-x]', box).forEach(function (bb) {
+                bb.onclick = function () {
+                  if (bb.dataset.x === 'yes') { M.reset(); ui.toast('🧹', 'Allt nollställt'); }
+                  ui.closeModal(); ui.renderProfile(); ui.refreshChips();
+                };
+              });
+            });
+        }
+      };
+    });
+  };
+
+  function toggleRow(key, label) {
+    var on = M.profile.settings[key];
+    return '<div class="row between" style="padding:9px 0;border-bottom:1px solid var(--border)">' +
+      '<span style="font-size:14px">' + label + '</span>' +
+      '<button class="btn ' + (on ? '' : 'ghost') + ' small" data-toggle="' + key + '">' + (on ? 'På' : 'Av') + '</button></div>';
+  }
+
+  function shopRow(item) {
+    var owned = M.owns(item.id) || item.cost === 0;
+    var inUse = (item.type === 'avatar' && M.profile.avatar === item.icon) ||
+                (item.type === 'theme' && M.profile.theme === item.theme) ||
+                (item.type === 'bomb' && M.profile.bomb === item.icon);
+    return '<div class="shop-item"><span class="ico">' + item.icon + '</span>' +
+      '<div class="body"><b>' + esc(item.name) + '</b><small>' + (owned ? 'Ägs' : item.cost + ' mynt') + '</small></div>' +
+      (owned
+        ? (inUse ? '<span class="pill live">✓ används</span>' : '<button class="btn ghost small" data-use="' + item.id + '">Använd</button>')
+        : '<button class="btn small" data-buy="' + item.id + '" ' + (M.profile.coins < item.cost ? 'disabled' : '') + '>Köp</button>') +
+    '</div>';
+  }
+
+  function buyItem(id) {
+    if (M.buy(id)) {
+      ui.sfx.coin();
+      var it = M.SHOP.filter(function (x) { return x.id === id; })[0];
+      ui.toast('🛒', 'Köpt: ' + it.name, 'Tryck "Använd" för att ta på dig den.');
+      ui.achToast(M.checkAchievements());
+      useItem(id);
+    } else {
+      ui.toast('🪙', 'Inte råd', 'Vinn fler matcher för att tjäna mynt.');
+    }
+  }
+
+  function useItem(id) {
+    var it = M.SHOP.filter(function (x) { return x.id === id; })[0];
+    if (!it) return;
+    if (it.type === 'avatar') M.profile.avatar = it.icon;
+    if (it.type === 'theme') M.profile.theme = it.theme;
+    if (it.type === 'bomb') M.profile.bomb = it.icon;
+    M.save();
+    ui.refreshChips();
+    ui.renderProfile();
+  }
+
+  function editProfileDialog() {
+    ui.modal(
+      '<h3>✏️ Din profil</h3>' +
+      '<label class="field"><span>Namn</span><input type="text" id="pf-name" maxlength="14" value="' + esc(M.profile.name) + '"></label>' +
+      '<div class="sub" style="margin-bottom:6px">Avatar</div>' +
+      '<div class="grid grid-4" id="pf-avs">' +
+        M.AVATARS.map(function (a) {
+          var locked = M.SHOP.some(function (s) { return s.type === 'avatar' && s.icon === a && !M.owns(s.id); });
+          return '<button class="btn ghost" data-av="' + a + '" ' + (locked ? 'disabled' : '') + ' style="font-size:22px;padding:10px 0">' + a + (locked ? '🔒' : '') + '</button>';
+        }).join('') +
+      '</div>' +
+      '<div class="row mt" style="gap:8px"><button class="btn ghost" data-x="close">Avbryt</button>' +
+      '<button class="btn" style="flex:1" data-x="save">Spara</button></div>',
+      function (box) {
+        var chosen = M.profile.avatar;
+        $$('[data-av]', box).forEach(function (b) {
+          b.onclick = function () {
+            chosen = b.dataset.av;
+            $$('[data-av]', box).forEach(function (x) { x.classList.add('ghost'); });
+            b.classList.remove('ghost');
+          };
+        });
+        $$('[data-x]', box).forEach(function (b) {
+          b.onclick = function () {
+            if (b.dataset.x === 'save') {
+              M.profile.name = ($('#pf-name').value || 'Du').trim().slice(0, 14) || 'Du';
+              M.profile.avatar = chosen;
+              M.save();
+            }
+            ui.closeModal();
+            ui.renderProfile();
+          };
+        });
+      }
+    );
+  }
+
+  function leaderboardHtml() {
+    var rnd = M.seededRandom('lb-' + M.todayKey().slice(0, 7) + '-' + Math.floor(new Date().getDate() / 7));
+    var base = 400 + M.profile.level * 90;
+    var rows = M.BOT_NAMES.slice(0, 12).map(function (n) {
+      return { name: n, av: M.AVATARS[Math.floor(rnd() * M.AVATARS.length)], score: Math.round(base * (0.35 + rnd() * 1.5)) };
+    });
+    var mine = M.profile.stats.correct * 3 + M.profile.stats.wins * 40 + M.achPoints() * 2;
+    rows.push({ name: M.profile.name, av: M.profile.avatar, score: mine, you: true });
+    rows.sort(function (a, b) { return b.score - a.score; });
+    return rows.slice(0, 13).map(function (r, i) {
+      var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+      return '<div class="lb-row ' + (r.you ? 'you' : '') + '"><span class="pos">' + medal + '</span>' +
+        '<span style="font-size:20px">' + r.av + '</span><span>' + esc(r.name) + (r.you ? ' (du)' : '') + '</span>' +
+        '<span class="sc">' + r.score + '</span></div>';
+    }).join('');
+  }
+
+})(window.MATTENITE = window.MATTENITE || {});
+
+</script>
+<script>
+/* ==========================================================================
+   game.js — spelmotorn: het bomb, blixt, överlevnad, duell, träning, dagens
+   ========================================================================== */
+(function (M) {
+  'use strict';
+
+  var ui = M.ui;
+  var $ = ui.$, $$ = ui.$$, esc = ui.esc;
+
+  var G = {
+    running: false,
+    cfg: null,
+    players: [],
+    holder: 0,
+    q: null,
+    phase: 'idle',     // 'answer' | 'throw' | 'wait' | 'over'
+    time: 0,           // sekunder kvar
+    maxTime: 0,
+    round: 1,
+    feed: [],
+    pw: [],            // dina power-ups
+    armed: null,       // förvald power-up
+    frozenUntil: 0,
+    m: null,           // matchstatistik
+    tickId: null,
+    botAt: 0,
+    qShownAt: 0,
+    dailyQs: null
+  };
+  M.game = G;
+
+  var LIVES = 3;
+
+  /* ---------- Start --------------------------------------------------------- */
+
+  G.start = function (cfg) {
+    G.cfg = cfg;
+    G.running = true;
+    G.round = 1;
+    G.feed = [];
+    G.pw = [];
+    G.armed = null;
+    G.frozenUntil = 0;
+    G.dailyQs = null;
+    G.m = {
+      correct: 0, wrong: 0, streak: 0, best: 0, throws: 0, booms: 0, kos: 0,
+      pwUsed: 0, score: 0, xp: 0, startedAt: Date.now(), targets: {}, x2: false
+    };
+
+    var you = {
+      id: 'you', name: M.profile.name, av: M.profile.avatar, you: true,
+      lives: LIVES, alive: true, skill: 1, shield: false, score: 0
+    };
+    G.players = [you];
+
+    var defs = cfg.botDefs || [];
+    var n = cfg.bots || 0;
+    var freeAvatars = M.shuffle(M.AVATARS.filter(function (a) { return a !== M.profile.avatar; }));
+    for (var i = 0; i < n; i++) {
+      var d = defs[i];
+      G.players.push({
+        id: 'b' + i,
+        name: d ? d.name : M.BOT_NAMES[(i * 7 + M.rnd(0, 20)) % M.BOT_NAMES.length],
+        av: (d && d.av !== M.profile.avatar) ? d.av : (freeAvatars[i % freeAvatars.length] || M.pick(M.AVATARS)),
+        you: false, lives: LIVES, alive: true,
+        skill: d ? d.skill : (0.5 + Math.random() * 0.45),
+        shield: false, score: 0
+      });
+    }
+    // Unika namn
+    var seen = {};
+    G.players.forEach(function (p, idx) {
+      while (seen[p.name]) p.name = p.name + ' ' + (idx + 1);
+      seen[p.name] = 1;
+    });
+
+    var hour = new Date().getHours();
+    if (hour < 5) M.bump('nightGames');
+    else if (hour < 7) M.bump('morningGames');
+
+    if (cfg.mode === 'daily') buildDaily();
+
+    G.maxTime = roundTime();
+    G.time = G.maxTime;
+    G.holder = cfg.mode === 'potato' || cfg.mode === 'duel' ? M.rnd(0, G.players.length - 1) : 0;
+
+    feed(cfg.mode === 'potato' || cfg.mode === 'duel'
+      ? '💣 ' + G.players[G.holder].name + ' börjar med bomben!'
+      : M.MODES[cfg.mode].icon + ' ' + M.MODES[cfg.mode].name + ' startar!');
+
+    ui.show('game');
+    nextQuestion();
+    startTick();
+    ui.sfx.throwIt();
+  };
+
+  function buildDaily() {
+    var rng = M.seededRandom('mattenite-' + M.todayKey());
+    var realRandom = Math.random;
+    Math.random = rng;
+    try {
+      G.dailyQs = [];
+      for (var i = 0; i < 10; i++) G.dailyQs.push(M.question('mix', 1 + (i % 4)));
+    } finally {
+      Math.random = realRandom;
+    }
+  }
+
+  function roundTime() {
+    var base = M.DIFFS[(G.cfg.diff || 2) - 1].time;
+    switch (G.cfg.mode) {
+      case 'potato':
+      case 'duel':
+        return Math.max(6, base - (G.round - 1) * 1.2);
+      case 'survival':
+        return Math.max(4, base - G.m.score * 0.35);
+      case 'blitz':
+        return 60;
+      case 'daily':
+        return 20;
+      default:
+        return 0; // träning = ingen klocka
+    }
+  }
+
+  function isPotato() { return G.cfg.mode === 'potato' || G.cfg.mode === 'duel'; }
+  function alive() { return G.players.filter(function (p) { return p.alive; }); }
+  function you() { return G.players[0]; }
+
+  function feed(txt) {
+    G.feed.unshift(txt);
+    if (G.feed.length > 30) G.feed.pop();
+  }
+
+  /* ---------- Frågeflöde ----------------------------------------------------- */
+
+  function nextQuestion() {
+    if (G.cfg.mode === 'daily') {
+      G.q = G.dailyQs[Math.min(G.m.correct + G.m.wrong, 9)];
+    } else {
+      var d = G.cfg.diff;
+      if (G.cfg.mode === 'survival') d = Math.min(4, G.cfg.diff + Math.floor(G.m.score / 8));
+      G.q = M.question(G.cfg.cat, d);
+    }
+    G.qShownAt = Date.now();
+    G.phase = (isPotato() && !G.players[G.holder].you) ? 'wait' : 'answer';
+    if (isPotato() && !G.players[G.holder].you) scheduleBot();
+    render();
+  }
+
+  function scheduleBot() {
+    var b = G.players[G.holder];
+    var base = 1400 + (1 - b.skill) * 2600;
+    G.botAt = Date.now() + base * (0.7 + Math.random() * 0.7);
+  }
+
+  function botTurn() {
+    var b = G.players[G.holder];
+    var ok = Math.random() < (b.skill - (G.cfg.diff - 2) * 0.06);
+    if (!ok) {
+      feed('❌ ' + b.name + ' svarade fel (−2 s)');
+      G.time = Math.max(0.4, G.time - 2);
+      scheduleBot();
+      render();
+      return;
+    }
+    // Boten kastar till någon annan — helst den med flest liv
+    var others = alive().filter(function (p) { return p !== b; });
+    if (!others.length) return;
+    others.sort(function (x, y) { return y.lives - x.lives; });
+    var target = Math.random() < 0.55 ? others[0] : M.pick(others);
+    throwBomb(b, target);
+  }
+
+  function throwBomb(from, to) {
+    if (to.shield) {
+      to.shield = false;
+      M.bump('shieldBlocks');
+      feed('🛡️ ' + to.name + ' studsade tillbaka bomben till ' + from.name + '!');
+      ui.sfx.throwIt();
+      G.holder = G.players.indexOf(from);
+    } else {
+      G.holder = G.players.indexOf(to);
+      feed('💣 ' + from.name + ' → ' + to.name);
+      ui.sfx.throwIt();
+    }
+    G.lastThrower = from;
+    nextQuestion();
+  }
+
+  /* ---------- Ditt svar ------------------------------------------------------- */
+
+  G.answer = function (idx) {
+    if (G.phase !== 'answer' || !G.q) return;
+    var ms = Date.now() - G.qShownAt;
+    var right = idx === G.q.correct;
+    var btns = $$('#opts .opt');
+    btns.forEach(function (b, i) {
+      b.disabled = true;
+      if (i === G.q.correct) b.classList.add('right');
+      else if (i === idx) b.classList.add('wrong');
+    });
+
+    M.bump('answers');
+    if (G.cfg.mode === 'practice') M.bump('practiceAnswers');
+
+    if (right) {
+      G.m.correct++;
+      G.m.streak++;
+      G.m.best = Math.max(G.m.best, G.m.streak);
+      M.bump('correct');
+      M.bump('cat_' + G.q.cat);
+      M.setMax('bestStreak', G.m.streak);
+      if (G.q.answer === 42) M.bump('answer42');
+      if (ms < 3000) M.bump('fastAnswers3');
+      if (ms < 1500) M.bump('fastAnswers15');
+      ui.sfx.right();
+      ui.buzz(20);
+      grantPowerup();
+      addXp(G.m.x2 ? 8 : 4);
+    } else {
+      G.m.wrong++;
+      G.m.streak = 0;
+      M.bump('wrong');
+      ui.sfx.wrong();
+      ui.buzz([40, 60, 40]);
+    }
+
+    setTimeout(function () { afterAnswer(right); }, right ? 260 : 520);
+  };
+
+  function afterAnswer(right) {
+    if (!G.running) return;
+
+    if (isPotato()) {
+      if (right) {
+        G.phase = 'throw';
+        render();
+      } else {
+        G.time = Math.max(0.4, G.time - 2);
+        feed('❌ Fel — 2 sekunder brändes');
+        nextQuestion();
+      }
+      return;
+    }
+
+    if (G.cfg.mode === 'blitz') {
+      if (right) { G.m.score++; you().score = G.m.score; }
+      nextQuestion();
+      return;
+    }
+
+    if (G.cfg.mode === 'survival') {
+      if (right) {
+        G.m.score++;
+        G.maxTime = roundTime();
+        G.time = G.maxTime;
+        nextQuestion();
+      } else {
+        loseLife(you(), 'fel svar');
+        if (G.running) { G.maxTime = roundTime(); G.time = G.maxTime; nextQuestion(); }
+      }
+      return;
+    }
+
+    if (G.cfg.mode === 'daily') {
+      if (right) G.m.score++;
+      if (G.m.correct + G.m.wrong >= 10) return endGame();
+      G.time = roundTime();
+      nextQuestion();
+      return;
+    }
+
+    // Träning
+    if (right) G.m.score++;
+    nextQuestion();
+  }
+
+  G.throwTo = function (id) {
+    if (G.phase !== 'throw') return;
+    var target = null;
+    G.players.forEach(function (p) { if (p.id === id) target = p; });
+    if (!target || !target.alive) return;
+
+    G.m.throws++;
+    G.m.targets[id] = (G.m.targets[id] || 0) + 1;
+    M.bump('throws');
+    if (G.time < 1) M.bump('clutchThrows');
+    throwBomb(you(), target);
+  };
+
+  /* ---------- Power-ups -------------------------------------------------------- */
+
+  function grantPowerup() {
+    if (!isPotato() && G.cfg.mode !== 'survival') return;
+    if (G.m.correct % 3 !== 0 || G.pw.length >= 3) return;
+    var keys = Object.keys(M.POWERUPS);
+    var k = M.pick(keys);
+    G.pw.push(k);
+    feed('🎁 Power-up: ' + M.POWERUPS[k].name);
+  }
+
+  G.usePowerup = function (i) {
+    var k = G.pw[i];
+    if (!k) return;
+    var p = M.POWERUPS[k];
+
+    if (k === 'swap' && G.players[G.holder] !== you()) {
+      ui.toast('🔀', 'Du håller inte i bomben');
+      return;
+    }
+    if (k === 'freeze' && !isPotato() && G.cfg.mode !== 'survival') return;
+
+    G.pw.splice(i, 1);
+    G.m.pwUsed++;
+    M.bump('powerupsUsed');
+    ui.buzz(25);
+
+    if (k === 'freeze') { G.frozenUntil = Date.now() + 4000; feed('⏸️ Bomben frusen i 4 sekunder'); }
+    if (k === 'skip') { feed('⏭️ Ny fråga'); nextQuestion(); }
+    if (k === 'shield') { you().shield = true; feed('🛡️ Sköld aktiv'); }
+    if (k === 'x2') { G.m.x2 = true; feed('💎 Dubbel XP resten av matchen'); }
+    if (k === 'swap') {
+      var others = alive().filter(function (p) { return !p.you; });
+      if (others.length) { G.phase = 'throw'; feed('🔀 Kasta utan att svara!'); }
+    }
+    ui.toast(p.icon, p.name + ' använd', p.desc, 1800);
+    render();
+  };
+
+  /* ---------- Klockan ---------------------------------------------------------- */
+
+  function startTick() {
+    clearInterval(G.tickId);
+    var last = Date.now();
+    G.tickId = setInterval(function () {
+      var now = Date.now();
+      var dt = (now - last) / 1000;
+      last = now;
+      if (!G.running) return;
+
+      if (G.cfg.mode !== 'practice') {
+        var frozen = now < G.frozenUntil;
+        if (!frozen) G.time -= dt;
+        if (G.time <= 3.2 && G.time > 0 && Math.floor(G.time * 2) !== Math.floor((G.time + dt) * 2)) ui.sfx.tick();
+        if (G.time <= 0) { G.time = 0; timeUp(); }
+      }
+
+      if (isPotato() && G.phase === 'wait' && now >= G.botAt && G.running) botTurn();
+      updateTimer();
+    }, 100);
+  }
+
+  function timeUp() {
+    if (isPotato()) {
+      var h = G.players[G.holder];
+      ui.sfx.boom();
+      ui.buzz([80, 60, 120]);
+      feed('💥 BOOM! ' + h.name + ' höll i bomben.');
+      if (h.you) { G.m.booms++; M.bump('booms'); if (G.m.booms === 3) M.bump('tripleBoom'); }
+      if (G.lastThrower && G.lastThrower.you && !h.you && h.lives === 1) { G.m.kos++; M.bump('knockouts'); }
+      loseLife(h, 'bomben');
+      if (!G.running) return;
+      G.round++;
+      G.maxTime = roundTime();
+      G.time = G.maxTime;
+      var live = alive();
+      G.holder = G.players.indexOf(M.pick(live));
+      G.lastThrower = null;
+      feed('🔄 Runda ' + G.round + ' — ' + G.players[G.holder].name + ' får bomben');
+      nextQuestion();
+      return;
+    }
+
+    if (G.cfg.mode === 'blitz') return endGame();
+    if (G.cfg.mode === 'survival') {
+      loseLife(you(), 'tiden');
+      if (G.running) { G.maxTime = roundTime(); G.time = G.maxTime; nextQuestion(); }
+      return;
+    }
+    if (G.cfg.mode === 'daily') {
+      G.m.wrong++;
+      if (G.m.correct + G.m.wrong >= 10) return endGame();
+      G.time = roundTime();
+      nextQuestion();
+    }
+  }
+
+  function loseLife(p, cause) {
+    p.lives--;
+    if (p.lives <= 0) {
+      p.alive = false;
+      feed('☠️ ' + p.name + ' är ute (' + cause + ')');
+      if (p.you) ui.sfx.lose();
+    }
+    var live = alive();
+    if (isPotato() && live.length <= 1) return endGame();
+    if (!isPotato() && !you().alive) return endGame();
+    render();
+  }
+
+  function updateTimer() {
+    var bar = $('#tbar');
+    if (!bar) return;
+    var pct = G.maxTime ? Math.max(0, Math.min(100, G.time / G.maxTime * 100)) : 100;
+    bar.style.width = pct + '%';
+    bar.parentNode.classList.toggle('danger', G.time < G.maxTime * 0.3);
+    var num = $('#tnum');
+    if (num) num.textContent = G.cfg.mode === 'practice' ? '∞' : G.time.toFixed(1) + ' s';
+  }
+
+  /* ---------- Slut -------------------------------------------------------------- */
+
+  G.abort = function () {
+    G.running = false;
+    clearInterval(G.tickId);
+  };
+
+  function endGame() {
+    if (!G.running) return;
+    G.running = false;
+    G.phase = 'over';
+    clearInterval(G.tickId);
+
+    var s = M.profile.stats;
+    var mode = G.cfg.mode;
+    var win = false, title = '', sub = '', coins = 0, xp = 0;
+    var secs = Math.round((Date.now() - G.m.startedAt) / 1000);
+    M.bump('secondsPlayed', secs);
+
+    if (isPotato()) {
+      var live = alive();
+      win = live.length === 1 && live[0].you;
+      M.bump('gamesPlayed');
+      if (win) {
+        M.bump('wins');
+        s.winStreak++;
+        M.setMax('bestWinStreak', s.winStreak);
+        if (G.m.wrong === 0) M.bump('perfectGames');
+        if (you().lives === LIVES) M.bump('fullLifeWins');
+        if (you().lives === 1) M.bump('comebacks');
+        if (G.m.pwUsed === 0) M.bump('pureWins');
+        if (G.cfg.diff === 3) M.bump('hardWins');
+        if (G.cfg.diff === 4) M.bump('extremeWins');
+        if (G.players.length >= 6) M.bump('bigLobbyWins');
+        if (mode === 'duel') M.bump('duelWins');
+        var tks = Object.keys(G.m.targets);
+        if (tks.length === 1 && G.m.targets[tks[0]] >= 4) M.bump('pacifist');
+        coins = 30 + G.players.length * 6 + G.cfg.diff * 8;
+        xp = 60 + G.m.correct * 3;
+        title = '🏆 Du vann!';
+        sub = 'Sist kvar av ' + G.players.length + ' spelare.';
+      } else {
+        s.winStreak = 0;
+        coins = 8 + G.m.correct;
+        xp = 15 + G.m.correct * 2;
+        var place = G.players.filter(function (p) { return p.alive; }).length + 1;
+        title = '💥 Du åkte ut';
+        sub = 'Du kom på plats ' + place + ' av ' + G.players.length + '.';
+      }
+    } else if (mode === 'blitz') {
+      G.m.score = G.m.correct;
+      you().score = G.m.score;
+      M.bump('gamesPlayed');
+      G.players.forEach(function (p) {
+        if (!p.you) p.score = Math.round(G.m.score * (0.55 + p.skill * 0.85) * (0.8 + Math.random() * 0.5));
+      });
+      var sorted = G.players.slice().sort(function (a, b) { return b.score - a.score; });
+      win = sorted[0].you;
+      M.setMax('blitzBest', G.m.score);
+      if (win) { M.bump('wins'); s.winStreak++; M.setMax('bestWinStreak', s.winStreak); } else s.winStreak = 0;
+      coins = 10 + G.m.score * 2 + (win ? 25 : 0);
+      xp = 20 + G.m.score * 3;
+      title = win ? '⚡ Blixtseger!' : '⚡ Blixt klar';
+      sub = G.m.score + ' rätt på 60 sekunder · plats ' + (sorted.indexOf(you()) + 1) + '/' + G.players.length;
+    } else if (mode === 'survival') {
+      M.bump('gamesPlayed');
+      M.setMax('survivalBest', G.m.score);
+      coins = 8 + G.m.score * 3;
+      xp = 15 + G.m.score * 4;
+      title = '🛡️ Överlevnad slut';
+      sub = 'Du klarade ' + G.m.score + ' frågor.';
+    } else if (mode === 'daily') {
+      M.bump('gamesPlayed');
+      var today = M.todayKey();
+      if (M.profile.daily.date !== today) {
+        var y = new Date(Date.now() - 864e5);
+        var yKey = y.getFullYear() + '-' + ('0' + (y.getMonth() + 1)).slice(-2) + '-' + ('0' + y.getDate()).slice(-2);
+        M.profile.daily.streak = (M.profile.daily.date === yKey) ? M.profile.daily.streak + 1 : 1;
+        M.profile.daily.date = today;
+        M.bump('dailyDone');
+        M.setMax('bestDailyStreak', M.profile.daily.streak);
+        if (G.m.score === 10) M.bump('dailyPerfect');
+        coins = 25 + G.m.score * 5;
+      } else {
+        coins = G.m.score;
+      }
+      M.profile.daily.score = G.m.score;
+      M.profile.daily.best = Math.max(M.profile.daily.best || 0, G.m.score);
+      xp = 20 + G.m.score * 5;
+      title = '📅 Dagens utmaning klar';
+      sub = G.m.score + '/10 rätt · svit ' + M.profile.daily.streak + ' dagar';
+    } else {
+      coins = Math.floor(G.m.correct / 2);
+      xp = G.m.correct * 2;
+      title = '🎯 Träning avslutad';
+      sub = G.m.correct + ' rätt, ' + G.m.wrong + ' fel.';
+    }
+
+    if (G.m.x2) xp *= 2;
+    M.addCoins(coins, true);
+    addXp(xp, true);
+    M.pushHistory({ mode: mode, win: win, result: (win ? 'Vinst' : '') + (win ? ' · ' : '') + (G.m.correct + ' rätt') });
+    M.save();
+
+    var fresh = M.checkAchievements();
+    if (win) { ui.sfx.win(); ui.confetti(90); }
+    ui.refreshChips();
+    renderOver(title, sub, coins, xp, fresh);
+    if (fresh.length) setTimeout(function () { ui.achToast(fresh); }, 700);
+  }
+
+  function addXp(n) {
+    var r = M.addXp(n);
+    if (r.levels > 0) {
+      ui.toast('⭐', 'Nivå ' + M.profile.level + '!', 'Du fick ' + (25 + M.profile.level * 5) + ' mynt.', 3000);
+      ui.sfx.unlock();
+      ui.confetti(40);
+      ui.refreshChips();
+    }
+  }
+
+  /* ---------- Rendering --------------------------------------------------------- */
+
+  function render() {
+    if (!$('#view-game')) return;
+    var mode = G.cfg.mode;
+    var holder = G.players[G.holder];
+    var html = '';
+
+    html += '<div class="game-top">' +
+      '<button class="btn ghost small" id="g-quit">✕</button>' +
+      '<div class="timer-wrap"><div class="timer-bar"><i id="tbar"></i></div>' +
+      '<div class="timer-num"><span>' + M.MODES[mode].icon + ' ' + esc(G.cfg.lobbyName || M.MODES[mode].name) + '</span>' +
+      '<span id="tnum">' + (mode === 'practice' ? '∞' : G.time.toFixed(1) + ' s') + '</span></div></div></div>';
+
+    if (isPotato()) {
+      html += '<div class="player-strip">' + G.players.map(function (p, i) {
+        return '<div class="pstrip ' + (i === G.holder ? 'holding' : '') + ' ' + (p.alive ? '' : 'out') + '">' +
+          (i === G.holder ? '<span class="bomb-tag">' + M.profile.bomb + '</span>' : '') +
+          '<div class="av">' + p.av + '</div><div class="nm">' + esc(p.you ? 'Du' : p.name) + '</div>' +
+          '<div class="hp">' + (p.alive ? '❤️'.repeat(Math.max(0, p.lives)) : '☠️') + '</div>' +
+          (p.shield ? '<div class="hp">🛡️</div>' : '') + '</div>';
+      }).join('') + '</div>';
+
+      html += '<div class="holder-banner ' + (holder.you ? 'mine' : '') + '">' +
+        '<span class="big">' + M.profile.bomb + '</span>' +
+        (holder.you
+          ? (G.phase === 'throw' ? 'Rätt svar! Kasta bomben vidare — fort!' : 'Du har bomben — svara snabbt!')
+          : esc(holder.name) + ' har bomben…') + '</div>';
+    }
+
+    if (mode === 'blitz') {
+      html += '<div class="row between" style="margin-bottom:10px"><b>⚡ Poäng: ' + G.m.score + '</b>' +
+        '<span class="sub">Svit ' + G.m.streak + '</span></div>';
+    }
+    if (mode === 'survival') {
+      html += '<div class="row between" style="margin-bottom:10px"><b>🛡️ ' + G.m.score + ' klarade</b>' +
+        '<span>' + '❤️'.repeat(Math.max(0, you().lives)) + '</span></div>';
+    }
+    if (mode === 'daily') {
+      html += '<div class="row between" style="margin-bottom:10px"><b>Fråga ' + Math.min(10, G.m.correct + G.m.wrong + 1) + '/10</b>' +
+        '<span class="sub">' + G.m.score + ' rätt</span></div>';
+    }
+    if (mode === 'practice') {
+      html += '<div class="row between" style="margin-bottom:10px"><b>🎯 ' + G.m.correct + ' rätt</b>' +
+        '<span class="sub">' + G.m.wrong + ' fel · svit ' + G.m.streak + '</span></div>';
+    }
+
+    if (G.pw.length) {
+      html += '<div class="pw-bar">' + G.pw.map(function (k, i) {
+        var p = M.POWERUPS[k];
+        return '<button class="pw" data-pw="' + i + '"><span class="ic">' + p.icon + '</span><span class="nm">' + p.name + '</span></button>';
+      }).join('') + '</div>';
+    }
+
+    if (G.phase === 'throw') {
+      html += '<div class="card"><h3>🤾 Kasta bomben till…</h3><div class="throw-grid">' +
+        alive().filter(function (p) { return !p.you; }).map(function (p) {
+          return '<button class="throw-btn ' + (p.shield ? 'shielded' : '') + '" data-throw="' + p.id + '">' +
+            '<span class="av">' + p.av + '</span><span>' + esc(p.name) + '</span>' +
+            '<span class="hearts">' + '❤️'.repeat(Math.max(0, p.lives)) + '</span></button>';
+        }).join('') + '</div></div>';
+    } else if (G.phase === 'wait') {
+      html += '<div class="q-card"><div class="q-cat">' + M.catName(G.q.cat) + '</div>' +
+        '<div class="q-text" style="opacity:.35">' + esc(G.q.text) + ' = ?</div>' +
+        '<div class="q-streak">' + esc(holder.name) + ' funderar…</div></div>';
+    } else if (G.q) {
+      html += '<div class="q-card"><div class="q-cat">' + M.catName(G.q.cat) + ' · ' + M.DIFFS[G.q.diff - 1].name + '</div>' +
+        '<div class="q-text">' + esc(G.q.text) + ' = ?</div>' +
+        '<div class="q-streak">' + (G.m.streak >= 2 ? '🔥 ' + G.m.streak + ' i rad' : '') + '</div></div>' +
+        '<div class="opts" id="opts">' + G.q.options.map(function (o, i) {
+          return '<button class="opt" data-opt="' + i + '">' + esc(o) + '</button>';
+        }).join('') + '</div>';
+    }
+
+    if (G.feed.length) {
+      html += '<div class="feed">' + G.feed.slice(0, 6).map(function (f) { return '<div>' + esc(f) + '</div>'; }).join('') + '</div>';
+    }
+
+    if (mode === 'practice' || mode === 'blitz') {
+      html += '<button class="btn ghost block" style="margin-top:12px" id="g-stop">Avsluta</button>';
+    }
+
+    $('#view-game').innerHTML = html;
+    updateTimer();
+
+    $$('#view-game [data-opt]').forEach(function (b) {
+      b.onclick = function () { G.answer(+b.dataset.opt); };
+    });
+    $$('#view-game [data-throw]').forEach(function (b) {
+      b.onclick = function () { G.throwTo(b.dataset.throw); };
+    });
+    $$('#view-game [data-pw]').forEach(function (b) {
+      b.onclick = function () { G.usePowerup(+b.dataset.pw); };
+    });
+    var quit = $('#g-quit');
+    if (quit) quit.onclick = function () { quitGame(); };
+    var stop = $('#g-stop');
+    if (stop) stop.onclick = function () { if (G.cfg.mode === 'blitz') { G.time = 0; timeUp(); } else endGame(); };
+  }
+
+  function quitGame() {
+    ui.modal('<h3>Lämna matchen?</h3><p class="sub">Resultatet räknas inte.</p>' +
+      '<div class="row mt" style="gap:8px"><button class="btn ghost" data-x="no">Fortsätt spela</button>' +
+      '<button class="btn danger" style="flex:1" data-x="yes">Lämna</button></div>', function (box) {
+        $$('[data-x]', box).forEach(function (b) {
+          b.onclick = function () {
+            ui.closeModal();
+            if (b.dataset.x === 'yes') {
+              G.abort();
+              M.bump('secondsPlayed', Math.round((Date.now() - G.m.startedAt) / 1000));
+              M.save();
+              ui.show(M.ui.getLobby() ? 'lobbies' : 'home');
+            }
+          };
+        });
+      });
+  }
+
+  function renderOver(title, sub, coins, xp, fresh) {
+    var mode = G.cfg.mode;
+    var rows = '';
+    if (isPotato()) {
+      rows = G.players.slice().sort(function (a, b) { return (b.alive - a.alive) || (b.lives - a.lives); })
+        .map(function (p, i) {
+          return '<div class="lb-row ' + (p.you ? 'you' : '') + '"><span class="pos">' + (i + 1) + '</span>' +
+            '<span style="font-size:19px">' + p.av + '</span><span>' + esc(p.you ? 'Du' : p.name) + '</span>' +
+            '<span class="sc">' + (p.alive ? '❤️'.repeat(Math.max(0, p.lives)) : '☠️') + '</span></div>';
+        }).join('');
+    } else if (mode === 'blitz') {
+      rows = G.players.slice().sort(function (a, b) { return b.score - a.score; }).map(function (p, i) {
+        return '<div class="lb-row ' + (p.you ? 'you' : '') + '"><span class="pos">' + (i + 1) + '</span>' +
+          '<span style="font-size:19px">' + p.av + '</span><span>' + esc(p.you ? 'Du' : p.name) + '</span>' +
+          '<span class="sc">' + p.score + '</span></div>';
+      }).join('');
+    }
+
+    $('#view-game').innerHTML =
+      '<div class="card center" style="padding:26px 18px">' +
+        '<div style="font-size:46px">' + title.split(' ')[0] + '</div>' +
+        '<h2 style="font-size:22px;margin:6px 0 4px">' + esc(title.replace(/^\S+\s/, '')) + '</h2>' +
+        '<p class="sub">' + esc(sub) + '</p>' +
+        '<div class="grid grid-3 mt">' +
+          '<div class="stat-tile"><div class="num">' + G.m.correct + '</div><div class="lbl">Rätt</div></div>' +
+          '<div class="stat-tile"><div class="num">' + G.m.best + '</div><div class="lbl">Bästa svit</div></div>' +
+          '<div class="stat-tile"><div class="num">' + G.m.throws + '</div><div class="lbl">Kast</div></div>' +
+        '</div>' +
+        '<div class="row mt" style="justify-content:center;gap:14px;font-weight:800">' +
+          '<span style="color:var(--warn)">🪙 +' + coins + '</span><span style="color:var(--brand-2)">✨ +' + xp + ' XP</span>' +
+        '</div>' +
+        (fresh.length ? '<p class="sub mt">🏅 ' + fresh.length + ' ny' + (fresh.length > 1 ? 'a' : '') + ' prestation' + (fresh.length > 1 ? 'er' : '') + '!</p>' : '') +
+      '</div>' +
+      (rows ? '<div class="card"><h3>📋 Slutställning</h3>' + rows + '</div>' : '') +
+      '<div class="row" style="gap:8px">' +
+        '<button class="btn ghost" data-end="home">🏠 Hem</button>' +
+        '<button class="btn" style="flex:1" data-end="again">🔁 Spela igen</button>' +
+      '</div>';
+
+    $$('#view-game [data-end]').forEach(function (b) {
+      b.onclick = function () {
+        if (b.dataset.end === 'again') G.start(G.cfg);
+        else { ui.leaveRoomSilently(); ui.show('home'); }
+      };
+    });
+  }
+
+  G.render = render;
+
+})(window.MATTENITE = window.MATTENITE || {});
+
+</script>
+<script>
+/* ==========================================================================
+   app.js — start, Cordova-koppling, hårdvaruknappar
+   ========================================================================== */
+(function (M) {
+  'use strict';
+
+  function boot() {
+    M.load();
+    M.ui.refreshChips();
+    M.ui.show('home');
+
+    // Nya prestationer kan ha tillkommit sedan förra versionen
+    var fresh = M.checkAchievements();
+    if (fresh.length) setTimeout(function () { M.ui.achToast(fresh); }, 800);
+
+    // Tabbar
+    M.ui.$$('.tabbar button').forEach(function (b) {
+      b.onclick = function () { M.ui.show(b.dataset.tab); };
+    });
+
+    // Stäng modal när man klickar utanför
+    M.ui.$('#modal').onclick = function (e) {
+      if (e.target.id === 'modal') M.ui.closeModal();
+    };
+
+    // Spara när appen går i bakgrunden
+    document.addEventListener('pause', M.save, false);
+    window.addEventListener('beforeunload', M.save);
+
+    // Android-bakåtknapp
+    document.addEventListener('backbutton', function () {
+      if (M.ui.$('#modal').classList.contains('open')) return M.ui.closeModal();
+      if (M.game.running) return M.ui.show('home');
+      if (M.ui.current !== 'home') return M.ui.show('home');
+      if (navigator.app && navigator.app.exitApp) navigator.app.exitApp();
+    }, false);
+
+    // Tangentbord: 1-4 svarar, Esc stänger modal
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') return M.ui.closeModal();
+      if (M.game.running && M.game.phase === 'answer' && /^[1-4]$/.test(e.key)) {
+        M.game.answer(parseInt(e.key, 10) - 1);
+      }
+    });
+  }
+
+  // Spelet behöver inga Cordova-plugin, så vi startar direkt och låter
+  // cordova.js ladda i bakgrunden för bakåtknappen och pause-händelsen.
+  if (window.location.protocol === 'file:' && !window.cordova) {
+    var s = document.createElement('script');
+    s.src = 'cordova.js';
+    s.onerror = function () { /* körs utanför Cordova — spelet fungerar ändå */ };
+    document.head.appendChild(s);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+
+})(window.MATTENITE = window.MATTENITE || {});
+
+</script>
+</body>
+</html>

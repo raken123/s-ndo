@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.mattenite.game" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>Mattenite</name>
+    <description>Mattespelet där du svarar på en fråga och kastar bomben vidare till nästa spelare.</description>
+    <author email="hej@mattenite.app" href="https://github.com/raken123/s-ndo">Mattenite</author>
+
+    <content src="index.html" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+
+    <preference name="Orientation" value="portrait" />
+    <preference name="Fullscreen" value="false" />
+    <preference name="BackgroundColor" value="0xff0d0f1e" />
+    <preference name="DisallowOverscroll" value="true" />
+    <preference name="android-minSdkVersion" value="24" />
+    <preference name="android-targetSdkVersion" value="34" />
+    <preference name="AndroidInsecureFileModeEnabled" value="false" />
+    <preference name="AndroidWindowSplashScreenBackground" value="#0d0f1e" />
+    <preference name="AndroidWindowSplashScreenAnimatedIcon" value="res/screen/android/splash-icon.png" />
+    <preference name="AndroidWindowSplashScreenAnimationDuration" value="600" />
+
+    <platform name="android">
+        <icon density="ldpi" src="res/icon/android/icon-ldpi.png"
+              foreground="res/icon/android/icon-ldpi-foreground.png"
+              background="res/icon/android/icon-ldpi-background.png" />
+        <icon density="mdpi" src="res/icon/android/icon-mdpi.png"
+              foreground="res/icon/android/icon-mdpi-foreground.png"
+              background="res/icon/android/icon-mdpi-background.png" />
+        <icon density="hdpi" src="res/icon/android/icon-hdpi.png"
+              foreground="res/icon/android/icon-hdpi-foreground.png"
+              background="res/icon/android/icon-hdpi-background.png" />
+        <icon density="xhdpi" src="res/icon/android/icon-xhdpi.png"
+              foreground="res/icon/android/icon-xhdpi-foreground.png"
+              background="res/icon/android/icon-xhdpi-background.png" />
+        <icon density="xxhdpi" src="res/icon/android/icon-xxhdpi.png"
+              foreground="res/icon/android/icon-xxhdpi-foreground.png"
+              background="res/icon/android/icon-xxhdpi-background.png" />
+        <icon density="xxxhdpi" src="res/icon/android/icon-xxxhdpi.png"
+              foreground="res/icon/android/icon-xxxhdpi-foreground.png"
+              background="res/icon/android/icon-xxxhdpi-background.png" />
+    </platform>
+</widget>
