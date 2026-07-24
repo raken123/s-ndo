@@ -74,9 +74,20 @@ html, body {
 .blabel { font-size: 9px; letter-spacing: 2px; opacity: .6; margin-top: 3px; }
 
 /* -------------------------------------------------------------- buttons */
-#pad { position: absolute; inset: 0; pointer-events: none; }
+/* grid cluster: sizes and gaps are laid out, so the buttons can never overlap
+   however short or narrow the screen is */
+#pad {
+  position: absolute; pointer-events: none;
+  right: max(2.4vmin, env(safe-area-inset-right));
+  bottom: max(2.4vmin, env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: auto auto auto;
+  grid-template-rows: auto auto;
+  gap: max(9px, 2.2vmin);
+  align-items: end; justify-items: center;
+}
 .btn {
-  position: absolute; pointer-events: auto; border-radius: 50%;
+  pointer-events: none; border-radius: 50%;
   color: #eaf4ff; font: bold 2.6vmin/1.1 "Trebuchet MS", sans-serif; letter-spacing: 1px;
   border: 2px solid rgba(160,210,255,.35);
   background: radial-gradient(circle at 35% 30%, rgba(60,110,180,.55), rgba(10,20,40,.55));
@@ -87,25 +98,26 @@ html, body {
 .btn.sm  { width: 12.5vmin; height: 12.5vmin; min-width: 52px; min-height: 52px; font-size: 2.1vmin; }
 .btn.down { transform: scale(.92); filter: brightness(1.5); }
 
+.btn.roll  { grid-area: 1 / 2; }
+.btn.jump  { grid-area: 1 / 3; }
+.btn.rev   { grid-area: 2 / 1; }
+.btn.gas   { grid-area: 2 / 2; }
+.btn.boost { grid-area: 2 / 3; }
+
 .btn.boost {
-  right: max(3vmin, env(safe-area-inset-right)); bottom: 3vmin;
   border-color: rgba(255,180,80,.7);
   background: radial-gradient(circle at 35% 30%, rgba(255,150,40,.6), rgba(70,30,5,.6));
   box-shadow: 0 0 16px rgba(255,140,30,.35);
 }
 .btn.jump {
-  right: max(3vmin, env(safe-area-inset-right)); bottom: 22vmin;
   border-color: rgba(120,220,255,.7);
   background: radial-gradient(circle at 35% 30%, rgba(50,150,230,.6), rgba(5,30,60,.6));
   box-shadow: 0 0 16px rgba(60,170,255,.3);
 }
 .btn.gas {
-  right: 22vmin; bottom: 3vmin;
   border-color: rgba(140,255,180,.6);
   background: radial-gradient(circle at 35% 30%, rgba(40,180,110,.55), rgba(5,40,25,.6));
 }
-.btn.roll { right: 22.5vmin; bottom: 23vmin; }
-.btn.rev  { right: 38vmin; bottom: 4vmin; }
 
 /* ------------------------------------------------------------- messages */
 #msg {
@@ -186,8 +198,8 @@ html, body {
   .lbl { font-size: 3vmin; width: auto; }
   .btn.big { width: 22vmin; height: 22vmin; font-size: 3.4vmin; }
   .btn.sm { width: 16vmin; height: 16vmin; font-size: 2.8vmin; }
-  .btn.jump { bottom: 28vmin; }
-  .btn.gas { right: 28vmin; }
-  .btn.roll { right: 29vmin; bottom: 30vmin; }
-  .btn.rev { right: 48vmin; }
+  /* not enough width for the scorebar and the chips on one line */
+  #topright { top: calc(max(8px, env(safe-area-inset-top)) + 46px); }
+  #scorebar .team { font-size: 22px; }
+  #clock { font-size: 17px; min-width: 54px; }
 }

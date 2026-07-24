@@ -26,13 +26,29 @@
     stickEl.style.opacity = '1';
   }
 
+  // Buttons are hit tested geometrically rather than by event target: the touch
+  // listeners are global, so it does not matter what element the finger lands on.
   function hitBtn(x, y) {
+    var best = null, bestD = 1e9;
     for (var i = 0; i < btns.length; i++) {
       var r = btns[i].el.getBoundingClientRect();
-      var m = 8;
-      if (x >= r.left - m && x <= r.right + m && y >= r.top - m && y <= r.bottom + m) return btns[i];
+      if (!r.width) continue;                       // hidden HUD
+      var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      var rad = r.width / 2 + 10;                   // round buttons + a little slack
+      var d = Math.hypot(x - cx, y - cy);
+      if (d < rad && d < bestD) { bestD = d; best = btns[i]; }
     }
-    return null;
+    return best;
+  }
+
+  // menus and overlays own the touch while they are up
+  var BLOCKERS = ['menu', 'pause', 'over', 'help'];
+  function uiBlocking() {
+    for (var i = 0; i < BLOCKERS.length; i++) {
+      var e = document.getElementById(BLOCKERS[i]);
+      if (e && !e.classList.contains('hidden')) return true;
+    }
+    return false;
   }
 
   function press(b, on) {
@@ -49,15 +65,20 @@
     }
   }
 
+  // returns true when the game consumed the touch (so the caller suppresses the
+  // browser default; taps that fall through still fire clicks on menu buttons)
   function onStart(id, x, y) {
+    if (uiBlocking()) return false;
     var b = hitBtn(x, y);
-    if (b) { b.touch = id; press(b, true); return; }
-    if (stickTouch === null && x < window.innerWidth * 0.55) {
+    if (b) { b.touch = id; press(b, true); return true; }
+    if (stickTouch === null && x < window.innerWidth * 0.58) {
       stickTouch = id;
       stickOrigin.x = x; stickOrigin.y = y;
       showStick(x, y); setKnob(0, 0);
       I.active = true;
+      return true;
     }
+    return false;
   }
 
   function onMove(id, x, y) {
@@ -72,19 +93,33 @@
       I.pitch = Math.abs(sy) < dz ? 0 : (sy - Math.sign(sy) * dz) / (1 - dz);
       I.steer = Math.max(-1, Math.min(1, I.steer));
       I.pitch = Math.max(-1, Math.min(1, I.pitch));
+      return true;
     }
+    return false;
   }
 
   function onEnd(id) {
+    var used = false;
     if (id === stickTouch) {
       stickTouch = null; I.steer = 0; I.pitch = 0;
       setKnob(0, 0);
       if (stickEl) stickEl.style.opacity = '0';
+      used = true;
     }
     for (var i = 0; i < btns.length; i++) {
-      if (btns[i].touch === id) { btns[i].touch = null; press(btns[i], false); }
+      if (btns[i].touch === id) { btns[i].touch = null; press(btns[i], false); used = true; }
     }
+    return used;
   }
+
+  // a finger that is lifted without a touchend (or while the HUD changes) must
+  // never leave a button stuck down
+  function releaseAll() {
+    for (var i = 0; i < btns.length; i++)
+      if (btns[i].touch !== null) { btns[i].touch = null; press(btns[i], false); }
+    if (stickTouch !== null) onEnd(stickTouch);
+  }
+  RC.releaseAllTouches = releaseAll;
 
   RC.initInput = function () {
     stickEl = document.getElementById('stick');
@@ -95,21 +130,33 @@
     for (var i = 0; i < els.length; i++)
       btns.push({ el: els[i], act: els[i].getAttribute('data-act'), touch: null });
 
+    // Listen on the document, not on a single layer: a finger on a button lands
+    // on that button (or the <span> inside it), which would never bubble to a
+    // listener attached to the backdrop.
     function tlist(e, fn) {
+      var used = false;
       for (var i = 0; i < e.changedTouches.length; i++) {
         var t = e.changedTouches[i];
-        fn(t.identifier, t.clientX, t.clientY);
+        if (fn(t.identifier, t.clientX, t.clientY)) used = true;
       }
+      // only swallow the event when the game took it, so menu buttons still click
+      if (used && e.cancelable) e.preventDefault();
     }
-    var opts = { passive: false };
-    zoneEl.addEventListener('touchstart', function (e) { e.preventDefault(); tlist(e, onStart); }, opts);
-    zoneEl.addEventListener('touchmove', function (e) { e.preventDefault(); tlist(e, onMove); }, opts);
-    zoneEl.addEventListener('touchend', function (e) { e.preventDefault(); tlist(e, function (id) { onEnd(id); }); }, opts);
-    zoneEl.addEventListener('touchcancel', function (e) { tlist(e, function (id) { onEnd(id); }); }, opts);
+    var opts = { passive: false, capture: true };
+    document.addEventListener('touchstart', function (e) { tlist(e, onStart); }, opts);
+    document.addEventListener('touchmove', function (e) { tlist(e, onMove); }, opts);
+    document.addEventListener('touchend', function (e) { tlist(e, onEnd); }, opts);
+    document.addEventListener('touchcancel', function (e) { tlist(e, onEnd); }, opts);
+    window.addEventListener('blur', releaseAll);
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) releaseAll();
+    });
 
     // mouse (desktop testing)
     var mouseDown = false;
-    zoneEl.addEventListener('mousedown', function (e) { mouseDown = true; onStart(-1, e.clientX, e.clientY); });
+    document.addEventListener('mousedown', function (e) {
+      if (onStart(-1, e.clientX, e.clientY)) mouseDown = true;
+    });
     window.addEventListener('mousemove', function (e) { if (mouseDown) onMove(-1, e.clientX, e.clientY); });
     window.addEventListener('mouseup', function () { if (mouseDown) { mouseDown = false; onEnd(-1); } });
 
