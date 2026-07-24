@@ -33,6 +33,7 @@ APK:n hamnar i `platforms/android/app/build/outputs/apk/`.
 ## Struktur
 
 ```
+res/icon/android/ – appikon (adaptiv + legacy, alla densiteter)
 www/
   index.html      – appens vyer (analysera, historik, bibliotek, guide)
   css/index.css   – stil, mobilanpassad med mörkt läge
