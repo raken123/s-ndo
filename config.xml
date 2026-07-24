@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <widget id="io.github.raken123.snakefps" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>Snake FPS</name>
-    <description>First-person snake: roam the arena and eat the red apples before you bite yourself.</description>
+    <description>Snake in first or third person: roam the arena and eat the red apples before you bite yourself.</description>
     <author>raken123</author>
     <content src="index.html" />
     <allow-intent href="http://*/*" />

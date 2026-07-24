@@ -33,6 +33,14 @@
   .turnbtn:active { background: rgba(74,222,128,.45); }
   #btnL { left: max(18px, env(safe-area-inset-left)); }
   #btnR { right: max(18px, env(safe-area-inset-right)); }
+  #btnView {
+    position: absolute; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+    padding: 9px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,.3);
+    background: rgba(0,0,0,.42); color: #fff; font-size: 13px; font-weight: 700;
+    letter-spacing: .3px; white-space: nowrap; z-index: 20;
+    user-select: none; -webkit-user-select: none;
+  }
+  #btnView:active { background: rgba(74,222,128,.45); }
   .overlay {
     position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
     justify-content: center; gap: 14px; background: rgba(3,20,10,.78); color: #fff; text-align: center;
@@ -55,12 +63,14 @@
     <div class="score">🍎 <span id="score">0</span></div>
     <div class="sub">Length <span id="len">3</span> · Best <span id="best">0</span></div>
   </div>
+  <div id="btnView">👁 1st person</div>
   <div id="btnL" class="turnbtn">⟲</div>
   <div id="btnR" class="turnbtn">⟳</div>
 
   <div id="start" class="overlay">
     <h1>SNAKE <span>FPS</span></h1>
-    <p>You are the snake. Hunt the red apples in first person — turn left and right, but never bite your own tail.</p>
+    <p>You are the snake. Hunt the red apples — turn left and right, but never bite your own tail.</p>
+    <p>👁 Tap the badge up top to swap between <b>first person</b> and <b>third person</b> (key: V)</p>
     <p>🕹️ Swipe or use the ⟲ ⟳ buttons · keyboard: ← → or A/D</p>
     <div class="tap">Tap to start</div>
   </div>
