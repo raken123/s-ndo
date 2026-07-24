@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.rakenlab.rocketcars" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>Rocket Cars</name>
+    <description>Car football: boost, jump, double jump, flip and fly.</description>
+    <author email="dev@example.com" href="https://example.com">Rocket Cars</author>
+
+    <content src="index.html" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+
+    <preference name="Orientation" value="landscape" />
+    <preference name="Fullscreen" value="true" />
+    <preference name="DisallowOverscroll" value="true" />
+    <preference name="BackgroundColor" value="0xff04060d" />
+    <preference name="android-minSdkVersion" value="24" />
+    <preference name="android-targetSdkVersion" value="36" />
+    <preference name="android-compileSdkVersion" value="36" />
+    <preference name="AndroidWindowSplashScreenBackground" value="#04060d" />
+
+    <platform name="android">
+        <icon density="ldpi" src="res/android/icon-ldpi.png" />
+        <icon density="mdpi" src="res/android/icon-mdpi.png" />
+        <icon density="hdpi" src="res/android/icon-hdpi.png" />
+        <icon density="xhdpi" src="res/android/icon-xhdpi.png" />
+        <icon density="xxhdpi" src="res/android/icon-xxhdpi.png" />
+        <icon density="xxxhdpi" src="res/android/icon-xxxhdpi.png" />
+        <preference name="AndroidXEnabled" value="true" />
+    </platform>
+</widget>

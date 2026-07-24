@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' data: gap: 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data:; script-src 'self' 'unsafe-inline'">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
+  <title>Rocket Cars</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <!-- touch surface: sits under the HUD buttons -->
+  <div id="touchzone"></div>
+
+  <div id="stick"><div id="knob"></div></div>
+
+  <!-- ------------------------------------------------------- in-game HUD -->
+  <div id="hud" class="hidden">
+    <div id="scorebar">
+      <div class="team blue"><span class="tag">BLUE</span><span id="scoreB">0</span></div>
+      <div id="clock">3:00</div>
+      <div class="team orange"><span id="scoreO">0</span><span class="tag">ORANGE</span></div>
+    </div>
+
+    <div id="topright">
+      <button id="btnCam" class="mini">BALL CAM</button>
+      <button id="btnPause" class="mini">II</button>
+    </div>
+
+    <div id="boostmeter">
+      <div id="boostArc"><div id="boostInner"><span id="boostNum">34</span></div></div>
+      <div class="blabel">BOOST</div>
+    </div>
+
+    <div id="pad">
+      <button class="btn big boost" data-act="boost"><span>BOOST</span></button>
+      <button class="btn big jump" data-act="jump"><span>JUMP</span></button>
+      <button class="btn big gas"  data-act="gas"><span>GAS</span></button>
+      <button class="btn sm roll"  data-act="roll"><span>DRIFT<br>ROLL</span></button>
+      <button class="btn sm rev"   data-act="rev"><span>BRAKE</span></button>
+    </div>
+
+    <div id="msg"><div id="msgBig"></div><div id="msgSmall"></div></div>
+  </div>
+
+  <!-- ------------------------------------------------------------- menu -->
+  <div id="menu">
+    <div class="logo">
+      <div class="l1">ROCKET</div>
+      <div class="l2">CARS</div>
+      <div class="l3">soccer, but you drive</div>
+    </div>
+
+    <div class="row">
+      <span class="lbl">OPPONENT</span>
+      <button data-diff="0" class="opt">ROOKIE</button>
+      <button data-diff="1" class="opt sel">PRO</button>
+      <button data-diff="2" class="opt">ALL-STAR</button>
+    </div>
+    <div class="row">
+      <span class="lbl">MATCH</span>
+      <button data-len="120" class="opt">2 MIN</button>
+      <button data-len="180" class="opt sel">3 MIN</button>
+      <button data-len="300" class="opt">5 MIN</button>
+    </div>
+
+    <div class="row">
+      <button id="play" class="cta">PLAY</button>
+      <button id="howto" class="opt">HOW TO PLAY</button>
+      <button id="invert" class="opt">AIR PITCH: INVERTED</button>
+    </div>
+  </div>
+
+  <!-- ------------------------------------------------------------- help -->
+  <div id="help" class="overlay hidden">
+    <div class="panel">
+      <h2>HOW TO PLAY</h2>
+      <div class="cols">
+        <div>
+          <h3>DRIVING</h3>
+          <p><b>Left thumb</b> anywhere on the left half is a floating stick — left/right steers.</p>
+          <p><b>GAS / BRAKE</b> drive forward and reverse. <b>DRIFT</b> powerslides around corners.</p>
+          <p><b>BOOST</b> burns your boost meter for speed — and it is the only way to fly.</p>
+          <p>Drive over <b>yellow pads</b> for +12 boost, <b>big orange rings</b> for a full 100.</p>
+        </div>
+        <div>
+          <h3>AIR &amp; TRICKS</h3>
+          <p><b>JUMP</b> to hop — hold it for a higher jump.</p>
+          <p><b>DOUBLE JUMP</b> — tap JUMP again in the air with the stick centred.</p>
+          <p><b>FLIP / DODGE</b> — tap JUMP again while holding a direction. Forward flips hit hardest.</p>
+          <p><b>FRONT FLICK</b> — balance the ball on your nose, then flip forward into it: the spin launches it.</p>
+          <p><b>FLY</b> — jump, aim the nose with the stick, then hold BOOST. Hold <b>DRIFT</b> in the air to air-roll.</p>
+          <p>You can drive up the <b>walls</b> and across the <b>ceiling</b> if you carry enough speed.</p>
+        </div>
+      </div>
+      <button id="helpClose" class="cta">GOT IT</button>
+    </div>
+  </div>
+
+  <!-- ------------------------------------------------------------ pause -->
+  <div id="pause" class="overlay hidden">
+    <div class="panel small">
+      <h2>PAUSED</h2>
+      <button id="resume" class="cta">RESUME</button>
+      <button id="quit" class="opt">QUIT MATCH</button>
+    </div>
+  </div>
+
+  <!-- --------------------------------------------------------- game over -->
+  <div id="over" class="overlay hidden">
+    <div class="panel small">
+      <h2 id="overTitle">YOU WIN</h2>
+      <div id="overScore" class="bigscore">0 - 0</div>
+      <button id="again" class="cta">REMATCH</button>
+      <button id="toMenu" class="opt">MENU</button>
+    </div>
+  </div>
+
+  <div id="loading">LOADING…</div>
+
+  <script src="js/three.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/arena.js"></script>
+  <script src="js/physics.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/game.js"></script>
+  <script src="cordova.js"></script>
+  <script>
+    (function () {
+      var booted = false;
+      function go() {
+        if (booted) return; booted = true;
+        try { RC.boot(); }
+        catch (e) {
+          document.getElementById('loading').textContent = 'ERROR: ' + e.message;
+          document.getElementById('loading').classList.remove('hidden');
+          throw e;
+        }
+      }
+      document.addEventListener('deviceready', go, false);
+      window.addEventListener('load', function () { setTimeout(go, 300); });
+    })();
+  </script>
+</body>
+</html>
