@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="se.sando.eskilgrytan" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>Eskil i Grytan</name>
+    <description>Fånga maten i grytan — ett kritritat fångarspel.</description>
+    <author email="aydaslim75@gmail.com" href="https://github.com/raken123/s-ndo">Sändo</author>
+
+    <content src="index.html" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+
+    <preference name="Orientation" value="portrait" />
+    <preference name="Fullscreen" value="false" />
+    <preference name="DisallowOverscroll" value="true" />
+    <preference name="BackgroundColor" value="0xfffaf8f4" />
+
+    <platform name="android">
+        <preference name="AndroidWindowSplashScreenBackground" value="#faf8f4" />
+        <preference name="AndroidWindowSplashScreenAnimatedIcon" value="res/splash-icon.png" />
+
+        <icon density="ldpi" src="res/icon/android/ldpi.png" />
+        <icon density="mdpi" src="res/icon/android/mdpi.png" />
+        <icon density="hdpi" src="res/icon/android/hdpi.png" />
+        <icon density="xhdpi" src="res/icon/android/xhdpi.png" />
+        <icon density="xxhdpi" src="res/icon/android/xxhdpi.png" />
+        <icon density="xxxhdpi" src="res/icon/android/xxxhdpi.png" />
+    </platform>
+</widget>
