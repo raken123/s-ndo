@@ -1,0 +1,3003 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob: gap: content:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob: mediastream:; connect-src 'self' blob: data:">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="format-detection" content="telephone=no">
+<meta name="msapplication-tap-highlight" content="no">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0d0f1a">
+<title>Sändo Fandom — bygg din publik</title>
+<style>
+/* ============================================================
+   Sändo Fandom — designsystem
+   Grund: indigo-brytande nästan-svart, panelerna lyfter med hårfina
+   linjer. Accentfärgen (cyan) är reserverad för handling; rosa är
+   enbart gillningar; grön/gul är status. Ljust tema delar samma
+   tokens och får samma omsorg.
+   ============================================================ */
+:root{
+  --ground:#0d0f1a; --ground-2:#11142330; --panel:#161a2b; --panel-2:#1d2238;
+  --line:rgba(255,255,255,.09); --line-strong:rgba(255,255,255,.16);
+  --ink:#eef1fa; --ink-dim:#c3c9de; --muted:#8b93b0;
+  --brand:#6366f1; --brand-soft:rgba(99,102,241,.16); --brand-ink:#a5b4fc;
+  --accent:#22d3ee; --accent-soft:rgba(34,211,238,.14);
+  --hot:#fb7185; --ok:#34d399; --warn:#fbbf24;
+  --shadow:0 18px 40px -22px rgba(0,0,0,.9);
+  --r:16px; --r-sm:11px; --r-pill:999px;
+  --tap:rgba(255,255,255,.06);
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --ground:#f2f4fb; --ground-2:#ffffff40; --panel:#ffffff; --panel-2:#f6f7fd;
+    --line:rgba(21,27,48,.10); --line-strong:rgba(21,27,48,.20);
+    --ink:#151b30; --ink-dim:#39415f; --muted:#5f6784;
+    --brand:#4f46e5; --brand-soft:rgba(79,70,229,.10); --brand-ink:#4338ca;
+    --accent:#0e9bb8; --accent-soft:rgba(14,155,184,.12);
+    --hot:#e11d48; --ok:#0f9d58; --warn:#b45309;
+    --shadow:0 14px 34px -20px rgba(21,27,48,.45);
+    --tap:rgba(21,27,48,.05);
+  }
+}
+:root[data-theme="light"]{
+  --ground:#f2f4fb; --ground-2:#ffffff40; --panel:#ffffff; --panel-2:#f6f7fd;
+  --line:rgba(21,27,48,.10); --line-strong:rgba(21,27,48,.20);
+  --ink:#151b30; --ink-dim:#39415f; --muted:#5f6784;
+  --brand:#4f46e5; --brand-soft:rgba(79,70,229,.10); --brand-ink:#4338ca;
+  --accent:#0e9bb8; --accent-soft:rgba(14,155,184,.12);
+  --hot:#e11d48; --ok:#0f9d58; --warn:#b45309;
+  --shadow:0 14px 34px -20px rgba(21,27,48,.45);
+  --tap:rgba(21,27,48,.05);
+}
+:root[data-theme="dark"]{
+  --ground:#0d0f1a; --ground-2:#11142330; --panel:#161a2b; --panel-2:#1d2238;
+  --line:rgba(255,255,255,.09); --line-strong:rgba(255,255,255,.16);
+  --ink:#eef1fa; --ink-dim:#c3c9de; --muted:#8b93b0;
+  --brand:#6366f1; --brand-soft:rgba(99,102,241,.16); --brand-ink:#a5b4fc;
+  --accent:#22d3ee; --accent-soft:rgba(34,211,238,.14);
+  --hot:#fb7185; --ok:#34d399; --warn:#fbbf24;
+  --shadow:0 18px 40px -22px rgba(0,0,0,.9);
+  --tap:rgba(255,255,255,.06);
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--ground); color:var(--ink); font-family:var(--sans);
+  font-size:15px; line-height:1.5; overscroll-behavior-y:none;
+  -webkit-font-smoothing:antialiased;
+}
+img,canvas,video{max-width:100%;display:block}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.sprite{position:absolute;width:0;height:0;overflow:hidden}
+.ic{width:1.25em;height:1.25em;fill:none;stroke:currentColor;stroke-width:1.9;
+    stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.solid{fill:currentColor;stroke:none}
+
+/* ---------- Skal ---------- */
+.app{min-height:100dvh;display:flex;flex-direction:column}
+.topbar{
+  position:sticky;top:0;z-index:40;padding:calc(var(--safe-top) + 10px) 16px 10px;
+  display:flex;align-items:center;gap:12px;
+  background:color-mix(in srgb,var(--ground) 88%,transparent);
+  backdrop-filter:blur(14px);border-bottom:1px solid var(--line);
+}
+.mark{width:32px;height:32px;border-radius:9px;flex:none;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,var(--brand),var(--accent));display:grid;place-items:center}
+.mark svg{width:20px;height:20px;fill:#fff}
+.wordmark{font-weight:800;letter-spacing:-.03em;font-size:17px;line-height:1.1}
+.wordmark span{display:block;font-size:10.5px;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted)}
+.follow-chip{
+  margin-left:auto;display:flex;align-items:center;gap:7px;padding:6px 12px 6px 9px;
+  border-radius:var(--r-pill);background:var(--panel);border:1px solid var(--line);
+  font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;
+}
+.follow-chip .ic{width:15px;height:15px;color:var(--accent)}
+.follow-chip b{font-weight:700}
+.icon-btn{background:var(--panel);border:1px solid var(--line);color:var(--ink-dim);
+  width:36px;height:36px;border-radius:10px;display:grid;place-items:center}
+.icon-btn:hover{background:var(--panel-2);color:var(--ink)}
+
+main{flex:1;padding:18px 16px 108px;width:100%;max-width:760px;margin:0 auto}
+.view{display:none;animation:rise .26s ease both}
+.view.on{display:block}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ---------- Typografi ---------- */
+h1,h2,h3,h4{margin:0;letter-spacing:-.03em;text-wrap:balance;font-weight:800}
+h1{font-size:27px;line-height:1.12}
+h2{font-size:20px;line-height:1.2}
+h3{font-size:16px;letter-spacing:-.015em}
+.eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:6px}
+.lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:60ch}
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:26px 0 12px}
+.section-head:first-child{margin-top:0}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ---------- Byggstenar ---------- */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:10px;align-items:center}
+.row.wrap{flex-wrap:wrap}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 16px;border-radius:12px;border:1px solid transparent;
+  background:var(--brand);color:#fff;font-weight:650;font-size:14.5px;
+  transition:transform .12s ease,filter .12s ease;
+}
+.btn:hover{filter:brightness(1.08)}
+.btn:active{transform:scale(.975)}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.btn.ghost{background:var(--panel);border-color:var(--line-strong);color:var(--ink)}
+.btn.ghost:hover{background:var(--panel-2)}
+.btn.quiet{background:transparent;border-color:transparent;color:var(--muted);padding:8px 10px}
+.btn.quiet:hover{color:var(--ink);background:var(--tap)}
+.btn.wide{width:100%}
+.btn{white-space:nowrap}
+.row > input,.row > select{flex:1;min-width:0}
+.btn.sm{padding:8px 12px;font-size:13.5px;border-radius:10px}
+.btn.hot{background:var(--hot)}
+.btn .ic{width:17px;height:17px}
+label.fld{display:block;font-size:12px;font-weight:650;color:var(--muted);margin-bottom:5px;
+  letter-spacing:.02em}
+input[type=text],input[type=date],input[type=time],input[type=number],textarea,select{
+  width:100%;padding:11px 13px;border-radius:11px;background:var(--panel-2);
+  border:1px solid var(--line);color:var(--ink);font-size:14.5px;
+}
+textarea{resize:vertical;min-height:74px;line-height:1.45}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--brand);
+  box-shadow:0 0 0 3px var(--brand-soft)}
+select{appearance:none;background-image:none}
+input[type=range]{width:100%;accent-color:var(--brand);height:26px}
+input[type=color]{width:100%;height:38px;padding:2px;border-radius:10px;border:1px solid var(--line);
+  background:var(--panel-2)}
+.hint{font-size:12px;color:var(--muted);line-height:1.45}
+
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  flex:none;padding:8px 13px;border-radius:var(--r-pill);border:1px solid var(--line);
+  background:var(--panel);color:var(--ink-dim);font-size:13.5px;font-weight:600;white-space:nowrap;
+}
+.chip[aria-pressed="true"]{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-ink)}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:var(--r-pill);
+  font-size:11.5px;font-weight:700;letter-spacing:.02em}
+.pill.foto{background:var(--accent-soft);color:var(--accent)}
+.pill.affisch{background:var(--brand-soft);color:var(--brand-ink)}
+.pill.video{background:rgba(251,113,133,.16);color:var(--hot)}
+.pill.event{background:rgba(251,191,36,.16);color:var(--warn)}
+.pill.ok{background:rgba(52,211,153,.15);color:var(--ok)}
+
+/* ---------- Hem ---------- */
+.hero{
+  position:relative;overflow:hidden;border-radius:22px;padding:20px;
+  background:linear-gradient(150deg,#312e81,#1e1b4b 45%,#083344);
+  border:1px solid var(--line-strong);color:#fff;
+}
+:root[data-theme="light"] .hero,:root:not([data-theme="dark"]) .hero{color:#fff}
+.hero canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.85}
+.hero .inner{position:relative}
+.hero h1{font-size:25px}
+.hero p{margin:8px 0 0;font-size:13.5px;color:#c7d2fe;max-width:44ch}
+.hero .cta{display:flex;gap:9px;margin-top:16px;flex-wrap:wrap}
+.hero .btn.ghost{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.24);color:#fff}
+.hero .btn.ghost:hover{background:rgba(255,255,255,.2)}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+.stat .k{font-size:10.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+.stat .v{font-family:var(--mono);font-size:23px;font-weight:700;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;margin-top:3px}
+.stat .d{font-size:12px;color:var(--ok);font-weight:650;display:flex;align-items:center;gap:3px}
+.stat .d.flat{color:var(--muted)}
+.spark{width:100%;height:34px;margin-top:8px}
+.goal{display:flex;align-items:center;gap:13px}
+.ring{width:64px;height:64px;flex:none}
+.bar{height:7px;border-radius:99px;background:var(--panel-2);overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--accent));
+  border-radius:99px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.action-tile{
+  display:flex;flex-direction:column;gap:9px;align-items:flex-start;text-align:left;
+  padding:14px;border-radius:var(--r);background:var(--panel);border:1px solid var(--line);
+  color:var(--ink);transition:transform .14s ease,border-color .14s ease;
+}
+.action-tile:hover{transform:translateY(-2px);border-color:var(--line-strong)}
+.action-tile .ic{width:20px;height:20px;color:var(--accent)}
+.action-tile b{font-size:14.5px;letter-spacing:-.01em}
+.action-tile span{font-size:12px;color:var(--muted);line-height:1.35}
+.tip{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--line)}
+.tip:last-child{border-bottom:0;padding-bottom:0}
+.tip .n{font-family:var(--mono);font-size:12px;color:var(--brand-ink);font-weight:700;
+  border:1px solid var(--line);border-radius:8px;padding:3px 7px;height:fit-content}
+.tip b{display:block;font-size:14px}
+.tip p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+
+/* ---------- Studio (foto/affisch) ---------- */
+.stage{
+  background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);
+  padding:12px;display:grid;place-items:center;min-height:230px;position:relative;
+}
+.stage canvas{border-radius:8px;box-shadow:var(--shadow);max-height:52vh;width:auto;
+  touch-action:none;cursor:grab}
+.stage.empty{color:var(--muted);font-size:13.5px;text-align:center}
+.tool-tabs{display:flex;gap:4px;background:var(--panel-2);padding:4px;border-radius:12px;
+  border:1px solid var(--line)}
+.tool-tabs button{flex:1;padding:8px 4px;border:0;background:transparent;border-radius:9px;
+  font-size:13px;font-weight:650;color:var(--muted)}
+.tool-tabs button[aria-selected="true"]{background:var(--panel);color:var(--ink);
+  box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.tool-pane{display:none;padding-top:12px}
+.tool-pane.on{display:block}
+.slider-row{display:grid;grid-template-columns:76px 1fr 42px;align-items:center;gap:10px;
+  padding:3px 0}
+.slider-row label{font-size:12.5px;color:var(--muted);font-weight:600}
+.slider-row output{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);text-align:right;
+  font-variant-numeric:tabular-nums}
+.preset-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.preset{border:1px solid var(--line);border-radius:12px;background:var(--panel-2);padding:0;
+  overflow:hidden;color:var(--ink)}
+.preset[aria-pressed="true"]{border-color:var(--brand);box-shadow:0 0 0 2px var(--brand-soft)}
+.preset .sw{height:40px;width:100%}
+.preset em{display:block;font-style:normal;font-size:11px;font-weight:650;padding:5px 2px;
+  color:var(--ink-dim)}
+.sticker-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.sticker-grid button{font-size:19px;padding:6px 0;border-radius:9px;border:1px solid var(--line);
+  background:var(--panel-2);line-height:1}
+.sticker-grid button:hover{background:var(--brand-soft);border-color:var(--brand)}
+.layer-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.layer-item{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:10px;
+  background:var(--panel-2);border:1px solid var(--line);font-size:13px}
+.layer-item span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-dim)}
+.layer-item button{background:none;border:0;color:var(--muted);padding:2px}
+.layer-item button:hover{color:var(--hot)}
+
+/* ---------- Video ---------- */
+.recorder{position:relative;border-radius:var(--r);overflow:hidden;background:#000;
+  aspect-ratio:9/16;max-height:56vh;margin:0 auto;display:grid;place-items:center}
+.recorder video{width:100%;height:100%;object-fit:cover}
+.recorder .off{color:#94a3b8;font-size:13px;text-align:center;padding:24px}
+.prompter{
+  position:absolute;left:0;right:0;bottom:0;padding:16px 14px 18px;
+  background:linear-gradient(transparent,rgba(0,0,0,.82));color:#fff;
+  font-size:16px;font-weight:650;line-height:1.35;text-shadow:0 1px 8px rgba(0,0,0,.6);
+}
+.prompter small{display:block;font-size:11px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:#a5b4fc;margin-bottom:5px}
+.rec-dot{position:absolute;top:12px;left:12px;display:flex;align-items:center;gap:7px;
+  background:rgba(0,0,0,.55);padding:5px 11px;border-radius:99px;color:#fff;font-size:12px;
+  font-family:var(--mono);opacity:0;transition:opacity .2s}
+.rec-dot.on{opacity:1}
+.rec-dot i{width:8px;height:8px;border-radius:99px;background:#ef4444;display:block;
+  animation:blink 1s steps(2,end) infinite}
+@keyframes blink{50%{opacity:.2}}
+.countdown{position:absolute;inset:0;display:none;place-items:center;background:rgba(0,0,0,.6);
+  color:#fff;font-size:74px;font-weight:800;font-family:var(--mono)}
+.countdown.on{display:grid}
+.rec-btn{width:66px;height:66px;border-radius:99px;border:4px solid var(--line-strong);
+  background:var(--hot);display:grid;place-items:center;margin:0 auto}
+.rec-btn.stop{background:var(--panel)}
+.rec-btn .ic{width:24px;height:24px;color:#fff}
+.rec-btn.stop .ic{color:var(--hot)}
+
+/* ---------- Vägg ---------- */
+.wall{display:grid;gap:14px}
+.post{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.post-head{display:flex;align-items:center;gap:10px;padding:11px 13px}
+.avatar{width:34px;height:34px;border-radius:99px;flex:none;display:grid;place-items:center;
+  font-weight:800;font-size:13px;color:#fff;letter-spacing:-.02em;overflow:hidden}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.post-head .who{flex:1;min-width:0}
+.post-head .who b{font-size:14px;display:block;letter-spacing:-.01em}
+.post-head .who small{color:var(--muted);font-size:11.5px;font-family:var(--mono)}
+.follow-btn{border:1px solid var(--line-strong);background:transparent;color:var(--ink);
+  padding:5px 11px;border-radius:99px;font-size:12.5px;font-weight:650}
+.follow-btn[aria-pressed="true"]{background:var(--brand-soft);border-color:var(--brand);
+  color:var(--brand-ink)}
+.post-media{background:var(--panel-2);position:relative}
+.post-media img,.post-media video{width:100%;display:block;max-height:min(72vh,640px);
+  object-fit:contain;margin:0 auto}
+.post-media .play{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.post-media .play i{width:52px;height:52px;border-radius:99px;background:rgba(0,0,0,.5);
+  display:grid;place-items:center;backdrop-filter:blur(4px)}
+.post-body{padding:11px 13px 13px}
+.post-body p{margin:0 0 8px;font-size:14px;line-height:1.45}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.tag{font-size:12px;color:var(--accent);font-weight:600}
+.post-actions{display:flex;gap:6px;align-items:center}
+.act{display:flex;align-items:center;gap:6px;background:none;border:0;color:var(--muted);
+  font-size:13px;font-weight:650;padding:6px 8px;border-radius:9px;font-variant-numeric:tabular-nums}
+.act:hover{background:var(--tap);color:var(--ink)}
+.act .ic{width:18px;height:18px}
+.act.liked{color:var(--hot)}
+.act.liked .ic{fill:var(--hot);stroke:var(--hot)}
+.trend{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.trend:last-child{border:0}
+.trend .r{font-family:var(--mono);font-size:12px;color:var(--muted);width:18px}
+.trend b{flex:1;font-size:14px;color:var(--accent)}
+.trend small{font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+/* ---------- Event ---------- */
+.event-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+  padding:14px;display:flex;gap:13px;align-items:flex-start;width:100%;text-align:left;color:var(--ink)}
+.event-card:hover{border-color:var(--line-strong)}
+.datebox{width:52px;flex:none;border-radius:12px;background:var(--panel-2);border:1px solid var(--line);
+  text-align:center;padding:7px 0;font-family:var(--mono)}
+.datebox b{display:block;font-size:19px;line-height:1;font-weight:700}
+.datebox small{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.event-card .meta{flex:1;min-width:0}
+.event-card .meta h3{margin-bottom:3px}
+.event-card .meta p{margin:0;font-size:12.5px;color:var(--muted)}
+.countdown-strip{display:flex;gap:8px;margin-top:10px}
+.cd-unit{flex:1;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;
+  padding:7px 4px;text-align:center}
+.cd-unit b{display:block;font-family:var(--mono);font-size:17px;font-variant-numeric:tabular-nums}
+.cd-unit small{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.check{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.check:last-child{border:0}
+.check button{width:21px;height:21px;border-radius:6px;border:1.5px solid var(--line-strong);
+  background:transparent;display:grid;place-items:center;flex:none;padding:0}
+.check button[aria-pressed="true"]{background:var(--ok);border-color:var(--ok)}
+.check button .ic{width:13px;height:13px;color:#052e16;opacity:0}
+.check button[aria-pressed="true"] .ic{opacity:1}
+.check span{flex:1;font-size:13.5px}
+.check.done span{color:var(--muted);text-decoration:line-through}
+.guest{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.guest:last-child{border:0}
+.guest .n{flex:1;font-size:13.5px}
+.rsvp{display:flex;gap:4px}
+.rsvp button{border:1px solid var(--line);background:var(--panel-2);border-radius:8px;
+  padding:3px 8px;font-size:11.5px;font-weight:650;color:var(--muted)}
+.rsvp button[aria-pressed="true"]{background:var(--brand-soft);border-color:var(--brand);
+  color:var(--brand-ink)}
+
+/* ---------- Profil ---------- */
+.profile-head{display:flex;gap:14px;align-items:center}
+.profile-head .avatar{width:66px;height:66px;font-size:24px}
+.badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:9px}
+.badge{border:1px solid var(--line);border-radius:12px;padding:11px 9px;text-align:center;
+  background:var(--panel-2)}
+.badge.locked{opacity:.42}
+.badge .ic{width:20px;height:20px;color:var(--warn);margin:0 auto 5px}
+.badge b{display:block;font-size:11.5px;letter-spacing:-.01em}
+.badge small{font-size:10px;color:var(--muted);line-height:1.3;display:block;margin-top:2px}
+.gal{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.gal button{aspect-ratio:1;border:0;padding:0;border-radius:10px;overflow:hidden;background:var(--panel-2)}
+.gal img,.gal video{width:100%;height:100%;object-fit:cover}
+
+/* ---------- Navigering ---------- */
+.tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;
+  padding:6px 6px calc(var(--safe-bot) + 6px);
+  background:color-mix(in srgb,var(--ground) 92%,transparent);
+  backdrop-filter:blur(16px);border-top:1px solid var(--line);
+}
+.tabbar button{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;
+  background:none;border:0;color:var(--muted);font-size:10px;font-weight:650;letter-spacing:.01em;
+  border-radius:12px;
+}
+.tabbar button .ic{width:21px;height:21px}
+.tabbar button[aria-current="page"]{color:var(--brand-ink)}
+.tabbar button[aria-current="page"] .ic{color:var(--brand-ink)}
+
+/* ---------- Toast / ark ---------- */
+.toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--safe-bot) + 82px);
+  z-index:90;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;
+  width:max-content;max-width:92vw}
+.toast{background:var(--panel);border:1px solid var(--line-strong);border-radius:99px;
+  padding:9px 16px;font-size:13.5px;font-weight:650;box-shadow:var(--shadow);
+  animation:pop .3s cubic-bezier(.2,1.4,.4,1) both}
+.toast.gain{background:linear-gradient(120deg,var(--brand),var(--accent));color:#fff;border-color:transparent}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.94)}to{opacity:1;transform:none}}
+.sheet-wrap{position:fixed;inset:0;z-index:80;display:none}
+.sheet-wrap.on{display:block}
+.sheet-wrap .scrim{position:absolute;inset:0;background:rgba(5,7,15,.66);backdrop-filter:blur(3px)}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:88dvh;overflow-y:auto;
+  background:var(--panel);border-radius:22px 22px 0 0;border-top:1px solid var(--line-strong);
+  padding:8px 16px calc(var(--safe-bot) + 20px);animation:up .28s cubic-bezier(.2,.9,.25,1) both}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+.sheet .handle{width:38px;height:4px;border-radius:99px;background:var(--line-strong);
+  margin:6px auto 14px}
+.sheet-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.sheet-head h2{flex:1}
+.empty{text-align:center;padding:34px 18px;color:var(--muted);font-size:13.5px;
+  border:1px dashed var(--line-strong);border-radius:var(--r)}
+.empty .ic{width:26px;height:26px;margin:0 auto 10px;color:var(--muted)}
+
+@media (min-width:900px){
+  .tabbar{
+    left:0;top:0;bottom:0;right:auto;width:212px;flex-direction:column;justify-content:flex-start;
+    gap:2px;border-top:0;border-right:1px solid var(--line);padding:18px 12px 12px;
+  }
+  .tabbar button{flex:none;flex-direction:row;justify-content:flex-start;gap:11px;
+    padding:11px 13px;font-size:14px}
+  .tabbar button[aria-current="page"]{background:var(--brand-soft)}
+  .topbar{margin-left:212px;padding:16px 34px 12px}
+  main{padding:26px 34px 60px;margin-left:212px;max-width:860px}
+  .toasts{bottom:26px;left:calc(50% + 106px)}
+  .sheet{left:auto;right:auto;width:min(560px,92vw);left:50%;transform:translateX(-50%);
+    bottom:24px;border-radius:22px;border:1px solid var(--line-strong)}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms !important;transition-duration:.001ms !important}
+}
+</style>
+</head>
+<body>
+<svg class="sprite" aria-hidden="true">
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 2.6c0 4.6 2.5 8.2 8.2 9.4-5.7 1.2-8.2 4.8-8.2 9.4 0-4.6-2.5-8.2-8.2-9.4C9.5 10.8 12 7.2 12 2.6Z"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 10.4 12 3.6l8.5 6.8V20a1 1 0 0 1-1 1h-5v-6h-5v6h-5a1 1 0 0 1-1-1Z"/></symbol>
+  <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M8.5 6 10 3.5h4L15.5 6"/><circle cx="12" cy="13" r="3.6"/></symbol>
+  <symbol id="i-poster" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8 8h8M8 12h5M8 16h8"/></symbol>
+  <symbol id="i-video" viewBox="0 0 24 24"><rect x="2.5" y="6" width="13" height="12" rx="3"/><path d="M15.5 11.2l5-3v7.6l-5-3z"/></symbol>
+  <symbol id="i-wall" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5c1.4-4 4.1-6 7.5-6s6.1 2 7.5 6"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.4"/><path d="M2.8 20c1.1-3.3 3.4-5 6.2-5s5.1 1.7 6.2 5M16 5.4a3.4 3.4 0 0 1 0 6.4M17.6 15.4c2 .7 3.2 2.2 3.9 4.6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3.5v11m0 0 4-4m-4 4-4-4M4.5 17.5v1.5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-1.5"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.6"/><circle cx="17.5" cy="6" r="2.6"/><circle cx="17.5" cy="18" r="2.6"/><path d="m8.4 10.8 6.7-3.4m0 9.2-6.7-3.4"/></symbol>
+  <symbol id="i-comment" viewBox="0 0 24 24"><path d="M4 5.5h16a1 1 0 0 1 1 1v8.6a1 1 0 0 1-1 1H9.5L5 20v-3.9H4a1 1 0 0 1-1-1V6.5a1 1 0 0 1 1-1Z"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9 7V4.8h6V7m-8 0 .9 12.3a1.6 1.6 0 0 0 1.6 1.5h5a1.6 1.6 0 0 0 1.6-1.5L17 7"/></symbol>
+  <symbol id="i-square" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
+  <symbol id="i-rec" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></symbol>
+  <symbol id="i-medal" viewBox="0 0 24 24"><circle cx="12" cy="14.5" r="5.5"/><path d="M8.5 9.4 6 2.8h12l-2.5 6.6"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></symbol>
+  <symbol id="i-magic" viewBox="0 0 24 24"><path d="m4 20 11-11M13.5 4.5 15 3l1.5 1.5L18 6l-1.5 1.5L15 9l-1.5-1.5L12 6ZM19 13l.8 1.7 1.7.8-1.7.8-.8 1.7-.8-1.7-1.7-.8 1.7-.8Z"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 21c3.6 0 6-2.4 6-5.6 0-4.3-4.2-5.1-3.2-11.4-3 1.3-5.2 4.4-5.2 6.8 0 1.3.5 2.2 1 2.9-1.4 0-2.5-1-2.9-2.3A6.6 6.6 0 0 0 6 15.4C6 18.6 8.4 21 12 21Z"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s6.5-6 6.5-11a6.5 6.5 0 1 0-13 0C5.5 15 12 21 12 21Z"/><circle cx="12" cy="10" r="2.4"/></symbol>
+</svg>
+
+<div class="app">
+  <header class="topbar">
+    <div class="mark"><svg viewBox="0 0 24 24"><use href="#i-spark"/></svg></div>
+    <div class="wordmark">Sändo<span>Fandom</span></div>
+    <div class="follow-chip" title="Dina följare">
+      <svg class="ic"><use href="#i-users"/></svg><b id="chipFollowers">0</b>
+    </div>
+    <button class="icon-btn" id="themeBtn" aria-label="Byt tema">
+      <svg class="ic"><use href="#i-moon" id="themeIcon"/></svg>
+    </button>
+  </header>
+
+  <main>
+    <!-- ============ HEM ============ -->
+    <section class="view on" id="v-hem" aria-label="Hem">
+      <div class="hero">
+        <canvas id="heroCanvas" aria-hidden="true"></canvas>
+        <div class="inner">
+          <div class="eyebrow" style="color:#a5b4fc">Din fandom idag</div>
+          <h1 id="heroTitle">Dags att synas.</h1>
+          <p id="heroSub">Lägg upp något varje dag – väggen belönar de som dyker upp.</p>
+          <div class="cta">
+            <button class="btn" data-go="foto"><svg class="ic"><use href="#i-photo"/></svg>Redigera foto</button>
+            <button class="btn ghost" data-go="affisch"><svg class="ic"><use href="#i-poster"/></svg>Gör affisch</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid g2" style="margin-top:14px">
+        <div class="stat">
+          <div class="k">Följare</div><div class="v" id="stFollowers">0</div>
+          <div class="d" id="stFollowersD">＋0 idag</div>
+          <canvas class="spark" id="sparkFollowers" aria-hidden="true"></canvas>
+        </div>
+        <div class="stat">
+          <div class="k">Räckvidd</div><div class="v" id="stReach">0</div>
+          <div class="d" id="stReachD">senaste 7 dagarna</div>
+          <canvas class="spark" id="sparkReach" aria-hidden="true"></canvas>
+        </div>
+      </div>
+
+      <div class="grid g2" style="margin-top:12px">
+        <div class="stat"><div class="k">Inlägg</div><div class="v" id="stPosts">0</div>
+          <div class="d flat" id="stPostsD">foto · affisch · video</div></div>
+        <div class="stat"><div class="k">Streak</div><div class="v" id="stStreak">0</div>
+          <div class="d flat">dagar i rad</div></div>
+      </div>
+
+      <div class="card goal" style="margin-top:12px">
+        <svg class="ring" id="goalRing" viewBox="0 0 100 100" aria-hidden="true"></svg>
+        <div style="flex:1">
+          <div class="eyebrow">Nästa milstolpe</div>
+          <h3 id="goalLabel">100 följare</h3>
+          <p class="hint" id="goalHint" style="margin-top:4px"></p>
+        </div>
+      </div>
+
+      <div class="section-head"><h2>Skapa något</h2></div>
+      <div class="grid g2">
+        <button class="action-tile" data-go="foto">
+          <svg class="ic"><use href="#i-photo"/></svg>
+          <b>Fotoredigerare</b><span>Filter, ramar, text och stickers med stil.</span>
+        </button>
+        <button class="action-tile" data-go="affisch">
+          <svg class="ic"><use href="#i-poster"/></svg>
+          <b>Affischbyggare</b><span>Sex mallar för släpp, gigs och meetups.</span>
+        </button>
+        <button class="action-tile" data-go="video">
+          <svg class="ic"><use href="#i-video"/></svg>
+          <b>Kort video</b><span>Spela in en presentation med manus.</span>
+        </button>
+        <button class="action-tile" data-go="event">
+          <svg class="ic"><use href="#i-calendar"/></svg>
+          <b>Eventplanerare</b><span>Planera och få färdigt kampanjmaterial.</span>
+        </button>
+      </div>
+
+      <div class="section-head"><h2>Veckans utmaning</h2></div>
+      <div class="card" id="challengeCard"></div>
+
+      <div class="section-head"><h2>Så växer du</h2></div>
+      <div class="card" id="tipsCard"></div>
+    </section>
+
+    <!-- ============ FOTO ============ -->
+    <section class="view" id="v-foto" aria-label="Fotoredigerare">
+      <div class="eyebrow">Studio</div>
+      <h1>Fotoredigerare</h1>
+      <p class="lede">Välj en stil, sätt din text och publicera direkt på väggen.</p>
+
+      <div class="stage" id="photoStage" style="margin-top:14px">
+        <canvas id="photoCanvas" width="1080" height="1080"></canvas>
+      </div>
+
+      <div class="row wrap" style="margin-top:12px">
+        <button class="btn ghost sm" id="photoPick"><svg class="ic"><use href="#i-photo"/></svg>Välj bild</button>
+        <button class="btn ghost sm" id="photoDemo"><svg class="ic"><use href="#i-magic"/></svg>Testbild</button>
+        <span class="hint" style="margin-left:auto" id="photoSize"></span>
+      </div>
+      <input type="file" id="photoFile" accept="image/*" hidden>
+
+      <div class="tool-tabs" role="tablist" style="margin-top:14px">
+        <button role="tab" aria-selected="true" data-pane="p-stil">Stil</button>
+        <button role="tab" aria-selected="false" data-pane="p-just">Justera</button>
+        <button role="tab" aria-selected="false" data-pane="p-text">Text</button>
+        <button role="tab" aria-selected="false" data-pane="p-dekor">Dekor</button>
+      </div>
+
+      <div class="tool-pane on" id="p-stil">
+        <div class="preset-grid" id="stylePresets"></div>
+        <div class="section-head"><h3>Format</h3></div>
+        <div class="chips" id="photoRatios"></div>
+      </div>
+
+      <div class="tool-pane" id="p-just">
+        <div id="adjustRows"></div>
+        <button class="btn quiet sm" id="resetAdjust" style="margin-top:6px">Nollställ justeringar</button>
+      </div>
+
+      <div class="tool-pane" id="p-text">
+        <div class="stack">
+          <div><label class="fld" for="ptHead">Rubrik</label>
+            <input type="text" id="ptHead" placeholder="T.ex. NY EPISOD IKVÄLL" maxlength="42"></div>
+          <div><label class="fld" for="ptSub">Underrad</label>
+            <input type="text" id="ptSub" placeholder="@dittnamn · fredag 20:00" maxlength="52"></div>
+          <div class="grid g2">
+            <div><label class="fld" for="ptFont">Typsnitt</label>
+              <select id="ptFont"></select></div>
+            <div><label class="fld" for="ptPos">Placering</label>
+              <select id="ptPos">
+                <option value="bottom">Nederkant</option>
+                <option value="center">Mitten</option>
+                <option value="top">Överkant</option>
+              </select></div>
+          </div>
+          <div class="grid g2">
+            <div><label class="fld" for="ptColor">Färg</label><input type="color" id="ptColor" value="#ffffff"></div>
+            <div><label class="fld" for="ptSize">Storlek</label><input type="range" id="ptSize" min="40" max="130" value="74"></div>
+          </div>
+          <div class="chips" id="textPlates"></div>
+        </div>
+      </div>
+
+      <div class="tool-pane" id="p-dekor">
+        <div class="eyebrow">Ram</div>
+        <div class="chips" id="frameChips"></div>
+        <div class="section-head"><h3>Stickers</h3><span class="hint">Tryck för att lägga till · dra i bilden</span></div>
+        <div class="sticker-grid" id="stickerGrid"></div>
+        <div class="slider-row" style="margin-top:10px">
+          <label for="stSize">Storlek</label>
+          <input type="range" id="stSize" min="40" max="260" value="120">
+          <output id="stSizeOut">120</output>
+        </div>
+        <div class="layer-list" id="stickerLayers"></div>
+      </div>
+
+      <div class="row" style="margin-top:18px;gap:9px">
+        <button class="btn wide" id="photoPublish"><svg class="ic"><use href="#i-spark"/></svg>Publicera på väggen</button>
+        <button class="btn ghost" id="photoSave" aria-label="Spara bild"><svg class="ic"><use href="#i-download"/></svg></button>
+      </div>
+    </section>
+
+    <!-- ============ AFFISCH ============ -->
+    <section class="view" id="v-affisch" aria-label="Affischbyggare">
+      <div class="eyebrow">Studio</div>
+      <h1>Affischbyggare</h1>
+      <p class="lede">Sex mallar byggda för väggen. Fyll i, välj palett, publicera.</p>
+
+      <div class="stage" id="posterStage" style="margin-top:14px">
+        <canvas id="posterCanvas" width="1080" height="1350"></canvas>
+      </div>
+
+      <div class="section-head"><h3>Mall</h3></div>
+      <div class="chips" id="posterTemplates"></div>
+
+      <div class="section-head"><h3>Palett</h3></div>
+      <div class="preset-grid" id="posterPalettes"></div>
+
+      <div class="section-head"><h3>Innehåll</h3></div>
+      <div class="stack">
+        <div><label class="fld" for="poHead">Rubrik</label>
+          <input type="text" id="poHead" maxlength="34"></div>
+        <div><label class="fld" for="poSub">Underrubrik</label>
+          <input type="text" id="poSub" maxlength="60"></div>
+        <div class="grid g2">
+          <div><label class="fld" for="poDate">Datum / tid</label><input type="text" id="poDate" maxlength="30"></div>
+          <div><label class="fld" for="poPlace">Plats</label><input type="text" id="poPlace" maxlength="30"></div>
+        </div>
+        <div><label class="fld" for="poFoot">Fotrad</label><input type="text" id="poFoot" maxlength="40"></div>
+        <div class="grid g2">
+          <div><label class="fld" for="poLayout">Layout</label>
+            <select id="poLayout">
+              <option value="stack">Staplad</option>
+              <option value="center">Centrerad</option>
+              <option value="edge">Vänsterkant</option>
+              <option value="split">Delad</option>
+            </select></div>
+          <div><label class="fld" for="poPattern">Mönster</label>
+            <select id="poPattern">
+              <option value="none">Inget</option>
+              <option value="dots">Prickar</option>
+              <option value="lines">Linjer</option>
+              <option value="waves">Vågor</option>
+              <option value="grid">Rutnät</option>
+            </select></div>
+        </div>
+        <div class="grid g2">
+          <div><label class="fld" for="poFormat">Format</label>
+            <select id="poFormat">
+              <option value="45">Affisch 4:5</option>
+              <option value="916">Story 9:16</option>
+              <option value="11">Kvadrat 1:1</option>
+            </select></div>
+          <div><label class="fld">Foto i bakgrunden</label>
+            <button class="btn ghost sm wide" id="posterPick">Välj bild</button>
+            <input type="file" id="posterFile" accept="image/*" hidden></div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:18px;gap:9px">
+        <button class="btn wide" id="posterPublish"><svg class="ic"><use href="#i-spark"/></svg>Publicera på väggen</button>
+        <button class="btn ghost" id="posterSave" aria-label="Spara affisch"><svg class="ic"><use href="#i-download"/></svg></button>
+      </div>
+    </section>
+
+    <!-- ============ VIDEO ============ -->
+    <section class="view" id="v-video" aria-label="Korta videor">
+      <div class="eyebrow">Studio</div>
+      <h1>Korta videor</h1>
+      <p class="lede">Presentera dig på 30 sekunder. Manuset rullar i bild medan du spelar in.</p>
+
+      <div class="section-head"><h3>Manus</h3></div>
+      <div class="chips" id="scriptChips"></div>
+
+      <div class="recorder" id="recorder" style="margin-top:14px">
+        <div class="off" id="camOff">
+          <svg class="ic" style="width:26px;height:26px;margin:0 auto 8px"><use href="#i-video"/></svg>
+          Kameran är avstängd.<br>Starta den eller ladda upp ett klipp.
+        </div>
+        <video id="camView" playsinline muted hidden></video>
+        <video id="clipView" playsinline controls hidden></video>
+        <div class="rec-dot" id="recDot"><i></i><span id="recTime">0:00</span></div>
+        <div class="prompter" id="prompter" hidden><small id="prompterStep"></small><span id="prompterLine"></span></div>
+        <div class="countdown" id="countdown"></div>
+      </div>
+
+      <div class="row" style="margin-top:14px;justify-content:center;gap:14px">
+        <button class="btn ghost sm" id="camStart">Starta kamera</button>
+        <button class="rec-btn" id="recBtn" aria-label="Spela in" hidden>
+          <svg class="ic"><use href="#i-rec"/></svg>
+        </button>
+        <button class="btn ghost sm" id="clipPick">Ladda upp klipp</button>
+        <input type="file" id="clipFile" accept="video/*" hidden>
+      </div>
+      <p class="hint" style="text-align:center;margin-top:10px" id="videoHint">
+        Max 30 sekunder. Klippet sparas bara på den här enheten.
+      </p>
+
+      <div id="clipReady" hidden>
+        <div class="section-head"><h3>Publicera klippet</h3></div>
+        <div class="stack">
+          <div><label class="fld" for="vidCap">Bildtext</label>
+            <input type="text" id="vidCap" placeholder="Hej! Det här är jag." maxlength="90"></div>
+          <div class="row" style="gap:9px">
+            <button class="btn wide" id="videoPublish"><svg class="ic"><use href="#i-spark"/></svg>Publicera på väggen</button>
+            <button class="btn ghost" id="videoSave" aria-label="Spara klipp"><svg class="ic"><use href="#i-download"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-head"><h3>Utan kamera</h3></div>
+      <div class="card">
+        <p class="hint" style="margin-bottom:11px">
+          Bygg en animerad titelvideo av text och färg – funkar även när kameran är blockerad.
+        </p>
+        <div class="stack">
+          <input type="text" id="teaserText" placeholder="NY EPISOD IKVÄLL" maxlength="28">
+          <input type="text" id="teaserSub" placeholder="fredag 20:00 · @dittnamn" maxlength="44">
+          <button class="btn ghost wide" id="teaserBtn"><svg class="ic"><use href="#i-magic"/></svg>Skapa teaser-video</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ VÄGG ============ -->
+    <section class="view" id="v-vagg" aria-label="Publika väggen">
+      <div class="eyebrow">Publikt</div>
+      <h1>Väggen</h1>
+      <p class="lede">Allt som publiceras hamnar här. Gilla och följ – det räknas åt båda hållen.</p>
+
+      <div class="chips" id="wallFilters" style="margin-top:14px"></div>
+      <div class="row" style="margin-top:10px">
+        <div class="chips" id="wallSorts"></div>
+      </div>
+
+      <div class="wall" id="wallFeed" style="margin-top:14px"></div>
+
+      <div class="section-head"><h2>Trendande taggar</h2></div>
+      <div class="card" id="trendCard"></div>
+    </section>
+
+    <!-- ============ EVENT ============ -->
+    <section class="view" id="v-event" aria-label="Eventplanerare">
+      <div class="eyebrow">Planering</div>
+      <h1>Event</h1>
+      <p class="lede">Planera släppet, bocka av listan och generera materialet i ett svep.</p>
+
+      <button class="btn wide" id="newEvent" style="margin-top:14px">
+        <svg class="ic"><use href="#i-plus"/></svg>Nytt event
+      </button>
+
+      <div class="section-head"><h2>Kommande</h2></div>
+      <div class="stack" id="eventList"></div>
+
+      <div class="section-head"><h2>Genomförda</h2></div>
+      <div class="stack" id="eventPast"></div>
+    </section>
+
+    <!-- ============ PROFIL ============ -->
+    <section class="view" id="v-profil" aria-label="Profil">
+      <div class="profile-head">
+        <div class="avatar" id="myAvatar"></div>
+        <div style="flex:1;min-width:0">
+          <h1 id="myName" style="font-size:22px">Du</h1>
+          <p class="mono" style="color:var(--muted);font-size:13px;margin:2px 0 0" id="myHandle">@du</p>
+        </div>
+        <button class="btn ghost sm" id="editProfile">Redigera</button>
+      </div>
+      <p class="lede" id="myBio" style="margin-top:12px"></p>
+
+      <div class="grid g3" style="margin-top:14px">
+        <div class="stat"><div class="k">Följare</div><div class="v" id="pfFollowers">0</div></div>
+        <div class="stat"><div class="k">Inlägg</div><div class="v" id="pfPosts">0</div></div>
+        <div class="stat"><div class="k">Gillningar</div><div class="v" id="pfLikes">0</div></div>
+      </div>
+
+      <div class="section-head"><h2>Utmärkelser</h2></div>
+      <div class="badge-grid" id="badgeGrid"></div>
+
+      <div class="section-head"><h2>Mitt galleri</h2></div>
+      <div class="gal" id="myGallery"></div>
+
+      <div class="section-head"><h2>Appen</h2></div>
+      <div class="card stack">
+        <div class="row"><span style="flex:1;font-size:13.5px">Version</span>
+          <span class="mono hint" id="appVersion">1.0.0</span></div>
+        <div class="row"><span style="flex:1;font-size:13.5px">Plattform</span>
+          <span class="mono hint" id="appPlatform">webb</span></div>
+        <button class="btn ghost sm" id="resetApp">Nollställ all data</button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="Huvudmeny">
+    <button data-go="hem" aria-current="page"><svg class="ic"><use href="#i-home"/></svg>Hem</button>
+    <button data-go="foto"><svg class="ic"><use href="#i-photo"/></svg>Foto</button>
+    <button data-go="affisch"><svg class="ic"><use href="#i-poster"/></svg>Affisch</button>
+    <button data-go="video"><svg class="ic"><use href="#i-video"/></svg>Video</button>
+    <button data-go="vagg"><svg class="ic"><use href="#i-wall"/></svg>Vägg</button>
+    <button data-go="event"><svg class="ic"><use href="#i-calendar"/></svg>Event</button>
+    <button data-go="profil"><svg class="ic"><use href="#i-user"/></svg>Profil</button>
+  </nav>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="sheet-wrap" id="sheetWrap">
+  <div class="scrim" data-close></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
+</div>
+
+<script>
+/* cordova.js finns bara i den byggda appen — ladda den bara där. */
+if (location.protocol === "file:") {
+  var s = document.createElement("script");
+  s.src = "cordova.js";
+  s.onerror = function () {
+    window.__cordovaMissing = true;
+    document.dispatchEvent(new Event("cordovamissing"));
+  };
+  document.head.appendChild(s);
+}
+</script>
+<script>
+/* ============================================================
+   Sändo Fandom — kärna: lagring, navigering, tillväxtmotor
+   ============================================================ */
+'use strict';
+
+var APP_VERSION = '1.0.0';
+var KEY = 'sandofandom.v1';
+
+/* ---------- Hjälpare ---------- */
+function $(sel, root) { return (root || document).querySelector(sel); }
+function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+function el(tag, cls, html) {
+  var n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (html != null) n.innerHTML = html;
+  return n;
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function rnd(a, b) { return a + Math.random() * (b - a); }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function nf(n) { return n >= 10000 ? (n / 1000).toFixed(1).replace('.', ',') + ' tn' : String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+function todayKey(d) { d = d || new Date(); return d.toISOString().slice(0, 10); }
+var MONTHS = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+function relTime(ts) {
+  var s = (Date.now() - ts) / 1000;
+  if (s < 60) return 'nyss';
+  if (s < 3600) return Math.floor(s / 60) + ' min';
+  if (s < 86400) return Math.floor(s / 3600) + ' tim';
+  if (s < 604800) return Math.floor(s / 86400) + ' d';
+  var d = new Date(ts);
+  return d.getDate() + ' ' + MONTHS[d.getMonth()];
+}
+
+/* ---------- Beständig lagring ---------- */
+var CREATORS = [
+  { id: 'c1', name: 'Nova Lindqvist', handle: '@novalind', hue: 268 },
+  { id: 'c2', name: 'Kite', handle: '@kitemakes', hue: 190 },
+  { id: 'c3', name: 'Vera Sund', handle: '@verasund', hue: 330 },
+  { id: 'c4', name: 'Blåtimmen', handle: '@blatimmen', hue: 215 },
+  { id: 'c5', name: 'Omar Reyes', handle: '@omarreyes', hue: 30 },
+  { id: 'c6', name: 'Studio Falk', handle: '@studiofalk', hue: 155 }
+];
+
+function freshState() {
+  return {
+    me: { name: 'Du', handle: '@du', bio: 'Skapar bilder, affischer och korta klipp. Bygger min fandom en dag i taget.', avatarId: null, hue: 252 },
+    followers: 0, reach: 0, likesGot: 0, likesGiven: 0,
+    streak: 1, lastDay: todayKey(), gainedToday: 0,
+    history: [], posts: [], following: [], events: [], badges: [],
+    challengeDone: false, seeded: false
+  };
+}
+var state = freshState();
+
+function load() {
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      Object.keys(state).forEach(function (k) { if (parsed[k] !== undefined) state[k] = parsed[k]; });
+    }
+  } catch (e) { /* korrupt lagring — börja om */ }
+}
+var saveTimer = null;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(function () {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch (e) { toast('Lagringen är full – ta bort några inlägg.'); }
+  }, 180);
+}
+
+/* ---------- Media (IndexedDB för bild-/videoblobbar) ---------- */
+var Media = {
+  db: null, mem: {}, urls: {},
+  open: function () {
+    return new Promise(function (res) {
+      if (!window.indexedDB) return res(null);
+      var rq = indexedDB.open('sandofandom', 1);
+      rq.onupgradeneeded = function () { rq.result.createObjectStore('media'); };
+      rq.onsuccess = function () { Media.db = rq.result; res(rq.result); };
+      rq.onerror = function () { res(null); };
+    });
+  },
+  put: function (id, blob) {
+    Media.mem[id] = blob;
+    return new Promise(function (res) {
+      if (!Media.db) return res(id);
+      try {
+        var tx = Media.db.transaction('media', 'readwrite');
+        tx.objectStore('media').put(blob, id);
+        tx.oncomplete = function () { res(id); };
+        tx.onerror = function () { res(id); };
+      } catch (e) { res(id); }
+    });
+  },
+  get: function (id) {
+    return new Promise(function (res) {
+      if (Media.mem[id]) return res(Media.mem[id]);
+      if (!Media.db) return res(null);
+      try {
+        var rq = Media.db.transaction('media', 'readonly').objectStore('media').get(id);
+        rq.onsuccess = function () { if (rq.result) Media.mem[id] = rq.result; res(rq.result || null); };
+        rq.onerror = function () { res(null); };
+      } catch (e) { res(null); }
+    });
+  },
+  url: function (id) {
+    if (Media.urls[id]) return Promise.resolve(Media.urls[id]);
+    return Media.get(id).then(function (blob) {
+      if (!blob) return null;
+      var u = URL.createObjectURL(blob);
+      Media.urls[id] = u;
+      return u;
+    });
+  },
+  del: function (id) {
+    delete Media.mem[id];
+    if (Media.urls[id]) { URL.revokeObjectURL(Media.urls[id]); delete Media.urls[id]; }
+    if (Media.db) { try { Media.db.transaction('media', 'readwrite').objectStore('media').delete(id); } catch (e) { } }
+  },
+  clear: function () {
+    Object.keys(Media.urls).forEach(function (k) { URL.revokeObjectURL(Media.urls[k]); });
+    Media.urls = {}; Media.mem = {};
+    if (Media.db) { try { Media.db.transaction('media', 'readwrite').objectStore('media').clear(); } catch (e) { } }
+  }
+};
+function canvasBlob(canvas, type, quality) {
+  return new Promise(function (res) {
+    if (canvas.toBlob) canvas.toBlob(function (b) { res(b); }, type || 'image/jpeg', quality || 0.9);
+    else res(dataURLtoBlob(canvas.toDataURL(type || 'image/jpeg', quality || 0.9)));
+  });
+}
+function dataURLtoBlob(u) {
+  var parts = u.split(','), mime = parts[0].match(/:(.*?);/)[1], bin = atob(parts[1]);
+  var arr = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+/* ---------- Toast ---------- */
+function toast(msg, kind) {
+  var box = $('#toasts');
+  var t = el('div', 'toast' + (kind ? ' ' + kind : ''), esc(msg));
+  box.appendChild(t);
+  setTimeout(function () {
+    t.style.transition = 'opacity .3s, transform .3s';
+    t.style.opacity = '0'; t.style.transform = 'translateY(-6px)';
+    setTimeout(function () { t.remove(); }, 320);
+  }, kind === 'gain' ? 2600 : 2100);
+}
+
+/* ---------- Navigering ---------- */
+var VIEWS = ['hem', 'foto', 'affisch', 'video', 'vagg', 'event', 'profil'];
+var current = 'hem';
+function go(name) {
+  if (VIEWS.indexOf(name) < 0) name = 'hem';
+  current = name;
+  $$('.view').forEach(function (v) { v.classList.toggle('on', v.id === 'v-' + name); });
+  $$('.tabbar button').forEach(function (b) {
+    if (b.dataset.go === name) b.setAttribute('aria-current', 'page');
+    else b.removeAttribute('aria-current');
+  });
+  window.scrollTo({ top: 0, behavior: 'instant' in document.body.style ? 'instant' : 'auto' });
+  if (name === 'hem') renderHome();
+  if (name === 'vagg') renderWall();
+  if (name === 'event') renderEvents();
+  if (name === 'profil') renderProfile();
+  if (name === 'foto') drawPhoto();
+  if (name === 'affisch') drawPoster();
+  if (name !== 'video') stopCamera();
+}
+document.addEventListener('click', function (e) {
+  var g = e.target.closest('[data-go]');
+  if (g) { go(g.dataset.go); }
+  var c = e.target.closest('[data-close]');
+  if (c) closeSheet();
+});
+
+/* ---------- Tema ---------- */
+function applyTheme(mode) {
+  if (mode) document.documentElement.setAttribute('data-theme', mode);
+  var dark = mode ? mode === 'dark'
+    : !window.matchMedia('(prefers-color-scheme: light)').matches;
+  $('#themeIcon').setAttribute('href', dark ? '#i-moon' : '#i-sun');
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = dark ? '#0d0f1a' : '#f2f4fb';
+}
+function toggleTheme() {
+  var cur = document.documentElement.getAttribute('data-theme');
+  var dark = cur ? cur === 'dark' : !window.matchMedia('(prefers-color-scheme: light)').matches;
+  var next = dark ? 'light' : 'dark';
+  localStorage.setItem(KEY + '.theme', next);
+  applyTheme(next);
+}
+
+/* ---------- Bottenark ---------- */
+function openSheet(title, bodyNode) {
+  var s = $('#sheet');
+  s.innerHTML = '';
+  s.appendChild(el('div', 'handle'));
+  var head = el('div', 'sheet-head');
+  head.appendChild(el('h2', null, esc(title)));
+  var x = el('button', 'icon-btn');
+  x.innerHTML = '<svg class="ic"><use href="#i-x"/></svg>';
+  x.setAttribute('aria-label', 'Stäng');
+  x.setAttribute('data-close', '');
+  head.appendChild(x);
+  s.appendChild(head);
+  s.appendChild(bodyNode);
+  $('#sheetWrap').classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+function closeSheet() {
+  $('#sheetWrap').classList.remove('on');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') closeSheet();
+});
+
+/* ---------- Tillväxtmotor ---------- */
+var MILESTONES = [25, 100, 250, 500, 1000, 2500, 5000, 10000, 25000];
+function nextMilestone() {
+  for (var i = 0; i < MILESTONES.length; i++) if (state.followers < MILESTONES[i]) return MILESTONES[i];
+  return MILESTONES[MILESTONES.length - 1];
+}
+function touchDay() {
+  var t = todayKey();
+  if (state.lastDay !== t) {
+    var diff = (new Date(t) - new Date(state.lastDay)) / 86400000;
+    state.streak = diff === 1 ? state.streak + 1 : 1;
+    state.lastDay = t; state.gainedToday = 0; state.challengeDone = false;
+    save();
+  }
+}
+function pushHistory(dFollow, dReach) {
+  var t = todayKey();
+  var last = state.history[state.history.length - 1];
+  if (!last || last.d !== t) {
+    last = { d: t, f: 0, r: 0 };
+    state.history.push(last);
+    if (state.history.length > 14) state.history.shift();
+  }
+  last.f += dFollow; last.r += dReach;
+}
+function gainFollowers(n, reason) {
+  n = Math.max(0, Math.round(n));
+  if (!n) return;
+  state.followers += n;
+  state.gainedToday += n;
+  pushHistory(n, 0);
+  save();
+  updateChip();
+  toast('+' + n + ' följare · ' + reason, 'gain');
+  checkBadges();
+}
+function gainReach(n) {
+  n = Math.max(0, Math.round(n));
+  state.reach += n; pushHistory(0, n); save();
+}
+/* Kvalitetspoäng styr hur mycket ett inlägg ger. */
+function postScore(post) {
+  var base = { foto: 4, affisch: 6, video: 9, event: 7 }[post.type] || 4;
+  var s = base;
+  if (post.cap && post.cap.length > 18) s += 2;
+  if (post.tags && post.tags.length >= 2) s += 2 + Math.min(post.tags.length, 5);
+  if (state.streak > 2) s += Math.min(state.streak, 7);
+  s += state.followers * 0.012;
+  return s * rnd(0.75, 1.5);
+}
+function updateChip() {
+  var chip = $('#chipFollowers');
+  var from = parseInt(chip.textContent.replace(/\D/g, ''), 10) || 0;
+  var to = state.followers, t0 = performance.now();
+  function step(t) {
+    var k = clamp((t - t0) / 500, 0, 1);
+    chip.textContent = nf(Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3))));
+    if (k < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ---------- Utmärkelser ---------- */
+var BADGES = [
+  { id: 'first', name: 'Första inlägget', need: 'Publicera något', test: function () { return myPosts().length >= 1; } },
+  { id: 'f100', name: '100 följare', need: 'Nå 100 följare', test: function () { return state.followers >= 100; } },
+  { id: 'streak7', name: '7 dagar', need: 'Streak i 7 dagar', test: function () { return state.streak >= 7; } },
+  { id: 'poster', name: 'Affischmakare', need: '3 affischer', test: function () { return myPosts().filter(function (p) { return p.type === 'affisch'; }).length >= 3; } },
+  { id: 'video', name: 'På film', need: 'Publicera en video', test: function () { return myPosts().some(function (p) { return p.type === 'video'; }); } },
+  { id: 'host', name: 'Eventvärd', need: 'Planera ett event', test: function () { return state.events.length >= 1; } },
+  { id: 'social', name: 'Peppare', need: 'Gilla 10 inlägg', test: function () { return state.likesGiven >= 10; } },
+  { id: 'f1000', name: '1 000 följare', need: 'Nå 1 000 följare', test: function () { return state.followers >= 1000; } }
+];
+function checkBadges() {
+  BADGES.forEach(function (b) {
+    if (state.badges.indexOf(b.id) < 0 && b.test()) {
+      state.badges.push(b.id); save();
+      toast('Utmärkelse: ' + b.name, 'gain');
+    }
+  });
+}
+function myPosts() { return state.posts.filter(function (p) { return p.author === 'me'; }); }
+
+/* ---------- Hem ---------- */
+var TIPS = [
+  ['Publicera på samma tid', 'Väggen visar färskt material först – en fast tid gör att folk vet när de ska titta.'],
+  ['Skriv ut din tagg', 'Inlägg med 2–3 taggar plockas upp av fler än inlägg utan.'],
+  ['Visa ansiktet', 'Korta videor ger mest nya följare av allt du kan lägga upp här.'],
+  ['Svara på allt', 'Gilla tillbaka. Varje gillning du ger ger dig lite räckvidd.'],
+  ['Bygg mot ett datum', 'Ett event i kalendern ger dig något att räkna ner till i flera inlägg.']
+];
+var CHALLENGES = [
+  { t: 'Presentera dig på 15 sekunder', d: 'Spela in en kort video med manuset "Presentera dig".', go: 'video', r: 22 },
+  { t: 'Släpp en affisch', d: 'Gör en affisch för nästa sak du gör och lägg upp den.', go: 'affisch', r: 18 },
+  { t: 'Tre foton i samma stil', d: 'Välj en stil i fotoredigeraren och håll dig till den.', go: 'foto', r: 15 },
+  { t: 'Planera ett event', d: 'Lägg in ett datum och generera kampanjmaterialet.', go: 'event', r: 26 }
+];
+function challengeOfDay() { return CHALLENGES[new Date().getDate() % CHALLENGES.length]; }
+
+function renderHome() {
+  touchDay();
+  var f = state.followers;
+  $('#stFollowers').textContent = nf(f);
+  $('#stReach').textContent = nf(state.reach);
+  $('#stPosts').textContent = nf(myPosts().length);
+  $('#stStreak').textContent = state.streak;
+  var d = $('#stFollowersD');
+  d.textContent = (state.gainedToday > 0 ? '＋' + nf(state.gainedToday) : '±0') + ' idag';
+  d.className = 'd' + (state.gainedToday > 0 ? '' : ' flat');
+  var week = state.history.slice(-7);
+  $('#stReachD').textContent = week.reduce(function (a, h) { return a + h.r; }, 0) > 0
+    ? 'senaste 7 dagarna' : 'inget ännu';
+
+  $('#heroTitle').textContent = f === 0 ? 'Dags att synas.'
+    : f < 100 ? 'Du är igång.' : f < 1000 ? 'Fandomen växer.' : 'Du har en publik.';
+  $('#heroSub').textContent = f === 0
+    ? 'Lägg upp något varje dag – väggen belönar de som dyker upp.'
+    : 'Streak på ' + state.streak + ' ' + (state.streak === 1 ? 'dag' : 'dagar') + '. '
+      + nf(nextMilestone() - f) + ' följare kvar till ' + nf(nextMilestone()) + '.';
+
+  drawSpark($('#sparkFollowers'), week.map(function (h) { return h.f; }), 'brand');
+  drawSpark($('#sparkReach'), week.map(function (h) { return h.r; }), 'accent');
+
+  var goal = nextMilestone(), prev = 0;
+  for (var i = 0; i < MILESTONES.length; i++) if (MILESTONES[i] < goal) prev = MILESTONES[i];
+  drawRing($('#goalRing'), (f - prev) / Math.max(goal - prev, 1));
+  $('#goalLabel').textContent = nf(goal) + ' följare';
+  $('#goalHint').textContent = f >= goal ? 'Uppnått!'
+    : nf(goal - f) + ' kvar. En video ger i snitt ' + Math.round(9 + f * 0.012) + '.';
+
+  var ch = challengeOfDay(), cc = $('#challengeCard');
+  cc.innerHTML = '';
+  var top = el('div', 'row');
+  top.appendChild(el('div', 'pill event', 'Utmaning'));
+  if (state.challengeDone) top.appendChild(el('div', 'pill ok', 'Klar'));
+  cc.appendChild(top);
+  cc.appendChild(el('h3', null, esc(ch.t)));
+  $('h3', cc).style.marginTop = '9px';
+  cc.appendChild(el('p', 'hint', esc(ch.d) + ' Ger ca ' + ch.r + ' följare.'));
+  $('p', cc).style.margin = '4px 0 12px';
+  var b = el('button', 'btn sm', 'Kör igång');
+  b.dataset.go = ch.go;
+  cc.appendChild(b);
+
+  var tc = $('#tipsCard');
+  tc.innerHTML = '';
+  TIPS.forEach(function (t, i) {
+    var row = el('div', 'tip');
+    row.appendChild(el('div', 'n', String(i + 1)));
+    var wrap = el('div');
+    wrap.appendChild(el('b', null, esc(t[0])));
+    wrap.appendChild(el('p', null, esc(t[1])));
+    row.appendChild(wrap);
+    tc.appendChild(row);
+  });
+}
+
+/* Sparkline: yta + framhävd slutpunkt. */
+function drawSpark(cv, data, tone) {
+  var dpr = window.devicePixelRatio || 1;
+  var w = cv.clientWidth || 140, h = 34;
+  cv.width = w * dpr; cv.height = h * dpr;
+  var c = cv.getContext('2d');
+  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  c.clearRect(0, 0, w, h);
+  while (data.length < 7) data.unshift(0);
+  var max = Math.max.apply(null, data.concat([1]));
+  var css = getComputedStyle(document.documentElement);
+  var col = css.getPropertyValue(tone === 'accent' ? '--accent' : '--brand').trim() || '#6366f1';
+  var pts = data.map(function (v, i) {
+    return [i / (data.length - 1) * (w - 6) + 3, h - 5 - (v / max) * (h - 12)];
+  });
+  var g = c.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, col + '55'); g.addColorStop(1, col + '00');
+  c.beginPath();
+  c.moveTo(pts[0][0], pts[0][1]);
+  pts.forEach(function (p) { c.lineTo(p[0], p[1]); });
+  c.lineTo(w - 3, h); c.lineTo(3, h); c.closePath();
+  c.fillStyle = g; c.fill();
+  c.beginPath();
+  pts.forEach(function (p, i) { i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]); });
+  c.strokeStyle = col; c.lineWidth = 1.8; c.lineJoin = 'round'; c.stroke();
+  var last = pts[pts.length - 1];
+  c.beginPath(); c.arc(last[0], last[1], 2.9, 0, 7); c.fillStyle = col; c.fill();
+}
+
+function drawRing(svg, frac) {
+  frac = clamp(frac, 0, 1);
+  var r = 41, cx = 50, len = 2 * Math.PI * r;
+  svg.innerHTML =
+    '<circle cx="' + cx + '" cy="' + cx + '" r="' + r + '" fill="none" stroke="var(--line)" stroke-width="8"/>' +
+    '<circle cx="' + cx + '" cy="' + cx + '" r="' + r + '" fill="none" stroke="url(#ringGrad)" stroke-width="8" ' +
+    'stroke-linecap="round" stroke-dasharray="' + (len * frac) + ' ' + len + '" transform="rotate(-90 50 50)"/>' +
+    '<defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">' +
+    '<stop offset="0" stop-color="var(--brand)"/><stop offset="1" stop-color="var(--accent)"/>' +
+    '</linearGradient></defs>' +
+    '<text x="50" y="56" text-anchor="middle" font-size="19" font-weight="700" fill="var(--ink)" ' +
+    'font-family="var(--mono)">' + Math.round(frac * 100) + '%</text>';
+}
+
+/* Ambient bakgrund i hero — lugn, pausar när vyn inte syns. */
+function heroAmbient() {
+  var cv = $('#heroCanvas');
+  var c = cv.getContext('2d');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var blobs = [
+    { x: .25, y: .3, r: .55, col: 'rgba(99,102,241,.55)', sx: .00007, sy: .00005 },
+    { x: .75, y: .6, r: .5, col: 'rgba(34,211,238,.4)', sx: -.00009, sy: .00006 },
+    { x: .5, y: .85, r: .42, col: 'rgba(236,72,153,.25)', sx: .00005, sy: -.00008 }
+  ];
+  function frame(t) {
+    var w = cv.clientWidth, h = cv.clientHeight;
+    if (!w || !h) return requestAnimationFrame(frame);
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    c.clearRect(0, 0, w, h);
+    blobs.forEach(function (b) {
+      var x = (b.x + (reduce ? 0 : Math.sin(t * b.sx) * .18)) * w;
+      var y = (b.y + (reduce ? 0 : Math.cos(t * b.sy) * .16)) * h;
+      var g = c.createRadialGradient(x, y, 0, x, y, b.r * Math.max(w, h));
+      g.addColorStop(0, b.col); g.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = g; c.fillRect(0, 0, w, h);
+    });
+    if (!reduce && current === 'hem' && !document.hidden) requestAnimationFrame(frame);
+    else if (!reduce) setTimeout(function () { requestAnimationFrame(frame); }, 400);
+  }
+  requestAnimationFrame(frame);
+}
+
+
+/* ============================================================
+   Studio — canvasmotor för foton och affischer
+   ============================================================ */
+
+/* ---------- Typsnitt på canvas ---------- */
+var FONTS = {
+  display: { name: 'Fet grotesk', css: function (s) { return '800 ' + s + 'px system-ui,"Segoe UI",Roboto,"Helvetica Neue",sans-serif'; }, upper: true, track: '-0.02em' },
+  serif: { name: 'Serif', css: function (s) { return '700 ' + s + 'px Georgia,"Times New Roman",serif'; }, upper: false, track: '0em' },
+  mono: { name: 'Teknisk', css: function (s) { return '700 ' + s + 'px ui-monospace,Menlo,Consolas,monospace'; }, upper: true, track: '0.08em' },
+  hand: { name: 'Handstil', css: function (s) { return '700 ' + s + 'px "Segoe Script","Bradley Hand","Snell Roundhand",cursive'; }, upper: false, track: '0em' }
+};
+function setFont(c, key, size) {
+  var f = FONTS[key] || FONTS.display;
+  c.font = f.css(size);
+  try { c.letterSpacing = f.track; } catch (e) { }
+  return f;
+}
+function fitLines(c, text, maxW, key, size, maxLines) {
+  var f = FONTS[key] || FONTS.display;
+  var t = f.upper ? String(text).toUpperCase() : String(text);
+  var words = t.split(/\s+/).filter(Boolean);
+  var lines, s = size;
+  for (var guard = 0; guard < 40; guard++) {
+    setFont(c, key, s);
+    lines = [];
+    var line = '';
+    for (var i = 0; i < words.length; i++) {
+      var test = line ? line + ' ' + words[i] : words[i];
+      if (c.measureText(test).width > maxW && line) { lines.push(line); line = words[i]; }
+      else line = test;
+    }
+    if (line) lines.push(line);
+    var widest = lines.reduce(function (m, l) { return Math.max(m, c.measureText(l).width); }, 0);
+    if (lines.length <= (maxLines || 3) && widest <= maxW) break;
+    s *= 0.92;
+  }
+  return { lines: lines, size: s, lh: s * 1.06 };
+}
+function drawLines(c, res, x, y, align) {
+  c.textAlign = align || 'left';
+  c.textBaseline = 'alphabetic';
+  res.lines.forEach(function (l, i) { c.fillText(l, x, y + i * res.lh); });
+  return y + (res.lines.length - 1) * res.lh;
+}
+function coverDraw(c, img, W, H) {
+  var s = Math.max(W / img.width, H / img.height);
+  var w = img.width * s, h = img.height * s;
+  c.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+}
+function roundRect(c, x, y, w, h, r) {
+  c.beginPath();
+  if (c.roundRect) c.roundRect(x, y, w, h, r);
+  else {
+    c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+  }
+}
+function grainPattern(c, W, H, amount) {
+  if (!amount) return;
+  var n = document.createElement('canvas');
+  n.width = n.height = 128;
+  var nc = n.getContext('2d'), d = nc.createImageData(128, 128);
+  for (var i = 0; i < d.data.length; i += 4) {
+    var v = 128 + (Math.random() - 0.5) * 255;
+    d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255;
+  }
+  nc.putImageData(d, 0, 0);
+  c.save();
+  c.globalAlpha = amount * 0.5;
+  c.globalCompositeOperation = 'overlay';
+  var p = c.createPattern(n, 'repeat');
+  c.fillStyle = p; c.fillRect(0, 0, W, H);
+  c.restore();
+}
+
+/* ---------- Fotoredigeraren ---------- */
+var RATIOS = { '11': [1080, 1080], '45': [1080, 1350], '916': [1080, 1920], '169': [1920, 1080] };
+var RATIO_LABEL = { '11': 'Kvadrat 1:1', '45': 'Flöde 4:5', '916': 'Story 9:16', '169': 'Bred 16:9' };
+var STYLES = [
+  { id: 'ren', name: 'Ren', sw: 'linear-gradient(135deg,#94a3b8,#e2e8f0)', filter: '', overlay: null },
+  { id: 'neon', name: 'Neon', sw: 'linear-gradient(135deg,#7c3aed,#22d3ee)', filter: 'saturate(1.45) contrast(1.14)', overlay: { mode: 'screen', a: .22, g: ['#7c3aed', '#22d3ee'] } },
+  { id: 'retro', name: 'Retro 90', sw: 'linear-gradient(135deg,#fb923c,#fde68a)', filter: 'sepia(.28) saturate(1.25) contrast(.94)', overlay: { mode: 'soft-light', a: .3, g: ['#f97316', '#fde68a'] }, fade: .09 },
+  { id: 'mono', name: 'Mono', sw: 'linear-gradient(135deg,#111827,#9ca3af)', filter: 'grayscale(1) contrast(1.22)', overlay: null },
+  { id: 'film', name: 'Filmisk', sw: 'linear-gradient(135deg,#0f766e,#f59e0b)', filter: 'contrast(1.12) saturate(.92)', overlay: { mode: 'soft-light', a: .35, g: ['#0f766e', '#f59e0b'] }, vig: .25 },
+  { id: 'pastell', name: 'Pastell', sw: 'linear-gradient(135deg,#fbcfe8,#bfdbfe)', filter: 'saturate(.85) brightness(1.07)', overlay: { mode: 'lighten', a: .16, g: ['#fbcfe8', '#bfdbfe'] }, fade: .12 },
+  { id: 'midnatt', name: 'Midnatt', sw: 'linear-gradient(135deg,#0b1120,#3730a3)', filter: 'brightness(.86) contrast(1.2) saturate(1.1)', overlay: { mode: 'multiply', a: .3, g: ['#1e1b4b', '#0ea5e9'] }, vig: .3 },
+  { id: 'guld', name: 'Guld', sw: 'linear-gradient(135deg,#78350f,#fbbf24)', filter: 'sepia(.4) saturate(1.35) contrast(1.06)', overlay: { mode: 'soft-light', a: .32, g: ['#fbbf24', '#78350f'] } }
+];
+var FRAMES = [
+  { id: 'none', name: 'Ingen' }, { id: 'white', name: 'Vit kant' },
+  { id: 'grad', name: 'Gradient' }, { id: 'polaroid', name: 'Polaroid' },
+  { id: 'inset', name: 'Tunn linje' }
+];
+var PLATES = [{ id: 'none', name: 'Ingen platta' }, { id: 'bar', name: 'Mörk list' }, { id: 'block', name: 'Färgblock' }, { id: 'shadow', name: 'Skugga' }];
+var STICKERS = ['✨', '⭐', '💜', '🔥', '🎧', '🎬', '📸', '🎤', '🎟️', '👑', '🌙', '⚡', '🩷', '🎨', '🕹️', '💬'];
+var ADJUSTS = [
+  { id: 'exp', name: 'Ljus', min: -50, max: 50 }, { id: 'con', name: 'Kontrast', min: -50, max: 50 },
+  { id: 'sat', name: 'Färg', min: -100, max: 100 }, { id: 'warm', name: 'Värme', min: -50, max: 50 },
+  { id: 'vig', name: 'Vinjett', min: 0, max: 100 }, { id: 'grain', name: 'Korn', min: 0, max: 100 },
+  { id: 'blur', name: 'Mjukhet', min: 0, max: 40 }
+];
+
+var photo = {
+  img: null, ratio: '45', style: 'ren',
+  adj: { exp: 0, con: 0, sat: 0, warm: 0, vig: 0, grain: 0, blur: 0 },
+  text: { head: '', sub: '', font: 'display', pos: 'bottom', color: '#ffffff', size: 74, plate: 'none' },
+  frame: 'none', stickers: []
+};
+
+function styleById(id) { return STYLES.filter(function (s) { return s.id === id; })[0] || STYLES[0]; }
+
+function paintPhoto(c, W, H, cfg) {
+  var st = styleById(cfg.style), a = cfg.adj;
+  c.save();
+  c.fillStyle = '#0b0e18';
+  c.fillRect(0, 0, W, H);
+
+  var inset = cfg.frame === 'white' ? W * 0.045 : cfg.frame === 'grad' ? W * 0.03 : 0;
+  var bottomExtra = cfg.frame === 'polaroid' ? H * 0.11 : 0;
+  var iw = W - inset * 2, ih = H - inset * 2 - bottomExtra;
+
+  if (cfg.frame === 'white' || cfg.frame === 'polaroid') { c.fillStyle = '#f8fafc'; c.fillRect(0, 0, W, H); }
+  if (cfg.frame === 'grad') {
+    var fg = c.createLinearGradient(0, 0, W, H);
+    fg.addColorStop(0, '#6366f1'); fg.addColorStop(1, '#22d3ee');
+    c.fillStyle = fg; c.fillRect(0, 0, W, H);
+  }
+  if (cfg.frame === 'polaroid') inset = W * 0.05, iw = W - inset * 2, ih = H - inset - bottomExtra;
+
+  c.save();
+  c.beginPath(); c.rect(inset, inset, iw, ih); c.clip();
+
+  var filters = [st.filter];
+  if (a.exp) filters.push('brightness(' + (1 + a.exp / 120) + ')');
+  if (a.con) filters.push('contrast(' + (1 + a.con / 110) + ')');
+  if (a.sat) filters.push('saturate(' + (1 + a.sat / 100) + ')');
+  if (a.warm) filters.push('sepia(' + Math.abs(a.warm) / 160 + ')' + (a.warm < 0 ? ' hue-rotate(160deg)' : ''));
+  if (a.blur) filters.push('blur(' + (a.blur / 10) + 'px)');
+  var fstr = filters.filter(Boolean).join(' ');
+
+  if (cfg.img) {
+    c.save();
+    if (fstr) c.filter = fstr;
+    c.translate(inset, inset);
+    coverDraw(c, cfg.img, iw, ih);
+    c.restore();
+  } else {
+    var g = c.createLinearGradient(inset, inset, inset + iw, inset + ih);
+    g.addColorStop(0, '#312e81'); g.addColorStop(.55, '#4f46e5'); g.addColorStop(1, '#0891b2');
+    c.fillStyle = g; c.fillRect(inset, inset, iw, ih);
+    c.globalAlpha = .16;
+    for (var i = 0; i < 5; i++) {
+      c.beginPath();
+      c.arc(inset + iw * rnd(.15, .85), inset + ih * rnd(.15, .85), iw * rnd(.08, .3), 0, 7);
+      c.fillStyle = pick(['#f472b6', '#22d3ee', '#fbbf24']); c.fill();
+    }
+    c.globalAlpha = 1;
+  }
+
+  if (st.overlay) {
+    var o = st.overlay;
+    c.save();
+    c.globalCompositeOperation = o.mode;
+    c.globalAlpha = o.a;
+    var og = c.createLinearGradient(inset, inset, inset + iw, inset + ih);
+    og.addColorStop(0, o.g[0]); og.addColorStop(1, o.g[1]);
+    c.fillStyle = og; c.fillRect(inset, inset, iw, ih);
+    c.restore();
+  }
+  if (st.fade) {
+    c.save(); c.globalAlpha = st.fade; c.fillStyle = '#fff';
+    c.fillRect(inset, inset, iw, ih); c.restore();
+  }
+  var vig = (a.vig / 100) + (st.vig || 0);
+  if (vig > 0) {
+    var vg = c.createRadialGradient(inset + iw / 2, inset + ih / 2, Math.min(iw, ih) * .28,
+      inset + iw / 2, inset + ih / 2, Math.max(iw, ih) * .78);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(1, 'rgba(0,0,0,' + clamp(vig, 0, .85) + ')');
+    c.fillStyle = vg; c.fillRect(inset, inset, iw, ih);
+  }
+  grainPattern(c, W, H, a.grain / 100);
+  c.restore();
+
+  if (cfg.frame === 'inset') {
+    c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = Math.max(2, W * .006);
+    c.strokeRect(W * .045, H * .045, W * .91, H * .91);
+  }
+
+  /* --- Text --- */
+  var t = cfg.text;
+  if (t.head || t.sub) {
+    var pad = W * .07;
+    var maxW = W - pad * 2;
+    var size = W * (t.size / 1000);
+    var res = fitLines(c, t.head || '', maxW, t.font, size, 3);
+    var subSize = Math.max(size * .3, W * .026);
+    var subLines = t.sub ? fitLines(c, t.sub, maxW, t.font === 'display' ? 'mono' : t.font, subSize, 2) : null;
+    var blockH = (t.head ? res.lines.length * res.lh : 0) + (subLines ? subLines.lines.length * subLines.lh + size * .28 : 0);
+    var topY = t.pos === 'top' ? pad + res.size * .85
+      : t.pos === 'center' ? (H - blockH) / 2 + res.size * .85
+        : H - pad - blockH + res.size * .85 - (cfg.frame === 'polaroid' ? bottomExtra * .2 : 0);
+
+    if (t.plate === 'bar') {
+      c.fillStyle = 'rgba(8,10,20,.62)';
+      c.fillRect(0, topY - res.size, W, blockH + res.size * .55);
+    } else if (t.plate === 'block') {
+      c.fillStyle = 'rgba(79,70,229,.9)';
+      roundRect(c, pad * .55, topY - res.size * 1.05, W - pad * 1.1, blockH + res.size * .6, W * .02);
+      c.fill();
+    } else if (t.plate === 'shadow') {
+      c.shadowColor = 'rgba(0,0,0,.65)'; c.shadowBlur = W * .02; c.shadowOffsetY = W * .004;
+    }
+    c.fillStyle = t.color;
+    if (t.head) {
+      setFont(c, t.font, res.size);
+      drawLines(c, res, pad, topY, 'left');
+    }
+    if (subLines) {
+      c.shadowBlur = t.plate === 'shadow' ? W * .012 : 0;
+      var subY = topY + (t.head ? res.lines.length * res.lh : 0) + size * .1;
+      c.globalAlpha = .92;
+      setFont(c, t.font === 'display' ? 'mono' : t.font, subLines.size);
+      drawLines(c, subLines, pad, subY, 'left');
+      c.globalAlpha = 1;
+    }
+    c.shadowBlur = 0; c.shadowOffsetY = 0;
+  }
+
+  /* --- Stickers --- */
+  (cfg.stickers || []).forEach(function (s) {
+    c.save();
+    c.font = (s.s / 1000 * W) + 'px system-ui,"Apple Color Emoji","Segoe UI Emoji",sans-serif';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.shadowColor = 'rgba(0,0,0,.35)'; c.shadowBlur = W * .012;
+    c.fillText(s.e, s.x * W, s.y * H);
+    c.restore();
+  });
+  c.restore();
+}
+
+function drawPhoto() {
+  var cv = $('#photoCanvas');
+  var size = RATIOS[photo.ratio];
+  cv.width = size[0]; cv.height = size[1];
+  paintPhoto(cv.getContext('2d'), size[0], size[1], photo);
+  $('#photoSize').textContent = RATIO_LABEL[photo.ratio] + ' · ' + size[0] + '×' + size[1];
+}
+
+function loadImageFile(file) {
+  return new Promise(function (res, rej) {
+    var url = URL.createObjectURL(file);
+    var im = new Image();
+    im.onload = function () { res(im); };
+    im.onerror = function () { URL.revokeObjectURL(url); rej(); };
+    im.src = url;
+  });
+}
+
+function buildPhotoUI() {
+  /* Verktygsflikar */
+  var tabs = $$('.tool-tabs button');
+  tabs.forEach(function (btn) {
+    btn.onclick = function () {
+      tabs.forEach(function (b) { b.setAttribute('aria-selected', b === btn ? 'true' : 'false'); });
+      $$('.tool-pane').forEach(function (p) { p.classList.toggle('on', p.id === btn.dataset.pane); });
+    };
+  });
+
+  var pg = $('#stylePresets');
+  STYLES.forEach(function (s) {
+    var b = el('button', 'preset');
+    b.setAttribute('aria-pressed', photo.style === s.id);
+    b.innerHTML = '<span class="sw" style="background:' + s.sw + '"></span><em>' + esc(s.name) + '</em>';
+    b.onclick = function () {
+      photo.style = s.id;
+      $$('#stylePresets .preset').forEach(function (x) { x.setAttribute('aria-pressed', 'false'); });
+      b.setAttribute('aria-pressed', 'true');
+      drawPhoto();
+    };
+    pg.appendChild(b);
+  });
+
+  var rc = $('#photoRatios');
+  ['11', '45', '916', '169'].forEach(function (r) {
+    var b = el('button', 'chip', RATIO_LABEL[r]);
+    b.setAttribute('aria-pressed', photo.ratio === r);
+    b.onclick = function () {
+      photo.ratio = r;
+      $$('#photoRatios .chip').forEach(function (x) { x.setAttribute('aria-pressed', 'false'); });
+      b.setAttribute('aria-pressed', 'true');
+      drawPhoto();
+    };
+    rc.appendChild(b);
+  });
+
+  var ar = $('#adjustRows');
+  ADJUSTS.forEach(function (a) {
+    var row = el('div', 'slider-row');
+    row.innerHTML = '<label for="adj-' + a.id + '">' + esc(a.name) + '</label>' +
+      '<input type="range" id="adj-' + a.id + '" min="' + a.min + '" max="' + a.max + '" value="' + photo.adj[a.id] + '">' +
+      '<output>' + photo.adj[a.id] + '</output>';
+    var inp = $('input', row), out = $('output', row);
+    inp.oninput = function () {
+      photo.adj[a.id] = +inp.value; out.textContent = inp.value; drawPhoto();
+    };
+    ar.appendChild(row);
+  });
+  $('#resetAdjust').onclick = function () {
+    ADJUSTS.forEach(function (a) {
+      photo.adj[a.id] = 0;
+      $('#adj-' + a.id).value = 0;
+      $('#adj-' + a.id).nextElementSibling.textContent = '0';
+    });
+    drawPhoto();
+  };
+
+  var fs = $('#ptFont');
+  Object.keys(FONTS).forEach(function (k) {
+    var o = el('option', null, FONTS[k].name); o.value = k; fs.appendChild(o);
+  });
+
+  function bindText(id, key, cast) {
+    var n = $(id);
+    n.oninput = function () { photo.text[key] = cast ? cast(n.value) : n.value; drawPhoto(); };
+    n.onchange = n.oninput;
+  }
+  bindText('#ptHead', 'head'); bindText('#ptSub', 'sub');
+  bindText('#ptFont', 'font'); bindText('#ptPos', 'pos');
+  bindText('#ptColor', 'color'); bindText('#ptSize', 'size', Number);
+
+  var pl = $('#textPlates');
+  PLATES.forEach(function (p) {
+    var b = el('button', 'chip', p.name);
+    b.setAttribute('aria-pressed', photo.text.plate === p.id);
+    b.onclick = function () {
+      photo.text.plate = p.id;
+      $$('#textPlates .chip').forEach(function (x) { x.setAttribute('aria-pressed', 'false'); });
+      b.setAttribute('aria-pressed', 'true'); drawPhoto();
+    };
+    pl.appendChild(b);
+  });
+
+  var fc = $('#frameChips');
+  FRAMES.forEach(function (f) {
+    var b = el('button', 'chip', f.name);
+    b.setAttribute('aria-pressed', photo.frame === f.id);
+    b.onclick = function () {
+      photo.frame = f.id;
+      $$('#frameChips .chip').forEach(function (x) { x.setAttribute('aria-pressed', 'false'); });
+      b.setAttribute('aria-pressed', 'true'); drawPhoto();
+    };
+    fc.appendChild(b);
+  });
+
+  var sg = $('#stickerGrid');
+  STICKERS.forEach(function (e) {
+    var b = el('button', null, e);
+    b.setAttribute('aria-label', 'Lägg till ' + e);
+    b.onclick = function () {
+      photo.stickers.push({ e: e, x: rnd(.3, .7), y: rnd(.3, .7), s: +$('#stSize').value });
+      drawPhoto(); renderStickerLayers();
+    };
+    sg.appendChild(b);
+  });
+  $('#stSize').oninput = function () {
+    $('#stSizeOut').textContent = this.value;
+    var last = photo.stickers[photo.stickers.length - 1];
+    if (last) { last.s = +this.value; drawPhoto(); }
+  };
+
+  /* Dra stickers direkt i bilden */
+  var cv = $('#photoCanvas'), drag = null;
+  function pos(e) {
+    var r = cv.getBoundingClientRect();
+    return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height };
+  }
+  cv.addEventListener('pointerdown', function (e) {
+    var p = pos(e), best = -1, bd = 0.09;
+    photo.stickers.forEach(function (s, i) {
+      var d = Math.hypot(s.x - p.x, (s.y - p.y) * (cv.height / cv.width));
+      if (d < bd) { bd = d; best = i; }
+    });
+    if (best >= 0) { drag = best; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; }
+  });
+  cv.addEventListener('pointermove', function (e) {
+    if (drag == null) return;
+    var p = pos(e);
+    photo.stickers[drag].x = clamp(p.x, 0, 1);
+    photo.stickers[drag].y = clamp(p.y, 0, 1);
+    drawPhoto();
+  });
+  cv.addEventListener('pointerup', function () { drag = null; cv.style.cursor = 'grab'; });
+  cv.addEventListener('pointercancel', function () { drag = null; });
+
+  $('#photoPick').onclick = function () { $('#photoFile').click(); };
+  $('#photoFile').onchange = function () {
+    if (!this.files[0]) return;
+    loadImageFile(this.files[0]).then(function (im) {
+      photo.img = im; drawPhoto(); toast('Bild inläst');
+    }).catch(function () { toast('Kunde inte läsa bilden.'); });
+  };
+  $('#photoDemo').onclick = function () { photo.img = null; drawPhoto(); toast('Genererad testbild'); };
+  $('#photoSave').onclick = function () { downloadCanvas($('#photoCanvas'), 'sandofandom-foto.png'); };
+  $('#photoPublish').onclick = function () {
+    publishCanvas($('#photoCanvas'), 'foto', photo.text.head || photo.text.sub || '');
+  };
+}
+function renderStickerLayers() {
+  var box = $('#stickerLayers');
+  box.innerHTML = '';
+  photo.stickers.forEach(function (s, i) {
+    var row = el('div', 'layer-item');
+    row.innerHTML = '<span>' + s.e + ' &nbsp;sticker ' + (i + 1) + '</span>';
+    var del = el('button');
+    del.innerHTML = '<svg class="ic"><use href="#i-trash"/></svg>';
+    del.setAttribute('aria-label', 'Ta bort sticker');
+    del.onclick = function () { photo.stickers.splice(i, 1); drawPhoto(); renderStickerLayers(); };
+    row.appendChild(del);
+    box.appendChild(row);
+  });
+}
+
+/* ---------- Affischmotorn ---------- */
+var PALETTES = [
+  { name: 'Indigo', c: ['#4338ca', '#06b6d4'], ink: '#ffffff', pop: '#fbbf24' },
+  { name: 'Solnedgång', c: ['#be123c', '#f97316'], ink: '#fff7ed', pop: '#fde68a' },
+  { name: 'Skog', c: ['#064e3b', '#84cc16'], ink: '#f0fdf4', pop: '#fde047' },
+  { name: 'Midnatt', c: ['#020617', '#1e293b'], ink: '#e2e8f0', pop: '#38bdf8' },
+  { name: 'Krita', c: ['#f8fafc', '#dbeafe'], ink: '#0f172a', pop: '#4f46e5' },
+  { name: 'Neon', c: ['#3b0764', '#0891b2'], ink: '#ffffff', pop: '#f0abfc' },
+  { name: 'Tegel', c: ['#7c2d12', '#b45309'], ink: '#fff7ed', pop: '#fdba74' },
+  { name: 'Rosa brus', c: ['#831843', '#db2777'], ink: '#fff1f2', pop: '#fbcfe8' }
+];
+var TEMPLATES = [
+  { id: 'gig', name: 'Konsert', head: 'LIVE PÅ SCEN', sub: 'En kväll med nytt material', date: 'fre 12 sep · 20:00', place: 'Klubb Nova, Göteborg', foot: 'Biljetter i länken', pal: 0, layout: 'stack', pattern: 'lines' },
+  { id: 'merch', name: 'Merch-släpp', head: 'MERCH DROP', sub: 'Begränsad upplaga, 60 exemplar', date: 'lör 6 sep · 12:00', place: 'Endast online', foot: 'Släpps i storyn', pal: 1, layout: 'center', pattern: 'dots' },
+  { id: 'meet', name: 'Fan-meet', head: 'FAN MEET', sub: 'Kom och häng, ta en bild, snacka', date: 'sön 21 sep · 14:00', place: 'Stadsbiblioteket', foot: 'Gratis · anmäl dig', pal: 2, layout: 'edge', pattern: 'waves' },
+  { id: 'live', name: 'Livesändning', head: 'LIVE IKVÄLL', sub: 'Frågestund och första lyssning', date: 'ikväll · 20:30', place: 'Direkt i appen', foot: 'Sätt en påminnelse', pal: 3, layout: 'split', pattern: 'grid' },
+  { id: 'tour', name: 'Turnédatum', head: 'HÖSTTURNÉ', sub: 'Sex städer · november', date: '3–19 nov', place: 'Sthlm · Gbg · Malmö · Umeå', foot: 'Fler datum släpps snart', pal: 5, layout: 'stack', pattern: 'lines' },
+  { id: 'contest', name: 'Fanart-tävling', head: 'RITA MED MIG', sub: 'Skicka in din tolkning – tre vinnare', date: 'Sista dag 30 sep', place: 'Tagga #sändofandom', foot: 'Vinnarna visas på väggen', pal: 7, layout: 'center', pattern: 'dots' }
+];
+var POSTER_FMT = { '45': [1080, 1350], '916': [1080, 1920], '11': [1080, 1080] };
+
+var poster = {
+  tpl: 'gig', pal: 0, layout: 'stack', pattern: 'lines', fmt: '45', img: null,
+  fields: {}
+};
+
+function paintPattern(c, W, H, kind, color) {
+  if (kind === 'none') return;
+  c.save();
+  c.globalAlpha = .16; c.strokeStyle = color; c.fillStyle = color;
+  var step = W / 18;
+  if (kind === 'dots') {
+    for (var y = step; y < H; y += step) for (var x = step; x < W; x += step) {
+      c.beginPath(); c.arc(x, y, W * .006, 0, 7); c.fill();
+    }
+  } else if (kind === 'lines') {
+    c.lineWidth = W * .004;
+    for (var i = -H; i < W; i += step) {
+      c.beginPath(); c.moveTo(i, H); c.lineTo(i + H, 0); c.stroke();
+    }
+  } else if (kind === 'waves') {
+    c.lineWidth = W * .005;
+    for (var wy = step; wy < H; wy += step * 1.4) {
+      c.beginPath();
+      for (var wx = 0; wx <= W; wx += 8) c.lineTo(wx, wy + Math.sin(wx / W * 9) * step * .42);
+      c.stroke();
+    }
+  } else if (kind === 'grid') {
+    c.lineWidth = W * .003;
+    for (var gx = step; gx < W; gx += step) { c.beginPath(); c.moveTo(gx, 0); c.lineTo(gx, H); c.stroke(); }
+    for (var gy = step; gy < H; gy += step) { c.beginPath(); c.moveTo(0, gy); c.lineTo(W, gy); c.stroke(); }
+  }
+  c.restore();
+}
+
+function paintPoster(c, W, H, cfg) {
+  var pal = PALETTES[cfg.pal] || PALETTES[0];
+  var f = cfg.fields || {};
+  var pad = W * .085;
+  c.save();
+  var g = c.createLinearGradient(0, 0, W * .4, H);
+  g.addColorStop(0, pal.c[0]); g.addColorStop(1, pal.c[1]);
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+
+  if (cfg.img) {
+    c.save();
+    c.globalAlpha = .55; c.globalCompositeOperation = 'luminosity';
+    coverDraw(c, cfg.img, W, H);
+    c.restore();
+    c.save();
+    c.globalCompositeOperation = 'multiply'; c.globalAlpha = .5;
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    c.restore();
+    var sg = c.createLinearGradient(0, H * .35, 0, H);
+    sg.addColorStop(0, 'rgba(0,0,0,0)'); sg.addColorStop(1, 'rgba(0,0,0,.55)');
+    c.fillStyle = sg; c.fillRect(0, 0, W, H);
+  }
+  paintPattern(c, W, H, cfg.pattern, pal.ink);
+
+  c.fillStyle = pal.ink;
+  var headSize = W * .155, y;
+
+  if (cfg.layout === 'center') {
+    var hc = fitLines(c, f.head || '', W - pad * 2, 'display', headSize, 3);
+    var subc = f.sub ? fitLines(c, f.sub, W - pad * 2.6, 'serif', W * .048, 3) : null;
+    var bh = hc.lines.length * hc.lh + (subc ? subc.lines.length * subc.lh + W * .05 : 0);
+    y = (H - bh) / 2;
+    c.save(); c.globalAlpha = .9;
+    setFont(c, 'mono', W * .026);
+    c.textAlign = 'center';
+    c.fillText((f.date || '').toUpperCase(), W / 2, y - W * .06);
+    c.restore();
+    setFont(c, 'display', hc.size);
+    y += hc.size;
+    var endY = drawLines(c, hc, W / 2, y, 'center');
+    if (subc) {
+      c.globalAlpha = .92;
+      setFont(c, 'serif', subc.size);
+      drawLines(c, subc, W / 2, endY + W * .085, 'center');
+      c.globalAlpha = 1;
+    }
+    c.fillStyle = pal.pop;
+    setFont(c, 'mono', W * .028);
+    c.textAlign = 'center';
+    c.fillText((f.place || '').toUpperCase(), W / 2, H - pad - W * .05);
+  } else if (cfg.layout === 'edge') {
+    c.save();
+    c.fillStyle = pal.pop;
+    c.fillRect(0, 0, W * .022, H);
+    c.restore();
+    var he = fitLines(c, f.head || '', W - pad * 2.1, 'display', headSize * 1.5, 4);
+    setFont(c, 'display', he.size);
+    y = pad + he.size * .92;
+    var e2 = drawLines(c, he, pad, y, 'left');
+    if (f.sub) {
+      var se = fitLines(c, f.sub, W - pad * 2, 'serif', W * .05, 3);
+      c.globalAlpha = .9; setFont(c, 'serif', se.size);
+      drawLines(c, se, pad, e2 + W * .09, 'left'); c.globalAlpha = 1;
+    }
+    c.fillStyle = pal.pop;
+    setFont(c, 'mono', W * .034);
+    c.textAlign = 'left';
+    c.fillText((f.date || '').toUpperCase(), pad, H - pad - W * .075);
+    c.fillStyle = pal.ink; c.globalAlpha = .85;
+    setFont(c, 'mono', W * .026);
+    c.fillText((f.place || '').toUpperCase(), pad, H - pad - W * .028);
+    c.globalAlpha = 1;
+  } else if (cfg.layout === 'split') {
+    c.save();
+    c.fillStyle = 'rgba(0,0,0,.32)';
+    c.fillRect(0, H * .52, W, H * .48);
+    c.restore();
+    var hs = fitLines(c, f.head || '', W - pad * 2, 'display', headSize, 3);
+    setFont(c, 'display', hs.size);
+    y = H * .52 - hs.lines.length * hs.lh + hs.size - W * .03;
+    drawLines(c, hs, pad, y, 'left');
+    var by = H * .52 + W * .1;
+    if (f.sub) {
+      var ss = fitLines(c, f.sub, W - pad * 2, 'serif', W * .052, 3);
+      setFont(c, 'serif', ss.size);
+      by = drawLines(c, ss, pad, by, 'left') + W * .1;
+    }
+    c.fillStyle = pal.pop;
+    setFont(c, 'mono', W * .032);
+    c.fillText((f.date || '').toUpperCase(), pad, by);
+    c.fillStyle = pal.ink; c.globalAlpha = .85;
+    setFont(c, 'mono', W * .026);
+    c.fillText((f.place || '').toUpperCase(), pad, by + W * .05);
+    c.globalAlpha = 1;
+  } else { /* stack */
+    setFont(c, 'mono', W * .028);
+    c.textAlign = 'left'; c.globalAlpha = .85;
+    c.fillText((f.place || '').toUpperCase(), pad, pad + W * .03);
+    c.globalAlpha = 1;
+    var hk = fitLines(c, f.head || '', W - pad * 2, 'display', headSize * 1.05, 4);
+    setFont(c, 'display', hk.size);
+    y = H * .58 - hk.lines.length * hk.lh;
+    var ek = drawLines(c, hk, pad, y, 'left');
+    c.fillStyle = pal.pop;
+    c.fillRect(pad, ek + W * .05, W * .22, W * .012);
+    c.fillStyle = pal.ink;
+    if (f.sub) {
+      var sk = fitLines(c, f.sub, W - pad * 2, 'serif', W * .052, 3);
+      c.globalAlpha = .92; setFont(c, 'serif', sk.size);
+      drawLines(c, sk, pad, ek + W * .14, 'left'); c.globalAlpha = 1;
+    }
+    c.fillStyle = pal.pop;
+    setFont(c, 'mono', W * .038);
+    c.fillText((f.date || '').toUpperCase(), pad, H - pad - W * .05);
+  }
+
+  /* Fotrad + märke */
+  c.globalAlpha = .8; c.fillStyle = pal.ink;
+  setFont(c, 'mono', W * .024);
+  c.textAlign = 'left';
+  c.fillText((f.foot || '').toUpperCase(), pad, H - pad * .55);
+  c.globalAlpha = 1;
+  c.save();
+  c.translate(W - pad, H - pad * .62);
+  c.fillStyle = pal.pop;
+  var r = W * .018;
+  c.beginPath();
+  for (var i = 0; i <= 64; i++) {
+    var th = i / 64 * Math.PI * 2;
+    var ct = Math.cos(th), st2 = Math.sin(th);
+    var rr = r / Math.pow(Math.pow(Math.abs(ct), .58) + Math.pow(Math.abs(st2), .58), 1 / .58);
+    c.lineTo(rr * ct, rr * st2);
+  }
+  c.closePath(); c.fill();
+  c.restore();
+  c.restore();
+}
+
+function drawPoster() {
+  var cv = $('#posterCanvas');
+  var s = POSTER_FMT[poster.fmt];
+  cv.width = s[0]; cv.height = s[1];
+  paintPoster(cv.getContext('2d'), s[0], s[1], poster);
+}
+
+function applyTemplate(id) {
+  var t = TEMPLATES.filter(function (x) { return x.id === id; })[0];
+  if (!t) return;
+  poster.tpl = id; poster.pal = t.pal; poster.layout = t.layout; poster.pattern = t.pattern;
+  poster.fields = { head: t.head, sub: t.sub, date: t.date, place: t.place, foot: t.foot };
+  syncPosterInputs();
+  drawPoster();
+}
+function syncPosterInputs() {
+  $('#poHead').value = poster.fields.head || '';
+  $('#poSub').value = poster.fields.sub || '';
+  $('#poDate').value = poster.fields.date || '';
+  $('#poPlace').value = poster.fields.place || '';
+  $('#poFoot').value = poster.fields.foot || '';
+  $('#poLayout').value = poster.layout;
+  $('#poPattern').value = poster.pattern;
+  $$('#posterTemplates .chip').forEach(function (c) {
+    c.setAttribute('aria-pressed', c.dataset.tpl === poster.tpl);
+  });
+  $$('#posterPalettes .preset').forEach(function (p, i) {
+    p.setAttribute('aria-pressed', i === poster.pal);
+  });
+}
+
+function buildPosterUI() {
+  var tc = $('#posterTemplates');
+  TEMPLATES.forEach(function (t) {
+    var b = el('button', 'chip', t.name);
+    b.dataset.tpl = t.id;
+    b.onclick = function () { applyTemplate(t.id); };
+    tc.appendChild(b);
+  });
+  var pc = $('#posterPalettes');
+  PALETTES.forEach(function (p, i) {
+    var b = el('button', 'preset');
+    b.innerHTML = '<span class="sw" style="background:linear-gradient(135deg,' + p.c[0] + ',' + p.c[1] + ')"></span>' +
+      '<em>' + esc(p.name) + '</em>';
+    b.onclick = function () { poster.pal = i; syncPosterInputs(); drawPoster(); };
+    pc.appendChild(b);
+  });
+  [['#poHead', 'head'], ['#poSub', 'sub'], ['#poDate', 'date'], ['#poPlace', 'place'], ['#poFoot', 'foot']]
+    .forEach(function (pair) {
+      $(pair[0]).oninput = function () { poster.fields[pair[1]] = this.value; drawPoster(); };
+    });
+  $('#poLayout').onchange = function () { poster.layout = this.value; drawPoster(); };
+  $('#poPattern').onchange = function () { poster.pattern = this.value; drawPoster(); };
+  $('#poFormat').onchange = function () { poster.fmt = this.value; drawPoster(); };
+  $('#posterPick').onclick = function () { $('#posterFile').click(); };
+  $('#posterFile').onchange = function () {
+    if (!this.files[0]) return;
+    loadImageFile(this.files[0]).then(function (im) {
+      poster.img = im; drawPoster(); toast('Bakgrundsbild vald');
+    });
+  };
+  $('#posterSave').onclick = function () { downloadCanvas($('#posterCanvas'), 'sandofandom-affisch.png'); };
+  $('#posterPublish').onclick = function () {
+    publishCanvas($('#posterCanvas'), 'affisch', poster.fields.head || '');
+  };
+  applyTemplate('gig');
+}
+
+/* ---------- Export ---------- */
+function downloadCanvas(cv, filename) {
+  canvasBlob(cv, 'image/png').then(function (blob) { downloadBlob(blob, filename); });
+}
+function downloadBlob(blob, filename) {
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  toast('Sparad: ' + filename);
+}
+
+
+/* ============================================================
+   Väggen, video, event, profil — och start
+   ============================================================ */
+
+/* ---------- Personer ---------- */
+function personOf(id) {
+  if (id === 'me') return { id: 'me', name: state.me.name, handle: state.me.handle, hue: state.me.hue, avatarId: state.me.avatarId };
+  return CREATORS.filter(function (c) { return c.id === id; })[0] || CREATORS[0];
+}
+function initials(name) {
+  return name.trim().split(/\s+/).slice(0, 2).map(function (w) { return w[0]; }).join('').toUpperCase();
+}
+function avatarNode(person, size) {
+  var a = el('div', 'avatar');
+  a.style.background = 'linear-gradient(135deg,hsl(' + person.hue + ' 70% 52%),hsl(' + ((person.hue + 48) % 360) + ' 78% 46%))';
+  if (size) { a.style.width = a.style.height = size + 'px'; a.style.fontSize = (size * .36) + 'px'; }
+  a.textContent = initials(person.name || '?');
+  if (person.avatarId) {
+    Media.url(person.avatarId).then(function (u) {
+      if (u) { a.textContent = ''; var im = el('img'); im.src = u; im.alt = ''; a.appendChild(im); }
+    });
+  }
+  return a;
+}
+
+/* ---------- Publicera ---------- */
+var TAG_SUGGEST = ['#sändofandom', '#nyttinlägg', '#bakomkulisserna', '#affisch', '#studio', '#live', '#meetup', '#fanart'];
+
+function publishCanvas(cv, type, prefill) {
+  canvasBlob(cv, 'image/jpeg', 0.92).then(function (blob) {
+    openPublishSheet(blob, type, prefill, cv.toDataURL('image/jpeg', 0.5));
+  });
+}
+function openPublishSheet(blob, type, prefill, thumbUrl) {
+  var body = el('div', 'stack');
+  if (thumbUrl) {
+    var prev = el('div');
+    prev.style.cssText = 'border-radius:12px;overflow:hidden;border:1px solid var(--line);max-height:190px;display:grid;place-items:center;background:var(--panel-2)';
+    var im = el('img'); im.src = thumbUrl; im.alt = 'Förhandsvisning';
+    im.style.cssText = 'max-height:190px;width:auto';
+    prev.appendChild(im);
+    body.appendChild(prev);
+  }
+  var capWrap = el('div');
+  capWrap.innerHTML = '<label class="fld" for="pubCap">Bildtext</label>';
+  var cap = el('textarea');
+  cap.id = 'pubCap'; cap.maxLength = 180;
+  cap.placeholder = 'Berätta vad det här är.';
+  cap.value = prefill ? String(prefill).slice(0, 90) : '';
+  capWrap.appendChild(cap);
+  body.appendChild(capWrap);
+
+  var tagWrap = el('div');
+  tagWrap.innerHTML = '<label class="fld">Taggar — fler taggar ger mer räckvidd</label>';
+  var chips = el('div', 'chips');
+  chips.style.flexWrap = 'wrap';
+  var chosen = [];
+  TAG_SUGGEST.forEach(function (t) {
+    var b = el('button', 'chip', t);
+    b.setAttribute('aria-pressed', 'false');
+    b.onclick = function () {
+      var i = chosen.indexOf(t);
+      if (i < 0) { chosen.push(t); b.setAttribute('aria-pressed', 'true'); }
+      else { chosen.splice(i, 1); b.setAttribute('aria-pressed', 'false'); }
+    };
+    chips.appendChild(b);
+  });
+  tagWrap.appendChild(chips);
+  body.appendChild(tagWrap);
+
+  var go = el('button', 'btn wide');
+  go.innerHTML = '<svg class="ic"><use href="#i-spark"/></svg>Publicera';
+  go.onclick = function () {
+    go.disabled = true;
+    doPublish(blob, type, cap.value.trim(), chosen.slice());
+  };
+  body.appendChild(go);
+  openSheet('Publicera', body);
+}
+
+function doPublish(blob, type, cap, tags) {
+  var id = uid();
+  Media.put(id, blob).then(function () {
+    var post = {
+      id: id, type: type, author: 'me', cap: cap, tags: tags,
+      mediaId: id, mime: blob.type, likes: 0, liked: false, comments: [], ts: Date.now()
+    };
+    state.posts.unshift(post);
+    touchDay();
+    var score = postScore(post);
+    save();
+    closeSheet();
+    go('vagg');
+    setTimeout(function () {
+      gainFollowers(score, type === 'video' ? 'videon syns' : 'nytt inlägg');
+      gainReach(score * rnd(9, 22));
+      simulateResponse(post);
+      renderWall();
+    }, 420);
+    checkBadges();
+    if (challengeOfDay().go === (type === 'affisch' ? 'affisch' : type === 'video' ? 'video' : 'foto')) {
+      state.challengeDone = true; save();
+    }
+  });
+}
+/* Publiken svarar med en liten fördröjning — gillningar och en kommentar. */
+var REPLIES = ['Det här var snyggt.', 'Åh, stilen!', 'Kommer definitivt.', 'Mer sånt här tack 🙌',
+  'Sparat direkt.', 'Vilken färgsättning.', 'Delar med mina vänner.', 'Första raden på den affischen 👀'];
+function simulateResponse(post) {
+  var waves = Math.floor(rnd(2, 5));
+  for (var i = 0; i < waves; i++) {
+    (function (n) {
+      setTimeout(function () {
+        var p = state.posts.filter(function (x) { return x.id === post.id; })[0];
+        if (!p) return;
+        p.likes += Math.round(rnd(1, 4) + state.followers * 0.01);
+        state.likesGot += 1;
+        if (n === 1) p.comments.push({ who: pick(CREATORS).id, text: pick(REPLIES), ts: Date.now() });
+        gainReach(rnd(6, 30));
+        save();
+        if (current === 'vagg') renderWall();
+      }, 900 + n * rnd(700, 2200));
+    })(i);
+  }
+}
+
+/* ---------- Väggen ---------- */
+var wallFilter = 'alla', wallSort = 'het';
+function postWeight(p) {
+  var age = (Date.now() - p.ts) / 3600000;
+  return p.likes * 3 + p.comments.length * 6 - age * 1.5;
+}
+function visiblePosts() {
+  var list = state.posts.slice();
+  if (wallFilter !== 'alla') list = list.filter(function (p) { return p.type === wallFilter; });
+  if (wallSort === 'foljer') list = list.filter(function (p) { return p.author === 'me' || state.following.indexOf(p.author) >= 0; });
+  list.sort(wallSort === 'ny' ? function (a, b) { return b.ts - a.ts; }
+    : function (a, b) { return postWeight(b) - postWeight(a); });
+  return list;
+}
+function renderWall() {
+  var feed = $('#wallFeed');
+  feed.innerHTML = '';
+  var list = visiblePosts();
+  if (!list.length) {
+    feed.appendChild(el('div', 'empty',
+      '<svg class="ic"><use href="#i-wall"/></svg>Inget här än. Publicera något från studion så dyker det upp direkt.'));
+  }
+  list.forEach(function (p) { feed.appendChild(postNode(p)); });
+
+  var tags = {};
+  state.posts.forEach(function (p) {
+    (p.tags || []).forEach(function (t) { tags[t] = (tags[t] || 0) + 1 + p.likes * 0.35; });
+  });
+  var top = Object.keys(tags).sort(function (a, b) { return tags[b] - tags[a]; }).slice(0, 6);
+  var tc = $('#trendCard');
+  tc.innerHTML = '';
+  if (!top.length) tc.appendChild(el('p', 'hint', 'Tagga dina inlägg så byggs listan här.'));
+  top.forEach(function (t, i) {
+    var row = el('div', 'trend');
+    row.appendChild(el('div', 'r', String(i + 1)));
+    row.appendChild(el('b', null, esc(t)));
+    row.appendChild(el('small', null, Math.round(tags[t]) + ' pts'));
+    tc.appendChild(row);
+  });
+}
+function postNode(p) {
+  var who = personOf(p.author);
+  var card = el('article', 'post');
+
+  var head = el('div', 'post-head');
+  head.appendChild(avatarNode(who));
+  var w = el('div', 'who');
+  w.innerHTML = '<b>' + esc(who.name) + '</b><small>' + esc(who.handle) + ' · ' + relTime(p.ts) + '</small>';
+  head.appendChild(w);
+  if (p.author !== 'me') {
+    var fb = el('button', 'follow-btn');
+    var on = state.following.indexOf(p.author) >= 0;
+    fb.textContent = on ? 'Följer' : 'Följ';
+    fb.setAttribute('aria-pressed', on);
+    fb.onclick = function () { toggleFollow(p.author, fb); };
+    head.appendChild(fb);
+  } else {
+    head.appendChild(el('span', 'pill ' + p.type, p.type));
+  }
+  card.appendChild(head);
+
+  var media = el('div', 'post-media');
+  card.appendChild(media);
+  if (p.mediaId) {
+    Media.url(p.mediaId).then(function (u) {
+      if (!u) { media.appendChild(el('div', 'empty', 'Mediet hittades inte.')); return; }
+      if (p.type === 'video' || (p.mime || '').indexOf('video') === 0) {
+        var v = el('video');
+        v.src = u; v.controls = true; v.playsInline = true; v.preload = 'metadata';
+        media.appendChild(v);
+      } else {
+        var im = el('img'); im.src = u; im.alt = p.cap || 'Inlägg'; im.loading = 'lazy';
+        media.appendChild(im);
+      }
+    });
+  }
+
+  var body = el('div', 'post-body');
+  if (p.cap) body.appendChild(el('p', null, esc(p.cap)));
+  if (p.tags && p.tags.length) {
+    var tg = el('div', 'tags');
+    p.tags.forEach(function (t) { tg.appendChild(el('span', 'tag', esc(t))); });
+    body.appendChild(tg);
+  }
+  var acts = el('div', 'post-actions');
+  var like = el('button', 'act' + (p.liked ? ' liked' : ''));
+  like.innerHTML = '<svg class="ic"><use href="#i-heart"/></svg><span>' + nf(p.likes) + '</span>';
+  like.onclick = function () { toggleLike(p, like); };
+  acts.appendChild(like);
+  var com = el('button', 'act');
+  com.innerHTML = '<svg class="ic"><use href="#i-comment"/></svg><span>' + p.comments.length + '</span>';
+  com.onclick = function () { openComments(p); };
+  acts.appendChild(com);
+  var sh = el('button', 'act');
+  sh.innerHTML = '<svg class="ic"><use href="#i-share"/></svg>';
+  sh.setAttribute('aria-label', 'Dela');
+  sh.onclick = function () { sharePost(p); };
+  acts.appendChild(sh);
+  if (p.author === 'me') {
+    var del = el('button', 'act');
+    del.style.marginLeft = 'auto';
+    del.innerHTML = '<svg class="ic"><use href="#i-trash"/></svg>';
+    del.setAttribute('aria-label', 'Ta bort inlägg');
+    del.onclick = function () {
+      state.posts = state.posts.filter(function (x) { return x.id !== p.id; });
+      Media.del(p.mediaId); save(); renderWall(); toast('Inlägget togs bort');
+    };
+    acts.appendChild(del);
+  }
+  body.appendChild(acts);
+  card.appendChild(body);
+  return card;
+}
+function toggleLike(p, btn) {
+  p.liked = !p.liked;
+  p.likes += p.liked ? 1 : -1;
+  btn.classList.toggle('liked', p.liked);
+  $('span', btn).textContent = nf(p.likes);
+  if (p.liked) {
+    state.likesGiven += 1;
+    gainReach(rnd(2, 7));
+    if (p.author !== 'me' && Math.random() < .28) gainFollowers(rnd(1, 3), 'du syns när du gillar');
+  }
+  save(); checkBadges();
+}
+function toggleFollow(id, btn) {
+  var i = state.following.indexOf(id);
+  if (i < 0) {
+    state.following.push(id);
+    btn.textContent = 'Följer'; btn.setAttribute('aria-pressed', 'true');
+    if (Math.random() < .55) setTimeout(function () { gainFollowers(rnd(1, 4), personOf(id).name + ' följde tillbaka'); }, 900);
+  } else {
+    state.following.splice(i, 1);
+    btn.textContent = 'Följ'; btn.setAttribute('aria-pressed', 'false');
+  }
+  save();
+}
+function openComments(p) {
+  var body = el('div', 'stack');
+  var list = el('div');
+  function paint() {
+    list.innerHTML = '';
+    if (!p.comments.length) list.appendChild(el('p', 'hint', 'Inga kommentarer än.'));
+    p.comments.forEach(function (c) {
+      var row = el('div', 'row');
+      row.style.alignItems = 'flex-start';
+      row.style.padding = '9px 0';
+      row.style.borderBottom = '1px solid var(--line)';
+      row.appendChild(avatarNode(personOf(c.who), 30));
+      var t = el('div');
+      t.innerHTML = '<b style="font-size:13.5px">' + esc(personOf(c.who).name) + '</b>' +
+        '<p style="margin:1px 0 0;font-size:13.5px">' + esc(c.text) + '</p>';
+      row.appendChild(t);
+      list.appendChild(row);
+    });
+  }
+  paint();
+  body.appendChild(list);
+  var inp = el('input'); inp.type = 'text'; inp.placeholder = 'Skriv en kommentar'; inp.maxLength = 140;
+  body.appendChild(inp);
+  var send = el('button', 'btn wide', 'Kommentera');
+  send.onclick = function () {
+    if (!inp.value.trim()) return;
+    p.comments.push({ who: 'me', text: inp.value.trim(), ts: Date.now() });
+    inp.value = ''; save(); paint(); renderWall();
+    gainReach(rnd(3, 9));
+  };
+  body.appendChild(send);
+  openSheet('Kommentarer', body);
+}
+function sharePost(p) {
+  var text = (p.cap || 'Kolla in det här') + ' — via Sändo Fandom';
+  if (navigator.share) {
+    Media.url(p.mediaId).then(function () {
+      navigator.share({ title: 'Sändo Fandom', text: text }).then(function () {
+        gainReach(rnd(20, 60));
+        gainFollowers(rnd(0, 3), 'delningen spred sig');
+      }).catch(function () { });
+    });
+  } else {
+    if (navigator.clipboard) navigator.clipboard.writeText(text).catch(function () { });
+    toast('Texten kopierad');
+    gainReach(rnd(10, 30));
+  }
+}
+
+/* ---------- Video ---------- */
+var SCRIPTS = [
+  { id: 'intro', name: 'Presentera dig', lines: ['Hej! Jag heter …', 'Jag gör … och det här är min grej.', 'Följ om du gillar sånt här.'] },
+  { id: 'fandom', name: 'Fandom-intro', lines: ['Det här är vår fandom.', 'Vi håller på med …', 'Nästa sak som händer är …'] },
+  { id: 'teaser', name: 'Event-teaser', lines: ['Något är på gång.', 'Datum: …', 'Vi ses där.'] },
+  { id: 'bts', name: 'Bakom kulisserna', lines: ['Så här ser det ut när jag jobbar.', 'Det svåraste är …', 'Resultatet kommer i nästa inlägg.'] }
+];
+var vid = { stream: null, rec: null, chunks: [], blob: null, script: SCRIPTS[0], timer: null, t0: 0, lineTimer: null };
+var MAX_REC = 30;
+
+function buildVideoUI() {
+  var sc = $('#scriptChips');
+  SCRIPTS.forEach(function (s, i) {
+    var b = el('button', 'chip', s.name);
+    b.setAttribute('aria-pressed', i === 0);
+    b.onclick = function () {
+      vid.script = s;
+      $$('#scriptChips .chip').forEach(function (x) { x.setAttribute('aria-pressed', 'false'); });
+      b.setAttribute('aria-pressed', 'true');
+      showPrompterLine(0);
+    };
+    sc.appendChild(b);
+  });
+  $('#camStart').onclick = startCamera;
+  $('#recBtn').onclick = function () { vid.rec && vid.rec.state === 'recording' ? stopRecording() : startCountdown(); };
+  $('#clipPick').onclick = function () { $('#clipFile').click(); };
+  $('#clipFile').onchange = function () {
+    if (!this.files[0]) return;
+    useClip(this.files[0]);
+  };
+  $('#videoSave').onclick = function () {
+    if (vid.blob) downloadBlob(vid.blob, 'sandofandom-klipp.webm');
+  };
+  $('#videoPublish').onclick = function () {
+    if (!vid.blob) return;
+    openPublishSheet(vid.blob, 'video', $('#vidCap').value.trim(), null);
+  };
+  $('#teaserBtn').onclick = makeTeaser;
+}
+function showPrompterLine(i) {
+  var p = $('#prompter');
+  p.hidden = false;
+  $('#prompterStep').textContent = vid.script.name + ' · ' + (i + 1) + '/' + vid.script.lines.length;
+  $('#prompterLine').textContent = vid.script.lines[i];
+}
+function startCamera() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    toast('Kameran är inte tillgänglig här — ladda upp ett klipp.');
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 720 } }, audio: true })
+    .then(function (s) {
+      vid.stream = s;
+      var v = $('#camView');
+      v.srcObject = s; v.hidden = false; v.play();
+      $('#clipView').hidden = true;
+      $('#camOff').hidden = true;
+      $('#recBtn').hidden = false;
+      $('#camStart').textContent = 'Stäng kamera';
+      $('#camStart').onclick = function () { stopCamera(); $('#camStart').textContent = 'Starta kamera'; $('#camStart').onclick = startCamera; };
+      showPrompterLine(0);
+    })
+    .catch(function () {
+      toast('Fick inte tillgång till kameran. Du kan ladda upp ett klipp i stället.');
+      $('#camOff').innerHTML = 'Kameran nekades.<br>Ladda upp ett klipp eller gör en teaser nedan.';
+    });
+}
+function stopCamera() {
+  if (vid.stream) { vid.stream.getTracks().forEach(function (t) { t.stop(); }); vid.stream = null; }
+  var v = $('#camView');
+  if (v) { v.srcObject = null; v.hidden = true; }
+  if ($('#camOff')) $('#camOff').hidden = false;
+  if ($('#recBtn')) $('#recBtn').hidden = true;
+  clearInterval(vid.timer); clearInterval(vid.lineTimer);
+  $('#recDot') && $('#recDot').classList.remove('on');
+}
+function startCountdown() {
+  var cd = $('#countdown'), n = 3;
+  cd.classList.add('on'); cd.textContent = n;
+  var iv = setInterval(function () {
+    n--;
+    if (n === 0) { clearInterval(iv); cd.classList.remove('on'); startRecording(); }
+    else cd.textContent = n;
+  }, 800);
+}
+function startRecording() {
+  if (!vid.stream || !window.MediaRecorder) { toast('Inspelning stöds inte här.'); return; }
+  var types = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'];
+  var mime = types.filter(function (t) { return MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t); })[0];
+  vid.chunks = [];
+  try { vid.rec = new MediaRecorder(vid.stream, mime ? { mimeType: mime } : undefined); }
+  catch (e) { toast('Inspelning stöds inte här.'); return; }
+  vid.rec.ondataavailable = function (e) { if (e.data.size) vid.chunks.push(e.data); };
+  vid.rec.onstop = function () {
+    var blob = new Blob(vid.chunks, { type: vid.chunks[0] ? vid.chunks[0].type : 'video/webm' });
+    useBlob(blob);
+  };
+  vid.rec.start();
+  vid.t0 = Date.now();
+  $('#recBtn').classList.add('stop');
+  $('#recBtn').innerHTML = '<svg class="ic"><use href="#i-square"/></svg>';
+  $('#recDot').classList.add('on');
+  vid.timer = setInterval(function () {
+    var s = (Date.now() - vid.t0) / 1000;
+    $('#recTime').textContent = '0:' + String(Math.floor(s)).padStart(2, '0');
+    if (s >= MAX_REC) stopRecording();
+  }, 200);
+  var li = 0;
+  showPrompterLine(0);
+  vid.lineTimer = setInterval(function () {
+    li++;
+    if (li < vid.script.lines.length) showPrompterLine(li);
+    else clearInterval(vid.lineTimer);
+  }, (MAX_REC * 1000) / vid.script.lines.length);
+}
+function stopRecording() {
+  if (vid.rec && vid.rec.state === 'recording') vid.rec.stop();
+  clearInterval(vid.timer); clearInterval(vid.lineTimer);
+  $('#recBtn').classList.remove('stop');
+  $('#recBtn').innerHTML = '<svg class="ic"><use href="#i-rec"/></svg>';
+  $('#recDot').classList.remove('on');
+}
+function useClip(file) { useBlob(file); }
+function useBlob(blob) {
+  vid.blob = blob;
+  var cv = $('#clipView');
+  cv.src = URL.createObjectURL(blob);
+  cv.hidden = false;
+  $('#camView').hidden = true;
+  $('#camOff').hidden = true;
+  $('#clipReady').hidden = false;
+  toast('Klippet är klart');
+  $('#clipReady').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+/* Teaser utan kamera: animerad canvas spelas in via captureStream. */
+function makeTeaser() {
+  var head = $('#teaserText').value.trim() || 'NY EPISOD IKVÄLL';
+  var sub = $('#teaserSub').value.trim() || state.me.handle;
+  var cv = document.createElement('canvas');
+  cv.width = 720; cv.height = 1280;
+  var c = cv.getContext('2d');
+  if (!cv.captureStream || !window.MediaRecorder) {
+    toast('Videoinspelning stöds inte här — spara en affisch i stället.');
+    return;
+  }
+  var stream = cv.captureStream(30);
+  var chunks = [];
+  var rec;
+  try { rec = new MediaRecorder(stream, { mimeType: 'video/webm' }); }
+  catch (e) { toast('Videoinspelning stöds inte här.'); return; }
+  rec.ondataavailable = function (e) { if (e.data.size) chunks.push(e.data); };
+  rec.onstop = function () { useBlob(new Blob(chunks, { type: 'video/webm' })); };
+  rec.start();
+  var t0 = performance.now(), DUR = 5200;
+  var pal = PALETTES[poster.pal] || PALETTES[0];
+  (function frame(t) {
+    var k = clamp((t - t0) / DUR, 0, 1);
+    var W = cv.width, H = cv.height;
+    var g = c.createLinearGradient(0, 0, W, H);
+    g.addColorStop(0, pal.c[0]); g.addColorStop(1, pal.c[1]);
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    c.save();
+    c.globalAlpha = .5;
+    for (var i = 0; i < 3; i++) {
+      var x = W * (.3 + .4 * Math.sin(k * 6 + i * 2)), y = H * (.3 + .35 * Math.cos(k * 5 + i));
+      var rg = c.createRadialGradient(x, y, 0, x, y, W * .7);
+      rg.addColorStop(0, ['rgba(255,255,255,.35)', 'rgba(34,211,238,.35)', 'rgba(236,72,153,.3)'][i]);
+      rg.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = rg; c.fillRect(0, 0, W, H);
+    }
+    c.restore();
+    paintPattern(c, W, H, 'lines', pal.ink);
+    var reveal = clamp(k * 2.1, 0, 1);
+    c.save();
+    c.globalAlpha = reveal;
+    c.fillStyle = pal.ink;
+    var res = fitLines(c, head, W * .82, 'display', W * .17, 3);
+    setFont(c, 'display', res.size);
+    c.translate(0, (1 - reveal) * 40);
+    drawLines(c, res, W * .09, H * .46, 'left');
+    c.restore();
+    if (k > .45) {
+      c.save();
+      c.globalAlpha = clamp((k - .45) * 4, 0, 1);
+      c.fillStyle = pal.pop;
+      c.fillRect(W * .09, H * .53, W * .2 * clamp((k - .45) * 3, 0, 1), 8);
+      setFont(c, 'mono', W * .042);
+      c.fillStyle = pal.ink;
+      c.textAlign = 'left';
+      c.fillText(sub.toUpperCase(), W * .09, H * .61);
+      c.restore();
+    }
+    if (k < 1) requestAnimationFrame(frame);
+    else setTimeout(function () { rec.stop(); }, 120);
+  })(t0);
+  toast('Spelar in teaser…');
+}
+
+/* ---------- Event ---------- */
+var EVENT_TYPES = {
+  meetup: { name: 'Meetup', tasks: ['Boka lokal', 'Sätt datum och tid', 'Gör affisch', 'Bjud in väggen', 'Planera vad ni gör', 'Fixa namnskyltar', 'Ta bilder på plats'] },
+  live: { name: 'Livesändning', tasks: ['Testa ljud och ljus', 'Skriv körschema', 'Gör teaser-video', 'Påminn 1 timme innan', 'Spara klipp efteråt'] },
+  release: { name: 'Släppfest', tasks: ['Sätt släppdatum', 'Gör affisch och story', 'Skicka till närmsta kretsen', 'Räkna ner tre dagar i rad', 'Publicera på släppdagen'] },
+  watch: { name: 'Watch party', tasks: ['Välj vad ni ser', 'Sätt tid', 'Gör inbjudan', 'Öppna chatten', 'Sammanfatta efteråt'] },
+  tour: { name: 'Turné', tasks: ['Lista städer', 'Boka datum', 'Affisch per stad', 'Släpp datumen i omgångar', 'Efterrapport med bilder'] }
+};
+function eventById(id) { return state.events.filter(function (e) { return e.id === id; })[0]; }
+function eventDate(ev) { return new Date(ev.date + 'T' + (ev.time || '18:00')); }
+
+function renderEvents() {
+  var now = Date.now();
+  var up = state.events.filter(function (e) { return eventDate(e).getTime() >= now - 3600000; })
+    .sort(function (a, b) { return eventDate(a) - eventDate(b); });
+  var past = state.events.filter(function (e) { return eventDate(e).getTime() < now - 3600000; })
+    .sort(function (a, b) { return eventDate(b) - eventDate(a); });
+  fillEventList($('#eventList'), up, true);
+  fillEventList($('#eventPast'), past, false);
+}
+function fillEventList(box, list, upcoming) {
+  box.innerHTML = '';
+  if (!list.length) {
+    box.appendChild(el('div', 'empty', upcoming
+      ? '<svg class="ic"><use href="#i-calendar"/></svg>Inget planerat. Ett datum i kalendern ger dig något att bygga innehåll runt.'
+      : 'Inga genomförda event än.'));
+    return;
+  }
+  list.forEach(function (ev) {
+    var d = eventDate(ev);
+    var card = el('button', 'event-card');
+    var db = el('div', 'datebox');
+    db.innerHTML = '<b>' + d.getDate() + '</b><small>' + MONTHS[d.getMonth()] + '</small>';
+    card.appendChild(db);
+    var meta = el('div', 'meta');
+    var done = ev.tasks.filter(function (t) { return t.done; }).length;
+    meta.innerHTML = '<h3>' + esc(ev.title) + '</h3>' +
+      '<p>' + esc(EVENT_TYPES[ev.type].name) + ' · ' + esc(ev.place || 'plats ej satt') + '</p>' +
+      '<p style="margin-top:6px">' + done + '/' + ev.tasks.length + ' klart · ' +
+      ev.guests.filter(function (g) { return g.rsvp === 'ja'; }).length + ' anmälda</p>';
+    var bar = el('div', 'bar');
+    bar.style.marginTop = '8px';
+    bar.innerHTML = '<i style="width:' + (done / ev.tasks.length * 100) + '%"></i>';
+    meta.appendChild(bar);
+    card.appendChild(meta);
+    card.onclick = function () { openEvent(ev.id); };
+    box.appendChild(card);
+  });
+}
+function newEventSheet() {
+  var body = el('div', 'stack');
+  var d = new Date(Date.now() + 7 * 86400000);
+  body.innerHTML =
+    '<div><label class="fld" for="evTitle">Vad händer?</label>' +
+    '<input type="text" id="evTitle" placeholder="T.ex. Släppfest för nya avsnittet" maxlength="48"></div>' +
+    '<div class="grid g2"><div><label class="fld" for="evType">Typ</label><select id="evType"></select></div>' +
+    '<div><label class="fld" for="evGoal">Mål (gäster)</label><input type="number" id="evGoal" value="25" min="1"></div></div>' +
+    '<div class="grid g2"><div><label class="fld" for="evDate">Datum</label>' +
+    '<input type="date" id="evDate" value="' + todayKey(d) + '"></div>' +
+    '<div><label class="fld" for="evTime">Tid</label><input type="time" id="evTime" value="19:00"></div></div>' +
+    '<div><label class="fld" for="evPlace">Plats</label><input type="text" id="evPlace" placeholder="Adress eller länk" maxlength="48"></div>' +
+    '<div><label class="fld" for="evDesc">Beskrivning</label><textarea id="evDesc" maxlength="220" placeholder="Vad ska hända, och varför ska folk komma?"></textarea></div>';
+  var sel = $('#evType', body);
+  Object.keys(EVENT_TYPES).forEach(function (k) {
+    var o = el('option', null, EVENT_TYPES[k].name); o.value = k; sel.appendChild(o);
+  });
+  var save2 = el('button', 'btn wide', 'Skapa event');
+  save2.onclick = function () {
+    var title = $('#evTitle', body).value.trim();
+    if (!title) { toast('Ge eventet en titel.'); return; }
+    var type = sel.value;
+    var ev = {
+      id: uid(), title: title, type: type,
+      date: $('#evDate', body).value || todayKey(d),
+      time: $('#evTime', body).value || '19:00',
+      place: $('#evPlace', body).value.trim(),
+      goal: +$('#evGoal', body).value || 25,
+      desc: $('#evDesc', body).value.trim(),
+      tasks: EVENT_TYPES[type].tasks.map(function (t) { return { t: t, done: false }; }),
+      guests: []
+    };
+    state.events.push(ev); save(); checkBadges();
+    closeSheet(); renderEvents();
+    toast('Eventet är inlagt');
+    setTimeout(function () { openEvent(ev.id); }, 260);
+  };
+  body.appendChild(save2);
+  openSheet('Nytt event', body);
+}
+function openEvent(id) {
+  var ev = eventById(id);
+  if (!ev) return;
+  var body = el('div', 'stack');
+
+  var when = eventDate(ev);
+  var head = el('div', 'card');
+  head.innerHTML = '<div class="eyebrow">' + esc(EVENT_TYPES[ev.type].name) + '</div>' +
+    '<p class="hint" style="margin-top:2px">' + when.getDate() + ' ' + MONTHS[when.getMonth()] + ' · ' +
+    esc(ev.time) + (ev.place ? ' · ' + esc(ev.place) : '') + '</p>' +
+    (ev.desc ? '<p class="hint" style="margin-top:8px">' + esc(ev.desc) + '</p>' : '') +
+    '<div class="countdown-strip" id="cdStrip"></div>';
+  body.appendChild(head);
+
+  var cdTimer = setInterval(function () {
+    var strip = $('#cdStrip', head);
+    if (!document.body.contains(strip)) { clearInterval(cdTimer); return; }
+    var ms = when - Date.now();
+    var neg = ms < 0; ms = Math.abs(ms);
+    var dd = Math.floor(ms / 86400000), hh = Math.floor(ms / 3600000) % 24,
+      mm = Math.floor(ms / 60000) % 60, ss = Math.floor(ms / 1000) % 60;
+    strip.innerHTML = [[dd, 'dagar'], [hh, 'tim'], [mm, 'min'], [ss, 'sek']].map(function (u) {
+      return '<div class="cd-unit"><b>' + u[0] + '</b><small>' + u[1] + '</small></div>';
+    }).join('');
+    if (neg) strip.previousElementSibling && 0;
+  }, 500);
+
+  /* Checklista */
+  var cl = el('div', 'card');
+  cl.appendChild(el('div', 'eyebrow', 'Checklista'));
+  var listBox = el('div');
+  function paintTasks() {
+    listBox.innerHTML = '';
+    ev.tasks.forEach(function (t, i) {
+      var row = el('div', 'check' + (t.done ? ' done' : ''));
+      var b = el('button');
+      b.setAttribute('aria-pressed', t.done);
+      b.setAttribute('aria-label', t.t);
+      b.innerHTML = '<svg class="ic"><use href="#i-check"/></svg>';
+      b.onclick = function () {
+        t.done = !t.done; save(); paintTasks(); renderEvents();
+        if (t.done && ev.tasks.every(function (x) { return x.done; })) {
+          gainFollowers(rnd(4, 10), 'du blev klar med planeringen');
+        }
+      };
+      row.appendChild(b);
+      row.appendChild(el('span', null, esc(t.t)));
+      listBox.appendChild(row);
+    });
+  }
+  paintTasks();
+  cl.appendChild(listBox);
+  var addT = el('div', 'row');
+  addT.style.marginTop = '10px';
+  var ti = el('input'); ti.type = 'text'; ti.placeholder = 'Lägg till punkt'; ti.maxLength = 60;
+  var tb = el('button', 'btn ghost sm', 'Lägg till');
+  tb.onclick = function () {
+    if (!ti.value.trim()) return;
+    ev.tasks.push({ t: ti.value.trim(), done: false });
+    ti.value = ''; save(); paintTasks();
+  };
+  addT.appendChild(ti); addT.appendChild(tb);
+  cl.appendChild(addT);
+  body.appendChild(cl);
+
+  /* Gäster */
+  var gc = el('div', 'card');
+  gc.appendChild(el('div', 'eyebrow', 'Gäster'));
+  var gBox = el('div');
+  function paintGuests() {
+    gBox.innerHTML = '';
+    var yes = ev.guests.filter(function (g) { return g.rsvp === 'ja'; }).length;
+    var bar = el('div', 'bar');
+    bar.innerHTML = '<i style="width:' + clamp(yes / ev.goal * 100, 0, 100) + '%"></i>';
+    gBox.appendChild(el('p', 'hint', yes + ' av ' + ev.goal + ' anmälda'));
+    gBox.appendChild(bar);
+    ev.guests.forEach(function (g, i) {
+      var row = el('div', 'guest');
+      row.appendChild(el('div', 'n', esc(g.name)));
+      var rs = el('div', 'rsvp');
+      ['ja', 'kanske', 'nej'].forEach(function (v) {
+        var b = el('button', null, v);
+        b.setAttribute('aria-pressed', g.rsvp === v);
+        b.onclick = function () { g.rsvp = v; save(); paintGuests(); renderEvents(); };
+        rs.appendChild(b);
+      });
+      row.appendChild(rs);
+      gBox.appendChild(row);
+    });
+  }
+  paintGuests();
+  gc.appendChild(gBox);
+  var addG = el('div', 'row');
+  addG.style.marginTop = '10px';
+  var gi = el('input'); gi.type = 'text'; gi.placeholder = 'Namn'; gi.maxLength = 40;
+  var gb = el('button', 'btn ghost sm', 'Bjud in');
+  gb.onclick = function () {
+    if (!gi.value.trim()) return;
+    ev.guests.push({ name: gi.value.trim(), rsvp: 'kanske' });
+    gi.value = ''; save(); paintGuests(); renderEvents();
+  };
+  addG.appendChild(gi); addG.appendChild(gb);
+  gc.appendChild(addG);
+  body.appendChild(gc);
+
+  /* Kampanjmaterial */
+  var mc = el('div', 'card');
+  mc.appendChild(el('div', 'eyebrow', 'Kampanjmaterial'));
+  mc.appendChild(el('p', 'hint', 'Genererat från eventets uppgifter — redigera vidare i studion om du vill.'));
+  var row = el('div', 'grid g3');
+  row.style.marginTop = '11px';
+  [['Affisch', '45'], ['Story', '916'], ['Kvadrat', '11']].forEach(function (pair) {
+    var b = el('button', 'btn ghost sm', pair[0]);
+    b.onclick = function () { eventArtwork(ev, pair[1]); };
+    row.appendChild(b);
+  });
+  mc.appendChild(row);
+  var tb2 = el('button', 'btn ghost wide sm', 'Teaser-video');
+  tb2.style.marginTop = '9px';
+  tb2.onclick = function () { closeSheet(); go('video'); prepTeaser(ev); };
+  mc.appendChild(tb2);
+  var sb = el('button', 'btn wide', 'Öppna i affischbyggaren');
+  sb.style.marginTop = '9px';
+  sb.onclick = function () {
+    poster.fields = eventFields(ev);
+    poster.pal = eventPal(ev); poster.layout = 'stack'; poster.pattern = 'lines'; poster.fmt = '45';
+    syncPosterInputs(); drawPoster(); closeSheet(); go('affisch');
+  };
+  mc.appendChild(sb);
+  body.appendChild(mc);
+
+  var danger = el('button', 'btn ghost sm', 'Ta bort eventet');
+  danger.onclick = function () {
+    state.events = state.events.filter(function (e) { return e.id !== ev.id; });
+    save(); closeSheet(); renderEvents(); toast('Eventet togs bort');
+  };
+  body.appendChild(danger);
+
+  openSheet(ev.title, body);
+}
+function eventFields(ev) {
+  var d = eventDate(ev);
+  var days = ['sön', 'mån', 'tis', 'ons', 'tors', 'fre', 'lör'];
+  return {
+    head: ev.title,
+    sub: ev.desc || EVENT_TYPES[ev.type].name + ' med ' + state.me.handle,
+    date: days[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' · ' + ev.time,
+    place: ev.place || 'plats meddelas',
+    foot: state.me.handle + ' · sändo fandom'
+  };
+}
+function eventPal(ev) {
+  return { meetup: 2, live: 3, release: 1, watch: 5, tour: 0 }[ev.type] || 0;
+}
+function eventArtwork(ev, fmt) {
+  var size = POSTER_FMT[fmt];
+  var cv = document.createElement('canvas');
+  cv.width = size[0]; cv.height = size[1];
+  paintPoster(cv.getContext('2d'), size[0], size[1], {
+    pal: eventPal(ev), layout: fmt === '916' ? 'center' : 'stack',
+    pattern: fmt === '916' ? 'waves' : 'lines', fields: eventFields(ev), img: null
+  });
+  publishCanvas(cv, 'affisch', ev.title);
+}
+function prepTeaser(ev) {
+  var f = eventFields(ev);
+  $('#teaserText').value = ev.title.slice(0, 28);
+  $('#teaserSub').value = (f.date + ' · ' + state.me.handle).slice(0, 44);
+  poster.pal = eventPal(ev);
+  toast('Teasern är förifylld — tryck på "Skapa teaser-video".');
+  setTimeout(function () { $('#teaserBtn').scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 250);
+}
+
+/* ---------- Profil ---------- */
+function renderProfile() {
+  var av = $('#myAvatar');
+  av.replaceWith(avatarNode(personOf('me'), 66));
+  $('.profile-head .avatar').id = 'myAvatar';
+  $('#myName').textContent = state.me.name;
+  $('#myHandle').textContent = state.me.handle;
+  $('#myBio').textContent = state.me.bio;
+  $('#pfFollowers').textContent = nf(state.followers);
+  $('#pfPosts').textContent = nf(myPosts().length);
+  $('#pfLikes').textContent = nf(myPosts().reduce(function (a, p) { return a + p.likes; }, 0));
+
+  var bg = $('#badgeGrid');
+  bg.innerHTML = '';
+  BADGES.forEach(function (b) {
+    var has = state.badges.indexOf(b.id) >= 0;
+    var n = el('div', 'badge' + (has ? '' : ' locked'));
+    n.innerHTML = '<svg class="ic"><use href="#i-medal"/></svg><b>' + esc(b.name) + '</b>' +
+      '<small>' + esc(has ? 'Klar' : b.need) + '</small>';
+    bg.appendChild(n);
+  });
+
+  var gal = $('#myGallery');
+  gal.innerHTML = '';
+  var mine = myPosts();
+  if (!mine.length) {
+    gal.innerHTML = '';
+    var e2 = el('div', 'empty', 'Ditt galleri fylls när du publicerar.');
+    e2.style.gridColumn = '1 / -1';
+    gal.appendChild(e2);
+  }
+  mine.slice(0, 12).forEach(function (p) {
+    var b = el('button');
+    b.onclick = function () { go('vagg'); };
+    Media.url(p.mediaId).then(function (u) {
+      if (!u) return;
+      if (p.type === 'video') {
+        var v = el('video'); v.src = u; v.muted = true; v.playsInline = true; b.appendChild(v);
+      } else { var im = el('img'); im.src = u; im.alt = p.cap || ''; b.appendChild(im); }
+    });
+    gal.appendChild(b);
+  });
+}
+function editProfileSheet() {
+  var body = el('div', 'stack');
+  body.innerHTML =
+    '<div><label class="fld" for="meName">Namn</label><input type="text" id="meName" maxlength="30"></div>' +
+    '<div><label class="fld" for="meHandle">Användarnamn</label><input type="text" id="meHandle" maxlength="24"></div>' +
+    '<div><label class="fld" for="meBio">Bio</label><textarea id="meBio" maxlength="160"></textarea></div>' +
+    '<div><label class="fld" for="meHue">Profilfärg</label><input type="range" id="meHue" min="0" max="360"></div>';
+  $('#meName', body).value = state.me.name;
+  $('#meHandle', body).value = state.me.handle;
+  $('#meBio', body).value = state.me.bio;
+  $('#meHue', body).value = state.me.hue;
+  var pickBtn = el('button', 'btn ghost wide sm', 'Välj profilbild');
+  var file = el('input'); file.type = 'file'; file.accept = 'image/*'; file.hidden = true;
+  pickBtn.onclick = function () { file.click(); };
+  file.onchange = function () {
+    if (!file.files[0]) return;
+    var id = uid();
+    Media.put(id, file.files[0]).then(function () {
+      state.me.avatarId = id; save(); renderProfile(); toast('Profilbild uppdaterad');
+    });
+  };
+  body.appendChild(pickBtn); body.appendChild(file);
+  var okBtn = el('button', 'btn wide', 'Spara');
+  okBtn.onclick = function () {
+    state.me.name = $('#meName', body).value.trim() || 'Du';
+    var h = $('#meHandle', body).value.trim() || '@du';
+    state.me.handle = h[0] === '@' ? h : '@' + h;
+    state.me.bio = $('#meBio', body).value.trim();
+    state.me.hue = +$('#meHue', body).value;
+    save(); closeSheet(); renderProfile(); toast('Profilen sparad');
+  };
+  body.appendChild(okBtn);
+  openSheet('Redigera profil', body);
+}
+
+/* ---------- Startinnehåll på väggen ---------- */
+function seedWall() {
+  var seeds = [
+    { by: 'c1', type: 'affisch', cfg: { pal: 5, layout: 'stack', pattern: 'lines', fields: { head: 'NATTPASS VOL. 3', sub: 'Tre timmar nya spår, en gång i månaden', date: 'fre 5 sep · 22:00', place: 'Studio Nova', foot: '@novalind' } }, cap: 'Affischen till nattpasset. Färgerna är hela grejen den här gången.', tags: ['#affisch', '#live'] },
+    { by: 'c3', type: 'foto', photo: { style: 'film', frame: 'inset', text: { head: 'Bakom kulisserna', sub: '@verasund · dag 14', font: 'display', pos: 'bottom', color: '#ffffff', size: 62, plate: 'shadow' }, adj: { exp: 4, con: 8, sat: 0, warm: 6, vig: 22, grain: 18, blur: 0 }, stickers: [{ e: '📸', x: .82, y: .18, s: 110 }] }, cap: 'Dag 14 av att bygga något varje dag. Idag: bara ljus och tålamod.', tags: ['#bakomkulisserna', '#studio'] },
+    { by: 'c2', type: 'affisch', cfg: { pal: 1, layout: 'center', pattern: 'dots', fields: { head: 'MERCH DROP', sub: 'Sextio tröjor, inga fler', date: 'lör 6 sep · 12:00', place: 'Endast online', foot: '@kitemakes' } }, cap: 'Släpper på lördag. Har suttit med tryckfilen i två veckor.', tags: ['#affisch', '#nyttinlägg'] },
+    { by: 'c5', type: 'foto', photo: { style: 'neon', frame: 'grad', text: { head: 'SÖNDAGSSESSION', sub: 'omarreyes · varje vecka', font: 'mono', pos: 'top', color: '#ffffff', size: 58, plate: 'bar' }, adj: { exp: 0, con: 12, sat: 20, warm: -8, vig: 10, grain: 8, blur: 0 }, stickers: [{ e: '🎧', x: .2, y: .78, s: 130 }] }, cap: 'Söndagssession. Kom förbi om du är i stan.', tags: ['#meetup', '#sändofandom'] },
+    { by: 'c6', type: 'affisch', cfg: { pal: 4, layout: 'edge', pattern: 'grid', fields: { head: 'ÖPPET HUS I STUDION', sub: 'Kom och se hur allt görs, ställ frågor', date: 'sön 21 sep · 14:00', place: 'Verkstadsgatan 4', foot: 'Fritt inträde' } }, cap: 'Öppet hus igen. Förra gången kom 40 personer, den här gången har vi mer plats.', tags: ['#meetup', '#affisch'] }
+  ];
+  var chain = Promise.resolve();
+  seeds.forEach(function (s, i) {
+    chain = chain.then(function () {
+      var cv = document.createElement('canvas');
+      if (s.type === 'affisch') {
+        cv.width = 1080; cv.height = 1350;
+        paintPoster(cv.getContext('2d'), 1080, 1350, {
+          pal: s.cfg.pal, layout: s.cfg.layout, pattern: s.cfg.pattern, fields: s.cfg.fields, img: null
+        });
+      } else {
+        cv.width = 1080; cv.height = 1350;
+        paintPhoto(cv.getContext('2d'), 1080, 1350, {
+          img: null, style: s.photo.style, adj: s.photo.adj, text: s.photo.text,
+          frame: s.photo.frame, stickers: s.photo.stickers
+        });
+      }
+      return canvasBlob(cv, 'image/jpeg', 0.86).then(function (blob) {
+        var id = uid();
+        return Media.put(id, blob).then(function () {
+          state.posts.push({
+            id: id, type: s.type, author: s.by, cap: s.cap, tags: s.tags, mediaId: id,
+            mime: 'image/jpeg', likes: Math.round(rnd(24, 320)), liked: false,
+            comments: [{ who: pick(CREATORS).id, text: pick(REPLIES), ts: Date.now() - rnd(1, 20) * 3600000 }],
+            ts: Date.now() - (i + 1) * rnd(2, 9) * 3600000
+          });
+        });
+      });
+    });
+  });
+  return chain.then(function () { state.seeded = true; save(); });
+}
+
+/* ---------- Start ---------- */
+function bindWallControls() {
+  var f = [['alla', 'Allt'], ['foto', 'Foton'], ['affisch', 'Affischer'], ['video', 'Videor']];
+  var box = $('#wallFilters');
+  f.forEach(function (pair) {
+    var b = el('button', 'chip', pair[1]);
+    b.setAttribute('aria-pressed', wallFilter === pair[0]);
+    b.onclick = function () {
+      wallFilter = pair[0];
+      $$('#wallFilters .chip').forEach(function (x) { x.setAttribute('aria-pressed', 'false'); });
+      b.setAttribute('aria-pressed', 'true'); renderWall();
+    };
+    box.appendChild(b);
+  });
+  var s = [['het', 'Hetast'], ['ny', 'Nyast'], ['foljer', 'Följer']];
+  var sb = $('#wallSorts');
+  s.forEach(function (pair) {
+    var b = el('button', 'chip', pair[1]);
+    b.setAttribute('aria-pressed', wallSort === pair[0]);
+    b.onclick = function () {
+      wallSort = pair[0];
+      $$('#wallSorts .chip').forEach(function (x) { x.setAttribute('aria-pressed', 'false'); });
+      b.setAttribute('aria-pressed', 'true'); renderWall();
+    };
+    sb.appendChild(b);
+  });
+}
+
+function boot() {
+  load();
+  var savedTheme = localStorage.getItem(KEY + '.theme');
+  applyTheme(savedTheme || null);
+  $('#themeBtn').onclick = toggleTheme;
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener &&
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function () {
+      if (!localStorage.getItem(KEY + '.theme')) applyTheme(null);
+    });
+
+  buildPhotoUI();
+  buildPosterUI();
+  buildVideoUI();
+  bindWallControls();
+  $('#newEvent').onclick = newEventSheet;
+  $('#editProfile').onclick = editProfileSheet;
+  $('#appVersion').textContent = APP_VERSION;
+  $('#appPlatform').textContent = window.cordova ? (window.cordova.platformId || 'cordova') : 'webb';
+  $('#resetApp').onclick = function () {
+    var body = el('div', 'stack');
+    body.appendChild(el('p', 'hint', 'Detta raderar följare, inlägg, event och sparade bilder på den här enheten. Går inte att ångra.'));
+    var b = el('button', 'btn hot wide', 'Radera allt');
+    b.onclick = function () {
+      Media.clear();
+      localStorage.removeItem(KEY);
+      state = freshState();
+      save(); closeSheet();
+      seedWall().then(function () { renderWall(); renderHome(); renderProfile(); updateChip(); });
+      toast('Allt nollställt');
+      go('hem');
+    };
+    body.appendChild(b);
+    openSheet('Nollställ appen', body);
+  };
+
+  touchDay();
+  updateChip();
+  renderHome();
+  heroAmbient();
+  drawPhoto();
+  renderStickerLayers();
+
+  Media.open().then(function () {
+    if (!state.seeded) return seedWall();
+  }).then(function () {
+    renderWall();
+    renderProfile();
+    checkBadges();
+  });
+
+  window.addEventListener('resize', function () {
+    if (current === 'hem') renderHome();
+  });
+}
+
+/* Cordova: vänta på deviceready när vi kör i appen, annars starta direkt.
+   Fallback efter 2,5 s så att appen aldrig fastnar på en tom skärm. */
+var booted = false;
+function bootOnce(fromDevice) {
+  if (booted) return;
+  booted = true;
+  if (fromDevice) {
+    if (window.StatusBar) try { window.StatusBar.styleLightContent(); } catch (e) { }
+    if (navigator.splashscreen) setTimeout(navigator.splashscreen.hide, 350);
+  }
+  boot();
+}
+var inCordova = location.protocol === 'file:' || !!window.cordova;
+if (inCordova) {
+  document.addEventListener('deviceready', function () { bootOnce(true); }, false);
+  /* Öppnad som lokal fil utan cordova.js — starta direkt i stället för att vänta. */
+  document.addEventListener('cordovamissing', function () { bootOnce(false); }, false);
+  if (window.__cordovaMissing) bootOnce(false);
+  setTimeout(function () { bootOnce(false); }, 2000);
+} else if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function () { bootOnce(false); });
+} else {
+  bootOnce(false);
+}
+
+</script>
+</body>
+</html>

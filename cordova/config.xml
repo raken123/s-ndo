@@ -1,0 +1,100 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.sando.fandom" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>Sändo Fandom</name>
+    <description>Bygg din fandom: fotoredigerare, affischbyggare, korta videor, publik vägg och eventplanerare.</description>
+    <author email="hej@sando.app" href="https://github.com/raken123/s-ndo">Sändo</author>
+
+    <content src="index.html" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <allow-intent href="tel:*" />
+    <allow-intent href="mailto:*" />
+
+    <preference name="DisallowOverscroll" value="true" />
+    <preference name="Orientation" value="portrait" />
+    <preference name="BackgroundColor" value="0xff0d0f1a" />
+    <preference name="SplashScreenDelay" value="1500" />
+    <preference name="AutoHideSplashScreen" value="false" />
+    <preference name="FadeSplashScreenDuration" value="300" />
+    <preference name="StatusBarOverlaysWebView" value="false" />
+    <preference name="StatusBarBackgroundColor" value="#0d0f1a" />
+    <preference name="StatusBarStyle" value="lightcontent" />
+
+    <!-- Appen sparar allt lokalt; inga nätverksanrop görs. -->
+    <preference name="AndroidInsecureFileModeEnabled" value="false" />
+
+    <platform name="android">
+        <preference name="AndroidWindowSplashScreenAnimatedIcon" value="res/icon/android/icon-xxxhdpi.png" />
+        <preference name="AndroidWindowSplashScreenBackground" value="#0d0f1a" />
+
+        <icon density="ldpi" src="res/icon/android/icon-ldpi.png" />
+        <icon density="mdpi" src="res/icon/android/icon-mdpi.png" />
+        <icon density="hdpi" src="res/icon/android/icon-hdpi.png" />
+        <icon density="xhdpi" src="res/icon/android/icon-xhdpi.png" />
+        <icon density="xxhdpi" src="res/icon/android/icon-xxhdpi.png" />
+        <icon density="xxxhdpi" src="res/icon/android/icon-xxxhdpi.png" />
+
+        <!-- Adaptiv ikon (Android 8+) -->
+        <icon background="#4f46e5" density="ldpi" foreground="res/icon/android/icon-ldpi-foreground.png" />
+        <icon background="#4f46e5" density="mdpi" foreground="res/icon/android/icon-mdpi-foreground.png" />
+        <icon background="#4f46e5" density="hdpi" foreground="res/icon/android/icon-hdpi-foreground.png" />
+        <icon background="#4f46e5" density="xhdpi" foreground="res/icon/android/icon-xhdpi-foreground.png" />
+        <icon background="#4f46e5" density="xxhdpi" foreground="res/icon/android/icon-xxhdpi-foreground.png" />
+        <icon background="#4f46e5" density="xxxhdpi" foreground="res/icon/android/icon-xxxhdpi-foreground.png" />
+
+        <splash density="land-mdpi" src="res/screen/android/splash-land-mdpi.png" />
+        <splash density="land-hdpi" src="res/screen/android/splash-land-hdpi.png" />
+        <splash density="land-xhdpi" src="res/screen/android/splash-land-xhdpi.png" />
+        <splash density="land-xxhdpi" src="res/screen/android/splash-land-xxhdpi.png" />
+        <splash density="land-xxxhdpi" src="res/screen/android/splash-land-xxxhdpi.png" />
+        <splash density="port-mdpi" src="res/screen/android/splash-port-mdpi.png" />
+        <splash density="port-hdpi" src="res/screen/android/splash-port-hdpi.png" />
+        <splash density="port-xhdpi" src="res/screen/android/splash-port-xhdpi.png" />
+        <splash density="port-xxhdpi" src="res/screen/android/splash-port-xxhdpi.png" />
+        <splash density="port-xxxhdpi" src="res/screen/android/splash-port-xxxhdpi.png" />
+
+        <!-- Kamera och mikrofon behövs för korta videor -->
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="android.permission.CAMERA" />
+            <uses-permission android:name="android.permission.RECORD_AUDIO" />
+            <uses-feature android:name="android.hardware.camera" android:required="false" />
+        </config-file>
+    </platform>
+
+    <platform name="ios">
+        <icon height="20" src="res/icon/ios/icon-20.png" width="20" />
+        <icon height="29" src="res/icon/ios/icon-29.png" width="29" />
+        <icon height="40" src="res/icon/ios/icon-40.png" width="40" />
+        <icon height="58" src="res/icon/ios/icon-58.png" width="58" />
+        <icon height="60" src="res/icon/ios/icon-60.png" width="60" />
+        <icon height="76" src="res/icon/ios/icon-76.png" width="76" />
+        <icon height="80" src="res/icon/ios/icon-80.png" width="80" />
+        <icon height="87" src="res/icon/ios/icon-87.png" width="87" />
+        <icon height="120" src="res/icon/ios/icon-120.png" width="120" />
+        <icon height="152" src="res/icon/ios/icon-152.png" width="152" />
+        <icon height="167" src="res/icon/ios/icon-167.png" width="167" />
+        <icon height="180" src="res/icon/ios/icon-180.png" width="180" />
+        <icon height="1024" src="res/icon/ios/icon-1024.png" width="1024" />
+
+        <splash src="res/screen/ios/Default@2x~universal~anyany.png" />
+
+        <edit-config file="*-Info.plist" mode="merge" target="NSCameraUsageDescription">
+            <string>Kameran används för att spela in korta presentationsvideor.</string>
+        </edit-config>
+        <edit-config file="*-Info.plist" mode="merge" target="NSMicrophoneUsageDescription">
+            <string>Mikrofonen används för ljudet i dina videoklipp.</string>
+        </edit-config>
+        <edit-config file="*-Info.plist" mode="merge" target="NSPhotoLibraryUsageDescription">
+            <string>Bildbiblioteket används för att välja foton att redigera.</string>
+        </edit-config>
+        <edit-config file="*-Info.plist" mode="merge" target="NSPhotoLibraryAddUsageDescription">
+            <string>Sparar dina färdiga bilder och affischer i bildbiblioteket.</string>
+        </edit-config>
+    </platform>
+
+    <plugin name="cordova-plugin-splashscreen" spec="^6.0.2" />
+    <plugin name="cordova-plugin-statusbar" spec="^4.0.0" />
+    <plugin name="cordova-plugin-camera" spec="^7.0.0" />
+    <plugin name="cordova-plugin-media-capture" spec="^5.0.0" />
+    <plugin name="cordova-plugin-file" spec="^8.1.0" />
+</widget>
