@@ -1,15 +1,18 @@
 # Mattenite 💣
 
-**Svara. Kasta. Överlev.** Ett mattespel för Android (Apache Cordova) där du svarar
-på en fråga och sedan kastar bomben vidare till en annan spelare — som då måste
-svara på sin fråga. Den som håller i bomben när klockan tar slut förlorar ett liv.
-Sist kvar vinner.
+**Svara. Kasta. Överlev.** Ett mattespel för Android (Apache Cordova) i två delar:
+
+- **Minfältet 3D** — förstapersons-3D där du går runt i en arena full av *osynliga*
+  bomber. Trampar du på en startar en mattefråga direkt, och klockan tickar.
+  Svarar du rätt får du sikta och kasta bomben på någon annan.
+- **Arcade Mode** — det klassiska 2D-spelet med lobbies och sex spellägen.
+  **Låst från början**: lev sist i fem rundor i Minfältet för att låsa upp det.
 
 Hela spelet körs offline och all data sparas lokalt på enheten.
 
 ## Färdig APK
 
-`dist/Mattenite-1.0.0-debug.apk` (3,4 MB, minSdk 24 / Android 7+).
+`dist/Mattenite-1.1.0-debug.apk` (3,5 MB, minSdk 24 / Android 7+).
 
 Installera: kopiera filen till telefonen, öppna den och tillåt "installera okända
 appar" för din filhanterare. Appen heter **Mattenite** och har den lila
@@ -19,7 +22,26 @@ Varje push till `mattenite/**` bygger dessutom en ny APK via GitHub Actions
 (`.github/workflows/mattenite-apk.yml`) som kan laddas ner under Actions →
 senaste körningen → Artifacts.
 
-## Så spelas det
+## Minfältet 3D
+
+Egen liten WebGL-motor — inga externa bibliotek, allt ritas från grunden.
+
+1. **Gå runt** med spaken nere till vänster (eller WASD). Dra på höger halva av
+   skärmen för att se dig omkring, piltangenter fungerar också.
+2. **Minsökaren** uppe till höger slår ut när du är nära en bomb — men den varnar
+   sent, så du hinner ofta trampa fel ändå.
+3. **Trampar du på en bomb** dyker frågan upp mitt i bilden och bomben hamnar i
+   dina händer. Skärmkanten pulserar rött och klockan tickar.
+4. **Svara rätt** → sikta med hårkorset (siktet blir rött när någon är i sikte)
+   eller tryck på en spelare i listan, och kasta. Svarar du fel brinner två
+   sekunder bort och du får en ny fråga.
+5. **Smäller bomben i dina händer** förlorar du ett liv av två. Sist kvar vinner
+   rundan — och varje vinst är en nyckel till Arcade Mode.
+
+Botarna går runt på egen hand, flyr från den som håller bomben och kastar helst
+på den som står närmast.
+
+## Arcade Mode (låses upp)
 
 1. **Lobbies** — gå till fliken *Lobbies* och tryck på en lobby för att gå med.
    Du kan också skapa en egen lobby eller gå med via en femteckens kod. I lobbyn
@@ -56,7 +78,8 @@ Var tredje rätt svar i en match ger en power-up (max tre i taget):
   multiplikation, division, potenser & rötter, procent, bråk, ekvationer,
   geometri, negativa tal, talföljder och primtal. Frågorna genereras slumpmässigt,
   så de tar aldrig slut.
-- **100 prestationer** i 13 grupper, inklusive sex hemliga. Varje prestation ger mynt.
+- **112 prestationer** i 14 grupper, inklusive sex hemliga och tolv för Minfältet.
+  Varje prestation ger mynt.
 - **Nivåer och XP**, mynt, butik med avatarer, sex teman och sex bombskinn.
 - **Topplista**, matchhistorik, statistik per kategori, lobbychatt, ljudeffekter
   och vibration — allt kan stängas av i inställningarna.
@@ -94,13 +117,18 @@ mattenite/
 │     ├─ data.js           frågegenerator, kategorier, prestationer, butik, lobbymallar
 │     ├─ state.js          profil, sparning, XP/nivåer, prestationsmotor
 │     ├─ ui.js             navigering, vyer, lobbyer, butik, ljud, toasts
-│     ├─ game.js           spelmotorn (bomben, botarna, alla lägen)
+│     ├─ game.js           arcade-motorn (bomben, botarna, alla lägen)
+│     ├─ arena3d.js        3D-motorn: WebGL, arenan, minorna, botarna
+│     ├─ arena-ui.js       meny, HUD, minikarta och styrning för 3D-läget
 │     └─ app.js            start, Cordova-koppling, bakåtknapp
 ├─ res/icon/               appikonen i alla densiteter (legacy + adaptiv)
 ├─ tools/make-icons.py     ritar ikonen från grunden
 ├─ tools/bundle.js         enfilsbygge för webb/inbäddning
 └─ dist/                   färdig APK och enfilsversioner
 ```
+
+Saknar enheten WebGL kan Minfältet inte köras — då låses Arcade Mode upp direkt
+i stället, så spelet alltid går att spela.
 
 Motståndarna är botar som simulerar spelare (de tänker olika snabbt, svarar fel
 ibland och siktar helst på den som har flest liv). Det finns ingen server och

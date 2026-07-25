@@ -122,16 +122,27 @@
 
   ui.current = 'home';
 
+  ui.arcadeSub = 'lobbies';
+
   ui.show = function (name) {
     if (M.game && M.game.running && name !== 'game') {
       if (!confirm('Lämna matchen?')) return;
       M.game.abort();
     }
+
+    // Arcade Mode kräver fem rundor som sist kvar i Minfältet
+    if (name === 'arcade') name = M.arcadeUnlocked() ? ui.arcadeSub : 'arcade';
+    if ((name === 'lobbies' || name === 'play') && !M.arcadeUnlocked()) name = 'arcade';
+    if (name === 'lobbies' || name === 'play') ui.arcadeSub = name;
+
     ui.current = name;
+    var tab = (name === 'lobbies' || name === 'play') ? 'arcade' : name;
     $$('.view').forEach(function (v) { v.classList.toggle('active', v.id === 'view-' + name); });
-    $$('.tabbar button').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === name); });
+    $$('.tabbar button').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === tab); });
     document.querySelector('main').scrollTop = 0;
     if (name === 'home') ui.renderHome();
+    if (name === 'arena') ui.renderArena();
+    if (name === 'arcade') ui.renderArcadeLock();
     if (name === 'lobbies') ui.renderLobbies();
     if (name === 'play') ui.renderPlay();
     if (name === 'ach') { ui.renderAch(); ui.markAchDot(false); }
@@ -149,6 +160,45 @@
     document.body.classList.toggle('no-anim', !p.settings.anim);
   };
 
+  /* ---------- Arcade Mode (låst tills fem rundor är vunna) ------------------ */
+
+  ui.renderArcadeLock = function () {
+    var w = M.profile.stats.arena3dWins;
+    var keys = '';
+    for (var i = 0; i < M.ARCADE_REQUIRED; i++) keys += '<i class="' + (i < w ? 'on' : '') + '">' + (i < w ? '🔑' : '·') + '</i>';
+
+    $('#view-arcade').innerHTML =
+      '<div class="view-head"><h2>Arcade Mode</h2><p>Det klassiska Mattenite: lobbies, blixt, duell, överlevnad, träning och dagens utmaning.</p></div>' +
+      '<div class="card lock-card">' +
+        '<span class="big">🔒</span>' +
+        '<b style="font-size:16px">Låst</b>' +
+        '<p class="sub" style="margin-top:6px">Lev sist i ' + M.ARCADE_REQUIRED + ' rundor i Minfältet 3D för att låsa upp hela arkadspelet.</p>' +
+        '<div class="keys">' + keys + '</div>' +
+        '<p class="sub">' + w + ' av ' + M.ARCADE_REQUIRED + ' rundor klara</p>' +
+        '<button class="btn block mt" data-act="toarena">🕹️ Till Minfältet</button>' +
+      '</div>' +
+      '<div class="card"><h3>🎁 Det här väntar</h3><p class="sub">' +
+        '💣 Het bomb i lobbies med upp till 8 spelare · ⚡ Blixt · 🛡️ Överlevnad · ⚔️ Duell · 🎯 Träning · 📅 Dagens utmaning' +
+      '</p></div>';
+
+    $$('#view-arcade [data-act]').forEach(function (b) {
+      b.onclick = function () { ui.show('arena'); };
+    });
+  };
+
+  function arcadeTabs(active) {
+    return '<div class="seg" style="margin-bottom:12px">' +
+      [['lobbies', '🚪 Lobbies'], ['play', '🎮 Spellägen']].map(function (t) {
+        return '<button data-sub="' + t[0] + '" class="' + (active === t[0] ? 'on' : '') + '">' + t[1] + '</button>';
+      }).join('') + '</div>';
+  }
+
+  function bindArcadeTabs(root) {
+    $$(root + ' [data-sub]').forEach(function (b) {
+      b.onclick = function () { ui.show(b.dataset.sub); };
+    });
+  }
+
   /* ---------- Hem ----------------------------------------------------------- */
 
   ui.renderHome = function () {
@@ -156,6 +206,7 @@
     var need = M.xpForLevel(p.level);
     var pct = Math.min(100, Math.round(p.xp / need * 100));
     var dailyDone = M.dailyDoneToday();
+    var arcade = M.arcadeUnlocked();
 
     $('#view-home').innerHTML =
       '<div class="hero">' +
@@ -166,21 +217,29 @@
           '<span class="sub" style="margin-left:auto">' + p.xp + ' / ' + need + ' XP</span></div>' +
         '<div class="xpbar mt" style="margin-top:6px"><i style="width:' + pct + '%"></i></div>' +
         '<div class="row mt" style="gap:8px">' +
-          '<button class="btn" data-act="quick">💣 Snabbmatch</button>' +
-          '<button class="btn ghost" data-act="lobbies">🚪 Lobbies</button>' +
+          '<button class="btn" data-act="arena">🕹️ Minfältet 3D</button>' +
+          (arcade
+            ? '<button class="btn ghost" data-act="quick">💣 Snabbmatch</button>'
+            : '<button class="btn ghost" data-act="arcade">🔒 Arcade</button>') +
         '</div>' +
       '</div>' +
 
-      '<div class="card" style="' + (dailyDone ? 'opacity:.85' : '') + '">' +
-        '<h3>📅 Dagens utmaning</h3>' +
-        '<p class="sub">10 frågor, samma för alla i hela världen. Svit: ' + p.daily.streak + ' dagar 🔥</p>' +
-        (dailyDone
-          ? '<div class="row mt between"><b>Klart idag — ' + p.daily.score + '/10</b><button class="btn ghost small" data-act="daily">Spela igen</button></div>'
-          : '<button class="btn block mt" data-act="daily">Starta dagens utmaning</button>') +
-      '</div>' +
+      (arcade
+        ? '<div class="card" style="' + (dailyDone ? 'opacity:.85' : '') + '">' +
+            '<h3>📅 Dagens utmaning</h3>' +
+            '<p class="sub">10 frågor, samma för alla i hela världen. Svit: ' + p.daily.streak + ' dagar 🔥</p>' +
+            (dailyDone
+              ? '<div class="row mt between"><b>Klart idag — ' + p.daily.score + '/10</b><button class="btn ghost small" data-act="daily">Spela igen</button></div>'
+              : '<button class="btn block mt" data-act="daily">Starta dagens utmaning</button>') +
+          '</div>'
+        : '<div class="card lock-card"><span class="big">🔒</span><b>Arcade Mode är låst</b>' +
+            '<p class="sub" style="margin-top:4px">Lev sist i ' + M.ARCADE_REQUIRED + ' rundor i Minfältet 3D så öppnas lobbies, blixt, duell, överlevnad, träning och dagens utmaning.</p>' +
+            homeKeys(s.arena3dWins) +
+            '<p class="sub">' + s.arena3dWins + ' av ' + M.ARCADE_REQUIRED + ' rundor klara</p>' +
+            '<button class="btn block mt" data-act="arena">🕹️ Spela en runda</button></div>') +
 
       '<div class="grid grid-3">' +
-        tile(s.wins, 'Segrar') + tile(s.gamesPlayed, 'Matcher') + tile(M.accuracy() + '%', 'Träffsäkerhet') +
+        tile(s.arena3dWins, 'Sist kvar 3D') + tile(s.gamesPlayed, 'Matcher') + tile(M.accuracy() + '%', 'Träffsäkerhet') +
         tile(s.bestStreak, 'Bästa svit') + tile(M.unlockedCount() + '/' + M.ACHIEVEMENTS.length, 'Prestationer') + tile(s.correct, 'Rätta svar') +
       '</div>' +
 
@@ -197,6 +256,8 @@
     $$('#view-home [data-act]').forEach(function (b) {
       b.onclick = function () {
         var a = b.dataset.act;
+        if (a === 'arena') ui.show('arena');
+        if (a === 'arcade') ui.show('arcade');
         if (a === 'quick') M.game.start({ mode: 'potato', diff: 2, cat: 'mix', bots: 3, lobbyName: 'Snabbmatch' });
         if (a === 'lobbies') ui.show('lobbies');
         if (a === 'daily') M.game.start({ mode: 'daily', diff: 2, cat: 'mix', bots: 0, lobbyName: 'Dagens utmaning' });
@@ -206,6 +267,12 @@
 
   function tile(num, lbl) {
     return '<div class="stat-tile"><div class="num">' + num + '</div><div class="lbl">' + lbl + '</div></div>';
+  }
+
+  function homeKeys(n) {
+    var out = '<div class="keys">';
+    for (var i = 0; i < M.ARCADE_REQUIRED; i++) out += '<i class="' + (i < n ? 'on' : '') + '">' + (i < n ? '🔑' : '·') + '</i>';
+    return out + '</div>';
   }
 
   /* ---------- Lobbies ------------------------------------------------------- */
@@ -242,6 +309,7 @@
     });
 
     $('#view-lobbies').innerHTML =
+      arcadeTabs('lobbies') +
       '<div class="view-head"><h2>Lobbies</h2><p>Välj en lobby och tryck för att gå med. Bomben väntar inte.</p></div>' +
       '<div class="row" style="gap:8px;margin-bottom:12px">' +
         '<button class="btn" style="flex:1" data-act="create">➕ Skapa lobby</button>' +
@@ -256,6 +324,7 @@
       '</div>' +
       (list.length ? list.map(lobbyRow).join('') : '<div class="empty"><span class="big">🕸️</span>Inga lobbyer matchar filtret.</div>');
 
+    bindArcadeTabs('#view-lobbies');
     $$('#view-lobbies [data-f]').forEach(function (b) {
       b.onclick = function () { ui.lobbyFilter = b.dataset.f; ui.renderLobbies(); };
     });
@@ -531,6 +600,7 @@
       { id: 'daily', lock: 0 }
     ];
     $('#view-play').innerHTML =
+      arcadeTabs('play') +
       '<div class="view-head"><h2>Spela</h2><p>Välj läge, svårighet och kategori.</p></div>' +
       '<div class="card"><h3>⚙️ Inställningar för matchen</h3>' +
         '<div class="sub" style="margin-bottom:6px">Svårighet</div>' +
@@ -552,6 +622,7 @@
           '<span><b>' + mm.name + '</b><small>' + mm.desc + '</small></span></button>';
       }).join('');
 
+    bindArcadeTabs('#view-play');
     $$('#seg-diff button').forEach(function (b) {
       b.onclick = function () { c.diff = +b.dataset.d; ui.renderPlay(); };
     });

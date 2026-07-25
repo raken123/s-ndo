@@ -19,7 +19,9 @@
     coinsEarned: 0, purchases: 0,
     dailyDone: 0, dailyPerfect: 0, dailyStreak: 0, bestDailyStreak: 0,
     minutesPlayed: 0, secondsPlayed: 0,
-    nightGames: 0, morningGames: 0, answer42: 0, tripleBoom: 0, pacifist: 0
+    nightGames: 0, morningGames: 0, answer42: 0, tripleBoom: 0, pacifist: 0,
+    arena3dGames: 0, arena3dWins: 0, minesStepped: 0, noMineWins: 0,
+    arenaFlawless: 0, arenaBestStreak: 0, walkedMeters: 0
   };
 
   M.CATEGORIES.forEach(function (c) { DEFAULT_STATS['cat_' + c.id] = 0; });
@@ -76,6 +78,20 @@
   M.reset = function () {
     profile = defaults();
     M.profile = profile;
+    M.save();
+  };
+
+  /* ---------- Arcade Mode låses upp av 3D-läget ---------------------------- */
+
+  M.ARCADE_REQUIRED = 5;
+
+  M.arcadeUnlocked = function () {
+    return profile.stats.arena3dWins >= M.ARCADE_REQUIRED || profile.arcadeForced === true;
+  };
+
+  /* Om enheten saknar WebGL kan 3D-läget inte spelas — lås då upp arcade. */
+  M.forceArcade = function () {
+    profile.arcadeForced = true;
     M.save();
   };
 

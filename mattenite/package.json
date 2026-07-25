@@ -1,7 +1,7 @@
 {
   "name": "mattenite",
   "displayName": "Mattenite",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Mattespelet där du svarar på en fråga och kastar bomben vidare till nästa spelare.",
   "license": "MIT",
   "private": true,

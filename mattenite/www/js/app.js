@@ -30,6 +30,8 @@
     // Android-bakåtknapp
     document.addEventListener('backbutton', function () {
       if (M.ui.$('#modal').classList.contains('open')) return M.ui.closeModal();
+      var stage = M.ui.$('#arena-stage');
+      if (stage && stage.classList.contains('on')) return M.ui.leaveArena();
       if (M.game.running) return M.ui.show('home');
       if (M.ui.current !== 'home') return M.ui.show('home');
       if (navigator.app && navigator.app.exitApp) navigator.app.exitApp();

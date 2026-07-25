@@ -400,6 +400,20 @@
     { id: 'time_60', g: 'daglig', n: 'En timme senare', d: 'Spela i totalt 60 minuter.', i: '⌛', stat: 'minutesPlayed', goal: 60, r: 'ovanlig', c: 100 },
     { id: 'time_600', g: 'daglig', n: 'Tio timmar', d: 'Spela i totalt 600 minuter.', i: '🕰️', stat: 'minutesPlayed', goal: 600, r: 'legendarisk', c: 700 },
 
+    // Minfältet 3D
+    { id: 'arena_first', g: 'arena', n: 'Ner i minfältet', d: 'Spela din första 3D-runda.', i: '🕹️', stat: 'arena3dGames', goal: 1, r: 'vanlig', c: 25 },
+    { id: 'mine_1', g: 'arena', n: 'Ojdå', d: 'Trampa på din första osynliga bomb.', i: '🕳️', stat: 'minesStepped', goal: 1, r: 'vanlig', c: 15 },
+    { id: 'mine_25', g: 'arena', n: 'Minmagnet', d: 'Trampa på 25 osynliga bomber.', i: '🧲', stat: 'minesStepped', goal: 25, r: 'ovanlig', c: 70 },
+    { id: 'mine_100', g: 'arena', n: 'Går alltid fel', d: 'Trampa på 100 osynliga bomber.', i: '🦶', stat: 'minesStepped', goal: 100, r: 'sallsynt', c: 160 },
+    { id: 'arena_win_1', g: 'arena', n: 'Sist kvar', d: 'Var sist kvar i en 3D-runda.', i: '🏁', stat: 'arena3dWins', goal: 1, r: 'ovanlig', c: 60 },
+    { id: 'arena_win_5', g: 'arena', n: 'Arkadnyckeln', d: 'Lev sist i 5 rundor och lås upp Arcade Mode.', i: '🗝️', stat: 'arena3dWins', goal: 5, r: 'sallsynt', c: 250 },
+    { id: 'arena_win_25', g: 'arena', n: 'Arenamästare', d: 'Var sist kvar i 25 rundor.', i: '🛡️', stat: 'arena3dWins', goal: 25, r: 'episk', c: 450 },
+    { id: 'no_mine_win', g: 'arena', n: 'Lätt på foten', d: 'Vinn en runda utan att trampa på en enda bomb.', i: '🩰', stat: 'noMineWins', goal: 1, r: 'sallsynt', c: 180 },
+    { id: 'arena_flawless', g: 'arena', n: 'Oskadd', d: 'Vinn en 3D-runda utan att förlora ett liv.', i: '💚', stat: 'arenaFlawless', goal: 1, r: 'sallsynt', c: 150 },
+    { id: 'walk_1000', g: 'arena', n: 'Vandraren', d: 'Gå 1000 meter i arenan.', i: '🚶', stat: 'walkedMeters', goal: 1000, r: 'ovanlig', c: 90 },
+    { id: 'walk_5000', g: 'arena', n: 'Maratonlöparen', d: 'Gå 5000 meter i arenan.', i: '🏃', stat: 'walkedMeters', goal: 5000, r: 'episk', c: 300 },
+    { id: 'arena_streak_10', g: 'arena', n: 'Kall under press', d: 'Få 10 rätt i rad i minfältet.', i: '🧊', stat: 'arenaBestStreak', goal: 10, r: 'sallsynt', c: 170 },
+
     // Hemliga
     { id: 'night_owl', g: 'hemlig', n: 'Nattuggla', d: 'Spela en match mellan 00 och 05.', i: '🦉', stat: 'nightGames', goal: 1, r: 'hemlig', c: 150, secret: true },
     { id: 'early_bird', g: 'hemlig', n: 'Morgonpigg', d: 'Spela en match före klockan 07.', i: '🌅', stat: 'morningGames', goal: 1, r: 'hemlig', c: 150, secret: true },
@@ -411,6 +425,7 @@
 
   M.ACH_GROUPS = [
     { id: 'alla', name: 'Alla' },
+    { id: 'arena', name: 'Minfältet 3D' },
     { id: 'start', name: 'Första stegen' },
     { id: 'svar', name: 'Svar' },
     { id: 'svit', name: 'Sviter' },

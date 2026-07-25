@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="com.mattenite.game" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="com.mattenite.game" version="1.1.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>Mattenite</name>
-    <description>Mattespelet där du svarar på en fråga och kastar bomben vidare till nästa spelare.</description>
+    <description>3D-mattespelet där osynliga bomber ligger utspridda i arenan. Trampa fel, svara rätt och kasta bomben vidare.</description>
     <author email="hej@mattenite.app" href="https://github.com/raken123/s-ndo">Mattenite</author>
 
     <content src="index.html" />
