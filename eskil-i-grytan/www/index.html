@@ -348,22 +348,26 @@ var eskilNormal = sprite(220, 300, function (c, w, h) { drawEskil(c, w, h, 'norm
 var eskilYum = sprite(220, 300, function (c, w, h) { drawEskil(c, w, h, 'yum'); });
 var eskilOuch = sprite(220, 300, function (c, w, h) { drawEskil(c, w, h, 'ouch'); });
 
-/* --- Spisen --- */
-var stove = sprite(VW, 300, function (c, w, h) {
-  var rng = makeRng(88);
-  rough(c, [[40, 40], [w - 40, 40], [w - 40, h - 30], [40, h - 30]], { color: COL.ink, width: 6, passes: 2, jit: 2.6, rng: rng, close: true });
-  var plates = [[w * 0.22, 130], [w * 0.5, 150], [w * 0.78, 130]];
-  for (var p = 0; p < plates.length; p++) {
-    var pts = [];
-    var rr = p === 1 ? 92 : 66;
-    for (var i = 0; i <= 180; i++) {
-      var a = (i / 180) * Math.PI * 7;
-      var r = (rr * i) / 180;
-      pts.push([plates[p][0] + Math.cos(a) * r, plates[p][1] + Math.sin(a) * r * 0.42]);
+/* --- Spisen (ljus variant används i nattläget) --- */
+function makeStove(frameCol, plateCol) {
+  return sprite(VW, 300, function (c, w, h) {
+    var rng = makeRng(88);
+    rough(c, [[40, 40], [w - 40, 40], [w - 40, h - 30], [40, h - 30]], { color: frameCol, width: 6, passes: 2, jit: 2.6, rng: rng, close: true });
+    var plates = [[w * 0.22, 130], [w * 0.5, 150], [w * 0.78, 130]];
+    for (var p = 0; p < plates.length; p++) {
+      var pts = [];
+      var rr = p === 1 ? 92 : 66;
+      for (var i = 0; i <= 180; i++) {
+        var a = (i / 180) * Math.PI * 7;
+        var r = (rr * i) / 180;
+        pts.push([plates[p][0] + Math.cos(a) * r, plates[p][1] + Math.sin(a) * r * 0.42]);
+      }
+      rough(c, pts, { color: plateCol, width: 5, passes: 2, jit: 2.4, rng: rng, alpha: 0.72 });
     }
-    rough(c, pts, { color: '#3b3b3b', width: 5, passes: 2, jit: 2.4, rng: rng, alpha: 0.72 });
-  }
-});
+  });
+}
+var stove = makeStove(COL.ink, '#3b3b3b');
+var stoveNight = makeStove('#6f6480', '#c85a2a');
 
 /* --- Ingredienser --- */
 function ingSprite(fn) { return sprite(120, 120, fn); }
@@ -546,6 +550,59 @@ SPR.sked = ingSprite(function (c, w) {
   });
 });
 
+/* --- Hemligheter: spöket och ögat --- */
+SPR.spoke = ingSprite(function (c, w, h) {
+  var rng = makeRng(206), cx = w / 2, cy = h / 2 - 4;
+  function body(cc) {
+    cc.moveTo(cx - 34, cy + 34);
+    cc.lineTo(cx - 34, cy - 6);
+    cc.bezierCurveTo(cx - 34, cy - 52, cx + 34, cy - 52, cx + 34, cy - 6);
+    cc.lineTo(cx + 34, cy + 34);
+    cc.lineTo(cx + 20, cy + 22); cc.lineTo(cx + 6, cy + 34);
+    cc.lineTo(cx - 8, cy + 22); cc.lineTo(cx - 22, cy + 34);
+    cc.closePath();
+  }
+  c.save(); c.beginPath(); body(c); c.fillStyle = '#fbfaf6'; c.fill(); c.restore();
+  scribble(c, body, [cx - 34, cy - 46, 68, 82], { color: '#dcd8e8', spacing: 10, width: 9, alpha: 0.6, rng: rng });
+  c.save(); c.lineWidth = 5; c.strokeStyle = '#8f88a8'; c.lineJoin = 'round'; c.lineCap = 'round';
+  c.beginPath(); body(c); c.stroke(); c.restore();
+  c.fillStyle = '#241f33';
+  c.beginPath(); c.ellipse(cx - 13, cy - 12, 7, 10, 0, 0, 6.3); c.fill();
+  c.beginPath(); c.ellipse(cx + 13, cy - 12, 7, 10, 0, 0, 6.3); c.fill();
+  c.beginPath(); c.ellipse(cx, cy + 8, 7, 9, 0, 0, 6.3); c.fill();
+});
+
+SPR.oga = ingSprite(function (c, w, h) {
+  var rng = makeRng(207), cx = w / 2, cy = h / 2;
+  c.save(); c.beginPath(); c.ellipse(cx, cy, 40, 32, 0, 0, 6.3); c.fillStyle = '#fdfcf7'; c.fill(); c.restore();
+  rough(c, arcPts(cx, cy, 40, 32, 0, 6.283, 28), { color: '#5a5060', width: 5, passes: 2, rng: rng, close: true });
+  // ådror
+  rough(c, [[cx - 36, cy - 6], [cx - 24, cy - 2], [cx - 28, cy + 8]], { color: '#c0453c', width: 3, passes: 1, rng: rng });
+  rough(c, [[cx + 36, cy + 4], [cx + 26, cy + 2], [cx + 30, cy - 8]], { color: '#c0453c', width: 3, passes: 1, rng: rng });
+  function iris(cc) { cc.ellipse(cx, cy, 17, 17, 0, 0, 6.3); }
+  scribble(c, iris, [cx - 17, cy - 17, 34, 34], { color: '#3a7d8c', spacing: 6, width: 8, alpha: 0.75, rng: rng });
+  rough(c, arcPts(cx, cy, 17, 17, 0, 6.283, 18), { color: '#26505c', width: 4, passes: 2, rng: rng, close: true });
+  c.fillStyle = '#141018';
+  c.beginPath(); c.ellipse(cx, cy, 7.5, 7.5, 0, 0, 6.3); c.fill();
+  c.save(); c.globalAlpha = 0.8; c.fillStyle = '#fff';
+  c.beginPath(); c.ellipse(cx - 6, cy - 6, 3.5, 3.5, 0, 0, 6.3); c.fill(); c.restore();
+});
+
+/* --- Musen under mössan (sällskap, ren dekoration) --- */
+var mouseSpr = sprite(70, 60, function (c, w, h) {
+  var rng = makeRng(208), cx = w / 2, cy = h / 2 + 6;
+  function body(cc) { cc.ellipse(cx, cy, 18, 13, 0, 0, 6.3); }
+  scribble(c, body, [cx - 18, cy - 13, 36, 26], { color: '#9a9098', spacing: 6, width: 7, alpha: 0.6, rng: rng });
+  rough(c, arcPts(cx, cy, 18, 13, 0, 6.283, 18), { color: '#6b626c', width: 3.5, passes: 2, rng: rng, close: true });
+  rough(c, arcPts(cx - 10, cy - 12, 8, 8, 0, 6.283, 12), { color: '#6b626c', width: 3, passes: 2, rng: rng, close: true });
+  rough(c, arcPts(cx + 4, cy - 13, 7, 7, 0, 6.283, 12), { color: '#6b626c', width: 3, passes: 2, rng: rng, close: true });
+  rough(c, [[cx + 18, cy], [cx + 30, cy - 4], [cx + 32, cy + 8]], { color: '#6b626c', width: 3, passes: 2, rng: rng });
+  c.fillStyle = '#241f33';
+  c.beginPath(); c.ellipse(cx - 10, cy - 2, 2.6, 2.6, 0, 0, 6.3); c.fill();
+  c.fillStyle = COL.pink;
+  c.beginPath(); c.ellipse(cx - 17, cy + 1, 2.6, 2.2, 0, 0, 6.3); c.fill();
+});
+
 var heartSpr = sprite(70, 70, function (c, w, h) {
   var rng = makeRng(301), cx = w / 2, cy = h / 2 + 2;
   function body(cc) {
@@ -577,6 +634,38 @@ var JUNK = [
   { key: 'strumpa', spr: SPR.strumpa, good: false }
 ];
 var BONUS = { key: 'sked', spr: SPR.sked, good: true, bonus: true, pts: 0 };
+var SPOKE = { key: 'spoke', spr: SPR.spoke, good: true, secret: 'spoke', pts: 100 };
+var OGA = { key: 'oga', spr: SPR.oga, good: true, secret: 'oga', pts: 50 };
+
+/* ============================================================
+   MÖRKA HEMLIGHETER
+   Sex saker som spelet aldrig berättar om. Oupptäckta visas som ???
+   med en ledtråd; hittade sparas för gott.
+   ============================================================ */
+var SECRETS = [
+  { key: 'midnatt', namn: 'MIDNATT', hint: 'Räkna till tretton utan att missa.',
+    text: 'Kombo x13 släcker ljuset. I mörkret är allt värt dubbelt.' },
+  { key: 'spoke', namn: 'SPÖKET', hint: 'Någon har stått i grytan före Eskil.',
+    text: 'Spöket vågar sig bara fram i mörkret. Fånga det: 100 poäng.' },
+  { key: 'oga', namn: 'ÖGAT', hint: 'Något tittar tillbaka högre upp.',
+    text: 'Ögat dyker upp från nivå 4. Fånga det så blir fem ingredienser värda tre gånger så mycket.' },
+  { key: 'kokbok', namn: 'KOKBOKEN', hint: 'Ett tal ingen vill laga efter.',
+    text: '666 poäng öppnar den förbjudna kokboken — och ger ett extra hjärta.' },
+  { key: 'mossan', namn: 'MÖSSAN', hint: 'Knacka på kockmössan. Sju gånger.',
+    text: 'Under mössan bor en mus. Nu följer den med i grytan.' },
+  { key: 'spisen', namn: 'SPISEN', hint: 'Vrid upp den vänstra plattan fem gånger.',
+    text: 'Elden minns alla som har stått i grytan. Den viskar deras namn.' }
+];
+var secretsFound = {};
+try {
+  var saved = JSON.parse(localStorage.getItem('eskil_hemligheter') || '[]');
+  for (var si = 0; si < saved.length; si++) secretsFound[saved[si]] = true;
+} catch (e) {}
+function saveSecrets() {
+  try { localStorage.setItem('eskil_hemligheter', JSON.stringify(Object.keys(secretsFound))); } catch (e) {}
+}
+function secretCount() { return Object.keys(secretsFound).length; }
+function hasSecret(k) { return !!secretsFound[k]; }
 
 /* ============================================================
    LJUD
@@ -609,6 +698,12 @@ function sfxMiss() { beep(240, 0.12, 'sine', 0.08, 150); }
 function sfxLevel() { [523, 659, 784, 1046].forEach(function (f, i) { setTimeout(function () { beep(f, 0.16, 'triangle', 0.15); }, i * 90); }); }
 function sfxBonus() { [784, 988, 1175, 1568].forEach(function (f, i) { setTimeout(function () { beep(f, 0.2, 'sine', 0.14); }, i * 70); }); }
 function sfxOver() { [392, 330, 262, 196].forEach(function (f, i) { setTimeout(function () { beep(f, 0.34, 'sawtooth', 0.13); }, i * 190); }); }
+function sfxSecret() { [1046, 1318, 1568, 2093].forEach(function (f, i) { setTimeout(function () { beep(f, 0.28, 'sine', 0.13); }, i * 110); }); }
+function sfxNight() {
+  beep(160, 1.6, 'sine', 0.14, 55);
+  setTimeout(function () { beep(98, 1.8, 'triangle', 0.1, 44); }, 140);
+}
+function sfxWhisper() { [220, 174, 147].forEach(function (f, i) { setTimeout(function () { beep(f, 0.5, 'sine', 0.07, f * 0.7); }, i * 260); }); }
 
 /* ============================================================
    SPELTILLSTÅND
@@ -621,7 +716,10 @@ var G = {
   items: [], parts: [], pops: [], steam: [],
   spawnT: 0, spawnGap: 1.0,
   mood: 'normal', moodT: 0, shake: 0, flash: 0, flashCol: '#fff',
-  doubleT: 0, levelBanner: 0, t: 0, over: 0
+  doubleT: 0, levelBanner: 0, t: 0, over: 0,
+  // mörka hemligheter
+  nightT: 0, night: 0, tripleN: 0, kokbok: false, maxLives: 3,
+  hatTaps: 0, plateTaps: 0, tapT: 0, reveal: null, revealT: 0, whisper: 0
 };
 try { G.best = parseInt(localStorage.getItem('eskil_best') || '0', 10) || 0; } catch (e) {}
 
@@ -632,12 +730,35 @@ function resetGame() {
   G.spawnT = 0.4; G.spawnGap = 1.05;
   G.mood = 'normal'; G.moodT = 0; G.shake = 0; G.flash = 0;
   G.doubleT = 0; G.levelBanner = 0; G.over = 0;
+  G.nightT = 0; G.night = 0; G.tripleN = 0; G.kokbok = false; G.maxLives = 3;
 }
+
+/* En hemlighet upptäckt: visa den, spara den, spela stinget. */
+function findSecret(key) {
+  if (hasSecret(key)) return false;
+  secretsFound[key] = true;
+  saveSecrets();
+  for (var i = 0; i < SECRETS.length; i++) {
+    if (SECRETS[i].key === key) { G.reveal = SECRETS[i]; G.revealT = 3.6; break; }
+  }
+  sfxSecret();
+  return true;
+}
+
+/* Nattläget: papperet svartnar och kritorna lyser. */
+function startNight(sec) {
+  G.nightT = Math.max(G.nightT, sec);
+  sfxNight();
+}
+function isNight() { return G.night > 0.02; }
+function inkCol() { return isNight() ? '#efe7dc' : COL.ink; }
+function greyCol() { return isNight() ? '#8d86a0' : COL.grey; }
 
 /* ---------- inmatning ---------- */
 var keys = {};
 window.addEventListener('keydown', function (e) {
   keys[e.key] = true;
+  if (state === 'title') konamiKey(e.key);
   if (e.key === ' ' || e.key === 'Enter') { activate(); e.preventDefault(); }
   if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') e.preventDefault();
   if (e.key === 'm' || e.key === 'M') toggleMute();
@@ -658,6 +779,40 @@ var dragging = false;
 function pointerDown(x, y) {
   audio();
   if (x > VW - 96 && y < 96) { toggleMute(); return; }   // ljudknappen
+
+  if (state === 'secrets') { state = 'title'; return; }
+
+  if (state === 'title') {
+    // hemlighetslistan nere till vänster
+    if (y > VH - 76 && x < 360) { state = 'secrets'; return; }
+
+    // MÖSSAN: sju knackningar på kockmössan
+    if (x > G.potX - 62 && x < G.potX + 62 && y > 716 && y < 828) {
+      G.hatTaps++; G.tapT = 2.2;
+      beep(300 + G.hatTaps * 60, 0.07, 'square', 0.07);
+      if (G.hatTaps >= 7) {
+        G.hatTaps = 0;
+        if (!findSecret('mossan')) popText(G.potX, 700, 'PIP!', COL.grey);
+        else popText(G.potX, 700, 'PIP!', COL.pink, true);
+      }
+      return;
+    }
+
+    // SPISEN: fem vridningar på vänstra plattan
+    if (x > 74 && x < 246 && y > 1050 && y < 1170) {
+      G.plateTaps++; G.tapT = 2.2;
+      beep(120 + G.plateTaps * 22, 0.12, 'sawtooth', 0.07);
+      if (G.plateTaps >= 5) {
+        G.plateTaps = 0;
+        findSecret('spisen');
+        G.whisper = 4;
+        startNight(6);
+        sfxWhisper();
+      }
+      return;
+    }
+  }
+
   if (state !== 'play') { activate(); return; }
   dragging = true;
   G.targetX = x;
@@ -683,6 +838,22 @@ function activate() {
   else if (state === 'over' && G.over > 0.8) { resetGame(); state = 'play'; }
 }
 
+/* Konami-koden på titelskärmen väcker också mörkret. */
+var konami = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight'];
+var konamiPos = 0;
+function konamiKey(k) {
+  if (k === konami[konamiPos]) {
+    konamiPos++;
+    if (konamiPos === konami.length) {
+      konamiPos = 0;
+      findSecret('mossan');
+      startNight(6);
+    }
+  } else {
+    konamiPos = (k === konami[0]) ? 1 : 0;
+  }
+}
+
 /* ---------- effekter ---------- */
 function burst(x, y, color, n, power) {
   for (var i = 0; i < (n || 12); i++) {
@@ -699,7 +870,9 @@ function spawn() {
   var r = Math.random();
   var def;
   var junkChance = clamp(0.12 + G.level * 0.035, 0.12, 0.38);
-  if (r < 0.028 && G.doubleT <= 0) def = BONUS;
+  if (isNight() && r < 0.10) def = SPOKE;                       // bara i mörkret
+  else if (G.level >= 4 && r < 0.022) def = OGA;                // sällsynt, högre nivåer
+  else if (r < 0.028 && G.doubleT <= 0) def = BONUS;
   else if (r < junkChance) def = pick(JUNK);
   else def = pick(INGREDIENTS);
 
@@ -731,6 +904,15 @@ function update(dt) {
   if (G.flash > 0) G.flash = Math.max(0, G.flash - dt * 2.2);
   if (G.levelBanner > 0) G.levelBanner -= dt;
   if (G.doubleT > 0) G.doubleT -= dt;
+  if (G.revealT > 0) { G.revealT -= dt; if (G.revealT <= 0) G.reveal = null; }
+  if (G.whisper > 0) G.whisper -= dt;
+  if (G.tapT > 0) { G.tapT -= dt; if (G.tapT <= 0) { G.hatTaps = 0; G.plateTaps = 0; } }
+
+  // nattläget tonar in och ut
+  if (G.nightT > 0) G.nightT -= dt;
+  var wantNight = G.nightT > 0 ? 1 : 0;
+  G.night += (wantNight - G.night) * Math.min(1, dt * 2.6);
+  if (G.night < 0.02 && !wantNight) G.night = 0;
 
   // ånga ur grytan
   if (state === 'play' && Math.random() < dt * 14) {
@@ -801,13 +983,45 @@ function onCatch(it) {
     G.combo++;
     G.bestCombo = Math.max(G.bestCombo, G.combo);
     G.caught++;
-    var gain = Math.round(d.pts * (G.doubleT > 0 ? 2 : 1) * (1 + Math.min(G.combo, 15) * 0.1));
+
+    // hemliga föremål
+    if (d.key === 'spoke') {
+      findSecret('spoke');
+      G.mood = 'ouch'; G.moodT = 0.5;
+      burst(it.x, POT_Y + 24, '#cfc8e4', 22, 1.2);
+    } else if (d.key === 'oga') {
+      findSecret('oga');
+      G.tripleN = 5;
+      popText(G.potX, POT_Y - 96, 'ÖGAT SER DIG', '#3a7d8c', true);
+      burst(it.x, POT_Y + 24, '#3a7d8c', 20, 1.1);
+    }
+
+    var mult = (G.doubleT > 0 ? 2 : 1) * (isNight() ? 2 : 1) * (G.tripleN > 0 ? 3 : 1);
+    var gain = Math.round(d.pts * mult * (1 + Math.min(G.combo, 15) * 0.1));
     G.score += gain;
-    G.mood = 'yum'; G.moodT = 0.45;
+    if (G.tripleN > 0 && !d.secret) G.tripleN--;
+    if (!d.secret) { G.mood = 'yum'; G.moodT = 0.45; }
     burst(it.x, POT_Y + 24, d.hot ? COL.red : COL.green, 12, 0.9);
-    popText(it.x, POT_Y - 20, '+' + gain, d.hot ? COL.red : COL.green);
+    popText(it.x, POT_Y - 20, '+' + gain, d.hot ? COL.red : isNight() ? '#c9a6ff' : COL.green);
     if (G.combo >= 3 && G.combo % 3 === 0) popText(G.potX, POT_Y - 90, 'KOMBO x' + G.combo + '!', COL.orange, true);
     sfxCatch(G.combo);
+
+    // MIDNATT: kombo x13 släcker ljuset
+    if (G.combo === 13) {
+      findSecret('midnatt');
+      startNight(20);
+      popText(G.potX, POT_Y - 150, 'MIDNATT', '#c9a6ff', true);
+    }
+    // KOKBOKEN: 666 poäng
+    if (!G.kokbok && G.score >= 666) {
+      G.kokbok = true;
+      findSecret('kokbok');
+      G.maxLives = 5;
+      G.lives = Math.min(G.maxLives, G.lives + 1);
+      G.flash = 0.8; G.flashCol = COL.red;
+      startNight(Math.max(8, G.nightT));
+      popText(G.potX, POT_Y - 130, 'DEN FÖRBJUDNA KOKBOKEN', COL.red, true);
+    }
 
     var newLevel = Math.floor(G.caught / 10) + 1;
     if (newLevel > G.level) { G.level = newLevel; G.levelBanner = 1.8; sfxLevel(); }
@@ -910,7 +1124,24 @@ function drawPot(c) {
   drawSprite(c, potBack, 0, POT_H / 2 - 20, 1);
   var sp = G.mood === 'yum' ? eskilYum : G.mood === 'ouch' ? eskilOuch : eskilNormal;
   var jump = G.mood === 'yum' ? -8 : 0;
-  drawSprite(c, sp, 0, -120 + jump + Math.sin(G.t * 2.4) * 2, 1);
+  var ey = -120 + jump + Math.sin(G.t * 2.4) * 2;
+  drawSprite(c, sp, 0, ey, 1);
+
+  // i mörkret lyser ögonen
+  if (isNight() && G.mood !== 'ouch') {
+    c.save();
+    c.globalAlpha = G.night * (0.7 + Math.sin(G.t * 6) * 0.2);
+    c.fillStyle = '#ffe680';
+    c.beginPath(); c.ellipse(-16, ey - 6, 7, 8, 0, 0, 6.3); c.fill();
+    c.beginPath(); c.ellipse(16, ey - 6, 7, 8, 0, 0, 6.3); c.fill();
+    c.restore();
+  }
+
+  // musen från MÖSSAN-hemligheten sitter på kanten
+  if (hasSecret('mossan')) {
+    drawSprite(c, mouseSpr, 104, 12 + Math.sin(G.t * 2.8) * 2, 1, -0.12);
+  }
+
   drawSprite(c, potFront, 0, POT_H / 2 - 20, 1);
   c.restore();
 }
@@ -919,14 +1150,25 @@ function drawItems(c) {
   for (var i = 0; i < G.items.length; i++) {
     var it = G.items[i];
     var wob = Math.sin(G.t * 4 + it.wob) * 4;
-    if (it.def.bonus) {
+    // i mörkret får allt en svag gloria så även kängan syns
+    if (G.night > 0) {
+      c.save();
+      c.globalAlpha = G.night * 0.16;
+      c.fillStyle = '#c9bfe8';
+      c.beginPath(); c.arc(it.x, it.y, 48, 0, 6.3); c.fill();
+      c.restore();
+    }
+    if (it.def.bonus || it.def.secret) {
       c.save();
       c.globalAlpha = 0.35 + Math.sin(G.t * 8) * 0.15;
-      c.fillStyle = COL.yellow;
+      c.fillStyle = it.def.key === 'spoke' ? '#b9aee0' : it.def.key === 'oga' ? '#5fb3c4' : COL.yellow;
       c.beginPath(); c.arc(it.x, it.y, 52, 0, 6.3); c.fill();
       c.restore();
     }
+    c.save();
+    if (it.def.key === 'spoke') c.globalAlpha = 0.72 + Math.sin(G.t * 5 + it.wob) * 0.16;
     drawSprite(c, it.def.spr, it.x + wob, it.y, it.scale, it.rot);
+    c.restore();
   }
 }
 
@@ -957,25 +1199,36 @@ function drawParticles(c) {
 }
 
 function drawHud(c) {
-  crayonText(c, 'POÄNG ' + G.score, 34, 54, 34, COL.ink, -0.02, 'left');
-  crayonText(c, 'BÄST ' + G.best, 34, 96, 22, COL.grey, -0.02, 'left');
-  crayonText(c, 'NIVÅ ' + G.level, VW / 2, 54, 30, COL.blue, 0.02);
-  for (var i = 0; i < 3; i++) {
+  crayonText(c, 'POÄNG ' + G.score, 34, 54, 34, inkCol(), -0.02, 'left');
+  crayonText(c, 'BÄST ' + G.best, 34, 96, 22, greyCol(), -0.02, 'left');
+  crayonText(c, 'NIVÅ ' + G.level, VW / 2, 54, 30, isNight() ? '#9ec3ff' : COL.blue, 0.02);
+  var slots = Math.max(3, G.maxLives);
+  for (var i = 0; i < slots; i++) {
     c.save();
     c.globalAlpha = i < G.lives ? 1 : 0.18;
-    drawSprite(c, heartSpr, VW - 150 + i * 46, 100, 0.85, Math.sin(G.t * 3 + i) * 0.06);
+    drawSprite(c, heartSpr, VW - 150 + (i - (slots - 3)) * 46, 100, 0.85, Math.sin(G.t * 3 + i) * 0.06);
     c.restore();
   }
   c.save();
   c.globalAlpha = 0.75;
-  crayonText(c, muted ? 'LJUD AV' : 'LJUD PÅ', VW - 56, 50, 20, COL.ink);
+  crayonText(c, muted ? 'LJUD AV' : 'LJUD PÅ', VW - 56, 50, 20, inkCol());
   c.restore();
 
+  var badgeY = 156;   // under hjärtraden
   if (G.doubleT > 0) {
-    crayonText(c, 'x2  ' + G.doubleT.toFixed(1) + 's', VW / 2, 108, 28 * (1 + Math.sin(G.t * 10) * 0.06), COL.yellow, 0);
+    crayonText(c, 'x2  ' + G.doubleT.toFixed(1) + 's', VW / 2, badgeY, 28 * (1 + Math.sin(G.t * 10) * 0.06), COL.yellow, 0);
+    badgeY += 40;
+  }
+  if (isNight()) {
+    crayonText(c, 'MIDNATT  ' + Math.max(0, G.nightT).toFixed(1) + 's', VW / 2, badgeY, 28, '#c9a6ff', 0);
+    badgeY += 40;
+  }
+  if (G.tripleN > 0) {
+    crayonText(c, 'ÖGAT  x3  (' + G.tripleN + ')', VW / 2, badgeY, 28, '#5fb3c4', 0);
   }
   if (G.combo >= 3) {
-    crayonText(c, 'KOMBO x' + G.combo, VW / 2, VH - 44, 30, COL.orange, Math.sin(G.t * 4) * 0.03);
+    var nara = G.combo >= 10 && G.combo < 13 && !hasSecret('midnatt');
+    crayonText(c, 'KOMBO x' + G.combo, VW / 2, VH - 44, 30, nara ? '#a06fd0' : COL.orange, Math.sin(G.t * 4) * 0.03);
   }
   if (G.levelBanner > 0) {
     c.save();
@@ -987,8 +1240,8 @@ function drawHud(c) {
 
 function drawTitle(c) {
   titleText(c, 'ESKIL I GRYTAN', VW / 2, 150, 92, 5, VW - 60);
-  crayonText(c, 'Fånga maten i grytan!', VW / 2, 236, 34, COL.ink, -0.01);
-  if (G.best > 0) crayonText(c, 'REKORD: ' + G.best, VW / 2, 292, 30, COL.purple, -0.02);
+  crayonText(c, 'Fånga maten i grytan!', VW / 2, 236, 34, inkCol(), -0.01);
+  if (G.best > 0) crayonText(c, 'REKORD: ' + G.best, VW / 2, 292, 30, isNight() ? '#c9a6ff' : COL.purple, -0.02);
 
   var y0 = 356;
   drawSprite(c, SPR.morot, VW / 2 - 168, y0, 0.72, -0.15);
@@ -1004,26 +1257,108 @@ function drawTitle(c) {
   c.globalAlpha = 0.6 + Math.sin(G.t * 4) * 0.4;
   crayonText(c, 'TRYCK FÖR ATT SPELA', VW / 2, 640, 46, COL.red, 0.01);
   c.restore();
-  crayonText(c, 'Dra fingret · piltangenter', VW / 2, 690, 26, COL.grey);
+  crayonText(c, 'Dra fingret · piltangenter', VW / 2, 690, 26, greyCol());
+
+  // hemligheterna: liten rad nere i hörnet
+  var n = secretCount();
+  c.save();
+  c.globalAlpha = n > 0 ? 0.95 : 0.55;
+  crayonText(c, 'MÖRKA HEMLIGHETER  ' + n + '/' + SECRETS.length, 34, VH - 44, 24,
+    n > 0 ? '#7b4fa8' : greyCol(), -0.015, 'left');
+  c.restore();
+}
+
+/** Listan över hemligheter. Hittade visar sin text, resten en ledtråd. */
+function drawSecrets(c) {
+  c.save();
+  c.globalAlpha = 0.93;
+  c.fillStyle = isNight() ? '#231d33' : COL.paper;
+  c.fillRect(24, 120, VW - 48, VH - 300);
+  c.restore();
+  rough(c, [[30, 124], [VW - 30, 128], [VW - 34, VH - 186], [34, VH - 190]],
+    { color: inkCol(), width: 6, passes: 2, jit: 3, rng: makeRng(4242), close: true });
+
+  titleText(c, 'MÖRKA HEMLIGHETER', VW / 2, 196, 60, 3, VW - 110);
+  crayonText(c, secretCount() + ' av ' + SECRETS.length + ' funna', VW / 2, 250, 26, greyCol());
+
+  for (var i = 0; i < SECRETS.length; i++) {
+    var s = SECRETS[i], y = 316 + i * 118, got = hasSecret(s.key);
+    var col = got ? TITLE_COLORS[(i * 2) % TITLE_COLORS.length] : greyCol();
+
+    c.save();
+    c.globalAlpha = got ? 1 : 0.75;
+    crayonText(c, (i + 1) + '.', 62, y, 30, col, 0, 'left');
+    crayonText(c, got ? s.namn : '? ? ?', 108, y, 34, col, got ? -0.01 : 0, 'left');
+    c.restore();
+
+    c.save();
+    c.globalAlpha = got ? 0.9 : 0.6;
+    // radbryt ledtråden så den får plats
+    var ord = (got ? s.text : s.hint).split(' ');
+    var rad = '', rader = [];
+    for (var w = 0; w < ord.length; w++) {
+      var test = rad ? rad + ' ' + ord[w] : ord[w];
+      if (test.length > 42) { rader.push(rad); rad = ord[w]; } else rad = test;
+    }
+    if (rad) rader.push(rad);
+    for (var r = 0; r < rader.length && r < 3; r++) {
+      crayonText(c, rader[r], 108, y + 32 + r * 26, 21, got ? inkCol() : greyCol(), 0, 'left');
+    }
+    c.restore();
+  }
+
+  c.save();
+  c.globalAlpha = 0.55 + Math.sin(G.t * 4) * 0.35;
+  crayonText(c, 'TRYCK FÖR ATT STÄNGA', VW / 2, VH - 226, 26, isNight() ? '#9ec3ff' : COL.blue);
+  c.restore();
+}
+
+/** Kort som visar en nyss upptäckt hemlighet. */
+function drawReveal(c) {
+  var k = clamp(G.revealT / 0.5, 0, 1) * clamp((3.6 - G.revealT) / 0.35, 0, 1);
+  var y = VH * 0.30;
+  c.save();
+  c.globalAlpha = 0.95 * k;
+  c.fillStyle = isNight() ? '#241d36' : COL.paper;
+  c.fillRect(46, y - 96, VW - 92, 214);
+  c.restore();
+
+  c.save();
+  c.globalAlpha = k;
+  rough(c, [[52, y - 92], [VW - 52, y - 88], [VW - 56, y + 112], [56, y + 108]],
+    { color: '#7b4fa8', width: 6, passes: 2, jit: 3, rng: makeRng(777), close: true });
+  crayonText(c, 'MÖRK HEMLIGHET FUNNEN', VW / 2, y - 56, 26, '#a06fd0');
+  titleText(c, G.reveal.namn, VW / 2, y - 4, 58, 3, VW - 160);
+  var ord = G.reveal.text.split(' '), rad = '', rader = [];
+  for (var w = 0; w < ord.length; w++) {
+    var test = rad ? rad + ' ' + ord[w] : ord[w];
+    if (test.length > 38) { rader.push(rad); rad = ord[w]; } else rad = test;
+  }
+  if (rad) rader.push(rad);
+  for (var r = 0; r < rader.length && r < 3; r++) {
+    crayonText(c, rader[r], VW / 2, y + 44 + r * 28, 22, inkCol());
+  }
+  c.restore();
 }
 
 function drawOver(c) {
   c.save();
-  c.globalAlpha = 0.85;
-  c.fillStyle = COL.paper;
+  c.globalAlpha = 0.87;
+  c.fillStyle = isNight() ? '#231d33' : COL.paper;
   c.fillRect(24, VH * 0.16, VW - 48, VH * 0.52);
   c.restore();
-  rough(c, [[30, VH * 0.16], [VW - 30, VH * 0.17], [VW - 34, VH * 0.68], [34, VH * 0.67]], { color: COL.ink, width: 6, passes: 2, jit: 3, rng: makeRng(999), close: true });
+  rough(c, [[30, VH * 0.16], [VW - 30, VH * 0.17], [VW - 34, VH * 0.68], [34, VH * 0.67]], { color: inkCol(), width: 6, passes: 2, jit: 3, rng: makeRng(999), close: true });
 
   titleText(c, 'SLUT!', VW / 2, VH * 0.24, 86, 4, VW - 120);
-  crayonText(c, 'Grytan är full av skräp...', VW / 2, VH * 0.31, 28, COL.grey);
-  crayonText(c, 'POÄNG', VW / 2, VH * 0.38, 34, COL.ink);
+  crayonText(c, 'Grytan är full av skräp...', VW / 2, VH * 0.31, 28, greyCol());
+  crayonText(c, 'POÄNG', VW / 2, VH * 0.38, 34, inkCol());
   crayonText(c, String(G.score), VW / 2, VH * 0.44, 84, COL.red, -0.02);
-  crayonText(c, 'Bästa kombo: x' + G.bestCombo + '   ·   Nivå: ' + G.level, VW / 2, VH * 0.50, 26, COL.grey);
+  crayonText(c, 'Bästa kombo: x' + G.bestCombo + '   ·   Nivå: ' + G.level, VW / 2, VH * 0.50, 26, greyCol());
+  crayonText(c, 'Mörka hemligheter: ' + secretCount() + '/' + SECRETS.length, VW / 2, VH * 0.535, 24, '#a06fd0');
   if (G.score >= G.best && G.score > 0) {
-    crayonText(c, 'NYTT REKORD!', VW / 2, VH * 0.56, 44, COL.yellow, Math.sin(G.t * 5) * 0.04);
+    crayonText(c, 'NYTT REKORD!', VW / 2, VH * 0.585, 42, COL.yellow, Math.sin(G.t * 5) * 0.04);
   } else {
-    crayonText(c, 'REKORD: ' + G.best, VW / 2, VH * 0.56, 32, COL.purple);
+    crayonText(c, 'REKORD: ' + G.best, VW / 2, VH * 0.585, 32, isNight() ? '#c9a6ff' : COL.purple);
   }
   if (G.over > 0.8) {
     c.save();
@@ -1042,7 +1377,20 @@ function render() {
   if (sh) c.translate(rand(-sh, sh), rand(-sh, sh));
 
   c.drawImage(paper, 0, 0, VW, VH);
-  c.drawImage(stove, 0, VH - 300, VW, 300);
+
+  // MIDNATT: papperet svartnar, kritorna blir det enda som syns
+  if (G.night > 0) {
+    c.save();
+    c.globalAlpha = G.night * 0.965;
+    c.fillStyle = '#140f1e';
+    c.fillRect(0, 0, VW, VH);
+    c.globalAlpha = G.night * 0.07;
+    c.globalCompositeOperation = 'screen';
+    c.drawImage(paper, 0, 0, VW, VH);   // kritkladdet lyser svagt igenom
+    c.restore();
+  }
+
+  c.drawImage(G.night > 0.5 ? stoveNight : stove, 0, VH - 300, VW, 300);
 
   drawSteam(c);
   if (state === 'title') drawTitle(c);
@@ -1052,6 +1400,15 @@ function render() {
 
   if (state === 'play') drawHud(c);
   if (state === 'over') { drawHud(c); drawOver(c); }
+  if (state === 'secrets') drawSecrets(c);
+
+  if (G.whisper > 0) {
+    c.save();
+    c.globalAlpha = clamp(G.whisper / 1.2, 0, 1) * 0.8;
+    crayonText(c, 'elden minns alla som stått i grytan', VW / 2, VH - 150, 26, '#e08a4a', Math.sin(G.t * 2) * 0.02);
+    c.restore();
+  }
+  if (G.reveal && G.revealT > 0) drawReveal(c);
 
   if (G.flash > 0) {
     c.save();
@@ -1081,6 +1438,40 @@ document.addEventListener('visibilitychange', function () {
 });
 document.addEventListener('pause', function () { dragging = false; }, false);
 document.addEventListener('resume', function () { last = 0; }, false);
+
+/* ---------- testkrok, bara med ?dbg i adressen ---------- */
+if (/[?&]dbg\b/.test(location.search)) {
+  window.__dbg = {
+    G: G,
+    state: function () { return state; },
+    setState: function (s) { state = s; },
+    secrets: function () { return Object.keys(secretsFound); },
+    /* släpp ett bestämt föremål rakt över grytan */
+    slapp: function (key) {
+      var alla = INGREDIENTS.concat(JUNK, [BONUS, SPOKE, OGA]);
+      for (var i = 0; i < alla.length; i++) {
+        if (alla[i].key === key) {
+          G.items.push({ def: alla[i], x: G.potX, y: -60, vy: 300, vx: 0, rot: 0, vr: 0, scale: 1, wob: 0 });
+          return true;
+        }
+      }
+      return false;
+    },
+    /* autopilot: sikta grytan på det ätbara som är närmast botten */
+    auto: function (on) {
+      if (!on) { clearInterval(window.__autoId); window.__autoId = 0; return; }
+      window.__autoId = setInterval(function () {
+        var best = null;
+        for (var i = 0; i < G.items.length; i++) {
+          var it = G.items[i];
+          if (!it.def.good) continue;
+          if (!best || it.y > best.y) best = it;
+        }
+        if (best) G.targetX = best.x;
+      }, 16);
+    }
+  };
+}
 
 /* ---------- ikonrendering (används av byggskriptet) ---------- */
 window.__renderIcon = function (size, pad) {
