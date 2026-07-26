@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="msapplication-tap-highlight" content="no">
+  <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover, user-scalable=no">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' data: gap:; style-src 'self' 'unsafe-inline'; script-src 'self'; media-src *; img-src 'self' data: content:;">
+  <title>Linguey</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- Startbild -->
+<div id="splash" class="splash">
+  <div>
+    <div class="mark">🦉</div>
+    <div class="nm">Linguey</div>
+    <div class="tg">Lär dig språk. Spela dig dit.</div>
+  </div>
+</div>
+
+<div id="app">
+
+  <!-- ===================================================== STARTSIDA -->
+  <section id="screen-home" class="screen active">
+    <div class="topbar">
+      <button class="flagbtn" id="top-flag">🇪🇸<small>Spanska</small></button>
+      <div class="stat streak" id="top-streak"><i>🔥</i>0</div>
+      <div class="stat gem" id="top-gems"><i>💎</i>0</div>
+      <div class="stat hearts" id="top-hearts"><i>❤️</i>5</div>
+    </div>
+    <div class="scroll" id="home-scroll"></div>
+  </section>
+
+  <!-- ===================================================== BONUSNAV -->
+  <section id="screen-bonus" class="screen">
+    <div class="topbar">
+      <button class="flagbtn" style="pointer-events:none">🕹️<small>Bonuslektioner</small></button>
+    </div>
+    <div class="scroll" id="bonus-scroll"></div>
+  </section>
+
+  <!-- ===================================================== SPRÅKVAL -->
+  <section id="screen-langs" class="screen">
+    <div class="scroll" id="langs-scroll" style="padding-top:calc(20px + var(--safe-top))"></div>
+  </section>
+
+  <!-- ===================================================== PROFIL -->
+  <section id="screen-profile" class="screen">
+    <div class="scroll" id="profile-scroll" style="padding-top:calc(20px + var(--safe-top))"></div>
+  </section>
+
+  <!-- ===================================================== LEKTION -->
+  <section id="screen-lesson" class="screen">
+    <div class="lessonbar" id="lesson-bar">
+      <button class="x" id="lesson-x">✕</button>
+      <div class="bar grow"><i style="width:0%"></i></div>
+      <div class="stat hearts" id="lesson-hearts">❤️ 5</div>
+    </div>
+    <div class="qwrap" id="q-wrap"></div>
+    <div class="footer">
+      <div class="feedback" id="feedback"></div>
+      <button class="btn" id="check" disabled>Kontrollera</button>
+    </div>
+  </section>
+
+  <!-- ===================================================== RESULTAT -->
+  <section id="screen-result" class="screen">
+    <div class="result" id="result-body"></div>
+    <div class="footer">
+      <button class="btn good" id="result-cont">Fortsätt</button>
+    </div>
+  </section>
+
+  <!-- ===================================================== 3D-BONUSLÄGE -->
+  <section id="screen-bonus3d" class="screen">
+    <canvas id="glcanvas"></canvas>
+
+    <div class="hud3d">
+      <div class="top">
+        <div class="qline" id="hud-lang">Spring in i rätt ord</div>
+        <div class="qword" id="hud-word">…</div>
+        <div class="bar" style="margin-top:9px"><i id="hud-bar" style="width:0%"></i></div>
+        <div class="meta" id="hud-meta"></div>
+      </div>
+      <div class="spacer"></div>
+    </div>
+
+    <div class="crosshair"></div>
+    <div class="toast3d" id="toast3d"></div>
+
+    <div class="controls3d">
+      <div class="lookpad" id="lookpad"></div>
+      <div class="stick" id="stick"><div class="knob" id="knob"></div></div>
+      <button class="btn3d" id="sprintbtn">SPRINT</button>
+    </div>
+    <button class="exit3d" id="exit3d">✕</button>
+  </section>
+
+  <!-- Navigering -->
+  <nav class="nav" id="nav">
+    <button data-nav="home" class="on"><b>🏠</b>Lär</button>
+    <button data-nav="bonus"><b>🕹️</b>Bonus 3D</button>
+    <button data-nav="langs"><b>🌍</b>Språk</button>
+    <button data-nav="profile"><b>🦉</b>Profil</button>
+  </nav>
+</div>
+
+<!-- Porträttspärr: bonuslektioner måste spelas stående -->
+<div id="rotate-gate">
+  <div class="phone"></div>
+  <h2>Vänd mobilen till porträtt</h2>
+  <p>Bonuslektionerna i 3D-läget måste spelas med mobilen stående.
+     Spelet pausas tills du vänder tillbaka.</p>
+</div>
+
+<div class="combo" id="combo"></div>
+
+<div class="modal" id="modal">
+  <div class="sheet" id="sheet-body"></div>
+</div>
+
+<script src="cordova.js"></script>
+<script src="js/data.js"></script>
+<script src="js/orientation.js"></script>
+<script src="js/world3d.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

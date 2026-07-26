@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.linguey.app" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>Linguey</name>
+    <description>
+        Linguey — lär dig språk med spelifierade lektioner och ett 3D-spelarläge som bonuslektion.
+    </description>
+    <author email="hej@linguey.app" href="https://linguey.app">
+        Linguey
+    </author>
+    <content src="index.html" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+
+    <!-- Appen får rotera fritt; bonuslektionerna låser själva till porträtt
+         (se www/js/orientation.js samt porträttspärren i index.html). -->
+    <preference name="Orientation" value="default" />
+    <preference name="BackgroundColor" value="0xff0f1226" />
+    <preference name="Fullscreen" value="false" />
+
+    <platform name="android">
+        <preference name="AndroidWindowSplashScreenAnimatedIcon" value="res/icon/linguey-512.png" />
+        <preference name="AndroidWindowSplashScreenBackground" value="#0f1226" />
+
+        <!-- Adaptiva ikoner (Android 8+) -->
+        <icon density="ldpi" src="res/icon/android/ldpi.png" background="res/icon/android/ldpi-background.png" foreground="res/icon/android/ldpi-foreground.png" />
+        <icon density="mdpi" src="res/icon/android/mdpi.png" background="res/icon/android/mdpi-background.png" foreground="res/icon/android/mdpi-foreground.png" />
+        <icon density="hdpi" src="res/icon/android/hdpi.png" background="res/icon/android/hdpi-background.png" foreground="res/icon/android/hdpi-foreground.png" />
+        <icon density="xhdpi" src="res/icon/android/xhdpi.png" background="res/icon/android/xhdpi-background.png" foreground="res/icon/android/xhdpi-foreground.png" />
+        <icon density="xxhdpi" src="res/icon/android/xxhdpi.png" background="res/icon/android/xxhdpi-background.png" foreground="res/icon/android/xxhdpi-foreground.png" />
+        <icon density="xxxhdpi" src="res/icon/android/xxxhdpi.png" background="res/icon/android/xxxhdpi-background.png" foreground="res/icon/android/xxxhdpi-foreground.png" />
+    </platform>
+</widget>
