@@ -62,3 +62,22 @@ cordova/
 Kamera och mikrofon används enbart när du själv startar en inspelning. Bilder, videor och
 all annan data sparas i enhetens `localStorage` och `IndexedDB` — inget lämnar telefonen,
 och `Nollställ all data` under Profil raderar allt.
+
+## Färdig APK
+
+En installerbar debug-APK byggs automatiskt av `.github/workflows/android.yml` vid varje
+push till `cordova/` — ladda ner den under **Actions → Bygg Android-APK → Artifacts**.
+
+Bygga lokalt i stället:
+
+```bash
+cd cordova
+npm install
+npx cordova platform add android
+npx cordova build android --debug
+# → platforms/android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+Kräver JDK 21 och Android SDK 35. APK:n är signerad med Androids debug-nyckel, vilket räcker
+för att installera direkt på en telefon (slå på "Installera okända appar"), men inte för
+Google Play — dit krävs en `--release`-build signerad med en egen nyckel.

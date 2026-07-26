@@ -1,0 +1,52 @@
+name: Bygg Android-APK
+
+# Bygger en installerbar debug-APK av Sändo Fandom och laddar upp den som
+# artefakt. Kör automatiskt vid ändringar i cordova/, eller manuellt.
+on:
+  push:
+    paths:
+      - 'cordova/**'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cordova
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Installera Cordova
+        run: npm install --no-audit --no-fund
+
+      - name: Lägg till Android-plattformen
+        run: npx cordova platform add android
+
+      - name: Bygg APK
+        run: npx cordova build android --debug
+
+      - name: Döp om APK:n
+        run: |
+          mkdir -p dist
+          cp platforms/android/app/build/outputs/apk/debug/app-debug.apk \
+             dist/sando-fandom-debug.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sando-fandom-apk
+          path: cordova/dist/sando-fandom-debug.apk
+          if-no-files-found: error

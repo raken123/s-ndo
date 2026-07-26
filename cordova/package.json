@@ -21,14 +21,16 @@
     "plugins": {
       "cordova-plugin-splashscreen": {},
       "cordova-plugin-statusbar": {},
-      "cordova-plugin-camera": {},
+      "cordova-plugin-camera": {
+        "ANDROIDX_CORE_VERSION": "1.6.+"
+      },
       "cordova-plugin-media-capture": {},
       "cordova-plugin-file": {}
     }
   },
   "devDependencies": {
     "cordova": "^12.0.0",
-    "cordova-android": "^13.0.0",
+    "cordova-android": "^14.0.1",
     "cordova-ios": "^7.1.1",
     "cordova-plugin-camera": "^7.0.0",
     "cordova-plugin-file": "^8.1.0",
