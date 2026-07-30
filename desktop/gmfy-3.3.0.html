@@ -1,0 +1,3350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<meta name="color-scheme" content="dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; connect-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: blob:;">
+<title>Gmfy</title>
+<style>
+  :root{
+    --bg:#05060a; --ink:#e9ecf5; --muted:#8a91a8;
+    --violet:#7c5cff; --cyan:#22d3ee; --gold:#f5c542; --pink:#ec4899;
+    --panel:#111320; --line:rgba(255,255,255,.10);
+    --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden}
+  body{
+    background:radial-gradient(120% 80% at 20% 0%,#1a1430 0%,var(--bg) 60%),var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    user-select:none;-webkit-user-select:none;
+  }
+  .mark{font-weight:800;letter-spacing:-1.2px;
+    background:linear-gradient(90deg,var(--violet),var(--cyan));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+
+  /* ---------------- auth ---------------- */
+  #auth{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;
+    justify-content:center;padding:30px 26px calc(30px + var(--safe-b));
+    background:radial-gradient(120% 70% at 25% 8%,#241a48 0%,#05060a 62%),var(--bg)}
+  #auth.hide{display:none}
+  #auth .mark{font-size:56px}
+  #auth .sub{color:var(--muted);font-size:14px;margin:8px 0 34px}
+  .field{margin-bottom:13px}
+  .field label{display:block;font-size:11px;color:#5c6379;text-transform:uppercase;
+    letter-spacing:.06em;margin-bottom:7px}
+  .field input{width:100%;background:var(--panel);border:1px solid var(--line);
+    border-radius:14px;padding:16px;color:var(--ink);font-size:16px;font-family:inherit;
+    outline:none}
+  .field input:focus{border-color:rgba(124,92,255,.8)}
+  #a-go{width:100%;margin-top:9px;padding:17px;border:none;border-radius:15px;color:#fff;
+    font-size:16px;font-weight:700;font-family:inherit;
+    background:linear-gradient(135deg,var(--violet),var(--cyan))}
+  #a-go:active{filter:brightness(.86)}
+  #a-go:disabled{opacity:.5}
+  #a-err{min-height:20px;margin-top:12px;font-size:13px;color:#ff8a8a;text-align:center}
+  #a-swap{margin-top:6px;text-align:center;font-size:13.5px;color:var(--muted)}
+  #a-swap b{color:var(--cyan)}
+  .legal{position:absolute;left:26px;right:26px;bottom:calc(16px + var(--safe-b));
+    text-align:center;font-size:10.5px;color:#3f4658;line-height:1.5}
+
+  /* ---------------- app ---------------- */
+  #app{display:none;flex-direction:column;height:100%;
+    padding-top:var(--safe-t);padding-bottom:var(--safe-b)}
+  #app.on{display:flex}
+
+  header{display:flex;align-items:center;gap:10px;padding:8px 14px 6px;flex:0 0 auto}
+  header .mark{font-size:22px}
+  .spacer{flex:1}
+  #who{font-size:11px;color:var(--muted);background:rgba(255,255,255,.05);
+    border-radius:999px;padding:6px 11px;max-width:150px;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  #out{background:none;border:1px solid var(--line);color:var(--muted);border-radius:999px;
+    padding:6px 11px;font-size:11px;font-family:inherit}
+
+  /* the viewport now owns the screen */
+  #stage{position:relative;flex:1 1 auto;min-height:0;margin:0 8px;border-radius:18px;
+    overflow:hidden;border:1px solid var(--line);background:#9fd4f2}
+  canvas{display:block;width:100%;height:100%;touch-action:none}
+  #hud{position:absolute;left:10px;top:10px;font-size:10.5px;color:#20304a;
+    background:rgba(255,255,255,.72);padding:5px 9px;border-radius:9px;line-height:1.45;
+    pointer-events:none;font-weight:600}
+  #hud b{color:#0b7ea8}
+  #pad{position:absolute;right:10px;bottom:10px;display:grid;gap:5px;
+    grid-template-columns:repeat(3,40px);grid-template-rows:repeat(2,40px)}
+  #pad button{background:rgba(8,10,18,.55);border:1px solid rgba(255,255,255,.22);
+    color:#fff;border-radius:11px;font-size:15px;font-family:inherit}
+  #pad button:active{background:rgba(124,92,255,.6)}
+  .g-up{grid-column:2;grid-row:1}.g-l{grid-column:1;grid-row:2}
+  .g-d{grid-column:2;grid-row:2}.g-r{grid-column:3;grid-row:2}
+  #runbar{position:absolute;left:10px;bottom:10px;display:flex;gap:6px}
+  #runbar button{border:none;border-radius:11px;padding:9px 15px;font-size:13px;
+    font-weight:700;font-family:inherit;color:#062012;background:#3ddc84}
+  #runbar #b-stop{background:#ff6b6b;color:#2a0808}
+  #fxbar{position:absolute;right:10px;top:10px;display:flex;gap:6px}
+  #fxbar .ghostbtn{background:rgba(8,10,18,.62);color:#9aa4bd;
+    border:1px solid rgba(255,255,255,.20);border-radius:10px;padding:7px 12px;
+    font-size:11.5px;font-weight:700;font-family:inherit}
+  #fxbar .ghostbtn.on{color:#bfe9ff;border-color:rgba(140,220,255,.65)}
+  .todlab{flex:0 0 auto;font-size:11px;color:var(--cyan);min-width:64px;text-align:right}
+  #runbar button:disabled{opacity:.4}
+
+  /* ---------------- bottom sheet ---------------- */
+  .sheet{flex:0 0 auto;padding:8px 12px 10px}
+  .tabs{display:flex;gap:5px;background:rgba(255,255,255,.04);border-radius:12px;
+    padding:4px;margin-bottom:9px}
+  .tab{flex:1;padding:9px;border:none;border-radius:9px;background:none;color:var(--muted);
+    font-size:13px;font-weight:600;font-family:inherit}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 6px rgba(0,0,0,.45)}
+  .pane{display:none;max-height:212px;overflow-y:auto}
+  .pane.on{display:block}
+
+  .r{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .lab{flex:0 0 46px;font-size:10px;color:#5c6379;text-transform:uppercase;letter-spacing:.05em}
+  .strip{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .strip::-webkit-scrollbar{display:none}
+  .seg{display:flex;gap:5px;flex:1}
+  .seg button{flex:1;padding:8px;border:1px solid var(--line);border-radius:10px;
+    background:rgba(255,255,255,.03);color:var(--muted);font-size:12px;font-family:inherit}
+  .seg button.on{border-color:var(--violet);color:var(--ink);background:rgba(124,92,255,.2)}
+  .bi{flex:0 0 auto;font-size:11.5px;padding:7px 12px;border-radius:999px;
+    border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--muted);
+    font-family:inherit;white-space:nowrap}
+  .bi.on{border-color:var(--cyan);color:var(--ink)}
+  .sw{flex:0 0 auto;width:28px;height:28px;border-radius:8px;border:2px solid transparent;padding:0}
+  .sw.on{border-color:#fff}
+  .sliders{gap:12px}
+  .sliders label{flex:1;display:flex;align-items:center;gap:7px;font-size:10px;
+    color:#5c6379;text-transform:uppercase;letter-spacing:.05em}
+  .sliders input{flex:1;accent-color:var(--violet);background:transparent}
+  .btns{gap:5px}
+  .btns button{flex:1;padding:10px 6px;border:1px solid var(--line);border-radius:10px;
+    background:rgba(255,255,255,.03);color:var(--ink);font-size:12px;font-family:inherit}
+  .btns button:active{background:rgba(124,92,255,.3)}
+  .hint{text-align:center;font-size:10px;color:#4d5468;margin-top:6px}
+
+  /* ---------------- blocks ---------------- */
+  .bwrap{display:flex;gap:8px}
+  .bcol{flex:1;min-width:0}
+  .bcol h4{font-size:10px;color:#5c6379;text-transform:uppercase;letter-spacing:.06em;
+    margin-bottom:6px}
+  .palette,.script{max-height:150px;overflow-y:auto;scrollbar-width:none}
+  .palette::-webkit-scrollbar,.script::-webkit-scrollbar{display:none}
+  .blk{position:relative;display:flex;align-items:center;gap:6px;width:100%;
+    border:none;border-radius:8px;padding:8px 9px;margin-bottom:5px;color:#12131c;
+    font-size:11.5px;font-weight:700;font-family:inherit;text-align:left;line-height:1.25}
+  .blk .nub{position:absolute;left:13px;bottom:-4px;width:14px;height:5px;border-radius:0 0 4px 4px;
+    background:inherit}
+  .blk.hat{border-radius:12px 12px 8px 8px}
+  .blk .v{background:rgba(255,255,255,.85);border-radius:999px;padding:2px 8px;
+    font-size:11px;color:#12131c;flex:0 0 auto}
+  .blk.now{outline:3px solid #fff;outline-offset:1px}
+  .script .blk{cursor:pointer}
+  .empty{font-size:11px;color:#4d5468;padding:8px 2px}
+  .cats{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;margin-bottom:7px}
+  .cats::-webkit-scrollbar{display:none}
+  .cat{flex:0 0 auto;font-size:11px;font-weight:700;padding:6px 11px;border-radius:999px;
+    border:none;color:#12131c;font-family:inherit;opacity:.5}
+  .cat.on{opacity:1;outline:2px solid rgba(255,255,255,.75)}
+  .blk .ind{flex:0 0 auto;width:0}
+  .card{border:1px solid var(--line);border-radius:13px;padding:12px;margin-bottom:8px;
+    background:rgba(255,255,255,.03)}
+  .card h5{font-size:14px;margin-bottom:4px}
+  .card p{font-size:11.5px;color:var(--muted);line-height:1.45}
+  .card.on{border-color:var(--cyan);background:rgba(34,211,238,.09)}
+  .card .row2{display:flex;align-items:center;gap:8px;margin-top:8px}
+  .card button{padding:8px 13px;border-radius:9px;border:1px solid var(--line);
+    background:rgba(255,255,255,.05);color:var(--ink);font-size:12px;font-family:inherit}
+  .price{font-size:11px;color:var(--gold);font-weight:700}
+  .code{font-family:ui-monospace,Menlo,monospace;font-size:26px;letter-spacing:.14em;
+    color:var(--cyan);font-weight:700}
+  .glist{max-height:180px;overflow-y:auto;scrollbar-width:none}
+  .grow{display:flex;align-items:center;gap:8px;padding:10px;border-radius:11px;
+    border:1px solid var(--line);margin-bottom:6px;background:rgba(255,255,255,.03)}
+  .grow.on{border-color:var(--violet);background:rgba(124,92,255,.14)}
+  .grow .nm{flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .grow button{padding:6px 10px;font-size:11px;border-radius:8px;border:1px solid var(--line);
+    background:none;color:var(--muted);font-family:inherit}
+  .grow .sc{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--cyan);
+    letter-spacing:.06em;background:rgba(34,211,238,.12);border-radius:6px;padding:3px 7px}
+  .grow button.shared{border-color:var(--cyan);color:var(--cyan)}
+  .quota{font-size:11px;color:var(--muted);margin-bottom:8px}
+  .quota b{color:var(--cyan)}
+  .iconbtn{display:flex;align-items:center;gap:12px;width:100%;padding:10px;
+    border:1px dashed rgba(255,255,255,.22);border-radius:13px;background:rgba(255,255,255,.03);
+    color:var(--ink);font-family:inherit;text-align:left}
+  .iconbtn .ico{flex:0 0 auto;width:54px;height:54px;border-radius:13px;
+    background:linear-gradient(135deg,var(--violet),var(--cyan));background-size:cover;
+    background-position:center;display:grid;place-items:center;color:#fff;font-weight:800;
+    font-size:26px}
+  .iconbtn .txt{font-size:12.5px;line-height:1.5}
+  .iconbtn .txt i{color:var(--muted);font-style:normal;font-size:11px}
+  input.txt{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:11px;
+    padding:12px;color:var(--ink);font-size:14px;font-family:inherit;outline:none}
+</style>
+</head>
+<body>
+
+<!-- ============ sign in ============ -->
+<div id="auth">
+  <div class="mark">gmfy</div>
+  <div class="sub">Build 3D games — without a bit of code.</div>
+
+  <div class="field">
+    <label for="a-mail">Email</label>
+    <input id="a-mail" type="email" autocomplete="username" autocapitalize="none"
+           spellcheck="false" placeholder="you@example.com">
+  </div>
+  <div class="field">
+    <label for="a-pass">Password</label>
+    <input id="a-pass" type="password" autocomplete="current-password"
+           placeholder="at least 6 characters">
+  </div>
+
+  <button id="a-go">Create account</button>
+  <div id="a-err"></div>
+  <div id="a-swap">Already have an account? <b>Sign in</b></div>
+
+  <div class="legal">Accounts are stored on this device only.</div>
+</div>
+
+<!-- ============ app ============ -->
+<div id="app">
+  <header>
+    <div class="mark">gmfy</div>
+    <div class="spacer"></div>
+    <div id="who">—</div>
+    <button id="out">Sign out</button>
+  </header>
+
+  <div id="stage">
+    <canvas id="c"></canvas>
+    <div id="hud">world <b id="h-biome">—</b><br>things <b id="h-objs">0</b></div>
+    <div id="runbar">
+      <button id="b-play">Play</button>
+      <button id="b-run">Run</button>
+      <button id="b-stop" hidden>Stop</button>
+    </div>
+    <div id="fxbar">
+      <button id="b-photo" class="ghostbtn">Photo</button>
+      <button id="b-ghost" class="ghostbtn on">Ghost</button>
+    </div>
+    <div id="pad">
+      <button class="g-up" data-k="f">&#9650;</button>
+      <button class="g-l"  data-k="l">&#9664;</button>
+      <button class="g-d"  data-k="b">&#9660;</button>
+      <button class="g-r"  data-k="r">&#9654;</button>
+    </div>
+  </div>
+
+  <div class="sheet">
+    <div class="tabs">
+      <button class="tab on" data-pane="build">Build</button>
+      <button class="tab"    data-pane="code">Code</button>
+      <button class="tab"    data-pane="world">World</button>
+      <button class="tab"    data-pane="games">Games</button>
+      <button class="tab"    data-pane="class">Class</button>
+      <button class="tab"    data-pane="plan">Plan</button>
+      <button class="tab"    data-pane="export">Export</button>
+    </div>
+
+    <!-- Build -->
+    <div class="pane on" id="pane-build">
+      <div class="r"><span class="lab">Tool</span>
+        <div class="seg" id="mk-tools">
+          <button data-tool="place" class="on">Place</button>
+          <button data-tool="erase">Erase</button>
+          <button data-tool="look">Look</button>
+          <button data-tool="raise">Raise</button>
+          <button data-tool="lower">Lower</button>
+        </div>
+      </div>
+      <div class="r"><span class="lab">Thing</span><div class="strip" id="mk-kinds"></div></div>
+      <div class="r"><span class="lab">Colour</span><div class="strip" id="mk-cols"></div></div>
+      <div class="r sliders"><label>Size <input type="range" id="mk-size" min="8" max="90" value="30"></label></div>
+      <div class="r btns">
+        <button id="mk-undo">Undo</button>
+        <button id="mk-clear">Clear</button>
+      </div>
+      <div class="hint" id="mk-hint">tap the ground to place &middot; drag to look around</div>
+    </div>
+
+    <!-- Code -->
+    <div class="pane" id="pane-code">
+      <div class="bwrap">
+        <div class="bcol">
+          <h4>Blocks</h4>
+          <div class="cats" id="bl-cats"></div>
+          <div class="palette" id="bl-palette"></div>
+        </div>
+        <div class="bcol">
+          <h4>Script</h4>
+          <div class="script" id="bl-script"></div>
+        </div>
+      </div>
+      <div class="r btns" style="margin-top:7px">
+        <button id="bl-clear">Clear script</button>
+      </div>
+      <div class="hint">tap a block to add it &middot; tap a script block to remove &middot; tap its number to change</div>
+    </div>
+
+    <!-- World -->
+    <div class="pane" id="pane-world">
+      <div class="r"><span class="lab">World</span><div class="strip" id="mk-biomes"></div></div>
+      <div class="r"><span class="lab">Sky</span><div class="strip" id="w-weather"></div></div>
+      <div class="r sliders">
+        <label>Time <input type="range" id="w-time" min="0" max="100" value="50"></label>
+        <span id="w-tod" class="todlab">noon</span>
+      </div>
+      <div class="r sliders">
+        <label>Wind <input type="range" id="w-wind" min="-3" max="3" value="0"></label>
+        <label>Hills <input type="range" id="mk-relief" min="0" max="28" value="9"></label>
+      </div>
+      <div class="r btns">
+        <button id="mk-new">New world</button>
+        <button id="mk-save">Save</button>
+        <button id="mk-load">Load</button>
+      </div>
+      <div class="hint" id="w-hint">worlds save to this device, per account</div>
+    </div>
+
+    <!-- Games -->
+    <div class="pane" id="pane-games">
+      <div class="quota" id="q-line">—</div>
+      <div class="r" style="gap:6px">
+        <input class="txt" id="g-name" placeholder="new game name" maxlength="28">
+        <button id="g-new" style="flex:0 0 auto;padding:12px 15px;border-radius:11px;border:none;
+          color:#fff;font-family:inherit;font-size:13px;font-weight:700;
+          background:linear-gradient(135deg,var(--violet),var(--cyan))">Create</button>
+      </div>
+      <div class="r" style="gap:6px">
+        <input class="txt" id="g-code" placeholder="add a game by code — ABC-123"
+               maxlength="7" autocapitalize="characters" spellcheck="false">
+        <button id="g-import" style="flex:0 0 auto;padding:12px 15px;border-radius:11px;
+          border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--ink);
+          font-family:inherit;font-size:13px">Add</button>
+      </div>
+      <div class="glist" id="g-list"></div>
+      <div class="hint" id="g-hint">each game keeps its own world and script</div>
+    </div>
+
+    <!-- Class (Edu) -->
+    <div class="pane" id="pane-class">
+      <div id="c-none">
+        <div class="card">
+          <h5>Join a class</h5>
+          <p>Enter the code your teacher gave you.</p>
+          <div class="row2">
+            <input class="txt" id="c-code" placeholder="ABC-123" maxlength="7"
+                   autocapitalize="characters" spellcheck="false">
+            <button id="c-join">Join</button>
+          </div>
+        </div>
+        <div class="card">
+          <h5>Teaching?</h5>
+          <p>Create a class and share the code with your students.</p>
+          <div class="row2">
+            <input class="txt" id="c-name" placeholder="Class name" maxlength="24">
+            <button id="c-make">Create</button>
+          </div>
+        </div>
+      </div>
+      <div id="c-in" hidden>
+        <div class="card on">
+          <h5 id="c-title">—</h5>
+          <p id="c-role">—</p>
+          <div class="code" id="c-show">—</div>
+          <div class="row2">
+            <button id="c-leave">Leave class</button>
+          </div>
+        </div>
+        <div class="quota" id="c-members">—</div>
+      </div>
+      <div class="hint" id="c-hint">Edu mode &middot; codes work on this device</div>
+    </div>
+
+    <!-- Plan -->
+    <div class="pane" id="pane-plan">
+      <div class="card" id="p-free">
+        <h5>Free <span class="price">$0</span></h5>
+        <p>Make up to <b>2 games</b> and share <b>1</b> at a time. Every building block and every code block included.</p>
+        <div class="row2"><button data-plan="free">Choose Free</button></div>
+      </div>
+      <div class="card" id="p-pro">
+        <h5>Pro <span class="price">$4/mo</span></h5>
+        <p>Make up to <b>1000 games</b> and share <b>25</b> at a time. Everything in Free.</p>
+        <div class="row2"><button data-plan="pro">Choose Pro</button></div>
+      </div>
+      <div class="card" id="p-max">
+        <h5>Max <span class="price">$9/mo</span></h5>
+        <p><b>Unlimited games</b> and <b>unlimited sharing</b>. Everything in Pro.</p>
+        <div class="row2"><button data-plan="max">Choose Max</button></div>
+      </div>
+      <div class="hint">plans are stored on this device</div>
+    </div>
+
+    <!-- Export -->
+    <div class="pane" id="pane-export">
+      <div class="r">
+        <button id="x-pick" class="iconbtn">
+          <span class="ico" id="x-thumb"></span>
+          <span class="txt"><b>Upload icon</b><br><i id="x-iconname">using the gmfy mark</i></span>
+        </button>
+        <input type="file" id="x-file" accept="image/*" hidden>
+      </div>
+      <div class="r" style="gap:6px">
+        <input class="txt" id="x-name" placeholder="app name" maxlength="28">
+        <input class="txt" id="x-pkg" placeholder="com.you.game" maxlength="48"
+               autocapitalize="none" spellcheck="false">
+      </div>
+      <div class="r btns">
+        <button id="x-cordova">Cordova&nbsp;/&nbsp;APK</button>
+        <button id="x-electron">Electron&nbsp;/&nbsp;Desktop</button>
+      </div>
+      <div class="quota" id="x-out">exports a ready-to-build project .zip</div>
+      <div class="hint" id="x-hint">phones can't compile — build the zip on a computer</div>
+    </div>
+  </div>
+</div>
+
+<script>window.GMFY_SRC={"js/engine.js": "/* gmfy \u2014 tiny software 3D renderer (canvas 2D, painter's algorithm). No deps. */\n(function (global) {\n  'use strict';\n\n  /* ---- deterministic RNG so a prompt always rebuilds the same world ---- */\n  function hash(str) {\n    var h = 2166136261 >>> 0;\n    for (var i = 0; i < str.length; i++) {\n      h ^= str.charCodeAt(i);\n      h = Math.imul(h, 16777619) >>> 0;\n    }\n    return h >>> 0;\n  }\n  function rng(seed) {\n    var s = seed >>> 0 || 1;\n    return function () {\n      s ^= s << 13; s >>>= 0;\n      s ^= s >> 17;\n      s ^= s << 5;  s >>>= 0;\n      return s / 4294967296;\n    };\n  }\n\n  /* ---- worlds: bright, friendly daylight palettes ---- */\n  var BIOMES = {\n    meadow: { name:'meadow',  sky:['#63b8f0','#d8f0ff'], ground:'#5cb84a',\n              grid:'#eafbe4', fog:'#dff1ff',\n              props:['tree','tree','rock','block'], palette:['#4ea63f','#8fd14f','#f6d365','#e86f6f'],\n              relief:0.9, density:1.1 },\n    forest: { name:'forest',  sky:['#79c6ea','#dff2f7'], ground:'#3f9e52',\n              grid:'#e6fbe9', fog:'#ddf1f6',\n              props:['tree','tree','tree','rock'], palette:['#2f8f45','#63c76a','#a7e07a','#c78b52'],\n              relief:1.25, density:1.4 },\n    beach:  { name:'beach',   sky:['#6fd0f0','#e6f8ff'], ground:'#efdcae',\n              grid:'#fff6dd', fog:'#e6f8ff',\n              props:['tree','rock','block'], palette:['#f2c66d','#7fd6c9','#e9a86b','#fff0c4'],\n              relief:0.6, density:0.85 },\n    hills:  { name:'hills',   sky:['#5cb3ee','#dcefff'], ground:'#6cbf5a',\n              grid:'#eafbe4', fog:'#dcefff',\n              props:['tree','rock','rock','dome'], palette:['#57ad46','#9ad463','#d6a55f','#f0f4e0'],\n              relief:1.9, density:1.0 },\n    snow:   { name:'snow',    sky:['#9fd4f2','#f2fbff'], ground:'#e8f2f7',\n              grid:'#ffffff', fog:'#f2fbff',\n              props:['tree','spike','rock'], palette:['#cfe7f5','#9ec9e2','#7fb3d5','#ffffff'],\n              relief:1.3, density:0.95 },\n    sunset: { name:'sunset',  sky:['#f2a25c','#ffe9c9'], ground:'#7ba85c',\n              grid:'#fff3dc', fog:'#ffe4c2',\n              props:['tree','rock','block'], palette:['#e2894f','#f4c06b','#8fbf68','#c96f5a'],\n              relief:1.1, density:1.0 }\n  };\n  var DEFAULT_BIOME = 'meadow';\n\n\n  /* ---- world generation ---- */\n  var N = 15, SPAN = 34;\n  // scenery + game pieces. shape drives how it renders, role drives gameplay.\n  var KIND = {\n    tree:      { shape:'cone',  role:'solid',      col:'#2f8f45', label:'Tree' },\n    rock:      { shape:'box',   role:'solid',      col:'#9b9285', label:'Rock' },\n    block:     { shape:'box',   role:'solid',      col:'#c8894f', label:'Block' },\n    tower:     { shape:'box',   role:'solid',      col:'#8d8f9c', label:'Tower' },\n    dome:      { shape:'dome',  role:'solid',      col:'#e6e2d3', label:'Dome' },\n    spike:     { shape:'cone',  role:'hazard',     col:'#b9c4cc', label:'Spike' },\n    cactus:    { shape:'cone',  role:'solid',      col:'#4f9d5b', label:'Cactus' },\n    coin:      { shape:'disc',  role:'coin',       col:'#f5c542', label:'Coin' },\n    star:      { shape:'disc',  role:'star',       col:'#ffd94a', label:'Star' },\n    key:       { shape:'disc',  role:'key',        col:'#c9a227', label:'Key' },\n    finish:    { shape:'flag',  role:'finish',     col:'#3ddc84', label:'Finish' },\n    checkpoint:{ shape:'flag',  role:'checkpoint', col:'#4c97ff', label:'Checkpoint' },\n    lava:      { shape:'patch', role:'lava',       col:'#f2560f', label:'Lava' },\n    water:     { shape:'patch', role:'water',      col:'#3aa6e0', label:'Water' },\n    spring:    { shape:'coil',  role:'spring',     col:'#ff7ac6', label:'Spring' },\n    enemy:     { shape:'box',   role:'enemy',      col:'#e2453c', label:'Enemy' },\n    door:      { shape:'box',   role:'door',       col:'#a06a3f', label:'Door' }\n  };\n  var PROP_KINDS = Object.keys(KIND);\n  var SCENERY = ['tree','rock','block','tower','dome','cactus'];\n\n  function buildWorld(prompt, opts) {\n    var seed = hash(prompt || 'gmfy');\n    var rand = rng(seed);\n    var key = opts && BIOMES[opts.biome] ? opts.biome : DEFAULT_BIOME;\n    var b = BIOMES[key];\n\n    var a1 = rand() * 6.28, a2 = rand() * 6.28, a3 = rand() * 6.28;\n    var h = [];\n    for (var i = 0; i < N; i++) {\n      h[i] = [];\n      for (var j = 0; j < N; j++) {\n        var u = i / (N - 1) - 0.5, v = j / (N - 1) - 0.5;\n        h[i][j] = (Math.sin(u * 7 + a1) * 0.9 +\n                   Math.cos(v * 6 + a2) * 0.8 +\n                   Math.sin((u + v) * 5 + a3) * 0.55) * b.relief;\n      }\n    }\n\n    var props = [], want = Math.round(20 * b.density), guard = 0;\n    while (props.length < want && guard++ < 400) {\n      var x = (rand() - 0.5) * SPAN * 0.86;\n      var z = (rand() - 0.5) * SPAN * 0.86;\n      if (Math.abs(x) < 3 && Math.abs(z) < 3) continue;      // keep spawn clear\n      var kind = b.props[(rand() * b.props.length) | 0];\n      if (!KIND[kind]) kind = 'tree';\n      props.push({\n        kind: kind, x: x, z: z,\n        h: 1.2 + rand() * (kind === 'tower' ? 6.5 : kind === 'tree' ? 3 : 1.6),\n        w: 0.5 + rand() * (kind === 'tower' ? 1.1 : 0.8),\n        col: b.palette[(rand() * b.palette.length) | 0]\n      });\n    }\n\n    return { seed:seed.toString(16).slice(0, 6), biomeKey:key, biome:b,\n             h:h, props:props, prompt:prompt };\n  }\n\n  function heightAt(w, x, z) {\n    var fi = (x / SPAN + 0.5) * (N - 1), fj = (z / SPAN + 0.5) * (N - 1);\n    var i = Math.max(0, Math.min(N - 2, Math.floor(fi)));\n    var j = Math.max(0, Math.min(N - 2, Math.floor(fj)));\n    var tx = Math.max(0, Math.min(1, fi - i)), tz = Math.max(0, Math.min(1, fj - j));\n    var h = w.h;\n    return h[i][j] * (1 - tx) * (1 - tz) + h[i + 1][j] * tx * (1 - tz) +\n           h[i][j + 1] * (1 - tx) * tz + h[i + 1][j + 1] * tx * tz;\n  }\n\n  /* ---- renderer ---- */\n  function Engine(canvas) {\n    this.cv = canvas;\n    this.ctx = canvas.getContext('2d');\n    this.world = null;\n    this.cam = { x: 0, z: -9, yaw: 0, pitch: 0.26, height: 3.4 };\n    // runtime effects driven by the block script\n    this.fx = { spin: 0, grow: 1, bounce: 0, t: 0 };\n    this.dpr = Math.min(global.devicePixelRatio || 1, 2);\n    this.resize();\n  }\n\n  Engine.prototype.resize = function () {\n    var r = this.cv.getBoundingClientRect();\n    this.w = Math.max(1, Math.round(r.width));\n    this.h = Math.max(1, Math.round(r.height));\n    this.cv.width = Math.round(this.w * this.dpr);\n    this.cv.height = Math.round(this.h * this.dpr);\n    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);\n    this.f = this.w * 0.9;\n  };\n\n  Engine.prototype.load = function (world) {\n    this.world = world;\n    this.cam.x = 0; this.cam.z = -9; this.cam.yaw = 0;\n  };\n\n  // world point -> screen. returns null when behind the camera\n  Engine.prototype.project = function (x, y, z) {\n    var c = this.cam;\n    var dx = x - c.x, dz = z - c.z;\n    var cy = Math.cos(c.yaw), sy = Math.sin(c.yaw);\n    var rx = dx * cy - dz * sy;\n    var rz = dx * sy + dz * cy;\n    // -y is up in world space, so the eye sits ABOVE the ground at (ground - height)\n    var ry = y - (heightAt(this.world, c.x, c.z) - c.height);\n    var cp = Math.cos(c.pitch), sp = Math.sin(c.pitch);\n    var ry2 = ry * cp - rz * sp;\n    var rz2 = ry * sp + rz * cp;\n    if (rz2 < 0.35) return null;\n    return { x: this.w / 2 + this.f * rx / rz2, y: this.h / 2 + this.f * ry2 / rz2, z: rz2 };\n  };\n\n  function shade(hex, k) {\n    var n = parseInt(hex.slice(1), 16);\n    var r = Math.min(255, Math.max(0, ((n >> 16) & 255) * k)) | 0;\n    var g = Math.min(255, Math.max(0, ((n >> 8) & 255) * k)) | 0;\n    var b = Math.min(255, Math.max(0, (n & 255) * k)) | 0;\n    return 'rgb(' + r + ',' + g + ',' + b + ')';\n  }\n\n  Engine.prototype.render = function () {\n    var ctx = this.ctx, w = this.world;\n    if (!w) return;\n    var b = w.biome;\n\n    var g = ctx.createLinearGradient(0, 0, 0, this.h);\n    g.addColorStop(0, b.sky[0]); g.addColorStop(1, b.sky[1]);\n    ctx.fillStyle = g; ctx.fillRect(0, 0, this.w, this.h);\n\n    var faces = [];\n\n    // terrain quads\n    for (var i = 0; i < N - 1; i++) {\n      for (var j = 0; j < N - 1; j++) {\n        var x0 = (i / (N - 1) - 0.5) * SPAN, x1 = ((i + 1) / (N - 1) - 0.5) * SPAN;\n        var z0 = (j / (N - 1) - 0.5) * SPAN, z1 = ((j + 1) / (N - 1) - 0.5) * SPAN;\n        var p = [\n          this.project(x0, w.h[i][j], z0), this.project(x1, w.h[i + 1][j], z0),\n          this.project(x1, w.h[i + 1][j + 1], z1), this.project(x0, w.h[i][j + 1], z1)\n        ];\n        if (!p[0] || !p[1] || !p[2] || !p[3]) continue;\n        var d = (p[0].z + p[1].z + p[2].z + p[3].z) / 4;\n        var slope = (w.h[i + 1][j] - w.h[i][j]) + (w.h[i][j + 1] - w.h[i][j]);\n        faces.push({ d: d, pts: p, fill: shade(b.ground, 1 + slope * 0.16),\n                     line: b.grid, alpha: Math.max(0, Math.min(1, 1.5 - d / 40)) });\n      }\n    }\n\n    // objects\n    for (var k = 0; k < w.props.length; k++) {\n      var pr = w.props[k];\n      if (pr.taken) continue;                       // collected coins vanish\n      var kd = KIND[pr.kind] || KIND.block;\n      var shape = kd.shape;\n      var base = heightAt(w, pr.x, pr.z);\n      var bob = this.fx.bounce\n        ? Math.abs(Math.sin(this.fx.t * 2.2 + pr.x * 0.35)) * this.fx.bounce : 0;\n      var hh = pr.h * this.fx.grow;\n      var top = base - hh - bob;\n      var s = pr.w * (0.6 + 0.4 * this.fx.grow);\n      var col = pr.col || kd.col;\n      var m, v, f, pts, dm;\n\n      if (shape === 'patch') {\n        // ground-hugging pool; pulses so lava reads as dangerous\n        var pulse = 0.86 + 0.14 * Math.sin(this.fx.t * 3 + pr.x);\n        var q = [], ok2 = true;\n        var corner = [[-1,-1],[1,-1],[1,1],[-1,1]];\n        for (m = 0; m < 4; m++) {\n          var px = pr.x + corner[m][0] * s * 2.1, pz = pr.z + corner[m][1] * s * 2.1;\n          var pp = this.project(px, heightAt(w, px, pz) - 0.06, pz);\n          if (!pp) { ok2 = false; break; }\n          q.push(pp);\n        }\n        if (!ok2) continue;\n        dm = (q[0].z + q[1].z + q[2].z + q[3].z) / 4;\n        faces.push({ d: dm, pts: q, fill: shade(col, pr.kind === 'lava' ? pulse : 0.95),\n                     line: shade(col, 1.25),\n                     alpha: Math.max(0, Math.min(1, 1.5 - dm / 40)) * (pr.kind === 'water' ? 0.72 : 1) });\n        continue;\n      }\n\n      if (shape === 'disc') {\n        // billboard: always faces the camera, spins by squashing horizontally\n        var spin = Math.abs(Math.cos(this.fx.t * 2.4 + pr.x));\n        var cy2 = base - hh * 0.55 - bob;\n        var c0 = this.project(pr.x, cy2, pr.z);\n        if (!c0) continue;\n        var rr = (this.f * s * 0.55) / c0.z;\n        var ring = [];\n        var sides = (pr.kind === 'star') ? 10 : 8;\n        for (m = 0; m < sides; m++) {\n          var ang = m / sides * Math.PI * 2;\n          var rad = (pr.kind === 'star' && m % 2) ? rr * 0.45 : rr;\n          ring.push({ x: c0.x + Math.cos(ang) * rad * (0.25 + 0.75 * spin),\n                      y: c0.y + Math.sin(ang) * rad, z: c0.z });\n        }\n        faces.push({ d: c0.z, pts: ring, fill: shade(col, 1.0), line: shade(col, 1.4),\n                     alpha: Math.max(0, Math.min(1, 1.5 - c0.z / 40)) });\n        continue;\n      }\n\n      if (shape === 'flag') {\n        var poleB = this.project(pr.x, base, pr.z);\n        var poleT = this.project(pr.x, top, pr.z);\n        if (!poleB || !poleT) continue;\n        var wdt = Math.max(2, (this.f * 0.10) / poleB.z);\n        faces.push({ d: poleB.z + 0.02,\n                     pts: [{x:poleB.x-wdt,y:poleB.y},{x:poleB.x+wdt,y:poleB.y},\n                           {x:poleT.x+wdt,y:poleT.y},{x:poleT.x-wdt,y:poleT.y}],\n                     fill: '#e9ecf5', line: '#b9c0cc',\n                     alpha: Math.max(0, Math.min(1, 1.5 - poleB.z / 40)) });\n        var fl = (this.f * s * 1.5) / poleT.z;\n        var wave = Math.sin(this.fx.t * 3 + pr.x) * fl * 0.18;\n        var active = (pr.kind !== 'checkpoint' || pr.on);\n        faces.push({ d: poleT.z,\n                     pts: [{x:poleT.x,y:poleT.y},\n                           {x:poleT.x+fl,y:poleT.y+fl*0.28+wave},\n                           {x:poleT.x,y:poleT.y+fl*0.62}],\n                     fill: shade(col, active ? 1.0 : 0.45),\n                     line: shade(col, 1.3),\n                     alpha: Math.max(0, Math.min(1, 1.5 - poleT.z / 40)) });\n        continue;\n      }\n\n      if (shape === 'coil') {\n        var rings = 4;\n        for (m = 0; m < rings; m++) {\n          var yy2 = base - (hh * (m + 1) / rings) - bob;\n          var cc = this.project(pr.x, yy2, pr.z);\n          if (!cc) continue;\n          var rr2 = (this.f * s * 0.5) / cc.z;\n          var poly = [];\n          for (var a2 = 0; a2 < 8; a2++) {\n            var an = a2 / 8 * Math.PI * 2;\n            poly.push({ x: cc.x + Math.cos(an) * rr2, y: cc.y + Math.sin(an) * rr2 * 0.34 });\n          }\n          faces.push({ d: cc.z + m * 0.01, pts: poly, fill: shade(col, 0.7 + m * 0.1),\n                       line: shade(col, 1.3),\n                       alpha: Math.max(0, Math.min(1, 1.5 - cc.z / 40)) });\n        }\n        continue;\n      }\n\n      if (shape === 'cone' || shape === 'dome') {\n        var apex = this.project(pr.x, shape === 'dome' ? base - hh * 0.6 : top, pr.z);\n        var cs = [this.project(pr.x - s, base, pr.z - s), this.project(pr.x + s, base, pr.z - s),\n                  this.project(pr.x + s, base, pr.z + s), this.project(pr.x - s, base, pr.z + s)];\n        if (!apex || cs.indexOf(null) !== -1) continue;\n        for (var q2 = 0; q2 < 4; q2++) {\n          var tri = [cs[q2], cs[(q2 + 1) % 4], apex];\n          var dd = (tri[0].z + tri[1].z + apex.z) / 3;\n          faces.push({ d: dd, pts: tri, fill: shade(col, 0.55 + q2 * 0.13), line: col,\n                       alpha: Math.max(0, Math.min(1, 1.5 - dd / 40)) });\n        }\n        continue;\n      }\n\n      // default: box\n      v = [];\n      var dxs = [-s, s, s, -s], dzs = [-s, -s, s, s];\n      for (m = 0; m < 4; m++) v.push(this.project(pr.x + dxs[m], base, pr.z + dzs[m]));\n      for (m = 0; m < 4; m++) v.push(this.project(pr.x + dxs[m], top, pr.z + dzs[m]));\n      if (v.indexOf(null) !== -1) continue;\n      var sides2 = [[0,1,5,4],[1,2,6,5],[2,3,7,6],[3,0,4,7],[4,5,6,7]];\n      for (m = 0; m < sides2.length; m++) {\n        f = sides2[m]; pts = [v[f[0]], v[f[1]], v[f[2]], v[f[3]]];\n        dm = (pts[0].z + pts[1].z + pts[2].z + pts[3].z) / 4;\n        faces.push({ d: dm, pts: pts, fill: shade(col, m === 4 ? 0.95 : 0.42 + m * 0.1),\n                     line: col, alpha: Math.max(0, Math.min(1, 1.5 - dm / 40)) });\n      }\n    }\n\n    faces.sort(function (a, c) { return c.d - a.d; });   // far -> near\n\n    for (var n = 0; n < faces.length; n++) {\n      var fc = faces[n];\n      if (fc.alpha <= 0.02) continue;\n      ctx.globalAlpha = fc.alpha;\n      ctx.beginPath();\n      ctx.moveTo(fc.pts[0].x, fc.pts[0].y);\n      for (var t = 1; t < fc.pts.length; t++) ctx.lineTo(fc.pts[t].x, fc.pts[t].y);\n      ctx.closePath();\n      ctx.fillStyle = fc.fill; ctx.fill();\n      ctx.strokeStyle = fc.line; ctx.lineWidth = 1; ctx.globalAlpha = fc.alpha * 0.5;\n      ctx.stroke();\n    }\n    ctx.globalAlpha = 1;\n\n    var fg = ctx.createLinearGradient(0, this.h * 0.30, 0, this.h * 0.62);\n    fg.addColorStop(0, b.fog); fg.addColorStop(1, 'rgba(0,0,0,0)');\n    ctx.fillStyle = fg; ctx.fillRect(0, 0, this.w, this.h * 0.62);\n  };\n\n  Engine.prototype.move = function (dir, dt) {\n    var c = this.cam, sp = 11 * dt;\n    var fx = Math.sin(c.yaw), fz = Math.cos(c.yaw);\n    if (dir === 'f') { c.x += fx * sp; c.z += fz * sp; }\n    if (dir === 'b') { c.x -= fx * sp; c.z -= fz * sp; }\n    if (dir === 'l') { c.x -= fz * sp; c.z += fx * sp; }\n    if (dir === 'r') { c.x += fz * sp; c.z -= fx * sp; }\n    var lim = SPAN * 0.52;\n    c.x = Math.max(-lim, Math.min(lim, c.x));\n    c.z = Math.max(-lim, Math.min(lim, c.z));\n  };\n\n  /* Screen point -> ground position. Inverts project(), then marches the ray\n     until it meets the heightfield and bisects for a clean hit. */\n  Engine.prototype.pick = function (sx, sy) {\n    var c = this.cam, w = this.world;\n    if (!w) return null;\n    var a = (sx - this.w / 2) / this.f;\n    var b = (sy - this.h / 2) / this.f;\n    var cp = Math.cos(c.pitch), sp = Math.sin(c.pitch);\n    var cyw = Math.cos(c.yaw), syw = Math.sin(c.yaw);\n    var eyeY = heightAt(w, c.x, c.z) - c.height;\n\n    function at(t) {\n      var ry = t * (b * cp + sp);        // undo pitch\n      var rz = t * (cp - b * sp);\n      var rx = a * t;\n      var dx = rx * cyw + rz * syw;      // undo yaw\n      var dz = -rx * syw + rz * cyw;\n      return { x: c.x + dx, y: eyeY + ry, z: c.z + dz };\n    }\n\n    // -y is up, so the ray has hit ground once y >= terrain height\n    var prev = null, t, lim = SPAN * 0.5;\n    for (t = 0.5; t < 120; t *= 1.05) {\n      var p = at(t);\n      if (p.y >= heightAt(w, p.x, p.z)) {\n        if (prev === null) return null;\n        var lo = prev, hi = t;\n        for (var k = 0; k < 26; k++) {\n          var mid = (lo + hi) / 2, pm = at(mid);\n          if (pm.y >= heightAt(w, pm.x, pm.z)) hi = mid; else lo = mid;\n        }\n        var f = at(hi);\n        if (Math.abs(f.x) > lim || Math.abs(f.z) > lim) return null;\n        return { x: f.x, z: f.z };\n      }\n      prev = t;\n    }\n    return null;\n  };\n\n  /* Nearest prop to a ground point, within `radius` world units. */\n  Engine.prototype.propAt = function (gx, gz, radius) {\n    var w = this.world, best = -1, bd = (radius || 2.2) * (radius || 2.2);\n    if (!w) return -1;\n    for (var i = 0; i < w.props.length; i++) {\n      var dx = w.props[i].x - gx, dz = w.props[i].z - gz;\n      var d2 = dx * dx + dz * dz;\n      if (d2 < bd) { bd = d2; best = i; }\n    }\n    return best;\n  };\n\n  /* ---- maker-mode world helpers ---- */\n  function emptyWorld(biomeKey, relief) {\n    var b = BIOMES[biomeKey] || BIOMES.meadow;\n    var rand = rng(hash(biomeKey + ':' + (relief || 1)));\n    var a1 = rand() * 6.28, a2 = rand() * 6.28, a3 = rand() * 6.28;\n    var h = [];\n    for (var i = 0; i < N; i++) {\n      h[i] = [];\n      for (var j = 0; j < N; j++) {\n        var u = i / (N - 1) - 0.5, v = j / (N - 1) - 0.5;\n        h[i][j] = (Math.sin(u * 7 + a1) * 0.9 + Math.cos(v * 6 + a2) * 0.8 +\n                   Math.sin((u + v) * 5 + a3) * 0.55) * (relief === undefined ? b.relief : relief);\n      }\n    }\n    return { seed: 'maker', biomeKey: biomeKey, biome: b, h: h, props: [],\n             prompt: '', source: 'maker' };\n  }\n\n  function reskin(world, biomeKey) {\n    var b = BIOMES[biomeKey] || BIOMES.meadow;\n    world.biomeKey = biomeKey;\n    world.biome = b;\n    return world;\n  }\n\n  function setRelief(world, relief) {\n    var cur = world._relief === undefined ? world.biome.relief : world._relief;\n    var k = (relief || 0.001) / (cur || 1);\n    for (var i = 0; i < N; i++)\n      for (var j = 0; j < N; j++) world.h[i][j] *= k;\n    world._relief = relief;\n    return world;\n  }\n\n  /* Build a world from a (possibly partial / untrusted) remote spec.\n     Every field is validated; anything missing falls back to the local world. */\n  function worldFromSpec(spec, prompt) {\n    var base = buildWorld(prompt);\n    if (!spec || typeof spec !== 'object') return base;\n\n    if (typeof spec.biome === 'string' && BIOMES[spec.biome]) {\n      base.biomeKey = spec.biome;\n      base.biome = BIOMES[spec.biome];\n    }\n\n    var num = function (v, dflt, lo, hi) {\n      v = typeof v === 'number' ? v : parseFloat(v);\n      if (!isFinite(v)) return dflt;\n      return Math.max(lo, Math.min(hi, v));\n    };\n\n    if (Object.prototype.toString.call(spec.props) === '[object Array]') {\n      var lim = SPAN * 0.5, out = [];\n      var allowed = { tower:1, block:1, tree:1, cactus:1, spike:1, rock:1, dome:1 };\n      for (var i = 0; i < spec.props.length && out.length < 120; i++) {\n        var p = spec.props[i];\n        if (!p || typeof p !== 'object') continue;\n        var col = (typeof p.col === 'string' && /^#[0-9a-fA-F]{6}$/.test(p.col))\n          ? p.col : base.biome.palette[i % base.biome.palette.length];\n        out.push({\n          kind: allowed[p.kind] ? p.kind : 'block',\n          x: num(p.x, 0, -lim, lim),\n          z: num(p.z, 0, -lim, lim),\n          h: num(p.h, 2, 0.4, 12),\n          w: num(p.w, 0.7, 0.2, 3),\n          col: col\n        });\n      }\n      if (out.length) base.props = out;\n    }\n\n    if (spec.relief !== undefined) {\n      var k2 = num(spec.relief, 1, 0.1, 3) / (base.biome.relief || 1);\n      for (var a = 0; a < N; a++)\n        for (var b2 = 0; b2 < N; b2++) base.h[a][b2] *= k2;\n    }\n    return base;\n  }\n\n  global.Gmfy = { Engine: Engine, buildWorld: buildWorld,\n                  worldFromSpec: worldFromSpec, BIOMES: BIOMES,\n                  emptyWorld: emptyWorld, reskin: reskin, setRelief: setRelief,\n                  heightAt: heightAt, SPAN: SPAN, PROP_KINDS: PROP_KINDS,\n                  KIND: KIND, SCENERY: SCENERY };\n})(window);\n", "js/game.js": "/* gmfy \u2014 play mode. Walk the world you built: collect coins, hit checkpoints,\n   avoid lava and enemies, reach the finish. */\n(function (global) {\n  'use strict';\n\n  var REACH = 1.9;          // how close counts as touching\n  var PATCH = 2.4;          // lava/water pools are wider than their marker\n\n  function Game(engine, onEvent) {\n    this.engine = engine;\n    this.onEvent = onEvent || function () {};\n    this.playing = false;\n    this.reset(true);\n  }\n\n  Game.prototype.reset = function (hard) {\n    var e = this.engine;\n    this.coins = 0;\n    this.stars = 0;\n    this.keys = 0;\n    this.deaths = 0;\n    this.won = false;\n    this.time = 0;\n    this.spawn = { x: 0, z: -9 };\n    this.message = '';\n    this.msgT = 0;\n    if (hard && e.world) this.restoreAll();\n    e.cam.x = this.spawn.x; e.cam.z = this.spawn.z; e.cam.yaw = 0;\n    this.vy = 0;\n  };\n\n  Game.prototype.restoreAll = function () {\n    var p = this.engine.world.props;\n    for (var i = 0; i < p.length; i++) {\n      p[i].taken = false;\n      if (p[i].kind === 'checkpoint') p[i].on = false;\n    }\n  };\n\n  Game.prototype.total = function (role) {\n    var p = this.engine.world.props, n = 0;\n    for (var i = 0; i < p.length; i++) {\n      var k = global.Gmfy.KIND[p[i].kind];\n      if (k && k.role === role) n++;\n    }\n    return n;\n  };\n\n  Game.prototype.start = function () {\n    this.playing = true;\n    this.reset(true);\n    this.track = [];              // this run, sampled ~10 Hz\n    this._sample = 0;\n    var FX = global.GmfyFX && global.GmfyFX.state;\n    if (FX) { FX.ghost = this.best ? this.best.track : null; FX.ghostT = 0; }\n    this.say(this.best ? 'Go! racing your ghost' : 'Go!');\n    this.onEvent('start');\n  };\n\n  Game.prototype.stop = function () {\n    this.playing = false;\n    this.onEvent('stop');\n  };\n\n  Game.prototype.say = function (txt, secs) {\n    this.message = txt;\n    this.msgT = secs || 1.6;\n  };\n\n  Game.prototype.respawn = function () {\n    var e = this.engine;\n    e.cam.x = this.spawn.x;\n    e.cam.z = this.spawn.z;\n    this.deaths++;\n    this.say('Ouch! Back to checkpoint');\n    this.onEvent('die');\n  };\n\n  /* called every frame while playing */\n  Game.prototype.tick = function (dt) {\n    if (this.msgT > 0) this.msgT -= dt;\n    if (!this.playing || this.won) return;\n    this.time += dt;\n\n    var FX = global.GmfyFX && global.GmfyFX.state;\n    if (FX) {\n      FX.ghostT = this.time;\n      if (FX.wind) this.engine.cam.x += FX.wind * dt * 0.9;   // weather pushes you\n    }\n    this._sample = (this._sample || 0) + dt;\n    if (this._sample >= 0.1) {\n      this._sample = 0;\n      if (this.track) this.track.push({ t: this.time,\n        x: this.engine.cam.x, z: this.engine.cam.z });\n    }\n\n    var e = this.engine, w = e.world;\n    var px = e.cam.x, pz = e.cam.z;\n\n    for (var i = 0; i < w.props.length; i++) {\n      var pr = w.props[i];\n      var kd = global.Gmfy.KIND[pr.kind];\n      if (!kd) continue;\n      var role = kd.role;\n      if (role === 'solid') continue;\n\n      var dx = pr.x - px, dz = pr.z - pz;\n      var d = Math.sqrt(dx * dx + dz * dz);\n      var reach = (kd.shape === 'patch') ? PATCH : REACH;\n      if (d > reach) continue;\n\n      if (role === 'coin' && !pr.taken) {\n        pr.taken = true; this.coins++;\n        this.say('Coin! ' + this.coins + '/' + (this.coins + this.remaining('coin')));\n        this.onEvent('coin');\n      } else if (role === 'star' && !pr.taken) {\n        pr.taken = true; this.stars++;\n        this.say('Star!'); this.onEvent('star');\n      } else if (role === 'key' && !pr.taken) {\n        pr.taken = true; this.keys++;\n        this.say('Key collected'); this.onEvent('key');\n      } else if (role === 'checkpoint') {\n        if (!pr.on) {\n          pr.on = true;\n          this.spawn = { x: pr.x, z: pr.z };\n          this.say('Checkpoint!');\n          this.onEvent('checkpoint');\n        }\n      } else if (role === 'lava' || role === 'hazard' || role === 'enemy') {\n        this.respawn();\n        return;\n      } else if (role === 'spring') {\n        // shove the player away from the pad\n        var len = d || 1;\n        e.cam.x -= (dx / len) * 6;\n        e.cam.z -= (dz / len) * 6;\n        this.say('Boing!');\n        this.onEvent('spring');\n      } else if (role === 'door') {\n        if (this.keys > 0) {\n          pr.taken = true; this.keys--;\n          this.say('Door unlocked'); this.onEvent('door');\n        } else {\n          e.cam.x -= dx * 0.12; e.cam.z -= dz * 0.12;\n          this.say('Locked \u2014 find a key');\n        }\n      } else if (role === 'finish') {\n        var left = this.remaining('coin');\n        if (left > 0) {\n          this.say(left + ' coin' + (left > 1 ? 's' : '') + ' to go!');\n        } else {\n          this.won = true;\n          this.playing = false;\n          var beat = !this.best || this.time < this.best.time;\n          if (beat) this.best = { time: this.time, track: (this.track || []).slice() };\n          this.say(beat ? ('New best!  ' + this.time.toFixed(1) + 's')\n                        : ('You win!  ' + this.time.toFixed(1) + 's  (best ' +\n                           this.best.time.toFixed(1) + 's)'), 6);\n          this.onEvent('win');\n        }\n      }\n    }\n  };\n\n  /* is the player standing on/near anything with this role? */\n  Game.prototype.near = function (role) {\n    var e = this.engine, w = e.world;\n    for (var i = 0; i < w.props.length; i++) {\n      var pr = w.props[i], kd = global.Gmfy.KIND[pr.kind];\n      if (!kd || kd.role !== role || pr.taken) continue;\n      var dx = pr.x - e.cam.x, dz = pr.z - e.cam.z;\n      var reach = (kd.shape === 'patch') ? PATCH : REACH;\n      if (dx * dx + dz * dz <= reach * reach) return true;\n    }\n    return false;\n  };\n\n  Game.prototype.remaining = function (role) {\n    var p = this.engine.world.props, n = 0;\n    for (var i = 0; i < p.length; i++) {\n      var k = global.Gmfy.KIND[p[i].kind];\n      if (k && k.role === role && !p[i].taken) n++;\n    }\n    return n;\n  };\n\n  /* HUD overlay drawn straight onto the canvas */\n  Game.prototype.draw = function (ctx, w, h) {\n    if (!this.playing && !this.won) return;\n    ctx.save();\n    ctx.font = 'bold 15px -apple-system,Roboto,sans-serif';\n    var pad = 10;\n    var line = 'Coins ' + this.coins + '/' + (this.coins + this.remaining('coin')) +\n               '   Time ' + this.time.toFixed(1) + 's' +\n               (this.best ? '   Best ' + this.best.time.toFixed(1) + 's' : '');\n    var tw = ctx.measureText(line).width;\n    ctx.fillStyle = 'rgba(255,255,255,.80)';\n    ctx.beginPath();\n    ctx.roundRect(w / 2 - tw / 2 - pad, 10, tw + pad * 2, 30, 9);\n    ctx.fill();\n    ctx.fillStyle = '#16324a';\n    ctx.textAlign = 'center';\n    ctx.fillText(line, w / 2, 30);\n\n    if (this.msgT > 0 && this.message) {\n      ctx.font = 'bold 21px -apple-system,Roboto,sans-serif';\n      var mw = ctx.measureText(this.message).width;\n      ctx.fillStyle = 'rgba(8,12,20,.78)';\n      ctx.beginPath();\n      ctx.roundRect(w / 2 - mw / 2 - 16, h * 0.34, mw + 32, 44, 12);\n      ctx.fill();\n      ctx.fillStyle = this.won ? '#3ddc84' : '#fff';\n      ctx.fillText(this.message, w / 2, h * 0.34 + 30);\n    }\n    ctx.restore();\n  };\n\n  global.GmfyGame = Game;\n})(window);\n", "js/blocks.js": "/* gmfy \u2014 block scripting across all Scratch categories.\n   Scripts are a flat list; C-blocks (repeat / forever / if) pair with an `end`\n   block, and hat blocks start independent threads when their event fires. */\n(function (global) {\n  'use strict';\n\n  var CATS = {\n    motion:  { name:'Motion',    col:'#4c97ff' },\n    looks:   { name:'Looks',     col:'#9966ff' },\n    sound:   { name:'Sound',     col:'#cf63cf' },\n    events:  { name:'Events',    col:'#ffbf00' },\n    control: { name:'Control',   col:'#ffab19' },\n    sensing: { name:'Sensing',   col:'#5cb1d6' },\n    operator:{ name:'Operators', col:'#59c059' },\n    data:    { name:'Variables', col:'#ff8c1a' }\n  };\n\n  /* conditions available to `if` and `wait until` (Sensing + Operators) */\n  var CONDS = [\n    { id:'touch_lava',  label:'touching lava?' },\n    { id:'touch_coin',  label:'touching a coin?' },\n    { id:'all_coins',   label:'all coins collected?' },\n    { id:'has_key',     label:'carrying a key?' },\n    { id:'timer5',      label:'timer > 5s' },\n    { id:'coins3',      label:'coins > 3' },\n    { id:'moving',      label:'player moving?' },\n    { id:'always',      label:'always' }\n  ];\n\n  /* value sources for `set score to` (Operators + Sensing reporters) */\n  var VALUES = [\n    { id:'random',  label:'random 1-10' },\n    { id:'coins',   label:'coin count' },\n    { id:'stars',   label:'star count' },\n    { id:'timer',   label:'timer' },\n    { id:'deaths',  label:'deaths' },\n    { id:'zero',    label:'0' }\n  ];\n\n  var SOUNDS = ['pop', 'coin', 'jump', 'win', 'buzz'];\n  var WORLDS = ['meadow', 'forest', 'beach', 'hills', 'snow', 'sunset'];\n  var WEATHER = ['clear', 'rain', 'snow', 'fog'];\n  var TOD = [['dawn', .25], ['noon', .5], ['dusk', .75], ['night', 0]];\n\n  /* hat:true starts a thread. c:true opens a C-block that needs an `end`. */\n  var DEFS = [\n    // ---- events ----\n    { id:'when_start',  cat:'events', hat:true, ev:'start',      label:'when GO is tapped' },\n    { id:'when_coin',   cat:'events', hat:true, ev:'coin',       label:'when a coin is collected' },\n    { id:'when_cp',     cat:'events', hat:true, ev:'checkpoint', label:'when a checkpoint is reached' },\n    { id:'when_lava',   cat:'events', hat:true, ev:'die',        label:'when lava is touched' },\n    { id:'when_win',    cat:'events', hat:true, ev:'win',        label:'when the finish is reached' },\n    { id:'when_msg',    cat:'events', hat:true, ev:'msg',        label:'when I receive message' },\n    { id:'broadcast',   cat:'events', label:'broadcast message' },\n\n    // ---- motion ----\n    { id:'move',      cat:'motion', label:'move',  arg:{min:1,max:12,step:1,val:4} },\n    { id:'turn_r',    cat:'motion', label:'turn right', arg:{min:15,max:180,step:15,val:45,unit:'\u00b0'} },\n    { id:'turn_l',    cat:'motion', label:'turn left',  arg:{min:15,max:180,step:15,val:45,unit:'\u00b0'} },\n    { id:'goto_start',cat:'motion', label:'go to start' },\n    { id:'goto_finish',cat:'motion',label:'glide to the finish' },\n    { id:'spin',      cat:'motion', label:'spin world', arg:{min:0,max:3,step:.5,val:1,unit:'x'} },\n    { id:'stopspin',  cat:'motion', label:'stop spinning' },\n    { id:'setspeed',  cat:'motion', label:'set speed', arg:{min:1,max:5,step:1,val:2,unit:'x'} },\n\n    // ---- looks ----\n    { id:'say',       cat:'looks', label:'say Hi!' },\n    { id:'think',     cat:'looks', label:'think Hmm\u2026' },\n    { id:'grow',      cat:'looks', label:'grow things', arg:{min:1,max:5,step:1,val:1,unit:'x'} },\n    { id:'shrink',    cat:'looks', label:'shrink things' },\n    { id:'setsize',   cat:'looks', label:'set size', arg:{min:25,max:200,step:25,val:100,unit:'%'} },\n    { id:'bounce',    cat:'looks', label:'make things bounce' },\n    { id:'plant',     cat:'looks', label:'plant a tree' },\n    { id:'drop_coin', cat:'looks', label:'drop a coin' },\n    { id:'drop_lava', cat:'looks', label:'pour some lava' },\n    { id:'setworld',  cat:'looks', label:'set world to', opt:'world', val:'forest' },\n    { id:'nextworld', cat:'looks', label:'next world' },\n    { id:'weather',   cat:'looks', label:'set weather', opt:'weather', val:'rain' },\n    { id:'wind',      cat:'looks', label:'set wind', arg:{min:-3,max:3,step:1,val:1} },\n    { id:'settime',   cat:'looks', label:'set time', opt:'tod', val:'noon' },\n    { id:'sunrise',   cat:'looks', label:'run a sunrise' },\n    { id:'raise',     cat:'looks', label:'raise the ground' },\n    { id:'lower',     cat:'looks', label:'lower the ground' },\n\n    // ---- sound ----\n    { id:'play',      cat:'sound', label:'play sound', opt:'sound', val:'pop' },\n    { id:'play_wait', cat:'sound', label:'play sound until done', opt:'sound', val:'coin' },\n    { id:'stop_snd',  cat:'sound', label:'stop all sounds' },\n    { id:'volume',    cat:'sound', label:'set volume', arg:{min:0,max:100,step:25,val:75,unit:'%'} },\n\n    // ---- control ----\n    { id:'wait',      cat:'control', label:'wait', arg:{min:.5,max:5,step:.5,val:1,unit:'s'} },\n    { id:'repeat',    cat:'control', c:true, label:'repeat', arg:{min:2,max:20,step:2,val:4} },\n    { id:'forever',   cat:'control', c:true, label:'forever' },\n    { id:'if',        cat:'control', c:true, label:'if', opt:'cond', val:'touch_lava' },\n    { id:'else',      cat:'control', label:'else' },\n    { id:'end',       cat:'control', label:'end' },\n    { id:'wait_until',cat:'control', label:'wait until', opt:'cond', val:'all_coins' },\n    { id:'stop_all',  cat:'control', label:'stop everything' },\n\n    // ---- sensing ----\n    { id:'reset_timer',cat:'sensing', label:'reset timer' },\n    { id:'show_coins', cat:'sensing', label:'show coin count' },\n    { id:'show_timer', cat:'sensing', label:'show timer' },\n\n    // ---- operators (arithmetic on the score variable) ----\n    { id:'op_add',   cat:'operator', label:'score +', arg:{min:1,max:20,step:1,val:5} },\n    { id:'op_sub',   cat:'operator', label:'score \u2212', arg:{min:1,max:20,step:1,val:1} },\n    { id:'op_mul',   cat:'operator', label:'score \u00d7', arg:{min:2,max:10,step:1,val:2} },\n    { id:'op_div',   cat:'operator', label:'score \u00f7', arg:{min:2,max:10,step:1,val:2} },\n    { id:'op_round', cat:'operator', label:'round score' },\n    { id:'op_rand',  cat:'operator', label:'pick random into score', arg:{min:5,max:100,step:5,val:10} },\n    { id:'op_min',   cat:'operator', label:'keep score under', arg:{min:5,max:100,step:5,val:50} },\n\n    // ---- variables ----\n    { id:'set_score', cat:'data', label:'set score to', opt:'value', val:'random' },\n    { id:'change_score', cat:'data', label:'change score by', arg:{min:1,max:10,step:1,val:1} },\n    { id:'show_score',cat:'data', label:'show score' }\n  ];\n\n  function defOf(id) {\n    for (var i = 0; i < DEFS.length; i++) if (DEFS[i].id === id) return DEFS[i];\n    return null;\n  }\n  function optList(kind) {\n    return kind === 'cond' ? CONDS\n         : kind === 'value' ? VALUES\n         : kind === 'sound' ? SOUNDS.map(function (s) { return { id:s, label:s }; })\n         : kind === 'weather' ? WEATHER.map(function (s) { return { id:s, label:s }; })\n         : kind === 'tod' ? TOD.map(function (p) { return { id:p[0], label:p[0] }; })\n         : WORLDS.map(function (s) { return { id:s, label:s }; });\n  }\n  function optLabel(kind, id) {\n    var l = optList(kind);\n    for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i].label;\n    return id;\n  }\n\n  /* ---------------- tiny beeper ---------------- */\n  var actx = null, vol = 0.75;\n  function beep(name) {\n    try {\n      if (!actx) actx = new (global.AudioContext || global.webkitAudioContext)();\n      var spec = { pop:[520,.09], coin:[880,.13], jump:[330,.14],\n                   win:[660,.42], buzz:[120,.25] }[name] || [440, .1];\n      var o = actx.createOscillator(), g = actx.createGain();\n      o.type = (name === 'buzz') ? 'sawtooth' : 'triangle';\n      o.frequency.value = spec[0];\n      g.gain.value = 0.16 * vol;\n      o.connect(g); g.connect(actx.destination);\n      o.start();\n      g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + spec[1]);\n      o.stop(actx.currentTime + spec[1] + .02);\n      return spec[1];\n    } catch (e) { return 0.1; }\n  }\n\n  /* ---------------- editor + VM ---------------- */\n  function Blocks(engine, game, onChange) {\n    this.engine = engine;\n    this.game = game;\n    this.onChange = onChange || function () {};\n    this.script = [{ id: 'when_start' }];\n    this.threads = [];\n    this.running = false;\n    this.score = 0;\n    this.speed = 2;\n    this.banner = '';\n    this.bannerT = 0;\n  }\n\n  Blocks.prototype.add = function (id) {\n    var d = defOf(id);\n    if (!d || this.script.length > 80) return;\n    var b = { id: id };\n    if (d.arg) b.val = d.arg.val;\n    if (d.opt) b.opt = d.val;\n    this.script.push(b);\n    if (d.c) this.script.push({ id: 'end' });     // C-blocks arrive closed\n    this.onChange();\n  };\n\n  Blocks.prototype.removeAt = function (i) {\n    if (i === 0 || i >= this.script.length) return;\n    var d = defOf(this.script[i].id);\n    if (d && d.c) {\n      var e = this.matchEnd(i);\n      this.script.splice(i, (e < 0 ? 1 : e - i + 1));\n    } else {\n      this.script.splice(i, 1);\n    }\n    this.onChange();\n  };\n\n  Blocks.prototype.bump = function (i) {\n    var b = this.script[i], d = defOf(b.id);\n    if (!d) return;\n    if (d.arg) {\n      var v = +(b.val + d.arg.step).toFixed(2);\n      b.val = (v > d.arg.max) ? d.arg.min : v;\n    } else if (d.opt) {\n      var l = optList(d.opt);\n      var idx = 0;\n      for (var k = 0; k < l.length; k++) if (l[k].id === b.opt) idx = k;\n      b.opt = l[(idx + 1) % l.length].id;\n    }\n    this.onChange();\n  };\n\n  /* index of the `end` that closes the C-block at i */\n  Blocks.prototype.matchEnd = function (i) {\n    var depth = 0;\n    for (var j = i; j < this.script.length; j++) {\n      var d = defOf(this.script[j].id);\n      if (!d) continue;\n      if (d.c) depth++;\n      else if (d.id === 'end') { depth--; if (depth === 0) return j; }\n    }\n    return -1;\n  };\n\n  Blocks.prototype.matchElse = function (i) {\n    var depth = 0;\n    for (var j = i; j < this.script.length; j++) {\n      var d = defOf(this.script[j].id);\n      if (!d) continue;\n      if (d.c) depth++;\n      else if (d.id === 'end') { depth--; if (depth === 0) return -1; }\n      else if (d.id === 'else' && depth === 1) return j;\n    }\n    return -1;\n  };\n\n  Blocks.prototype.indentOf = function (i) {\n    var depth = 0;\n    for (var j = 0; j < i; j++) {\n      var d = defOf(this.script[j].id);\n      if (!d) continue;\n      if (d.c) depth++;\n      else if (d.id === 'end') depth = Math.max(0, depth - 1);\n    }\n    var self = defOf(this.script[i].id);\n    if (self && (self.id === 'end' || self.id === 'else')) depth = Math.max(0, depth - 1);\n    return depth;\n  };\n\n  Blocks.prototype.clear = function () {\n    this.script = [{ id: 'when_start' }];\n    this.stop();\n    this.onChange();\n  };\n\n  Blocks.prototype.fire = function (ev) {\n    for (var i = 0; i < this.script.length; i++) {\n      var d = defOf(this.script[i].id);\n      if (d && d.hat && d.ev === ev) {\n        this.threads.push({ pc: i + 1, wait: 0, stack: [] });\n      }\n    }\n  };\n\n  Blocks.prototype.run = function () {\n    this.running = true;\n    this.threads = [];\n    this.score = 0;\n    this.engine.fx.grow = 1;\n    this.fire('start');\n    this.onChange();\n  };\n\n  Blocks.prototype.stop = function () {\n    this.running = false;\n    this.threads = [];\n    this.engine.fx.spin = 0;\n    this.sunrise = 0;\n    this.onChange();\n  };\n\n  Blocks.prototype.say = function (txt, secs) {\n    this.banner = txt;\n    this.bannerT = secs || 1.8;\n  };\n\n  Blocks.prototype.cond = function (id) {\n    var g = this.game, e = this.engine;\n    switch (id) {\n      case 'touch_lava':  return g.near('lava');\n      case 'touch_coin':  return g.near('coin');\n      case 'all_coins':   return g.remaining('coin') === 0;\n      case 'has_key':     return g.keys > 0;\n      case 'timer5':      return g.time > 5;\n      case 'coins3':      return g.coins > 3;\n      case 'moving':      return !!e.fx.spin;\n      default:            return true;\n    }\n  };\n\n  Blocks.prototype.value = function (id) {\n    var g = this.game;\n    switch (id) {\n      case 'random': return 1 + Math.floor(Math.random() * 10);\n      case 'coins':  return g.coins;\n      case 'stars':  return g.stars;\n      case 'timer':  return +g.time.toFixed(1);\n      case 'deaths': return g.deaths;\n      default:       return 0;\n    }\n  };\n\n  Blocks.prototype.tick = function (dt) {\n    var e = this.engine;\n    e.fx.t += dt;\n    if (e.fx.spin) e.cam.yaw += e.fx.spin * dt;\n    if (this.sunrise && global.GmfyFX) {\n      var S = global.GmfyFX.state;\n      S.time = (S.time + this.sunrise * dt) % 1;\n    }\n    if (this.bannerT > 0) this.bannerT -= dt;\n    if (!this.running) return;\n\n    for (var ti = this.threads.length - 1; ti >= 0; ti--) {\n      var th = this.threads[ti];\n      if (th.wait > 0) { th.wait -= dt; continue; }\n      var budget = 20;\n      while (budget-- > 0) {\n        if (th.pc >= this.script.length) { this.threads.splice(ti, 1); break; }\n        var b = this.script[th.pc];\n        var d = defOf(b.id);\n        if (!d) { th.pc++; continue; }\n        if (d.hat) { this.threads.splice(ti, 1); break; }   // next script starts here\n        var r = this.exec(b, d, th);\n        if (r === 'yield') break;\n        if (r === 'dead') { this.threads.splice(ti, 1); break; }\n      }\n    }\n  };\n\n  Blocks.prototype.exec = function (b, d, th) {\n    var e = this.engine, g = this.game;\n    switch (d.id) {\n      case 'move':       e.move('f', (b.val || 4) * 0.03 * this.speed); break;\n      case 'turn_r':     e.cam.yaw += (b.val || 45) * Math.PI / 180; break;\n      case 'turn_l':     e.cam.yaw -= (b.val || 45) * Math.PI / 180; break;\n      case 'goto_start': e.cam.x = g.spawn.x; e.cam.z = g.spawn.z; break;\n      case 'goto_finish': this.toFinish(); break;\n      case 'spin':       e.fx.spin = (b.val || 1) * 0.6; break;\n      case 'stopspin':   e.fx.spin = 0; break;\n      case 'setspeed':   this.speed = b.val || 2; break;\n\n      case 'say':        this.say('Hi!'); break;\n      case 'think':      this.say('Hmm\u2026'); break;\n      case 'grow':       e.fx.grow = Math.min(4, e.fx.grow * (1 + .25 * (b.val || 1))); break;\n      case 'shrink':     e.fx.grow = Math.max(.25, e.fx.grow * .75); break;\n      case 'setsize':    e.fx.grow = (b.val || 100) / 100; break;\n      case 'bounce':     e.fx.bounce = e.fx.bounce ? 0 : 1.4; break;\n      case 'plant':      this.spawn('tree'); break;\n      case 'drop_coin':  this.spawn('coin'); break;\n      case 'drop_lava':  this.spawn('lava'); break;\n      case 'setworld':   global.Gmfy.reskin(e.world, b.opt || 'forest'); break;\n      case 'nextworld':  this.nextWorld(); break;\n      case 'weather':    if (global.GmfyFX) global.GmfyFX.state.weather = b.opt || 'rain'; break;\n      case 'wind':       if (global.GmfyFX) global.GmfyFX.state.wind = (b.val || 0); break;\n      case 'settime':\n        if (global.GmfyFX) {\n          var m = { dawn:.25, noon:.5, dusk:.75, night:0 };\n          global.GmfyFX.state.time = m[b.opt] !== undefined ? m[b.opt] : .5;\n        }\n        break;\n      case 'sunrise':    this.sunrise = 0.06; break;\n      case 'raise':      if (global.GmfyFX) global.GmfyFX.sculpt(e.world, e.cam.x, e.cam.z, 5, 1.2); break;\n      case 'lower':      if (global.GmfyFX) global.GmfyFX.sculpt(e.world, e.cam.x, e.cam.z, 5, -1.2); break;\n\n      case 'play':       beep(b.opt || 'pop'); break;\n      case 'play_wait':  th.wait = beep(b.opt || 'coin'); th.pc++; return 'yield';\n      case 'stop_snd':   break;\n      case 'volume':     vol = (b.val || 75) / 100; break;\n\n      case 'wait':       th.wait = b.val || 1; th.pc++; return 'yield';\n      case 'wait_until':\n        if (!this.cond(b.opt)) return 'yield';                 // re-test next frame\n        break;\n      case 'repeat': {\n        var top = th.stack[th.stack.length - 1];\n        if (!top || top.at !== th.pc) th.stack.push({ at: th.pc, left: b.val || 4 });\n        break;\n      }\n      case 'forever': {\n        var t2 = th.stack[th.stack.length - 1];\n        if (!t2 || t2.at !== th.pc) th.stack.push({ at: th.pc, forever: true });\n        break;\n      }\n      case 'if': {\n        if (!this.cond(b.opt)) {\n          var els = this.matchElse(th.pc);\n          var end = this.matchEnd(th.pc);\n          th.pc = (els >= 0 ? els : end) + 1;\n          return 'ok';\n        }\n        th.stack.push({ at: th.pc, iff: true });\n        break;\n      }\n      case 'else': {\n        // reached while running the true branch -> skip to the closing end\n        var depth = 1;\n        for (var j = th.pc + 1; j < this.script.length; j++) {\n          var dd = defOf(this.script[j].id);\n          if (!dd) continue;\n          if (dd.c) depth++;\n          else if (dd.id === 'end') { depth--; if (depth === 0) { th.pc = j; break; } }\n        }\n        break;\n      }\n      case 'end': {\n        var fr = th.stack[th.stack.length - 1];\n        if (fr && fr.forever) { th.pc = fr.at + 1; return 'yield'; }\n        if (fr && fr.left !== undefined) {\n          fr.left--;\n          if (fr.left > 0) { th.pc = fr.at + 1; return 'yield'; }\n          th.stack.pop();\n        } else if (fr && fr.iff) {\n          th.stack.pop();\n        }\n        break;\n      }\n      case 'stop_all':   this.stop(); return 'dead';\n      case 'broadcast':  this.fire('msg'); break;\n\n      case 'reset_timer': g.time = 0; break;\n      case 'show_coins':  this.say('Coins: ' + g.coins); break;\n      case 'show_timer':  this.say('Timer: ' + g.time.toFixed(1) + 's'); break;\n\n      case 'set_score':    this.score = this.value(b.opt); break;\n      case 'change_score': this.score += (b.val || 1); break;\n      case 'show_score':   this.say('Score: ' + this.score); break;\n\n      case 'op_add':   this.score += (b.val || 5); break;\n      case 'op_sub':   this.score -= (b.val || 1); break;\n      case 'op_mul':   this.score *= (b.val || 2); break;\n      case 'op_div':   this.score = (b.val ? this.score / b.val : this.score); break;\n      case 'op_round': this.score = Math.round(this.score); break;\n      case 'op_rand':  this.score = 1 + Math.floor(Math.random() * (b.val || 10)); break;\n      case 'op_min':   this.score = Math.min(this.score, b.val || 50); break;\n    }\n    th.pc++;\n    return 'ok';\n  };\n\n  Blocks.prototype.spawn = function (kind) {\n    var w = this.engine.world, lim = global.Gmfy.SPAN * .42;\n    var kd = global.Gmfy.KIND[kind] || global.Gmfy.KIND.tree;\n    w.props.push({ kind: kind,\n      x: (Math.random() - .5) * 2 * lim, z: (Math.random() - .5) * 2 * lim,\n      h: kind === 'tree' ? 2 + Math.random() * 3 : 1.2,\n      w: kind === 'lava' ? 1.2 : .7, col: kd.col });\n  };\n\n  Blocks.prototype.toFinish = function () {\n    var w = this.engine.world;\n    for (var i = 0; i < w.props.length; i++) {\n      if (w.props[i].kind === 'finish') {\n        this.engine.cam.x = w.props[i].x;\n        this.engine.cam.z = w.props[i].z - 2;\n        return;\n      }\n    }\n    this.say('no finish flag yet');\n  };\n\n  Blocks.prototype.nextWorld = function () {\n    var keys = Object.keys(global.Gmfy.BIOMES);\n    var i = keys.indexOf(this.engine.world.biomeKey);\n    global.Gmfy.reskin(this.engine.world, keys[(i + 1) % keys.length]);\n  };\n\n  Blocks.CATS = CATS;\n  Blocks.DEFS = DEFS;\n  Blocks.defOf = defOf;\n  Blocks.optLabel = optLabel;\n  Blocks.beep = beep;\n  global.GmfyBlocks = Blocks;\n})(window);\n"};window.GMFY_STANDALONE=true;</script>
+<script>
+/* gmfy — accounts.
+ *
+ * SCOPE: this is on-device auth. Accounts live in localStorage on this phone
+ * and are never sent anywhere. Passwords are stored as a salted SHA-256 digest
+ * rather than plaintext, so a casual look at app storage does not reveal them —
+ * but anyone with the unlocked device and developer tools can clear the store
+ * and register again. It gates the UI; it is not a security boundary, and it is
+ * not a substitute for a real server-side login.
+ */
+(function (global) {
+  'use strict';
+
+  var USERS = 'gmfy.users.v1';
+  var SESSION = 'gmfy.session.v1';
+
+  function read(key, dflt) {
+    try {
+      var raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : dflt;
+    } catch (e) { return dflt; }
+  }
+  function write(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); return true; }
+    catch (e) { return false; }
+  }
+
+  function randSalt() {
+    var a = new Uint8Array(16);
+    if (global.crypto && global.crypto.getRandomValues) global.crypto.getRandomValues(a);
+    else for (var i = 0; i < 16; i++) a[i] = (Math.random() * 256) | 0;
+    return Array.prototype.map.call(a, function (b) {
+      return ('0' + b.toString(16)).slice(-2);
+    }).join('');
+  }
+
+  /* SHA-256 where available (secure context); otherwise a clearly-labelled
+     non-cryptographic fallback so the app still works. */
+  function digest(text) {
+    if (global.crypto && global.crypto.subtle && global.TextEncoder) {
+      return global.crypto.subtle
+        .digest('SHA-256', new TextEncoder().encode(text))
+        .then(function (buf) {
+          return Array.prototype.map.call(new Uint8Array(buf), function (b) {
+            return ('0' + b.toString(16)).slice(-2);
+          }).join('');
+        })
+        .catch(function () { return 'weak:' + weakHash(text); });
+    }
+    return Promise.resolve('weak:' + weakHash(text));
+  }
+
+  function weakHash(str) {
+    var h1 = 0x811c9dc5, h2 = 0x01000193;
+    for (var i = 0; i < str.length; i++) {
+      h1 = Math.imul(h1 ^ str.charCodeAt(i), 16777619) >>> 0;
+      h2 = Math.imul(h2 + str.charCodeAt(i) * (i + 7), 2246822519) >>> 0;
+    }
+    return (h1 >>> 0).toString(16) + (h2 >>> 0).toString(16);
+  }
+
+  function normEmail(e) { return String(e || '').trim().toLowerCase(); }
+
+  function validate(email, password) {
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normEmail(email)))
+      return 'Enter a valid email address.';
+    if (String(password || '').length < 6)
+      return 'Password needs at least 6 characters.';
+    return null;
+  }
+
+  var Auth = {
+    /* resolves { ok:true, user } or { ok:false, error } */
+    signUp: function (email, password) {
+      var err = validate(email, password);
+      if (err) return Promise.resolve({ ok: false, error: err });
+
+      var mail = normEmail(email);
+      var users = read(USERS, {});
+      if (users[mail]) return Promise.resolve({ ok: false, error: 'That account already exists — sign in instead.' });
+
+      var salt = randSalt();
+      return digest(salt + ':' + password).then(function (h) {
+        users[mail] = { salt: salt, hash: h, created: Date.now() };
+        if (!write(USERS, users))
+          return { ok: false, error: 'Device storage is unavailable.' };
+        write(SESSION, { email: mail, at: Date.now() });
+        return { ok: true, user: { email: mail } };
+      });
+    },
+
+    signIn: function (email, password) {
+      var mail = normEmail(email);
+      var users = read(USERS, {});
+      var rec = users[mail];
+      if (!rec) return Promise.resolve({ ok: false, error: 'No account for that email.' });
+
+      return digest(rec.salt + ':' + password).then(function (h) {
+        if (h !== rec.hash) return { ok: false, error: 'Wrong password.' };
+        write(SESSION, { email: mail, at: Date.now() });
+        return { ok: true, user: { email: mail } };
+      });
+    },
+
+    current: function () {
+      var s = read(SESSION, null);
+      return (s && s.email) ? { email: s.email } : null;
+    },
+
+    signOut: function () {
+      try { localStorage.removeItem(SESSION); } catch (e) {}
+    },
+
+    /* per-account key so saved worlds don't leak between users */
+    scope: function (key) {
+      var u = Auth.current();
+      return key + '::' + (u ? u.email : 'guest');
+    }
+  };
+
+  global.GmfyAuth = Auth;
+})(window);
+
+</script>
+<script>
+/* gmfy — tiny software 3D renderer (canvas 2D, painter's algorithm). No deps. */
+(function (global) {
+  'use strict';
+
+  /* ---- deterministic RNG so a prompt always rebuilds the same world ---- */
+  function hash(str) {
+    var h = 2166136261 >>> 0;
+    for (var i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619) >>> 0;
+    }
+    return h >>> 0;
+  }
+  function rng(seed) {
+    var s = seed >>> 0 || 1;
+    return function () {
+      s ^= s << 13; s >>>= 0;
+      s ^= s >> 17;
+      s ^= s << 5;  s >>>= 0;
+      return s / 4294967296;
+    };
+  }
+
+  /* ---- worlds: bright, friendly daylight palettes ---- */
+  var BIOMES = {
+    meadow: { name:'meadow',  sky:['#63b8f0','#d8f0ff'], ground:'#5cb84a',
+              grid:'#eafbe4', fog:'#dff1ff',
+              props:['tree','tree','rock','block'], palette:['#4ea63f','#8fd14f','#f6d365','#e86f6f'],
+              relief:0.9, density:1.1 },
+    forest: { name:'forest',  sky:['#79c6ea','#dff2f7'], ground:'#3f9e52',
+              grid:'#e6fbe9', fog:'#ddf1f6',
+              props:['tree','tree','tree','rock'], palette:['#2f8f45','#63c76a','#a7e07a','#c78b52'],
+              relief:1.25, density:1.4 },
+    beach:  { name:'beach',   sky:['#6fd0f0','#e6f8ff'], ground:'#efdcae',
+              grid:'#fff6dd', fog:'#e6f8ff',
+              props:['tree','rock','block'], palette:['#f2c66d','#7fd6c9','#e9a86b','#fff0c4'],
+              relief:0.6, density:0.85 },
+    hills:  { name:'hills',   sky:['#5cb3ee','#dcefff'], ground:'#6cbf5a',
+              grid:'#eafbe4', fog:'#dcefff',
+              props:['tree','rock','rock','dome'], palette:['#57ad46','#9ad463','#d6a55f','#f0f4e0'],
+              relief:1.9, density:1.0 },
+    snow:   { name:'snow',    sky:['#9fd4f2','#f2fbff'], ground:'#e8f2f7',
+              grid:'#ffffff', fog:'#f2fbff',
+              props:['tree','spike','rock'], palette:['#cfe7f5','#9ec9e2','#7fb3d5','#ffffff'],
+              relief:1.3, density:0.95 },
+    sunset: { name:'sunset',  sky:['#f2a25c','#ffe9c9'], ground:'#7ba85c',
+              grid:'#fff3dc', fog:'#ffe4c2',
+              props:['tree','rock','block'], palette:['#e2894f','#f4c06b','#8fbf68','#c96f5a'],
+              relief:1.1, density:1.0 }
+  };
+  var DEFAULT_BIOME = 'meadow';
+
+
+  /* ---- world generation ---- */
+  var N = 15, SPAN = 34;
+  // scenery + game pieces. shape drives how it renders, role drives gameplay.
+  var KIND = {
+    tree:      { shape:'cone',  role:'solid',      col:'#2f8f45', label:'Tree' },
+    rock:      { shape:'box',   role:'solid',      col:'#9b9285', label:'Rock' },
+    block:     { shape:'box',   role:'solid',      col:'#c8894f', label:'Block' },
+    tower:     { shape:'box',   role:'solid',      col:'#8d8f9c', label:'Tower' },
+    dome:      { shape:'dome',  role:'solid',      col:'#e6e2d3', label:'Dome' },
+    spike:     { shape:'cone',  role:'hazard',     col:'#b9c4cc', label:'Spike' },
+    cactus:    { shape:'cone',  role:'solid',      col:'#4f9d5b', label:'Cactus' },
+    coin:      { shape:'disc',  role:'coin',       col:'#f5c542', label:'Coin' },
+    star:      { shape:'disc',  role:'star',       col:'#ffd94a', label:'Star' },
+    key:       { shape:'disc',  role:'key',        col:'#c9a227', label:'Key' },
+    finish:    { shape:'flag',  role:'finish',     col:'#3ddc84', label:'Finish' },
+    checkpoint:{ shape:'flag',  role:'checkpoint', col:'#4c97ff', label:'Checkpoint' },
+    lava:      { shape:'patch', role:'lava',       col:'#f2560f', label:'Lava' },
+    water:     { shape:'patch', role:'water',      col:'#3aa6e0', label:'Water' },
+    spring:    { shape:'coil',  role:'spring',     col:'#ff7ac6', label:'Spring' },
+    enemy:     { shape:'box',   role:'enemy',      col:'#e2453c', label:'Enemy' },
+    door:      { shape:'box',   role:'door',       col:'#a06a3f', label:'Door' }
+  };
+  var PROP_KINDS = Object.keys(KIND);
+  var SCENERY = ['tree','rock','block','tower','dome','cactus'];
+
+  function buildWorld(prompt, opts) {
+    var seed = hash(prompt || 'gmfy');
+    var rand = rng(seed);
+    var key = opts && BIOMES[opts.biome] ? opts.biome : DEFAULT_BIOME;
+    var b = BIOMES[key];
+
+    var a1 = rand() * 6.28, a2 = rand() * 6.28, a3 = rand() * 6.28;
+    var h = [];
+    for (var i = 0; i < N; i++) {
+      h[i] = [];
+      for (var j = 0; j < N; j++) {
+        var u = i / (N - 1) - 0.5, v = j / (N - 1) - 0.5;
+        h[i][j] = (Math.sin(u * 7 + a1) * 0.9 +
+                   Math.cos(v * 6 + a2) * 0.8 +
+                   Math.sin((u + v) * 5 + a3) * 0.55) * b.relief;
+      }
+    }
+
+    var props = [], want = Math.round(20 * b.density), guard = 0;
+    while (props.length < want && guard++ < 400) {
+      var x = (rand() - 0.5) * SPAN * 0.86;
+      var z = (rand() - 0.5) * SPAN * 0.86;
+      if (Math.abs(x) < 3 && Math.abs(z) < 3) continue;      // keep spawn clear
+      var kind = b.props[(rand() * b.props.length) | 0];
+      if (!KIND[kind]) kind = 'tree';
+      props.push({
+        kind: kind, x: x, z: z,
+        h: 1.2 + rand() * (kind === 'tower' ? 6.5 : kind === 'tree' ? 3 : 1.6),
+        w: 0.5 + rand() * (kind === 'tower' ? 1.1 : 0.8),
+        col: b.palette[(rand() * b.palette.length) | 0]
+      });
+    }
+
+    return { seed:seed.toString(16).slice(0, 6), biomeKey:key, biome:b,
+             h:h, props:props, prompt:prompt };
+  }
+
+  function heightAt(w, x, z) {
+    var fi = (x / SPAN + 0.5) * (N - 1), fj = (z / SPAN + 0.5) * (N - 1);
+    var i = Math.max(0, Math.min(N - 2, Math.floor(fi)));
+    var j = Math.max(0, Math.min(N - 2, Math.floor(fj)));
+    var tx = Math.max(0, Math.min(1, fi - i)), tz = Math.max(0, Math.min(1, fj - j));
+    var h = w.h;
+    return h[i][j] * (1 - tx) * (1 - tz) + h[i + 1][j] * tx * (1 - tz) +
+           h[i][j + 1] * (1 - tx) * tz + h[i + 1][j + 1] * tx * tz;
+  }
+
+  /* ---- renderer ---- */
+  function Engine(canvas) {
+    this.cv = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.world = null;
+    this.cam = { x: 0, z: -9, yaw: 0, pitch: 0.26, height: 3.4 };
+    // runtime effects driven by the block script
+    this.fx = { spin: 0, grow: 1, bounce: 0, t: 0 };
+    this.dpr = Math.min(global.devicePixelRatio || 1, 2);
+    this.resize();
+  }
+
+  Engine.prototype.resize = function () {
+    var r = this.cv.getBoundingClientRect();
+    this.w = Math.max(1, Math.round(r.width));
+    this.h = Math.max(1, Math.round(r.height));
+    this.cv.width = Math.round(this.w * this.dpr);
+    this.cv.height = Math.round(this.h * this.dpr);
+    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    this.f = this.w * 0.9;
+  };
+
+  Engine.prototype.load = function (world) {
+    this.world = world;
+    this.cam.x = 0; this.cam.z = -9; this.cam.yaw = 0;
+  };
+
+  // world point -> screen. returns null when behind the camera
+  Engine.prototype.project = function (x, y, z) {
+    var c = this.cam;
+    var dx = x - c.x, dz = z - c.z;
+    var cy = Math.cos(c.yaw), sy = Math.sin(c.yaw);
+    var rx = dx * cy - dz * sy;
+    var rz = dx * sy + dz * cy;
+    // -y is up in world space, so the eye sits ABOVE the ground at (ground - height)
+    var ry = y - (heightAt(this.world, c.x, c.z) - c.height);
+    var cp = Math.cos(c.pitch), sp = Math.sin(c.pitch);
+    var ry2 = ry * cp - rz * sp;
+    var rz2 = ry * sp + rz * cp;
+    if (rz2 < 0.35) return null;
+    return { x: this.w / 2 + this.f * rx / rz2, y: this.h / 2 + this.f * ry2 / rz2, z: rz2 };
+  };
+
+  function shade(hex, k) {
+    var n = parseInt(hex.slice(1), 16);
+    var r = Math.min(255, Math.max(0, ((n >> 16) & 255) * k)) | 0;
+    var g = Math.min(255, Math.max(0, ((n >> 8) & 255) * k)) | 0;
+    var b = Math.min(255, Math.max(0, (n & 255) * k)) | 0;
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
+  }
+
+  Engine.prototype.render = function () {
+    var ctx = this.ctx, w = this.world;
+    if (!w) return;
+    var b = w.biome;
+
+    var g = ctx.createLinearGradient(0, 0, 0, this.h);
+    g.addColorStop(0, b.sky[0]); g.addColorStop(1, b.sky[1]);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, this.w, this.h);
+
+    var faces = [];
+
+    // terrain quads
+    for (var i = 0; i < N - 1; i++) {
+      for (var j = 0; j < N - 1; j++) {
+        var x0 = (i / (N - 1) - 0.5) * SPAN, x1 = ((i + 1) / (N - 1) - 0.5) * SPAN;
+        var z0 = (j / (N - 1) - 0.5) * SPAN, z1 = ((j + 1) / (N - 1) - 0.5) * SPAN;
+        var p = [
+          this.project(x0, w.h[i][j], z0), this.project(x1, w.h[i + 1][j], z0),
+          this.project(x1, w.h[i + 1][j + 1], z1), this.project(x0, w.h[i][j + 1], z1)
+        ];
+        if (!p[0] || !p[1] || !p[2] || !p[3]) continue;
+        var d = (p[0].z + p[1].z + p[2].z + p[3].z) / 4;
+        var slope = (w.h[i + 1][j] - w.h[i][j]) + (w.h[i][j + 1] - w.h[i][j]);
+        faces.push({ d: d, pts: p, fill: shade(b.ground, 1 + slope * 0.16),
+                     line: b.grid, alpha: Math.max(0, Math.min(1, 1.5 - d / 40)) });
+      }
+    }
+
+    // objects
+    for (var k = 0; k < w.props.length; k++) {
+      var pr = w.props[k];
+      if (pr.taken) continue;                       // collected coins vanish
+      var kd = KIND[pr.kind] || KIND.block;
+      var shape = kd.shape;
+      var base = heightAt(w, pr.x, pr.z);
+      var bob = this.fx.bounce
+        ? Math.abs(Math.sin(this.fx.t * 2.2 + pr.x * 0.35)) * this.fx.bounce : 0;
+      var hh = pr.h * this.fx.grow;
+      var top = base - hh - bob;
+      var s = pr.w * (0.6 + 0.4 * this.fx.grow);
+      var col = pr.col || kd.col;
+      var m, v, f, pts, dm;
+
+      if (shape === 'patch') {
+        // ground-hugging pool; pulses so lava reads as dangerous
+        var pulse = 0.86 + 0.14 * Math.sin(this.fx.t * 3 + pr.x);
+        var q = [], ok2 = true;
+        var corner = [[-1,-1],[1,-1],[1,1],[-1,1]];
+        for (m = 0; m < 4; m++) {
+          var px = pr.x + corner[m][0] * s * 2.1, pz = pr.z + corner[m][1] * s * 2.1;
+          var pp = this.project(px, heightAt(w, px, pz) - 0.06, pz);
+          if (!pp) { ok2 = false; break; }
+          q.push(pp);
+        }
+        if (!ok2) continue;
+        dm = (q[0].z + q[1].z + q[2].z + q[3].z) / 4;
+        faces.push({ d: dm, pts: q, fill: shade(col, pr.kind === 'lava' ? pulse : 0.95),
+                     line: shade(col, 1.25),
+                     alpha: Math.max(0, Math.min(1, 1.5 - dm / 40)) * (pr.kind === 'water' ? 0.72 : 1) });
+        continue;
+      }
+
+      if (shape === 'disc') {
+        // billboard: always faces the camera, spins by squashing horizontally
+        var spin = Math.abs(Math.cos(this.fx.t * 2.4 + pr.x));
+        var cy2 = base - hh * 0.55 - bob;
+        var c0 = this.project(pr.x, cy2, pr.z);
+        if (!c0) continue;
+        var rr = (this.f * s * 0.55) / c0.z;
+        var ring = [];
+        var sides = (pr.kind === 'star') ? 10 : 8;
+        for (m = 0; m < sides; m++) {
+          var ang = m / sides * Math.PI * 2;
+          var rad = (pr.kind === 'star' && m % 2) ? rr * 0.45 : rr;
+          ring.push({ x: c0.x + Math.cos(ang) * rad * (0.25 + 0.75 * spin),
+                      y: c0.y + Math.sin(ang) * rad, z: c0.z });
+        }
+        faces.push({ d: c0.z, pts: ring, fill: shade(col, 1.0), line: shade(col, 1.4),
+                     alpha: Math.max(0, Math.min(1, 1.5 - c0.z / 40)) });
+        continue;
+      }
+
+      if (shape === 'flag') {
+        var poleB = this.project(pr.x, base, pr.z);
+        var poleT = this.project(pr.x, top, pr.z);
+        if (!poleB || !poleT) continue;
+        var wdt = Math.max(2, (this.f * 0.10) / poleB.z);
+        faces.push({ d: poleB.z + 0.02,
+                     pts: [{x:poleB.x-wdt,y:poleB.y},{x:poleB.x+wdt,y:poleB.y},
+                           {x:poleT.x+wdt,y:poleT.y},{x:poleT.x-wdt,y:poleT.y}],
+                     fill: '#e9ecf5', line: '#b9c0cc',
+                     alpha: Math.max(0, Math.min(1, 1.5 - poleB.z / 40)) });
+        var fl = (this.f * s * 1.5) / poleT.z;
+        var wave = Math.sin(this.fx.t * 3 + pr.x) * fl * 0.18;
+        var active = (pr.kind !== 'checkpoint' || pr.on);
+        faces.push({ d: poleT.z,
+                     pts: [{x:poleT.x,y:poleT.y},
+                           {x:poleT.x+fl,y:poleT.y+fl*0.28+wave},
+                           {x:poleT.x,y:poleT.y+fl*0.62}],
+                     fill: shade(col, active ? 1.0 : 0.45),
+                     line: shade(col, 1.3),
+                     alpha: Math.max(0, Math.min(1, 1.5 - poleT.z / 40)) });
+        continue;
+      }
+
+      if (shape === 'coil') {
+        var rings = 4;
+        for (m = 0; m < rings; m++) {
+          var yy2 = base - (hh * (m + 1) / rings) - bob;
+          var cc = this.project(pr.x, yy2, pr.z);
+          if (!cc) continue;
+          var rr2 = (this.f * s * 0.5) / cc.z;
+          var poly = [];
+          for (var a2 = 0; a2 < 8; a2++) {
+            var an = a2 / 8 * Math.PI * 2;
+            poly.push({ x: cc.x + Math.cos(an) * rr2, y: cc.y + Math.sin(an) * rr2 * 0.34 });
+          }
+          faces.push({ d: cc.z + m * 0.01, pts: poly, fill: shade(col, 0.7 + m * 0.1),
+                       line: shade(col, 1.3),
+                       alpha: Math.max(0, Math.min(1, 1.5 - cc.z / 40)) });
+        }
+        continue;
+      }
+
+      if (shape === 'cone' || shape === 'dome') {
+        var apex = this.project(pr.x, shape === 'dome' ? base - hh * 0.6 : top, pr.z);
+        var cs = [this.project(pr.x - s, base, pr.z - s), this.project(pr.x + s, base, pr.z - s),
+                  this.project(pr.x + s, base, pr.z + s), this.project(pr.x - s, base, pr.z + s)];
+        if (!apex || cs.indexOf(null) !== -1) continue;
+        for (var q2 = 0; q2 < 4; q2++) {
+          var tri = [cs[q2], cs[(q2 + 1) % 4], apex];
+          var dd = (tri[0].z + tri[1].z + apex.z) / 3;
+          faces.push({ d: dd, pts: tri, fill: shade(col, 0.55 + q2 * 0.13), line: col,
+                       alpha: Math.max(0, Math.min(1, 1.5 - dd / 40)) });
+        }
+        continue;
+      }
+
+      // default: box
+      v = [];
+      var dxs = [-s, s, s, -s], dzs = [-s, -s, s, s];
+      for (m = 0; m < 4; m++) v.push(this.project(pr.x + dxs[m], base, pr.z + dzs[m]));
+      for (m = 0; m < 4; m++) v.push(this.project(pr.x + dxs[m], top, pr.z + dzs[m]));
+      if (v.indexOf(null) !== -1) continue;
+      var sides2 = [[0,1,5,4],[1,2,6,5],[2,3,7,6],[3,0,4,7],[4,5,6,7]];
+      for (m = 0; m < sides2.length; m++) {
+        f = sides2[m]; pts = [v[f[0]], v[f[1]], v[f[2]], v[f[3]]];
+        dm = (pts[0].z + pts[1].z + pts[2].z + pts[3].z) / 4;
+        faces.push({ d: dm, pts: pts, fill: shade(col, m === 4 ? 0.95 : 0.42 + m * 0.1),
+                     line: col, alpha: Math.max(0, Math.min(1, 1.5 - dm / 40)) });
+      }
+    }
+
+    faces.sort(function (a, c) { return c.d - a.d; });   // far -> near
+
+    for (var n = 0; n < faces.length; n++) {
+      var fc = faces[n];
+      if (fc.alpha <= 0.02) continue;
+      ctx.globalAlpha = fc.alpha;
+      ctx.beginPath();
+      ctx.moveTo(fc.pts[0].x, fc.pts[0].y);
+      for (var t = 1; t < fc.pts.length; t++) ctx.lineTo(fc.pts[t].x, fc.pts[t].y);
+      ctx.closePath();
+      ctx.fillStyle = fc.fill; ctx.fill();
+      ctx.strokeStyle = fc.line; ctx.lineWidth = 1; ctx.globalAlpha = fc.alpha * 0.5;
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    var fg = ctx.createLinearGradient(0, this.h * 0.30, 0, this.h * 0.62);
+    fg.addColorStop(0, b.fog); fg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = fg; ctx.fillRect(0, 0, this.w, this.h * 0.62);
+  };
+
+  Engine.prototype.move = function (dir, dt) {
+    var c = this.cam, sp = 11 * dt;
+    var fx = Math.sin(c.yaw), fz = Math.cos(c.yaw);
+    if (dir === 'f') { c.x += fx * sp; c.z += fz * sp; }
+    if (dir === 'b') { c.x -= fx * sp; c.z -= fz * sp; }
+    if (dir === 'l') { c.x -= fz * sp; c.z += fx * sp; }
+    if (dir === 'r') { c.x += fz * sp; c.z -= fx * sp; }
+    var lim = SPAN * 0.52;
+    c.x = Math.max(-lim, Math.min(lim, c.x));
+    c.z = Math.max(-lim, Math.min(lim, c.z));
+  };
+
+  /* Screen point -> ground position. Inverts project(), then marches the ray
+     until it meets the heightfield and bisects for a clean hit. */
+  Engine.prototype.pick = function (sx, sy) {
+    var c = this.cam, w = this.world;
+    if (!w) return null;
+    var a = (sx - this.w / 2) / this.f;
+    var b = (sy - this.h / 2) / this.f;
+    var cp = Math.cos(c.pitch), sp = Math.sin(c.pitch);
+    var cyw = Math.cos(c.yaw), syw = Math.sin(c.yaw);
+    var eyeY = heightAt(w, c.x, c.z) - c.height;
+
+    function at(t) {
+      var ry = t * (b * cp + sp);        // undo pitch
+      var rz = t * (cp - b * sp);
+      var rx = a * t;
+      var dx = rx * cyw + rz * syw;      // undo yaw
+      var dz = -rx * syw + rz * cyw;
+      return { x: c.x + dx, y: eyeY + ry, z: c.z + dz };
+    }
+
+    // -y is up, so the ray has hit ground once y >= terrain height
+    var prev = null, t, lim = SPAN * 0.5;
+    for (t = 0.5; t < 120; t *= 1.05) {
+      var p = at(t);
+      if (p.y >= heightAt(w, p.x, p.z)) {
+        if (prev === null) return null;
+        var lo = prev, hi = t;
+        for (var k = 0; k < 26; k++) {
+          var mid = (lo + hi) / 2, pm = at(mid);
+          if (pm.y >= heightAt(w, pm.x, pm.z)) hi = mid; else lo = mid;
+        }
+        var f = at(hi);
+        if (Math.abs(f.x) > lim || Math.abs(f.z) > lim) return null;
+        return { x: f.x, z: f.z };
+      }
+      prev = t;
+    }
+    return null;
+  };
+
+  /* Nearest prop to a ground point, within `radius` world units. */
+  Engine.prototype.propAt = function (gx, gz, radius) {
+    var w = this.world, best = -1, bd = (radius || 2.2) * (radius || 2.2);
+    if (!w) return -1;
+    for (var i = 0; i < w.props.length; i++) {
+      var dx = w.props[i].x - gx, dz = w.props[i].z - gz;
+      var d2 = dx * dx + dz * dz;
+      if (d2 < bd) { bd = d2; best = i; }
+    }
+    return best;
+  };
+
+  /* ---- maker-mode world helpers ---- */
+  function emptyWorld(biomeKey, relief) {
+    var b = BIOMES[biomeKey] || BIOMES.meadow;
+    var rand = rng(hash(biomeKey + ':' + (relief || 1)));
+    var a1 = rand() * 6.28, a2 = rand() * 6.28, a3 = rand() * 6.28;
+    var h = [];
+    for (var i = 0; i < N; i++) {
+      h[i] = [];
+      for (var j = 0; j < N; j++) {
+        var u = i / (N - 1) - 0.5, v = j / (N - 1) - 0.5;
+        h[i][j] = (Math.sin(u * 7 + a1) * 0.9 + Math.cos(v * 6 + a2) * 0.8 +
+                   Math.sin((u + v) * 5 + a3) * 0.55) * (relief === undefined ? b.relief : relief);
+      }
+    }
+    return { seed: 'maker', biomeKey: biomeKey, biome: b, h: h, props: [],
+             prompt: '', source: 'maker' };
+  }
+
+  function reskin(world, biomeKey) {
+    var b = BIOMES[biomeKey] || BIOMES.meadow;
+    world.biomeKey = biomeKey;
+    world.biome = b;
+    return world;
+  }
+
+  function setRelief(world, relief) {
+    var cur = world._relief === undefined ? world.biome.relief : world._relief;
+    var k = (relief || 0.001) / (cur || 1);
+    for (var i = 0; i < N; i++)
+      for (var j = 0; j < N; j++) world.h[i][j] *= k;
+    world._relief = relief;
+    return world;
+  }
+
+  /* Build a world from a (possibly partial / untrusted) remote spec.
+     Every field is validated; anything missing falls back to the local world. */
+  function worldFromSpec(spec, prompt) {
+    var base = buildWorld(prompt);
+    if (!spec || typeof spec !== 'object') return base;
+
+    if (typeof spec.biome === 'string' && BIOMES[spec.biome]) {
+      base.biomeKey = spec.biome;
+      base.biome = BIOMES[spec.biome];
+    }
+
+    var num = function (v, dflt, lo, hi) {
+      v = typeof v === 'number' ? v : parseFloat(v);
+      if (!isFinite(v)) return dflt;
+      return Math.max(lo, Math.min(hi, v));
+    };
+
+    if (Object.prototype.toString.call(spec.props) === '[object Array]') {
+      var lim = SPAN * 0.5, out = [];
+      var allowed = { tower:1, block:1, tree:1, cactus:1, spike:1, rock:1, dome:1 };
+      for (var i = 0; i < spec.props.length && out.length < 120; i++) {
+        var p = spec.props[i];
+        if (!p || typeof p !== 'object') continue;
+        var col = (typeof p.col === 'string' && /^#[0-9a-fA-F]{6}$/.test(p.col))
+          ? p.col : base.biome.palette[i % base.biome.palette.length];
+        out.push({
+          kind: allowed[p.kind] ? p.kind : 'block',
+          x: num(p.x, 0, -lim, lim),
+          z: num(p.z, 0, -lim, lim),
+          h: num(p.h, 2, 0.4, 12),
+          w: num(p.w, 0.7, 0.2, 3),
+          col: col
+        });
+      }
+      if (out.length) base.props = out;
+    }
+
+    if (spec.relief !== undefined) {
+      var k2 = num(spec.relief, 1, 0.1, 3) / (base.biome.relief || 1);
+      for (var a = 0; a < N; a++)
+        for (var b2 = 0; b2 < N; b2++) base.h[a][b2] *= k2;
+    }
+    return base;
+  }
+
+  global.Gmfy = { Engine: Engine, buildWorld: buildWorld,
+                  worldFromSpec: worldFromSpec, BIOMES: BIOMES,
+                  emptyWorld: emptyWorld, reskin: reskin, setRelief: setRelief,
+                  heightAt: heightAt, SPAN: SPAN, PROP_KINDS: PROP_KINDS,
+                  KIND: KIND, SCENERY: SCENERY };
+})(window);
+
+</script>
+<script>
+/* gmfy — plans, the games library, and Edu classes.
+ *
+ * SCOPE: everything here is device-local (localStorage), scoped per account.
+ * Plans are not verified against a billing system and class codes do not travel
+ * between devices — both need a backend to be real.
+ */
+(function (global) {
+  'use strict';
+
+  var PLANS = {
+    free: { id:'free', name:'Free', limit:2,        shares:1,        blurb:'2 games, 1 shared' },
+    pro:  { id:'pro',  name:'Pro',  limit:1000,     shares:25,       blurb:'1000 games, 25 shared' },
+    max:  { id:'max',  name:'Max',  limit:Infinity, shares:Infinity, blurb:'unlimited, share freely' }
+  };
+
+  var K_GAMES = 'gmfy.games.v2';
+  var K_PLAN  = 'gmfy.plan.v2';
+  var K_CLASS = 'gmfy.class.v2';
+  var K_ROOMS = 'gmfy.rooms.v2';        // class code -> {name, owner, members[]}
+  var K_SHARES = 'gmfy.shares.v2';      // share code -> {name, world, script, by, at}
+
+  function scoped(k) {
+    return global.GmfyAuth ? global.GmfyAuth.scope(k) : k;
+  }
+  function read(k, dflt) {
+    try { var r = localStorage.getItem(k); return r ? JSON.parse(r) : dflt; }
+    catch (e) { return dflt; }
+  }
+  function write(k, v) {
+    try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; }
+  }
+
+  var Plans = {
+    all: PLANS,
+
+    current: function () {
+      var id = read(scoped(K_PLAN), 'free');
+      return PLANS[id] || PLANS.free;
+    },
+    setPlan: function (id) {
+      if (!PLANS[id]) return false;
+      write(scoped(K_PLAN), id);
+      return true;
+    },
+
+    /* ---------------- games library ---------------- */
+    games: function () {
+      var g = read(scoped(K_GAMES), []);
+      return Array.isArray(g) ? g : [];
+    },
+    canCreate: function () {
+      return this.games().length < this.current().limit;
+    },
+    remaining: function () {
+      var l = this.current().limit;
+      return l === Infinity ? Infinity : Math.max(0, l - this.games().length);
+    },
+    create: function (name, world) {
+      if (!this.canCreate()) return { ok:false, error:'limit' };
+      var list = this.games();
+      var id = 'g' + Date.now().toString(36);
+      list.push({ id:id, name:name || ('Game ' + (list.length + 1)),
+                  saved:Date.now(), world:world || null, script:null });
+      write(scoped(K_GAMES), list);
+      return { ok:true, id:id };
+    },
+    save: function (id, world, script) {
+      var list = this.games();
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].id === id) {
+          list[i].world = world;
+          list[i].script = script;
+          list[i].saved = Date.now();
+          var ok = write(scoped(K_GAMES), list);
+          var code = this.shareOf(id);
+          if (code) {
+            var all = this.shares();
+            all[code].world = world;
+            all[code].script = script;
+            all[code].name = list[i].name;
+            write(K_SHARES, all);
+          }
+          return ok;
+        }
+      }
+      return false;
+    },
+    get: function (id) {
+      var list = this.games();
+      for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+      return null;
+    },
+    rename: function (id, name) {
+      var list = this.games();
+      for (var i = 0; i < list.length; i++) if (list[i].id === id) list[i].name = name;
+      return write(scoped(K_GAMES), list);
+    },
+    remove: function (id) {
+      var code = this.shareOf(id);
+      if (code) this.unshare(code);
+      var list = this.games().filter(function (g) { return g.id !== id; });
+      return write(scoped(K_GAMES), list);
+    },
+
+    /* ---------------- sharing by code ---------------- */
+    shares: function () { return read(K_SHARES, {}); },
+
+    /* codes published by the signed-in account */
+    myShares: function () {
+      var all = this.shares(), me = this.who(), out = [];
+      Object.keys(all).forEach(function (code) {
+        if (all[code].by === me) out.push({ code: code, entry: all[code] });
+      });
+      return out;
+    },
+
+    who: function () {
+      var u = global.GmfyAuth && global.GmfyAuth.current();
+      return u ? u.email : 'guest';
+    },
+
+    shareLimit: function () { return this.current().shares; },
+
+    sharesLeft: function () {
+      var l = this.shareLimit();
+      return l === Infinity ? Infinity : Math.max(0, l - this.myShares().length);
+    },
+
+    /* code already published for this game, or null */
+    shareOf: function (gameId) {
+      var all = this.shares(), me = this.who(), found = null;
+      Object.keys(all).forEach(function (c) {
+        if (all[c].game === gameId && all[c].by === me) found = c;
+      });
+      return found;
+    },
+
+    share: function (gameId) {
+      var g = this.get(gameId);
+      if (!g) return { ok:false, error:'That game is gone.' };
+      var existing = this.shareOf(gameId);
+      if (existing) return { ok:true, code:existing, already:true };
+      if (this.sharesLeft() <= 0) {
+        return { ok:false, limit:true,
+                 error:'Your ' + this.current().name + ' plan shares ' +
+                       this.shareLimit() + ' game' + (this.shareLimit() === 1 ? '' : 's') +
+                       ' at a time. Unshare one, or upgrade.' };
+      }
+      var all = this.shares();
+      var code = this.code(), guard = 0;
+      while (all[code] && guard++ < 20) code = this.code();
+      all[code] = { game:gameId, name:g.name, world:g.world, script:g.script,
+                    by:this.who(), at:Date.now(), opens:0 };
+      if (!write(K_SHARES, all)) return { ok:false, error:'Device storage is full.' };
+      return { ok:true, code:code };
+    },
+
+    unshare: function (code) {
+      var all = this.shares();
+      if (!all[code]) return false;
+      delete all[code];
+      return write(K_SHARES, all);
+    },
+
+    /* import someone else's code as a new game in your library */
+    importShare: function (code) {
+      code = String(code || '').toUpperCase().replace(/\s/g, '');
+      if (code.length === 6 && code.indexOf('-') === -1)
+        code = code.slice(0, 3) + '-' + code.slice(3);
+      var all = this.shares();
+      var e = all[code];
+      if (!e) return { ok:false, error:'No shared game with that code on this device.' };
+      if (!this.canCreate()) {
+        return { ok:false, error:'You are at your ' + this.current().name +
+                 ' limit of ' + this.current().limit + ' games — upgrade or delete one first.' };
+      }
+      var res = this.create(e.name + ' (copy)', e.world);
+      if (!res.ok) return { ok:false, error:'Could not add that game.' };
+      this.save(res.id, e.world, e.script);
+      e.opens = (e.opens || 0) + 1;
+      write(K_SHARES, all);
+      return { ok:true, id:res.id, name:e.name };
+    },
+
+    /* ---------------- Edu classes ---------------- */
+    code: function () {
+      var A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', s = '';
+      for (var i = 0; i < 6; i++) s += A[(Math.random() * A.length) | 0];
+      return s.slice(0, 3) + '-' + s.slice(3);
+    },
+    rooms: function () { return read(K_ROOMS, {}); },
+
+    createClass: function (name) {
+      var u = global.GmfyAuth && global.GmfyAuth.current();
+      var rooms = this.rooms();
+      var code = this.code();
+      var guard = 0;
+      while (rooms[code] && guard++ < 20) code = this.code();
+      rooms[code] = { name: name || 'My class', owner: u ? u.email : 'teacher',
+                      members: [], made: Date.now() };
+      write(K_ROOMS, rooms);
+      write(scoped(K_CLASS), { code: code, role: 'teacher' });
+      return code;
+    },
+
+    joinClass: function (code) {
+      code = String(code || '').toUpperCase().replace(/\s/g, '');
+      if (code.length === 6 && code.indexOf('-') === -1)
+        code = code.slice(0, 3) + '-' + code.slice(3);
+      var rooms = this.rooms();
+      if (!rooms[code]) return { ok:false, error:'No class with that code on this device.' };
+      var u = global.GmfyAuth && global.GmfyAuth.current();
+      var who = u ? u.email : 'student';
+      if (rooms[code].members.indexOf(who) === -1) rooms[code].members.push(who);
+      write(K_ROOMS, rooms);
+      write(scoped(K_CLASS), { code: code, role: 'student' });
+      return { ok:true, room: rooms[code], code: code };
+    },
+
+    myClass: function () {
+      var c = read(scoped(K_CLASS), null);
+      if (!c) return null;
+      var r = this.rooms()[c.code];
+      if (!r) return null;
+      return { code: c.code, role: c.role, room: r };
+    },
+
+    leaveClass: function () {
+      var c = read(scoped(K_CLASS), null);
+      if (!c) return;
+      var rooms = this.rooms(), u = global.GmfyAuth && global.GmfyAuth.current();
+      var who = u ? u.email : 'student';
+      if (rooms[c.code]) {
+        rooms[c.code].members = rooms[c.code].members.filter(function (m) { return m !== who; });
+        write(K_ROOMS, rooms);
+      }
+      try { localStorage.removeItem(scoped(K_CLASS)); } catch (e) {}
+    }
+  };
+
+  global.GmfyPlans = Plans;
+})(window);
+
+</script>
+<script>
+/* gmfy — export a game as a buildable Cordova (Android) or Electron (desktop)
+ * project, as a .zip you download and build on a computer.
+ *
+ * SCOPE: phones have no Android SDK / Gradle / Node, so nothing is compiled
+ * here. What you get is a complete project tree — sources, config, manifest and
+ * every icon size — plus the one command that turns it into an APK or an .exe.
+ */
+(function (global) {
+  'use strict';
+
+  /* ---------------- minimal ZIP writer (store, no compression) ------------ */
+  var CRC = (function () {
+    var t = new Uint32Array(256);
+    for (var n = 0; n < 256; n++) {
+      var c = n;
+      for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+
+  function crc32(buf) {
+    var c = 0xFFFFFFFF;
+    for (var i = 0; i < buf.length; i++) c = CRC[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function utf8(str) {
+    if (global.TextEncoder) return new TextEncoder().encode(str);
+    var out = [], s = unescape(encodeURIComponent(str));
+    for (var i = 0; i < s.length; i++) out.push(s.charCodeAt(i));
+    return new Uint8Array(out);
+  }
+
+  function w16(a, o, v) { a[o] = v & 255; a[o + 1] = (v >>> 8) & 255; }
+  function w32(a, o, v) { w16(a, o, v & 0xFFFF); w16(a, o + 2, (v >>> 16) & 0xFFFF); }
+
+  /* files: [{name, data:Uint8Array}] -> Blob */
+  function zip(files) {
+    var chunks = [], central = [], offset = 0;
+    files.forEach(function (f) {
+      var name = utf8(f.name), data = f.data, sum = crc32(data);
+      var lh = new Uint8Array(30 + name.length);
+      w32(lh, 0, 0x04034b50); w16(lh, 4, 20); w16(lh, 6, 0); w16(lh, 8, 0);
+      w16(lh, 10, 0); w16(lh, 12, 0);
+      w32(lh, 14, sum); w32(lh, 18, data.length); w32(lh, 22, data.length);
+      w16(lh, 26, name.length); w16(lh, 28, 0);
+      lh.set(name, 30);
+      chunks.push(lh, data);
+
+      var cd = new Uint8Array(46 + name.length);
+      w32(cd, 0, 0x02014b50); w16(cd, 4, 20); w16(cd, 6, 20); w16(cd, 8, 0);
+      w16(cd, 10, 0); w16(cd, 12, 0); w16(cd, 14, 0);
+      w32(cd, 16, sum); w32(cd, 20, data.length); w32(cd, 24, data.length);
+      w16(cd, 28, name.length); w16(cd, 30, 0); w16(cd, 32, 0);
+      w16(cd, 34, 0); w16(cd, 36, 0); w32(cd, 38, 0);
+      w32(cd, 42, offset);
+      cd.set(name, 46);
+      central.push(cd);
+      offset += lh.length + data.length;
+    });
+
+    var cdSize = central.reduce(function (n, c) { return n + c.length; }, 0);
+    var eocd = new Uint8Array(22);
+    w32(eocd, 0, 0x06054b50); w16(eocd, 4, 0); w16(eocd, 6, 0);
+    w16(eocd, 8, files.length); w16(eocd, 10, files.length);
+    w32(eocd, 12, cdSize); w32(eocd, 16, offset); w16(eocd, 20, 0);
+
+    return new Blob(chunks.concat(central).concat([eocd]), { type: 'application/zip' });
+  }
+
+  /* ---------------- icon handling ---------------- */
+  function dataURLtoBytes(url) {
+    var b64 = url.split(',')[1];
+    var bin = atob(b64);
+    var out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  /* draw src (Image) into a size x size PNG, cover-cropped */
+  function iconAt(srcImg, size) {
+    var c = document.createElement('canvas');
+    c.width = c.height = size;
+    var x = c.getContext('2d');
+    if (srcImg) {
+      var s = Math.min(srcImg.width, srcImg.height);
+      x.drawImage(srcImg, (srcImg.width - s) / 2, (srcImg.height - s) / 2, s, s,
+                  0, 0, size, size);
+    } else {
+      // fall back to the gmfy mark
+      var g = x.createLinearGradient(0, 0, size, size);
+      g.addColorStop(0, '#7c5cff'); g.addColorStop(1, '#22d3ee');
+      x.fillStyle = g; x.fillRect(0, 0, size, size);
+      x.fillStyle = '#fff';
+      x.font = 'bold ' + Math.round(size * 0.66) + 'px -apple-system,Roboto,sans-serif';
+      x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillText('g', size / 2, size * 0.54);
+    }
+    return dataURLtoBytes(c.toDataURL('image/png'));
+  }
+
+  /* ---------------- the standalone player ---------------- */
+  function playerHTML(name) {
+    return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n' +
+      '<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">\n' +
+      '<title>' + esc(name) + '</title>\n<style>\n' +
+      '*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}\n' +
+      'html,body{height:100%;overflow:hidden;background:#05060a}\n' +
+      'body{display:flex;flex-direction:column;font-family:-apple-system,Roboto,sans-serif;user-select:none}\n' +
+      '#c{flex:1;width:100%;display:block;touch-action:none}\n' +
+      '#pad{position:fixed;right:14px;bottom:14px;display:grid;gap:6px;' +
+      'grid-template-columns:repeat(3,52px);grid-template-rows:repeat(2,52px)}\n' +
+      '#pad button{background:rgba(8,10,18,.55);border:1px solid rgba(255,255,255,.25);' +
+      'color:#fff;border-radius:12px;font-size:18px}\n' +
+      '#again{position:fixed;left:14px;bottom:14px;border:none;border-radius:12px;' +
+      'padding:12px 20px;font-size:15px;font-weight:700;background:#3ddc84;color:#062012}\n' +
+      '</style>\n</head>\n<body>\n<canvas id="c"></canvas>\n' +
+      '<button id="again">Restart</button>\n<div id="pad">' +
+      '<button style="grid-column:2;grid-row:1" data-k="f">&#9650;</button>' +
+      '<button style="grid-column:1;grid-row:2" data-k="l">&#9664;</button>' +
+      '<button style="grid-column:2;grid-row:2" data-k="b">&#9660;</button>' +
+      '<button style="grid-column:3;grid-row:2" data-k="r">&#9654;</button></div>\n' +
+      '<script src="game.json.js"><\/script>\n<script src="engine.js"><\/script>\n' +
+      '<script src="game.js"><\/script>\n<script src="blocks.js"><\/script>\n' +
+      '<script src="player.js"><\/script>\n</body>\n</html>\n';
+  }
+
+  var PLAYER_JS =
+    "(function(){'use strict';\n" +
+    "var D=window.GMFY_GAME||{};\n" +
+    "var cv=document.getElementById('c');\n" +
+    "var eng=new window.Gmfy.Engine(cv);\n" +
+    "var w=window.Gmfy.worldFromSpec({biome:(D.world||{}).biomeKey,props:(D.world||{}).props,\n" +
+    "  relief:(D.world||{}).relief},'export');\n" +
+    "eng.load(w);\n" +
+    "var game=new window.GmfyGame(eng,function(ev){ if(blk.running) blk.fire(ev); });\n" +
+    "var blk=new window.GmfyBlocks(eng,game,function(){});\n" +
+    "if(D.script&&D.script.length) blk.script=D.script;\n" +
+    "var held=null;\n" +
+    "Array.prototype.forEach.call(document.querySelectorAll('#pad button'),function(b){\n" +
+    " var k=b.getAttribute('data-k');\n" +
+    " b.addEventListener('pointerdown',function(e){e.preventDefault();held=k;});\n" +
+    " ['pointerup','pointerleave','pointercancel'].forEach(function(ev){\n" +
+    "  b.addEventListener(ev,function(){ if(held===k) held=null; });});});\n" +
+    "var drag=null;\n" +
+    "cv.addEventListener('pointerdown',function(e){drag={x:e.clientX,y:e.clientY};" +
+    "cv.setPointerCapture(e.pointerId);});\n" +
+    "cv.addEventListener('pointermove',function(e){ if(!drag)return;\n" +
+    " eng.cam.yaw-=(e.clientX-drag.x)*0.006;\n" +
+    " eng.cam.pitch=Math.max(-0.15,Math.min(0.75,eng.cam.pitch+(e.clientY-drag.y)*0.0035));\n" +
+    " drag.x=e.clientX; drag.y=e.clientY;});\n" +
+    "['pointerup','pointercancel'].forEach(function(ev){cv.addEventListener(ev,function(){drag=null;});});\n" +
+    "function start(){ game.start(); blk.run(); }\n" +
+    "document.getElementById('again').addEventListener('click',start);\n" +
+    "window.addEventListener('resize',function(){eng.resize();});\n" +
+    "var last=performance.now();\n" +
+    "function loop(now){var dt=Math.min(0.05,(now-last)/1000);last=now;\n" +
+    " if(held) eng.move(held,dt*1.4);\n" +
+    " blk.tick(dt); game.tick(dt); eng.render(); game.draw(eng.ctx,eng.w,eng.h);\n" +
+    " requestAnimationFrame(loop);}\n" +
+    "eng.resize(); start(); requestAnimationFrame(loop);\n" +
+    "})();\n";
+
+  function esc(s) {
+    return String(s || '').replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function slug(s) {
+    return String(s || 'game').toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'game';
+  }
+
+  /* Pull the runtime sources straight out of this app.
+     Desktop and single-file builds run from file://, where fetch() is blocked,
+     so those builds embed the sources on window.GMFY_SRC at build time and we
+     use them directly. Over http (Cordova's localhost, a dev server) we fetch. */
+  var SRC_FILES = ['js/engine.js', 'js/game.js', 'js/blocks.js'];
+
+  function runtime() {
+    var pre = global.GMFY_SRC;
+    if (pre) {
+      var missing = SRC_FILES.filter(function (p) { return typeof pre[p] !== 'string'; });
+      if (!missing.length) {
+        return Promise.resolve(SRC_FILES.map(function (p) { return pre[p]; }));
+      }
+    }
+    return Promise.all(SRC_FILES.map(function (p) {
+      return fetch(p).then(function (r) {
+        if (!r.ok) throw new Error(p);
+        return r.text();
+      });
+    }));
+  }
+
+  /* ---------------- Cordova project ---------------- */
+  var CDV_DENS = { ldpi: 36, mdpi: 48, hdpi: 72, xhdpi: 96, xxhdpi: 144, xxxhdpi: 192 };
+
+  function cordovaFiles(opts, src, iconImg) {
+    var name = opts.name, id = opts.pkg, files = [];
+    var icons = '';
+    Object.keys(CDV_DENS).forEach(function (dens) {
+      files.push({ name: 'res/icon/android/' + dens + '.png',
+                   data: iconAt(iconImg, CDV_DENS[dens]) });
+      icons += '        <icon density="' + dens + '" src="res/icon/android/' + dens + '.png" />\n';
+    });
+
+    var config =
+      '<?xml version=\'1.0\' encoding=\'utf-8\'?>\n' +
+      '<widget id="' + esc(id) + '" version="1.0.0" xmlns="http://www.w3.org/ns/widgets">\n' +
+      '    <name>' + esc(name) + '</name>\n' +
+      '    <description>A game built with gmfy.</description>\n' +
+      '    <content src="index.html" />\n' +
+      '    <preference name="Orientation" value="portrait" />\n' +
+      '    <preference name="BackgroundColor" value="#FF05060A" />\n' +
+      '    <platform name="android">\n' + icons + '    </platform>\n' +
+      '</widget>\n';
+
+    files.push({ name: 'config.xml', data: utf8(config) });
+    files.push({ name: 'www/index.html', data: utf8(playerHTML(name)) });
+    files.push({ name: 'www/engine.js', data: utf8(src[0]) });
+    files.push({ name: 'www/game.js', data: utf8(src[1]) });
+    files.push({ name: 'www/blocks.js', data: utf8(src[2]) });
+    files.push({ name: 'www/player.js', data: utf8(PLAYER_JS) });
+    files.push({ name: 'www/game.json.js',
+                 data: utf8('window.GMFY_GAME = ' + JSON.stringify(opts.game) + ';\n') });
+    files.push({ name: 'README.md', data: utf8(
+      '# ' + name + '\n\nExported from gmfy as a Cordova project.\n\n' +
+      '## Build an APK\n\n```bash\nnpm install -g cordova\ncordova platform add android\n' +
+      'cordova build android\n```\n\nThe APK lands in\n' +
+      '`platforms/android/app/build/outputs/apk/debug/`.\n\n' +
+      'Needs a JDK, the Android SDK and Gradle on the machine you build on.\n\n' +
+      '## Release build\n\n```bash\ncordova build android --release -- --packageType=bundle\n```\n') });
+    return files;
+  }
+
+  /* ---------------- Electron project ---------------- */
+  function electronFiles(opts, src, iconImg) {
+    var name = opts.name, files = [];
+    files.push({ name: 'build/icon.png', data: iconAt(iconImg, 512) });
+    files.push({ name: 'assets/icon-256.png', data: iconAt(iconImg, 256) });
+
+    var pkg = {
+      name: slug(name), version: '1.0.0', description: 'A game built with gmfy.',
+      main: 'main.js', scripts: { start: 'electron .', dist: 'electron-builder' },
+      devDependencies: { electron: '^32.0.0', 'electron-builder': '^25.0.0' },
+      build: { appId: opts.pkg, productName: name,
+               files: ['main.js', 'renderer/**'],
+               directories: { output: 'dist', buildResources: 'build' },
+               win: { target: 'nsis' }, mac: { target: 'dmg' }, linux: { target: 'AppImage' } }
+    };
+    files.push({ name: 'package.json', data: utf8(JSON.stringify(pkg, null, 2) + '\n') });
+
+    var main =
+      "const { app, BrowserWindow } = require('electron');\n" +
+      "const path = require('path');\n\n" +
+      "function createWindow () {\n" +
+      "  const win = new BrowserWindow({\n" +
+      "    width: 520, height: 900, backgroundColor: '#05060a',\n" +
+      "    title: " + JSON.stringify(name) + ",\n" +
+      "    icon: path.join(__dirname, 'assets', 'icon-256.png'),\n" +
+      "    webPreferences: { contextIsolation: true }\n" +
+      "  });\n" +
+      "  win.setMenuBarVisibility(false);\n" +
+      "  win.loadFile(path.join(__dirname, 'renderer', 'index.html'));\n" +
+      "}\n\n" +
+      "app.whenReady().then(() => {\n" +
+      "  createWindow();\n" +
+      "  app.on('activate', () => {\n" +
+      "    if (BrowserWindow.getAllWindows().length === 0) createWindow();\n" +
+      "  });\n" +
+      "});\n\n" +
+      "app.on('window-all-closed', () => {\n" +
+      "  if (process.platform !== 'darwin') app.quit();\n" +
+      "});\n";
+    files.push({ name: 'main.js', data: utf8(main) });
+
+    files.push({ name: 'renderer/index.html', data: utf8(playerHTML(name)) });
+    files.push({ name: 'renderer/engine.js', data: utf8(src[0]) });
+    files.push({ name: 'renderer/game.js', data: utf8(src[1]) });
+    files.push({ name: 'renderer/blocks.js', data: utf8(src[2]) });
+    files.push({ name: 'renderer/player.js', data: utf8(PLAYER_JS) });
+    files.push({ name: 'renderer/game.json.js',
+                 data: utf8('window.GMFY_GAME = ' + JSON.stringify(opts.game) + ';\n') });
+    files.push({ name: 'README.md', data: utf8(
+      '# ' + name + '\n\nExported from gmfy as an Electron app.\n\n' +
+      '## Run it\n\n```bash\nnpm install\nnpm start\n```\n\n' +
+      '## Build installers\n\n```bash\nnpm run dist\n```\n\n' +
+      'Produces a Windows .exe, macOS .dmg or Linux AppImage in `dist/`,\n' +
+      'depending on the machine you build on.\n') });
+    return files;
+  }
+
+  /* ---------------- public API ---------------- */
+  function build(target, opts, iconImg) {
+    return runtime().then(function (src) {
+      var files = (target === 'electron')
+        ? electronFiles(opts, src, iconImg)
+        : cordovaFiles(opts, src, iconImg);
+      var blob = zip(files);
+      return { blob: blob, count: files.length,
+               filename: slug(opts.name) + '-' + target + '.zip' };
+    });
+  }
+
+  function save(blob, filename) {
+    try {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 4000);
+      return true;
+    } catch (e) { return false; }
+  }
+
+  global.GmfyExport = { build: build, save: save, zip: zip, iconAt: iconAt, slug: slug };
+})(window);
+
+</script>
+<script>
+/* gmfy — world effects layer:
+ *   sculpting   raise / lower the ground with a brush
+ *   weather     rain, snow, fog, wind (wind pushes the player)
+ *   daylight    a real sun arc: dawn -> noon -> dusk -> night
+ *   ghost       race a translucent replay of your best run
+ *   photo       freeze the frame and save a PNG
+ * Wraps Engine.render so the base renderer stays untouched.
+ */
+(function (global) {
+  'use strict';
+
+  var N = 15;
+
+  var FX = {
+    weather: 'clear',          // clear | rain | snow | fog
+    wind: 0,                   // -3..3, pushes the player on x
+    time: 0.5,                 // 0 midnight, 0.25 dawn, 0.5 noon, 0.75 dusk
+    ghost: null,               // [{t,x,z}] being replayed
+    ghostT: 0,
+    showGhost: true,
+    _p: null
+  };
+
+  /* ---------------- sculpting ---------------- */
+  function sculpt(world, x, z, radius, delta) {
+    var SPAN = global.Gmfy.SPAN;
+    for (var i = 0; i < N; i++) {
+      for (var j = 0; j < N; j++) {
+        var wx = (i / (N - 1) - 0.5) * SPAN;
+        var wz = (j / (N - 1) - 0.5) * SPAN;
+        var d2 = (wx - x) * (wx - x) + (wz - z) * (wz - z);
+        var f = Math.exp(-d2 / (2 * radius * radius));
+        if (f < 0.01) continue;
+        world.h[i][j] -= delta * f;            // -y is up
+      }
+    }
+  }
+
+  /* ---------------- daylight ---------------- */
+  function sunElev(time) {
+    return Math.sin((time - 0.25) * Math.PI * 2);   // -1 midnight .. 1 noon
+  }
+
+  function light(time) {
+    var e = sunElev(time);
+    var day = Math.max(0, e);
+    return {
+      elev: e,
+      bright: 0.20 + 0.80 * day,
+      warm: Math.max(0, 1 - Math.abs(e) * 2.4),      // orange near the horizon
+      night: Math.max(0, -e)
+    };
+  }
+
+  function label(time) {
+    var e = sunElev(time);
+    if (e > 0.72) return 'noon';
+    if (e > 0.15) return time < 0.5 ? 'morning' : 'afternoon';
+    if (e > -0.34) return time < 0.5 ? 'dawn' : 'dusk';
+    return 'night';
+  }
+
+  /* ---------------- weather particles ---------------- */
+  function particles(n) {
+    if (FX._p && FX._p.length === n) return FX._p;
+    var p = [];
+    for (var i = 0; i < n; i++) {
+      p.push({ x: Math.random(), y: Math.random(),
+               s: 0.5 + Math.random(), r: Math.random() });
+    }
+    FX._p = p;
+    return p;
+  }
+
+  function drawWeather(ctx, w, h, dt) {
+    var kind = FX.weather;
+    if (kind === 'clear') return;
+
+    if (kind === 'fog') {
+      var g = ctx.createLinearGradient(0, h * 0.18, 0, h);
+      g.addColorStop(0, 'rgba(210,220,230,0.06)');
+      g.addColorStop(0.45, 'rgba(210,220,230,0.34)');
+      g.addColorStop(1, 'rgba(210,220,230,0.14)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+      return;
+    }
+
+    var rain = (kind === 'rain');
+    var ps = particles(rain ? 150 : 110);
+    ctx.save();
+    ctx.strokeStyle = rain ? 'rgba(190,214,255,0.55)' : 'rgba(255,255,255,0.85)';
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = rain ? 2 : 1;
+    for (var i = 0; i < ps.length; i++) {
+      var p = ps[i];
+      p.y += dt * (rain ? 1.25 : 0.22) * p.s;
+      p.x += dt * (rain ? 0.05 : 0.06) * FX.wind * p.s
+           + (rain ? 0 : Math.sin(p.y * 8 + p.r * 6) * dt * 0.02);
+      if (p.y > 1) { p.y -= 1; p.x = Math.random(); }
+      if (p.x > 1) p.x -= 1; if (p.x < 0) p.x += 1;
+      var X = p.x * w, Y = p.y * h;
+      if (rain) {
+        ctx.beginPath();
+        ctx.moveTo(X, Y);
+        ctx.lineTo(X + FX.wind * 4, Y + 16 * p.s);
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.arc(X, Y, 1.6 + p.s * 1.6, 0, 6.283);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  /* ---------------- ghost ---------------- */
+  function ghostAt(track, t) {
+    if (!track || !track.length) return null;
+    if (t <= track[0].t) return track[0];
+    for (var i = 1; i < track.length; i++) {
+      if (track[i].t >= t) {
+        var a = track[i - 1], b = track[i];
+        var f = (t - a.t) / Math.max(0.001, b.t - a.t);
+        return { x: a.x + (b.x - a.x) * f, z: a.z + (b.z - a.z) * f };
+      }
+    }
+    return track[track.length - 1];
+  }
+
+  function drawGhost(eng, ctx) {
+    if (!FX.showGhost || !FX.ghost) return;
+    var g = ghostAt(FX.ghost, FX.ghostT);
+    if (!g) return;
+    var base = global.Gmfy.heightAt(eng.world, g.x, g.z);
+    var p = eng.project(g.x, base, g.z);
+    var top = eng.project(g.x, base - 2.1, g.z);
+    if (!p || !top) return;
+    var wpx = Math.max(6, (eng.f * 0.55) / p.z);
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    var grad = ctx.createLinearGradient(0, top.y, 0, p.y);
+    grad.addColorStop(0, 'rgba(140,220,255,0.95)');
+    grad.addColorStop(1, 'rgba(90,150,255,0.15)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(p.x - wpx, top.y, wpx * 2, p.y - top.y, wpx);
+    else ctx.rect(p.x - wpx, top.y, wpx * 2, p.y - top.y);
+    ctx.fill();
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = '#bfe9ff';
+    ctx.font = 'bold 12px -apple-system,Roboto,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('ghost', p.x, top.y - 8);
+    ctx.restore();
+  }
+
+  /* ---------------- wrap the renderer ---------------- */
+  function install() {
+    var E = global.Gmfy.Engine;
+    if (!E || E.prototype.__fx) return;
+    var base = E.prototype.render;
+
+    E.prototype.render = function () {
+      base.call(this);
+      var ctx = this.ctx, w = this.w, h = this.h;
+      var L = light(FX.time);
+      var dt = 1 / 60;
+
+      // sun / moon high in the sky
+      var up = Math.max(0, L.elev);
+      var sx = w * (0.16 + 0.68 * ((FX.time - 0.25 + 1) % 1));
+      var sy = h * (0.42 - 0.30 * up);
+      if (sy < h * 0.55) {
+        var r = w * (L.night > 0.2 ? 0.045 : 0.062);
+        var gg = ctx.createRadialGradient(sx, sy, r * 0.2, sx, sy, r * 3.4);
+        var core = L.night > 0.2 ? 'rgba(226,236,255,0.95)'
+                                 : 'rgba(255,' + Math.round(238 - L.warm * 70) + ',' +
+                                   Math.round(190 - L.warm * 120) + ',0.98)';
+        gg.addColorStop(0, core);
+        gg.addColorStop(0.24, 'rgba(255,240,200,0.35)');
+        gg.addColorStop(1, 'rgba(255,220,160,0)');
+        ctx.fillStyle = gg;
+        ctx.beginPath(); ctx.arc(sx, sy, r * 3.4, 0, 6.283); ctx.fill();
+      }
+
+      // time-of-day grade
+      if (L.bright < 0.99) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'multiply';
+        var b = Math.round(255 * L.bright);
+        var rr = Math.min(255, Math.round(b * (1 + L.warm * 0.35)));
+        var gg2 = Math.round(b * (1 - L.night * 0.10 + L.warm * 0.06));
+        var bb = Math.min(255, Math.round(b * (1 + L.night * 0.45 - L.warm * 0.18)));
+        ctx.fillStyle = 'rgb(' + rr + ',' + gg2 + ',' + bb + ')';
+        ctx.fillRect(0, 0, w, h);
+        ctx.restore();
+      }
+
+      drawWeather(ctx, w, h, dt);
+      drawGhost(this, ctx);
+    };
+    E.prototype.__fx = true;
+  }
+
+  /* ---------------- photo mode ---------------- */
+  function photo(eng, name) {
+    try {
+      var url = eng.cv.toDataURL('image/png');
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = (name || 'gmfy-world') + '.png';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { document.body.removeChild(a); }, 3000);
+      return true;
+    } catch (e) { return false; }
+  }
+
+  global.GmfyFX = {
+    state: FX, sculpt: sculpt, light: light, label: label,
+    install: install, photo: photo, ghostAt: ghostAt
+  };
+})(window);
+
+</script>
+<script>
+/* gmfy — Maker: build a world by hand.
+   Tap the ground to place things, tap a thing to erase it. */
+(function (global) {
+  'use strict';
+
+  var STORE = 'gmfy.maker.world.v1';
+  function storeKey(){ return global.GmfyAuth ? global.GmfyAuth.scope(STORE) : STORE; }
+  var el = function (id) { return document.getElementById(id); };
+
+  function Maker(engine, onChange) {
+    this.engine = engine;
+    this.onChange = onChange || function () {};
+    this.tool = 'place';
+    this.kind = 'coin';
+    this.col = '#4ea63f';
+    this.size = 0.30;      // 0..1 -> prop height
+    this.relief = 1.0;
+    this.active = false;
+    this.undoStack = [];
+  }
+
+  Maker.prototype.enter = function () {
+    this.active = true;
+    var w = this.engine.world;
+    // carry the current world in so you can hand-edit a generated one
+    if (!w) w = global.Gmfy.emptyWorld('meadow', this.relief);
+    w.source = 'maker';
+    this.engine.load(w);
+    this.syncPalette();
+    this.onChange();
+  };
+
+  Maker.prototype.exit = function () { this.active = false; };
+
+  Maker.prototype.blank = function (biomeKey) {
+    var w = global.Gmfy.emptyWorld(biomeKey || this.engine.world.biomeKey, this.relief);
+    this.undoStack = [];
+    this.engine.load(w);
+    this.syncPalette();
+    this.onChange();
+  };
+
+  /* refresh the colour swatches to the active biome's palette */
+  Maker.prototype.syncPalette = function () {
+    var pal = this.engine.world.biome.palette.slice();
+    ['#e9ecf5', '#8a91a8'].forEach(function (c) {
+      if (pal.indexOf(c) === -1) pal.push(c);
+    });
+    this.palette = pal;
+    if (pal.indexOf(this.col) === -1) this.col = pal[0];
+  };
+
+  Maker.prototype.setBiome = function (key) {
+    global.Gmfy.reskin(this.engine.world, key);
+    this.syncPalette();
+    this.onChange();
+  };
+
+  Maker.prototype.setRelief = function (v) {
+    this.relief = v;
+    global.Gmfy.setRelief(this.engine.world, v);
+    this.onChange();
+  };
+
+  /* screen tap -> place or erase */
+  Maker.prototype.tap = function (sx, sy) {
+    if (!this.active || this.tool === 'look') return;
+    var w = this.engine.world;
+    var g = this.engine.pick(sx, sy);
+    if (!g) return;
+
+    if (this.tool === 'erase') {
+      var i = this.engine.propAt(g.x, g.z, 2.4);
+      if (i >= 0) {
+        this.undoStack.push({ op: 'add', index: i, prop: w.props[i] });
+        w.props.splice(i, 1);
+        this.onChange();
+      }
+      return;
+    }
+
+    var tall = (this.kind === 'tower') ? 9 : (this.kind === 'tree' ? 5 : 3.2);
+    var prop = {
+      kind: this.kind, x: g.x, z: g.z,
+      h: 0.6 + this.size * tall,
+      w: 0.35 + this.size * (this.kind === 'tower' ? 1.3 : 1.0),
+      col: this.col
+    };
+    w.props.push(prop);
+    this.undoStack.push({ op: 'remove', index: w.props.length - 1 });
+    this.onChange();
+  };
+
+  Maker.prototype.undo = function () {
+    var w = this.engine.world, a = this.undoStack.pop();
+    if (!a) return;
+    if (a.op === 'remove') w.props.splice(a.index, 1);
+    else w.props.splice(a.index, 0, a.prop);
+    this.onChange();
+  };
+
+  Maker.prototype.clear = function () {
+    var w = this.engine.world;
+    if (!w.props.length) return;
+    this.undoStack = [];
+    w.props = [];
+    this.onChange();
+  };
+
+  Maker.prototype.save = function () {
+    var w = this.engine.world;
+    try {
+      localStorage.setItem(storeKey(), JSON.stringify({
+        biomeKey: w.biomeKey, relief: this.relief, props: w.props
+      }));
+      return true;
+    } catch (e) { return false; }
+  };
+
+  Maker.prototype.load = function (silent) {
+    var raw;
+    try { raw = localStorage.getItem(storeKey()); } catch (e) { return false; }
+    if (!raw) return false;
+    var data;
+    try { data = JSON.parse(raw); } catch (e) { return false; }
+
+    // validate on the way in so a hand-edited store can't break rendering
+    var w = global.Gmfy.worldFromSpec(
+      { biome: data.biomeKey, props: data.props, relief: data.relief }, 'maker');
+    w.props = w.props || [];
+    if (!data.props || !data.props.length) w.props = [];
+    w.source = 'maker';
+    this.relief = data.relief || 1;
+    this.undoStack = [];
+    this.engine.load(w);
+    this.syncPalette();
+    this.onChange();
+    return true;
+  };
+
+  global.GmfyMaker = Maker;
+})(window);
+
+</script>
+<script>
+/* gmfy — play mode. Walk the world you built: collect coins, hit checkpoints,
+   avoid lava and enemies, reach the finish. */
+(function (global) {
+  'use strict';
+
+  var REACH = 1.9;          // how close counts as touching
+  var PATCH = 2.4;          // lava/water pools are wider than their marker
+
+  function Game(engine, onEvent) {
+    this.engine = engine;
+    this.onEvent = onEvent || function () {};
+    this.playing = false;
+    this.reset(true);
+  }
+
+  Game.prototype.reset = function (hard) {
+    var e = this.engine;
+    this.coins = 0;
+    this.stars = 0;
+    this.keys = 0;
+    this.deaths = 0;
+    this.won = false;
+    this.time = 0;
+    this.spawn = { x: 0, z: -9 };
+    this.message = '';
+    this.msgT = 0;
+    if (hard && e.world) this.restoreAll();
+    e.cam.x = this.spawn.x; e.cam.z = this.spawn.z; e.cam.yaw = 0;
+    this.vy = 0;
+  };
+
+  Game.prototype.restoreAll = function () {
+    var p = this.engine.world.props;
+    for (var i = 0; i < p.length; i++) {
+      p[i].taken = false;
+      if (p[i].kind === 'checkpoint') p[i].on = false;
+    }
+  };
+
+  Game.prototype.total = function (role) {
+    var p = this.engine.world.props, n = 0;
+    for (var i = 0; i < p.length; i++) {
+      var k = global.Gmfy.KIND[p[i].kind];
+      if (k && k.role === role) n++;
+    }
+    return n;
+  };
+
+  Game.prototype.start = function () {
+    this.playing = true;
+    this.reset(true);
+    this.track = [];              // this run, sampled ~10 Hz
+    this._sample = 0;
+    var FX = global.GmfyFX && global.GmfyFX.state;
+    if (FX) { FX.ghost = this.best ? this.best.track : null; FX.ghostT = 0; }
+    this.say(this.best ? 'Go! racing your ghost' : 'Go!');
+    this.onEvent('start');
+  };
+
+  Game.prototype.stop = function () {
+    this.playing = false;
+    this.onEvent('stop');
+  };
+
+  Game.prototype.say = function (txt, secs) {
+    this.message = txt;
+    this.msgT = secs || 1.6;
+  };
+
+  Game.prototype.respawn = function () {
+    var e = this.engine;
+    e.cam.x = this.spawn.x;
+    e.cam.z = this.spawn.z;
+    this.deaths++;
+    this.say('Ouch! Back to checkpoint');
+    this.onEvent('die');
+  };
+
+  /* called every frame while playing */
+  Game.prototype.tick = function (dt) {
+    if (this.msgT > 0) this.msgT -= dt;
+    if (!this.playing || this.won) return;
+    this.time += dt;
+
+    var FX = global.GmfyFX && global.GmfyFX.state;
+    if (FX) {
+      FX.ghostT = this.time;
+      if (FX.wind) this.engine.cam.x += FX.wind * dt * 0.9;   // weather pushes you
+    }
+    this._sample = (this._sample || 0) + dt;
+    if (this._sample >= 0.1) {
+      this._sample = 0;
+      if (this.track) this.track.push({ t: this.time,
+        x: this.engine.cam.x, z: this.engine.cam.z });
+    }
+
+    var e = this.engine, w = e.world;
+    var px = e.cam.x, pz = e.cam.z;
+
+    for (var i = 0; i < w.props.length; i++) {
+      var pr = w.props[i];
+      var kd = global.Gmfy.KIND[pr.kind];
+      if (!kd) continue;
+      var role = kd.role;
+      if (role === 'solid') continue;
+
+      var dx = pr.x - px, dz = pr.z - pz;
+      var d = Math.sqrt(dx * dx + dz * dz);
+      var reach = (kd.shape === 'patch') ? PATCH : REACH;
+      if (d > reach) continue;
+
+      if (role === 'coin' && !pr.taken) {
+        pr.taken = true; this.coins++;
+        this.say('Coin! ' + this.coins + '/' + (this.coins + this.remaining('coin')));
+        this.onEvent('coin');
+      } else if (role === 'star' && !pr.taken) {
+        pr.taken = true; this.stars++;
+        this.say('Star!'); this.onEvent('star');
+      } else if (role === 'key' && !pr.taken) {
+        pr.taken = true; this.keys++;
+        this.say('Key collected'); this.onEvent('key');
+      } else if (role === 'checkpoint') {
+        if (!pr.on) {
+          pr.on = true;
+          this.spawn = { x: pr.x, z: pr.z };
+          this.say('Checkpoint!');
+          this.onEvent('checkpoint');
+        }
+      } else if (role === 'lava' || role === 'hazard' || role === 'enemy') {
+        this.respawn();
+        return;
+      } else if (role === 'spring') {
+        // shove the player away from the pad
+        var len = d || 1;
+        e.cam.x -= (dx / len) * 6;
+        e.cam.z -= (dz / len) * 6;
+        this.say('Boing!');
+        this.onEvent('spring');
+      } else if (role === 'door') {
+        if (this.keys > 0) {
+          pr.taken = true; this.keys--;
+          this.say('Door unlocked'); this.onEvent('door');
+        } else {
+          e.cam.x -= dx * 0.12; e.cam.z -= dz * 0.12;
+          this.say('Locked — find a key');
+        }
+      } else if (role === 'finish') {
+        var left = this.remaining('coin');
+        if (left > 0) {
+          this.say(left + ' coin' + (left > 1 ? 's' : '') + ' to go!');
+        } else {
+          this.won = true;
+          this.playing = false;
+          var beat = !this.best || this.time < this.best.time;
+          if (beat) this.best = { time: this.time, track: (this.track || []).slice() };
+          this.say(beat ? ('New best!  ' + this.time.toFixed(1) + 's')
+                        : ('You win!  ' + this.time.toFixed(1) + 's  (best ' +
+                           this.best.time.toFixed(1) + 's)'), 6);
+          this.onEvent('win');
+        }
+      }
+    }
+  };
+
+  /* is the player standing on/near anything with this role? */
+  Game.prototype.near = function (role) {
+    var e = this.engine, w = e.world;
+    for (var i = 0; i < w.props.length; i++) {
+      var pr = w.props[i], kd = global.Gmfy.KIND[pr.kind];
+      if (!kd || kd.role !== role || pr.taken) continue;
+      var dx = pr.x - e.cam.x, dz = pr.z - e.cam.z;
+      var reach = (kd.shape === 'patch') ? PATCH : REACH;
+      if (dx * dx + dz * dz <= reach * reach) return true;
+    }
+    return false;
+  };
+
+  Game.prototype.remaining = function (role) {
+    var p = this.engine.world.props, n = 0;
+    for (var i = 0; i < p.length; i++) {
+      var k = global.Gmfy.KIND[p[i].kind];
+      if (k && k.role === role && !p[i].taken) n++;
+    }
+    return n;
+  };
+
+  /* HUD overlay drawn straight onto the canvas */
+  Game.prototype.draw = function (ctx, w, h) {
+    if (!this.playing && !this.won) return;
+    ctx.save();
+    ctx.font = 'bold 15px -apple-system,Roboto,sans-serif';
+    var pad = 10;
+    var line = 'Coins ' + this.coins + '/' + (this.coins + this.remaining('coin')) +
+               '   Time ' + this.time.toFixed(1) + 's' +
+               (this.best ? '   Best ' + this.best.time.toFixed(1) + 's' : '');
+    var tw = ctx.measureText(line).width;
+    ctx.fillStyle = 'rgba(255,255,255,.80)';
+    ctx.beginPath();
+    ctx.roundRect(w / 2 - tw / 2 - pad, 10, tw + pad * 2, 30, 9);
+    ctx.fill();
+    ctx.fillStyle = '#16324a';
+    ctx.textAlign = 'center';
+    ctx.fillText(line, w / 2, 30);
+
+    if (this.msgT > 0 && this.message) {
+      ctx.font = 'bold 21px -apple-system,Roboto,sans-serif';
+      var mw = ctx.measureText(this.message).width;
+      ctx.fillStyle = 'rgba(8,12,20,.78)';
+      ctx.beginPath();
+      ctx.roundRect(w / 2 - mw / 2 - 16, h * 0.34, mw + 32, 44, 12);
+      ctx.fill();
+      ctx.fillStyle = this.won ? '#3ddc84' : '#fff';
+      ctx.fillText(this.message, w / 2, h * 0.34 + 30);
+    }
+    ctx.restore();
+  };
+
+  global.GmfyGame = Game;
+})(window);
+
+</script>
+<script>
+/* gmfy — block scripting across all Scratch categories.
+   Scripts are a flat list; C-blocks (repeat / forever / if) pair with an `end`
+   block, and hat blocks start independent threads when their event fires. */
+(function (global) {
+  'use strict';
+
+  var CATS = {
+    motion:  { name:'Motion',    col:'#4c97ff' },
+    looks:   { name:'Looks',     col:'#9966ff' },
+    sound:   { name:'Sound',     col:'#cf63cf' },
+    events:  { name:'Events',    col:'#ffbf00' },
+    control: { name:'Control',   col:'#ffab19' },
+    sensing: { name:'Sensing',   col:'#5cb1d6' },
+    operator:{ name:'Operators', col:'#59c059' },
+    data:    { name:'Variables', col:'#ff8c1a' }
+  };
+
+  /* conditions available to `if` and `wait until` (Sensing + Operators) */
+  var CONDS = [
+    { id:'touch_lava',  label:'touching lava?' },
+    { id:'touch_coin',  label:'touching a coin?' },
+    { id:'all_coins',   label:'all coins collected?' },
+    { id:'has_key',     label:'carrying a key?' },
+    { id:'timer5',      label:'timer > 5s' },
+    { id:'coins3',      label:'coins > 3' },
+    { id:'moving',      label:'player moving?' },
+    { id:'always',      label:'always' }
+  ];
+
+  /* value sources for `set score to` (Operators + Sensing reporters) */
+  var VALUES = [
+    { id:'random',  label:'random 1-10' },
+    { id:'coins',   label:'coin count' },
+    { id:'stars',   label:'star count' },
+    { id:'timer',   label:'timer' },
+    { id:'deaths',  label:'deaths' },
+    { id:'zero',    label:'0' }
+  ];
+
+  var SOUNDS = ['pop', 'coin', 'jump', 'win', 'buzz'];
+  var WORLDS = ['meadow', 'forest', 'beach', 'hills', 'snow', 'sunset'];
+  var WEATHER = ['clear', 'rain', 'snow', 'fog'];
+  var TOD = [['dawn', .25], ['noon', .5], ['dusk', .75], ['night', 0]];
+
+  /* hat:true starts a thread. c:true opens a C-block that needs an `end`. */
+  var DEFS = [
+    // ---- events ----
+    { id:'when_start',  cat:'events', hat:true, ev:'start',      label:'when GO is tapped' },
+    { id:'when_coin',   cat:'events', hat:true, ev:'coin',       label:'when a coin is collected' },
+    { id:'when_cp',     cat:'events', hat:true, ev:'checkpoint', label:'when a checkpoint is reached' },
+    { id:'when_lava',   cat:'events', hat:true, ev:'die',        label:'when lava is touched' },
+    { id:'when_win',    cat:'events', hat:true, ev:'win',        label:'when the finish is reached' },
+    { id:'when_msg',    cat:'events', hat:true, ev:'msg',        label:'when I receive message' },
+    { id:'broadcast',   cat:'events', label:'broadcast message' },
+
+    // ---- motion ----
+    { id:'move',      cat:'motion', label:'move',  arg:{min:1,max:12,step:1,val:4} },
+    { id:'turn_r',    cat:'motion', label:'turn right', arg:{min:15,max:180,step:15,val:45,unit:'°'} },
+    { id:'turn_l',    cat:'motion', label:'turn left',  arg:{min:15,max:180,step:15,val:45,unit:'°'} },
+    { id:'goto_start',cat:'motion', label:'go to start' },
+    { id:'goto_finish',cat:'motion',label:'glide to the finish' },
+    { id:'spin',      cat:'motion', label:'spin world', arg:{min:0,max:3,step:.5,val:1,unit:'x'} },
+    { id:'stopspin',  cat:'motion', label:'stop spinning' },
+    { id:'setspeed',  cat:'motion', label:'set speed', arg:{min:1,max:5,step:1,val:2,unit:'x'} },
+
+    // ---- looks ----
+    { id:'say',       cat:'looks', label:'say Hi!' },
+    { id:'think',     cat:'looks', label:'think Hmm…' },
+    { id:'grow',      cat:'looks', label:'grow things', arg:{min:1,max:5,step:1,val:1,unit:'x'} },
+    { id:'shrink',    cat:'looks', label:'shrink things' },
+    { id:'setsize',   cat:'looks', label:'set size', arg:{min:25,max:200,step:25,val:100,unit:'%'} },
+    { id:'bounce',    cat:'looks', label:'make things bounce' },
+    { id:'plant',     cat:'looks', label:'plant a tree' },
+    { id:'drop_coin', cat:'looks', label:'drop a coin' },
+    { id:'drop_lava', cat:'looks', label:'pour some lava' },
+    { id:'setworld',  cat:'looks', label:'set world to', opt:'world', val:'forest' },
+    { id:'nextworld', cat:'looks', label:'next world' },
+    { id:'weather',   cat:'looks', label:'set weather', opt:'weather', val:'rain' },
+    { id:'wind',      cat:'looks', label:'set wind', arg:{min:-3,max:3,step:1,val:1} },
+    { id:'settime',   cat:'looks', label:'set time', opt:'tod', val:'noon' },
+    { id:'sunrise',   cat:'looks', label:'run a sunrise' },
+    { id:'raise',     cat:'looks', label:'raise the ground' },
+    { id:'lower',     cat:'looks', label:'lower the ground' },
+
+    // ---- sound ----
+    { id:'play',      cat:'sound', label:'play sound', opt:'sound', val:'pop' },
+    { id:'play_wait', cat:'sound', label:'play sound until done', opt:'sound', val:'coin' },
+    { id:'stop_snd',  cat:'sound', label:'stop all sounds' },
+    { id:'volume',    cat:'sound', label:'set volume', arg:{min:0,max:100,step:25,val:75,unit:'%'} },
+
+    // ---- control ----
+    { id:'wait',      cat:'control', label:'wait', arg:{min:.5,max:5,step:.5,val:1,unit:'s'} },
+    { id:'repeat',    cat:'control', c:true, label:'repeat', arg:{min:2,max:20,step:2,val:4} },
+    { id:'forever',   cat:'control', c:true, label:'forever' },
+    { id:'if',        cat:'control', c:true, label:'if', opt:'cond', val:'touch_lava' },
+    { id:'else',      cat:'control', label:'else' },
+    { id:'end',       cat:'control', label:'end' },
+    { id:'wait_until',cat:'control', label:'wait until', opt:'cond', val:'all_coins' },
+    { id:'stop_all',  cat:'control', label:'stop everything' },
+
+    // ---- sensing ----
+    { id:'reset_timer',cat:'sensing', label:'reset timer' },
+    { id:'show_coins', cat:'sensing', label:'show coin count' },
+    { id:'show_timer', cat:'sensing', label:'show timer' },
+
+    // ---- operators (arithmetic on the score variable) ----
+    { id:'op_add',   cat:'operator', label:'score +', arg:{min:1,max:20,step:1,val:5} },
+    { id:'op_sub',   cat:'operator', label:'score −', arg:{min:1,max:20,step:1,val:1} },
+    { id:'op_mul',   cat:'operator', label:'score ×', arg:{min:2,max:10,step:1,val:2} },
+    { id:'op_div',   cat:'operator', label:'score ÷', arg:{min:2,max:10,step:1,val:2} },
+    { id:'op_round', cat:'operator', label:'round score' },
+    { id:'op_rand',  cat:'operator', label:'pick random into score', arg:{min:5,max:100,step:5,val:10} },
+    { id:'op_min',   cat:'operator', label:'keep score under', arg:{min:5,max:100,step:5,val:50} },
+
+    // ---- variables ----
+    { id:'set_score', cat:'data', label:'set score to', opt:'value', val:'random' },
+    { id:'change_score', cat:'data', label:'change score by', arg:{min:1,max:10,step:1,val:1} },
+    { id:'show_score',cat:'data', label:'show score' }
+  ];
+
+  function defOf(id) {
+    for (var i = 0; i < DEFS.length; i++) if (DEFS[i].id === id) return DEFS[i];
+    return null;
+  }
+  function optList(kind) {
+    return kind === 'cond' ? CONDS
+         : kind === 'value' ? VALUES
+         : kind === 'sound' ? SOUNDS.map(function (s) { return { id:s, label:s }; })
+         : kind === 'weather' ? WEATHER.map(function (s) { return { id:s, label:s }; })
+         : kind === 'tod' ? TOD.map(function (p) { return { id:p[0], label:p[0] }; })
+         : WORLDS.map(function (s) { return { id:s, label:s }; });
+  }
+  function optLabel(kind, id) {
+    var l = optList(kind);
+    for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i].label;
+    return id;
+  }
+
+  /* ---------------- tiny beeper ---------------- */
+  var actx = null, vol = 0.75;
+  function beep(name) {
+    try {
+      if (!actx) actx = new (global.AudioContext || global.webkitAudioContext)();
+      var spec = { pop:[520,.09], coin:[880,.13], jump:[330,.14],
+                   win:[660,.42], buzz:[120,.25] }[name] || [440, .1];
+      var o = actx.createOscillator(), g = actx.createGain();
+      o.type = (name === 'buzz') ? 'sawtooth' : 'triangle';
+      o.frequency.value = spec[0];
+      g.gain.value = 0.16 * vol;
+      o.connect(g); g.connect(actx.destination);
+      o.start();
+      g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + spec[1]);
+      o.stop(actx.currentTime + spec[1] + .02);
+      return spec[1];
+    } catch (e) { return 0.1; }
+  }
+
+  /* ---------------- editor + VM ---------------- */
+  function Blocks(engine, game, onChange) {
+    this.engine = engine;
+    this.game = game;
+    this.onChange = onChange || function () {};
+    this.script = [{ id: 'when_start' }];
+    this.threads = [];
+    this.running = false;
+    this.score = 0;
+    this.speed = 2;
+    this.banner = '';
+    this.bannerT = 0;
+  }
+
+  Blocks.prototype.add = function (id) {
+    var d = defOf(id);
+    if (!d || this.script.length > 80) return;
+    var b = { id: id };
+    if (d.arg) b.val = d.arg.val;
+    if (d.opt) b.opt = d.val;
+    this.script.push(b);
+    if (d.c) this.script.push({ id: 'end' });     // C-blocks arrive closed
+    this.onChange();
+  };
+
+  Blocks.prototype.removeAt = function (i) {
+    if (i === 0 || i >= this.script.length) return;
+    var d = defOf(this.script[i].id);
+    if (d && d.c) {
+      var e = this.matchEnd(i);
+      this.script.splice(i, (e < 0 ? 1 : e - i + 1));
+    } else {
+      this.script.splice(i, 1);
+    }
+    this.onChange();
+  };
+
+  Blocks.prototype.bump = function (i) {
+    var b = this.script[i], d = defOf(b.id);
+    if (!d) return;
+    if (d.arg) {
+      var v = +(b.val + d.arg.step).toFixed(2);
+      b.val = (v > d.arg.max) ? d.arg.min : v;
+    } else if (d.opt) {
+      var l = optList(d.opt);
+      var idx = 0;
+      for (var k = 0; k < l.length; k++) if (l[k].id === b.opt) idx = k;
+      b.opt = l[(idx + 1) % l.length].id;
+    }
+    this.onChange();
+  };
+
+  /* index of the `end` that closes the C-block at i */
+  Blocks.prototype.matchEnd = function (i) {
+    var depth = 0;
+    for (var j = i; j < this.script.length; j++) {
+      var d = defOf(this.script[j].id);
+      if (!d) continue;
+      if (d.c) depth++;
+      else if (d.id === 'end') { depth--; if (depth === 0) return j; }
+    }
+    return -1;
+  };
+
+  Blocks.prototype.matchElse = function (i) {
+    var depth = 0;
+    for (var j = i; j < this.script.length; j++) {
+      var d = defOf(this.script[j].id);
+      if (!d) continue;
+      if (d.c) depth++;
+      else if (d.id === 'end') { depth--; if (depth === 0) return -1; }
+      else if (d.id === 'else' && depth === 1) return j;
+    }
+    return -1;
+  };
+
+  Blocks.prototype.indentOf = function (i) {
+    var depth = 0;
+    for (var j = 0; j < i; j++) {
+      var d = defOf(this.script[j].id);
+      if (!d) continue;
+      if (d.c) depth++;
+      else if (d.id === 'end') depth = Math.max(0, depth - 1);
+    }
+    var self = defOf(this.script[i].id);
+    if (self && (self.id === 'end' || self.id === 'else')) depth = Math.max(0, depth - 1);
+    return depth;
+  };
+
+  Blocks.prototype.clear = function () {
+    this.script = [{ id: 'when_start' }];
+    this.stop();
+    this.onChange();
+  };
+
+  Blocks.prototype.fire = function (ev) {
+    for (var i = 0; i < this.script.length; i++) {
+      var d = defOf(this.script[i].id);
+      if (d && d.hat && d.ev === ev) {
+        this.threads.push({ pc: i + 1, wait: 0, stack: [] });
+      }
+    }
+  };
+
+  Blocks.prototype.run = function () {
+    this.running = true;
+    this.threads = [];
+    this.score = 0;
+    this.engine.fx.grow = 1;
+    this.fire('start');
+    this.onChange();
+  };
+
+  Blocks.prototype.stop = function () {
+    this.running = false;
+    this.threads = [];
+    this.engine.fx.spin = 0;
+    this.sunrise = 0;
+    this.onChange();
+  };
+
+  Blocks.prototype.say = function (txt, secs) {
+    this.banner = txt;
+    this.bannerT = secs || 1.8;
+  };
+
+  Blocks.prototype.cond = function (id) {
+    var g = this.game, e = this.engine;
+    switch (id) {
+      case 'touch_lava':  return g.near('lava');
+      case 'touch_coin':  return g.near('coin');
+      case 'all_coins':   return g.remaining('coin') === 0;
+      case 'has_key':     return g.keys > 0;
+      case 'timer5':      return g.time > 5;
+      case 'coins3':      return g.coins > 3;
+      case 'moving':      return !!e.fx.spin;
+      default:            return true;
+    }
+  };
+
+  Blocks.prototype.value = function (id) {
+    var g = this.game;
+    switch (id) {
+      case 'random': return 1 + Math.floor(Math.random() * 10);
+      case 'coins':  return g.coins;
+      case 'stars':  return g.stars;
+      case 'timer':  return +g.time.toFixed(1);
+      case 'deaths': return g.deaths;
+      default:       return 0;
+    }
+  };
+
+  Blocks.prototype.tick = function (dt) {
+    var e = this.engine;
+    e.fx.t += dt;
+    if (e.fx.spin) e.cam.yaw += e.fx.spin * dt;
+    if (this.sunrise && global.GmfyFX) {
+      var S = global.GmfyFX.state;
+      S.time = (S.time + this.sunrise * dt) % 1;
+    }
+    if (this.bannerT > 0) this.bannerT -= dt;
+    if (!this.running) return;
+
+    for (var ti = this.threads.length - 1; ti >= 0; ti--) {
+      var th = this.threads[ti];
+      if (th.wait > 0) { th.wait -= dt; continue; }
+      var budget = 20;
+      while (budget-- > 0) {
+        if (th.pc >= this.script.length) { this.threads.splice(ti, 1); break; }
+        var b = this.script[th.pc];
+        var d = defOf(b.id);
+        if (!d) { th.pc++; continue; }
+        if (d.hat) { this.threads.splice(ti, 1); break; }   // next script starts here
+        var r = this.exec(b, d, th);
+        if (r === 'yield') break;
+        if (r === 'dead') { this.threads.splice(ti, 1); break; }
+      }
+    }
+  };
+
+  Blocks.prototype.exec = function (b, d, th) {
+    var e = this.engine, g = this.game;
+    switch (d.id) {
+      case 'move':       e.move('f', (b.val || 4) * 0.03 * this.speed); break;
+      case 'turn_r':     e.cam.yaw += (b.val || 45) * Math.PI / 180; break;
+      case 'turn_l':     e.cam.yaw -= (b.val || 45) * Math.PI / 180; break;
+      case 'goto_start': e.cam.x = g.spawn.x; e.cam.z = g.spawn.z; break;
+      case 'goto_finish': this.toFinish(); break;
+      case 'spin':       e.fx.spin = (b.val || 1) * 0.6; break;
+      case 'stopspin':   e.fx.spin = 0; break;
+      case 'setspeed':   this.speed = b.val || 2; break;
+
+      case 'say':        this.say('Hi!'); break;
+      case 'think':      this.say('Hmm…'); break;
+      case 'grow':       e.fx.grow = Math.min(4, e.fx.grow * (1 + .25 * (b.val || 1))); break;
+      case 'shrink':     e.fx.grow = Math.max(.25, e.fx.grow * .75); break;
+      case 'setsize':    e.fx.grow = (b.val || 100) / 100; break;
+      case 'bounce':     e.fx.bounce = e.fx.bounce ? 0 : 1.4; break;
+      case 'plant':      this.spawn('tree'); break;
+      case 'drop_coin':  this.spawn('coin'); break;
+      case 'drop_lava':  this.spawn('lava'); break;
+      case 'setworld':   global.Gmfy.reskin(e.world, b.opt || 'forest'); break;
+      case 'nextworld':  this.nextWorld(); break;
+      case 'weather':    if (global.GmfyFX) global.GmfyFX.state.weather = b.opt || 'rain'; break;
+      case 'wind':       if (global.GmfyFX) global.GmfyFX.state.wind = (b.val || 0); break;
+      case 'settime':
+        if (global.GmfyFX) {
+          var m = { dawn:.25, noon:.5, dusk:.75, night:0 };
+          global.GmfyFX.state.time = m[b.opt] !== undefined ? m[b.opt] : .5;
+        }
+        break;
+      case 'sunrise':    this.sunrise = 0.06; break;
+      case 'raise':      if (global.GmfyFX) global.GmfyFX.sculpt(e.world, e.cam.x, e.cam.z, 5, 1.2); break;
+      case 'lower':      if (global.GmfyFX) global.GmfyFX.sculpt(e.world, e.cam.x, e.cam.z, 5, -1.2); break;
+
+      case 'play':       beep(b.opt || 'pop'); break;
+      case 'play_wait':  th.wait = beep(b.opt || 'coin'); th.pc++; return 'yield';
+      case 'stop_snd':   break;
+      case 'volume':     vol = (b.val || 75) / 100; break;
+
+      case 'wait':       th.wait = b.val || 1; th.pc++; return 'yield';
+      case 'wait_until':
+        if (!this.cond(b.opt)) return 'yield';                 // re-test next frame
+        break;
+      case 'repeat': {
+        var top = th.stack[th.stack.length - 1];
+        if (!top || top.at !== th.pc) th.stack.push({ at: th.pc, left: b.val || 4 });
+        break;
+      }
+      case 'forever': {
+        var t2 = th.stack[th.stack.length - 1];
+        if (!t2 || t2.at !== th.pc) th.stack.push({ at: th.pc, forever: true });
+        break;
+      }
+      case 'if': {
+        if (!this.cond(b.opt)) {
+          var els = this.matchElse(th.pc);
+          var end = this.matchEnd(th.pc);
+          th.pc = (els >= 0 ? els : end) + 1;
+          return 'ok';
+        }
+        th.stack.push({ at: th.pc, iff: true });
+        break;
+      }
+      case 'else': {
+        // reached while running the true branch -> skip to the closing end
+        var depth = 1;
+        for (var j = th.pc + 1; j < this.script.length; j++) {
+          var dd = defOf(this.script[j].id);
+          if (!dd) continue;
+          if (dd.c) depth++;
+          else if (dd.id === 'end') { depth--; if (depth === 0) { th.pc = j; break; } }
+        }
+        break;
+      }
+      case 'end': {
+        var fr = th.stack[th.stack.length - 1];
+        if (fr && fr.forever) { th.pc = fr.at + 1; return 'yield'; }
+        if (fr && fr.left !== undefined) {
+          fr.left--;
+          if (fr.left > 0) { th.pc = fr.at + 1; return 'yield'; }
+          th.stack.pop();
+        } else if (fr && fr.iff) {
+          th.stack.pop();
+        }
+        break;
+      }
+      case 'stop_all':   this.stop(); return 'dead';
+      case 'broadcast':  this.fire('msg'); break;
+
+      case 'reset_timer': g.time = 0; break;
+      case 'show_coins':  this.say('Coins: ' + g.coins); break;
+      case 'show_timer':  this.say('Timer: ' + g.time.toFixed(1) + 's'); break;
+
+      case 'set_score':    this.score = this.value(b.opt); break;
+      case 'change_score': this.score += (b.val || 1); break;
+      case 'show_score':   this.say('Score: ' + this.score); break;
+
+      case 'op_add':   this.score += (b.val || 5); break;
+      case 'op_sub':   this.score -= (b.val || 1); break;
+      case 'op_mul':   this.score *= (b.val || 2); break;
+      case 'op_div':   this.score = (b.val ? this.score / b.val : this.score); break;
+      case 'op_round': this.score = Math.round(this.score); break;
+      case 'op_rand':  this.score = 1 + Math.floor(Math.random() * (b.val || 10)); break;
+      case 'op_min':   this.score = Math.min(this.score, b.val || 50); break;
+    }
+    th.pc++;
+    return 'ok';
+  };
+
+  Blocks.prototype.spawn = function (kind) {
+    var w = this.engine.world, lim = global.Gmfy.SPAN * .42;
+    var kd = global.Gmfy.KIND[kind] || global.Gmfy.KIND.tree;
+    w.props.push({ kind: kind,
+      x: (Math.random() - .5) * 2 * lim, z: (Math.random() - .5) * 2 * lim,
+      h: kind === 'tree' ? 2 + Math.random() * 3 : 1.2,
+      w: kind === 'lava' ? 1.2 : .7, col: kd.col });
+  };
+
+  Blocks.prototype.toFinish = function () {
+    var w = this.engine.world;
+    for (var i = 0; i < w.props.length; i++) {
+      if (w.props[i].kind === 'finish') {
+        this.engine.cam.x = w.props[i].x;
+        this.engine.cam.z = w.props[i].z - 2;
+        return;
+      }
+    }
+    this.say('no finish flag yet');
+  };
+
+  Blocks.prototype.nextWorld = function () {
+    var keys = Object.keys(global.Gmfy.BIOMES);
+    var i = keys.indexOf(this.engine.world.biomeKey);
+    global.Gmfy.reskin(this.engine.world, keys[(i + 1) % keys.length]);
+  };
+
+  Blocks.CATS = CATS;
+  Blocks.DEFS = DEFS;
+  Blocks.defOf = defOf;
+  Blocks.optLabel = optLabel;
+  Blocks.beep = beep;
+  global.GmfyBlocks = Blocks;
+})(window);
+
+</script>
+<script>
+/* gmfy — app shell: auth, build, blocks, play, games, class, plan. */
+(function () {
+  'use strict';
+
+  var el = function (id) { return document.getElementById(id); };
+  var engine, maker, blocks, game, held = null, last = 0, started = false;
+  var curGame = null, catFilter = 'events';
+
+  /* ---------------- auth ---------------- */
+  var mode = 'signup';
+
+  function paintAuth() {
+    var up = (mode === 'signup');
+    el('a-go').textContent = up ? 'Create account' : 'Sign in';
+    el('a-swap').innerHTML = up ? 'Already have an account? <b>Sign in</b>'
+                                : 'New here? <b>Create an account</b>';
+    el('a-err').textContent = '';
+  }
+
+  function wireAuth() {
+    paintAuth();
+    el('a-swap').addEventListener('click', function () {
+      mode = (mode === 'signup') ? 'signin' : 'signup';
+      paintAuth();
+    });
+    el('a-go').addEventListener('click', submit);
+    el('a-pass').addEventListener('keydown', function (e) { if (e.key === 'Enter') submit(); });
+
+    function submit() {
+      el('a-go').disabled = true;
+      el('a-err').textContent = '';
+      var op = (mode === 'signup') ? window.GmfyAuth.signUp : window.GmfyAuth.signIn;
+      op(el('a-mail').value, el('a-pass').value).then(function (res) {
+        el('a-go').disabled = false;
+        if (!res.ok) { el('a-err').textContent = res.error; return; }
+        el('a-pass').value = '';
+        enterApp();
+      });
+    }
+  }
+
+  function enterApp() {
+    var u = window.GmfyAuth.current();
+    el('auth').classList.add('hide');
+    el('app').classList.add('on');
+    el('who').textContent = u ? u.email : '';
+    if (!started) { startApp(); started = true; }
+    else { engine.resize(); refreshAll(); }
+  }
+
+  function leaveApp() {
+    window.GmfyAuth.signOut();
+    curGame = null;
+    el('app').classList.remove('on');
+    el('auth').classList.remove('hide');
+    mode = 'signin';
+    paintAuth();
+  }
+
+  /* ---------------- boot ---------------- */
+  function startApp() {
+    var canvas = el('c');
+    engine = new window.Gmfy.Engine(canvas);
+    window.GmfyFX.install();
+    maker  = new window.GmfyMaker(engine, refreshHud);
+    game   = new window.GmfyGame(engine, onGameEvent);
+    blocks = new window.GmfyBlocks(engine, game, paintScript);
+
+    maker.enter();
+    if (!maker.load(true)) maker.blank();
+
+    wireStage(canvas);
+    wireTabs();
+    wireBuild();
+    wireWorld();
+    wireBlocks();
+    wireGames();
+    wireClass();
+    wirePlan();
+    wireExport();
+    wireFX();
+    refreshAll();
+
+    window.addEventListener('resize', function () { engine.resize(); });
+    last = performance.now();
+    requestAnimationFrame(loop);
+  }
+
+  function refreshAll() {
+    buildPickers();
+    paintScript();
+    paintGames();
+    paintClass();
+    paintPlan();
+    refreshHud();
+    if (el('x-thumb') && !iconImg) el('x-thumb').textContent = 'g';
+  }
+
+  function refreshHud() {
+    var w = engine.world;
+    el('h-biome').textContent = w.biome.name;
+    el('h-objs').textContent = String(w.props.length);
+  }
+
+  function onGameEvent(ev) {
+    if (blocks && blocks.running) blocks.fire(ev);
+    if (ev === 'coin') window.GmfyBlocks.beep('coin');
+    if (ev === 'win')  window.GmfyBlocks.beep('win');
+    if (ev === 'die')  window.GmfyBlocks.beep('buzz');
+  }
+
+  /* ---------------- stage ---------------- */
+  function wireStage(canvas) {
+    var drag = null;
+    canvas.addEventListener('pointerdown', function (e) {
+      drag = { x:e.clientX, y:e.clientY, x0:e.clientX, y0:e.clientY, t0:Date.now(), moved:0 };
+      canvas.setPointerCapture(e.pointerId);
+    });
+    canvas.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      drag.moved += Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y);
+      engine.cam.yaw -= (e.clientX - drag.x) * 0.006;
+      engine.cam.pitch = Math.max(-0.15, Math.min(0.75,
+        engine.cam.pitch + (e.clientY - drag.y) * 0.0035));
+      drag.x = e.clientX; drag.y = e.clientY;
+    });
+    canvas.addEventListener('pointerup', function () {
+      if (drag && !game.playing && drag.moved < 10 && Date.now() - drag.t0 < 500) {
+        var r = canvas.getBoundingClientRect();
+        if (maker.tool === 'raise' || maker.tool === 'lower') {
+          var g = engine.pick(drag.x0 - r.left, drag.y0 - r.top);
+          if (g) {
+            window.GmfyFX.sculpt(engine.world, g.x, g.z, 5,
+                                 maker.tool === 'raise' ? 1.1 : -1.1);
+            refreshHud();
+          }
+        } else {
+          maker.tap(drag.x0 - r.left, drag.y0 - r.top);
+        }
+      }
+      drag = null;
+    });
+    canvas.addEventListener('pointercancel', function () { drag = null; });
+
+    Array.prototype.forEach.call(document.querySelectorAll('#pad button'), function (b) {
+      var k = b.getAttribute('data-k');
+      b.addEventListener('pointerdown', function (e) { e.preventDefault(); held = k; });
+      ['pointerup','pointerleave','pointercancel'].forEach(function (ev) {
+        b.addEventListener(ev, function () { if (held === k) held = null; });
+      });
+    });
+    el('out').addEventListener('click', leaveApp);
+  }
+
+  function wireTabs() {
+    var tabs = document.querySelectorAll('.tab');
+    Array.prototype.forEach.call(tabs, function (t) {
+      t.addEventListener('click', function () {
+        Array.prototype.forEach.call(tabs, function (x) { x.classList.remove('on'); });
+        t.classList.add('on');
+        var want = t.getAttribute('data-pane');
+        ['build','code','world','games','class','plan','export'].forEach(function (p) {
+          el('pane-' + p).classList.toggle('on', p === want);
+        });
+        maker.tool = (want === 'build') ? (maker.tool === 'look' ? 'place' : maker.tool) : 'look';
+      });
+    });
+  }
+
+  /* ---------------- build ---------------- */
+  function buildPickers() {
+    var kinds = el('mk-kinds');
+    kinds.innerHTML = '';
+    window.Gmfy.PROP_KINDS.forEach(function (k) {
+      var kd = window.Gmfy.KIND[k];
+      var b = document.createElement('button');
+      b.className = 'bi' + (k === maker.kind ? ' on' : '');
+      b.textContent = kd.label;
+      b.addEventListener('click', function () {
+        maker.kind = k;
+        maker.col = kd.col;
+        Array.prototype.forEach.call(kinds.children, function (c) { c.classList.remove('on'); });
+        b.classList.add('on');
+        paintSwatches();
+      });
+      kinds.appendChild(b);
+    });
+
+    var bio = el('mk-biomes');
+    bio.innerHTML = '';
+    Object.keys(window.Gmfy.BIOMES).forEach(function (key) {
+      var b = document.createElement('button');
+      b.className = 'bi' + (key === engine.world.biomeKey ? ' on' : '');
+      b.textContent = window.Gmfy.BIOMES[key].name;
+      b.addEventListener('click', function () {
+        maker.setBiome(key);
+        Array.prototype.forEach.call(bio.children, function (c) { c.classList.remove('on'); });
+        b.classList.add('on');
+        paintSwatches();
+      });
+      bio.appendChild(b);
+    });
+    paintSwatches();
+  }
+
+  function paintSwatches() {
+    var cols = el('mk-cols');
+    cols.innerHTML = '';
+    var kd = window.Gmfy.KIND[maker.kind];
+    var pal = [kd.col].concat(maker.palette.filter(function (c) { return c !== kd.col; }));
+    pal.slice(0, 6).forEach(function (c) {
+      var b = document.createElement('button');
+      b.className = 'sw' + (c === maker.col ? ' on' : '');
+      b.style.background = c;
+      b.addEventListener('click', function () {
+        maker.col = c;
+        Array.prototype.forEach.call(cols.children, function (x) { x.classList.remove('on'); });
+        b.classList.add('on');
+      });
+      cols.appendChild(b);
+    });
+  }
+
+  function wireBuild() {
+    var tools = el('mk-tools');
+    Array.prototype.forEach.call(tools.children, function (b) {
+      b.addEventListener('click', function () {
+        maker.tool = b.getAttribute('data-tool');
+        Array.prototype.forEach.call(tools.children, function (c) { c.classList.remove('on'); });
+        b.classList.add('on');
+      });
+    });
+    el('mk-size').addEventListener('input', function () { maker.size = this.value / 100; });
+    el('mk-undo').addEventListener('click', function () { maker.undo(); });
+    el('mk-clear').addEventListener('click', function () { maker.clear(); });
+  }
+
+  function wireFX() {
+    var FX = window.GmfyFX.state;
+
+    var box = el('w-weather');
+    box.innerHTML = '';
+    ['clear', 'rain', 'snow', 'fog'].forEach(function (k) {
+      var b = document.createElement('button');
+      b.className = 'bi' + (k === FX.weather ? ' on' : '');
+      b.textContent = k;
+      b.addEventListener('click', function () {
+        FX.weather = k;
+        Array.prototype.forEach.call(box.children, function (c) { c.classList.remove('on'); });
+        b.classList.add('on');
+      });
+      box.appendChild(b);
+    });
+
+    el('w-time').addEventListener('input', function () {
+      FX.time = this.value / 100;
+      el('w-tod').textContent = window.GmfyFX.label(FX.time);
+    });
+    el('w-wind').addEventListener('input', function () { FX.wind = +this.value; });
+
+    el('b-photo').addEventListener('click', function () {
+      var nm = curGame ? window.GmfyPlans.get(curGame).name : 'gmfy-world';
+      var ok = window.GmfyFX.photo(engine, window.GmfyExport.slug(nm));
+      el('w-hint').textContent = ok ? 'photo saved' : 'photo blocked by the browser';
+    });
+    el('b-ghost').addEventListener('click', function () {
+      FX.showGhost = !FX.showGhost;
+      this.classList.toggle('on', FX.showGhost);
+    });
+  }
+
+  function wireWorld() {
+    el('mk-relief').addEventListener('input', function () { maker.setRelief(this.value / 10); });
+    el('mk-new').addEventListener('click', function () {
+      maker.blank(engine.world.biomeKey); buildPickers();
+      el('w-hint').textContent = 'fresh world ready';
+    });
+    el('mk-save').addEventListener('click', saveCurrent);
+    el('mk-load').addEventListener('click', function () {
+      var ok = maker.load();
+      if (ok) buildPickers();
+      el('w-hint').textContent = ok ? 'world loaded' : 'nothing saved yet';
+    });
+  }
+
+  function saveCurrent() {
+    maker.save();
+    if (curGame) {
+      window.GmfyPlans.save(curGame, {
+        biomeKey: engine.world.biomeKey, relief: maker.relief, props: engine.world.props
+      }, blocks.script);
+      el('w-hint').textContent = 'saved to "' + (window.GmfyPlans.get(curGame) || {}).name + '"';
+      paintGames();
+    } else {
+      el('w-hint').textContent = 'world saved to this device';
+    }
+  }
+
+  /* ---------------- blocks ---------------- */
+  function blockEl(def, b, i, inScript) {
+    var btn = document.createElement('button');
+    var col = window.GmfyBlocks.CATS[def.cat].col;
+    btn.className = 'blk' + (def.hat ? ' hat' : '');
+    btn.style.background = col;
+    if (inScript) btn.style.marginLeft = (blocks.indentOf(i) * 12) + 'px';
+
+    var span = document.createElement('span');
+    span.textContent = def.label;
+    btn.appendChild(span);
+
+    if (def.arg || def.opt) {
+      var v = document.createElement('span');
+      v.className = 'v';
+      v.textContent = def.arg
+        ? ((b && b.val !== undefined ? b.val : def.arg.val) + (def.arg.unit || ''))
+        : window.GmfyBlocks.optLabel(def.opt, (b && b.opt) || def.val);
+      btn.appendChild(v);
+      if (inScript) v.addEventListener('click', function (e) { e.stopPropagation(); blocks.bump(i); });
+    }
+    if (!def.hat) {
+      var nub = document.createElement('span');
+      nub.className = 'nub';
+      nub.style.background = col;
+      btn.appendChild(nub);
+    }
+    return btn;
+  }
+
+  function wireBlocks() {
+    var cats = el('bl-cats');
+    Object.keys(window.GmfyBlocks.CATS).forEach(function (key) {
+      var c = window.GmfyBlocks.CATS[key];
+      var b = document.createElement('button');
+      b.className = 'cat' + (key === catFilter ? ' on' : '');
+      b.style.background = c.col;
+      b.textContent = c.name;
+      b.addEventListener('click', function () {
+        catFilter = key;
+        Array.prototype.forEach.call(cats.children, function (x) { x.classList.remove('on'); });
+        b.classList.add('on');
+        paintPalette();
+      });
+      cats.appendChild(b);
+    });
+    paintPalette();
+
+    el('bl-clear').addEventListener('click', function () { blocks.clear(); });
+    el('b-run').addEventListener('click', function () {
+      blocks.run();
+      el('b-run').hidden = true; el('b-stop').hidden = false;
+    });
+    el('b-stop').addEventListener('click', function () {
+      blocks.stop(); game.stop();
+      el('b-run').hidden = false; el('b-stop').hidden = true;
+    });
+    el('b-play').addEventListener('click', function () {
+      game.start();
+      blocks.run();
+      el('b-run').hidden = true; el('b-stop').hidden = false;
+    });
+  }
+
+  function paintPalette() {
+    var pal = el('bl-palette');
+    pal.innerHTML = '';
+    window.GmfyBlocks.DEFS.forEach(function (d) {
+      if (d.cat !== catFilter) return;
+      var b = blockEl(d, null, -1, false);
+      b.addEventListener('click', function () { blocks.add(d.id); });
+      pal.appendChild(b);
+    });
+  }
+
+  function paintScript() {
+    var s = el('bl-script');
+    if (!s) return;
+    s.innerHTML = '';
+    blocks.script.forEach(function (b, i) {
+      var d = window.GmfyBlocks.defOf(b.id);
+      if (!d) return;
+      var node = blockEl(d, b, i, true);
+      if (i > 0) node.addEventListener('click', function () { blocks.removeAt(i); });
+      s.appendChild(node);
+    });
+    if (blocks.script.length === 1) {
+      var e = document.createElement('div');
+      e.className = 'empty';
+      e.textContent = 'Pick a category, tap blocks to add them, then Run.';
+      s.appendChild(e);
+    }
+    if (!blocks.running) { el('b-run').hidden = false; el('b-stop').hidden = true; }
+    refreshHud();
+  }
+
+  /* ---------------- games ---------------- */
+  function wireGames() {
+    el('g-import').addEventListener('click', function () {
+      var res = window.GmfyPlans.importShare(el('g-code').value);
+      if (!res.ok) { el('g-hint').textContent = res.error; return; }
+      el('g-code').value = '';
+      el('g-hint').textContent = 'added "' + res.name + '" to your games';
+      openGame(res.id);
+    });
+    el('g-new').addEventListener('click', function () {
+      var P = window.GmfyPlans;
+      if (!P.canCreate()) {
+        el('g-hint').textContent = 'You have used all ' + P.current().limit +
+          ' games on ' + P.current().name + ' — upgrade in the Plan tab.';
+        return;
+      }
+      var res = P.create(el('g-name').value.trim(), {
+        biomeKey: engine.world.biomeKey, relief: maker.relief, props: engine.world.props
+      });
+      if (!res.ok) { el('g-hint').textContent = 'Could not create that game.'; return; }
+      el('g-name').value = '';
+      curGame = res.id;
+      P.save(curGame, { biomeKey: engine.world.biomeKey, relief: maker.relief,
+                        props: engine.world.props }, blocks.script);
+      el('g-hint').textContent = 'created — this is now your open game';
+      paintGames();
+    });
+  }
+
+  function paintGames() {
+    var P = window.GmfyPlans, list = P.games(), box = el('g-list');
+    var rem = P.remaining();
+    var sl = P.shareLimit(), sLeft = P.sharesLeft();
+    el('q-line').innerHTML = 'Plan <b>' + P.current().name + '</b> &middot; ' +
+      list.length + ' of ' + (P.current().limit === Infinity ? '∞' : P.current().limit) +
+      ' games' + (rem === Infinity ? '' : ' &middot; <b>' + rem + '</b> left') +
+      ' &middot; shared ' + P.myShares().length + '/' + (sl === Infinity ? '∞' : sl);
+    box.innerHTML = '';
+    if (!list.length) {
+      box.innerHTML = '<div class="empty">No games yet — name one and hit Create.</div>';
+      return;
+    }
+    list.forEach(function (g) {
+      var row = document.createElement('div');
+      row.className = 'grow' + (g.id === curGame ? ' on' : '');
+      var nm = document.createElement('div');
+      nm.className = 'nm';
+      nm.textContent = g.name;
+      row.appendChild(nm);
+
+      var open = document.createElement('button');
+      open.textContent = (g.id === curGame) ? 'open' : 'Open';
+      open.addEventListener('click', function () { openGame(g.id); });
+      row.appendChild(open);
+
+      var code = P.shareOf(g.id);
+      if (code) {
+        var chip = document.createElement('span');
+        chip.className = 'sc';
+        chip.textContent = code;
+        row.appendChild(chip);
+      }
+
+      var sh = document.createElement('button');
+      sh.className = code ? 'shared' : '';
+      sh.textContent = code ? 'Unshare' : 'Share';
+      sh.addEventListener('click', function () {
+        if (code) {
+          P.unshare(code);
+          el('g-hint').textContent = 'stopped sharing "' + g.name + '"';
+        } else {
+          var res = P.share(g.id);
+          el('g-hint').textContent = res.ok
+            ? 'share code for "' + g.name + '": ' + res.code
+            : res.error;
+        }
+        paintGames();
+      });
+      row.appendChild(sh);
+
+      var del = document.createElement('button');
+      del.textContent = 'Delete';
+      del.addEventListener('click', function () {
+        P.remove(g.id);
+        if (curGame === g.id) curGame = null;
+        paintGames();
+      });
+      row.appendChild(del);
+      box.appendChild(row);
+    });
+  }
+
+  function openGame(id) {
+    var g = window.GmfyPlans.get(id);
+    if (!g) return;
+    curGame = id;
+    if (g.world) {
+      var w = window.Gmfy.worldFromSpec(
+        { biome: g.world.biomeKey, props: g.world.props, relief: g.world.relief }, 'maker');
+      w.source = 'maker';
+      maker.relief = g.world.relief || 1;
+      engine.load(w);
+      maker.syncPalette();
+    }
+    if (g.script && g.script.length) blocks.script = g.script;
+    buildPickers();
+    paintScript();
+    paintGames();
+    el('g-hint').textContent = 'opened "' + g.name + '"';
+  }
+
+  /* ---------------- class ---------------- */
+  function wireClass() {
+    el('c-join').addEventListener('click', function () {
+      var res = window.GmfyPlans.joinClass(el('c-code').value);
+      el('c-hint').textContent = res.ok ? 'joined ' + res.room.name : res.error;
+      paintClass();
+    });
+    el('c-make').addEventListener('click', function () {
+      var code = window.GmfyPlans.createClass(el('c-name').value.trim());
+      el('c-hint').textContent = 'class created — share code ' + code;
+      paintClass();
+    });
+    el('c-leave').addEventListener('click', function () {
+      window.GmfyPlans.leaveClass();
+      paintClass();
+    });
+  }
+
+  function paintClass() {
+    var c = window.GmfyPlans.myClass();
+    el('c-none').hidden = !!c;
+    el('c-in').hidden = !c;
+    if (!c) return;
+    el('c-title').textContent = c.room.name;
+    el('c-role').textContent = (c.role === 'teacher')
+      ? 'You are the teacher. Share this code:' : 'You joined with this code:';
+    el('c-show').textContent = c.code;
+    el('c-members').innerHTML = '<b>' + c.room.members.length + '</b> student' +
+      (c.room.members.length === 1 ? '' : 's') + ' joined on this device';
+  }
+
+  /* ---------------- plan ---------------- */
+  function wirePlan() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-plan]'), function (b) {
+      b.addEventListener('click', function () {
+        window.GmfyPlans.setPlan(b.getAttribute('data-plan'));
+        paintPlan();
+        paintGames();
+      });
+    });
+  }
+
+  function paintPlan() {
+    var cur = window.GmfyPlans.current().id;
+    ['free','pro','max'].forEach(function (p) {
+      el('p-' + p).classList.toggle('on', p === cur);
+      var btn = document.querySelector('[data-plan="' + p + '"]');
+      if (btn) btn.textContent = (p === cur) ? 'Current plan' : ('Choose ' + p.toUpperCase());
+    });
+  }
+
+  /* ---------------- export ---------------- */
+  var iconImg = null;
+
+  function wireExport() {
+    el('x-pick').addEventListener('click', function () { el('x-file').click(); });
+    el('x-file').addEventListener('change', function () {
+      var f = this.files && this.files[0];
+      if (!f) return;
+      var rd = new FileReader();
+      rd.onload = function () {
+        var im = new Image();
+        im.onload = function () {
+          iconImg = im;
+          el('x-thumb').style.backgroundImage = 'url(' + im.src + ')';
+          el('x-thumb').textContent = '';
+          el('x-iconname').textContent = f.name + ' · ' + im.width + '×' + im.height;
+          if (im.width < 512 || im.height < 512)
+            el('x-hint').textContent = 'tip: 512×512 or larger keeps icons sharp';
+        };
+        im.onerror = function () { el('x-hint').textContent = 'could not read that image'; };
+        im.src = rd.result;
+      };
+      rd.readAsDataURL(f);
+    });
+
+    el('x-cordova').addEventListener('click', function () { doExport('cordova'); });
+    el('x-electron').addEventListener('click', function () { doExport('electron'); });
+  }
+
+  function doExport(target) {
+    var g = curGame ? window.GmfyPlans.get(curGame) : null;
+    var name = (el('x-name').value.trim()) || (g && g.name) || 'My Game';
+    var pkg = (el('x-pkg').value.trim()) || ('com.gmfy.' + window.GmfyExport.slug(name).replace(/-/g, ''));
+    var payload = {
+      name: name,
+      world: { biomeKey: engine.world.biomeKey, relief: maker.relief, props: engine.world.props },
+      script: blocks.script
+    };
+    el('x-out').textContent = 'packing ' + target + ' project…';
+    el('x-cordova').disabled = el('x-electron').disabled = true;
+
+    window.GmfyExport.build(target, { name: name, pkg: pkg, game: payload }, iconImg)
+      .then(function (res) {
+        var kb = Math.max(1, Math.round(res.blob.size / 1024));
+        var ok = window.GmfyExport.save(res.blob, res.filename);
+        el('x-out').innerHTML = '<b>' + res.filename + '</b> · ' + res.count +
+          ' files · ' + kb + ' KB';
+        el('x-hint').textContent = ok
+          ? (target === 'cordova' ? 'unzip, then: cordova platform add android && cordova build android'
+                                  : 'unzip, then: npm install && npm start')
+          : 'download blocked by the browser — try again from a desktop browser';
+      })
+      .catch(function (e) {
+        el('x-out').textContent = 'export failed: ' + (e && e.message ? e.message : e);
+      })
+      .then(function () {
+        el('x-cordova').disabled = el('x-electron').disabled = false;
+      });
+  }
+
+  /* ---------------- loop ---------------- */
+  function loop(now) {
+    var dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    if (held) engine.move(held, dt * (game.playing ? blocks.speed * 0.6 : 1));
+    blocks.tick(dt);
+    game.tick(dt);
+    engine.render();
+    game.draw(engine.ctx, engine.w, engine.h);
+    if (blocks.bannerT > 0 && blocks.banner) drawBanner(blocks.banner);
+    requestAnimationFrame(loop);
+  }
+
+  function drawBanner(txt) {
+    var ctx = engine.ctx;
+    ctx.save();
+    ctx.font = 'bold 17px -apple-system,Roboto,sans-serif';
+    var w = ctx.measureText(txt).width;
+    ctx.fillStyle = 'rgba(124,92,255,.92)';
+    ctx.beginPath();
+    ctx.roundRect(engine.w / 2 - w / 2 - 14, engine.h - 96, w + 28, 36, 11);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.fillText(txt, engine.w / 2, engine.h - 72);
+    ctx.restore();
+  }
+
+  /* ---------------- start ---------------- */
+  function boot() {
+    if (window.__gmfyBooted) return;
+    window.__gmfyBooted = true;
+    wireAuth();
+    if (window.GmfyAuth.current()) enterApp();
+  }
+
+  document.addEventListener('deviceready', boot, false);
+  if (document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(boot, 300);
+  else window.addEventListener('load', function () { setTimeout(boot, 300); });
+})();
+
+</script>
+</body>
+</html>
