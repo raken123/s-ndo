@@ -32,7 +32,9 @@ function freeNeighbour(map, x, y) {
 
 (async () => {
   const browser = await chromium.launch({
-    executablePath: process.env.CHROMIUM_PATH || undefined
+    executablePath: process.env.CHROMIUM_PATH || undefined,
+    // headless chromium needs a software GL stack for WebGL
+    args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader']
   });
   const page = await browser.newPage({ viewport: { width: 900, height: 480 } });
   const errors = [];
@@ -58,7 +60,7 @@ function freeNeighbour(map, x, y) {
     // exits must refuse until their requirements are met
     if ((def.exitRequires || []).length) {
       const ex = await page.evaluate(() => __blackgate.state.exit);
-      await page.evaluate((e) => { __blackgate.tp(e.x, e.y); __blackgate.act(); }, ex);
+      await page.evaluate((e) => { __blackgate.tp(e.x, e.y); __blackgate.face(e.x, e.y + 1); __blackgate.act(); }, ex);
       await page.waitForTimeout(120);
       check(await page.evaluate(() => __blackgate.mode === 'play'), 'exit refuses without the required item');
     }
@@ -66,7 +68,9 @@ function freeNeighbour(map, x, y) {
     // collect every item
     for (const it of def.items || []) {
       const [nx, ny] = freeNeighbour(def.map, it.x, it.y);
-      await page.evaluate((a) => { __blackgate.tp(a[0], a[1]); __blackgate.act(); }, [nx, ny]);
+      await page.evaluate((a) => {
+        __blackgate.tp(a[0], a[1]); __blackgate.face(a[2], a[3]); __blackgate.act();
+      }, [nx, ny, it.x, it.y]);
       await page.waitForTimeout(120);
       check(await page.evaluate((id) => __blackgate.progress.inventory.includes(id), it.id), `picked up ${it.name}`);
     }
@@ -78,7 +82,9 @@ function freeNeighbour(map, x, y) {
       let pos = null;
       def.map.forEach((row, y) => { const x = row.indexOf(ch); if (x >= 0) pos = [x, y]; });
       const [nx, ny] = freeNeighbour(def.map, pos[0], pos[1]);
-      await page.evaluate((a) => { __blackgate.tp(a[0], a[1]); __blackgate.act(); }, [nx, ny]);
+      await page.evaluate((a) => {
+        __blackgate.tp(a[0], a[1]); __blackgate.face(a[2], a[3]); __blackgate.act();
+      }, [nx, ny, pos[0], pos[1]]);
       await page.waitForTimeout(120);
       const opened = await page.evaluate((p) => __blackgate.state.grid[p[1]][p[0]] === '+', pos);
       check(opened, `door '${ch}' unlocked with the ${def.locks[ch].item}`);
@@ -89,7 +95,9 @@ function freeNeighbour(map, x, y) {
       let pos = null;
       def.map.forEach((row, y) => { const x = row.indexOf('F'); if (x >= 0 && !pos) pos = [x + 12, y]; });
       const [nx, ny] = [pos[0], pos[1] - 1];
-      await page.evaluate((a) => { __blackgate.tp(a[0], a[1]); __blackgate.act(); }, [nx, ny]);
+      await page.evaluate((a) => {
+        __blackgate.tp(a[0], a[1]); __blackgate.face(a[2], a[3]); __blackgate.act();
+      }, [nx, ny, pos[0], pos[1]]);
       await page.waitForTimeout(120);
       check(await page.evaluate((p) => __blackgate.state.grid[p[1]][p[0]] === ',', pos), 'fence cut with the wire cutters');
     }

@@ -13,7 +13,9 @@
   "author": "Blackgate",
   "license": "MIT",
   "devDependencies": {
-    "cordova-android": "^14.0.1"
+    "cordova-android": "^14.0.1",
+    "esbuild": "^0.28.1",
+    "three": "^0.185.1"
   },
   "cordova": {
     "platforms": [

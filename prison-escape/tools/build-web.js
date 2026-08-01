@@ -12,14 +12,17 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
 const html = read('www/index.html');
 const css = read('www/css/style.css');
-const js = read('www/js/levels.js') + '\n' + read('www/js/game.js');
+const js = [
+  'www/js/lib/three.bundle.js',
+  'www/js/levels.js',
+  'www/js/world.js',
+  'www/js/game.js'
+].map(read).join('\n;\n');
 
 const body = html
   .replace(/[\s\S]*?<body>/, '')
   .replace(/<\/body>[\s\S]*/, '')
-  .replace(/\s*<script src="cordova\.js"><\/script>/, '')
-  .replace(/\s*<script src="js\/levels\.js"><\/script>/, '')
-  .replace(/\s*<script src="js\/game\.js"><\/script>/, '')
+  .replace(/\s*<script src="[^"]*"><\/script>/g, '')
   .trim();
 
 const out = `<title>Escape from Blackgate</title>

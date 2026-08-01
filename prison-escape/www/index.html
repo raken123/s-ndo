@@ -5,14 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="format-detection" content="telephone=no">
   <meta name="msapplication-tap-highlight" content="no">
-  <meta name="theme-color" content="#0a0c11">
+  <meta name="theme-color" content="#07090d">
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self' data: gap: https://ssl.gstatic.com; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data:; script-src 'self'">
+        content="default-src 'self' data: gap: https://ssl.gstatic.com; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: blob:; script-src 'self'">
   <title>Escape from Blackgate</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <canvas id="game"></canvas>
+  <div id="damage"></div>
 
   <!-- HUD -->
   <div id="hud">
@@ -27,30 +28,29 @@
         </div>
         <div id="hud-obj" class="obj">Get out of the cell</div>
       </div>
+      <canvas id="minimap" width="132" height="132"></canvas>
       <button id="btn-pause" aria-label="Pause">❚❚</button>
     </div>
 
     <div class="meters">
-      <div class="meter" title="How much of you they can see">
-        <label>SEEN</label><div class="track"><i id="bar-eye" class="fill eye"></i></div>
-      </div>
-      <div class="meter" title="Wing alert level">
-        <label>ALERT</label><div class="track"><i id="bar-alarm" class="fill alarm"></i></div>
-      </div>
-      <div class="meter" title="Stamina">
-        <label>WIND</label><div class="track"><i id="bar-stam" class="fill stam"></i></div>
-      </div>
+      <div class="meter"><label>SEEN</label><div class="track"><i id="bar-eye" class="fill eye"></i></div></div>
+      <div class="meter"><label>ALERT</label><div class="track"><i id="bar-alarm" class="fill alarm"></i></div></div>
+      <div class="meter"><label>WIND</label><div class="track"><i id="bar-stam" class="fill stam"></i></div></div>
     </div>
 
     <div id="hud-inv" class="inv"></div>
     <div id="lockdown">LOCKDOWN</div>
+    <div id="crosshair"><i></i></div>
+    <div id="prompt"></div>
     <div id="toasts"></div>
   </div>
 
   <!-- touch controls -->
   <div id="touch-left"></div>
+  <div id="touch-right"></div>
   <div id="stick"><i id="stick-nub"></i></div>
   <div id="buttons">
+    <button id="btn-sneak" class="pad">SNEAK</button>
     <button id="btn-run" class="pad">RUN</button>
     <button id="btn-action" class="pad big">ACT</button>
   </div>
@@ -58,7 +58,9 @@
   <div id="overlay"></div>
 
   <script src="cordova.js"></script>
+  <script src="js/lib/three.bundle.js"></script>
   <script src="js/levels.js"></script>
+  <script src="js/world.js"></script>
   <script src="js/game.js"></script>
 </body>
 </html>

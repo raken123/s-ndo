@@ -1,7 +1,9 @@
 # Escape from Blackgate
 
-A top-down stealth game about breaking out of a prison, packaged as an Android
-app with Apache Cordova. One night, five chapters, roughly **15 minutes** of play.
+A first-person stealth game about breaking out of a prison, packaged as an
+Android app with Apache Cordova. One night, five chapters, roughly
+**15 minutes** of play. Rendered in 3D with three.js; no assets are loaded —
+every texture is drawn on a canvas at startup.
 
 ![icon](res/android/icon/xxhdpi.png)
 
@@ -30,21 +32,34 @@ alert level that escalates to a lockdown sweep, patrol → investigate → chase
 search AI on BFS pathfinding, cameras, searchlights, cover bushes, a disguise
 that fails at close range, stamina, three chances, and per-chapter saves.
 
+**Rendering:** the game rules run on a 32px logic tile grid; `world.js` builds a
+three.js scene from that same grid — wall shells merged into one buffer with
+hidden faces culled, a floor baked to a single texture, hinged doors, chain-link
+fence, bushes, watchtowers, ceiling strip lights, a starfield over the yard, and
+guards whose torch beams pool on the floor so you can read where they are
+looking. Every texture is generated on a canvas at load; nothing is downloaded.
+
 **Controls**
 
-| | Touch | Keyboard |
+| | Touch | Keyboard / mouse |
 |---|---|---|
-| Move | drag anywhere on the left half | WASD / arrows |
-| Sneak | push the stick gently | Ctrl or C |
+| Look | drag on the right half | move the mouse (click once to capture it) |
+| Move | drag on the left half | WASD / arrows |
+| Sneak | SNEAK button, or a gentle push on the stick | Ctrl or C |
 | Run | RUN button | Shift |
-| Search / unlock / cut / use exit | ACT button | E or Space |
+| Search / unlock / cut / use exit | ACT button | E, Space, or click |
 | Pause | ❚❚ | Esc or P |
+
+Whatever is under the crosshair and within arm's reach gets a prompt, so ACT is
+always one button.
 
 ## Building it yourself
 
 ```bash
-npm install                # pulls cordova-android
-node tools/make-icon.js    # regenerates every icon density from code
+npm install                 # cordova-android, three, esbuild
+node tools/bundle-three.js  # three.js -> a classic script for file:// (Cordova)
+node tools/make-icon.js     # regenerates every icon density from code
+node tools/build-web.js     # optional single-file browser build
 cordova build android --debug
 ```
 
@@ -67,14 +82,18 @@ node tools/playtest.js --shots /tmp/shots
 ## Layout
 
 ```
-www/index.html        app shell, HUD, touch controls
-www/css/style.css     HUD + screens
-www/js/levels.js      the five maps (ASCII tiles) and all level data
-www/js/game.js        engine: movement, vision, AI, rendering, flow
-tools/make-icon.js    dependency-free PNG icon generator (SDF → hand-encoded PNG)
-tools/playtest.js     end-to-end play-through test
-res/android/icon/     generated launcher icons, ldpi → xxxhdpi
-dist/                 built APK
+www/index.html          app shell, HUD, crosshair, touch zones
+www/css/style.css       HUD + screens
+www/js/levels.js        the five maps (ASCII tiles) and all level data
+www/js/world.js         builds the 3D scene from a level: geometry, textures, props
+www/js/game.js          movement, look, vision, hearing, AI, flow, minimap
+www/js/lib/three.bundle.js  generated — do not edit by hand
+tools/bundle-three.js   esbuild wrapper that produces the above
+tools/make-icon.js      dependency-free PNG icon generator (SDF → hand-encoded PNG)
+tools/build-web.js      inlines everything into one standalone HTML file
+tools/playtest.js       end-to-end play-through test
+res/android/icon/       generated launcher icons, ldpi → xxxhdpi
+dist/                   built APK + single-file web build
 ```
 
 ## Adding a chapter
