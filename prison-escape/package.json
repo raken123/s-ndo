@@ -1,0 +1,23 @@
+{
+  "name": "escape-from-blackgate",
+  "displayName": "Escape from Blackgate",
+  "version": "1.0.0",
+  "description": "A top-down stealth prison-escape game, packaged with Apache Cordova.",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "icons": "node tools/make-icon.js",
+    "build": "cordova build android --debug",
+    "release": "cordova build android --release"
+  },
+  "author": "Blackgate",
+  "license": "MIT",
+  "devDependencies": {
+    "cordova-android": "^14.0.1"
+  },
+  "cordova": {
+    "platforms": [
+      "android"
+    ]
+  }
+}
