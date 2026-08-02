@@ -15,7 +15,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FRAMES = os.path.join(HERE, "out", "frames")
-OUT_MP4 = os.path.join(HERE, "out", "kinger_on_claude.mp4")
+OUT_MP4 = os.environ.get(
+    "COMPOSE_OUT", os.path.join(HERE, "out", "kinger_on_claude.mp4")
+)
 
 FPS = 24
 

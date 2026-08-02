@@ -2,6 +2,8 @@
 out/frames/
 out/preview/
 out/render.log
+# work-in-progress encodes; only the final mp4 is committed
+out/preview_wip.mp4
 # Blender's rolling backup of the saved scene
 *.blend1
 __pycache__/
