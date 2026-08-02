@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<meta name="color-scheme" content="dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap:; connect-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; media-src *; img-src 'self' data:;">
+<title>Gmfy</title>
+<style>
+  :root{
+    --bg:#05060a; --ink:#e9ecf5; --muted:#8a91a8;
+    --violet:#7c5cff; --cyan:#22d3ee; --gold:#f5c542; --pink:#ec4899;
+    --panel:#111320; --line:rgba(255,255,255,.10);
+    --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden}
+  body{
+    background:radial-gradient(120% 80% at 20% 0%,#1a1430 0%,var(--bg) 60%),var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    user-select:none;-webkit-user-select:none;
+  }
+  .mark{font-weight:800;letter-spacing:-1.2px;
+    background:linear-gradient(90deg,var(--violet),var(--cyan));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+
+  /* ---------------- auth ---------------- */
+  #auth{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;
+    justify-content:center;padding:30px 26px calc(30px + var(--safe-b));
+    background:radial-gradient(120% 70% at 25% 8%,#241a48 0%,#05060a 62%),var(--bg)}
+  #auth.hide{display:none}
+  #auth .mark{font-size:56px}
+  #auth .sub{color:var(--muted);font-size:14px;margin:8px 0 34px}
+  .field{margin-bottom:13px}
+  .field label{display:block;font-size:11px;color:#5c6379;text-transform:uppercase;
+    letter-spacing:.06em;margin-bottom:7px}
+  .field input{width:100%;background:var(--panel);border:1px solid var(--line);
+    border-radius:14px;padding:16px;color:var(--ink);font-size:16px;font-family:inherit;
+    outline:none}
+  .field input:focus{border-color:rgba(124,92,255,.8)}
+  #a-go{width:100%;margin-top:9px;padding:17px;border:none;border-radius:15px;color:#fff;
+    font-size:16px;font-weight:700;font-family:inherit;
+    background:linear-gradient(135deg,var(--violet),var(--cyan))}
+  #a-go:active{filter:brightness(.86)}
+  #a-go:disabled{opacity:.5}
+  #a-err{min-height:20px;margin-top:12px;font-size:13px;color:#ff8a8a;text-align:center}
+
+  /* ---------------- checkout ---------------- */
+  #pay{position:fixed;inset:0;z-index:60;display:none;align-items:flex-end;
+    justify-content:center;background:rgba(3,4,8,.66)}
+  #pay.on{display:flex}
+  #pay .sheet{width:100%;max-width:520px;background:var(--panel);
+    border:1px solid var(--line);border-bottom:none;
+    border-radius:22px 22px 0 0;padding:22px 22px calc(22px + var(--safe-b));
+    box-shadow:0 -14px 40px rgba(0,0,0,.5)}
+  #pay h4{font-size:20px;display:flex;align-items:center;gap:8px}
+  #pay .plan-tag{font-size:12px;font-weight:700;color:#062012;background:var(--cyan);
+    border-radius:999px;padding:3px 10px}
+  #pay .amt{margin:4px 0 16px;color:var(--muted);font-size:13px}
+  #pay label{display:block;font-size:11px;color:#5c6379;text-transform:uppercase;
+    letter-spacing:.06em;margin:12px 0 6px}
+  #pay input{width:100%;background:#0b0d17;border:1px solid var(--line);
+    border-radius:12px;padding:14px;color:var(--ink);font-size:16px;
+    font-family:ui-monospace,Menlo,monospace;outline:none}
+  #pay input:focus{border-color:rgba(124,92,255,.8)}
+  #pay input.bad{border-color:#ff6b6b}
+  #pay .two{display:flex;gap:12px}
+  #pay .two>div{flex:1}
+  #pay .brand{position:absolute;right:14px;margin-top:-40px;float:right;
+    font-size:12px;color:var(--muted);pointer-events:none}
+  #pay-go{width:100%;margin-top:18px;padding:16px;border:none;border-radius:14px;
+    color:#fff;font-size:16px;font-weight:700;font-family:inherit;
+    background:linear-gradient(135deg,var(--violet),var(--cyan))}
+  #pay-go:active{filter:brightness(.86)}
+  #pay-cancel{width:100%;margin-top:8px;padding:12px;border:none;background:none;
+    color:var(--muted);font-size:14px;font-family:inherit}
+  #pay-err{min-height:18px;margin-top:10px;font-size:13px;color:#ff8a8a;text-align:center}
+  #pay .demo{margin-top:12px;font-size:11px;color:#5c6379;line-height:1.5;text-align:center}
+  #pay .ok{text-align:center;padding:14px 4px 2px}
+  #pay .ok .big{font-size:44px;line-height:1;margin-bottom:12px}
+  #pay .ok h4{justify-content:center;font-size:19px}
+  #pay .ok p{color:var(--muted);font-size:14px;margin:10px 0;line-height:1.5}
+  #pay .ok .paid{color:var(--cyan);font-weight:700}
+  #a-swap{margin-top:6px;text-align:center;font-size:13.5px;color:var(--muted)}
+  #a-swap b{color:var(--cyan)}
+  .legal{position:absolute;left:26px;right:26px;bottom:calc(16px + var(--safe-b));
+    text-align:center;font-size:10.5px;color:#3f4658;line-height:1.5}
+
+  /* ---------------- app ---------------- */
+  #app{display:none;flex-direction:column;height:100%;
+    padding-top:var(--safe-t);padding-bottom:var(--safe-b)}
+  #app.on{display:flex}
+
+  header{display:flex;align-items:center;gap:10px;padding:8px 14px 6px;flex:0 0 auto}
+  header .mark{font-size:22px}
+  .spacer{flex:1}
+  #who{font-size:11px;color:var(--muted);background:rgba(255,255,255,.05);
+    border-radius:999px;padding:6px 11px;max-width:150px;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  #out{background:none;border:1px solid var(--line);color:var(--muted);border-radius:999px;
+    padding:6px 11px;font-size:11px;font-family:inherit}
+
+  /* the viewport now owns the screen — edge to edge */
+  #stage{position:relative;flex:1 1 auto;min-height:0;margin:0;border-radius:0;
+    overflow:hidden;border:none;background:#9fd4f2}
+  /* ultra-big mode: the tool sheet folds away and the viewport takes it all */
+  #app.big .sheet{display:none}
+  #app.big header{padding:6px 12px 4px}
+  #tools-toggle{background:none;border:1px solid var(--line);color:var(--muted);
+    border-radius:999px;padding:6px 12px;font-size:11px;font-family:inherit}
+  canvas{display:block;width:100%;height:100%;touch-action:none}
+  /* free-tier watermark, tiled across the viewport (hidden on paid plans) */
+  #watermark{position:absolute;inset:0;z-index:4;display:none;pointer-events:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='190'><text x='10' y='150' fill='rgba(255,255,255,0.13)' font-family='Arial,sans-serif' font-size='34' font-weight='700' transform='rotate(-24 150 95)'>made with gmfy</text></svg>");
+    background-repeat:repeat}
+  /* rotating in-app ad banner (Free only) */
+  #adbar{position:absolute;left:50%;transform:translateX(-50%);top:64px;z-index:8;
+    display:none;align-items:center;gap:9px;max-width:calc(100% - 24px);
+    background:rgba(10,12,20,.86);border:1px solid rgba(255,255,255,.14);
+    border-radius:13px;padding:8px 10px 8px 12px}
+  #adbar .ad-dot{flex:0 0 auto;width:22px;height:22px;border-radius:7px;background:#ff4d6d}
+  #adbar .ad-txt{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+  #adbar .ad-brand{font-size:13px;font-weight:800}
+  #adbar .ad-tag{font-size:11.5px;color:#c7ccd8;white-space:nowrap;overflow:hidden;
+    text-overflow:ellipsis;max-width:44vw}
+  #adbar .ad-label{flex:0 0 auto;font-size:9px;font-weight:700;color:#8a91a8;
+    border:1px solid rgba(255,255,255,.2);border-radius:5px;padding:1px 5px}
+  #ad-remove{flex:0 0 auto;border:none;border-radius:9px;padding:7px 11px;font-size:11px;
+    font-weight:700;font-family:inherit;color:#fff;
+    background:linear-gradient(135deg,var(--violet),var(--cyan))}
+  /* fullscreen video-ad interstitial */
+  #vad{position:fixed;inset:0;z-index:90;display:none;background:#000}
+  #vad.on{display:block}
+  #vad video{width:100%;height:100%;object-fit:cover;background:#000}
+  #vad-skip{position:absolute;right:14px;bottom:calc(20px + var(--safe-b));
+    border:none;border-radius:12px;padding:12px 18px;font-size:14px;font-weight:700;
+    font-family:inherit;color:#fff;background:rgba(10,12,20,.72);
+    border:1px solid rgba(255,255,255,.25)}
+  #vad-skip.ready{background:rgba(255,255,255,.92);color:#0a0c12}
+  #vad-remove{position:absolute;left:14px;bottom:calc(20px + var(--safe-b));
+    border:none;border-radius:12px;padding:12px 16px;font-size:13px;font-weight:700;
+    font-family:inherit;color:#fff;background:linear-gradient(135deg,var(--violet),var(--cyan))}
+  #hud{position:absolute;left:10px;top:10px;font-size:10.5px;color:#20304a;
+    background:rgba(255,255,255,.72);padding:5px 9px;border-radius:9px;line-height:1.45;
+    pointer-events:none;font-weight:600}
+  #hud b{color:#0b7ea8}
+  #pad{position:absolute;right:10px;bottom:10px;display:grid;gap:5px;
+    grid-template-columns:repeat(3,40px);grid-template-rows:repeat(2,40px)}
+  #pad button{background:rgba(8,10,18,.55);border:1px solid rgba(255,255,255,.22);
+    color:#fff;border-radius:11px;font-size:15px;font-family:inherit}
+  #pad button:active{background:rgba(124,92,255,.6)}
+  .g-up{grid-column:2;grid-row:1}.g-l{grid-column:1;grid-row:2}
+  .g-d{grid-column:2;grid-row:2}.g-r{grid-column:3;grid-row:2}
+  #runbar{position:absolute;left:10px;bottom:10px;display:flex;gap:6px}
+  #runbar button{border:none;border-radius:11px;padding:9px 15px;font-size:13px;
+    font-weight:700;font-family:inherit;color:#062012;background:#3ddc84}
+  #runbar #b-stop{background:#ff6b6b;color:#2a0808}
+  #fxbar{position:absolute;right:10px;top:10px;display:flex;gap:6px}
+  #fxbar .ghostbtn{background:rgba(8,10,18,.62);color:#9aa4bd;
+    border:1px solid rgba(255,255,255,.20);border-radius:10px;padding:7px 12px;
+    font-size:11.5px;font-weight:700;font-family:inherit}
+  #fxbar .ghostbtn.on{color:#bfe9ff;border-color:rgba(140,220,255,.65)}
+  .todlab{flex:0 0 auto;font-size:11px;color:var(--cyan);min-width:64px;text-align:right}
+  #runbar button:disabled{opacity:.4}
+
+  /* ---------------- bottom sheet ---------------- */
+  .sheet{flex:0 0 auto;padding:8px 12px 10px}
+  .tabs{display:flex;gap:5px;background:rgba(255,255,255,.04);border-radius:12px;
+    padding:4px;margin-bottom:9px}
+  .tab{flex:1;padding:9px;border:none;border-radius:9px;background:none;color:var(--muted);
+    font-size:13px;font-weight:600;font-family:inherit}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 6px rgba(0,0,0,.45)}
+  .pane{display:none;max-height:212px;overflow-y:auto}
+  .pane.on{display:block}
+
+  .r{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .lab{flex:0 0 46px;font-size:10px;color:#5c6379;text-transform:uppercase;letter-spacing:.05em}
+  .strip{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .strip::-webkit-scrollbar{display:none}
+  .seg{display:flex;gap:5px;flex:1}
+  .seg button{flex:1;padding:8px;border:1px solid var(--line);border-radius:10px;
+    background:rgba(255,255,255,.03);color:var(--muted);font-size:12px;font-family:inherit}
+  .seg button.on{border-color:var(--violet);color:var(--ink);background:rgba(124,92,255,.2)}
+  .bi{flex:0 0 auto;font-size:11.5px;padding:7px 12px;border-radius:999px;
+    border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--muted);
+    font-family:inherit;white-space:nowrap}
+  .bi.on{border-color:var(--cyan);color:var(--ink)}
+  .sw{flex:0 0 auto;width:28px;height:28px;border-radius:8px;border:2px solid transparent;padding:0}
+  .sw.on{border-color:#fff}
+  .sliders{gap:12px}
+  .sliders label{flex:1;display:flex;align-items:center;gap:7px;font-size:10px;
+    color:#5c6379;text-transform:uppercase;letter-spacing:.05em}
+  .sliders input{flex:1;accent-color:var(--violet);background:transparent}
+  .btns{gap:5px}
+  .btns button{flex:1;padding:10px 6px;border:1px solid var(--line);border-radius:10px;
+    background:rgba(255,255,255,.03);color:var(--ink);font-size:12px;font-family:inherit}
+  .btns button:active{background:rgba(124,92,255,.3)}
+  .hint{text-align:center;font-size:10px;color:#4d5468;margin-top:6px}
+
+  /* ---------------- blocks ---------------- */
+  .bwrap{display:flex;gap:8px}
+  .bcol{flex:1;min-width:0}
+  .bcol h4{font-size:10px;color:#5c6379;text-transform:uppercase;letter-spacing:.06em;
+    margin-bottom:6px}
+  .palette,.script{max-height:150px;overflow-y:auto;scrollbar-width:none}
+  .palette::-webkit-scrollbar,.script::-webkit-scrollbar{display:none}
+  .blk{position:relative;display:flex;align-items:center;gap:6px;width:100%;
+    border:none;border-radius:8px;padding:8px 9px;margin-bottom:5px;color:#12131c;
+    font-size:11.5px;font-weight:700;font-family:inherit;text-align:left;line-height:1.25}
+  .blk .nub{position:absolute;left:13px;bottom:-4px;width:14px;height:5px;border-radius:0 0 4px 4px;
+    background:inherit}
+  .blk.hat{border-radius:12px 12px 8px 8px}
+  .blk .v{background:rgba(255,255,255,.85);border-radius:999px;padding:2px 8px;
+    font-size:11px;color:#12131c;flex:0 0 auto}
+  .blk.now{outline:3px solid #fff;outline-offset:1px}
+  .script .blk{cursor:pointer}
+  .empty{font-size:11px;color:#4d5468;padding:8px 2px}
+  .cats{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;margin-bottom:7px}
+  .cats::-webkit-scrollbar{display:none}
+  .cat{flex:0 0 auto;font-size:11px;font-weight:700;padding:6px 11px;border-radius:999px;
+    border:none;color:#12131c;font-family:inherit;opacity:.5}
+  .cat.on{opacity:1;outline:2px solid rgba(255,255,255,.75)}
+  .blk .ind{flex:0 0 auto;width:0}
+  .card{border:1px solid var(--line);border-radius:13px;padding:12px;margin-bottom:8px;
+    background:rgba(255,255,255,.03)}
+  .card h5{font-size:14px;margin-bottom:4px}
+  .card p{font-size:11.5px;color:var(--muted);line-height:1.45}
+  .card.on{border-color:var(--cyan);background:rgba(34,211,238,.09)}
+  .card .row2{display:flex;align-items:center;gap:8px;margin-top:8px}
+  .card button{padding:8px 13px;border-radius:9px;border:1px solid var(--line);
+    background:rgba(255,255,255,.05);color:var(--ink);font-size:12px;font-family:inherit}
+  .price{font-size:11px;color:var(--gold);font-weight:700}
+  .code{font-family:ui-monospace,Menlo,monospace;font-size:26px;letter-spacing:.14em;
+    color:var(--cyan);font-weight:700}
+  .glist{max-height:180px;overflow-y:auto;scrollbar-width:none}
+  .grow{display:flex;align-items:center;gap:8px;padding:10px;border-radius:11px;
+    border:1px solid var(--line);margin-bottom:6px;background:rgba(255,255,255,.03)}
+  .grow.on{border-color:var(--violet);background:rgba(124,92,255,.14)}
+  .grow .nm{flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .grow button{padding:6px 10px;font-size:11px;border-radius:8px;border:1px solid var(--line);
+    background:none;color:var(--muted);font-family:inherit}
+  .grow .sc{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--cyan);
+    letter-spacing:.06em;background:rgba(34,211,238,.12);border-radius:6px;padding:3px 7px}
+  .grow button.shared{border-color:var(--cyan);color:var(--cyan)}
+  .quota{font-size:11px;color:var(--muted);margin-bottom:8px}
+  .quota b{color:var(--cyan)}
+  .iconbtn{display:flex;align-items:center;gap:12px;width:100%;padding:10px;
+    border:1px dashed rgba(255,255,255,.22);border-radius:13px;background:rgba(255,255,255,.03);
+    color:var(--ink);font-family:inherit;text-align:left}
+  .iconbtn .ico{flex:0 0 auto;width:54px;height:54px;border-radius:13px;
+    background:linear-gradient(135deg,var(--violet),var(--cyan));background-size:cover;
+    background-position:center;display:grid;place-items:center;color:#fff;font-weight:800;
+    font-size:26px}
+  .iconbtn .txt{font-size:12.5px;line-height:1.5}
+  .iconbtn .txt i{color:var(--muted);font-style:normal;font-size:11px}
+  input.txt{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:11px;
+    padding:12px;color:var(--ink);font-size:14px;font-family:inherit;outline:none}
+
+  /* ---------------- homepage ---------------- */
+  #home{position:fixed;inset:0;z-index:70;display:none;flex-direction:column;
+    overflow-y:auto;background:radial-gradient(120% 70% at 20% 0%,#1a1430 0%,#05060a 60%),var(--bg);
+    padding:calc(46px + var(--safe-t)) 26px calc(30px + var(--safe-b))}
+  #home.on{display:flex}
+  #home .hero{flex:0 0 auto;text-align:center;margin:auto 0}
+  #home .mark{font-size:74px}
+  #home .tag{font-size:20px;color:var(--ink);margin:16px 0 6px;font-weight:600}
+  #home .sub{font-size:14px;color:var(--muted);line-height:1.6;max-width:420px;margin:0 auto 26px}
+  #home .cta{display:inline-block;border:none;border-radius:15px;padding:16px 40px;color:#fff;
+    font-size:16px;font-weight:700;font-family:inherit;
+    background:linear-gradient(135deg,var(--violet),var(--cyan))}
+  #home .cta:active{filter:brightness(.86)}
+  #home .feats{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:34px auto 0;
+    max-width:560px}
+  #home .feat{flex:1 1 150px;min-width:150px;background:rgba(255,255,255,.04);
+    border:1px solid var(--line);border-radius:14px;padding:14px 16px;text-align:left}
+  #home .feat h6{font-size:13px;color:var(--ink);margin-bottom:4px}
+  #home .feat p{font-size:11.5px;color:var(--muted);line-height:1.5}
+  #home .foot{flex:0 0 auto;text-align:center;font-size:11px;color:#3f4658;margin-top:30px}
+
+  /* ---------------- invite codes ---------------- */
+  .invite-box{margin-top:10px;border:1px solid var(--line);border-radius:14px;padding:14px}
+  .invite-box h6{font-size:13px;margin-bottom:8px}
+  .invite-box .q{font-size:11px;color:var(--muted);margin-bottom:10px}
+  .code-row{display:flex;align-items:center;gap:8px;background:#0b0d17;border:1px solid var(--line);
+    border-radius:10px;padding:9px 12px;margin-bottom:6px;font-family:ui-monospace,Menlo,monospace}
+  .code-row .code{flex:1;font-size:13px;color:var(--ink);letter-spacing:.03em}
+  .code-row .used{font-size:10px;color:#5c6379;font-family:inherit}
+  .code-row.spent .code{color:#5c6379;text-decoration:line-through}
+  .invite-box button{border:none;border-radius:11px;padding:11px 16px;font-size:13px;
+    font-weight:700;font-family:inherit;color:#fff;
+    background:linear-gradient(135deg,var(--violet),var(--cyan))}
+  .invite-box button:disabled{opacity:.45}
+  .invite-box .row{gap:8px}
+  #inv-msg{min-height:16px;font-size:12px;margin-top:6px}
+  #inv-msg.ok{color:var(--cyan)} #inv-msg.err{color:#ff8a8a}
+  /* free restrictions list */
+  #free-count{font-size:11px;color:var(--muted);font-weight:600}
+  .free-row{display:flex;align-items:center;gap:8px;padding:7px 2px;
+    border-bottom:1px solid rgba(255,255,255,.06)}
+  .free-row .fi{flex:0 0 auto;width:18px;text-align:center;font-size:13px}
+  .free-row .fl{flex:1;font-size:12.5px;color:var(--ink);min-width:0}
+  .free-row.off .fl{color:var(--muted);text-decoration:line-through}
+  .free-row .fw{flex:0 0 auto;border:none;border-radius:9px;padding:6px 10px;
+    font-size:10.5px;font-weight:700;font-family:inherit;color:#0a0c12;
+    background:linear-gradient(135deg,var(--gold),#ffd977)}
+  .free-row .fw:disabled{opacity:.4;background:#2a2d38;color:var(--muted)}
+  .free-row .fu{flex:0 0 auto;font-size:10px;color:var(--muted)}
+
+  /* ad-blocker / VPN ban overlay */
+  #ban{position:fixed;inset:0;z-index:70;display:none;align-items:center;
+    justify-content:center;background:rgba(0,0,0,.8);padding:20px}
+  #ban.on{display:flex}
+  #ban .sheet{width:100%;max-width:400px;background:var(--panel);
+    border:1px solid var(--line);border-radius:18px;padding:28px 24px;
+    text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.6)}
+  #ban h3{font-size:22px;margin-bottom:12px}
+  #ban p{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:16px}
+  #ban .timer{font-size:48px;font-weight:700;font-family:ui-monospace,monospace;
+    color:var(--gold);margin:18px 0;letter-spacing:2px}
+  #ban .sub{font-size:12px;margin-bottom:18px}
+  #ban-recheck{width:100%;padding:14px;border:none;border-radius:12px;
+    background:linear-gradient(135deg,var(--violet),var(--cyan));color:#fff;
+    font-size:15px;font-weight:700;font-family:inherit}
+  #ban-recheck:active{filter:brightness(.86)}
+</style>
+</head>
+<body>
+
+<!-- ============ homepage ============ -->
+<div id="home">
+  <div class="hero">
+    <div class="mark">gmfy</div>
+    <div class="tag">Build 3D games without a bit of code.</div>
+    <div class="sub">Sculpt a world, drop in coins and hazards, snap together
+      Scratch-style blocks, and play it — all in your browser, all on the free plan.</div>
+    <button id="home-start" class="cta">Start building</button>
+    <div class="feats">
+      <div class="feat"><h6>Shape a world</h6><p>Raise hills, carve valleys, set the weather and the time of day.</p></div>
+      <div class="feat"><h6>No code</h6><p>Fifty-seven Scratch-style blocks. Snap them together and press Run.</p></div>
+      <div class="feat"><h6>Third-person</h6><p>A big viewport and a chase camera over your world.</p></div>
+      <div class="feat"><h6>Share &amp; invite</h6><p>Send a game by code, or gift a friend your plan for three months.</p></div>
+    </div>
+  </div>
+  <div class="foot">gmfy 3.4.0 · everything runs on this device</div>
+</div>
+
+<!-- ============ sign in ============ -->
+<div id="auth">
+  <div class="mark">gmfy</div>
+  <div class="sub">Build 3D games — without a bit of code.</div>
+
+  <div class="field">
+    <label for="a-mail">Email</label>
+    <input id="a-mail" type="email" autocomplete="username" autocapitalize="none"
+           spellcheck="false" placeholder="you@example.com">
+  </div>
+  <div class="field">
+    <label for="a-pass">Password</label>
+    <input id="a-pass" type="password" autocomplete="current-password"
+           placeholder="at least 6 characters">
+  </div>
+
+  <button id="a-go">Create account</button>
+  <div id="a-err"></div>
+  <div id="a-swap">Already have an account? <b>Sign in</b></div>
+
+  <div class="legal">Accounts are stored on this device only.</div>
+</div>
+
+<!-- ============ app ============ -->
+<div id="app">
+  <header>
+    <div class="mark">gmfy</div>
+    <div class="spacer"></div>
+    <button id="tools-toggle">Tools</button>
+    <div id="who">—</div>
+    <button id="out">Sign out</button>
+  </header>
+
+  <div id="stage">
+    <canvas id="c"></canvas>
+    <div id="watermark"></div>
+    <div id="adbar">
+      <span class="ad-dot"></span>
+      <div class="ad-txt"><b class="ad-brand">Tendar</b><span class="ad-tag">Try Tendar Today</span></div>
+      <span class="ad-label">Ad</span>
+      <button id="ad-remove">Remove ads</button>
+    </div>
+    <div id="hud">world <b id="h-biome">—</b><br>things <b id="h-objs">0</b></div>
+    <div id="runbar">
+      <button id="b-play">Play</button>
+      <button id="b-run">Run</button>
+      <button id="b-stop" hidden>Stop</button>
+    </div>
+    <div id="fxbar">
+      <button id="b-photo" class="ghostbtn">Photo</button>
+      <button id="b-ghost" class="ghostbtn on">Ghost</button>
+    </div>
+    <div id="pad">
+      <button class="g-up" data-k="f">&#9650;</button>
+      <button class="g-l"  data-k="l">&#9664;</button>
+      <button class="g-d"  data-k="b">&#9660;</button>
+      <button class="g-r"  data-k="r">&#9654;</button>
+    </div>
+  </div>
+
+  <div class="sheet">
+    <div class="tabs">
+      <button class="tab on" data-pane="build">Build</button>
+      <button class="tab"    data-pane="code">Code</button>
+      <button class="tab"    data-pane="world">World</button>
+      <button class="tab"    data-pane="games">Games</button>
+      <button class="tab"    data-pane="class">Class</button>
+      <button class="tab"    data-pane="plan">Plan</button>
+      <button class="tab"    data-pane="export">Export</button>
+    </div>
+
+    <!-- Build -->
+    <div class="pane on" id="pane-build">
+      <div class="r"><span class="lab">Tool</span>
+        <div class="seg" id="mk-tools">
+          <button data-tool="place" class="on">Place</button>
+          <button data-tool="erase">Erase</button>
+          <button data-tool="look">Look</button>
+          <button data-tool="raise">Raise</button>
+          <button data-tool="lower">Lower</button>
+        </div>
+      </div>
+      <div class="r"><span class="lab">Thing</span><div class="strip" id="mk-kinds"></div></div>
+      <div class="r"><span class="lab">Colour</span><div class="strip" id="mk-cols"></div></div>
+      <div class="r sliders"><label>Size <input type="range" id="mk-size" min="8" max="90" value="30"></label></div>
+      <div class="r btns">
+        <button id="mk-undo">Undo</button>
+        <button id="mk-clear">Clear</button>
+      </div>
+      <div class="hint" id="mk-hint">tap the ground to place &middot; drag to look around</div>
+    </div>
+
+    <!-- Code -->
+    <div class="pane" id="pane-code">
+      <div class="bwrap">
+        <div class="bcol">
+          <h4>Blocks</h4>
+          <div class="cats" id="bl-cats"></div>
+          <div class="palette" id="bl-palette"></div>
+        </div>
+        <div class="bcol">
+          <h4>Script</h4>
+          <div class="script" id="bl-script"></div>
+        </div>
+      </div>
+      <div class="r btns" style="margin-top:7px">
+        <button id="bl-clear">Clear script</button>
+      </div>
+      <div class="hint">tap a block to add it &middot; tap a script block to remove &middot; tap its number to change</div>
+    </div>
+
+    <!-- World -->
+    <div class="pane" id="pane-world">
+      <div class="r"><span class="lab">World</span><div class="strip" id="mk-biomes"></div></div>
+      <div class="r"><span class="lab">Sky</span><div class="strip" id="w-weather"></div></div>
+      <div class="r sliders">
+        <label>Time <input type="range" id="w-time" min="0" max="100" value="50"></label>
+        <span id="w-tod" class="todlab">noon</span>
+      </div>
+      <div class="r sliders">
+        <label>Wind <input type="range" id="w-wind" min="-3" max="3" value="0"></label>
+        <label>Hills <input type="range" id="mk-relief" min="0" max="28" value="9"></label>
+      </div>
+      <div class="r btns">
+        <button id="mk-new">New world</button>
+        <button id="mk-save">Save</button>
+        <button id="mk-load">Load</button>
+      </div>
+      <div class="hint" id="w-hint">worlds save to this device, per account</div>
+    </div>
+
+    <!-- Games -->
+    <div class="pane" id="pane-games">
+      <div class="quota" id="q-line">—</div>
+      <div class="r" style="gap:6px">
+        <input class="txt" id="g-name" placeholder="new game name" maxlength="28">
+        <button id="g-new" style="flex:0 0 auto;padding:12px 15px;border-radius:11px;border:none;
+          color:#fff;font-family:inherit;font-size:13px;font-weight:700;
+          background:linear-gradient(135deg,var(--violet),var(--cyan))">Create</button>
+      </div>
+      <div class="r" style="gap:6px">
+        <input class="txt" id="g-code" placeholder="add a game by code — ABC-123"
+               maxlength="7" autocapitalize="characters" spellcheck="false">
+        <button id="g-import" style="flex:0 0 auto;padding:12px 15px;border-radius:11px;
+          border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--ink);
+          font-family:inherit;font-size:13px">Add</button>
+      </div>
+      <div class="glist" id="g-list"></div>
+      <div class="hint" id="g-hint">each game keeps its own world and script</div>
+    </div>
+
+    <!-- Class (Edu) -->
+    <div class="pane" id="pane-class">
+      <div id="c-none">
+        <div class="card">
+          <h5>Join a class</h5>
+          <p>Enter the code your teacher gave you.</p>
+          <div class="row2">
+            <input class="txt" id="c-code" placeholder="ABC-123" maxlength="7"
+                   autocapitalize="characters" spellcheck="false">
+            <button id="c-join">Join</button>
+          </div>
+        </div>
+        <div class="card">
+          <h5>Teaching?</h5>
+          <p>Create a class and share the code with your students.</p>
+          <div class="row2">
+            <input class="txt" id="c-name" placeholder="Class name" maxlength="24">
+            <button id="c-make">Create</button>
+          </div>
+        </div>
+      </div>
+      <div id="c-in" hidden>
+        <div class="card on">
+          <h5 id="c-title">—</h5>
+          <p id="c-role">—</p>
+          <div class="code" id="c-show">—</div>
+          <div class="row2">
+            <button id="c-leave">Leave class</button>
+          </div>
+        </div>
+        <div class="quota" id="c-members">—</div>
+      </div>
+      <div class="hint" id="c-hint">Edu mode &middot; codes work on this device</div>
+    </div>
+
+    <!-- Plan -->
+    <div class="pane" id="pane-plan">
+      <div class="card" id="p-free">
+        <h5>Free <span class="price">$0</span></h5>
+        <p>Make up to <b>2 games</b> and share <b>1</b> at a time. Every building block and every code block included.</p>
+        <div class="row2"><button data-plan="free">Choose Free</button></div>
+      </div>
+      <div class="card" id="p-go">
+        <h5>Go <span class="price">$2/mo</span></h5>
+        <p>Make up to <b>50 games</b> and share <b>5</b> at a time. Everything in Free.</p>
+        <div class="row2"><button data-plan="go">Choose Go</button></div>
+      </div>
+      <div class="card" id="p-pro">
+        <h5>Pro <span class="price">$20/mo</span></h5>
+        <p>Make up to <b>1000 games</b> and share <b>25</b> at a time. Everything in Go.</p>
+        <div class="row2"><button data-plan="pro">Choose Pro</button></div>
+      </div>
+      <div class="card" id="p-max">
+        <h5>Max <span class="price">$390/mo</span></h5>
+        <p><b>Unlimited games</b> and <b>unlimited sharing</b>. Everything in Pro.</p>
+        <div class="row2"><button data-plan="max">Choose Max</button></div>
+      </div>
+
+      <div class="invite-box">
+        <h6>Invite a friend</h6>
+        <div class="q">You have <b id="inv-left">10</b> invite codes. Give one to a
+          friend and they get your plan free for <b>3 months</b>. You keep yours.</div>
+        <div id="inv-list"></div>
+        <div class="row"><button id="inv-mint">Create an invite code</button></div>
+      </div>
+
+      <div class="invite-box">
+        <h6>Got a code from a friend?</h6>
+        <div class="q">Enter it to get their plan free for 3 months.</div>
+        <div class="row">
+          <input class="txt" id="inv-code" placeholder="GMFY-XXXX-XXXX" autocapitalize="characters">
+          <button id="inv-redeem">Redeem</button>
+        </div>
+        <div id="inv-msg"></div>
+      </div>
+
+      <div class="invite-box" id="freebox">
+        <h6>Free plan restrictions <span id="free-count">(0 / 28 active)</span></h6>
+        <div class="q">Watch a rewarded ad to lift one for this session, or upgrade
+          to remove them all.</div>
+        <div id="free-list"></div>
+      </div>
+
+      <div class="hint">plans are stored on this device</div>
+    </div>
+
+    <!-- Export -->
+    <div class="pane" id="pane-export">
+      <div class="r">
+        <button id="x-pick" class="iconbtn">
+          <span class="ico" id="x-thumb"></span>
+          <span class="txt"><b>Upload icon</b><br><i id="x-iconname">using the gmfy mark</i></span>
+        </button>
+        <input type="file" id="x-file" accept="image/*" hidden>
+      </div>
+      <div class="r" style="gap:6px">
+        <input class="txt" id="x-name" placeholder="app name" maxlength="28">
+        <input class="txt" id="x-pkg" placeholder="com.you.game" maxlength="48"
+               autocapitalize="none" spellcheck="false">
+      </div>
+      <div class="r btns">
+        <button id="x-cordova">Cordova&nbsp;/&nbsp;APK</button>
+        <button id="x-electron">Electron&nbsp;/&nbsp;Desktop</button>
+      </div>
+      <div class="quota" id="x-out">exports a ready-to-build project .zip</div>
+      <div class="hint" id="x-hint">phones can't compile — build the zip on a computer</div>
+    </div>
+  </div>
+</div>
+
+<script src="cordova.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/engine.js"></script>
+<!-- checkout sheet -->
+<div id="pay">
+  <div class="sheet">
+    <div id="pay-form">
+      <h4>Upgrade to <span id="pay-plan" class="plan-tag">PRO</span></h4>
+      <div class="amt" id="pay-amt">$4/mo · card is validated, not charged</div>
+
+      <label for="pay-name">Name on card</label>
+      <input id="pay-name" type="text" autocomplete="cc-name" placeholder="Alex Rivera">
+
+      <label for="pay-num">Card number</label>
+      <input id="pay-num" type="text" inputmode="numeric" autocomplete="cc-number"
+             placeholder="4242 4242 4242 4242" maxlength="23">
+      <span class="brand" id="pay-brand"></span>
+
+      <div class="two">
+        <div>
+          <label for="pay-exp">Expiry</label>
+          <input id="pay-exp" type="text" inputmode="numeric" autocomplete="cc-exp"
+                 placeholder="MM/YY" maxlength="5">
+        </div>
+        <div>
+          <label for="pay-cvv">CVV</label>
+          <input id="pay-cvv" type="text" inputmode="numeric" autocomplete="cc-csc"
+                 placeholder="123" maxlength="4">
+        </div>
+      </div>
+
+      <div id="pay-err"></div>
+      <button id="pay-go">Validate card</button>
+      <button id="pay-cancel">Cancel</button>
+      <div class="demo">Demo checkout. Your card is only checked for a valid
+        format (Luhn, expiry, CVV). Nothing is sent, stored, or charged.</div>
+    </div>
+
+    <div id="pay-done" class="ok" style="display:none">
+      <div class="big">✓</div>
+      <h4>Card validated</h4>
+      <p><span id="pay-summary"></span> passed the format check and
+         <span class="paid">your plan is now active</span>.</p>
+      <p><b>No charge was made.</b> This is a demo — the card was validated
+         locally and nothing left your device.</p>
+      <button id="pay-close">Done</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/pay.js"></script>
+<script src="js/guard.js"></script>
+<!-- fullscreen video ad interstitial (free tier) -->
+<div id="vad">
+  <video id="vad-v" playsinline muted preload="auto"></video>
+  <button id="vad-skip">Skip in 5</button>
+  <button id="vad-remove">Remove ads →</button>
+</div>
+
+<!-- ad-blocker / VPN ban overlay -->
+<div id="ban">
+  <div class="sheet">
+    <h3>Access paused</h3>
+    <p id="ban-why">We detected an ad blocker.</p>
+    <div class="timer" id="ban-timer">60:00</div>
+    <p class="sub">The free plan is ad-supported. Disable your ad blocker to continue.</p>
+    <button id="ban-recheck">Check again</button>
+  </div>
+</div>
+
+<script src="js/plans.js"></script>
+<script src="js/freegate.js"></script>
+<script src="js/promos.js"></script>
+<script src="js/vidads.js"></script>
+<script src="js/export.js"></script>
+<script src="js/worldfx.js"></script>
+<script src="js/maker.js"></script>
+<script src="js/game.js"></script>
+<script src="js/blocks.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
