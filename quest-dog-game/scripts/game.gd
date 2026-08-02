@@ -46,6 +46,7 @@ var _shop_button_was_down := false
 var _trigger_was_down := false
 var _mouse_captured := false
 var _announcement_tween: Tween
+var _flash_tween: Tween
 
 
 func _ready() -> void:
@@ -386,6 +387,9 @@ func _build_player() -> void:
 	var flash_material := StandardMaterial3D.new()
 	flash_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	flash_material.albedo_color = Color(1, 0.1, 0.1, 0.0)
+	# A vignette rather than a full-screen wash: tinting the whole view red is
+	# both unreadable and uncomfortable in a headset.
+	flash_material.albedo_texture = _vignette_texture()
 	flash_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	flash_material.no_depth_test = true
 	flash_material.render_priority = 10
@@ -394,6 +398,19 @@ func _build_player() -> void:
 	_damage_flash.position = Vector3(0, 0, -1.0)
 	_damage_flash.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_camera.add_child(_damage_flash)
+
+
+## Transparent in the middle, solid at the edges.
+func _vignette_texture() -> ImageTexture:
+	var size := 96
+	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var centre := (size - 1) * 0.5
+	for y in range(size):
+		for x in range(size):
+			var distance := Vector2(x - centre, y - centre).length() / centre
+			var alpha := clampf((distance - 0.42) / 0.58, 0.0, 1.0)
+			image.set_pixel(x, y, Color(1, 1, 1, pow(alpha, 1.4)))
+	return ImageTexture.create_from_image(image)
 
 
 func _add_hand_mesh(controller: Node3D) -> void:
@@ -417,6 +434,7 @@ func _build_ui() -> void:
 		_hud.position = Vector3(-0.40, -0.25, -0.78)
 		_hud.scale = Vector3.ONE * 1.9
 	_hud.set_hint("Y / Tab: shop")
+	SaveGame.food_changed.connect(_hud.set_food)
 
 	_shop = KibbleShop.new()
 	add_child(_shop)
@@ -600,9 +618,11 @@ func damage_player(amount: float, _source: Vector3) -> void:
 	_pulse_haptic(0.8, 0.16)
 
 	var material: StandardMaterial3D = _damage_flash.material_override
-	material.albedo_color.a = 0.42
-	var tween := create_tween()
-	tween.tween_property(material, "albedo_color:a", 0.0, 0.45)
+	material.albedo_color.a = minf(material.albedo_color.a + 0.34, 0.62)
+	if _flash_tween != null and _flash_tween.is_valid():
+		_flash_tween.kill()
+	_flash_tween = create_tween()
+	_flash_tween.tween_property(material, "albedo_color:a", 0.0, 0.5)
 
 	if _health <= 0.0:
 		_down_player()
@@ -670,7 +690,6 @@ func _finish_wave() -> void:
 	_intermission_timer = INTERMISSION
 	var bonus := 25 + _wave * 15
 	SaveGame.add_food(bonus)
-	_hud.set_food(SaveGame.food)
 	_announce("Wave %d cleared!  +%d Dog Food" % [_wave, bonus], Color("7dff9b"), 3.5)
 	Sfx.play("buy", get_player_position(), -4.0)
 	_hud.set_hint("Shop open: %s" % ("Y button" if vr_mode else "Tab"))
@@ -733,7 +752,6 @@ func _unlock_golden(reason: String) -> void:
 
 func collect_food(value: int, golden: bool) -> void:
 	SaveGame.add_food(value)
-	_hud.set_food(SaveGame.food)
 	if golden:
 		_pulse_haptic(0.25, 0.05)
 

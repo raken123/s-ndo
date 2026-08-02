@@ -9,6 +9,25 @@ in [`build/DogBlasterVR.apk`](build/DogBlasterVR.apk) (29 MB, arm64, signed).
 
 ![The arena](docs/arena.png)
 
+## Watch it play itself
+
+[`docs/playtest.mp4`](docs/playtest.mp4) — 1 min 52 s, with sound — is a
+recording of `tools/demo.tscn`: a bot that boots the real game and plays it.
+Its mouse-look goes through the same `_unhandled_input` handler a human's
+would, and it shoots and shops with the same input actions the trigger and Y
+button are bound to, so the hits, the payouts and the purchases are all real.
+It clears two waves, buys and equips Cyber Hound, then kills a Golden Dog and
+wears the drop.
+
+```bash
+xvfb-run -s "-screen 0 1280x720x24" godot --path . --resolution 1280x720 \
+  --write-movie /tmp/demo.avi --fixed-fps 24 tools/demo.tscn
+ffmpeg -i /tmp/demo.avi -c:v libx264 -crf 28 -tune animation -c:a aac docs/playtest.mp4
+```
+
+Godot's Movie Maker renders on a fixed timestep, so the capture stays smooth
+even though this machine only has a software Vulkan driver.
+
 ## Install it on a headset
 
 1. Enable Developer Mode for your headset in the Meta Horizon phone app, then
@@ -115,13 +134,14 @@ Boots the real game headlessly and drives it: spawning, the kill → Dog Food �
 shop economy, buying and equipping, both Golden Dog unlock paths, the blaster,
 player damage, and the save round-trip. 30 checks.
 
-### Screenshots
+### Screenshots and video
 
 ```bash
 xvfb-run -s "-screen 0 1600x900x24" godot --path . tools/screenshot.tscn
 ```
 
-Poses the camera at a few angles and writes PNGs to `user://`.
+Poses the camera at a few angles and writes PNGs to `user://`. For the video,
+see "Watch it play itself" above.
 
 ### Regenerating generated files
 
@@ -163,6 +183,8 @@ Two details worth knowing if you extend it:
   squash and lean rather than per-limb rigging.
 - **UI panels are opaque on purpose.** Alpha-blended quads sort by distance to
   the camera, which drew the shop's backdrop over the tiles nearest its edges.
+- **The damage indicator is a vignette, not a full-screen tint.** Washing the
+  whole view red is uncomfortable in a headset and hides the thing biting you.
 
 ### Desktop fallback
 
