@@ -1,0 +1,25 @@
+# Build artifacts
+build/*.log
+build/*.png
+build/icons/
+build/mkdesktop.py
+build/mkicon.py
+build/repack.py
+build/theme_*.py
+
+# Ad rendering scripts and outputs
+ad/__pycache__/
+ad/*.py
+ad/*.log
+ad/*.png
+ad/*.txt
+
+# Node dependencies
+node_modules/
+package-lock.json
+
+# OS files
+.DS_Store
+*.swp
+*.swo
+*~
