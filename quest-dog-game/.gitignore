@@ -1,0 +1,18 @@
+# Godot's import cache and editor state
+.godot/
+*.translation
+
+# Godot's Android Gradle template (~200 MB) - tools/build_apk.sh unpacks it
+# from the installed export templates on demand.
+android/build/
+android/.build_version
+
+# Signing key. Keep your copy: Android only allows in-place upgrades of an app
+# with the key that first signed it.
+android/release.keystore
+*.keystore
+*.jks
+
+# Gradle/Android leftovers
+.gradle/
+android/build.gradle.bak

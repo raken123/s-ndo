@@ -1,0 +1,68 @@
+; Engine configuration file.
+; Dog Blaster VR - Meta Quest 3 / Quest 2 / Quest Pro (OpenXR)
+
+config_version=5
+
+[application]
+
+config/name="Dog Blaster VR"
+config/description="Blast cartoon dogs, earn Dog Food, and unlock skins for your own pup - including the ultra rare Golden Dog."
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.4", "Mobile")
+config/icon="res://icon.png"
+boot_splash/bg_color=Color(0.05, 0.07, 0.1, 1)
+boot_splash/show_image=false
+
+[autoload]
+
+Skins="*res://scripts/skins.gd"
+SaveGame="*res://scripts/save_manager.gd"
+DogFactory="*res://scripts/dog_factory.gd"
+Sfx="*res://scripts/sfx.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/vsync/vsync_mode=0
+window/stretch/mode="canvas_items"
+
+[debug]
+
+gdscript/warnings/shadowed_variable=0
+gdscript/warnings/shadowed_variable_base_class=0
+gdscript/warnings/integer_division=0
+gdscript/warnings/unused_parameter=0
+
+[layer_names]
+
+3d_physics/layer_1="world"
+3d_physics/layer_2="dogs"
+3d_physics/layer_3="player"
+3d_physics/layer_4="ui"
+3d_physics/layer_5="pickups"
+
+[physics]
+
+common/physics_ticks_per_second=72
+
+[rendering]
+
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+textures/vram_compression/import_etc2_astc=true
+anti_aliasing/quality/msaa_3d=2
+lights_and_shadows/directional_shadow/size=2048
+lights_and_shadows/directional_shadow/soft_shadow_filter_quality=1
+environment/defaults/default_clear_color=Color(0.42, 0.62, 0.85, 1)
+
+[xr]
+
+openxr/enabled=true
+openxr/default_action_map="res://openxr_action_map.tres"
+openxr/startup_alert=false
+openxr/extensions/hand_tracking=false
+openxr/extensions/meta/environment_depth=false
+openxr/foveation_level=2
+openxr/foveation_dynamic=true
+shaders/enabled=true
