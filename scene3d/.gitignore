@@ -1,0 +1,9 @@
+# render intermediates: the frame sequence is ~350 MB and rebuildable
+out/frames/
+out/preview/
+out/render.log
+# Blender's rolling backup of the saved scene
+*.blend1
+__pycache__/
+# local bpy virtualenv symlink
+bl
