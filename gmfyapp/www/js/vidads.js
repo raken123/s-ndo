@@ -11,9 +11,12 @@
 (function (global) {
   'use strict';
 
-  var CLIPS = ['tendar', 'snackrocket', 'riftrunner'];
+  var CLIPS = ['tendar', 'snackrocket', 'riftrunner', 'nimbusfit',
+               'bloomly', 'vaultly', 'pixelpaws', 'zenote'];
   var SKIP_AFTER = 5;      // seconds before Skip is allowed
-  var idx = 0;
+  // start somewhere random so a session doesn't always open on the same spot,
+  // then rotate so you never get the same clip twice in a row
+  var idx = Math.floor(Math.random() * CLIPS.length);
 
   function isFree() {
     return !global.GmfyPlans || global.GmfyPlans.current().id === 'free';

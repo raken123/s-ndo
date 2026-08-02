@@ -24,7 +24,14 @@
     { b: 'CloudCat',     t: 'Back up everything to CloudCat',c: '#7c5cff', k: 'app'    },
     { b: 'ZoomiScooters',t: 'Unlock a ride for $1',          c: '#22d3ee', k: 'travel' },
     { b: 'Munchr',       t: 'Swipe. Match. Eat. Munchr.',    c: '#ff4d6d', k: 'food'   },
-    { b: 'HyperFit',     t: '30-day body with HyperFit',     c: '#3ddc84', k: 'health' }
+    { b: 'HyperFit',     t: '30-day body with HyperFit',     c: '#3ddc84', k: 'health' },
+    // brands that also run a full-screen spot (see vidads.js) — one fake ad
+    // network across both surfaces
+    { b: 'NimbusFit',    t: "20 minutes a day. That's it.",  c: '#34d6a4', k: 'health' },
+    { b: 'Bloomly',      t: "Plants that don't die. 20% off",c: '#7cc85a', k: 'retail' },
+    { b: 'Vaultly',      t: 'Save without thinking',         c: '#388cff', k: 'fintech'},
+    { b: 'PixelPaws',    t: 'Adopt a pixel pup — play free', c: '#ec4899', k: 'game'   },
+    { b: 'Zenote',       t: 'Think in one place with Zenote',c: '#6e78ff', k: 'app'    }
   ];
 
   var idx = 0, timer = null;

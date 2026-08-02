@@ -261,6 +261,19 @@ with sync_playwright() as p:
                       "return window.GmfyFree.stats().active;})()") == 0)
     check("rewarded() exists on video ads",
           pg.evaluate("typeof window.GmfyVideoAds.rewarded === 'function'"))
+
+    # every clip the player can pick must actually be inlined, or a rotation
+    # step would land on a 404 / empty <video>
+    check("eight video ad clips",
+          pg.evaluate("window.GmfyVideoAds.clips.length") == 8,
+          pg.evaluate("window.GmfyVideoAds.clips.length"))
+    missing = pg.evaluate("window.GmfyVideoAds.clips.filter("
+                          "function(c){return !(window.GMFY_VIDEO||{})[c];})")
+    check("every clip is inlined in the standalone build", not missing, missing)
+    check("inlined clips are real mp4 data URIs",
+          pg.evaluate("Object.values(window.GMFY_VIDEO).every("
+                      "function(s){return s.indexOf('data:video/mp4;base64,')===0"
+                      " && s.length > 100000;})"))
     pg.evaluate("window.GmfyPlans.setPlan('free');")
 
     # ---- ad-blocker / VPN ban feature ----

@@ -19,7 +19,8 @@ VERSION = "3.4.0"
 SCRIPTS = ["auth.js", "engine.js", "pay.js", "plans.js", "guard.js", "freegate.js", "promos.js", "vidads.js",
            "export.js", "worldfx.js", "maker.js", "game.js", "blocks.js", "app.js"]
 EMBED = ["js/engine.js", "js/game.js", "js/blocks.js"]     # what export.js needs
-VIDADS = ["tendar", "snackrocket", "riftrunner"]           # ad/<id>.mp4 to inline
+VIDADS = ["tendar", "snackrocket", "riftrunner", "nimbusfit",      # ad/<id>.mp4
+          "bloomly", "vaultly", "pixelpaws", "zenote"]             # to inline
 
 
 def read(p):
