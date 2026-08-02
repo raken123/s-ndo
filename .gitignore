@@ -14,6 +14,14 @@ ad/*.log
 ad/*.png
 ad/*.txt
 
+# gmfyapp configuration and build files
+gmfyapp/config.xml
+gmfyapp/makeicons.py
+gmfyapp/package.json
+gmfyapp/package-lock.json
+gmfyapp/res/
+gmfyapp/.gitignore
+
 # Node dependencies
 node_modules/
 package-lock.json
