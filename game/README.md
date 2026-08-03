@@ -103,8 +103,16 @@ a guard cannot open. It caught three unwinnable levels during development.
 
 ## The build in this repo
 
-`build/PrisonBreak.apk` — release build, `arm64-v8a` + `armeabi-v7a`,
-minSdk 21 (Android 5.0+), signed with a debug key.
+Two release builds, both minSdk 21 (Android 5.0+), signed with a debug key:
+
+| File | Size | ABIs |
+|---|---|---|
+| `build/PrisonBreak.apk` | 44 MB | `arm64-v8a` + `armeabi-v7a` |
+| `build/PrisonBreak-arm64.apk` | 23 MB | `arm64-v8a` only |
+
+The arm64-only build covers every phone from roughly 2015 onward; take the
+dual-ABI one only if you need a 32-bit device. Build them with the `Android`
+and `Android arm64` presets respectively.
 
 Because it is signed with a debug key rather than a Play-issued one, Android
 will warn about installing from an unknown source; allow it for your browser or
