@@ -1,6 +1,6 @@
 # Prison Break
 
-A top-down stealth escape game built with **Godot 4.3**, packaged as an Android APK.
+A **3D** top-down stealth escape game built with **Godot 4.3**, packaged as an Android APK.
 
 Three blocks stand between you and the outside. Each one needs every keycard on
 the floor before the gate will open, and the guards are the only thing in your way.
@@ -44,22 +44,36 @@ game/
 ├── export_presets.cfg       # Android export preset
 ├── assets/                  # icon sources (SVG) and rendered PNGs
 ├── src/
-│   ├── main.gd              # level building, A* grid, game state machine
+│   ├── main.gd              # level/mesh building, A* grid, game state machine
 │   ├── main.tscn            # entry scene (everything else is built in code)
 │   ├── levels.gd            # the level grids and patrol routes
-│   ├── player.gd            # movement + visibility model
-│   ├── guard.gd             # patrol / suspect / chase AI, vision cones
+│   ├── player.gd            # CharacterBody3D movement + visibility model
+│   ├── guard.gd             # patrol / suspect / chase AI, vision cone meshes
 │   ├── hud.gd               # status bar, overlays, touch controls
-│   └── *_view.gd            # drawing for the level, doors, keycards, exit
+│   ├── keycard.gd           # spinning pickup
+│   └── exit_gate.gd         # pulsing exit pillar
 └── tools/
     ├── smoke_test.gd        # headless correctness checks
     └── screenshot.gd        # renders each level to a PNG
 ```
 
 Levels are plain character grids in `src/levels.gd` — `#` wall, `.` floor,
-`P` start, `K` keycard, `D` door, `E` exit, `~` shadow. Everything (collision
-bodies, the A* navigation grid, entities) is generated from that grid at load
-time, so a new level is just a new block of text plus patrol waypoints.
+`P` start, `K` keycard, `D` door, `E` exit, `~` shadow. Everything is generated
+from that grid at load time: the wall meshes (one MultiMesh, so hundreds of
+blocks cost a single draw call), one StaticBody3D holding every wall collider,
+and an AStarGrid2D laid on the X/Z plane for guard navigation. A new level is
+just a new block of text plus patrol waypoints.
+
+## Notes on the 3D
+
+- One grid cell is 2.0 world units; walls are 2.6 units tall.
+- The camera is a fixed-orientation follow cam. It never rotates, so a given
+  stick direction always means the same world direction — the only scheme that
+  stays workable one-thumbed.
+- Guard sight lines are cast at eye height (1.15) so a guard cannot see over a
+  wall, and each vision cone is rebuilt every physics tick from one raycast per
+  edge, which is what makes it visibly stop at corners.
+- Rendering targets the `gl_compatibility` backend for mobile.
 
 ## Building
 

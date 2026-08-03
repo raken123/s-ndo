@@ -13,7 +13,7 @@ const FRAMES_PER_LEVEL := 90
 var _failures: Array[String] = []
 
 func _initialize() -> void:
-	var main: Node2D = load("res://src/main.tscn").instantiate()
+	var main: Node3D = load("res://src/main.tscn").instantiate()
 	root.add_child(main)
 	# Let _ready() finish before driving the node directly.
 	await process_frame
@@ -31,7 +31,7 @@ func _initialize() -> void:
 			printerr("  - " + f)
 	quit(0 if _failures.is_empty() else 1)
 
-func _check_level(main: Node2D, index: int) -> void:
+func _check_level(main: Node3D, index: int) -> void:
 	var name: String = Levels.DATA[index]["name"]
 	main.load_level(index)
 
@@ -47,7 +47,7 @@ func _check_level(main: Node2D, index: int) -> void:
 		return
 	if main.keycards_total <= 0:
 		_fail(name, "no keycards")
-	if main._exit_pos == Vector2.ZERO:
+	if main._exit_pos == Vector3.ZERO:
 		_fail(name, "no exit 'E' in grid")
 	if main._guards.is_empty():
 		_fail(name, "no guards")
@@ -65,7 +65,7 @@ func _check_level(main: Node2D, index: int) -> void:
 					% [g_i, w_i - 1, w_i])
 
 	# Reachability with doors still locked: at least one keycard must be gettable.
-	var start: Vector2 = main.player.global_position
+	var start: Vector3 = main.player.global_position
 	var reachable_card := false
 	for card in main._keycards:
 		if main.find_path(start, card.global_position).size() > 0:
@@ -94,13 +94,13 @@ func _check_level(main: Node2D, index: int) -> void:
 
 ## Walks level 1 through the full pickup → door → exit chain by teleporting the
 ## player, to prove the win condition actually fires.
-func _check_win_flow(main: Node2D) -> void:
+func _check_win_flow(main: Node3D) -> void:
 	main.load_level(0)
 	await process_frame
 	main.phase = main.Phase.PLAYING
 	main._hud.hide_overlay()
 
-	var card_pos: Vector2 = main._keycards[0].global_position
+	var card_pos: Vector3 = main._keycards[0].global_position
 	main.player.global_position = card_pos
 	await process_frame
 	await process_frame
@@ -108,8 +108,10 @@ func _check_win_flow(main: Node2D) -> void:
 		_fail("win flow", "standing on a keycard did not pick it up")
 		return
 
-	var door_body: StaticBody2D = main._doors[0]["body"]
-	main.player.global_position = door_body.global_position + Vector2(0, -Levels.TILE)
+	var door_body: StaticBody3D = main._doors[0]["body"]
+	# Stand on the floor one tile in front of the door, not inside it.
+	var at_door := door_body.global_position + Vector3(0, 0, -main.TILE)
+	main.player.global_position = Vector3(at_door.x, 0.0, at_door.z)
 	await process_frame
 	await process_frame
 	if not main._doors[0]["open"]:

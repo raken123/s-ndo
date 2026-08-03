@@ -4,11 +4,11 @@ extends SceneTree
 ##   xvfb-run godot --path game --script res://tools/screenshot.gd
 
 const OUT_DIR := "user://shots"
-const SETTLE_FRAMES := 30
+const SETTLE_FRAMES := 8
 
 func _initialize() -> void:
 	DirAccess.make_dir_recursive_absolute(OUT_DIR)
-	var main: Node2D = load("res://src/main.tscn").instantiate()
+	var main: Node3D = load("res://src/main.tscn").instantiate()
 	root.add_child(main)
 	await process_frame
 
