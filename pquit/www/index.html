@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="color-scheme" content="dark">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data:;">
+    <title>PQuit</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<main id="app">
+
+    <!-- ── home ─────────────────────────────────────────────── -->
+    <section class="view" data-view="home">
+        <header class="topbar">
+            <span class="brand"><i class="dot"></i>PQuit</span>
+            <button class="icon-btn" data-go="setup" aria-label="Setup">⚙</button>
+        </header>
+
+        <div class="scroll">
+            <div class="card streak">
+                <div class="streak-num" id="streakDays">0</div>
+                <div class="streak-label">days free</div>
+                <div class="streak-sub" id="streakSince">since today</div>
+                <div class="streak-bar"><span id="streakBar"></span></div>
+                <div class="streak-next" id="streakNext">next milestone: 1 day</div>
+            </div>
+
+            <div class="card lock-card hidden" id="lockCard">
+                <div class="lock-title">Cooldown running</div>
+                <div class="lock-time" id="lockTime">--:--</div>
+                <div class="lock-sub">Chrome, Edge, TikTok and YouTube stay shut until this hits zero.</div>
+                <button class="btn ghost" data-go="games">Play something while you wait</button>
+            </div>
+
+            <div class="row-2">
+                <div class="card stat"><b id="statResisted">0</b><span>urges ridden out</span></div>
+                <div class="card stat"><b id="statLocks">0</b><span>cooldowns taken</span></div>
+            </div>
+
+            <button class="btn big primary" data-go="games">
+                <span class="btn-title">I'm having an urge</span>
+                <span class="btn-sub">Give me something else to do</span>
+            </button>
+
+            <div class="panic-zone">
+                <button class="panic" id="panicBtn" aria-label="I really want to do it">
+                    <span class="panic-inner">
+                        <span class="panic-label">I really<br>want to</span>
+                    </span>
+                </button>
+                <p class="panic-hint">Press it and nothing bad happens - you just wait an hour first.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── games ────────────────────────────────────────────── -->
+    <section class="view" data-view="games">
+        <header class="topbar">
+            <button class="icon-btn" data-go="home" aria-label="Back">←</button>
+            <span class="title">Ride it out</span>
+            <span class="spacer"></span>
+        </header>
+        <div class="scroll">
+            <p class="lede">An urge peaks in a few minutes and then falls apart on its own. Pick one and let it pass.</p>
+            <div class="game-grid" id="gameGrid"></div>
+            <div class="card tip">
+                <b>Still climbing?</b>
+                <span>Stand up, put the phone on the other side of the room and drink a glass of water. Then come back and pick a game.</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── one game ─────────────────────────────────────────── -->
+    <section class="view" data-view="play">
+        <header class="topbar">
+            <button class="icon-btn" data-go="games" aria-label="Back">←</button>
+            <span class="title" id="playTitle">Game</span>
+            <span class="score" id="playScore"></span>
+        </header>
+        <div class="game-host" id="gameHost"></div>
+    </section>
+
+    <!-- ── screen time ──────────────────────────────────────── -->
+    <section class="view" data-view="stats">
+        <header class="topbar">
+            <button class="icon-btn" data-go="home" aria-label="Back">←</button>
+            <span class="title">Screen time</span>
+            <span class="spacer"></span>
+        </header>
+        <div class="scroll">
+            <div class="card" id="usageDenied">
+                <b>Turn on usage access</b>
+                <span class="muted">PQuit needs Android's usage access to show where your day went. It reads times only, never content.</span>
+                <button class="btn ghost" id="grantUsage">Grant usage access</button>
+            </div>
+            <div id="usageBody" class="hidden">
+                <div class="row-2">
+                    <div class="card stat"><b id="usageTotal">0m</b><span>screen time today</span></div>
+                    <div class="card stat danger"><b id="usageBlocked">0m</b><span>on blocked apps</span></div>
+                </div>
+                <div class="card list" id="usageList"></div>
+            </div>
+            <button class="btn ghost" id="openWellbeing">Open system Digital Wellbeing</button>
+            <p class="fineprint">Android's own screen-time limits work alongside PQuit. When your cooldown ends, PQuit stops blocking - the system limits keep going.</p>
+        </div>
+    </section>
+
+    <!-- ── setup ────────────────────────────────────────────── -->
+    <section class="view" data-view="setup">
+        <header class="topbar">
+            <button class="icon-btn" data-go="home" aria-label="Back">←</button>
+            <span class="title">Setup</span>
+            <span class="spacer"></span>
+        </header>
+        <div class="scroll">
+            <div class="card perm" id="permAccess">
+                <div class="perm-head"><b>App blocking</b><span class="pill" id="pillAccess">off</span></div>
+                <span class="muted">PQuit uses an accessibility service to send blocked apps back to the home screen while a cooldown runs. Find <b>PQuit blocker</b> in the list and switch it on.</span>
+                <button class="btn ghost" id="grantAccess">Open accessibility settings</button>
+            </div>
+
+            <div class="card perm">
+                <div class="perm-head"><b>Usage access</b><span class="pill" id="pillUsage">off</span></div>
+                <span class="muted">Optional. Powers the screen-time page.</span>
+                <button class="btn ghost" id="grantUsage2">Open usage access</button>
+            </div>
+
+            <div class="card">
+                <label class="switch">
+                    <span>
+                        <b>Strict mode</b>
+                        <span class="muted">During a cooldown, block every app you installed yourself - only the apps that came with the phone stay open.</span>
+                    </span>
+                    <input type="checkbox" id="strictToggle" checked>
+                    <i></i>
+                </label>
+            </div>
+
+            <div class="card">
+                <b>Cooldown length</b>
+                <span class="muted">How long the wait lasts after the red button. One hour is the point; you can make it longer, never shorter.</span>
+                <div class="chips" id="durationChips">
+                    <button class="chip on" data-min="60">1 hour</button>
+                    <button class="chip" data-min="120">2 hours</button>
+                    <button class="chip" data-min="240">4 hours</button>
+                    <button class="chip" data-min="480">8 hours</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <b>Always blocked during a cooldown</b>
+                <ul class="pkglist">
+                    <li>Chrome <span>and other browsers</span></li>
+                    <li>Microsoft Edge</li>
+                    <li>TikTok</li>
+                    <li>YouTube</li>
+                </ul>
+                <span class="muted">Phone, messages, camera, clock, settings and everything else preinstalled keep working.</span>
+            </div>
+
+            <div class="card">
+                <b>Streak</b>
+                <span class="muted" id="streakSince2">Counting since today.</span>
+                <button class="btn ghost danger" id="resetStreak">I slipped - reset to day 0</button>
+            </div>
+
+            <p class="fineprint">Everything stays on this phone. No account, no network, nothing uploaded.<br>PQuit v1.0.0</p>
+        </div>
+    </section>
+
+</main>
+
+<!-- ── panic confirmation sheet ─────────────────────────────── -->
+<div class="sheet-wrap hidden" id="panicSheet">
+    <div class="sheet">
+        <div class="sheet-grip"></div>
+        <h2>Take the hour first</h2>
+        <p>Nothing is being taken away from you. Press confirm and Chrome, Edge, TikTok and YouTube close for <b id="sheetDuration">1 hour</b>. When the timer runs out, they open again and this is entirely your call.</p>
+        <p class="muted">Most urges are gone long before the timer is.</p>
+        <button class="btn primary" id="panicConfirm">Start the hour</button>
+        <button class="btn ghost" id="panicCancel">Not now</button>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="cordova.js"></script>
+<script src="js/native.js"></script>
+<script src="js/store.js"></script>
+<script src="js/games/util.js"></script>
+<script src="js/games/snake.js"></script>
+<script src="js/games/twenty48.js"></script>
+<script src="js/games/breakout.js"></script>
+<script src="js/games/memory.js"></script>
+<script src="js/games/breathe.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

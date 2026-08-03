@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.pquit.app" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>PQuit</name>
+    <description>Quit porn. Play a game when the urge hits, or take the hour.</description>
+    <author email="dev@pquit.app" href="https://github.com/raken123/s-ndo">PQuit</author>
+
+    <content src="index.html" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <access origin="*" />
+
+    <preference name="BackgroundColor" value="0xff12162a" />
+    <preference name="Orientation" value="portrait" />
+    <preference name="Fullscreen" value="false" />
+    <preference name="AndroidLaunchMode" value="singleTask" />
+    <preference name="AndroidInsetsMode" value="edge-to-edge" />
+    <preference name="SplashScreenDelay" value="1200" />
+    <preference name="AndroidWindowSplashScreenBackground" value="#12162a" />
+    <preference name="AndroidWindowSplashScreenAnimatedIcon" value="res/icon/android/xxxhdpi-foreground.png" />
+
+    <platform name="android">
+        <preference name="AndroidXEnabled" value="true" />
+
+        <icon density="ldpi" src="res/icon/android/ldpi.png" foreground="res/icon/android/ldpi-foreground.png" background="res/icon/android/ldpi-background.png" />
+        <icon density="mdpi" src="res/icon/android/mdpi.png" foreground="res/icon/android/mdpi-foreground.png" background="res/icon/android/mdpi-background.png" />
+        <icon density="hdpi" src="res/icon/android/hdpi.png" foreground="res/icon/android/hdpi-foreground.png" background="res/icon/android/hdpi-background.png" />
+        <icon density="xhdpi" src="res/icon/android/xhdpi.png" foreground="res/icon/android/xhdpi-foreground.png" background="res/icon/android/xhdpi-background.png" />
+        <icon density="xxhdpi" src="res/icon/android/xxhdpi.png" foreground="res/icon/android/xxhdpi-foreground.png" background="res/icon/android/xxhdpi-background.png" />
+        <icon density="xxxhdpi" src="res/icon/android/xxxhdpi.png" foreground="res/icon/android/xxxhdpi-foreground.png" background="res/icon/android/xxxhdpi-background.png" />
+    </platform>
+</widget>

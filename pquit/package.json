@@ -1,0 +1,26 @@
+{
+  "name": "com.pquit.app",
+  "displayName": "PQuit",
+  "version": "1.0.0",
+  "description": "Quit porn. Play a game when the urge hits, or take the hour.",
+  "main": "index.js",
+  "scripts": {
+    "icons": "python3 tools/mkicon.py",
+    "build": "cordova build android",
+    "release": "cordova build android --release"
+  },
+  "author": "PQuit",
+  "license": "MIT",
+  "devDependencies": {
+    "cordova-android": "^13.0.0",
+    "cordova-plugin-pquit-blocker": "file:plugins-local/cordova-plugin-pquit-blocker"
+  },
+  "cordova": {
+    "platforms": [
+      "android"
+    ],
+    "plugins": {
+      "cordova-plugin-pquit-blocker": {}
+    }
+  }
+}
