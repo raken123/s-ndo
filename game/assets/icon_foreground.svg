@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="432" height="432" viewBox="0 0 432 432">
+  <defs>
+    <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8b939c"/>
+      <stop offset="40%" stop-color="#e2e8ee"/>
+      <stop offset="100%" stop-color="#79818a"/>
+    </linearGradient>
+  </defs>
+  <!-- Content sits inside the 264px adaptive-icon safe zone (centred, 61%). -->
+  <g transform="translate(216,216) scale(0.52) translate(-256,-256)">
+    <g>
+      <rect x="60"  y="70" width="26" height="372" rx="12" fill="url(#bar)"/>
+      <path d="M 214 70 q 8 118 -52 188 q -60 70 -46 184 l 28 0 q -12 -104 44 -166 q 56 -62 54 -206 z" fill="url(#bar)"/>
+      <path d="M 298 70 q -8 118 52 188 q 60 70 46 184 l -28 0 q 12 -104 -44 -166 q -56 -62 -54 -206 z" fill="url(#bar)"/>
+      <rect x="426" y="70" width="26" height="372" rx="12" fill="url(#bar)"/>
+      <rect x="48" y="96"  width="416" height="20" rx="9" fill="#98a0a8"/>
+      <rect x="48" y="400" width="416" height="20" rx="9" fill="#98a0a8"/>
+    </g>
+    <g transform="translate(0,-14)">
+      <path d="M 236 392 l -20 58" stroke="#e8963a" stroke-width="21" stroke-linecap="round" fill="none"/>
+      <path d="M 276 392 l 24 54" stroke="#e8963a" stroke-width="21" stroke-linecap="round" fill="none"/>
+      <rect x="216" y="292" width="82" height="112" rx="34" fill="#f0912c"/>
+      <rect x="216" y="318" width="82" height="13" fill="#ffe2bd"/>
+      <rect x="216" y="352" width="82" height="13" fill="#ffe2bd"/>
+      <path d="M 222 320 l -54 -30" stroke="#f0912c" stroke-width="22" stroke-linecap="round" fill="none"/>
+      <path d="M 292 320 l 56 -26" stroke="#f0912c" stroke-width="22" stroke-linecap="round" fill="none"/>
+      <circle cx="257" cy="262" r="42" fill="#ffcf9e"/>
+      <path d="M 215 252 a 42 42 0 0 1 84 0 z" fill="#2b3550"/>
+    </g>
+  </g>
+</svg>
