@@ -13,13 +13,18 @@ ad/*.py
 ad/*.log
 ad/*.png
 ad/*.txt
-# ...except the video-ad pipeline, which is the source for the clips the app
-# ships. These four modules are self-contained: gfx (drawing toolkit), vidads
-# (the spots), admusic (soundtrack), render_vidads (the renderer).
+# ...except the two ad pipelines, which are the source for clips we ship or
+# publish. Both are self-contained — no walkthrough scene graph.
+#   shared:      gfx (drawing toolkit), admusic (soundtrack)
+#   in-app ads:  vidads (fictional-brand spots) + render_vidads
+#   gmfy promos: v340 (portrait teasers) + world (3D preview) + render_v340
 !ad/gfx.py
-!ad/vidads.py
 !ad/admusic.py
+!ad/vidads.py
 !ad/render_vidads.py
+!ad/v340.py
+!ad/world.py
+!ad/render_v340.py
 
 # gmfyapp configuration and build files
 gmfyapp/config.xml

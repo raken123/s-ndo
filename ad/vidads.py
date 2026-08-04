@@ -7,7 +7,7 @@ motion, a star rating and an INSTALL / ORDER call-to-action. No real companies.
 import math
 from PIL import Image, ImageDraw, ImageFilter
 from gfx import (W, H, font, clamp, ease_out, ease_in_out, spring, seg,
-                 DISPLAY, BODY, BODYB, INK, MUTED)
+                 atext, DISPLAY, BODY, BODYB, INK, MUTED)
 
 
 # ---------------- shared pieces ----------------
@@ -33,34 +33,6 @@ def soft_blobs(img, blobs, t):
         g = np.repeat(np.repeat(fall, 6, 0), 6, 1)[:H, :W]
         add += g[:, :, None] * np.array(col, np.float32) * amp
     return Image.fromarray(np.clip(base + add, 0, 255).astype("uint8"), "RGB")
-
-
-def atext(d, xy, txt, f, col, a=255, anchor="mm"):
-    """Draw text with a working alpha.
-
-    Pillow's draw.text() ignores the ink's alpha when the target is an RGB
-    image (shapes honour it, glyphs do not), so every fade written as an ink
-    alpha would pop in at full strength. Composite the glyphs through a small
-    RGBA patch instead, clipped to the text's own bounding box so the cost
-    stays local rather than full-frame.
-    """
-    a = int(clamp(a / 255.0) * 255)
-    if a <= 0:
-        return
-    if a >= 255:
-        d.text(xy, txt, font=f, fill=tuple(col) + (255,), anchor=anchor)
-        return
-    img = d._image
-    b = d.textbbox(xy, txt, font=f, anchor=anchor)
-    x0, y0 = max(0, int(b[0]) - 8), max(0, int(b[1]) - 8)
-    x1, y1 = min(img.size[0], int(b[2]) + 8), min(img.size[1], int(b[3]) + 8)
-    if x1 <= x0 or y1 <= y0:
-        return
-    lay = Image.new("RGBA", (x1 - x0, y1 - y0), (0, 0, 0, 0))
-    ImageDraw.Draw(lay).text((xy[0] - x0, xy[1] - y0), txt, font=f,
-                             fill=tuple(col) + (a,), anchor=anchor)
-    reg = img.crop((x0, y0, x1, y1)).convert("RGBA")
-    img.paste(Image.alpha_composite(reg, lay).convert("RGB"), (x0, y0))
 
 
 def center_text(d, cx, y, txt, f, col, a=255, anchor="mm"):

@@ -140,10 +140,39 @@ def wrap(d, text, f, maxw):
     return lines
 
 
+def atext(d, xy, txt, f, col, a=255, anchor="mm"):
+    """Draw text with a working alpha.
+
+    Pillow's draw.text() ignores the ink's alpha when the target is an RGB
+    image — shapes honour it, glyphs do not — so a fade written as an ink
+    alpha would pop in at full strength instead of fading. Composite the
+    glyphs through an RGBA patch clipped to the text's own bounding box, so
+    the cost stays local rather than full-frame.
+    """
+    a = int(clamp(a / 255.0) * 255)
+    if a <= 0:
+        return
+    if a >= 255:
+        d.text(xy, txt, font=f, fill=tuple(col) + (255,), anchor=anchor)
+        return
+    img = d._image
+    b = d.textbbox(xy, txt, font=f, anchor=anchor)
+    x0, y0 = max(0, int(b[0]) - 8), max(0, int(b[1]) - 8)
+    x1, y1 = min(img.size[0], int(b[2]) + 8), min(img.size[1], int(b[3]) + 8)
+    if x1 <= x0 or y1 <= y0:
+        return
+    lay = Image.new("RGBA", (x1 - x0, y1 - y0), (0, 0, 0, 0))
+    ImageDraw.Draw(lay).text((xy[0] - x0, xy[1] - y0), txt, font=f,
+                             fill=tuple(col) + (a,), anchor=anchor)
+    reg = img.crop((x0, y0, x1, y1)).convert("RGBA")
+    img.paste(Image.alpha_composite(reg, lay).convert("RGB"), (x0, y0))
+
+
 def block(d, x, y, lines, f, fill, lh=1.24, anchor="la"):
     step = int(f.size * lh)
+    col, a = tuple(fill[:3]), (fill[3] if len(fill) > 3 else 255)
     for i, ln in enumerate(lines):
-        d.text((x, y + i * step), ln, font=f, fill=fill, anchor=anchor)
+        atext(d, (x, y + i * step), ln, f, col, a, anchor)
     return y + len(lines) * step
 
 
@@ -167,11 +196,11 @@ def caption(img, y, big, small=None, appear=1.0, col=INK, size=84):
     dy = int((1 - ease_out(appear)) * 36)
     for i, ln in enumerate(lines):
         yy = y + i * int(size * 1.15) + dy
-        d.text((W / 2 + 3, yy + 5), ln, font=f, fill=(0, 0, 0, int(a * .5)), anchor="mm")
-        d.text((W / 2, yy), ln, font=f, fill=col + (a,), anchor="mm")
+        atext(d, (W / 2 + 3, yy + 5), ln, f, (0, 0, 0), int(a * .5))
+        atext(d, (W / 2, yy), ln, f, col, a)
     if small:
-        d.text((W / 2, y + len(lines) * int(size * 1.15) + 34 + dy), small,
-               font=font(BODY, 42), fill=MUTED + (a,), anchor="mm")
+        atext(d, (W / 2, y + len(lines) * int(size * 1.15) + 34 + dy), small,
+              font(BODY, 42), MUTED, a)
 
 
 # ---------- chat ----------
@@ -232,9 +261,9 @@ def wordmark(img, cy, scale=1.0, appear=1.0, sub=None):
     out = glow(img, lay, 34, 1.15)
     out.paste(Image.alpha_composite(out.convert("RGBA"), lay).convert("RGB"), (0, 0))
     if sub:
-        ImageDraw.Draw(out, "RGBA").text(
-            (W / 2, cy + size * 0.86), sub, font=font(BODY, int(40 * scale)),
-            fill=MUTED + (int(235 * ease_out(seg(appear, .35, 1))),), anchor="mm")
+        atext(ImageDraw.Draw(out, "RGBA"), (W / 2, cy + size * 0.86), sub,
+              font(BODY, int(40 * scale)), MUTED,
+              int(235 * ease_out(seg(appear, .35, 1))))
     return out
 
 
@@ -252,5 +281,5 @@ def pill(img, cx, cy, label, col, appear=1.0, size=44, pad=34):
                                           outline=col + (a,), width=3)
     out = glow(img, lay, 16, .8)
     out.paste(Image.alpha_composite(out.convert("RGBA"), lay).convert("RGB"), (0, 0))
-    ImageDraw.Draw(out, "RGBA").text((cx, cy + 1), label, font=f, fill=col + (a,), anchor="mm")
+    atext(ImageDraw.Draw(out, "RGBA"), (cx, cy + 1), label, f, col, a)
     return out
