@@ -79,6 +79,7 @@
     wireTabs();
     wireBuild();
     wireWorld();
+    wireLuna();
     wireBlocks();
     wireGames();
     wireClass();
@@ -297,6 +298,64 @@
       FX.showGhost = !FX.showGhost;
       this.classList.toggle('on', FX.showGhost);
     });
+  }
+
+  /* ---------------- Luna generation ---------------- */
+  function paintLuna() {
+    var q = el('lu-quota'), go = el('lu-go');
+    if (!q) return;
+    var n = window.GmfyLuna.left();
+    q.textContent = n + ' build' + (n === 1 ? '' : 's') + ' left';
+    q.classList.toggle('out', n <= 0);
+    go.disabled = n <= 0;
+    if (n <= 0)
+      el('lu-hint').textContent = 'monthly builds used up on ' +
+        window.GmfyPlans.current().name + ' — upgrade for more';
+  }
+
+  function wireLuna() {
+    if (!el('lu-go')) return;
+    el('lu-setup').addEventListener('click', function () {
+      var c = el('lu-conf');
+      c.hidden = !c.hidden;
+      if (!c.hidden) {
+        el('lu-proxy').value = window.GmfyLuna.proxy() || '';
+        el('lu-key').value = '';            // never echo a stored key back out
+      }
+    });
+    el('lu-save').addEventListener('click', function () {
+      window.GmfyLuna.setProxy(el('lu-proxy').value.trim());
+      var k = el('lu-key').value.trim();
+      if (k) window.GmfyLuna.setKey(k);
+      el('lu-key').value = '';
+      el('lu-conf').hidden = true;
+      el('lu-hint').textContent = window.GmfyLuna.configured()
+        ? 'Luna is ready' : 'still needs a proxy or a key';
+    });
+    el('lu-forget').addEventListener('click', function () {
+      window.GmfyLuna.setKey(null); window.GmfyLuna.setProxy(null);
+      el('lu-proxy').value = ''; el('lu-key').value = '';
+      el('lu-hint').textContent = 'cleared from this device';
+    });
+    el('lu-go').addEventListener('click', function () {
+      var btn = this;
+      btn.disabled = true;
+      el('lu-hint').textContent = 'Luna is building…';
+      window.GmfyLuna.generate(el('lu-prompt').value, function (err, spec) {
+        btn.disabled = false;
+        if (err) { el('lu-hint').textContent = err; paintLuna(); return; }
+        // worldFromSpec validates and clamps every field before we load it
+        var w = window.Gmfy.worldFromSpec(spec, 'maker');
+        w.source = 'maker';
+        maker.relief = spec && spec.relief || 1;
+        engine.load(w);
+        maker.syncPalette();
+        buildPickers();
+        el('lu-hint').textContent = 'built ' + (w.props || []).length + ' objects';
+        paintLuna();
+      });
+    });
+    paintLuna();
   }
 
   function wireWorld() {
@@ -678,6 +737,7 @@
     });
     paintInvites();
     paintFree();
+    paintLuna();
     if (window.GmfyPromos) window.GmfyPromos.start();   // ads on/off follows the plan
   }
 

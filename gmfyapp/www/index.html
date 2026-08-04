@@ -308,6 +308,17 @@
   .free-row .fw:disabled{opacity:.4;background:#2a2d38;color:var(--muted)}
   .free-row .fu{flex:0 0 auto;font-size:10px;color:var(--muted)}
 
+  /* Luna generation */
+  #lunabox{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  #lunabox .lrow{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  #lunabox .lquota{margin-left:auto;font-size:11px;color:var(--muted);
+    background:rgba(255,255,255,.05);border-radius:999px;padding:4px 10px}
+  #lunabox .lquota.out{color:#ffb4b4;background:rgba(255,90,90,.12)}
+  #lunabox .txt{width:100%;margin-bottom:8px}
+  #lunabox .hint.warn{color:#f3c96b;line-height:1.5;margin:4px 0 10px}
+  #lu-conf{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+  #lu-go:disabled{opacity:.45}
+
   /* ad-blocker / VPN ban overlay */
   #ban{position:fixed;inset:0;z-index:70;display:none;align-items:center;
     justify-content:center;background:rgba(0,0,0,.8);padding:20px}
@@ -475,6 +486,36 @@
         <button id="mk-load">Load</button>
       </div>
       <div class="hint" id="w-hint">worlds save to this device, per account</div>
+
+      <!-- Luna generation -->
+      <div id="lunabox">
+        <div class="lrow">
+          <span class="lab">Luna</span>
+          <span class="lquota" id="lu-quota">5 builds left</span>
+        </div>
+        <input class="txt" id="lu-prompt" maxlength="180"
+               placeholder="a snowy island with a finish on the far peak">
+        <div class="r btns">
+          <button id="lu-go">Generate world</button>
+          <button id="lu-setup">Setup</button>
+        </div>
+        <div class="hint" id="lu-hint">describes a world, Luna builds it</div>
+
+        <div id="lu-conf" hidden>
+          <div class="hint warn">No key is bundled with gmfy — anything shipped in
+            the app can be read off the device. Point Luna at your own proxy
+            (recommended: the key stays on your server), or paste your own key,
+            which is stored on this device and spends your own credits.</div>
+          <input class="txt" id="lu-proxy" autocapitalize="none" spellcheck="false"
+                 placeholder="https://your-proxy.example/luna">
+          <input class="txt" id="lu-key" type="password" autocapitalize="none"
+                 spellcheck="false" placeholder="or paste your own API key">
+          <div class="r btns">
+            <button id="lu-save">Save</button>
+            <button id="lu-forget">Forget</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Games -->
@@ -678,6 +719,7 @@
 </div>
 
 <script src="js/plans.js"></script>
+<script src="js/luna.js"></script>
 <script src="js/freegate.js"></script>
 <script src="js/promos.js"></script>
 <script src="js/vidads.js"></script>

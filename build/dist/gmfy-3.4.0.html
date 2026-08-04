@@ -308,6 +308,17 @@
   .free-row .fw:disabled{opacity:.4;background:#2a2d38;color:var(--muted)}
   .free-row .fu{flex:0 0 auto;font-size:10px;color:var(--muted)}
 
+  /* Luna generation */
+  #lunabox{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  #lunabox .lrow{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  #lunabox .lquota{margin-left:auto;font-size:11px;color:var(--muted);
+    background:rgba(255,255,255,.05);border-radius:999px;padding:4px 10px}
+  #lunabox .lquota.out{color:#ffb4b4;background:rgba(255,90,90,.12)}
+  #lunabox .txt{width:100%;margin-bottom:8px}
+  #lunabox .hint.warn{color:#f3c96b;line-height:1.5;margin:4px 0 10px}
+  #lu-conf{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+  #lu-go:disabled{opacity:.45}
+
   /* ad-blocker / VPN ban overlay */
   #ban{position:fixed;inset:0;z-index:70;display:none;align-items:center;
     justify-content:center;background:rgba(0,0,0,.8);padding:20px}
@@ -475,6 +486,36 @@
         <button id="mk-load">Load</button>
       </div>
       <div class="hint" id="w-hint">worlds save to this device, per account</div>
+
+      <!-- Luna generation -->
+      <div id="lunabox">
+        <div class="lrow">
+          <span class="lab">Luna</span>
+          <span class="lquota" id="lu-quota">5 builds left</span>
+        </div>
+        <input class="txt" id="lu-prompt" maxlength="180"
+               placeholder="a snowy island with a finish on the far peak">
+        <div class="r btns">
+          <button id="lu-go">Generate world</button>
+          <button id="lu-setup">Setup</button>
+        </div>
+        <div class="hint" id="lu-hint">describes a world, Luna builds it</div>
+
+        <div id="lu-conf" hidden>
+          <div class="hint warn">No key is bundled with gmfy — anything shipped in
+            the app can be read off the device. Point Luna at your own proxy
+            (recommended: the key stays on your server), or paste your own key,
+            which is stored on this device and spends your own credits.</div>
+          <input class="txt" id="lu-proxy" autocapitalize="none" spellcheck="false"
+                 placeholder="https://your-proxy.example/luna">
+          <input class="txt" id="lu-key" type="password" autocapitalize="none"
+                 spellcheck="false" placeholder="or paste your own API key">
+          <div class="r btns">
+            <button id="lu-save">Save</button>
+            <button id="lu-forget">Forget</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Games -->
@@ -1849,6 +1890,192 @@
   };
 
   global.GmfyPlans = Plans;
+})(window);
+
+</script>
+<script>
+/* gmfy — Luna world generation.
+ *
+ * Turns a text prompt ("a snowy island with a finish line on the far peak")
+ * into a world spec, which Gmfy.worldFromSpec() then validates and clamps
+ * before anything reaches the engine. Model output is treated as untrusted
+ * input: worldFromSpec already whitelists prop kinds, range-checks every
+ * coordinate and rejects malformed colours, so a hostile or broken response
+ * degrades to a plain generated world rather than corrupting one.
+ *
+ * ── Build quota ──────────────────────────────────────────────────────────
+ * Each plan gets a number of generations per calendar month:
+ *
+ *     Free 5   ·   Go 50   ·   Pro 185   ·   Max 300
+ *
+ * The count is stored per account and resets when the month changes. Like
+ * every other limit in this app it is device-local and advisory: a determined
+ * user can clear localStorage and get their allowance back. Enforcing it for
+ * real needs the same backend that would hold the API key (see below).
+ *
+ * ── Why there is no API key in this file ─────────────────────────────────
+ * gmfy is a client-side app. Everything here ships inside the APK and inside
+ * the single-file HTML build, both of which the user has on their device, so
+ * anything embedded in this source is readable by anyone who installs it — a
+ * bundled key would be extractable in seconds and billed to whoever owns it.
+ * There is no obfuscation that fixes this; it is a property of shipping code
+ * to a device.
+ *
+ * So a key is never bundled. Two supported setups, in order of preference:
+ *
+ *   1. PROXY (the real one). Point Luna at your own endpoint that holds the
+ *      key server-side, checks who the caller is and enforces the quota
+ *      somewhere the user cannot edit. Set window.GMFY_LUNA_PROXY, or call
+ *      GmfyLuna.setProxy(url). No key is stored on the device at all.
+ *
+ *   2. BRING YOUR OWN KEY (development, or power users). The user pastes
+ *      their own key, which is kept in localStorage on their own device and
+ *      spends their own credits. Never ship someone else's key this way.
+ */
+(function (global) {
+  'use strict';
+
+  // generations per calendar month, by plan id
+  var QUOTA = { free: 5, go: 50, pro: 185, max: 300 };
+
+  var MODEL = 'gpt-5.6-luna';
+  var ENDPOINT = 'https://api.openai.com/v1/chat/completions';
+
+  var K_USED  = 'gmfy.luna.used.v1';     // {period:'YYYY-MM', n:Number}
+  var K_KEY   = 'gmfy.luna.key.v1';      // the user's own key, their device
+  var K_PROXY = 'gmfy.luna.proxy.v1';
+
+  var BIOMES = ['meadow', 'forest', 'beach', 'hills', 'snow', 'sunset'];
+  // worldFromSpec only accepts these seven; asking for others just wastes
+  // tokens on props that get rewritten to 'block'
+  var KINDS = ['tower', 'block', 'tree', 'cactus', 'spike', 'rock', 'dome'];
+
+  function scoped(k) {
+    return global.GmfyAuth ? global.GmfyAuth.scope(k) : k;
+  }
+  function read(k, dflt) {
+    try { var r = localStorage.getItem(k); return r ? JSON.parse(r) : dflt; }
+    catch (e) { return dflt; }
+  }
+  function write(k, v) {
+    try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; }
+  }
+
+  function planId() {
+    return global.GmfyPlans ? global.GmfyPlans.current().id : 'free';
+  }
+  function period() {
+    var d = new Date();
+    return d.getUTCFullYear() + '-' + ('0' + (d.getUTCMonth() + 1)).slice(-2);
+  }
+
+  function quota() { return QUOTA[planId()] || 0; }
+
+  function used() {
+    var rec = read(scoped(K_USED), null);
+    if (!rec || rec.period !== period()) return 0;      // a new month starts over
+    return rec.n || 0;
+  }
+
+  function left() { return Math.max(0, quota() - used()); }
+
+  function spend() {
+    write(scoped(K_USED), { period: period(), n: used() + 1 });
+  }
+
+  // ---- credentials (never bundled — see the header) ----
+  function proxy() {
+    return global.GMFY_LUNA_PROXY || read(scoped(K_PROXY), null) || null;
+  }
+  function setProxy(url) {
+    if (url) write(scoped(K_PROXY), String(url));
+    else { try { localStorage.removeItem(scoped(K_PROXY)); } catch (e) {} }
+  }
+  function key() {
+    return global.GMFY_LUNA_KEY || read(scoped(K_KEY), null) || null;
+  }
+  function setKey(k) {
+    if (k) write(scoped(K_KEY), String(k).trim());
+    else { try { localStorage.removeItem(scoped(K_KEY)); } catch (e) {} }
+  }
+  function configured() { return !!(proxy() || key()); }
+
+  function prompt(text) {
+    return 'Design a small 3D game world. Reply with JSON only, no prose.\n' +
+      'Schema: {"biome": one of ' + BIOMES.join('|') + ',\n' +
+      ' "relief": number 0.1-3 (how hilly),\n' +
+      ' "props": [{"kind": one of ' + KINDS.join('|') + ',\n' +
+      '   "x": -17..17, "z": -17..17, "h": 0.4..12, "w": 0.2..3,\n' +
+      '   "col": "#rrggbb"}]}\n' +
+      'Use 12-40 props, spread out, no two at the same spot.\n' +
+      'The world to build: ' + text;
+  }
+
+  // Models like to wrap JSON in prose or a fenced block; take the outermost
+  // braces rather than trusting the whole body to parse.
+  function extract(body) {
+    if (!body) return null;
+    var a = body.indexOf('{'), b = body.lastIndexOf('}');
+    if (a < 0 || b <= a) return null;
+    try { return JSON.parse(body.slice(a, b + 1)); } catch (e) { return null; }
+  }
+
+  /* Generate a world spec. cb(err, spec) — spec is raw model output and must
+     still go through Gmfy.worldFromSpec(), which does the validation. */
+  function generate(text, cb) {
+    text = (text || '').trim();
+    if (!text) { cb('Describe the world you want first.'); return; }
+    if (!configured()) {
+      cb('Luna needs an endpoint. Add a proxy URL, or your own API key, below.');
+      return;
+    }
+    if (left() <= 0) {
+      cb('No builds left this month on ' + planId().toUpperCase() +
+         ' (' + quota() + '/month). Upgrade for more.');
+      return;
+    }
+
+    var url = proxy() || ENDPOINT;
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    // a proxy holds its own credentials; only the BYO-key path sends one
+    if (!proxy() && key()) xhr.setRequestHeader('Authorization', 'Bearer ' + key());
+    xhr.timeout = 60000;
+
+    xhr.onload = function () {
+      if (xhr.status < 200 || xhr.status >= 300) {
+        cb('Luna returned ' + xhr.status + (xhr.status === 401
+          ? ' — the key was rejected.' : '.'));
+        return;
+      }
+      var body = null, spec = null;
+      try { body = JSON.parse(xhr.responseText); } catch (e) {}
+      // accept both a chat-completions shape and a proxy that just returns
+      // the spec, so a self-hosted endpoint does not have to imitate an API
+      var msg = body && body.choices && body.choices[0] &&
+                body.choices[0].message && body.choices[0].message.content;
+      spec = msg ? extract(msg) : (body && body.props ? body : null);
+      if (!spec) { cb('Luna sent something this build could not read.'); return; }
+      spend();                                   // only a usable world costs a build
+      cb(null, spec);
+    };
+    xhr.onerror = function () { cb('Could not reach Luna. Check the connection.'); };
+    xhr.ontimeout = function () { cb('Luna timed out.'); };
+
+    xhr.send(JSON.stringify({
+      model: MODEL,
+      messages: [{ role: 'user', content: prompt(text) }],
+      response_format: { type: 'json_object' }
+    }));
+  }
+
+  global.GmfyLuna = {
+    QUOTA: QUOTA, MODEL: MODEL,
+    quota: quota, used: used, left: left, spend: spend,
+    generate: generate, configured: configured,
+    key: key, setKey: setKey, proxy: proxy, setProxy: setProxy
+  };
 })(window);
 
 </script>
@@ -3642,6 +3869,7 @@
     wireTabs();
     wireBuild();
     wireWorld();
+    wireLuna();
     wireBlocks();
     wireGames();
     wireClass();
@@ -3860,6 +4088,64 @@
       FX.showGhost = !FX.showGhost;
       this.classList.toggle('on', FX.showGhost);
     });
+  }
+
+  /* ---------------- Luna generation ---------------- */
+  function paintLuna() {
+    var q = el('lu-quota'), go = el('lu-go');
+    if (!q) return;
+    var n = window.GmfyLuna.left();
+    q.textContent = n + ' build' + (n === 1 ? '' : 's') + ' left';
+    q.classList.toggle('out', n <= 0);
+    go.disabled = n <= 0;
+    if (n <= 0)
+      el('lu-hint').textContent = 'monthly builds used up on ' +
+        window.GmfyPlans.current().name + ' — upgrade for more';
+  }
+
+  function wireLuna() {
+    if (!el('lu-go')) return;
+    el('lu-setup').addEventListener('click', function () {
+      var c = el('lu-conf');
+      c.hidden = !c.hidden;
+      if (!c.hidden) {
+        el('lu-proxy').value = window.GmfyLuna.proxy() || '';
+        el('lu-key').value = '';            // never echo a stored key back out
+      }
+    });
+    el('lu-save').addEventListener('click', function () {
+      window.GmfyLuna.setProxy(el('lu-proxy').value.trim());
+      var k = el('lu-key').value.trim();
+      if (k) window.GmfyLuna.setKey(k);
+      el('lu-key').value = '';
+      el('lu-conf').hidden = true;
+      el('lu-hint').textContent = window.GmfyLuna.configured()
+        ? 'Luna is ready' : 'still needs a proxy or a key';
+    });
+    el('lu-forget').addEventListener('click', function () {
+      window.GmfyLuna.setKey(null); window.GmfyLuna.setProxy(null);
+      el('lu-proxy').value = ''; el('lu-key').value = '';
+      el('lu-hint').textContent = 'cleared from this device';
+    });
+    el('lu-go').addEventListener('click', function () {
+      var btn = this;
+      btn.disabled = true;
+      el('lu-hint').textContent = 'Luna is building…';
+      window.GmfyLuna.generate(el('lu-prompt').value, function (err, spec) {
+        btn.disabled = false;
+        if (err) { el('lu-hint').textContent = err; paintLuna(); return; }
+        // worldFromSpec validates and clamps every field before we load it
+        var w = window.Gmfy.worldFromSpec(spec, 'maker');
+        w.source = 'maker';
+        maker.relief = spec && spec.relief || 1;
+        engine.load(w);
+        maker.syncPalette();
+        buildPickers();
+        el('lu-hint').textContent = 'built ' + (w.props || []).length + ' objects';
+        paintLuna();
+      });
+    });
+    paintLuna();
   }
 
   function wireWorld() {
@@ -4241,6 +4527,7 @@
     });
     paintInvites();
     paintFree();
+    paintLuna();
     if (window.GmfyPromos) window.GmfyPromos.start();   // ads on/off follows the plan
   }
 

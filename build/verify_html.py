@@ -300,6 +300,41 @@ with sync_playwright() as p:
     check("ban hidden for paid plan",
           not pg.evaluate("document.querySelector('#ban').classList.contains('on')"))
 
+    # ---- Luna generation quotas ----
+    pg.evaluate("window.GmfyPlans.setPlan('free');")
+    check("Luna quota is 5/50/185/300",
+          pg.evaluate("JSON.stringify(window.GmfyLuna.QUOTA)")
+          == '{"free":5,"go":50,"pro":185,"max":300}',
+          pg.evaluate("JSON.stringify(window.GmfyLuna.QUOTA)"))
+    check("free starts with 5 builds",
+          pg.evaluate("window.GmfyLuna.quota()") == 5
+          and pg.evaluate("window.GmfyLuna.left()") == 5)
+    check("spending a build decrements",
+          pg.evaluate("(function(){GmfyLuna.spend();return GmfyLuna.left();})()") == 4)
+    check("quota follows the plan",
+          pg.evaluate("(function(){GmfyPlans.setPlan('pro');return GmfyLuna.quota();})()") == 185)
+    check("used builds carry across a plan change",
+          pg.evaluate("window.GmfyLuna.left()") == 184)
+    # a key must never be baked into the shipped build
+    check("no API key bundled in the HTML",
+          pg.evaluate("window.GmfyLuna.key()") is None
+          and not pg.evaluate("!!window.GMFY_LUNA_KEY"))
+    check("generate refuses with no endpoint configured",
+          "proxy" in (pg.evaluate("""() => new Promise(r => {
+              window.GmfyLuna.setKey(null); window.GmfyLuna.setProxy(null);
+              window.GmfyLuna.generate('a snowy island', e => r(e || 'NO ERROR'));
+          })""") or "").lower())
+    # exhausting the allowance blocks further builds
+    exhausted = pg.evaluate("""() => new Promise(r => {
+        window.GmfyPlans.setPlan('free');
+        window.GmfyLuna.setKey('test-key-not-real');
+        for (let i = 0; i < 10; i++) window.GmfyLuna.spend();
+        window.GmfyLuna.generate('another world', e => r(e || 'NO ERROR'));
+    })""")
+    check("out of builds is refused before any request",
+          "no builds left" in (exhausted or "").lower(), exhausted)
+    pg.evaluate("window.GmfyLuna.setKey(null); window.GmfyPlans.setPlan('free');")
+
     bad = [c for c in cons if c.startswith("error")]
     check("no console errors", not bad, bad[:2])
     b.close()
