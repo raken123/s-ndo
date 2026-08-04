@@ -139,10 +139,13 @@ def a5_recap(t):
         img = pill(img, W / 2, H * 0.66, "COINS · LAVA · FINISH", CYAN,
                    seg(t, .30, .52), 40)
     else:
-        img = wordmark(img, H * 0.40, 1.5, seg(t, .62, .82),
+        # the world section ends on a hard cut, so bring the logo up fast —
+        # ramping it slowly from zero here just left the frame near-black for
+        # a second and a half, which reads as a glitch rather than a beat
+        img = wordmark(img, H * 0.40, 1.5, seg(t, .62, .72),
                        sub="build 3D games — without a bit of code")
         caption(img, H * 0.60, "gmfy 3.4.0", "out now, free to start",
-                      seg(t, .74, .92), col=INK, size=84)
+                      seg(t, .70, .86), col=INK, size=84)
     return vignette(img, t)
 
 
