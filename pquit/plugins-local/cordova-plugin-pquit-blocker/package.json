@@ -1,0 +1,24 @@
+{
+  "name": "cordova-plugin-pquit-blocker",
+  "version": "1.0.0",
+  "description": "Time-locked app blocker for PQuit: holds chosen apps closed until a cooldown expires.",
+  "cordova": {
+    "id": "cordova-plugin-pquit-blocker",
+    "platforms": [
+      "android"
+    ]
+  },
+  "keywords": [
+    "ecosystem:cordova",
+    "cordova-android"
+  ],
+  "engines": {
+    "cordovaDependencies": {
+      "1.0.0": {
+        "cordova-android": ">=10.0.0"
+      }
+    }
+  },
+  "author": "PQuit",
+  "license": "MIT"
+}

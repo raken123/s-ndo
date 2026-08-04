@@ -1,0 +1,46 @@
+name: Build PQuit APK
+
+on:
+  push:
+    branches: ["main"]
+    paths: ["pquit/**", ".github/workflows/pquit-apk.yml"]
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pquit
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install SDK packages
+        run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Install Cordova
+        run: npm install -g cordova@12
+
+      - name: Prepare project
+        run: |
+          cordova platform add android@13
+          cordova plugin add ./plugins-local/cordova-plugin-pquit-blocker
+
+      - name: Build debug APK
+        run: cordova build android
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PQuit-apk
+          path: pquit/platforms/android/app/build/outputs/apk/debug/app-debug.apk
