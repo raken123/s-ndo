@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.addictstop.app" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>AddictStop</name>
+    <description>Blocks your apps when the adhan starts. Follow the stickman through salah to unlock.</description>
+    <author email="dev@addictstop.app" href="https://addictstop.app">AddictStop</author>
+
+    <content src="index.html" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <allow-intent href="tel:*" />
+    <allow-intent href="geo:*" />
+
+    <preference name="Orientation" value="portrait" />
+    <preference name="Fullscreen" value="false" />
+    <preference name="BackgroundColor" value="0xff0b1f1a" />
+    <preference name="SplashMaintainAspectRatio" value="true" />
+    <preference name="AndroidLaunchMode" value="singleTask" />
+    <preference name="AndroidInsetsMode" value="edgeToEdge" />
+
+    <platform name="android">
+        <preference name="android-minSdkVersion" value="24" />
+        <preference name="android-targetSdkVersion" value="36" />
+        <preference name="AndroidWindowSplashScreenBackground" value="#0b1f1a" />
+        <preference name="AndroidWindowSplashScreenAnimatedIcon" value="res/android/splash.png" />
+
+        <icon density="ldpi" src="res/android/icon-36.png" />
+        <icon density="mdpi" src="res/android/icon-48.png" />
+        <icon density="hdpi" src="res/android/icon-72.png" />
+        <icon density="xhdpi" src="res/android/icon-96.png" />
+        <icon density="xxhdpi" src="res/android/icon-144.png" />
+        <icon density="xxxhdpi" src="res/android/icon-192.png" />
+        <!-- No edit-config on /manifest/application here: cordova re-applies it
+             on every prepare and drops one of the application's children each
+             time, which silently removes the accessibility service from the
+             built APK. The app loads no remote content anyway (see the CSP in
+             index.html), so it has nothing to gain from one. -->
+    </platform>
+</widget>

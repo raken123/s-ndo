@@ -1,0 +1,37 @@
+{
+  "name": "com.addictstop.app",
+  "displayName": "AddictStop",
+  "version": "1.0.0",
+  "description": "Blocks every other app when the adhan is called; follow the stickman through salah to unlock.",
+  "main": "www/index.html",
+  "scripts": {
+    "build": "cordova build android --debug",
+    "release": "cordova build android --release",
+    "icons": "python3 tools/make_icons.py",
+    "serve": "python3 -m http.server 8899"
+  },
+  "keywords": [
+    "ecosystem:cordova",
+    "salah",
+    "prayer-times",
+    "screen-time"
+  ],
+  "author": "AddictStop",
+  "license": "MIT",
+  "devDependencies": {
+    "cordova-android": "^15.1.0",
+    "cordova-plugin-addictstop": "file:local-plugins/cordova-plugin-addictstop",
+    "cordova-plugin-geolocation": "^5.0.0"
+  },
+  "cordova": {
+    "platforms": [
+      "android"
+    ],
+    "plugins": {
+      "cordova-plugin-geolocation": {
+        "GPS_REQUIRED": "true"
+      },
+      "cordova-plugin-addictstop": {}
+    }
+  }
+}

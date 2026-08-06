@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="addictstop_a11y_label">AddictStop</string>
+    <!-- Shown on the accessibility settings screen, so it has to explain
+         plainly what the service can and cannot see. -->
+    <string name="addictstop_a11y_description">Lets AddictStop see which app is in the foreground so it can send you back to the prayer screen while the adhan lock is on. Nothing is read from the screen and nothing leaves your phone.</string>
+</resources>

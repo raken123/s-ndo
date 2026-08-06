@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="color-scheme" content="dark">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data:; connect-src 'self'">
+  <title>AddictStop</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<!-- ============================ SETUP ============================ -->
+<section class="screen" id="screen-setup" hidden>
+  <div class="scroll">
+    <header class="brand">
+      <div class="brand-mark"><canvas id="brand-canvas" width="120" height="120"></canvas></div>
+      <h1>AddictStop</h1>
+      <p class="lede">When the adhan starts, your apps stop. Follow the stickman through salah, tick it off, and go back to your feed until the next one.</p>
+    </header>
+
+    <div class="card">
+      <h2>1 · Where are you?</h2>
+      <p class="muted">Prayer times are worked out on your phone from the sun's position. Nothing is sent anywhere.</p>
+      <button class="btn" id="btn-locate">Use my location</button>
+      <div class="row">
+        <label class="field"><span>Latitude</span><input id="in-lat" type="number" step="0.0001" inputmode="decimal" placeholder="59.3293"></label>
+        <label class="field"><span>Longitude</span><input id="in-lng" type="number" step="0.0001" inputmode="decimal" placeholder="18.0686"></label>
+      </div>
+      <p class="hint" id="locate-status"></p>
+    </div>
+
+    <div class="card">
+      <h2>2 · How should times be worked out?</h2>
+      <label class="field"><span>Calculation method</span>
+        <select id="in-method"></select>
+      </label>
+      <label class="field"><span>Asr (madhab)</span>
+        <select id="in-madhab">
+          <option value="standard">Standard — Shafi'i, Maliki, Hanbali</option>
+          <option value="hanafi">Hanafi — later Asr</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="card" id="permissions-card">
+      <h2>3 · Let it hold the lock</h2>
+      <p class="muted">Android only lets an app block other apps if you say so, one switch at a time.</p>
+      <ul class="perms" id="perm-list"></ul>
+      <p class="hint">AddictStop only reads which app is in front, never what is on the screen. Settings and the phone dialler always stay reachable.</p>
+    </div>
+
+    <button class="btn primary big" id="btn-arm">Arm AddictStop</button>
+    <p class="hint center">You can disarm it any time. That is the point — this is a nudge, not a cage.</p>
+  </div>
+</section>
+
+<!-- ============================ HOME ============================ -->
+<section class="screen" id="screen-home" hidden>
+  <div class="scroll">
+    <header class="home-head">
+      <div>
+        <p class="eyebrow" id="home-status">Armed</p>
+        <h1 id="home-next-name">Maghrib</h1>
+        <p class="muted" id="home-next-when">in 3h 12m · 20:14</p>
+      </div>
+      <button class="icon-btn" id="btn-settings" aria-label="Settings">⚙</button>
+    </header>
+
+    <div class="countdown-card">
+      <div class="ring">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+          <circle class="ring-fg" id="ring-fg" cx="60" cy="60" r="52"></circle>
+        </svg>
+        <div class="ring-label">
+          <strong id="countdown">3:12:04</strong>
+          <span>until the lock</span>
+        </div>
+      </div>
+      <p class="scroll-blessing" id="doomscroll-note">Doomscroll away. You are clear until Maghrib.</p>
+    </div>
+
+    <div class="card">
+      <h2>Today</h2>
+      <ul class="times" id="times-list"></ul>
+      <p class="hint" id="times-note"></p>
+    </div>
+
+    <div class="card">
+      <h2>Streak</h2>
+      <div class="streak"><strong id="streak-count">0</strong><span>prayers followed in a row</span></div>
+      <div class="dots" id="streak-dots"></div>
+    </div>
+
+    <button class="btn ghost" id="btn-test">Test the lock right now</button>
+  </div>
+</section>
+
+<!-- ============================ LOCKED ============================ -->
+<section class="screen locked" id="screen-locked" hidden>
+  <div class="lock-body">
+    <div class="lock-badge">🔒</div>
+    <p class="eyebrow">The adhan has been called</p>
+    <h1 id="lock-prayer">Maghrib</h1>
+    <p class="arabic" id="lock-arabic">المغرب</p>
+    <p class="lede">Every other app is shut until this prayer is done. The stickman will lead — copy him, pose for pose.</p>
+    <button class="btn primary big" id="btn-start-salah">Follow the stickman</button>
+    <button class="btn link" id="btn-excuse">I can't pray right now</button>
+    <p class="hint" id="lock-elapsed"></p>
+  </div>
+</section>
+
+<!-- ============================ SALAH ============================ -->
+<section class="screen salah" id="screen-salah" hidden>
+  <div class="salah-top">
+    <div class="salah-meta">
+      <span id="salah-prayer">Maghrib</span>
+      <span class="dot-sep">·</span>
+      <span>Rak'ah <strong id="salah-rakah">1 / 3</strong></span>
+    </div>
+    <div class="bar"><div class="bar-fill" id="salah-overall"></div></div>
+  </div>
+
+  <div class="stage">
+    <canvas id="stickman"></canvas>
+    <div class="stage-caption">
+      <p class="arabic" id="pose-arabic">قيام</p>
+      <h2 id="pose-label">Qiyam</h2>
+      <p class="dhikr" id="pose-dhikr">al-Fātiḥa, then a sūrah</p>
+      <p class="hint" id="pose-hint">Stand. Hands folded.</p>
+    </div>
+  </div>
+
+  <div class="hold-track" id="hold-track">
+    <div class="hold-fill" id="hold-fill"></div>
+    <span class="hold-text" id="hold-text">Hold the pose he is in</span>
+  </div>
+
+  <div class="pose-pad" id="pose-pad">
+    <button class="pose-btn" data-group="stand"><span class="glyph">⬆</span>Stand</button>
+    <button class="pose-btn" data-group="bow"><span class="glyph">⤵</span>Bow</button>
+    <button class="pose-btn" data-group="down"><span class="glyph">⬇</span>Prostrate</button>
+    <button class="pose-btn" data-group="sit"><span class="glyph">◟</span>Sit</button>
+  </div>
+  <p class="hint center tiny" id="salah-nudge">Press and hold the pose the stickman is in. Let go and it drains.</p>
+</section>
+
+<!-- ============================ DONE ============================ -->
+<section class="screen done" id="screen-done" hidden>
+  <div class="lock-body">
+    <div class="check" id="check-mark">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="44"></circle>
+        <path d="M28 52 L44 68 L73 34"></path>
+      </svg>
+    </div>
+    <h1 id="done-prayer">Maghrib prayed</h1>
+    <p class="lede" id="done-note">Ticked off. The lock is lifted until the next adhan.</p>
+    <button class="btn primary big" id="btn-unlock">Unlock and go doomscroll</button>
+    <p class="hint" id="done-next"></p>
+  </div>
+</section>
+
+<!-- ============================ SHEETS ============================ -->
+<div class="sheet-scrim" id="sheet-scrim" hidden></div>
+
+<div class="sheet" id="sheet-settings" hidden>
+  <div class="sheet-grab"></div>
+  <h2>Settings</h2>
+  <label class="field"><span>Calculation method</span><select id="set-method"></select></label>
+  <label class="field"><span>Asr (madhab)</span>
+    <select id="set-madhab">
+      <option value="standard">Standard</option>
+      <option value="hanafi">Hanafi</option>
+    </select>
+  </label>
+  <label class="field"><span>Pace of the stickman</span>
+    <select id="set-pace">
+      <option value="0.7">Brisk</option>
+      <option value="1" selected>Measured</option>
+      <option value="1.4">Unhurried</option>
+    </select>
+  </label>
+  <label class="field"><span>Location</span>
+    <span class="row">
+      <input id="set-lat" type="number" step="0.0001" inputmode="decimal">
+      <input id="set-lng" type="number" step="0.0001" inputmode="decimal">
+    </span>
+  </label>
+  <ul class="perms" id="set-perm-list"></ul>
+  <button class="btn" id="btn-disarm">Disarm AddictStop</button>
+  <button class="btn ghost" id="btn-close-settings">Close</button>
+</div>
+
+<div class="sheet" id="sheet-excuse" hidden>
+  <div class="sheet-grab"></div>
+  <h2>Not now</h2>
+  <p class="muted">There are real reasons not to pray at this moment, and the app is not the judge of them. Pick one and the lock lifts.</p>
+  <div class="excuse-list">
+    <button class="btn ghost" data-excuse="already">I already prayed it</button>
+    <button class="btn ghost" data-excuse="menses">Menstruation or postnatal bleeding</button>
+    <button class="btn ghost" data-excuse="travel">Travelling — combining prayers</button>
+    <button class="btn ghost" data-excuse="ill">Ill, or somewhere I can't pray</button>
+    <button class="btn ghost" data-excuse="later">I'll pray it later, off the app</button>
+  </div>
+  <button class="btn link" id="btn-cancel-excuse">Back to the stickman</button>
+</div>
+
+<script src="cordova.js"></script>
+<script src="js/prayertimes.js"></script>
+<script src="js/stickman.js"></script>
+<script src="js/salah.js"></script>
+<script src="js/native.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

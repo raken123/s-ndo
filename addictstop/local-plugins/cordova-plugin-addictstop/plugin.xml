@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        id="cordova-plugin-addictstop"
+        version="1.0.0">
+
+  <name>AddictStop Blocker</name>
+  <description>Screen-time lock driven by prayer times: an accessibility service bounces you out of every other app while the lock is on, and exact alarms turn it on when the adhan starts.</description>
+  <license>MIT</license>
+
+  <js-module src="www/addictstop.js" name="AddictStop">
+    <clobbers target="AddictStopNative" />
+  </js-module>
+
+  <platform name="android">
+    <config-file target="res/xml/config.xml" parent="/*">
+      <feature name="AddictStop">
+        <param name="android-package" value="com.addictstop.block.AddictStopPlugin" />
+      </feature>
+    </config-file>
+
+    <config-file target="AndroidManifest.xml" parent="/manifest">
+      <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+      <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+      <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+      <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+      <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+      <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+      <uses-permission android:name="android.permission.VIBRATE" />
+      <uses-permission android:name="android.permission.WAKE_LOCK" />
+      <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+      <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+      <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    </config-file>
+
+    <config-file target="AndroidManifest.xml" parent="/manifest/application">
+      <service
+          android:name="com.addictstop.block.AppBlockService"
+          android:exported="false"
+          android:label="AddictStop"
+          android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+        <intent-filter>
+          <action android:name="android.accessibilityservice.AccessibilityService" />
+        </intent-filter>
+        <meta-data
+            android:name="android.accessibilityservice"
+            android:resource="@xml/addictstop_accessibility" />
+      </service>
+
+      <receiver
+          android:name="com.addictstop.block.PrayerAlarmReceiver"
+          android:exported="false" />
+
+      <receiver
+          android:name="com.addictstop.block.BootReceiver"
+          android:exported="true">
+        <intent-filter>
+          <action android:name="android.intent.action.BOOT_COMPLETED" />
+          <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+          <action android:name="android.intent.action.TIME_SET" />
+          <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+        </intent-filter>
+      </receiver>
+    </config-file>
+
+    <resource-file src="src/android/addictstop_accessibility.xml" target="res/xml/addictstop_accessibility.xml" />
+    <resource-file src="src/android/addictstop_strings.xml" target="res/values/addictstop_strings.xml" />
+
+    <source-file src="src/android/AddictStopPlugin.java" target-dir="src/com/addictstop/block" />
+    <source-file src="src/android/LockState.java" target-dir="src/com/addictstop/block" />
+    <source-file src="src/android/AppBlockService.java" target-dir="src/com/addictstop/block" />
+    <source-file src="src/android/PrayerAlarmReceiver.java" target-dir="src/com/addictstop/block" />
+    <source-file src="src/android/BootReceiver.java" target-dir="src/com/addictstop/block" />
+    <source-file src="src/android/Scheduler.java" target-dir="src/com/addictstop/block" />
+    <source-file src="src/android/Notifier.java" target-dir="src/com/addictstop/block" />
+  </platform>
+</plugin>

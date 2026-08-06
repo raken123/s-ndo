@@ -1,0 +1,23 @@
+{
+  "name": "cordova-plugin-addictstop",
+  "version": "1.0.0",
+  "description": "Prayer-time screen lock: exact alarms fire at the adhan and an accessibility service keeps every other app out of the foreground until salah is done.",
+  "cordova": {
+    "id": "cordova-plugin-addictstop",
+    "platforms": [
+      "android"
+    ]
+  },
+  "keywords": [
+    "ecosystem:cordova",
+    "cordova-android"
+  ],
+  "engines": {
+    "cordovaDependencies": {
+      "1.0.0": {
+        "cordova-android": ">=11.0.0"
+      }
+    }
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AddictStop — pose sheet</title>
+<style>
+  body { margin: 0; background: #0b1f1a; color: #eef6f2;
+         font-family: -apple-system, "Segoe UI", Roboto, sans-serif; padding: 16px; }
+  h1 { font-size: 16px; font-weight: 600; margin: 0 0 14px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  figure { margin: 0; background: rgba(255,255,255,.05); border-radius: 14px; padding: 6px; }
+  canvas { width: 100%; aspect-ratio: 1; display: block; }
+  figcaption { text-align: center; font-size: 12px; padding: 4px 0 6px; color: #9db6ac; }
+</style>
+</head>
+<body>
+<h1>Pose sheet — every position the stickman leads you through</h1>
+<div class="grid" id="grid"></div>
+<script src="../www/js/stickman.js"></script>
+<script>
+  // A dev aid: renders each pose statically so they can be eyeballed and tuned
+  // without walking through a whole prayer. Not shipped in the app.
+  var grid = document.getElementById('grid');
+  Object.keys(Stickman.POSES).forEach(function (name) {
+    var fig = document.createElement('figure');
+    var canvas = document.createElement('canvas');
+    var cap = document.createElement('figcaption');
+    cap.textContent = Stickman.POSES[name].label;
+    fig.appendChild(canvas);
+    fig.appendChild(cap);
+    grid.appendChild(fig);
+    var man = new Stickman(canvas);
+    man.setPose(name, true);
+    requestAnimationFrame(function (t) { man.draw(t, { bg: '#0b1f1a' }); });
+  });
+</script>
+</body>
+</html>
