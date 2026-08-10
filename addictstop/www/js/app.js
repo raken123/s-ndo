@@ -184,10 +184,22 @@
     }
   ];
 
+  /*
+   * On a platform that cannot hold other apps shut -- iOS -- only the adhan
+   * permission means anything, so the rest of the checklist is dropped rather
+   * than left there as five switches that promise something untrue.
+   */
+  function relevantPermissions() {
+    if (state.status.canBlock === false) {
+      return PERMISSIONS.filter(function (p) { return p.key === 'notifications'; });
+    }
+    return PERMISSIONS;
+  }
+
   function renderPermissions(listEl) {
     if (!listEl) return;
     listEl.innerHTML = '';
-    PERMISSIONS.forEach(function (perm) {
+    relevantPermissions().forEach(function (perm) {
       var on = !!state.status[perm.key];
       var li = document.createElement('li');
       li.className = on ? 'on' : '';
@@ -225,19 +237,77 @@
       state.status = status || {};
       renderPermissions($('perm-list'));
       renderPermissions($('set-perm-list'));
+      renderPlatformCopy();
       return state.status;
     });
   }
 
+  /* Where the platform cannot block, say so everywhere rather than in one
+   * apologetic footnote. */
+  function renderPlatformCopy() {
+    var blocks = state.status.canBlock !== false;
+    $('brand-lede').textContent = blocks
+      ? 'When the adhan starts, your apps stop. Follow the stickman through salah, tick it off, and go back to your feed until the next one.'
+      : 'When the adhan starts, this app calls it and asks for the prayer back. Follow the stickman through salah and tick it off — on iOS, on your honour.';
+    $('perm-heading').textContent = blocks ? '3 · Let it hold the lock' : '3 · Let it call the adhan';
+    $('perm-sub').textContent = blocks
+      ? 'Android only lets an app block other apps if you say so, one switch at a time.'
+      : 'iOS gives an app no way to shut another one, so there is only the one switch that matters.';
+    $('perm-note').textContent = blocks
+      ? 'AddictStop only reads which app is in front, never what is on the screen. Settings and the phone dialler always stay reachable.'
+      : 'Real blocking on iOS needs Apple’s Screen Time entitlement and a native extension, which this build does not have. Everything else works the same.';
+  }
+
+  /* ----------------------------------------------------------------- adhan */
+
+  /*
+   * The bundled recitation. It plays here when the lock is raised with the app
+   * already in front; when the alarm fires in the background the notification
+   * channel plays the same file, and the native side posts a silent
+   * notification instead so it is never called twice at once.
+   */
+  function playAdhan() {
+    var audio = $('adhan-audio');
+    if (!audio) return;
+    try {
+      audio.currentTime = 0;
+      var played = audio.play();
+      if (played && played.catch) {
+        // Autoplay can be refused until the screen has been touched; the
+        // notification has the sound covered either way.
+        played.catch(function () { $('btn-hush').hidden = true; });
+      }
+      $('btn-hush').hidden = false;
+    } catch (e) {
+      $('btn-hush').hidden = true;
+    }
+  }
+
+  function stopAdhan() {
+    var audio = $('adhan-audio');
+    if (!audio) return;
+    try {
+      audio.pause();
+      audio.currentTime = 0;
+    } catch (e) {
+      // Nothing to stop.
+    }
+    $('btn-hush').hidden = true;
+  }
+
   /* -------------------------------------------------------------- the lock */
 
-  function enterLock(prayer) {
+  function enterLock(prayer, options) {
     state.locked = prayer;
     $('lock-prayer').textContent = prayer.name;
     $('lock-arabic').textContent = prayer.arabic || '';
     $('lock-elapsed').textContent = '';
+    $('lock-lede').textContent = state.status.canBlock === false
+      ? 'iOS will not let one app shut another, so nothing is being held closed — this one is on your honour. The stickman will lead; copy him, pose for pose.'
+      : 'Every other app is shut until this prayer is done. The stickman will lead — copy him, pose for pose.';
     show('screen-locked');
     buzz([0, 220, 120, 220]);
+    if (!options || options.sound !== false) playAdhan();
   }
 
   function triggerLock(prayer) {
@@ -248,6 +318,7 @@
   }
 
   function releaseLock() {
+    stopAdhan();
     return Native.unlock().then(function () {
       state.locked = null;
       return pushSchedule();
@@ -363,9 +434,13 @@
     }
 
     var due = outstandingPrayer(now);
-    $('doomscroll-note').textContent = state.settings.armed
-      ? 'Doomscroll away. You are clear until ' + (next ? next.name : 'the next prayer') + '.'
-      : 'Disarmed — nothing will be blocked.';
+    if (!state.settings.armed) {
+      $('doomscroll-note').textContent = 'Disarmed — nothing will be blocked.';
+    } else if (state.status.canBlock === false) {
+      $('doomscroll-note').textContent = 'Scroll on. ' + (next ? next.name : 'The next prayer') + ' will call you.';
+    } else {
+      $('doomscroll-note').textContent = 'Doomscroll away. You are clear until ' + (next ? next.name : 'the next prayer') + '.';
+    }
 
     if (due && state.settings.armed && state.screen === 'screen-home') {
       triggerLock(due);
@@ -377,6 +452,7 @@
   var stickman = null;
 
   function startSalah(prayer) {
+    stopAdhan();
     state.session = new Salah.Session(prayer, { pace: state.settings.pace });
     state.held = null;
     $('salah-prayer').textContent = prayer.name;
@@ -674,6 +750,7 @@
       startSalah(state.locked || outstandingPrayer(new Date()) || nextPrayer(new Date()));
     });
     $('btn-excuse').addEventListener('click', function () { openSheet('sheet-excuse'); });
+    $('btn-hush').addEventListener('click', stopAdhan);
     $('btn-cancel-excuse').addEventListener('click', closeSheets);
     Array.prototype.forEach.call(document.querySelectorAll('[data-excuse]'), function (btn) {
       btn.addEventListener('click', function () { excuse(btn.dataset.excuse); });
@@ -696,7 +773,9 @@
     if (!event || !event.type) return;
     if (event.type === 'adhan' || event.type === 'blocked') {
       var due = outstandingPrayer(new Date()) || nextPrayer(new Date());
-      if (due && state.screen !== 'screen-salah') enterLock(due);
+      // The notification channel is already reciting in both these cases, so
+      // the WebView keeps quiet.
+      if (due && state.screen !== 'screen-salah') enterLock(due, { sound: false });
       if (event.type === 'blocked' && event.payload && event.payload.blocked) {
         toast('Not until you have prayed.');
       }
@@ -705,7 +784,8 @@
       refreshStatus().then(function (status) {
         if (status.locked && state.screen !== 'screen-salah' && state.screen !== 'screen-done') {
           var due = outstandingPrayer(new Date());
-          if (due) enterLock(due);
+          // Coming back to a lock already in progress: no second adhan.
+          if (due) enterLock(due, { sound: false });
         }
       });
     }
@@ -733,7 +813,8 @@
       pushSchedule();
       var due = outstandingPrayer(new Date());
       if (status.locked && due) {
-        enterLock(due);
+        // Re-opening into a lock that was already called: no second adhan.
+        enterLock(due, { sound: false });
       } else {
         if (status.locked) Native.unlock();
         show('screen-home');

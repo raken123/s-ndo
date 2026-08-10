@@ -27,7 +27,9 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
 
         LockState.lock(context, name, rakahs);
         wake(context);
-        Notifier.postLockNotification(context, name);
+        // Not silent: this is the adhan itself, and the app is not necessarily
+        // open to play it.
+        Notifier.postLockNotification(context, name, false);
 
         Intent launch = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
         if (launch != null) {

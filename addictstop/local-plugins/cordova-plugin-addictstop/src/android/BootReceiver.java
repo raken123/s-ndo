@@ -16,7 +16,8 @@ public class BootReceiver extends BroadcastReceiver {
         Notifier.ensureChannel(context);
         Scheduler.arm(context);
         if (LockState.isLocked(context)) {
-            Notifier.postLockNotification(context, LockState.prayer(context));
+            // Silent: the adhan was already called before the reboot.
+            Notifier.postLockNotification(context, LockState.prayer(context), true);
         }
     }
 }

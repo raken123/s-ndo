@@ -116,7 +116,7 @@ public class AppBlockService extends AccessibilityService {
             // Background activity starts can still be refused on some builds;
             // the full-screen notification is the fallback path.
             Log.w(TAG, "could not start activity, falling back to notification", e);
-            Notifier.postLockNotification(this, LockState.prayer(this));
+            Notifier.postLockNotification(this, LockState.prayer(this), true);
         }
     }
 

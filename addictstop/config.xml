@@ -35,4 +35,41 @@
              built APK. The app loads no remote content anyway (see the CSP in
              index.html), so it has nothing to gain from one. -->
     </platform>
+
+    <platform name="ios">
+        <preference name="deployment-target" value="14.0" />
+        <preference name="SwiftVersion" value="5" />
+        <preference name="WKWebViewOnly" value="true" />
+
+        <!-- iOS cannot block other apps from a Cordova app: there is no
+             equivalent of Android's accessibility service, and Screen Time
+             (FamilyControls) needs a native extension and an entitlement Apple
+             grants by request. The iOS build is therefore the prayer clock,
+             the adhan and the stickman, on your honour. See README. -->
+
+        <icon height="20" src="res/ios/icon-20.png" width="20" />
+        <icon height="40" src="res/ios/icon-40.png" width="40" />
+        <icon height="60" src="res/ios/icon-60.png" width="60" />
+        <icon height="29" src="res/ios/icon-29.png" width="29" />
+        <icon height="58" src="res/ios/icon-58.png" width="58" />
+        <icon height="87" src="res/ios/icon-87.png" width="87" />
+        <icon height="48" src="res/ios/icon-48.png" width="48" />
+        <icon height="55" src="res/ios/icon-55.png" width="55" />
+        <icon height="80" src="res/ios/icon-80.png" width="80" />
+        <icon height="88" src="res/ios/icon-88.png" width="88" />
+        <icon height="100" src="res/ios/icon-100.png" width="100" />
+        <icon height="172" src="res/ios/icon-172.png" width="172" />
+        <icon height="196" src="res/ios/icon-196.png" width="196" />
+        <icon height="216" src="res/ios/icon-216.png" width="216" />
+        <icon height="120" src="res/ios/icon-120.png" width="120" />
+        <icon height="76" src="res/ios/icon-76.png" width="76" />
+        <icon height="152" src="res/ios/icon-152.png" width="152" />
+        <icon height="167" src="res/ios/icon-167.png" width="167" />
+        <icon height="180" src="res/ios/icon-180.png" width="180" />
+        <icon height="1024" src="res/ios/icon-1024.png" width="1024" />
+
+        <edit-config file="*-Info.plist" mode="merge" target="NSLocationWhenInUseUsageDescription">
+            <string>Your location is used on this device to work out the prayer times. It is never sent anywhere.</string>
+        </edit-config>
+    </platform>
 </widget>

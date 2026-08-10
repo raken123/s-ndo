@@ -61,8 +61,10 @@ public class AddictStopPlugin extends CordovaPlugin {
             return true;
         }
         if ("lock".equals(action)) {
+            // Raised from the WebView, so the app is in front and playing the
+            // adhan itself: the notification stays quiet.
             LockState.lock(context, args.optString(0, "Prayer"), args.optInt(1, 2));
-            Notifier.postLockNotification(context, args.optString(0, "Prayer"));
+            Notifier.postLockNotification(context, args.optString(0, "Prayer"), true);
             cb.success(status(context));
             return true;
         }

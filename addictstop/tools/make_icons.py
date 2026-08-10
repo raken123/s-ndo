@@ -12,8 +12,14 @@ Everything is drawn at 8x and downsampled so the small densities stay clean.
 import os
 from PIL import Image, ImageDraw
 
-OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "res", "android")
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUT_DIR = os.path.join(ROOT, "res", "android")
+IOS_DIR = os.path.join(ROOT, "res", "ios")
 SIZES = [36, 48, 72, 96, 144, 192, 512]
+# Every size cordova-ios asks for in config.xml, from the notification badge
+# through to the App Store listing.
+IOS_SIZES = [20, 29, 40, 48, 50, 55, 57, 58, 60, 72, 76, 80, 87, 88, 100,
+             114, 120, 144, 152, 167, 172, 180, 196, 216, 1024]
 SS = 8  # supersampling factor
 
 BG_TOP = (16, 92, 74)
@@ -103,6 +109,17 @@ def main():
     splash.paste(draw_icon(320), (96, 96))
     splash.save(os.path.join(OUT_DIR, "splash.png"))
     print("wrote", os.path.join(OUT_DIR, "splash.png"))
+
+    # iOS rounds the corners itself and rejects alpha in App Store artwork, so
+    # these are flattened onto the icon's own dark green.
+    os.makedirs(IOS_DIR, exist_ok=True)
+    for s in IOS_SIZES:
+        flat = Image.new("RGB", (s, s), BG_BOTTOM)
+        icon = draw_icon(s)
+        flat.paste(icon, (0, 0), icon)
+        path = os.path.join(IOS_DIR, "icon-%d.png" % s)
+        flat.save(path)
+        print("wrote", path)
 
 
 if __name__ == "__main__":

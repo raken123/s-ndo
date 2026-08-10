@@ -20,12 +20,14 @@
   "license": "MIT",
   "devDependencies": {
     "cordova-android": "^15.1.0",
+    "cordova-ios": "^8.1.1",
     "cordova-plugin-addictstop": "file:local-plugins/cordova-plugin-addictstop",
     "cordova-plugin-geolocation": "^5.0.0"
   },
   "cordova": {
     "platforms": [
-      "android"
+      "android",
+      "ios"
     ],
     "plugins": {
       "cordova-plugin-geolocation": {

@@ -13,7 +13,7 @@
   var stub = {
     _state: {
       locked: false, armed: false, prayer: null, rakahs: 0, lockedSince: 0,
-      accessibility: false, overlay: false, exactAlarms: true,
+      canBlock: true, accessibility: false, overlay: false, exactAlarms: true,
       notifications: true, batteryUnrestricted: false, sdk: 0
     },
     getStatus: function () { return Promise.resolve(copy(this._state)); },

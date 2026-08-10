@@ -17,7 +17,7 @@
     <header class="brand">
       <div class="brand-mark"><canvas id="brand-canvas" width="120" height="120"></canvas></div>
       <h1>AddictStop</h1>
-      <p class="lede">When the adhan starts, your apps stop. Follow the stickman through salah, tick it off, and go back to your feed until the next one.</p>
+      <p class="lede" id="brand-lede">When the adhan starts, your apps stop. Follow the stickman through salah, tick it off, and go back to your feed until the next one.</p>
     </header>
 
     <div class="card">
@@ -45,10 +45,10 @@
     </div>
 
     <div class="card" id="permissions-card">
-      <h2>3 · Let it hold the lock</h2>
-      <p class="muted">Android only lets an app block other apps if you say so, one switch at a time.</p>
+      <h2 id="perm-heading">3 · Let it hold the lock</h2>
+      <p class="muted" id="perm-sub">Android only lets an app block other apps if you say so, one switch at a time.</p>
       <ul class="perms" id="perm-list"></ul>
-      <p class="hint">AddictStop only reads which app is in front, never what is on the screen. Settings and the phone dialler always stay reachable.</p>
+      <p class="hint" id="perm-note">AddictStop only reads which app is in front, never what is on the screen. Settings and the phone dialler always stay reachable.</p>
     </div>
 
     <button class="btn primary big" id="btn-arm">Arm AddictStop</button>
@@ -105,9 +105,10 @@
     <p class="eyebrow">The adhan has been called</p>
     <h1 id="lock-prayer">Maghrib</h1>
     <p class="arabic" id="lock-arabic">المغرب</p>
-    <p class="lede">Every other app is shut until this prayer is done. The stickman will lead — copy him, pose for pose.</p>
+    <p class="lede" id="lock-lede">Every other app is shut until this prayer is done. The stickman will lead — copy him, pose for pose.</p>
     <button class="btn primary big" id="btn-start-salah">Follow the stickman</button>
     <button class="btn link" id="btn-excuse">I can't pray right now</button>
+    <button class="btn link" id="btn-hush" hidden>Stop the adhan</button>
     <p class="hint" id="lock-elapsed"></p>
   </div>
 </section>
@@ -207,6 +208,8 @@
   </div>
   <button class="btn link" id="btn-cancel-excuse">Back to the stickman</button>
 </div>
+
+<audio id="adhan-audio" src="audio/adhan.mp3" preload="auto"></audio>
 
 <script src="cordova.js"></script>
 <script src="js/prayertimes.js"></script>
