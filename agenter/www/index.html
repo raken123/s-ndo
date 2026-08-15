@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self' data: blob: gap: https://generativelanguage.googleapis.com;
+               style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';
+               img-src 'self' data: blob:; connect-src 'self' https://generativelanguage.googleapis.com;
+               frame-src 'self' blob: data:; media-src 'self' blob: data:">
+<meta name="color-scheme" content="dark">
+<title>Agenter — your own AI coding agent</title>
+<link rel="icon" href="res/icon.svg">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<div id="app">
+  <aside id="sidebar">
+    <div class="brand">
+      <span class="brand-mark" id="brandMark"></span>
+      <span class="brand-text">
+        <b>Agenter</b>
+        <small>your own AI coding agent</small>
+      </span>
+    </div>
+
+    <button class="new-chat" id="newChat">＋ New session</button>
+
+    <div class="nav-label">Sessions</div>
+    <div id="sessionList" class="session-list"></div>
+
+    <div class="side-foot">
+      <div id="usageCard" class="usage-card"></div>
+      <div id="dealCard"></div>
+      <button class="ghost-btn" id="openSettings">⚙ Settings</button>
+    </div>
+  </aside>
+
+  <main id="main">
+    <header id="topbar">
+      <button class="icon-btn only-narrow" id="menuBtn" aria-label="Menu">☰</button>
+      <div class="topbar-title" id="topTitle">New session</div>
+      <span class="plan-badge" id="planBadge">Free</span>
+    </header>
+
+    <div id="transcript" class="transcript"></div>
+
+    <div id="composer" class="composer">
+      <div id="triggerHint" class="trigger-hint" hidden></div>
+      <div class="composer-row">
+        <textarea id="prompt" rows="1" placeholder="Ask Agenter to build something…"
+                  autocomplete="off" spellcheck="false"></textarea>
+        <button id="send" class="send-btn" aria-label="Send">▶</button>
+      </div>
+      <div class="composer-foot">
+        <span id="composerNote">Enter to send · Shift+Enter for a new line</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ── subscription page ───────────────────────────────────────────── -->
+<div id="paywall" class="paywall" hidden>
+  <div class="paywall-sheet" role="dialog" aria-modal="true" aria-labelledby="pwTitle">
+    <button class="paywall-close" id="pwClose" aria-label="Leave">✕</button>
+
+    <div class="deal-ribbon">
+      <span class="deal-emoji">🎒</span>
+      <span><b>Back To School</b> — 75% off Pro</span>
+      <span class="deal-clock" id="dealClock"></span>
+    </div>
+
+    <div class="paywall-head">
+      <span class="paywall-robot" id="paywallRobot"></span>
+      <h2 id="pwTitle">Agenter Pro</h2>
+      <p class="paywall-sub" id="pwReason">This one needs Pro.</p>
+    </div>
+
+    <div class="price-row">
+      <span class="price-was" id="priceWas"></span>
+      <span class="price-now" id="priceNow"></span>
+      <span class="price-per">/month</span>
+    </div>
+    <p class="price-note" id="priceNote"></p>
+
+    <ul class="perk-list">
+      <li><b>5&times; the usage</b> <span id="perkUsage"></span></li>
+      <li><b>Videos made with HTML</b> — real, downloadable, self-contained</li>
+      <li><b>3D games</b> — canvas &amp; WebGL scaffolds that run</li>
+      <li><b>Cordova apps</b> — full project trees, ready to build</li>
+      <li><b>Animations</b> — CSS &amp; canvas motion work</li>
+      <li><b>Device control</b> — battery, vibration, sensors, clipboard</li>
+    </ul>
+
+    <button class="buy-btn" id="pwBuy">Get Pro — <span id="buyPrice"></span>/mo</button>
+    <p class="paywall-warn">⚠ Leaving this page clears the prompt you were typing.</p>
+    <button class="leave-link" id="pwLeave">Leave and clear my prompt</button>
+  </div>
+</div>
+
+<!-- ── settings ────────────────────────────────────────────────────── -->
+<div id="settings" class="modal" hidden>
+  <div class="modal-sheet">
+    <button class="paywall-close" id="setClose" aria-label="Close">✕</button>
+    <h2>Settings</h2>
+
+    <label class="field">
+      <span>Gemini API key</span>
+      <input type="password" id="setKey" placeholder="AIza…" autocomplete="off" spellcheck="false">
+      <small>Stored on this device only, in local storage. Never bundled into the app,
+             never sent anywhere except Google's API.</small>
+    </label>
+
+    <label class="field">
+      <span>Model</span>
+      <input type="text" id="setModel" spellcheck="false">
+      <small>Default <code>gemini-2.5-flash</code>. Leave the key blank to run Agenter
+             in offline demo mode.</small>
+    </label>
+
+    <div class="field">
+      <span>Plan</span>
+      <div class="plan-switch">
+        <button id="setFree">Free</button>
+        <button id="setPro">Pro</button>
+      </div>
+      <small id="setPlanNote"></small>
+    </div>
+
+    <button class="buy-btn" id="setSave">Save</button>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="cordova.js"></script>
+<script src="js/config.js"></script>
+<script src="js/robot.js"></script>
+<script src="js/store.js"></script>
+<script src="js/gemini.js"></script>
+<script src="js/video.js"></script>
+<script src="js/device.js"></script>
+<script src="js/agent.js"></script>
+<script src="js/paywall.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>

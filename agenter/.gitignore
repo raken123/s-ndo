@@ -1,0 +1,19 @@
+# Generated Cordova project — reproduce it with build/mkcordova.py
+build/cordova/
+
+# Electron runtime downloads and intermediate trees
+build/cache/
+build/work/
+
+__pycache__/
+*.pyc
+
+# Verification harness
+build/node_modules/
+build/package.json
+build/package-lock.json
+
+# Never commit a key. The app reads one from Settings at runtime instead.
+config.local.js
+*.keystore
+*.jks
