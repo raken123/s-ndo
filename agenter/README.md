@@ -8,9 +8,9 @@ Android APK, and Electron apps for Windows, macOS and Linux.
 | `dist/agenter-1.0.0.html` | any browser | 96 KB |
 | `dist/agenter-1.0.0.apk` | Android 7+ (API 24) | 3.6 MB |
 | `dist/agenter_1.0.0_amd64.deb` | Debian / Ubuntu x86-64 | 82.8 MB |
-| `dist/agenter-1.0.0-linux-x64.tar.xz` | any Linux x86-64 | ~88 MB |
-| `dist/agenter-1.0.0-win32-x64.tar.xz` | Windows x86-64 | ~93 MB |
-| `dist/agenter-1.0.0-macos-arm64.tar.xz` | macOS Apple Silicon | ~86 MB |
+| `dist/agenter-1.0.0-linux-x64.tar.xz` | any Linux x86-64 | 80.2 MB |
+| `dist/agenter-1.0.0-win32-x64.tar.xz` | Windows x86-64 | 92.7 MB |
+| `dist/agenter-1.0.0-macos-arm64.tar.xz` | macOS Apple Silicon | 72.1 MB |
 
 The icon is a cute robot — one SVG in `res/icon.svg`, rasterised into every
 density Android and the desktop platforms ask for, including Android adaptive
@@ -182,10 +182,29 @@ targetSdk 36, `INTERNET` and `VIBRATE` permissions only, all of `www/` present
 in `assets/`, and both legacy and adaptive (v26) launcher icons. It passes
 `apksigner verify` under APK Signature Scheme v2.
 
-The Windows and macOS archives were checked structurally only — they are
-assembled from official Electron runtimes with the same payload and `main.js`
-that was verified on Linux, but **neither was actually run**, because there is
-no Windows or macOS machine in the build environment.
+The Windows and macOS archives were checked structurally only: `agenter.exe` is
+a valid PE32+ x86-64 image, `Agenter.app`'s executable is a 64-bit arm64 Mach-O
+with its 14 framework symlinks intact, `Info.plist` names the right executable
+and bundle id, and `agenter.icns` is a valid icon container. They are assembled
+from official Electron runtimes with the same payload and `main.js` that was
+verified on Linux, but **neither was actually run** — there is no Windows or
+macOS machine in the build environment, so "runs" is not a claim that has been
+tested for those two.
+
+`tar.xz` rather than zip for both: a zipped Windows tree lands past GitHub's
+100 MB per-file limit, and zip mangles the framework symlinks a macOS `.app`
+depends on.
+
+## Checksums (SHA-256)
+
+```
+e8fbd3218da31253f6ca131283ccf5bd44817192a78573702d334c5fdf83dfd8  agenter-1.0.0.html
+570c520f3fa32687a2d5059c207d2f040d99a5baa0c48a049812125585e52b03  agenter-1.0.0.apk
+1468f3a5c4007a009cddc108bfc4fa948672c5471876f10d619e79fb02878534  agenter_1.0.0_amd64.deb
+b5489afaf151773a8432ffd6a3389786ba771a00ae2e16a6bf5ed58659659548  agenter-1.0.0-linux-x64.tar.xz
+90c9d89e4e48cdb7e0c56d9a206705cf1c58432c78b2245985b8d4d250550850  agenter-1.0.0-win32-x64.tar.xz
+959407dd552544b9b88a570deac347d9c192b356a64cbd390812c85fab046e8e  agenter-1.0.0-macos-arm64.tar.xz
+```
 
 ---
 
