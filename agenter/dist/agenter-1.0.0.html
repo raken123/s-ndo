@@ -1,0 +1,1943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self' data: blob: gap: https://generativelanguage.googleapis.com;
+               style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';
+               img-src 'self' data: blob:; connect-src 'self' https://generativelanguage.googleapis.com;
+               frame-src 'self' blob: data:; media-src 'self' blob: data:">
+<meta name="color-scheme" content="dark">
+<title>Agenter — your own AI coding agent</title>
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAq6ElEQVR4nO2de5QlVX3vP3tXnXP6dM/0ND0908OIMCAywwwi+ABiUIwShSgwIhAVJWBuonmQe8OKSYwxMRqW5nExN/exEl0rUfPwgSiGKESQoCuIyKA8BxjAAWUePTM93TP9OK+qve8fux57V9V5dfcMg85eq6emalft+u3f7/f9ffdvV9U+gkNQrr764AZQFwEnafQahBhH63EBa5TWgwKBRiMQaK1BANpcq7VGCHM8rRegNUT78a4QoJX5T9F1QgiU1qb5pBnTTnwge76pT0tSTw/ygLlfO/mFQKti+S155oUQu7XWEwKxW2s1IZA/akm+cvPN408vta3EUjV09dUHNyDDd6C5HNgIkY4AY12RHDB7eWXHlYmyzU7+lOyx2BiJF5FxKstmBQeS03Ptxk248tu9KpbPkr/gnIzPJ/Ind8vInwgIDwBfCqT40lI5w6Id4Kr3Tr1NwkfQnA4u0mwEFCM01elSIt8xbid5uiG/oN1+5E/bLZC/x0hUJL8wkWQLUl5/0y3jNy/Gfgt2gKv/29TrheIGDWcWeXj+QBxGi5FmNrbr94bQ9Lp0376tg7SCdouuy8nzfCHfPq1A/ujQFo344Fe+vuaOvETdS98OcNWvTp0pETeg9Os7eiqW5x9KzlfW9S9Mzi+WJxG7aEzjymfUqe8Qmg/e9I21Ww6ZA1zzq1N/rLX4KFoLl1Rj5SX/oycER5VLwvmZ6oVyvtn0gfys/O3ksQ/3yPn96lNrNEJ/+KtfX3s9PZaeHODXf33nYDOofkogruzKUTbyj0DORyuEbI98pSm8Lit/ZwQfAs53aLSLPgX/0pL8+i23rJ1ftAO8971712r8fwdxZicPzx/ohfPtA50iSva6HpGf5Bsq2jPdFfEJwjoNUDHEE6WKtPpI4Xw668WihR8GQfDWf7v9+J15ydMiO1Vec83B1yj8+0CcmSLIuWfCQWmnsp6K42bxGCB2juSEBDlpJ4XlPe51Rg4hhCWHjTRzQAgAlXTTk+BJhedp8yc1Uig8qZBS4UuNRCOkAER0vU7EF6TtOxEm1ovIy68zB9IIaeTHqs7q025fRxLETlWsTytywZmeX7rv4gt3nNnJxm0jwOWX/6Q6NLzsu2jOcAbnzs2T/5HnqOc3zxfS1As0SPCEBjRSGscQwkQCc1SjtUAp0Eok/1eYQZxRvLDEOTI4P4f8An1q+GFpWfjzN9744hoFpW0EGFq+7LNCizNipLX1VIvzIs9zOCrVQdyZDHKA7shPI0qMtLzxU3mETI2AMMiXUuP7mnJJUSmHVMotBgZCBgZaVMshlVJAuazwfYXnKYTQSGF41XitsvptjymK5dcZATsiPyt/JiLaWY2jzyzyC/SJ1me2Zv1/bGfnwghw9Xun/1DAx5ee823X73dUXiyHG5iSQGk6JsGTGk8qfE9TKil8z/x5UoNU5uxQE4aCIIAg9GgGgiCQhKEkVBKtNVpLlNII5BHJ+UXFPizgg1+9be0nsufkHOCaayY3IryHtNbeCzHPN4FbIoRKeL7kh5TLinJJUSoFVEoG5Z7UoDWhFgQtTbPl0Wh4tFqCRssjCDxagUApj1BphJZmoPi85PkL0CdY9YRaitO/duuxW217+zm3Ed4NWmsP4XpWyrGp8UmE0+nNLA81Z7tO4rpmNpVJb2Q7kzvwynK+k2sZHxAqGuBpfE9RLisGKiED5ZCBgZBKOWD16AxrV+8Drdg5cQx79i+j3vDwpE9deNG4AJTy0FohhUBlEZpTNo4xEv1k+uE2E+lF2MZ29WkHiK76tHa1YzjhodQNwAWOue2dq391ajOKr75Q8/xo3IfnmdF9yVdUKiEDlYDqQMiyoYB1L9rPG85+lrGxllF0WEcHB9mzR/Kd+zfyox3HMlsrUZv3qDUq1JuSIPAJAolGoBVoZF7+TCQ6pHl+R30WzH9YkVTBhf/2H2tvyznAtdfqyszs9DYExy8d59sH+uO2TAMZ5bVpV5itJyPklxQDlYChasCywYCT1+3l0gu2Icuj4FVNC8EMojWFbuxFNye56T9fz5M/OY7ZuTKz82UajTKNliQIPcIQ0DIeYRzRnG8LkMmetpaH155+440iBCsLmJk78LtCiOOzuj+S8/wk+yAeLQtEZBQhNFIqPBlSKoUMDdV502seQ5aWQWkFojIO5TFEaQS8IfCqCFniTa+4g6FKnZIfUPIUUgQmZYRoBrGDPIcxz8c6P7m9eyOHVhJ9ajbWD+66Nm5fAlxzzcwq0H/kcH7SVjvOzwxokusWyfl2p3vh/FgekV4X30cKM+HjeyFrVk4xvLwFeAhZRntDCH8IhA/SM6oQkuWDMxy7ciclL0B6AdLTSJTppFZOitkP5xeNoQ4x5yeC2s5nPFn/2YUX7lqVOICW6pVolrsOdOTm+ekANUW+HVZFYqx0pm/1yD60aoFuocN5aO1HN6dA1SFsAgFaBYBifHgXUoTJ5BGOvLF4fSA/I/9S5vlupM3rB2uDAC00SIY9HWyCOAtQKhkZup6aHnBSEksZkRSZcOa4vIVQWykic102vGeQlmk3Ro6DNKsI7Fk8DTqEsIZuHUQICaGZGNPBHCKchWAeoZrosA46sOQxf2agauRRdiTqhPycPm3jkLabB7aL/IIT2tkpOyCM20OAEqmzak9eANwVjQHEBUUclSqhV87PhJ8iDy8M8x04PwOlLPKLBlhaRymbFqhQoxTsmVoBrQMQDfhoTKAbu6G5z0SCYAYdzEBYY2J6DWEISgtUKEw78RNw1RvyyepTu0g21YeK81N5XOQLsxUCLfRmAN+8wBmuf8Hk+bE8RchPOq3RShCGECozw7djYoy9kx5jo/sQah5NyWgwbICaR7emITjIvqnl7JhcSxBKwkAAglAJhBaO/N04n6w+D32en3hFdixlIz92BiFYf9FFOzdICDbbyo+lz3N+AUclnVkCzsc9v3fOt+QRUXjW5jKlJa1A0Gz61Oo+d/3gLHR9El2fMBGgvhuae9GNfdCcRjUPcOfDv0StXqbZ9AhC8wdEEcWSZ6Gc30mfC+B8ndFPwpIAsgj5JE4RynCzRMgzHC5JPLsXzo+vcyBLe+T3wPkFyOnK+XG7kfWVAhVHgEDSaAlqDY/tu9Zyy3ffRG12jsnmiTwc/iEPhR9if7CeudkGt3z/l3lmYh21hk8z8GkF0rSTPA+w9VOAfIrldzi/oz775/ziSBoZOTrPRr7ZRseFOMNHq5HDOrdvO5dY6nf4JGiFlhKtFaHyaAYK2fSQ+Ait2frsSeyeuprTz38FXnUFCNgWvJ8H7nol03PD1Golas0K9WaZIPQJAtCRAyCk88ZQtxlT84ZRXp+WOvvTZ+J0ln6cZxHR/WzOxza6RQcmGxjxQax5QeX5GeTbY5ZEWUqhhAShAI9G01ynFAQhNFseZ1ZXJM141RH2TI2ah0GtEvVmmVbLMxFA+ygVorXfFnFk5H++8/w855NBflI/4mtYkyovizi38XiA5Y5O+0e+kyJmkdMP8nNh0LzTJ4VA6RCUAC0BiWqYqdxWICh5HtlycG6AMPRoBr7h/kASKh+lBFrI1LgR0toi35G3QC/dImlWn1l9O8h3nSCPfJGEfQf5iXOINb6AEUd421MLOKqI8w97np+Vx2o3lV+glEYLAXigJHUl8KVHUwY5B6g1BghCgVJ+tPVQSqO0Mb7Q0QCzX87P6iUj/6HK84s533UKjV4jldaVWPgXRp5vOZ3t+pBcZyQyPVdKE4YerVASBj6NpqTRquQcoN4o0QpKNFuSMCwRhhqFF2UVMpoHsOSxkRzJf2Tl+alT6MQZMrQgqfhFHLWknO+MTpcgz89wrC1PLF/qBAAeoVbIaFQsRAmhMu0CQVhCaYHWKvrzzf2KkG9jIIP8w8P5Lsj6Rr41JpA6MbLliI7wR1aen0V+O6ShzZnmPhKlJFr7KAWhyr8KGShjaKUkGt+0m8wApshPbXHk5/mpM1jOQVSPiQx+Z86PhMtwfnvk98D5BchZNOeTkR8sREpUrDyljdYEuaK1l0A9lm9BnN9Rn4c3z1cdkB8fl50537qbtpXTDvk2Qttwvus1S8L56V6WblzkaCGjMJ/3AK2iervdLPKTdmNjHy7Ox9VnwvlZo3fhfAv5sfP6UV+ScqTn+bY8WeQbcTLyO6Tqyu8WS54M4sjI/4LJ89shn9R5kpdCj5Q8f+WY5PjjfYaGBMuWS6pVk9cnclB0XVqfbB05RGqk6KzjVlvKFoLL3zFY2E6uf9jGTI3kXBY5hdaC+TnF7Ixm5mDIs8+G7NsTuPrM6jvWz5Lk+QmGzLOMxPhpvbjqqv3aFjqnRLtvWeQ419munzq6cA7n2wUYGhScfU6Fn39thQ0bSs7gKXu7NlUvjHoNWx9pctedNb77nRrz8wUKs53VqnbCegGyO9eb+ZDccUC85z2T+vn6Pr86KLngggHeenGVgQHh3uenfDs/r7j5xjm+dtMszVaqsEJ9xgjvFfkSh/OT66RVH+2Lq96zXzthLYvyjCdmPTVx/Uy1mzS4B6QH558/wOZLBxke7vh96k992T8Z8q+fm+Hb36oRhpFGlwz5pAM+yylsZ5CHO88vlQS/+VvDvOdXljE8LLF9pHD7U15/zEqP3/7dEf77B0YolyXJgBOWJM9PjY1jfIVGS4GfIPkw5PkrxwTX/d4wxx/vp0OBo1u0hp8/r8qLXuzz8Y/sZ++eMDIirnEXkOc71wFaCuOWEQ3IrDSdkY+D/H7y/NFRyZ98ZIQXR8Yno4Sj+7DupBLX//UYwyNyyfJ8F/lmq+OIIOMPQ7oif3F5fqkM131gmGNGZXI+bbY/6/Vjqzx+/4+PoVyROeMW5vkyU28P9OL6xOjaGgAaH4zfCu6C/ALOz5zfaW7/fb+x3IT9AiXQRUk/i/UbN1W49n+MkOX8QuRDHvkFnJ9FfuwE5sOQxXB+spvnfI3mla8uc9ZZ5bSzBWEQWxlH69Eazn1dlbPOqXRHfnag6CCftshPswDLiIWcrxf3PP9tlw4mfUs6n56e7h+tz9W/4x3DaNkL51vzA3E7bTg/Ow8gu3K+SJHf79z+2eeUOf4E33GapLNH97vun3hiibPPqi6I8/OTPrGT2XSg8RPbHYK5/deeV3GcZaHber3O3d/dwnfu/h6PPPI4e/dOsm9yP7VanSOhVKsDjK0cZdXqlbxs46mcd945nP3qVzA0VF10/y948xD3bKkXcn7R3L6d5xfN/GWdQ7z7ykmd9CTxwIwrxtWuL0QnWM5hHa5WBf/n70bxfbFgxSql+Mw/fYlP/q9PMTs7t+B2no+yfPkQH7juN7nynZci5cJnO4NA8+5f28VcTbWZAbQiAph3YNHohOsteil4JiBTZKcetBTP808/o4zvC8tZrMt62L//Bw9x8aVX87HrP/mCMz7AzMwcf/Jnf8XFl17NI48+nhzvVx+eJ3jlmQMLzvNdesgPIOVS5PlFz/NPPtmkfW7E6G3/G7feyZW/8ts8uvWJHlQtzEWd/lhIFFqadh/d+gTvfPdv8O9fv71tf7vtn/LSclfObzvaz3C+TSMa8Jf6eX5cVo7JzPXdt0qFXP+Jv+UfP/uFHoxjaSh7LC46+kfE/7eOHcZ2Z+fmufZ3/5gHHnyUP/z9a/F9ry+9jK/yunJ+u6d9Cm1WNrGdwskCFpnn21mCraCxVR6Z5rpuv3n7t/nM577YxjixMaw/Kc1nYJ6H9j2072f+PFMnJUjZAb2Hql23/MNnv8Dd372vb72sXuUvOM9HRAPCDPJjZ5KLzfPzA0VzYMyKAIDTbtF2cmqaD/3JJ/LOlNgoQqIQptOeh/Z88EvoUgldLqPLFXQl+itXzLFSyZzj+ZHR2of0pWkXK3rkdXPdB/6Uyf1TeT100M/qMa9/zo8jQtGkUTyAlAK5mDy/7du7mJc9Il9xOyWKtzd88u+Ymj7Q3vjERpLgeeD56HIJXSmjB6roapVStUppcMj8Vc0xPVA155RL4PkQIzdn/CVsN44oBWX/1DQ3/M3f5/XQQT+DVbngPD+L/DgL0MIMKM0szRJwfn4s0TvHPfzIVr5449eKjY9tfGEU7fvg+2i/RLkcIdH30dIzCwMDhIqSChFBAEGLZrMFXguCABEEaKHitV5ARmF/KdoF8+FJop58RPvijV/j7Ze+lTPPOK13PSVGTLm9lzw/y/naHhOIeI2gnPHN3frh/KL39t0xRPv9z/3zjSilOto/NX7JoK5coVwpo8sDUDFh2SA4NpSGMIBmExoNyqU6zUbT7AuBCELM18NExvfQpTKUywtst0FEimjC9OujAkZTSvEvn7+JM15+Wk/60RqH8+mEfFGMfKzjyZhAgB9FGQf5dtjvCfmkTwu15bKJM8Wj5cy+EKCU5u67v9/G+BHyhW38MnqgQnmgiq4ORuF4AH9sDG/VOPqYUXPp1H7CvXsI9u1F1OtQK1Py5mkm4b8FKowcwDN8X6lQHhhYYLvpAFAkekmUlOvaPffcB9porZN+EnN0Ge13RL4wL4/YyI/nFfzFcn4SKSzkx67r7MadzNzvgQcfZc/efcUOEDuB9AwKSyXKlQq6OghDQ+ihZahVq6letBm9Zk2i/Lh4gN61k+DrtyD3TCA8SVkYlDYFiDAaqHoe5XIFXa0uut2W1qDj78zCQuMD7J7Yy9bHnmTjqad01E+83xX5cX0B58erZ6qM8bWwnwUskPPXHOvx2l8cYnSVYZPJvQF33zGfhi+sCFOw/9jj29obPkG/4WeD/ioMDqGXL0eecirlC99iDNem+Meuxb/yPQS33Yp64rFEhrIQNAPzmXjZ99EDAzC0LGp3Q5/tbkVo0EqhQwUqRCjzkamIB4MFjvDY49s49dRTOuon3j/u2BJvef0I42MlAHZPtvjG3QfYvqveMc834BXu6D/ZF2kE6JfzfV9w9uuqvOLnBrGnul90fInLrl4Rn9Z1e+DgTFslm8FfnI+XIpQOoIeGkOtOwt/8Nq5YOcg7RyuMlyT3zrX46901drQy44nqIP4lmwlurKOefhqhTMwqt1pGjlIJqoNRuycurN2nnkKEAeUgMI4VhogwWmG0aCAANBrNnvX0/neNJ8MQgBNfVOH9l63mrvsPctv3p0F34PyCr4XN/6O3gs1d7DDePc8vleG0V1Qpes4hpRu+Om0PtnUAYYT0pKEA309Ts+FhSm++kFctq/ChYwc5qeIxJAVvWF7mo2sHi5uTHqVfvBA1PGyQPTCQ5PZEvK8W0a4eHjaylcvgR8vPyqgPbSaHDhyc6VlPXoGePQnnnLaMSkW2zfPtcJ+MJUR6XPbL+fGA78UnVhioFncsOb2HzlUq+cUaiAdGcZ7ueZRLJSiXYWCA0rnnoY8Z5fTB/M8drB/IL/+SyDM6Svnc88wAr2JG+VQq6MoAujpg6hbYbunc82CgYrKTkpkXSGcJi69LIkCPTlBUhqqSF49XHM638/wc8mUaEZSInwaKPPJzttepBwkEq8Y7P+LMX995v7BEEzTJJI1fwi+VkZtOA2BfNiQDMwWLP9hFbtxEqVKBchldKiepX6lSQW7ctPB2N52GX6pAyTeTSVJGA7DY+r2Bpd1+p3LcqnJmmrgA+ZnvCmJ6kL1yfjbPD/PL7DjFGcVm9zOj3PzF9n8EZSnRMpp/XzFiIgFw10yLHa3QElPzr5ONzoKVy+hlQ8mkD76PLvno4SVod/kyMzUsTVbgzAZ2sH83/XTzBd+jbZ5vc77z/kA0TewvOM/vUpxOiPb7XUsCIGGEXrkyqTqoNJc+dZDXLS8x7kvunQvY1giL27FlGx6Byf0kAxghUaOjxEF+we2uGIGdO0FYU8K9IL+DfpJ5gU4lGugV5fnKygKSZzu5LGAheX4PJTkte1k/zWjrPxrE1H6nuq7hmwdbPckTFzE3FxFmKoBcinZnZ7NC91a66adLc8XITxFvc75t/GSFkE6cD+7KHOa0/Pk5oXoc2BS2YxsdTVNrs8qjChEHD0Ct8DcQeyu1GmLmIEKZVM2kayFiZmZJ2jXLjCuaOpMCttHXYgaASRG9c376VNFsnaeBqVR5zo+lScYKXYVyw1mnbcdmIuMLpRBBQKvVIpzc24NWiks4uQ+aLWi2EIH5o2meEYSTHWYku7a7l1ariQgDhFlrvuPzAOhdP13B1gfnx1sdDRhlVrjkQU4G+abEWUL3khW+3X6xcnQaopVGqBCCFrRaiEYD7wc/6EGCYqG8+7cQNGqIRgOiP9FoEDTqeD+8f1HtinrDOFcYGJm16hzHe9BPbxHAMnYmz0+dwxy3Xw4xL4U6HUnz/CLOj5Hfi1DCOk932C9Xym1a0An6CUOarcAYq16j8fhW1MMP9aAZt6gHH6Cx7XET6ht1aDSjvzrMz9N4/LGFt/vE44hGHZoNI2scBbRFA5myfNmyqKfd9dW1tMnzMz8SATL66lhmHCD/VnCe813kdxar1wHgKmtUX9iIVoajg4Bmswm1OmJujta3bkfs39/+2kwJ9u6hddediLk5xHwNUa/RbNRpNuqIeh1Rqy2i3W+ZgWWtRrPZNNQSZiNAvoyNrVz0ABDoi/M1WE8JSVcJ63sdvh6IwBpHOvv2duVYGweI72UW/4eghWhKhDXDVv+HT1N+5asRrzkX2kWSZhN9z38R3vd9xOwsYm4WUZs30SSezAhDg9SoSwtrd844UrMBQZDK3T4ApH3voB9bf+1KHM6xOT8z2i+sx54HyOb5ljPEb6QIiNasaUvejlBJGIsUK+zj0Xb9S0/u0ALJUzYRhCBbNEXdTLJg6KF173dRT22jsn49au1xeGuOBSCc2I3csYPGE48hJ/ch5ucQ8/OIWo1mvY5oNQ1KgZYXorWmHN92Me02W0ZWpazwX6yrl6w7oat+ep0H0ILCPF+R2i8XEZwVQnrgfA24S7N1LvFN495ko5oGVo+v4vSXbeKhhx9t24hQCk2IiNLyJlBWyiCt2UTWarT2TKB9nyBeCl6FiFaAbDajAZ8J9c1GA9FsmoFaGP0kvFIIZdLNchRtFtZuw2QVoXkc3Akjp79sE2OrxizFFuun/UA5r+eiPN/MD2B9U2i9PGLWCez0HoAljDVTmK6N20EoK5B0277xDecVO0ASC43iCdKQ2FSKchBAqwV18/6e8D3zFI74fJM9iJYxaLNl/m+MpAxHA0LJKFzrxbcbhNaLILqtnt7whvP60lPHUsj1NtLzyI8jg98r5xeuwNml9DrJcenbLuYzn/tXpqam2zYiAFSIDuLsIKQVBuhWC3yfcjw2iKd3Iw5uhmHywmaSo0eTNXEXNAq0XJJ2ReRIyV9BGRlZwWWXXrK4ybJskb1xvv1GkQJ8x9U6cH7+y6HO8tgcZnuwfXlcPzp6DNf+1vv46J//RfvG4jFBqIwsZtlv8AJoSVpSgoiewIExpjYTSChlwr2yuFnrpA9CAGqJ2k1+tqy9bn7nt9/PyDEjjj466aenCNAj56vECQCZfSu4iPMpQL7W7J/s/HDEHsA4PpMJb/H+5Zdt5s7//A7/dfc9Ba25CjWvXWvD3aE0r3VHD18cZcWGVpHRHMNnjKRBiMW22x2yP3fOWVz29s1966dTeXpfvQfOx5osIokEMg6wuTzfcgrbCWIpn32qSS271Gn2cnsAGJ9q71v1Qkj+6i//nHUnHN++p7ailUGrCE0YptVKZgvtvyREq+hFTcdYMVqXql06WuuUl57MJ//nJ5Ce7Fs/7cpcQ/HMZNNCOk6enyIfaz89Ltvm+QWcry0p6zXNnV/v9D4fKcJ63C5ftoz//bd/zTFReGzbaBSGU6OZUbwIlftnfgHCMnA8MVNkpEPVrikjIyv4f//3kyxbNtS3XjrRyee3TDIXhMncfvoZWDHnZz8sTdYIgjhsx86QWUFUEzlFJJOGbY80+Pynp9jxbIt6zTjFjmdafP7T030PcOLtuhNO4Pbbvsab33R++17HxUauVm3+MuG5l7LE7V5y8Vu4/bZ/Y8346gXr5a++sYunJurMNxTzDcVTe+r85Td38f1nZxPzpOsGuMh3F4vQ6RtDUiB++e17cj1wkA85D4ydRtsHrCNaw6f+edy9LpvP9rD/7W//Fx+7/i+YmNiTFfEFUcbHV/PhD/0B573u3AX1395/48e2Zx75Wk/9wOJ828iZ+tg5BMlAMP97AdqeB3Cnh9381CKrwutcCnP2BT3Vn/e6c3n1q1/F5/7pX7jjW//JE088uWijHI6yadOp/MLrX8dV734XA9UBYGH9d+rt0XwfeX7xl0PxugG4EWApkB/v/v0/jS+5YvdN7mfbtm3s2zvJ5P4ja5GolaOjjK1ayaaNG1mxYnjJ7/HG67cX5PlR2HeQH9FB7vMwF/nxdZ1XCBEi89u0JKuJtUe+5TzWdUuxP7ZylJXnnLNk7R2q/UPR/4Xm+XnkK2dftsvzTScs48eHMwlqMnC0swQNtZp2r4Oj+wvcn62rBPnZ5/nFawZBPhUsphHn9wLsPN8RIm7EOpA+QIKi39Wbng5jX8hwmUsjR+u710/NhZbR6CvPj8N+6jQa+/Uwv12en0N+Et86IJ80QBw8oFizJhYqalW7+0mYCwL8mWlEvYYImuaDjUqVYNkIlPzu1x/J9WGANzONaNQQzab5wLVSJVg+YlYW6aH9yVmT5/cyt59bQMqiC2ehqajeXyrOt7MDgeDAtHI5rGjbqFF5Zhvl/RNmYiVbpKQ5Ok7zpA2oUqXnp4tHxLZWo/rjbZQm2/ettXKc+roN5vO0Du3tnwsSIy6W8533BSTkFvBfKOcnp0URZftTLYdGsltZrzH08L2U9+0qVhCAUpT37WLwoXsRjXrH9uLt3FyNVqC6ntfvNghCZmdrPZ0vajWWPXIvpb2d+1bau4uhh++Fer1je4/ubBRwvlgQ55sIkkYGGbvWYjk/WREjigD33VND6/adKu18BtnoLY2T9XnKO7Z3Vf6u3Xv58s238eWvfINHHnuSIAgXbfxWK+SRrU/y5a/eypdvvo1du/d1va7cZ98qO7Z3bO9bT8wWcH6Bsa0ZvkLOF9aYIEolo4mgxXN+jPyYJg4e0DzzdIt1J5fsZqzz+y/O9QXb7c8+h9aaeqPJlvsf5tGtT/Ly0zZw8snr8DzZ9Xq7PtSKJ5/YzoOPPE69nn4X+OMf72DN+Fjn6/vtl6XurHwPPldnfy3seW7fjgRtf3MoPh5/GeQqtzfkpxHARX4ycwj8x7/Puedbxm+sOQFdab8Ch11UpUrz2HXO9UXD5VM3nEylXEquq9XqfO++B/jKzf/Btie3o7TueD0CwlCz7antfOXm27h3y4OO8QcqZU7dcHLH67VeYN8y+on3v/yD6Qzy6Ti3b34NjJQenI9D8r88Iq5420TyFVjiudrtne7Q2aIDyekafu/Do7zklLJxkozuRaPOwLNPUJqcQOgCrhSS5spxaieealakyFxftN9oNPnhQ1t5YtuPcs1JKRisVhkcrDJYHWBoaBCtNfPzNeZr9WhbQxV8Cr7+lJM48+WbqJRLHe8f78uob+XJCejQt/qJp6JKxfp5ZGeda7+0M0V2ZEjH+JZxNTjG7eV3BsXlmyd0b3P7qTPYo/3cMwPcdwpfuqHMdX802nGUK0KTBspGDVpNKJVRUaqkPX9Bo/D90wd58KGt/PgnO/PK76OccPyLePnppzIyPLywbKAVUJqbRtRryFYTVTKrnLSGRhAlv+P11920ix8+N+/M3bf7JVBlfKpDve0UqXOIKzZPWEDugnz7NNtXM6Se5fh3XT3Ma9/QZomVQ1xm5+bZ9tSPeObZHT0vO79s2RDrjj+ODetPYrDDQlGHstzy8EFuuHNv97n9NshuX+8eF5dfsttJ/HtGfoR0ldmPxwQJW2iN7wt+5w9GOWVD2aFOZ+BJwXaJ6+fm5tm9Zy/7J6eZOnCAqakDSCEYGRlmxYoVjK0cYXx8NcsGq8+LfPH2kZ11rrtpJwEsOs9vh/zYCcTlmyf0UnK+U3S80QwPe/zBR1cyurJgrZ0sif4M1++dCXjf559juqF6ep6/2N8WTtcIajPaT4cG7mg/rrBTR2F1Mvut4cEDITf8+X527wzSdp32yR//Gav/yVSL37lxB9MNtWR5fjvjx788kqwSJmyjWVBul+dH4jt5vZ3COE8Zo4rJvQF/8af7ePD+euo0R7doDd/bPs9vfOE5JuYCZ2C32DzfOW79xU4jLrtk97RArGj/PN8dE/TC+e1/gcTsSwlnvabKJVcsZ+QYLwl/CY38DO3vnQ34h3um+OZjB9ELntsnRX4Xzk+yBFN/QFx+ycTjWuv1rhVj41N4QNudsUviO9b7BQXnxIdKZcEbLxjizRcNMVBNlyrI0kmWQ38a6mstxRe2THPTAweoB+qQ5fn5+vRtIgRPiMsu3n2XEOK8heb5afjvjvxsuzGdDAxI1m8q87IzBtj48gqjK/v7TZ0XynbfbMD3t89z37M1tvx4jnqYIvxQ5fk55LvXfdsXgt19cX5k7NhZYg8v4nz7BLfd9EYCQb2uePD+Og9uMQ9Qlg9LVq3xGRv3GF3lJ99lIiJnitCko31znOR4yoPu+aAxn3hp6xz7mqi/yfH8fv4esSz580Ol2DMTsvNAix0HWkzXwjbv8On2nG/dp+h5fi+cT84pzFYJdvtKszsO5wvN83tDfkwbLjTc9w/M/WZmFAdmGzz1owzHiXj5E8vTYyV29nQHaZ3W2y/kYJGut59dii3+VS4VrcOX4VgL2W57S/U8vxvydbbecR6x25daP6AReeQ7xs4gPwWUi/y4JhcxSK+znCP2CptGHCNnlF208kVhfeIUaWcP1Xr7qbwL+z4/ud8Cn+d31wc55Fv9fUCGQXiHseHi8nx30QhhGT1tN3EOa0yBtUmEzOa1oiCvLQiPyZcxUlhGTJFT9OtaStj1pAMu52maaKNM67iLLGtbZNyle57fLc9PnTyjD6G1VuKbAuDtF+1+AHh5ao0E4y6gLeSnxrXHCJnTctdFTpWJDEDHznQf3Rpuz4c/2v+WbqT0wuucdtsfd3nWlW+p3tvPcnpeH/njdK3XaMG9+37l1HNk5Bi3xci3n+fbESC1YQHyk9AgXKDbXmAhP/1VMcsz+0W+4+kZxGWQtZjf1csZAVc+Nyzn1+HLI7/A+It4np9zTrL6yshJPBDmtkgEUHBzapw0bB86zteOM+U53zZyhuPsb+AipTmcnxtIucizOT9LI8ZoKYJ7WW+/2zp8i31vPxvRunJ+zoktEFj7ytO3Rd0G0OLtb9k9hRArnNG+xQaLyfNFMtpPz1OafF5rD5xENPOYHe1Hyjsko/0kH7dH+9pRurIjQZtv7trd73nI89voQxyYfPf6YxBCR9NvQiPEJ1IExwhtg/w+8/zsM4Y4ILSdy44Qp4qQbyPLDpMJt3ZBfiZMO8iKjvez3n7yFa4TtikwwqHL8x36zMihoxQ1M/D9BELEvm/K8tna32jExKHh/MiJcpyfNXqvnG+HS1JldeL8nJLccJlkAxlOTZGHa5Sl4nzHeXoZ7bvyuQPZYs53sxH2rGgN/E1s38QBPnPXiXWB+khkq2LkxzWHM8/vkfO7Ir8L5+eRn7a/MM63Odcyfk+cX4T8xXF+ml2IP33mmhOTd9bTJzCArB77aWB7W+QnscFCPkfz/CMyz48jgyvfI1Pl9Z92bG7v3HijCDXij3LI74PzyQwIk9BQiHy7U22QXxi+LY9uh3xrYNmV8wvkOGScbznLUjzPL+L8QuRLgZL6w1whnOXdHAcA+OrX13wB+MfFcb44muc78tjIzzqP7WRLl+fn9CH0Z6fftfHmrL1zDgAwNrHmfQJuXzjn6+gyG2F9Ir8L5x/N8119dEQ++o7pmflfK7J1oQN86n7RqunKZUKLh8yR9pyvCzhfCEsJHZDvcG3GWN04X7VDfi+cX4T8RXM+eWMnyG//ff4h5XwJoB+WuvR23veqwl/AEkUH43Lphc8dp5H3AMdZNk+LNbcfeUda5Xhu3pM7dbbtXDe0n9uPzj/i5vYX09/k/+375Vxn6cOsJ8AO6cuzJ69Yv6OdjQsjQFy+cutxz4VBcLaGHx7N81kY5x/2PD9B/ve8UL+6k/GjprqXiy7aOei3+JSGKxPjm9GAuXEO+b14eod6LCPGSoie17dFflzfFkH9RQQnG4jv5yC/oN525iTvXqw+dF6+WB+5+ycR8otTJXUVV5zW7GbbnhwgLm+7cOeHlNIfE0IIe24/Gf8JN+/Ozu07AxwrfCZz3QuY23fm7guQGP9yZm7MESPcHv0v2dx+m3pnIJnRRwHnL0AfoUJ/YPrKjZ/s1aZ9OQDAxb+081Ui1B8XcP7R5/mWsxUi3263nT6KIla3+jzykfqOUMoPHnjnhi392LNvB4jLJW/ecT5afFyjX7Ug5C/O0wsQahsjHWXnnurF14k+3uHr4SliWr+k7+33oA+2CKk/OHnlxjsWYscFO0BcLr5gxzs0/B6CVy4l5zupXKJsEmMefs635YXOyD8snH8fQn988t0bv7oY+y3aAeLy1rf+5EVCywsU+peQ4nwl1PDR5/l2/SI5X+gphLhdC32r5we37nnXyyaWwm5L5gDZ8pZLdrxGE64PpXyJELxECX0ygpcgOKYtB9KB8zuNFZ5Pzu8n0vWW509pwdPA00rop5Hi6RC1df81G793KOz0/wF/E1aiIIqVYAAAAABJRU5ErkJggg==">
+<style>
+:root {
+  --bg:        #0b0e17;
+  --panel:     #121727;
+  --panel-2:   #182036;
+  --line:      #232c45;
+  --ink:       #e8ecf7;
+  --muted:     #93a0bd;
+  --brand:     #6366f1;
+  --brand-dk:  #4f46e5;
+  --accent:    #22d3ee;
+  --ok:        #34d399;
+  --warn:      #fbbf24;
+  --danger:    #f87171;
+  --radius:    14px;
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, Helvetica, Arial, sans-serif;
+  background: var(--bg); color: var(--ink);
+  overflow: hidden; -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+button, input, textarea { font-family: inherit; color: inherit; }
+code, pre { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
+
+#app { display: flex; height: 100%; }
+
+/* ── sidebar ─────────────────────────────────────────────── */
+#sidebar {
+  width: 258px; flex-shrink: 0; background: var(--panel);
+  border-right: 1px solid var(--line);
+  display: flex; flex-direction: column;
+  padding: calc(14px + var(--safe-top)) 12px calc(12px + var(--safe-bottom));
+}
+.brand { display: flex; align-items: center; gap: 10px; padding: 4px 6px 16px; }
+.brand-mark { width: 38px; height: 38px; flex-shrink: 0; display: block; }
+.brand-mark svg { width: 100%; height: 100%; display: block; border-radius: 10px; }
+.brand-text b { font-size: 18px; letter-spacing: -.3px; display: block; }
+.brand-text small { font-size: 10.5px; color: var(--muted); }
+
+.new-chat {
+  width: 100%; padding: 10px; border: 1px solid var(--line); background: var(--panel-2);
+  color: var(--ink); border-radius: 10px; cursor: pointer; font-size: 13.5px; font-weight: 600;
+}
+.new-chat:hover { border-color: var(--brand); }
+
+.nav-label {
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: .09em;
+  color: var(--muted); padding: 18px 8px 6px;
+}
+.session-list { flex: 1; overflow-y: auto; min-height: 0; }
+.session-list button {
+  display: block; width: 100%; text-align: left; padding: 9px 10px; border: none;
+  background: none; border-radius: 9px; cursor: pointer; font-size: 13px; color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px;
+}
+.session-list button:hover { background: var(--panel-2); color: var(--ink); }
+.session-list button.active { background: var(--panel-2); color: var(--ink); font-weight: 600; }
+
+.side-foot { display: flex; flex-direction: column; gap: 9px; padding-top: 10px; }
+.usage-card {
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 11px;
+  padding: 10px 11px; font-size: 12px; color: var(--muted);
+}
+.usage-card b { color: var(--ink); }
+.usage-bar { height: 5px; background: var(--line); border-radius: 3px; margin-top: 7px; overflow: hidden; }
+.usage-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--brand), var(--accent)); }
+.usage-bar.full i { background: linear-gradient(90deg, #f87171, #fbbf24); }
+
+.deal-card {
+  border-radius: 11px; padding: 11px; cursor: pointer; border: none; width: 100%; text-align: left;
+  background: linear-gradient(135deg, var(--brand-dk), var(--accent)); color: #fff;
+}
+.deal-card b { display: block; font-size: 13px; }
+.deal-card small { font-size: 11px; opacity: .92; }
+
+.ghost-btn {
+  width: 100%; padding: 9px; border: 1px solid var(--line); background: none;
+  border-radius: 9px; cursor: pointer; font-size: 12.5px; color: var(--muted);
+}
+.ghost-btn:hover { color: var(--ink); border-color: var(--brand); }
+
+/* ── main ────────────────────────────────────────────────── */
+#main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+#topbar {
+  height: calc(52px + var(--safe-top)); padding: var(--safe-top) 16px 0;
+  border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+}
+.topbar-title { flex: 1; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan-badge {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  padding: 4px 9px; border-radius: 999px; background: var(--panel-2);
+  color: var(--muted); border: 1px solid var(--line);
+}
+.plan-badge.pro { background: linear-gradient(135deg, var(--brand-dk), var(--accent)); color: #fff; border-color: transparent; }
+.icon-btn { background: none; border: none; font-size: 19px; cursor: pointer; color: var(--muted); }
+.only-narrow { display: none; }
+
+/* ── transcript ──────────────────────────────────────────── */
+.transcript { flex: 1; overflow-y: auto; padding: 22px 16px 8px; scroll-behavior: smooth; }
+.turn { max-width: 760px; margin: 0 auto 20px; display: flex; gap: 11px; }
+.turn .av {
+  width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; display: grid;
+  place-items: center; font-size: 13px; font-weight: 700;
+}
+.turn.user .av { background: var(--panel-2); border: 1px solid var(--line); color: var(--muted); }
+.turn.bot .av { background: none; padding: 0; }
+.turn.bot .av svg { width: 30px; height: 30px; border-radius: 9px; display: block; }
+.bubble { flex: 1; min-width: 0; font-size: 14.5px; line-height: 1.62; }
+.bubble p { margin: 0 0 10px; }
+.bubble p:last-child { margin-bottom: 0; }
+.bubble h3 { font-size: 15px; margin: 14px 0 7px; }
+.bubble ul, .bubble ol { margin: 0 0 10px 20px; }
+.bubble li { margin-bottom: 4px; }
+.bubble code { background: var(--panel-2); padding: 1px 5px; border-radius: 5px; font-size: 12.8px; }
+.bubble pre {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 12px 13px; overflow-x: auto; margin: 0 0 12px; font-size: 12.8px; line-height: 1.55;
+}
+.bubble pre code { background: none; padding: 0; font-size: inherit; }
+.turn.user .bubble {
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 12px; padding: 10px 13px; white-space: pre-wrap; word-wrap: break-word;
+}
+
+.refusal {
+  border-left: 3px solid var(--warn); background: rgba(251, 191, 36, .07);
+  border-radius: 0 10px 10px 0; padding: 11px 13px; margin-bottom: 12px;
+}
+.refusal .no { font-size: 19px; font-weight: 800; color: var(--warn); display: block; margin-bottom: 3px; }
+.inline-upsell {
+  margin-top: 4px; border: none; background: linear-gradient(135deg, var(--brand-dk), var(--accent));
+  color: #fff; padding: 8px 15px; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+
+.artifact { border: 1px solid var(--line); border-radius: 11px; overflow: hidden; margin-bottom: 12px; }
+.artifact-head {
+  display: flex; align-items: center; gap: 9px; padding: 9px 12px;
+  background: var(--panel-2); font-size: 12.5px; font-weight: 600;
+}
+.artifact-head .grow { flex: 1; color: var(--muted); font-weight: 400; }
+.artifact-head button {
+  border: 1px solid var(--line); background: var(--panel); border-radius: 7px;
+  padding: 4px 10px; font-size: 11.5px; cursor: pointer; color: var(--ink);
+}
+.artifact-head button:hover { border-color: var(--brand); }
+.artifact iframe { width: 100%; height: 300px; border: none; background: #000; display: block; }
+
+.dots span {
+  display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--muted); margin-right: 4px; animation: blink 1.3s infinite;
+}
+.dots span:nth-child(2) { animation-delay: .18s; }
+.dots span:nth-child(3) { animation-delay: .36s; }
+@keyframes blink { 0%, 60%, 100% { opacity: .25; } 30% { opacity: 1; } }
+
+.empty { max-width: 760px; margin: 6vh auto 0; text-align: center; }
+.empty .hero { width: 92px; height: 92px; margin: 0 auto 16px; }
+.empty .hero svg { width: 100%; height: 100%; border-radius: 22px; display: block; }
+.empty h2 { font-size: 24px; letter-spacing: -.4px; margin-bottom: 7px; }
+.empty p { color: var(--muted); font-size: 14px; margin-bottom: 22px; }
+.chip-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.chip-grid button {
+  border: 1px solid var(--line); background: var(--panel); border-radius: 999px;
+  padding: 8px 15px; font-size: 13px; cursor: pointer; color: var(--muted);
+}
+.chip-grid button:hover { border-color: var(--brand); color: var(--ink); }
+.chip-grid button .lock { color: var(--warn); margin-left: 4px; }
+
+/* ── composer ────────────────────────────────────────────── */
+.composer {
+  padding: 10px 16px calc(12px + var(--safe-bottom)); border-top: 1px solid var(--line); flex-shrink: 0;
+}
+.composer-row {
+  max-width: 760px; margin: 0 auto; display: flex; gap: 9px; align-items: flex-end;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 8px 8px 8px 14px;
+}
+.composer-row:focus-within { border-color: var(--brand); }
+#prompt {
+  flex: 1; background: none; border: none; outline: none; resize: none;
+  font-size: 14.5px; line-height: 1.55; max-height: 168px; padding: 6px 0;
+}
+#prompt::placeholder { color: var(--muted); }
+.send-btn {
+  width: 36px; height: 36px; flex-shrink: 0; border: none; border-radius: 10px; cursor: pointer;
+  background: linear-gradient(135deg, var(--brand-dk), var(--accent)); color: #fff; font-size: 13px;
+}
+.send-btn:disabled { opacity: .4; cursor: default; }
+.composer-foot {
+  max-width: 760px; margin: 6px auto 0; font-size: 11px; color: var(--muted); text-align: center;
+}
+.trigger-hint {
+  max-width: 760px; margin: 0 auto 8px; font-size: 12px; padding: 8px 12px; border-radius: 9px;
+  background: rgba(99, 102, 241, .12); border: 1px solid rgba(99, 102, 241, .35); color: #c7d2fe;
+}
+
+/* ── paywall ─────────────────────────────────────────────── */
+.paywall, .modal {
+  position: fixed; inset: 0; z-index: 50; background: rgba(6, 8, 14, .82);
+  display: flex; align-items: center; justify-content: center; padding: 18px;
+  overflow-y: auto; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+/* `display:flex` outranks the UA rule for [hidden], which would otherwise leave
+   these full-screen layers invisible but still eating every click. */
+.paywall[hidden], .modal[hidden], .toast[hidden] { display: none; }
+.paywall-sheet, .modal-sheet {
+  position: relative; width: 100%; max-width: 440px; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 20px; padding: 0 22px 22px;
+  animation: rise .22s ease-out; max-height: 100%; overflow-y: auto;
+}
+.modal-sheet { padding-top: 22px; }
+@keyframes rise { from { transform: translateY(14px); opacity: 0; } }
+.paywall-close {
+  position: absolute; top: 12px; right: 12px; z-index: 2; width: 30px; height: 30px;
+  border: none; border-radius: 8px; background: rgba(0, 0, 0, .28); color: #fff;
+  font-size: 14px; cursor: pointer;
+}
+
+.deal-ribbon {
+  /* right padding clears the ✕, which floats over this strip */
+  margin: 0 -22px; padding: 11px 52px 11px 22px; display: flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, var(--brand-dk), var(--accent));
+  border-radius: 20px 20px 0 0; font-size: 13px; color: #fff;
+}
+.deal-emoji { font-size: 16px; }
+.deal-clock { margin-left: auto; font-size: 11px; opacity: .95; font-variant-numeric: tabular-nums; }
+
+.paywall-head { text-align: center; padding: 20px 0 4px; }
+.paywall-robot { width: 74px; height: 74px; display: block; margin: 0 auto 12px; }
+.paywall-robot svg { width: 100%; height: 100%; border-radius: 18px; display: block; }
+.paywall-head h2 { font-size: 22px; letter-spacing: -.4px; }
+.paywall-sub { color: var(--muted); font-size: 13.5px; margin-top: 5px; }
+
+.price-row { display: flex; align-items: baseline; justify-content: center; gap: 9px; margin-top: 16px; }
+.price-was { color: var(--muted); text-decoration: line-through; font-size: 17px; }
+.price-now { font-size: 40px; font-weight: 800; letter-spacing: -1.5px; }
+.price-per { color: var(--muted); font-size: 13px; }
+.price-note { text-align: center; color: var(--ok); font-size: 12.5px; margin-top: 5px; }
+
+.perk-list { list-style: none; margin: 18px 0 0; }
+.perk-list li {
+  font-size: 13.5px; padding: 8px 0 8px 26px; position: relative;
+  border-bottom: 1px solid var(--line); color: var(--muted);
+}
+.perk-list li:last-child { border-bottom: none; }
+.perk-list li b { color: var(--ink); }
+.perk-list li::before {
+  content: "✓"; position: absolute; left: 4px; color: var(--accent); font-weight: 700;
+}
+
+.buy-btn {
+  width: 100%; margin-top: 18px; padding: 14px; border: none; border-radius: 12px; cursor: pointer;
+  background: linear-gradient(135deg, var(--brand-dk), var(--accent));
+  color: #fff; font-size: 15px; font-weight: 700;
+}
+.paywall-warn { text-align: center; font-size: 11.5px; color: var(--warn); margin-top: 12px; }
+.leave-link {
+  display: block; width: 100%; margin-top: 8px; background: none; border: none;
+  color: var(--muted); font-size: 12px; cursor: pointer; text-decoration: underline;
+}
+
+/* ── settings ────────────────────────────────────────────── */
+.modal-sheet h2 { font-size: 19px; margin-bottom: 16px; }
+.field { display: block; margin-bottom: 16px; }
+.field > span { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 6px; }
+.field input {
+  width: 100%; padding: 10px 12px; border-radius: 9px; border: 1px solid var(--line);
+  background: var(--bg); font-size: 13.5px; outline: none;
+}
+.field input:focus { border-color: var(--brand); }
+.field small { display: block; font-size: 11.5px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+.field code { background: var(--panel-2); padding: 1px 4px; border-radius: 4px; }
+.plan-switch { display: flex; gap: 8px; }
+.plan-switch button {
+  flex: 1; padding: 9px; border-radius: 9px; border: 1px solid var(--line);
+  background: var(--bg); cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted);
+}
+.plan-switch button.on { border-color: transparent; color: #fff; background: linear-gradient(135deg, var(--brand-dk), var(--accent)); }
+
+/* ── toast ───────────────────────────────────────────────── */
+.toast {
+  position: fixed; left: 50%; bottom: calc(26px + var(--safe-bottom)); transform: translateX(-50%);
+  background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
+  padding: 11px 17px; border-radius: 11px; font-size: 13px; z-index: 80;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .45); max-width: 90vw; text-align: center;
+}
+
+/* ── narrow / phone ──────────────────────────────────────── */
+@media (max-width: 760px) {
+  .only-narrow { display: block; }
+  #sidebar {
+    position: fixed; z-index: 40; height: 100%; left: 0; top: 0;
+    transform: translateX(-100%); transition: transform .22s ease;
+    box-shadow: 0 0 40px rgba(0, 0, 0, .5);
+  }
+  #sidebar.open { transform: none; }
+  .transcript { padding: 16px 13px 4px; }
+  .composer { padding: 8px 12px calc(10px + var(--safe-bottom)); }
+  .empty { margin-top: 3vh; }
+  .empty h2 { font-size: 20px; }
+  .paywall-sheet, .modal-sheet { max-width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <aside id="sidebar">
+    <div class="brand">
+      <span class="brand-mark" id="brandMark"></span>
+      <span class="brand-text">
+        <b>Agenter</b>
+        <small>your own AI coding agent</small>
+      </span>
+    </div>
+
+    <button class="new-chat" id="newChat">＋ New session</button>
+
+    <div class="nav-label">Sessions</div>
+    <div id="sessionList" class="session-list"></div>
+
+    <div class="side-foot">
+      <div id="usageCard" class="usage-card"></div>
+      <div id="dealCard"></div>
+      <button class="ghost-btn" id="openSettings">⚙ Settings</button>
+    </div>
+  </aside>
+
+  <main id="main">
+    <header id="topbar">
+      <button class="icon-btn only-narrow" id="menuBtn" aria-label="Menu">☰</button>
+      <div class="topbar-title" id="topTitle">New session</div>
+      <span class="plan-badge" id="planBadge">Free</span>
+    </header>
+
+    <div id="transcript" class="transcript"></div>
+
+    <div id="composer" class="composer">
+      <div id="triggerHint" class="trigger-hint" hidden></div>
+      <div class="composer-row">
+        <textarea id="prompt" rows="1" placeholder="Ask Agenter to build something…"
+                  autocomplete="off" spellcheck="false"></textarea>
+        <button id="send" class="send-btn" aria-label="Send">▶</button>
+      </div>
+      <div class="composer-foot">
+        <span id="composerNote">Enter to send · Shift+Enter for a new line</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ── subscription page ───────────────────────────────────────────── -->
+<div id="paywall" class="paywall" hidden>
+  <div class="paywall-sheet" role="dialog" aria-modal="true" aria-labelledby="pwTitle">
+    <button class="paywall-close" id="pwClose" aria-label="Leave">✕</button>
+
+    <div class="deal-ribbon">
+      <span class="deal-emoji">🎒</span>
+      <span><b>Back To School</b> — 75% off Pro</span>
+      <span class="deal-clock" id="dealClock"></span>
+    </div>
+
+    <div class="paywall-head">
+      <span class="paywall-robot" id="paywallRobot"></span>
+      <h2 id="pwTitle">Agenter Pro</h2>
+      <p class="paywall-sub" id="pwReason">This one needs Pro.</p>
+    </div>
+
+    <div class="price-row">
+      <span class="price-was" id="priceWas"></span>
+      <span class="price-now" id="priceNow"></span>
+      <span class="price-per">/month</span>
+    </div>
+    <p class="price-note" id="priceNote"></p>
+
+    <ul class="perk-list">
+      <li><b>5&times; the usage</b> <span id="perkUsage"></span></li>
+      <li><b>Videos made with HTML</b> — real, downloadable, self-contained</li>
+      <li><b>3D games</b> — canvas &amp; WebGL scaffolds that run</li>
+      <li><b>Cordova apps</b> — full project trees, ready to build</li>
+      <li><b>Animations</b> — CSS &amp; canvas motion work</li>
+      <li><b>Device control</b> — battery, vibration, sensors, clipboard</li>
+    </ul>
+
+    <button class="buy-btn" id="pwBuy">Get Pro — <span id="buyPrice"></span>/mo</button>
+    <p class="paywall-warn">⚠ Leaving this page clears the prompt you were typing.</p>
+    <button class="leave-link" id="pwLeave">Leave and clear my prompt</button>
+  </div>
+</div>
+
+<!-- ── settings ────────────────────────────────────────────────────── -->
+<div id="settings" class="modal" hidden>
+  <div class="modal-sheet">
+    <button class="paywall-close" id="setClose" aria-label="Close">✕</button>
+    <h2>Settings</h2>
+
+    <label class="field">
+      <span>Gemini API key</span>
+      <input type="password" id="setKey" placeholder="AIza…" autocomplete="off" spellcheck="false">
+      <small>Stored on this device only, in local storage. Never bundled into the app,
+             never sent anywhere except Google's API.</small>
+    </label>
+
+    <label class="field">
+      <span>Model</span>
+      <input type="text" id="setModel" spellcheck="false">
+      <small>Default <code>gemini-2.5-flash</code>. Leave the key blank to run Agenter
+             in offline demo mode.</small>
+    </label>
+
+    <div class="field">
+      <span>Plan</span>
+      <div class="plan-switch">
+        <button id="setFree">Free</button>
+        <button id="setPro">Pro</button>
+      </div>
+      <small id="setPlanNote"></small>
+    </div>
+
+    <button class="buy-btn" id="setSave">Save</button>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+<script>
+/* ---- js/config.js ---- */
+/* Agenter — configuration.
+ *
+ * No API key lives in this file, and none is baked into any build. The key is
+ * entered once in Settings and kept in this device's local storage. See
+ * agenter/README.md for why: a key shipped inside an APK or an Electron asar is
+ * readable by anyone who unzips it, and a key committed to git gets revoked by
+ * secret scanning within minutes.
+ */
+window.AGENTER = window.AGENTER || {};
+
+(function () {
+  'use strict';
+
+  // The Back To School window: 30 September, rolling to next year once it passes,
+  // so a build that sits around for a while never shows a dead countdown.
+  function dealEnds() {
+    var now = new Date();
+    var end = new Date(now.getFullYear(), 8, 30, 23, 59, 59); // month 8 = September
+    if (end < now) end = new Date(now.getFullYear() + 1, 8, 30, 23, 59, 59);
+    return end;
+  }
+
+  var PRO_MONTHLY = 20.00;
+  var PERCENT_OFF = 75;
+
+  AGENTER.CONFIG = {
+    version: '1.0.0',
+    appId: 'com.agenter.app',
+
+    // "Gemini 3.5 Flash" is not a model Google publishes. gemini-2.5-flash is the
+    // current Flash tier and is what this defaults to; override it in Settings.
+    model: 'gemini-2.5-flash',
+    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/',
+
+    deal: {
+      name: 'Back To School',
+      percentOff: PERCENT_OFF,
+      ends: dealEnds()
+    },
+
+    price: {
+      currency: '$',
+      full: PRO_MONTHLY,
+      discounted: Math.round(PRO_MONTHLY * (100 - PERCENT_OFF)) / 100
+    },
+
+    // Pro is five times the free allowance.
+    limits: { free: 10, pro: 50 },
+
+    /* Capabilities that Pro unlocks. `test` is matched against the composer on
+     * every keystroke — a hit opens the subscription page before Send is pressed.
+     * Word boundaries keep "provide" from looking like "video". */
+    gated: [
+      { id: 'game3d',  label: '3D game',        test: /\b3\s*-?\s*d\b[\s-]*(game|games)\b/i },
+      { id: 'cordova', label: 'Cordova app',    test: /\bcordova\b(?:[\s-]*(app|apk|application|project|build))?/i },
+      { id: 'video',   label: 'Video',          test: /\bvideos?\b/i },
+      { id: 'anim',    label: 'Animation',      test: /\banimations?\b|\banimated\b|\banimate\b/i },
+      { id: 'device',  label: 'Device control', test: /\bdevice[\s-]*control\b|\bcontrol\s+(?:my|the|this)\s+device\b/i }
+    ],
+
+    // Milliseconds after the last keystroke before the composer is re-scanned.
+    triggerDelay: 180
+  };
+
+  AGENTER.CONFIG.gatedById = AGENTER.CONFIG.gated.reduce(function (m, c) {
+    m[c.id] = c; return m;
+  }, {});
+
+  /* First gated capability mentioned in `text`, or null. */
+  AGENTER.matchGate = function (text) {
+    if (!text) return null;
+    var list = AGENTER.CONFIG.gated;
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].test.test(text)) return list[i];
+    }
+    return null;
+  };
+
+  AGENTER.money = function (n) {
+    return AGENTER.CONFIG.price.currency + n.toFixed(2);
+  };
+})();
+
+/* ---- js/robot.js ---- */
+/* The Agenter mascot, inline so it also renders from file:// in the desktop
+ * builds where fetching an external SVG is blocked. Gradient and filter ids are
+ * suffixed per instance — several copies share one document. */
+window.AGENTER = window.AGENTER || {};
+
+(function () {
+  'use strict';
+  var n = 0;
+
+  AGENTER.robotSVG = function (opts) {
+    opts = opts || {};
+    var u = 'r' + (++n);
+    var id = function (s) { return s + u; };
+
+    return '' +
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Agenter">' +
+  '<defs>' +
+    '<linearGradient id="' + id('bg') + '" x1="0" y1="0" x2="1" y2="1">' +
+      '<stop offset="0" stop-color="#6366f1"/><stop offset=".55" stop-color="#4f46e5"/>' +
+      '<stop offset="1" stop-color="#06b6d4"/></linearGradient>' +
+    '<linearGradient id="' + id('shell') + '" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e6ebff"/></linearGradient>' +
+    '<radialGradient id="' + id('bulb') + '" cx=".4" cy=".35" r=".75">' +
+      '<stop offset="0" stop-color="#fffbe6"/><stop offset="1" stop-color="#fbbf24"/></radialGradient>' +
+    '<filter id="' + id('glow') + '" x="-60%" y="-60%" width="220%" height="220%">' +
+      '<feGaussianBlur stdDeviation="12" result="b"/>' +
+      '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
+  '</defs>' +
+  (opts.bare ? '' : '<rect width="512" height="512" rx="112" fill="url(#' + id('bg') + ')"/>') +
+  '<g filter="url(#' + id('glow') + ')"><circle cx="256" cy="76" r="22" fill="url(#' + id('bulb') + ')"/></g>' +
+  '<rect x="248" y="92" width="16" height="54" rx="8" fill="#c7d2fe"/>' +
+  '<rect x="58" y="232" width="36" height="92" rx="18" fill="#c7d2fe"/>' +
+  '<rect x="418" y="232" width="36" height="92" rx="18" fill="#c7d2fe"/>' +
+  '<rect x="88" y="138" width="336" height="276" rx="74" fill="url(#' + id('shell') + ')"/>' +
+  '<rect x="130" y="184" width="252" height="150" rx="58" fill="#1b2136"/>' +
+  '<g filter="url(#' + id('glow') + ')">' +
+    '<circle cx="212" cy="259" r="33" fill="#22d3ee"/>' +
+    '<circle cx="300" cy="259" r="33" fill="#22d3ee"/></g>' +
+  '<circle cx="201" cy="247" r="11" fill="#fff" opacity=".95"/>' +
+  '<circle cx="289" cy="247" r="11" fill="#fff" opacity=".95"/>' +
+  '<ellipse cx="146" cy="364" rx="25" ry="14" fill="#fca5a5" opacity=".8"/>' +
+  '<ellipse cx="366" cy="364" rx="25" ry="14" fill="#fca5a5" opacity=".8"/>' +
+  '<path d="M212 366 Q256 396 300 366" stroke="#8b93ad" stroke-width="13" ' +
+        'stroke-linecap="round" fill="none"/>' +
+'</svg>';
+  };
+
+  AGENTER.paintRobot = function (el, opts) {
+    if (el) el.innerHTML = AGENTER.robotSVG(opts);
+  };
+})();
+
+/* ---- js/store.js ---- */
+/* Persistence: plan, usage allowance, API key, sessions.
+ *
+ * localStorage is unavailable on some file:// origins, so every access goes
+ * through a wrapper that quietly degrades to an in-memory map for the session. */
+window.AGENTER = window.AGENTER || {};
+
+(function () {
+  'use strict';
+  var PREFIX = 'agenter.';
+  var memory = {};
+  var backing = (function () {
+    try {
+      var k = PREFIX + '__probe';
+      window.localStorage.setItem(k, '1');
+      window.localStorage.removeItem(k);
+      return window.localStorage;
+    } catch (e) {
+      return null;
+    }
+  })();
+
+  function get(key, fallback) {
+    var raw;
+    try {
+      raw = backing ? backing.getItem(PREFIX + key) : memory[key];
+    } catch (e) { raw = memory[key]; }
+    if (raw === null || raw === undefined) return fallback;
+    try { return JSON.parse(raw); } catch (e) { return fallback; }
+  }
+
+  function set(key, value) {
+    var raw = JSON.stringify(value);
+    memory[key] = raw;
+    try { if (backing) backing.setItem(PREFIX + key, raw); } catch (e) { /* quota / private mode */ }
+  }
+
+  function today() {
+    var d = new Date();
+    return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+  }
+
+  var Store = {
+    /* ── plan ─────────────────────────────────────────────── */
+    plan: function () { return get('plan', 'free') === 'pro' ? 'pro' : 'free'; },
+    isPro: function () { return Store.plan() === 'pro'; },
+    setPlan: function (p) { set('plan', p === 'pro' ? 'pro' : 'free'); },
+
+    /* ── usage, reset each local day ──────────────────────── */
+    usage: function () {
+      var u = get('usage', null);
+      if (!u || u.day !== today()) { u = { day: today(), used: 0 }; set('usage', u); }
+      return u;
+    },
+    limit: function () {
+      var L = AGENTER.CONFIG.limits;
+      return Store.isPro() ? L.pro : L.free;
+    },
+    remaining: function () { return Math.max(0, Store.limit() - Store.usage().used); },
+    spend: function () {
+      var u = Store.usage();
+      u.used += 1;
+      set('usage', u);
+      return u;
+    },
+
+    /* ── credentials ──────────────────────────────────────── */
+    apiKey: function () { return get('apiKey', '') || ''; },
+    setApiKey: function (k) { set('apiKey', (k || '').trim()); },
+    model: function () { return get('model', '') || AGENTER.CONFIG.model; },
+    setModel: function (m) { set('model', (m || '').trim()); },
+    hasKey: function () { return Store.apiKey().length > 0; },
+
+    /* ── sessions ─────────────────────────────────────────── */
+    sessions: function () { return get('sessions', []); },
+    saveSessions: function (list) { set('sessions', list.slice(0, 40)); },
+    currentId: function () { return get('currentId', null); },
+    setCurrentId: function (id) { set('currentId', id); }
+  };
+
+  AGENTER.Store = Store;
+})();
+
+/* ---- js/gemini.js ---- */
+/* Thin Gemini client. The key travels in the x-goog-api-key header rather than
+ * the query string so it stays out of URLs, proxy logs and referrers. */
+window.AGENTER = window.AGENTER || {};
+
+(function () {
+  'use strict';
+  var Store = AGENTER.Store;
+
+  function endpoint(model) {
+    return AGENTER.CONFIG.endpoint + encodeURIComponent(model) + ':generateContent';
+  }
+
+  var Gemini = {
+    configured: function () { return Store.hasKey(); },
+
+    /* history: [{role:'user'|'model', text}]   →   resolves to a string. */
+    generate: function (system, history, signal) {
+      var key = Store.apiKey();
+      if (!key) return Promise.reject(new Error('NO_KEY'));
+
+      var body = {
+        systemInstruction: { parts: [{ text: system }] },
+        contents: history.map(function (t) {
+          return { role: t.role === 'model' ? 'model' : 'user', parts: [{ text: t.text }] };
+        }),
+        generationConfig: { temperature: 0.7, topP: 0.95, maxOutputTokens: 4096 }
+      };
+
+      return fetch(endpoint(Store.model()), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+        body: JSON.stringify(body),
+        signal: signal
+      }).then(function (res) {
+        return res.text().then(function (raw) {
+          var data = null;
+          try { data = JSON.parse(raw); } catch (e) { /* non-JSON error body */ }
+
+          if (!res.ok) {
+            var msg = (data && data.error && data.error.message) || raw.slice(0, 300) ||
+                      ('HTTP ' + res.status);
+            if (res.status === 400 && /API key not valid/i.test(msg)) {
+              throw new Error('That API key was rejected. Check it in Settings.');
+            }
+            if (res.status === 403) {
+              throw new Error('The API key is not authorised for this model (HTTP 403). ' + msg);
+            }
+            if (res.status === 404) {
+              throw new Error('No model named "' + Store.model() +
+                              '". Pick another one in Settings.');
+            }
+            if (res.status === 429) {
+              throw new Error('Google is rate-limiting this key right now (HTTP 429). Try again shortly.');
+            }
+            throw new Error(msg);
+          }
+
+          var cand = data && data.candidates && data.candidates[0];
+          if (!cand) {
+            var blocked = data && data.promptFeedback && data.promptFeedback.blockReason;
+            throw new Error(blocked ? ('The prompt was blocked: ' + blocked)
+                                    : 'The model returned nothing.');
+          }
+          var parts = (cand.content && cand.content.parts) || [];
+          var text = parts.map(function (p) { return p.text || ''; }).join('').trim();
+          if (!text && cand.finishReason === 'MAX_TOKENS') {
+            throw new Error('The reply hit the token ceiling before any text came back.');
+          }
+          if (!text) throw new Error('The model returned an empty reply.');
+          return text;
+        });
+      });
+    }
+  };
+
+  AGENTER.Gemini = Gemini;
+})();
+
+/* ---- js/video.js ---- */
+/* Video, made out of HTML.
+ *
+ * A spec becomes a standalone document: a canvas timeline that plays scenes, and
+ * a Record button that runs canvas.captureStream() through MediaRecorder so the
+ * page hands back a real .webm. No frames are rendered here — the generated
+ * document is the video, and it is self-contained. Pro only. */
+window.AGENTER = window.AGENTER || {};
+
+(function () {
+  'use strict';
+
+  var PALETTES = [
+    ['#4f46e5', '#06b6d4'], ['#db2777', '#f59e0b'], ['#059669', '#84cc16'],
+    ['#7c3aed', '#ec4899'], ['#0ea5e9', '#22d3ee'], ['#ea580c', '#facc15']
+  ];
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+  }
+
+  /* Pull a title and beats out of whatever the user asked for. */
+  function specFromPrompt(prompt) {
+    var clean = String(prompt || '').trim();
+    var title = clean.replace(/^(make|create|build|generate|do)\s+(me\s+)?(an?\s+)?/i, '')
+                     .replace(/\bvideos?\b\s*(of|about|for|showing)?\s*/i, '')
+                     .replace(/[.!?]+$/, '').trim();
+    if (!title) title = 'Made with Agenter';
+    if (title.length > 58) title = title.slice(0, 55).trim() + '…';
+
+    var beats = clean.split(/[\n;]|(?:,\s)|(?:\.\s)/)
+                     .map(function (s) { return s.trim(); })
+                     .filter(function (s) { return s.length > 3; })
+                     .slice(0, 5);
+    if (beats.length < 3) beats = [title, 'Rendered in the browser', 'No plugins, no export step'];
+
+    return {
+      title: title,
+      scenes: beats.map(function (b, i) {
+        return {
+          text: b.length > 62 ? b.slice(0, 59).trim() + '…' : b,
+          palette: PALETTES[i % PALETTES.length]
+        };
+      }),
+      secondsPerScene: 3.2
+    };
+  }
+
+  function buildHTML(spec) {
+    var scenes = JSON.stringify(spec.scenes);
+    var per = Number(spec.secondsPerScene) || 3.2;
+
+    return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n' +
+'<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
+'<title>' + esc(spec.title) + '</title>\n<style>\n' +
+'*{margin:0;padding:0;box-sizing:border-box}\n' +
+'body{background:#05070d;color:#e8ecf7;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;\n' +
+'  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px}\n' +
+'canvas{width:100%;max-width:960px;aspect-ratio:16/9;border-radius:12px;display:block;background:#000;\n' +
+'  box-shadow:0 20px 60px rgba(0,0,0,.6)}\n' +
+'.bar{width:100%;max-width:960px;display:flex;gap:10px;align-items:center}\n' +
+'button{border:1px solid #232c45;background:#121727;color:#e8ecf7;border-radius:9px;padding:9px 16px;\n' +
+'  font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}\n' +
+'button:hover{border-color:#6366f1}button:disabled{opacity:.45;cursor:default}\n' +
+'.track{flex:1;height:5px;background:#232c45;border-radius:3px;overflow:hidden}\n' +
+'.track i{display:block;height:100%;width:0;background:linear-gradient(90deg,#6366f1,#22d3ee)}\n' +
+'.note{font-size:11.5px;color:#93a0bd;max-width:960px;text-align:center;line-height:1.6}\n' +
+'</style>\n</head>\n<body>\n' +
+'<canvas id="v" width="1280" height="720"></canvas>\n' +
+'<div class="bar">\n' +
+'  <button id="play">⏸ Pause</button>\n' +
+'  <div class="track"><i id="fill"></i></div>\n' +
+'  <button id="rec">● Record .webm</button>\n' +
+'</div>\n' +
+'<p class="note">This file is the video. It plays on a canvas; Record captures the same\n' +
+'canvas through MediaRecorder and downloads a .webm. Nothing is fetched at runtime.</p>\n' +
+'<script>\n' +
+'(function(){\n' +
+'var SCENES=' + scenes + ',PER=' + per + ',TOTAL=SCENES.length*PER;\n' +
+'var cv=document.getElementById("v"),cx=cv.getContext("2d"),W=cv.width,H=cv.height;\n' +
+'var playing=true,t=0,last=performance.now();\n' +
+'var stars=[];for(var i=0;i<90;i++)stars.push({x:Math.random()*W,y:Math.random()*H,\n' +
+'  r:Math.random()*2.2+.4,s:Math.random()*14+4,a:Math.random()*.5+.15});\n' +
+'\n' +
+'function mix(a,b,k){\n' +
+'  var pa=parseInt(a.slice(1),16),pb=parseInt(b.slice(1),16);\n' +
+'  var r=Math.round((pa>>16)+(((pb>>16)-(pa>>16))*k));\n' +
+'  var g=Math.round(((pa>>8)&255)+((((pb>>8)&255)-((pa>>8)&255))*k));\n' +
+'  var bl=Math.round((pa&255)+(((pb&255)-(pa&255))*k));\n' +
+'  return "rgb("+r+","+g+","+bl+")";\n' +
+'}\n' +
+'function ease(k){return k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;}\n' +
+'\n' +
+'function draw(){\n' +
+'  var idx=Math.min(SCENES.length-1,Math.floor(t/PER)),local=(t-idx*PER)/PER;\n' +
+'  var nxt=SCENES[Math.min(SCENES.length-1,idx+1)],cur=SCENES[idx];\n' +
+'  var blend=local>.82?ease((local-.82)/.18):0;\n' +
+'  var c0=mix(cur.palette[0],nxt.palette[0],blend),c1=mix(cur.palette[1],nxt.palette[1],blend);\n' +
+'\n' +
+'  var g=cx.createLinearGradient(0,0,W,H);g.addColorStop(0,c0);g.addColorStop(1,c1);\n' +
+'  cx.fillStyle=g;cx.fillRect(0,0,W,H);\n' +
+'\n' +
+'  cx.save();cx.globalCompositeOperation="screen";\n' +
+'  for(var i=0;i<stars.length;i++){var s=stars[i];\n' +
+'    var y=(s.y-t*s.s)%H;if(y<0)y+=H;\n' +
+'    cx.globalAlpha=s.a;cx.fillStyle="#fff";\n' +
+'    cx.beginPath();cx.arc(s.x,y,s.r,0,6.2832);cx.fill();}\n' +
+'  cx.restore();cx.globalAlpha=1;\n' +
+'\n' +
+'  var pulse=40+Math.sin(t*1.6)*10;\n' +
+'  cx.save();cx.globalCompositeOperation="overlay";cx.globalAlpha=.35;\n' +
+'  cx.beginPath();cx.arc(W*.5,H*.5,H*.55+pulse,0,6.2832);\n' +
+'  cx.fillStyle="rgba(0,0,0,.55)";cx.fill();cx.restore();cx.globalAlpha=1;\n' +
+'\n' +
+'  var inK=Math.min(1,local/.18),outK=local>.86?1-(local-.86)/.14:1;\n' +
+'  var alpha=Math.max(0,Math.min(inK,outK)),lift=(1-ease(inK))*46;\n' +
+'  cx.globalAlpha=alpha;\n' +
+'  cx.textAlign="center";cx.textBaseline="middle";\n' +
+'  cx.shadowColor="rgba(0,0,0,.45)";cx.shadowBlur=26;cx.shadowOffsetY=6;\n' +
+'  cx.fillStyle="#fff";\n' +
+'  cx.font="700 66px -apple-system,Segoe UI,Roboto,sans-serif";\n' +
+'  wrap(cur.text,W/2,H/2+lift,W*.8,78);\n' +
+'  cx.shadowBlur=0;cx.shadowOffsetY=0;\n' +
+'  cx.globalAlpha=alpha*.75;\n' +
+'  cx.font="500 26px -apple-system,Segoe UI,Roboto,sans-serif";\n' +
+'  cx.fillText((idx+1)+" / "+SCENES.length,W/2,H-64+lift);\n' +
+'  cx.globalAlpha=1;\n' +
+'\n' +
+'  cx.fillStyle="rgba(255,255,255,.85)";\n' +
+'  cx.fillRect(0,H-6,W*(t/TOTAL),6);\n' +
+'}\n' +
+'function wrap(text,x,y,max,lh){\n' +
+'  var words=String(text).split(" "),line="",lines=[];\n' +
+'  for(var i=0;i<words.length;i++){var probe=line?line+" "+words[i]:words[i];\n' +
+'    if(cx.measureText(probe).width>max&&line){lines.push(line);line=words[i];}else line=probe;}\n' +
+'  if(line)lines.push(line);\n' +
+'  var start=y-(lines.length-1)*lh/2;\n' +
+'  for(var j=0;j<lines.length;j++)cx.fillText(lines[j],x,start+j*lh);\n' +
+'}\n' +
+'\n' +
+'var fill=document.getElementById("fill"),playBtn=document.getElementById("play");\n' +
+'function loop(now){\n' +
+'  var dt=Math.min(.05,(now-last)/1000);last=now;\n' +
+'  if(playing){t+=dt;if(t>=TOTAL)t=0;}\n' +
+'  draw();fill.style.width=(t/TOTAL*100)+"%";\n' +
+'  requestAnimationFrame(loop);\n' +
+'}\n' +
+'requestAnimationFrame(function(n){last=n;loop(n);});\n' +
+'playBtn.onclick=function(){playing=!playing;playBtn.textContent=playing?"⏸ Pause":"▶ Play";};\n' +
+'\n' +
+'var recBtn=document.getElementById("rec"),mr=null,chunks=[];\n' +
+'recBtn.onclick=function(){\n' +
+'  if(mr){mr.stop();return;}\n' +
+'  if(!cv.captureStream||typeof MediaRecorder==="undefined"){\n' +
+'    recBtn.disabled=true;recBtn.textContent="Recording unsupported here";return;}\n' +
+'  var types=["video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"],pick="";\n' +
+'  for(var i=0;i<types.length;i++){if(MediaRecorder.isTypeSupported(types[i])){pick=types[i];break;}}\n' +
+'  if(!pick){recBtn.disabled=true;recBtn.textContent="No webm encoder";return;}\n' +
+'  chunks=[];t=0;playing=true;playBtn.textContent="⏸ Pause";\n' +
+'  mr=new MediaRecorder(cv.captureStream(30),{mimeType:pick,videoBitsPerSecond:6000000});\n' +
+'  mr.ondataavailable=function(e){if(e.data.size)chunks.push(e.data);};\n' +
+'  mr.onstop=function(){\n' +
+'    var blob=new Blob(chunks,{type:"video/webm"}),url=URL.createObjectURL(blob);\n' +
+'    var a=document.createElement("a");a.href=url;\n' +
+'    a.download=' + JSON.stringify(slug(spec.title)) + '+".webm";\n' +
+'    document.body.appendChild(a);a.click();a.remove();\n' +
+'    setTimeout(function(){URL.revokeObjectURL(url);},4000);\n' +
+'    mr=null;recBtn.textContent="● Record .webm";};\n' +
+'  mr.start();\n' +
+'  recBtn.textContent="■ Stop ("+Math.round(TOTAL)+"s)";\n' +
+'  setTimeout(function(){if(mr)mr.stop();},TOTAL*1000+250);\n' +
+'};\n' +
+'})();\n' +
+'<\/script>\n</body>\n</html>\n';
+  }
+
+  function slug(s) {
+    return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-|-$/g, '').slice(0, 40) || 'agenter-video';
+  }
+
+  AGENTER.Video = {
+    specFromPrompt: specFromPrompt,
+    buildHTML: buildHTML,
+    slug: slug
+  };
+})();
+
+/* ---- js/device.js ---- */
+/* Device control. Uses Cordova plugins when the app is running as the APK and
+ * falls back to the equivalent web APIs on desktop, so the same panel works in
+ * all four builds. Pro only. */
+window.AGENTER = window.AGENTER || {};
+
+(function () {
+  'use strict';
+
+  function onCordova() {
+    return !!(window.cordova && window.device);
+  }
+
+  function battery() {
+    if (window.navigator.getBattery) {
+      return navigator.getBattery().then(function (b) {
+        return { level: Math.round(b.level * 100), charging: b.charging };
+      });
+    }
+    if (AGENTER._batteryEvent) return Promise.resolve(AGENTER._batteryEvent);
+    return Promise.resolve(null);
+  }
+
+  // cordova-plugin-battery-status pushes status rather than exposing a getter.
+  window.addEventListener('batterystatus', function (e) {
+    AGENTER._batteryEvent = { level: e.level, charging: !!e.isPlugged };
+  }, false);
+
+  var Device = {
+    available: function () {
+      return {
+        info:      true,
+        battery:   !!(navigator.getBattery || onCordova()),
+        vibration: !!(navigator.vibrate || (navigator.notification && navigator.notification.vibrate)),
+        clipboard: !!(navigator.clipboard && navigator.clipboard.writeText),
+        screen:    true,
+        network:   !!(navigator.connection || navigator.onLine !== undefined)
+      };
+    },
+
+    platform: function () {
+      if (onCordova()) return window.device.platform + ' ' + window.device.version;
+      if (window.process && window.process.versions && window.process.versions.electron) {
+        return 'Electron ' + window.process.versions.electron;
+      }
+      return navigator.platform || 'browser';
+    },
+
+    vibrate: function (ms) {
+      ms = ms || 240;
+      if (navigator.notification && navigator.notification.vibrate) {
+        navigator.notification.vibrate(ms); return true;
+      }
+      if (navigator.vibrate) return navigator.vibrate(ms);
+      return false;
+    },
+
+    copy: function (text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text);
+      }
+      return Promise.reject(new Error('no clipboard'));
+    },
+
+    /* A readable report of what this build can actually reach. */
+    report: function () {
+      return battery().then(function (b) {
+        var caps = Device.available();
+        var lines = [];
+        lines.push('**Platform** — ' + Device.platform());
+        lines.push('**Screen** — ' + screen.width + '×' + screen.height +
+                   ' @ ' + (window.devicePixelRatio || 1) + 'x, window ' +
+                   window.innerWidth + '×' + window.innerHeight);
+        lines.push('**Battery** — ' + (b ? b.level + '%' + (b.charging ? ', charging' : ', on battery')
+                                         : 'not exposed on this platform'));
+        lines.push('**Network** — ' + (navigator.onLine ? 'online' : 'offline') +
+                   (navigator.connection && navigator.connection.effectiveType
+                      ? ' (' + navigator.connection.effectiveType + ')' : ''));
+        lines.push('**Language** — ' + (navigator.language || 'unknown') +
+                   ', ' + (navigator.hardwareConcurrency || '?') + ' logical cores');
+        lines.push('');
+        lines.push('Controls I can drive from here: ' +
+          Object.keys(caps).filter(function (k) { return caps[k]; }).join(', ') + '.');
+        return lines.join('\n');
+      });
+    }
+  };
+
+  AGENTER.Device = Device;
+})();
+
+/* ---- js/agent.js ---- */
+/* Agenter itself: routing, plan gating, and the offline scaffolds.
+ *
+ * A reply is a list of blocks the UI knows how to paint:
+ *   {type:'md',       text}
+ *   {type:'refusal',  capability}                 → the hard "No." for free plans
+ *   {type:'artifact', kind, title, filename, html}
+ */
+window.AGENTER = window.AGENTER || {};
+
+(function () {
+  'use strict';
+  var Store = AGENTER.Store;
+
+  var SYSTEM = [
+    'You are Agenter, an AI coding agent built into a small cross-platform app',
+    '(Android via Cordova, and Windows / macOS / Linux via Electron).',
+    '',
+    'How you answer:',
+    '- You are a coding agent, not a chat bot. Lead with the code.',
+    '- Ship complete, runnable files. No "..." placeholders, no truncated bodies.',
+    '- Put every file in its own fenced block, and name the file on the line above it.',
+    '- Keep prose short: what you built, how to run it, what to change next.',
+    '- If a request is ambiguous, pick the most useful reading, build it, and say',
+    '  in one line what you assumed.',
+    '',
+    'The user is on the ' + (Store.isPro() ? 'Pro' : 'Free') + ' plan.'
+  ].join('\n');
+
+  /* ── which capability is this? ──────────────────────────── */
+  function classify(text) {
+    return AGENTER.matchGate(text);
+  }
+
+  /* ── offline scaffolds, used when no API key is configured ─ */
+
+  function gameScaffold() {
+    return {
+      type: 'artifact', kind: '3D game', title: 'cube-runner.html', filename: 'cube-runner.html',
+      html: GAME_HTML
+    };
+  }
+
+  var GAME_HTML = '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n' +
+'<title>Cube Runner</title>\n<style>\n' +
+'*{margin:0;padding:0;box-sizing:border-box}\n' +
+'body{background:#05070d;color:#e8ecf7;font-family:system-ui,sans-serif;display:flex;\n' +
+'  flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:10px;padding:14px}\n' +
+'canvas{width:100%;max-width:900px;aspect-ratio:16/10;border-radius:12px;background:#070b16;\n' +
+'  display:block;touch-action:none}\n' +
+'.hud{font-size:13px;color:#93a0bd}\n.hud b{color:#22d3ee}\n' +
+'</style>\n</head>\n<body>\n<canvas id="g" width="900" height="562"></canvas>\n' +
+'<p class="hud">Arrow keys or drag to steer · Score <b id="s">0</b> · <b id="m">running</b></p>\n' +
+'<script>\n' +
+'(function(){\n' +
+'var cv=document.getElementById("g"),cx=cv.getContext("2d"),W=cv.width,H=cv.height;\n' +
+'var FOV=420,camX=0,camZ=0,speed=13,score=0,alive=true;\n' +
+'var cubes=[];\n' +
+'function spawn(z){cubes.push({x:(Math.random()-.5)*900,y:0,z:z,s:46,hit:false,\n' +
+'  good:Math.random()>.32});}\n' +
+'for(var i=0;i<26;i++)spawn(300+i*180);\n' +
+'\n' +
+'function project(x,y,z){var d=z-camZ;if(d<12)return null;var k=FOV/d;\n' +
+'  return{x:W/2+(x-camX)*k,y:H/2+40+(y+120)*k,k:k};}\n' +
+'\n' +
+'function face(pts,fill,stroke){\n' +
+'  cx.beginPath();cx.moveTo(pts[0].x,pts[0].y);\n' +
+'  for(var i=1;i<pts.length;i++)cx.lineTo(pts[i].x,pts[i].y);\n' +
+'  cx.closePath();cx.fillStyle=fill;cx.fill();\n' +
+'  cx.strokeStyle=stroke;cx.lineWidth=1.4;cx.stroke();}\n' +
+'\n' +
+'function drawCube(c){\n' +
+'  var s=c.s,n=[],f=[];\n' +
+'  var corners=[[-1,-1],[1,-1],[1,1],[-1,1]];\n' +
+'  for(var i=0;i<4;i++){\n' +
+'    var a=project(c.x+corners[i][0]*s,c.y+corners[i][1]*s,c.z);\n' +
+'    var b=project(c.x+corners[i][0]*s,c.y+corners[i][1]*s,c.z+s*2);\n' +
+'    if(!a||!b)return;n.push(a);f.push(b);}\n' +
+'  var hue=c.good?"34,211,238":"248,113,113";\n' +
+'  var fade=Math.max(.12,Math.min(1,n[0].k*2.4));\n' +
+'  face(f,"rgba("+hue+",."+Math.round(fade*22)+")","rgba("+hue+",.25)");\n' +
+'  face([n[1],f[1],f[2],n[2]],"rgba("+hue+",."+Math.round(fade*38)+")","rgba("+hue+",.4)");\n' +
+'  face(n,"rgba("+hue+",."+Math.round(fade*70)+")","rgba("+hue+",.95)");}\n' +
+'\n' +
+'function grid(){\n' +
+'  cx.strokeStyle="rgba(99,102,241,.22)";cx.lineWidth=1;\n' +
+'  for(var x=-1200;x<=1200;x+=150){\n' +
+'    var a=project(x,120,camZ+40),b=project(x,120,camZ+2600);\n' +
+'    if(a&&b){cx.beginPath();cx.moveTo(a.x,a.y);cx.lineTo(b.x,b.y);cx.stroke();}}\n' +
+'  for(var z=0;z<2600;z+=180){\n' +
+'    var zz=camZ+40+((z-camZ*0)%2600);\n' +
+'    var a2=project(-1200,120,zz),b2=project(1200,120,zz);\n' +
+'    if(a2&&b2){cx.beginPath();cx.moveTo(a2.x,a2.y);cx.lineTo(b2.x,b2.y);cx.stroke();}}}\n' +
+'\n' +
+'var keys={};\n' +
+'addEventListener("keydown",function(e){keys[e.key]=true;\n' +
+'  if(["ArrowLeft","ArrowRight"].indexOf(e.key)>=0)e.preventDefault();});\n' +
+'addEventListener("keyup",function(e){keys[e.key]=false;});\n' +
+'var drag=null;\n' +
+'cv.addEventListener("pointerdown",function(e){drag=e.clientX;cv.setPointerCapture(e.pointerId);});\n' +
+'cv.addEventListener("pointermove",function(e){if(drag!==null){camX+=(e.clientX-drag)*-2.4;drag=e.clientX;}});\n' +
+'cv.addEventListener("pointerup",function(){drag=null;});\n' +
+'\n' +
+'var sEl=document.getElementById("s"),mEl=document.getElementById("m");\n' +
+'function tick(){\n' +
+'  if(alive){\n' +
+'    if(keys.ArrowLeft)camX-=11;if(keys.ArrowRight)camX+=11;\n' +
+'    camX=Math.max(-620,Math.min(620,camX));\n' +
+'    camZ+=speed;speed=Math.min(30,speed+0.004);\n' +
+'  }\n' +
+'  cx.fillStyle="#070b16";cx.fillRect(0,0,W,H);\n' +
+'  var sky=cx.createLinearGradient(0,0,0,H*.55);\n' +
+'  sky.addColorStop(0,"rgba(79,70,229,.28)");sky.addColorStop(1,"rgba(6,182,212,0)");\n' +
+'  cx.fillStyle=sky;cx.fillRect(0,0,W,H*.55);\n' +
+'  grid();\n' +
+'  cubes.sort(function(a,b){return b.z-a.z;});\n' +
+'  for(var i=0;i<cubes.length;i++){var c=cubes[i];\n' +
+'    if(!c.hit)drawCube(c);\n' +
+'    if(!c.hit&&Math.abs(c.z-camZ-90)<40&&Math.abs(c.x-camX)<c.s+58){\n' +
+'      c.hit=true;\n' +
+'      if(c.good){score+=10;sEl.textContent=score;}\n' +
+'      else{alive=false;mEl.textContent="crashed — reload to retry";}}\n' +
+'    if(c.z<camZ-200){c.z+=26*180;c.hit=false;c.x=(Math.random()-.5)*900;c.good=Math.random()>.32;}}\n' +
+'  requestAnimationFrame(tick);}\n' +
+'tick();\n' +
+'})();\n' +
+'<\/script>\n</body>\n</html>\n';
+
+  var ANIM_HTML = '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n' +
+'<title>Motion study</title>\n<style>\n' +
+'*{margin:0;padding:0;box-sizing:border-box}\n' +
+'body{min-height:100vh;background:#05070d;display:grid;place-items:center;padding:24px;\n' +
+'  font-family:system-ui,sans-serif;color:#e8ecf7}\n' +
+'.stage{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:22px;max-width:760px;width:100%}\n' +
+'.card{background:#121727;border:1px solid #232c45;border-radius:14px;padding:22px;text-align:center}\n' +
+'.card p{font-size:11.5px;color:#93a0bd;margin-top:14px;letter-spacing:.04em;text-transform:uppercase}\n' +
+'.dot{width:52px;height:52px;margin:0 auto;border-radius:14px;\n' +
+'  background:linear-gradient(135deg,#6366f1,#22d3ee)}\n' +
+'.a1{animation:float 2.4s cubic-bezier(.45,0,.25,1) infinite}\n' +
+'.a2{animation:spin 3.2s cubic-bezier(.7,0,.3,1) infinite}\n' +
+'.a3{animation:pulse 1.8s ease-in-out infinite}\n' +
+'.a4{animation:morph 4s ease-in-out infinite}\n' +
+'@keyframes float{0%,100%{transform:translateY(-14px)}50%{transform:translateY(14px)}}\n' +
+'@keyframes spin{0%{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(.72)}\n' +
+'  100%{transform:rotate(360deg) scale(1)}}\n' +
+'@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(34,211,238,.55)}\n' +
+'  70%{box-shadow:0 0 0 22px rgba(34,211,238,0)}}\n' +
+'@keyframes morph{0%,100%{border-radius:14px}33%{border-radius:50%}66%{border-radius:4px 30px}}\n' +
+'@media(prefers-reduced-motion:reduce){.dot{animation:none!important}}\n' +
+'</style>\n</head>\n<body>\n<div class="stage">\n' +
+'<div class="card"><div class="dot a1"></div><p>float</p></div>\n' +
+'<div class="card"><div class="dot a2"></div><p>spin + scale</p></div>\n' +
+'<div class="card"><div class="dot a3"></div><p>pulse ring</p></div>\n' +
+'<div class="card"><div class="dot a4"></div><p>morph</p></div>\n' +
+'</div>\n</body>\n</html>\n';
+
+  function cordovaScaffold() {
+    var tree = [
+      'myapp/',
+      '├── config.xml',
+      '├── package.json',
+      '├── www/',
+      '│   ├── index.html',
+      '│   ├── css/app.css',
+      '│   └── js/app.js',
+      '├── res/icon/android/   ← ldpi…xxxhdpi pngs',
+      '└── platforms/android/  ← generated, do not commit'
+    ].join('\n');
+
+    return [
+      { type: 'md', text:
+        '### Cordova project\n\n' +
+        'Project tree:\n\n```\n' + tree + '\n```\n\n' +
+        '`config.xml`:\n\n' +
+        '```xml\n' +
+        '<?xml version="1.0" encoding="utf-8"?>\n' +
+        '<widget id="com.example.myapp" version="1.0.0"\n' +
+        '        xmlns="http://www.w3.org/ns/widgets"\n' +
+        '        xmlns:cdv="http://cordova.apache.org/ns/1.0">\n' +
+        '  <name>MyApp</name>\n' +
+        '  <description>Built with Agenter.</description>\n' +
+        '  <content src="index.html" />\n' +
+        '  <allow-intent href="http://*/*" />\n' +
+        '  <allow-intent href="https://*/*" />\n' +
+        '  <preference name="AndroidWindowSplashScreenAnimatedIcon" value="res/icon/android/xxxhdpi.png" />\n' +
+        '  <preference name="BackgroundColor" value="0xff0b0e17" />\n' +
+        '  <platform name="android">\n' +
+        '    <icon density="ldpi"    src="res/icon/android/ldpi.png" />\n' +
+        '    <icon density="mdpi"    src="res/icon/android/mdpi.png" />\n' +
+        '    <icon density="hdpi"    src="res/icon/android/hdpi.png" />\n' +
+        '    <icon density="xhdpi"   src="res/icon/android/xhdpi.png" />\n' +
+        '    <icon density="xxhdpi"  src="res/icon/android/xxhdpi.png" />\n' +
+        '    <icon density="xxxhdpi" src="res/icon/android/xxxhdpi.png" />\n' +
+        '  </platform>\n' +
+        '</widget>\n```\n\n' +
+        'Build it:\n\n' +
+        '```sh\n' +
+        'npm i -g cordova\n' +
+        'cordova create myapp com.example.myapp MyApp\n' +
+        'cd myapp\n' +
+        'cordova platform add android\n' +
+        'cordova build android --release -- \\\n' +
+        '  --keystore=my.keystore --alias=my --storePassword=… --password=…\n' +
+        '```\n\n' +
+        'The APK lands in `platforms/android/app/build/outputs/apk/release/`. ' +
+        'Needs a JDK (17 or 21) and the Android SDK with `platforms;android-35` ' +
+        'and `build-tools;35.0.0` installed.' }
+    ];
+  }
+
+  /* ── the free-plan refusal ──────────────────────────────── */
+  function refuse(cap) {
+    return [{ type: 'refusal', capability: cap }];
+  }
+
+  /* ── main entry ─────────────────────────────────────────── */
+  var Agent = {
+    systemPrompt: function () { return SYSTEM; },
+    classify: classify,
+
+    /* Resolves to { blocks, spent } */
+    respond: function (prompt, history) {
+      var cap = classify(prompt);
+      var pro = Store.isPro();
+
+      // Free plan + a Pro capability: a flat no, every time.
+      if (cap && !pro) {
+        return Promise.resolve({ blocks: refuse(cap), spent: false });
+      }
+
+      if (Store.remaining() <= 0) {
+        return Promise.resolve({
+          blocks: [{ type: 'md', text:
+            "You're out of " + (pro ? 'Pro' : 'free') + ' runs for today (' +
+            Store.limit() + '/day). ' +
+            (pro ? 'The allowance resets at midnight, local time.'
+                 : 'Pro is 5× this — ' + Store.limit() * 5 + ' a day — and the allowance ' +
+                   'resets at midnight either way.') }],
+          spent: false, outOfRuns: true
+        });
+      }
+
+      // Pro + a capability we can serve locally, no round trip needed.
+      if (cap && pro) {
+        if (cap.id === 'video') {
+          Store.spend();
+          var spec = AGENTER.Video.specFromPrompt(prompt);
+          return Promise.resolve({ blocks: [
+            { type: 'md', text: 'Built you a video out of HTML — ' + spec.scenes.length +
+              ' scenes on a canvas timeline. Press **Record .webm** inside it to encode a ' +
+              'real file through MediaRecorder; the document itself is self-contained.' },
+            { type: 'artifact', kind: 'Video', title: spec.title,
+              filename: AGENTER.Video.slug(spec.title) + '.html',
+              html: AGENTER.Video.buildHTML(spec) }
+          ], spent: true });
+        }
+        if (cap.id === 'device') {
+          Store.spend();
+          return AGENTER.Device.report().then(function (md) {
+            return { blocks: [
+              { type: 'md', text: 'Here is what this device reports right now.\n\n' + md },
+              { type: 'device' }
+            ], spent: true };
+          });
+        }
+      }
+
+      // Everything else goes to the model, with local scaffolds as the fallback.
+      if (!AGENTER.Gemini.configured()) {
+        Store.spend();
+        return Promise.resolve({ blocks: Agent.offline(prompt, cap), spent: true });
+      }
+
+      Store.spend();
+      return AGENTER.Gemini.generate(SYSTEM, history.concat([{ role: 'user', text: prompt }]))
+        .then(function (text) {
+          var blocks = [{ type: 'md', text: text }];
+          if (cap && pro) blocks = blocks.concat(Agent.bonusArtifact(cap, prompt));
+          return { blocks: blocks, spent: true };
+        })
+        .catch(function (err) {
+          return { blocks: [{ type: 'md', text:
+            '**' + (err && err.message ? err.message : 'The request failed.') + '**\n\n' +
+            'Falling back to the built-in scaffold.' }].concat(Agent.offline(prompt, cap)),
+            spent: true };
+        });
+    },
+
+    /* Artifacts worth attaching alongside a model answer. */
+    bonusArtifact: function (cap, prompt) {
+      if (cap.id === 'game3d') return [gameScaffold()];
+      if (cap.id === 'anim') {
+        return [{ type: 'artifact', kind: 'Animation', title: 'Motion study',
+                  filename: 'motion-study.html', html: ANIM_HTML }];
+      }
+      return [];
+    },
+
+    /* No key configured — still do something real. */
+    offline: function (prompt, cap) {
+      var head = AGENTER.Gemini.configured() ? [] : [{ type: 'md', text:
+        'No API key is set, so this is the built-in scaffold rather than a model answer. ' +
+        'Add a Gemini key under **⚙ Settings** to get answers written for your exact prompt.' }];
+
+      if (cap && cap.id === 'game3d') {
+        return head.concat([
+          { type: 'md', text:
+            '### Cube Runner\n\nSoftware-projected 3D on a 2D canvas — no WebGL, no libraries. ' +
+            'Perspective divide in `project()`, painter\'s algorithm by depth sort, cyan cubes ' +
+            'score and red ones end the run. Arrow keys on desktop, drag on a phone.' },
+          gameScaffold()
+        ]);
+      }
+      if (cap && cap.id === 'anim') {
+        return head.concat([
+          { type: 'md', text:
+            '### Four motion primitives\n\nFloat, spin-with-scale, pulse ring and a border-radius ' +
+            'morph — each on a cubic-bezier that is not the browser default, which is most of ' +
+            'what separates motion that reads as designed from motion that reads as a transition. ' +
+            'The whole sheet is disabled under `prefers-reduced-motion`.' },
+          { type: 'artifact', kind: 'Animation', title: 'Motion study',
+            filename: 'motion-study.html', html: ANIM_HTML }
+        ]);
+      }
+      if (cap && cap.id === 'cordova') return head.concat(cordovaScaffold());
+
+      return head.concat([{ type: 'md', text:
+        'I can scaffold this once a key is set. What I can build without one, right now:\n\n' +
+        '- **3D games** — canvas projection, no dependencies\n' +
+        '- **Cordova apps** — full project tree and build commands\n' +
+        '- **Videos** — HTML documents that play and record themselves\n' +
+        '- **Animations** — CSS and canvas motion\n' +
+        '- **Device control** — battery, vibration, sensors, clipboard\n\n' +
+        'Ask for any of those by name.' }]);
+    }
+  };
+
+  AGENTER.Agent = Agent;
+})();
+
+/* ---- js/paywall.js ---- */
+/* The subscription page.
+ *
+ * On a free plan the composer is watched keystroke by keystroke: the moment a
+ * gated capability is named, this opens — before Send is ever pressed. Leaving
+ * it by any route (✕, Esc, backdrop, the leave link) clears the composer, which
+ * is the deal the page states out loud before you take it. */
+window.AGENTER = window.AGENTER || {};
+
+(function () {
+  'use strict';
+  var Store = AGENTER.Store, CFG = AGENTER.CONFIG;
+
+  var el = {};
+  var openCap = null, ticker = null, hooks = {};
+
+  function $(id) { return document.getElementById(id); }
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  function countdown() {
+    var ms = CFG.deal.ends - new Date();
+    if (ms <= 0) return 'last day';
+    var d = Math.floor(ms / 86400000);
+    var h = Math.floor(ms / 3600000) % 24;
+    var m = Math.floor(ms / 60000) % 60;
+    var s = Math.floor(ms / 1000) % 60;
+    return d > 0 ? (d + 'd ' + pad(h) + ':' + pad(m) + ':' + pad(s))
+                 : (pad(h) + ':' + pad(m) + ':' + pad(s) + ' left');
+  }
+
+  var Paywall = {
+    init: function (h) {
+      hooks = h || {};
+      el.root     = $('paywall');
+      el.close    = $('pwClose');
+      el.leave    = $('pwLeave');
+      el.buy      = $('pwBuy');
+      el.reason   = $('pwReason');
+      el.clock    = $('dealClock');
+      el.robot    = $('paywallRobot');
+
+      AGENTER.paintRobot(el.robot);
+
+      $('priceWas').textContent  = AGENTER.money(CFG.price.full);
+      $('priceNow').textContent  = AGENTER.money(CFG.price.discounted);
+      $('buyPrice').textContent  = AGENTER.money(CFG.price.discounted);
+      $('priceNote').textContent =
+        CFG.deal.name + ': ' + CFG.deal.percentOff + '% off — you save ' +
+        AGENTER.money(CFG.price.full - CFG.price.discounted) + ' every month.';
+      $('perkUsage').textContent =
+        '— ' + CFG.limits.pro + ' runs a day instead of ' + CFG.limits.free + '.';
+
+      el.close.onclick = function () { Paywall.leave(); };
+      el.leave.onclick = function () { Paywall.leave(); };
+      el.root.onclick  = function (e) { if (e.target === el.root) Paywall.leave(); };
+      el.buy.onclick   = function () { Paywall.buy(); };
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && Paywall.isOpen()) { e.preventDefault(); Paywall.leave(); }
+      });
+    },
+
+    isOpen: function () { return el.root && !el.root.hidden; },
+
+    open: function (cap) {
+      if (Paywall.isOpen()) return;
+      openCap = cap || null;
+      el.reason.textContent = cap
+        ? ('“' + cap.label + '” is a Pro capability.')
+        : 'Five times the usage, and every capability unlocked.';
+      el.root.hidden = false;
+      el.clock.textContent = countdown();
+      ticker = setInterval(function () { el.clock.textContent = countdown(); }, 1000);
+      // Focus the buy button so keyboard and screen-reader users land inside the sheet.
+      setTimeout(function () { el.buy.focus(); }, 30);
+    },
+
+    close: function () {
+      if (!Paywall.isOpen()) return;
+      el.root.hidden = true;
+      clearInterval(ticker); ticker = null;
+      openCap = null;
+    },
+
+    /* Left without subscribing — the prompt goes. */
+    leave: function () {
+      Paywall.close();
+      if (hooks.onLeave) hooks.onLeave();
+    },
+
+    buy: function () {
+      Store.setPlan('pro');
+      var cap = openCap;
+      Paywall.close();
+      if (hooks.onBuy) hooks.onBuy(cap);
+    },
+
+    /* Watch a textarea and open the page mid-typing. */
+    watch: function (input, onHint) {
+      var timer = null;
+      input.addEventListener('input', function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+          var cap = AGENTER.matchGate(input.value);
+          if (onHint) onHint(cap);
+          if (cap && !Store.isPro() && !Paywall.isOpen()) Paywall.open(cap);
+        }, CFG.triggerDelay);
+      });
+    }
+  };
+
+  AGENTER.Paywall = Paywall;
+})();
+
+/* ---- js/ui.js ---- */
+/* UI glue: sessions, transcript, artifacts, settings, and the plan surfaces. */
+(function () {
+  'use strict';
+  var Store = AGENTER.Store, CFG = AGENTER.CONFIG, Agent = AGENTER.Agent,
+      Paywall = AGENTER.Paywall;
+
+  function $(id) { return document.getElementById(id); }
+  var elPrompt, elSend, elTranscript, elHint, elToast;
+  var session = null, busy = false;
+
+  /* ── tiny markdown ──────────────────────────────────────── */
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+  }
+
+  function inline(s) {
+    return esc(s)
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+      .replace(/(^|[\s(])\*([^*\n]+)\*/g, '$1<i>$2</i>');
+  }
+
+  function markdown(src) {
+    var out = [], lines = String(src).split('\n'), i = 0;
+
+    while (i < lines.length) {
+      var line = lines[i];
+
+      if (/^```/.test(line)) {                       // fenced code
+        var lang = line.slice(3).trim(), buf = [];
+        i++;
+        while (i < lines.length && !/^```/.test(lines[i])) { buf.push(lines[i]); i++; }
+        i++;
+        out.push('<pre><code data-lang="' + esc(lang) + '">' +
+                 esc(buf.join('\n')) + '</code></pre>');
+        continue;
+      }
+
+      var h = /^(#{2,4})\s+(.*)$/.exec(line);
+      if (h) { out.push('<h3>' + inline(h[2]) + '</h3>'); i++; continue; }
+
+      if (/^\s*[-*]\s+/.test(line)) {                // bullet run
+        var items = [];
+        while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
+          items.push('<li>' + inline(lines[i].replace(/^\s*[-*]\s+/, '')) + '</li>');
+          i++;
+        }
+        out.push('<ul>' + items.join('') + '</ul>');
+        continue;
+      }
+
+      if (/^\s*\d+[.)]\s+/.test(line)) {             // numbered run
+        var oi = [];
+        while (i < lines.length && /^\s*\d+[.)]\s+/.test(lines[i])) {
+          oi.push('<li>' + inline(lines[i].replace(/^\s*\d+[.)]\s+/, '')) + '</li>');
+          i++;
+        }
+        out.push('<ol>' + oi.join('') + '</ol>');
+        continue;
+      }
+
+      if (!line.trim()) { i++; continue; }
+
+      var para = [];                                  // paragraph run
+      while (i < lines.length && lines[i].trim() &&
+             !/^```/.test(lines[i]) && !/^#{2,4}\s/.test(lines[i]) &&
+             !/^\s*[-*]\s+/.test(lines[i]) && !/^\s*\d+[.)]\s+/.test(lines[i])) {
+        para.push(lines[i]); i++;
+      }
+      out.push('<p>' + inline(para.join(' ')) + '</p>');
+    }
+    return out.join('');
+  }
+
+  /* ── toast ──────────────────────────────────────────────── */
+  var toastTimer = null;
+  function toast(msg) {
+    elToast.textContent = msg;
+    elToast.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { elToast.hidden = true; }, 3200);
+  }
+
+  /* ── sessions ───────────────────────────────────────────── */
+  function newSession() {
+    session = { id: 'S' + Date.now(), title: 'New session', turns: [] };
+    var all = Store.sessions();
+    all.unshift(session);
+    Store.saveSessions(all);
+    Store.setCurrentId(session.id);
+    render();
+    paintSessions();
+  }
+
+  function persist() {
+    var all = Store.sessions().filter(function (s) { return s.id !== session.id; });
+    all.unshift(session);
+    Store.saveSessions(all);
+  }
+
+  function loadSession(id) {
+    var found = Store.sessions().filter(function (s) { return s.id === id; })[0];
+    if (!found) return newSession();
+    session = found;
+    Store.setCurrentId(id);
+    render();
+    paintSessions();
+  }
+
+  function paintSessions() {
+    var list = $('sessionList');
+    list.innerHTML = '';
+    Store.sessions().forEach(function (s) {
+      var b = document.createElement('button');
+      b.textContent = s.title;
+      if (session && s.id === session.id) b.className = 'active';
+      b.onclick = function () { loadSession(s.id); closeSidebar(); };
+      list.appendChild(b);
+    });
+    $('topTitle').textContent = session ? session.title : 'New session';
+  }
+
+  /* ── plan surfaces ──────────────────────────────────────── */
+  function paintPlan() {
+    var pro = Store.isPro();
+    var badge = $('planBadge');
+    badge.textContent = pro ? 'Pro' : 'Free';
+    badge.className = 'plan-badge' + (pro ? ' pro' : '');
+
+    var u = Store.usage(), lim = Store.limit(), pct = Math.min(100, u.used / lim * 100);
+    $('usageCard').innerHTML =
+      '<b>' + Store.remaining() + '</b> of ' + lim + ' runs left today' +
+      '<div class="usage-bar' + (Store.remaining() === 0 ? ' full' : '') +
+      '"><i style="width:' + pct + '%"></i></div>';
+
+    var deal = $('dealCard');
+    if (pro) {
+      deal.innerHTML = '';
+    } else {
+      deal.innerHTML =
+        '<button class="deal-card" id="dealBtn">' +
+        '<b>🎒 Back To School — ' + CFG.deal.percentOff + '% off</b>' +
+        '<small>Pro for ' + AGENTER.money(CFG.price.discounted) + '/mo · 5× the usage</small>' +
+        '</button>';
+      $('dealBtn').onclick = function () { Paywall.open(null); };
+    }
+  }
+
+  /* ── artifacts ──────────────────────────────────────────── */
+  function artifactNode(block) {
+    var wrap = document.createElement('div');
+    wrap.className = 'artifact';
+
+    var head = document.createElement('div');
+    head.className = 'artifact-head';
+    head.innerHTML = '<span>' + esc(block.kind) + '</span>' +
+                     '<span class="grow">' + esc(block.filename) + '</span>';
+
+    var openBtn = document.createElement('button');
+    openBtn.textContent = 'Open';
+    openBtn.onclick = function () {
+      var w = window.open('', '_blank');
+      if (w) { w.document.write(block.html); w.document.close(); }
+      else toast('Popup blocked — use Download instead.');
+    };
+
+    var dlBtn = document.createElement('button');
+    var isCordova = !!window.cordova;
+    dlBtn.textContent = isCordova ? 'Copy source' : 'Download';
+    dlBtn.onclick = function () {
+      if (isCordova) {
+        AGENTER.Device.copy(block.html)
+          .then(function () { toast('HTML copied to the clipboard.'); })
+          .catch(function () { toast('Clipboard is unavailable here.'); });
+        return;
+      }
+      var blob = new Blob([block.html], { type: 'text/html' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = block.filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    };
+
+    head.appendChild(openBtn);
+    head.appendChild(dlBtn);
+    wrap.appendChild(head);
+
+    var frame = document.createElement('iframe');
+    frame.setAttribute('sandbox', 'allow-scripts allow-downloads allow-same-origin');
+    frame.setAttribute('title', block.kind + ' preview');
+    frame.srcdoc = block.html;
+    wrap.appendChild(frame);
+
+    return wrap;
+  }
+
+  function deviceNode() {
+    var wrap = document.createElement('div');
+    wrap.className = 'artifact';
+    var head = document.createElement('div');
+    head.className = 'artifact-head';
+    head.innerHTML = '<span>Device control</span><span class="grow">live</span>';
+
+    var buzz = document.createElement('button');
+    buzz.textContent = 'Vibrate';
+    buzz.onclick = function () {
+      toast(AGENTER.Device.vibrate(240) ? 'Buzzed.' : 'No vibration motor here.');
+    };
+    var copy = document.createElement('button');
+    copy.textContent = 'Copy report';
+    copy.onclick = function () {
+      AGENTER.Device.report().then(function (r) {
+        return AGENTER.Device.copy(r).then(function () { toast('Report copied.'); });
+      }).catch(function () { toast('Clipboard is unavailable here.'); });
+    };
+    head.appendChild(buzz); head.appendChild(copy);
+    wrap.appendChild(head);
+    return wrap;
+  }
+
+  /* ── transcript ─────────────────────────────────────────── */
+  function turnNode(role) {
+    var t = document.createElement('div');
+    t.className = 'turn ' + role;
+    var av = document.createElement('div');
+    av.className = 'av';
+    if (role === 'bot') AGENTER.paintRobot(av); else av.textContent = 'You';
+    var bub = document.createElement('div');
+    bub.className = 'bubble';
+    t.appendChild(av); t.appendChild(bub);
+    return { root: t, bubble: bub };
+  }
+
+  function paintBlocks(bubble, blocks) {
+    blocks.forEach(function (b) {
+      if (b.type === 'md') {
+        var d = document.createElement('div');
+        d.innerHTML = markdown(b.text);
+        bubble.appendChild(d);
+      } else if (b.type === 'artifact') {
+        bubble.appendChild(artifactNode(b));
+      } else if (b.type === 'device') {
+        bubble.appendChild(deviceNode());
+      } else if (b.type === 'refusal') {
+        var r = document.createElement('div');
+        r.className = 'refusal';
+        r.innerHTML = '<span class="no">No.</span>' +
+          '<div>' + esc(b.capability.label) + ' is a Pro capability, and you are on Free. ' +
+          'I will not build it on this plan.</div>';
+        var up = document.createElement('button');
+        up.className = 'inline-upsell';
+        up.textContent = 'See Pro — ' + CFG.deal.percentOff + '% off';
+        up.onclick = function () { Paywall.open(b.capability); };
+        r.appendChild(up);
+        bubble.appendChild(r);
+      }
+    });
+  }
+
+  function render() {
+    elTranscript.innerHTML = '';
+    if (!session || !session.turns.length) { paintEmpty(); return; }
+    session.turns.forEach(function (t) {
+      var n = turnNode(t.role === 'user' ? 'user' : 'bot');
+      if (t.role === 'user') n.bubble.textContent = t.text;
+      else paintBlocks(n.bubble, t.blocks || [{ type: 'md', text: t.text || '' }]);
+      elTranscript.appendChild(n.root);
+    });
+    elTranscript.scrollTop = elTranscript.scrollHeight;
+  }
+
+  function paintEmpty() {
+    var wrap = document.createElement('div');
+    wrap.className = 'empty';
+    var hero = document.createElement('div');
+    hero.className = 'hero';
+    AGENTER.paintRobot(hero);
+    wrap.appendChild(hero);
+
+    var h = document.createElement('h2');
+    h.textContent = 'Agenter';
+    var p = document.createElement('p');
+    p.textContent = 'Your own AI coding agent. Ask it to build something.';
+    wrap.appendChild(h); wrap.appendChild(p);
+
+    var grid = document.createElement('div');
+    grid.className = 'chip-grid';
+    [['Make a 3D game', true], ['Build a Cordova app', true], ['Make a video about my project', true],
+     ['Animation for a loading state', true], ['Device control panel', true],
+     ['Explain this stack trace', false]].forEach(function (pair) {
+      var b = document.createElement('button');
+      b.innerHTML = esc(pair[0]) + (pair[1] && !Store.isPro() ? '<span class="lock">🔒</span>' : '');
+      b.onclick = function () {
+        elPrompt.value = pair[0];
+        elPrompt.dispatchEvent(new Event('input'));
+        elPrompt.focus();
+      };
+      grid.appendChild(b);
+    });
+    wrap.appendChild(grid);
+    elTranscript.appendChild(wrap);
+  }
+
+  /* ── send ───────────────────────────────────────────────── */
+  function autosize() {
+    elPrompt.style.height = 'auto';
+    elPrompt.style.height = Math.min(168, elPrompt.scrollHeight) + 'px';
+  }
+
+  function send() {
+    if (busy) return;
+    var text = elPrompt.value.trim();
+    if (!text) return;
+
+    // Belt and braces: paste and autofill both fire `input`, but if anything
+    // slipped past the watcher, the gate still holds here.
+    var cap = Agent.classify(text);
+    if (cap && !Store.isPro()) { Paywall.open(cap); return; }
+
+    elPrompt.value = '';
+    autosize();
+    elHint.hidden = true;
+
+    if (!session) newSession();
+    if (session.turns.length === 0) {
+      session.title = text.length > 38 ? text.slice(0, 36).trim() + '…' : text;
+    }
+    session.turns.push({ role: 'user', text: text });
+    persist(); paintSessions(); render();
+
+    var pending = turnNode('bot');
+    pending.bubble.innerHTML = '<div class="dots"><span></span><span></span><span></span></div>';
+    elTranscript.appendChild(pending.root);
+    elTranscript.scrollTop = elTranscript.scrollHeight;
+
+    busy = true; elSend.disabled = true;
+
+    var history = session.turns.slice(0, -1).map(function (t) {
+      return { role: t.role === 'user' ? 'user' : 'model',
+               text: t.role === 'user' ? t.text : plainOf(t) };
+    });
+
+    Agent.respond(text, history).then(function (res) {
+      session.turns.push({ role: 'bot', blocks: res.blocks });
+      persist();
+      pending.bubble.innerHTML = '';
+      paintBlocks(pending.bubble, res.blocks);
+      elTranscript.scrollTop = elTranscript.scrollHeight;
+    }).catch(function (err) {
+      pending.bubble.innerHTML = markdown('**Something went wrong.** ' +
+        (err && err.message ? err.message : String(err)));
+    }).then(function () {
+      busy = false; elSend.disabled = false;
+      paintPlan();
+      elPrompt.focus();
+    });
+  }
+
+  function plainOf(turn) {
+    return (turn.blocks || []).filter(function (b) { return b.type === 'md'; })
+                              .map(function (b) { return b.text; }).join('\n\n') || '(artifact)';
+  }
+
+  /* ── settings ───────────────────────────────────────────── */
+  function openSettings() {
+    $('setKey').value = Store.apiKey();
+    $('setModel').value = Store.model();
+    paintPlanSwitch();
+    $('settings').hidden = false;
+  }
+
+  function paintPlanSwitch() {
+    var pro = Store.isPro();
+    $('setFree').className = pro ? '' : 'on';
+    $('setPro').className = pro ? 'on' : '';
+    $('setPlanNote').textContent = pro
+      ? 'Pro: ' + CFG.limits.pro + ' runs a day, every capability unlocked.'
+      : 'Free: ' + CFG.limits.free + ' runs a day. Gated capabilities are refused.';
+  }
+
+  /* ── sidebar (narrow) ───────────────────────────────────── */
+  function closeSidebar() { $('sidebar').classList.remove('open'); }
+
+  /* ── boot ───────────────────────────────────────────────── */
+  function boot() {
+    elPrompt     = $('prompt');
+    elSend       = $('send');
+    elTranscript = $('transcript');
+    elHint       = $('triggerHint');
+    elToast      = $('toast');
+
+    AGENTER.paintRobot($('brandMark'));
+
+    Paywall.init({
+      onLeave: function () {
+        var had = elPrompt.value.length > 0;
+        elPrompt.value = '';
+        autosize();
+        elHint.hidden = true;
+        if (had) toast('Prompt cleared — that is the cost of leaving the Pro page.');
+      },
+      onBuy: function (cap) {
+        paintPlan(); render(); paintPlanSwitch();
+        toast('Pro is on. ' + CFG.limits.pro + ' runs a day, everything unlocked.');
+        if (cap) elPrompt.focus();
+      }
+    });
+
+    Paywall.watch(elPrompt, function (cap) {
+      if (cap && Store.isPro()) {
+        elHint.hidden = false;
+        elHint.textContent = cap.label + ' — unlocked on Pro. Send when ready.';
+      } else {
+        elHint.hidden = true;
+      }
+    });
+
+    elPrompt.addEventListener('input', autosize);
+    elPrompt.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+    });
+    elSend.onclick = send;
+
+    $('newChat').onclick = function () { newSession(); closeSidebar(); };
+    $('menuBtn').onclick = function () { $('sidebar').classList.toggle('open'); };
+    $('openSettings').onclick = openSettings;
+    $('setClose').onclick = function () { $('settings').hidden = true; };
+    $('settings').onclick = function (e) {
+      if (e.target === $('settings')) $('settings').hidden = true;
+    };
+    $('setFree').onclick = function () { Store.setPlan('free'); paintPlanSwitch(); paintPlan(); render(); };
+    $('setPro').onclick  = function () { Store.setPlan('pro');  paintPlanSwitch(); paintPlan(); render(); };
+    $('setSave').onclick = function () {
+      Store.setApiKey($('setKey').value);
+      Store.setModel($('setModel').value);
+      $('settings').hidden = true;
+      toast(Store.hasKey() ? 'Key saved on this device.' : 'Running in offline demo mode.');
+      paintPlan();
+    };
+
+    var current = Store.currentId();
+    var known = Store.sessions();
+    if (current && known.some(function (s) { return s.id === current; })) loadSession(current);
+    else if (known.length) loadSession(known[0].id);
+    else newSession();
+
+    paintPlan();
+    autosize();
+  }
+
+  if (window.cordova) document.addEventListener('deviceready', boot, false);
+  else if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+
+</script>
+</body>
+</html>
