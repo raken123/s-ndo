@@ -11,7 +11,7 @@
 VERSION := $(shell cat VERSION)
 DIST    := dist
 
-.PHONY: all web icons android desktop check check-web check-server check-packages serve clean
+.PHONY: all web icons android desktop trailer check check-web check-server check-packages serve clean
 
 all: web icons android desktop
 	@echo
@@ -42,10 +42,14 @@ check-server:
 check-packages:
 	python3 build/verify-packages.py
 
+trailer: web icons
+	node build/mktrailer.js
+	python3 build/mktrailer.py
+
 serve:
 	node server/server.js
 
 clean:
-	rm -rf $(DIST)/aijudge.html $(DIST)/icons $(DIST)/shots* \
-	       $(DIST)/*.apk $(DIST)/*.deb $(DIST)/*.exe $(DIST)/*.dmg \
+	rm -rf $(DIST)/aijudge.html $(DIST)/icons $(DIST)/shots* $(DIST)/trailer \
+	       $(DIST)/*.apk $(DIST)/*.deb $(DIST)/*.exe $(DIST)/*.dmg $(DIST)/*.mp4 \
 	       build/.android build/.desktop

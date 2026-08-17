@@ -80,6 +80,7 @@
     wall(0, -HALF, 0, HALF * 2);
     wall(-HALF, 0, Math.PI / 2, HALF * 2);
     wall(HALF, 0, -Math.PI / 2, HALF * 2);
+    wall(0, HALF, Math.PI, HALF * 2);      // behind the queue, where the line comes in
 
     /* Coffered ceiling with exposed beams. */
     b.at(0, 6.7, 0).sc(HALF * 2, 0.3, HALF * 2); b.box(shade(C.woodDark, 1.1)); b.pop().pop();

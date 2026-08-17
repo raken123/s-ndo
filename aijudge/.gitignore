@@ -22,3 +22,5 @@ dist/*.exe
 dist/*.dmg
 __pycache__/
 __pycache__/
+dist/*.mp4
+dist/trailer/

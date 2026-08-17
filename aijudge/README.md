@@ -219,6 +219,25 @@ It is how the game plays offline, on a plane, or before you have a server.
 
 ![the shot](docs/shot-verdict.png)
 
+## The trailer
+
+```sh
+make trailer     # dist/AIJudge-1.0.0-trailer.mp4 — 3:00, 1920x1080, 30fps
+```
+
+The footage is the real game. `build/mktrailer.js` cancels the render loop and
+drives `update()` / `render()` by hand a fixed 1/30s at a time, pulling each
+frame straight off the canvas, so the capture is clean 1080p30 no matter how
+slowly software WebGL draws — nine shots, about 160 seconds, with the camera
+told where to stand. Nothing is mocked up: the queue really shuffles forward,
+the drum roll is the animator, and the shot lands on the frame the game fires it.
+
+`build/mktrailer.py` does the rest. It synthesises the score from scratch —
+kick, toms, snare, cymbals, wood and a low drone, through a small convolution
+hall, because the judge is a drum robot and the trailer should be carried by
+drums — then draws the typography and the end card over the frames and encodes
+the lot. No stock music, no stock footage, no editor.
+
 ## Building
 
 ```sh
@@ -233,6 +252,8 @@ make serve      # open the hall on http://localhost:8787
 | `build/mkicon.js` | PNGs, `icon.ico`, `icon.icns` from the one SVG |
 | `build/mkandroid.py` | both APKs, driving aapt2/javac/d8/apksigner directly |
 | `build/mkdesktop.py` | `.deb`, `.exe`, `.dmg` from `build/host.c` |
+| `build/mktrailer.js` | captures the trailer's footage from the running game |
+| `build/mktrailer.py` | synthesises the score, cuts the picture, encodes the mp4 |
 
 Needs `python3`, `node` (playwright, for the icon rasteriser and the browser
 tests), `cc`, `x86_64-w64-mingw32-gcc`, `dpkg-deb`, `genisoimage`, and an

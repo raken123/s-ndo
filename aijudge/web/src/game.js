@@ -577,12 +577,23 @@
       { name: m.nameA, arg: m.argA, pos: m.scene.a, side: 'A' },
       { name: m.nameB, arg: m.argB, pos: m.scene.b, side: 'B' }
     ];
+    /* Where the cards go depends on where the player's eyes actually are. On a
+       flat screen the camera climbs onto the bench, so the cards must turn round
+       to face it. In VR the headset pose is the camera and the player never
+       leaves their feet, so they stay facing the hall. */
+    const inVR = !!(this.xr && this.xr.session);
     for (let k = 0; k < 2; k++) {
       const d = data[k];
       const card = cards[k];
       card.visible = true;
-      card.pos = [k === 0 ? -2.3 : 2.3, 2.1, -2.2];
-      card.rot = [0, k === 0 ? 0.34 : -0.34, 0];
+      if (inVR) {
+        card.pos = [k === 0 ? -2.3 : 2.3, 2.1, -2.2];
+        card.rot = [0, k === 0 ? 0.34 : -0.34, 0];
+      } else {
+        card.pos = [k === 0 ? -1.5 : 1.5, 2.05, 0.9];
+        card.rot = [0, Math.PI + (k === 0 ? -0.30 : 0.30), 0];
+        card.scl = [2.4, 1.5, 1];
+      }
       card.panel.update((c, w, h) => {
         frame(c, w, h);
         c.textAlign = 'center'; c.textBaseline = 'top';
@@ -866,7 +877,7 @@
         /* you are the drum: the hall seen from the bench */
         const r = L.robot;
         eye = [r[0], r[1] + 2.6, r[2] + 0.7];
-        target = [0, 1.35, 0.2];
+        target = [0, 1.8, 1.1];
         break;
       }
       case 'verdict':
