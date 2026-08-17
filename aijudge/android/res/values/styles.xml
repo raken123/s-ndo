@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fullscreen, no action bar, and the hall's own dark oak behind it. -->
+    <style name="AIJudgeTheme" parent="@android:style/Theme.NoTitleBar.Fullscreen">
+        <item name="android:windowBackground">@color/hall</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+</resources>

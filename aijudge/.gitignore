@@ -1,0 +1,12 @@
+# build scratch
+build/.android/
+build/.desktop/
+build/debug.keystore
+dist/shots*/
+dist/*.idsig
+
+# server state (VIP grants) is per-deployment
+server/state.json
+
+node_modules/
+dist/icons/

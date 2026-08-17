@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#2a1c10">
+<meta name="description" content="AI Judge — an AI drum robot hears your case against a stranger. Lose and you get shot.">
+<title>AI Judge</title>
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<canvas id="stage"></canvas>
+
+<div id="ui">
+
+  <!-- ---------------- top bar ---------------- -->
+  <div id="topbar">
+    <div id="brand">
+      <img id="brandIcon" src="assets/icon.svg" alt="AI Judge">
+      <div>
+        <h1>AI Judge</h1>
+        <small>Hall of Small Grievances</small>
+      </div>
+    </div>
+    <div id="status">
+      <span class="pill off" id="pillNet">offline</span>
+      <span class="pill" id="pillModel">—</span>
+      <span class="pill vip hidden" id="pillVip">VIP</span>
+      <span class="pill hidden" id="pillMorph">10 morphs</span>
+    </div>
+    <button class="icon-btn" id="btnSound" title="Sound">🔊</button>
+    <button class="icon-btn" id="btnSettings" title="Settings">⚙</button>
+  </div>
+
+  <!-- ---------------- centre ---------------- -->
+  <div id="centre">
+
+    <!-- menu -->
+    <div class="screen card" id="menu">
+      <div class="hero">
+        <img id="menuIcon" src="assets/icon.svg" alt="">
+        <h2>AI Judge</h2>
+        <div class="tagline">Two strangers. One drum. One verdict.</div>
+      </div>
+      <p class="lede">
+        Join the line in the Hall of Small Grievances. When you reach the front you
+        will be standing beside the AI drum robot — and it holds two guns, one for
+        each of you. State your case. Lose, and you get shot.
+      </p>
+      <div class="actions">
+        <button class="btn big wide" id="btnPlay">Take a place in the line</button>
+        <div class="row">
+          <button class="btn ghost" id="btnVR">Enter in VR</button>
+          <button class="btn ghost" id="btnVip">VIP · $59</button>
+        </div>
+      </div>
+      <div class="facts">
+        <div class="fact"><b id="factWins">0</b><span>verdicts won</span></div>
+        <div class="fact"><b id="factRank">Bystander</b><span>standing</span></div>
+        <div class="fact"><b id="factStreak">0</b><span>best streak</span></div>
+      </div>
+    </div>
+
+    <!-- queue -->
+    <div class="screen card hidden" id="queue">
+      <h2>In the line</h2>
+      <div class="pos" id="queuePos">—</div>
+      <div class="sub" id="queueSub">finding you a place…</div>
+      <div class="line" id="queueLine"></div>
+      <p class="lede" style="margin-top:16px">
+        The bench hears one case at a time. You will be called when you are standing
+        next to the drum.
+      </p>
+      <button class="btn ghost" id="btnLeave">Leave the hall</button>
+    </div>
+
+    <!-- trial -->
+    <div class="screen card hidden" id="trial">
+      <div class="case-head">
+        <h2 id="caseTitle">The Case</h2>
+        <span class="pill" id="caseSide">side A</span>
+      </div>
+      <p class="brief" id="caseBrief"></p>
+      <div class="stance"><b>Your position</b><span id="caseStance"></span></div>
+      <div class="opp-strip">
+        <span class="dot" id="oppDot"></span>
+        <span id="oppLine">Against <b>—</b></span>
+      </div>
+      <textarea id="argument" maxlength="600" placeholder="Address the bench. Be specific — the drum is not moved by volume."></textarea>
+      <div class="under">
+        <span id="clock">45</span>
+        <span id="chars">0 / 600</span>
+        <button class="btn ghost hidden" id="btnMorph">Drum morph</button>
+        <button class="btn" id="btnSubmit">Rest your case</button>
+      </div>
+    </div>
+
+    <!-- deliberation -->
+    <div class="screen card hidden" id="deliberating">
+      <div class="drum"></div>
+      <h2>The bench is deliberating</h2>
+      <p class="lede" id="delibLine">A drum roll, and then a ruling.</p>
+    </div>
+
+    <!-- morph choice -->
+    <div class="screen card hidden" id="morphchoice" style="width:min(680px,100%)">
+      <h2>You are the drum</h2>
+      <p class="lede">You have taken the bench. Read them both and rule. There is no appeal.</p>
+      <div class="cards" id="morphCards"></div>
+    </div>
+
+    <!-- verdict / aftermath -->
+    <div class="screen card hidden" id="verdict">
+      <div class="outcome" id="outcome">Verdict</div>
+      <div class="ruling" id="rulingText"></div>
+      <div class="scores" id="scoreRow"></div>
+      <div class="byline" id="verdictByline"></div>
+      <div style="display:flex;gap:10px;margin-top:16px" id="verdictActions">
+        <button class="btn wide" id="btnAgain">Back to the line</button>
+        <button class="btn ghost" id="btnQuit">Leave</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ---------------- settings ---------------- -->
+<div class="modal-back hidden" id="settingsModal">
+  <div class="modal card">
+    <h3>Settings</h3>
+    <p class="sub">Everything here is stored on this device only.</p>
+
+    <label class="field">
+      <span>Your name in the hall</span>
+      <input type="text" id="setName" maxlength="24" placeholder="Brass Kettle">
+    </label>
+
+    <label class="field">
+      <span>Game server</span>
+      <input type="text" id="setServer" placeholder="ws://localhost:8787">
+      <div class="hint">Leave empty to play the practice hall against a stand-in
+        opponent. Point it at a running <code>aijudge/server</code> to be matched
+        with real people.</div>
+    </label>
+
+    <label class="field">
+      <span>Gemini API key (optional)</span>
+      <input type="password" id="setKey" placeholder="AIza…">
+      <div class="hint">Only needed when you have no game server. With neither, the
+        hall falls back to its own local bench so a verdict always arrives.</div>
+    </label>
+
+    <div class="foot">
+      <button class="btn ghost" id="btnSettingsClose">Close</button>
+      <button class="btn" id="btnSettingsSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ---------------- VIP ---------------- -->
+<div class="modal-back hidden" id="vipModal">
+  <div class="modal card">
+    <h3>VIP</h3>
+    <p class="sub">One payment. The bench gets sharper and the drum becomes yours.</p>
+    <div class="price">$59 <small>once</small></div>
+    <ul class="perks">
+      <li><span class="tick">✦</span><span><b>Gemini 3.6 Flash on the bench.</b> Longer, sharper rulings that actually quote you back. Free players are judged by Gemini 3.1 Flash Lite.</span></li>
+      <li><span class="tick">✦</span><span><b>10 drum morphs a day.</b> Become the drum robot for one case and hand down the verdict yourself. Resets at midnight.</span></li>
+      <li><span class="tick">✦</span><span><b>A brass badge</b> over your head in the line, so the hall knows.</span></li>
+    </ul>
+
+    <label class="field">
+      <span>Redeem code</span>
+      <input type="text" id="vipCode" placeholder="code from your receipt">
+    </label>
+
+    <div class="notice" id="vipNotice">
+      No payment processor is wired into this build. With a game server running,
+      codes are checked against <code>AIJUDGE_VIP_CODES</code> there; with no
+      server, any code unlocks VIP on this device only.
+    </div>
+
+    <div class="foot">
+      <button class="btn ghost" id="btnVipClose">Close</button>
+      <button class="btn" id="btnVipRedeem">Redeem</button>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script src="src/gl.js"></script>
+<script src="src/mesh.js"></script>
+<script src="src/scene.js"></script>
+<script src="src/render.js"></script>
+<script src="src/audio.js"></script>
+<script src="src/account.js"></script>
+<script src="src/judge.js"></script>
+<script src="src/net.js"></script>
+<script src="src/xr.js"></script>
+<script src="src/game.js"></script>
+<script src="src/ui.js"></script>
+</body>
+</html>
