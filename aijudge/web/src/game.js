@@ -286,7 +286,7 @@
     const acct = global.AJAccount.get();
     const profile = {
       name: acct.name, id: acct.id, vip: acct.vip, rank: global.AJAccount.rank(),
-      server: acct.server, apiKey: acct.apiKey
+      server: acct.server
     };
     this.net = acct.server
       ? new global.AJNet.OnlineNet(acct.server, profile)

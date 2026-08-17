@@ -244,7 +244,6 @@
         scene: m.scene, nameA, argA, nameB, argB,
         vip: !!this.profile.vip,
         endpoint: this.profile.server || '',
-        apiKey: this.profile.apiKey || '',
         matchId: m.matchId
       }).then(v => {
         this.emit('verdict', { verdict: v, argA, argB, nameA, nameB, scene: m.scene });

@@ -294,14 +294,13 @@
       const acct = Account.get();
       $('setName').value = acct.name;
       $('setServer').value = acct.server || '';
-      $('setKey').value = acct.apiKey || '';
       $('settingsModal').classList.remove('hidden');
     };
     $('btnSettings').addEventListener('click', openSettings);
     $('btnSettingsClose').addEventListener('click', () => $('settingsModal').classList.add('hidden'));
     $('btnSettingsSave').addEventListener('click', () => {
       Account.setName($('setName').value);
-      Account.set({ server: $('setServer').value.trim(), apiKey: $('setKey').value.trim() });
+      Account.set({ server: $('setServer').value.trim() });
       $('settingsModal').classList.add('hidden');
       ui.refreshChrome();
       ui.toast('Saved. Reconnecting to the hall.');

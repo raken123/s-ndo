@@ -16,14 +16,17 @@ It holds two guns, one trained on each podium. The loser gets shot.
 
 ## The five builds
 
+`make` puts all six in `dist/`. They are **not committed** — a build carries the
+bench key (see below), so the artifacts stay out of the repository.
+
 | File | Platform | Size |
 |---|---|---|
-| `dist/AIJudge-1.0.0-vr.apk` | Meta Quest and other Android headsets | 133 KB |
-| `dist/AIJudge-1.0.0-android.apk` | Android 7 and later | 133 KB |
-| `dist/AIJudge-1.0.0-macos.dmg` | macOS 11 and later | 930 KB |
-| `dist/AIJudge-1.0.0-win-x64.exe` | Windows 10/11 x86-64 | 164 KB |
-| `dist/aijudge_1.0.0_amd64.deb` | Debian / Ubuntu x86-64 | 495 KB |
-| `dist/aijudge.html` | any browser, one file | 165 KB |
+| `AIJudge-1.0.0-vr.apk` | Meta Quest and other Android headsets | 133 KB |
+| `AIJudge-1.0.0-android.apk` | Android 7 and later | 133 KB |
+| `AIJudge-1.0.0-macos.dmg` | macOS 11 and later | 930 KB |
+| `AIJudge-1.0.0-win-x64.exe` | Windows 10/11 x86-64 | 164 KB |
+| `aijudge_1.0.0_amd64.deb` | Debian / Ubuntu x86-64 | 495 KB |
+| `aijudge.html` | any browser, one file | 165 KB |
 
 They are small because none of them bundles a browser engine. The game is
 WebGL2 and WebXR; every platform already has an engine that runs it, so each
@@ -122,18 +125,48 @@ linked, so it does not care how old the distribution's glibc is.
 | Drum morphs | — | 10 per day |
 
 The two model ids live in one place, `MODELS` at the top of
-[`web/src/judge.js`](web/src/judge.js). **I could not verify against Google's API
-that models by these exact names are available** — no key was configured in the
-environment this was built in — so treat them as configuration, not as a tested
-fact. If they are wrong, change those two strings and nothing else needs to move.
-Every call is a normal `generateContent` request with a `responseSchema`, so any
-Gemini model id works there.
+[`web/src/judge.js`](web/src/judge.js). **Both were called for real against
+Google's API during the build** and both answered the game's own request —
+`generateContent` with the verdict `responseSchema` — with a parseable ruling.
+
+`gemini-3.6-flash` reasons before it answers, and those thought tokens are
+charged against `maxOutputTokens`: about 325 of them on a case like these. At a
+512 budget the ruling came back truncated, so the larger model is given 2048 and
+the Lite model 640. A `MAX_TOKENS` finish is caught explicitly and drops through
+to the next route rather than surfacing as a parse error.
 
 A verdict always arrives. The judge tries, in order: the game server's
-`/api/judge` (where the API key lives), then a key you pasted into Settings, then
-a local rule-based bench that reads for specificity, reasoning and whether you
-engaged with your own side. The last one is not a model and the game says so on
-the verdict card — it exists so the hall never stalls.
+`/api/judge` (its own key, kept server-side), then Gemini directly with the key
+built into this release, then a local rule-based bench that reads for
+specificity, reasoning and whether you engaged with your own side. The last one
+is not a model and the game says so on the verdict card — it exists so the hall
+never stalls.
+
+### The bench key
+
+`DEFAULT_API_KEY` in [`web/src/judge.js`](web/src/judge.js) is **empty in this
+repository, on purpose.** `build/mkweb.py` substitutes the real key in when it
+packages a release, reading it from `AIJUDGE_API_KEY` or `build/apikey.txt` —
+neither of which is version-controlled. A plain checkout therefore builds a game
+with no key, which falls back to the local bench and says so.
+
+```sh
+AIJUDGE_API_KEY=... make      # a release whose bench works out of the box
+make                          # a keyless build; the local bench judges
+```
+
+`build/verify-packages.py` follows the same rule, so it asserts the key is in
+every artifact when one is configured and asserts it is *absent* when one is not.
+
+Two things worth being blunt about:
+
+- **A key inside a client is not a secret.** Whoever has the APK, the `.exe` or
+  the HTML can read it straight out of the file. Keeping it out of git only
+  stops it being scraped by the bots that crawl public repositories; it does not
+  make it private. Ship a key you are willing to have shared, with a quota cap.
+- **The only key nobody can extract is a server-side one.** Run the game server
+  with `GEMINI_API_KEY` set and point clients at it: `/api/judge` is tried first,
+  the server's key wins, and it never leaves the machine.
 
 ### Drum morphs
 
@@ -226,8 +259,14 @@ case. 21 checks.
 
 `build/verify-packages.py` opens all five artifacts and checks format, payload
 and metadata — PE headers, the ISO volume, manifest package ids, the VR launch
-category, signatures, and that the game inside each one is byte-identical to
-`dist/aijudge.html`. 63 checks.
+category, signatures, that the game inside each one is byte-identical to
+`dist/aijudge.html`, and that the bench key is present or absent exactly as the
+build was configured. 69 checks.
+
+Both Gemini models were called against the live API during the build, with the
+game's own request shape, and both returned a parseable ruling. With a key
+configured, `verify-server.js` shows the whole chain working: two clients queued,
+matched and handed one real `gemini-3.1-flash-lite` verdict.
 
 **Not verified, and I will not claim otherwise:** the Windows `.exe`, the macOS
 `.dmg` and both APKs were never executed. There is no Windows machine, no Mac and

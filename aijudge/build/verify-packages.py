@@ -17,7 +17,32 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 DIST = ROOT / "dist"
 VERSION = (ROOT / "VERSION").read_text().strip()
 
+sys.path.insert(0, str(ROOT / "build"))
+from mkweb import bench_key            # noqa: E402  same source of truth as the build
+
+BENCH_KEY = bench_key()
+
 checks = []
+
+
+def gunzip(blob):
+    """Pulls the embedded game back out of a host binary.
+
+    The gzip member is appended verbatim, but 1f 8b can occur by chance in the
+    code before it, so every candidate offset is tried.
+    """
+    import zlib
+    start = 0
+    while True:
+        i = blob.find(b"\x1f\x8b\x08", start)
+        if i < 0:
+            return b""
+        try:
+            # decompressobj stops at the end of the member and ignores the rest
+            # of the binary that follows it; gzip.decompress would choke on it
+            return zlib.decompressobj(16 + zlib.MAX_WBITS).decompress(blob[i:])
+        except Exception:
+            start = i + 1
 
 
 def check(name, ok, detail=""):
@@ -48,6 +73,12 @@ def verify_html():
           "gemini-3.1-flash-lite" in text and "gemini-3.6-flash" in text)
     check("VIP is priced at $59", "PRICE_USD = 59" in text)
     check("ten drum morphs a day", "MORPHS_PER_DAY = 10" in text)
+    if BENCH_KEY:
+        check("the configured bench key was baked in", BENCH_KEY in text,
+              "this build must not be committed")
+    else:
+        check("no bench key is baked in", "const DEFAULT_API_KEY = '';" in text,
+              "the local bench will judge")
 
 
 # ---------------------------------------------------------------- apks
@@ -69,8 +100,11 @@ def verify_apk(path, want_package, want_label, vr):
         check("is signed", any(n.startswith("META-INF/") and
                                n.endswith((".RSA", ".DSA", ".EC")) for n in names))
         if "assets/aijudge.html" in names:
-            same = z.read("assets/aijudge.html") == (DIST / "aijudge.html").read_bytes()
-            check("the bundled game matches dist/aijudge.html", same)
+            body = z.read("assets/aijudge.html")
+            check("the bundled game matches dist/aijudge.html",
+                  body == (DIST / "aijudge.html").read_bytes())
+            if BENCH_KEY:
+                check("carries the bench key", BENCH_KEY.encode() in body)
 
     # aapt2 is optional here; when present it answers the manifest questions
     aapt2 = find_aapt2()
@@ -146,6 +180,8 @@ def verify_deb():
     check("is statically linked (runs on older distributions)",
           b"/lib64/ld-linux" not in member[:8192])
     check("the game is embedded in the binary", b"\x1f\x8b" in member)
+    if BENCH_KEY:
+        check("carries the bench key", BENCH_KEY.encode() in gunzip(member))
 
 
 # ---------------------------------------------------------------- exe
@@ -180,6 +216,8 @@ def verify_exe():
     check("imports only system DLLs",
           b"KERNEL32.dll" in data and b"WS2_32.dll" in data)
     check("the game is embedded in the binary", b"\x1f\x8b" in data)
+    if BENCH_KEY:
+        check("carries the bench key", BENCH_KEY.encode() in gunzip(data))
 
 
 # ---------------------------------------------------------------- dmg
@@ -219,6 +257,8 @@ def verify_dmg():
     check("the bundled game matches dist/aijudge.html",
           body == (DIST / "aijudge.html").read_bytes(),
           f"{len(body)} B")
+    if BENCH_KEY:
+        check("carries the bench key", BENCH_KEY.encode() in body)
 
 
 # ----------------------------------------------------------------

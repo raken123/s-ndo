@@ -51,7 +51,9 @@ const until = (fn, ms) => new Promise((res, rej) => {
   const srv = spawn(process.execPath, [path.join(__dirname, '..', 'server', 'server.js')], {
     env: Object.assign({}, process.env, {
       PORT: String(PORT), AIJUDGE_VIP_CODES: 'DRUM-TEST', AIJUDGE_STATE: STATE,
-      GEMINI_API_KEY: ''
+      /* a developer with a key gets the real bench exercised; without one the
+         local scorer answers and the checks still hold */
+      GEMINI_API_KEY: process.env.GEMINI_API_KEY || ''
     }),
     stdio: ['ignore', 'pipe', 'pipe']
   });

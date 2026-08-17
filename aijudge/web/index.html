@@ -145,12 +145,12 @@
         with real people.</div>
     </label>
 
-    <label class="field">
-      <span>Gemini API key (optional)</span>
-      <input type="password" id="setKey" placeholder="AIza…">
-      <div class="hint">Only needed when you have no game server. With neither, the
-        hall falls back to its own local bench so a verdict always arrives.</div>
-    </label>
+    <div class="notice">
+      The bench runs on a key built into this release, so there is nothing to
+      enter. A game server with its own <code>GEMINI_API_KEY</code> overrides it.
+      If no model can be reached the hall falls back to its own local bench, and
+      says so on the verdict card.
+    </div>
 
     <div class="foot">
       <button class="btn ghost" id="btnSettingsClose">Close</button>

@@ -10,3 +10,15 @@ server/state.json
 
 node_modules/
 dist/icons/
+
+# the Gemini key a release is built with — never in the repository
+build/apikey.txt
+
+# built artifacts carry that key, so they are not committed either
+dist/*.html
+dist/*.apk
+dist/*.deb
+dist/*.exe
+dist/*.dmg
+__pycache__/
+__pycache__/

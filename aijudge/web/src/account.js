@@ -40,7 +40,6 @@
       streak: 0, bestStreak: 0,
       morphDay: dayKey(),
       morphsUsed: 0,
-      apiKey: '',
       server: ''
     };
   }

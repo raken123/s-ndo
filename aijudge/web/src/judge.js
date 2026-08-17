@@ -1,8 +1,8 @@
 /* judge.js — the AI that hears the case.
 
    Three routes to a verdict, tried in order:
-     1. the game server's /api/judge proxy (the API key lives server-side),
-     2. a Gemini key the player pasted into Settings (stored on device only),
+     1. the game server's /api/judge proxy (its own key, kept server-side),
+     2. Gemini directly, with the key built into this release,
      3. a local rule-based judge so a verdict always arrives, even offline.
 
    Free players are judged by the Lite model, VIP by the larger Flash model.
@@ -16,6 +16,17 @@
   };
 
   const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
+
+  /* The key a release is built with. It is empty in the source tree on purpose:
+     build/mkweb.py substitutes the real one in when packaging, from
+     AIJUDGE_API_KEY or build/apikey.txt, neither of which is in the repository.
+
+     A key that ships inside a client cannot be a secret — anyone holding the
+     game can read it out of the binary — so keeping it out of source control
+     only stops it being scraped, it does not make it private. A deployment that
+     wants a key nobody can extract sets GEMINI_API_KEY on the game server; the
+     server's key wins because /api/judge is tried first. */
+  const DEFAULT_API_KEY = '';
 
   /* ---------------- the scenes ---------------- */
 
@@ -245,6 +256,13 @@
     return normalise(data.verdict || data, data.model || payload.model, 'server');
   }
 
+  /* gemini-3.6-flash reasons before it answers and those thought tokens are
+     charged against maxOutputTokens — measured at ~325 for a case like this.
+     A 512 budget leaves too little for the ruling and the JSON comes back
+     truncated, so the larger model gets a larger budget. */
+  const OUTPUT_TOKENS = { 'gemini-3.6-flash': 2048 };
+  const DEFAULT_OUTPUT_TOKENS = 640;
+
   async function viaGemini(apiKey, model, prompt) {
     const res = await fetch(API_BASE + encodeURIComponent(model) + ':generateContent?key=' +
       encodeURIComponent(apiKey), {
@@ -254,7 +272,7 @@
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.85,
-          maxOutputTokens: 512,
+          maxOutputTokens: OUTPUT_TOKENS[model] || DEFAULT_OUTPUT_TOKENS,
           responseMimeType: 'application/json',
           responseSchema: SCHEMA
         }
@@ -265,7 +283,11 @@
       throw new Error('gemini ' + res.status + ' ' + body.slice(0, 160));
     }
     const data = await res.json();
-    const text = (((data.candidates || [])[0] || {}).content || {}).parts?.[0]?.text;
+    const candidate = (data.candidates || [])[0] || {};
+    if (candidate.finishReason === 'MAX_TOKENS') {
+      throw new Error('gemini ran out of output budget before finishing the ruling');
+    }
+    const text = (candidate.content || {}).parts?.[0]?.text;
     if (!text) throw new Error('gemini returned no verdict');
     return normalise(JSON.parse(text), model, 'gemini');
   }
@@ -367,7 +389,9 @@
 
   /* ---------------- entry point ---------------- */
 
-  /* opts: { scene, nameA, argA, nameB, argB, vip, endpoint, apiKey, matchId } */
+  /* opts: { scene, nameA, argA, nameB, argB, vip, endpoint, matchId }
+     `apiKey` is only honoured from the server, which passes its own
+     GEMINI_API_KEY; the browser never supplies one. */
   async function judge(opts) {
     const model = opts.vip ? MODELS.vip : MODELS.free;
     const prompt = buildPrompt(opts.scene, opts.nameA, opts.argA, opts.nameB, opts.argB);
@@ -382,10 +406,11 @@
         });
       } catch (e) { errors.push('server: ' + e.message); }
     }
-    if (opts.apiKey) {
+    const key = opts.apiKey || DEFAULT_API_KEY;
+    if (key) {
       try {
-        return await viaGemini(opts.apiKey, model, prompt);
-      } catch (e) { errors.push('direct: ' + e.message); }
+        return await viaGemini(key, model, prompt);
+      } catch (e) { errors.push('gemini: ' + e.message); }
     }
 
     const v = localVerdict(opts.scene, opts.nameA, opts.argA, opts.nameB, opts.argB);
@@ -393,5 +418,5 @@
     return v;
   }
 
-  global.AJJudge = { MODELS, SCENES, pickScene, judge, localVerdict, scoreArgument };
+  global.AJJudge = { MODELS, DEFAULT_API_KEY, SCENES, pickScene, judge, localVerdict, scoreArgument };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -48,6 +48,11 @@ try {
   process.exit(1);
 }
 
+/* What the bench is actually running on. GEMINI_API_KEY overrides the key
+   built into judge.js; without either, only the local scorer is left. */
+const BENCH = GEMINI_KEY ? 'gemini (server key)'
+  : (AJJudge.DEFAULT_API_KEY ? 'gemini (key built into this release)' : 'local');
+
 /* ---------------- persisted VIP grants ---------------- */
 
 let state = { vip: {}, redeemed: {} };
@@ -448,7 +453,7 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/health') {
     return json(res, 200, {
       ok: true, online: players.size, queued: queue.length,
-      matches: matches.size, bench: GEMINI_KEY ? 'gemini' : 'local', models: MODELS
+      matches: matches.size, bench: BENCH, models: MODELS
     });
   }
 
@@ -516,9 +521,8 @@ server.on('upgrade', (req, socket, head) => {
 
 server.listen(PORT, () => {
   console.log('AI Judge — the hall is open on http://localhost:' + PORT);
-  console.log('  bench       : ' + (GEMINI_KEY
-    ? 'Gemini (' + MODELS.free + ' / ' + MODELS.vip + ' for VIP)'
-    : 'local rule-based — set GEMINI_API_KEY for the real thing'));
+  console.log('  bench       : ' + BENCH +
+    ' — ' + MODELS.free + ', ' + MODELS.vip + ' for VIP');
   console.log('  VIP codes   : ' + (VIP_CODES.size ? VIP_CODES.size + ' configured' : 'none (set AIJUDGE_VIP_CODES)'));
   console.log('  websocket   : ws://localhost:' + PORT);
 });
