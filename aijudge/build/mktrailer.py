@@ -561,6 +561,27 @@ def assemble():
     print(f"    {TOTAL}/{TOTAL}  done")
 
 
+def encode_web(master):
+    """A size-capped copy, for anywhere a 77 MB master will not go.
+
+    Two-pass at 1120k with -tune animation: the hall is flat-shaded with large
+    even areas and hard-edged type, which is exactly what that tune is for, so
+    the cut survives the squeeze down to about 27 MB.
+    """
+    out = DIST / f"AIJudge-{VERSION}-trailer-web.mp4"
+    common = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", str(master),
+              "-c:v", "libx264", "-preset", "medium", "-tune", "animation",
+              "-b:v", "1120k"]
+    subprocess.run(common + ["-pass", "1", "-an", "-f", "mp4", "/dev/null"], check=True)
+    subprocess.run(common + ["-pass", "2", "-pix_fmt", "yuv420p",
+                             "-profile:v", "high", "-level", "4.1",
+                             "-c:a", "aac", "-b:a", "112k",
+                             "-movflags", "+faststart", str(out)], check=True)
+    for junk in ("ffmpeg2pass-0.log", "ffmpeg2pass-0.log.mbtree"):
+        pathlib.Path(junk).unlink(missing_ok=True)
+    return out
+
+
 def encode(audio):
     out = DIST / f"AIJudge-{VERSION}-trailer.mp4"
     if out.exists():
@@ -592,6 +613,8 @@ def main():
         capture_output=True, text=True).stdout.strip().replace("\n", "  ")
     print(f"  {out.name}   {out.stat().st_size/1024/1024:.1f} MB")
     print(f"  {probe}")
+    web = encode_web(out)
+    print(f"  {web.name}   {web.stat().st_size/1024/1024:.1f} MB   (size-capped copy)")
     shutil.rmtree(WORK, ignore_errors=True)
 
 

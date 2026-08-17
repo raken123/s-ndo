@@ -222,8 +222,12 @@ It is how the game plays offline, on a plane, or before you have a server.
 ## The trailer
 
 ```sh
-make trailer     # dist/AIJudge-1.0.0-trailer.mp4 — 3:00, 1920x1080, 30fps
+make trailer     # 3:00, 1920x1080, 30fps
 ```
+
+Two files come out: `AIJudge-1.0.0-trailer.mp4`, the CRF 19 master at
+about 77 MB, and `AIJudge-1.0.0-trailer-web.mp4`, a two-pass copy around
+27 MB for anywhere the master will not fit.
 
 The footage is the real game. `build/mktrailer.js` cancels the render loop and
 drives `update()` / `render()` by hand a fixed 1/30s at a time, pulling each
