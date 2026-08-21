@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#4f46e5">
+<title>Sändo Tavla — Klassrumstavla</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header id="topbar">
+  <button id="btn-home" class="icon-btn" title="Startsida" aria-label="Startsida">🏠</button>
+  <div class="brand">
+    <div class="logo-mark">S</div>
+    <div class="brand-text">
+      <h1 id="view-title">Sändo Tavla</h1>
+      <small id="view-sub">Klassrumstavla för tablet &amp; smartboard</small>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <div id="mini-dock"></div>
+  <div id="topclock" class="topclock">--:--</div>
+  <button id="btn-theme" class="icon-btn" title="Mörkt/ljust läge" aria-label="Byt tema">🌙</button>
+  <button id="btn-full" class="icon-btn" title="Helskärm" aria-label="Helskärm">⛶</button>
+  <button id="btn-settings" class="icon-btn" title="Inställningar" aria-label="Inställningar">⚙️</button>
+</header>
+
+<main id="main">
+  <section id="home" class="view">
+    <div class="home-head">
+      <div id="class-summary" class="class-summary"></div>
+      <div class="cat-filter" id="cat-filter"></div>
+      <input id="tool-search" class="tool-search" type="search" placeholder="Sök verktyg…" autocomplete="off">
+    </div>
+    <div id="tool-grid" class="tool-grid"></div>
+  </section>
+
+  <section id="tool-view" class="view hidden"></section>
+</main>
+
+<div id="toast" class="toast hidden"></div>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-card">
+    <h2 id="modal-title">Rubrik</h2>
+    <div id="modal-body"></div>
+    <div class="modal-actions">
+      <button id="modal-cancel" class="btn ghost">Avbryt</button>
+      <button id="modal-ok" class="btn">OK</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/core.js"></script>
+<script src="js/tools-board.js"></script>
+<script src="js/tools-time.js"></script>
+<script src="js/tools-random.js"></script>
+<script src="js/tools-class.js"></script>
+<script src="js/tools-learn.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
