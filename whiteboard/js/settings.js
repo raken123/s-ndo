@@ -159,11 +159,9 @@
               '). Kontrollera att rätt mikrofon är vald och att inget täcker den.';
         });
       }));
+      micRow.appendChild(App.button('🩺 Mikrofondiagnos', 'sm ghost', function () { App.micDiagnosis(); }));
       micRow.appendChild(App.button('⏹️ Släpp mikrofonen', 'sm ghost', function () {
-        if (window.Trams && Trams.armed) Trams.stop();
-        if (App.Noise && App.Noise.on) App.Noise.stop();
-        App.Mic.users = 0;
-        App.Mic.release();
+        App.Mic.hardRelease();
         micStatus.textContent = 'Mikrofonen släppt. Alla detektorer är avstängda.';
       }));
       micCard.appendChild(micRow);
@@ -225,7 +223,48 @@
       }));
       aiCard.appendChild(keyRow);
 
-      textField(aiCard, 'Modell (Gemini Live)', 'gemini.model', 'gemini-live-2.5-flash-preview');
+      var keyStatus = App.el('div', 'muted');
+      keyStatus.style.cssText = 'font-size:14px;line-height:1.5;white-space:pre-wrap;margin-bottom:12px';
+      keyStatus.textContent = App.Store.get('gemini.auth', '')
+        ? 'Senast fungerande metod: ' + (App.Store.get('gemini.auth') === 'key' ? '?key=' : '?access_token=')
+        : 'Nyckeln är inte testad än.';
+      aiCard.appendChild(keyStatus);
+      var keyTestRow = App.el('div', 'row');
+      keyTestRow.style.marginBottom = '12px';
+      keyTestRow.appendChild(App.button('🧪 Testa API-nyckeln', 'sm', function () {
+        keyStatus.textContent = 'Frågar Google…';
+        App.Gemini.testKey(function (res) {
+          keyStatus.innerHTML = (res.ok ? '<span style="color:var(--ok)">✅ </span>' : '<span style="color:var(--danger)">❌ </span>') +
+            App.esc(res.text);
+        });
+      }));
+      aiCard.appendChild(keyTestRow);
+
+      var modelField = textField(aiCard, 'Modell (Gemini Live)', 'gemini.model', 'gemini-3.1-flash-live-preview');
+      var modelRow = App.el('div', 'row');
+      modelRow.style.marginBottom = '12px';
+      modelRow.appendChild(App.button('📋 Hämta modeller nyckeln har', 'sm ghost', function () {
+        keyStatus.textContent = 'Hämtar modellista…';
+        App.Gemini.liveModels(function (live, all) {
+          if (!all.length) { keyStatus.textContent = 'Kunde inte hämta modeller — testa nyckeln först.'; return; }
+          if (!live.length) { keyStatus.textContent = 'Nyckeln har ' + all.length + ' modeller men ingen live-modell.'; return; }
+          var box = App.el('div', 'list');
+          live.forEach(function (m) {
+            var row = App.el('div', 'list-item');
+            row.appendChild(App.el('span', 'grow', m));
+            row.appendChild(App.button('Välj', 'sm', function () {
+              App.Store.set('gemini.model', m);
+              modelField.value = m;
+              App.hideModal();
+              App.toast('Modell vald: ' + m);
+            }));
+            box.appendChild(row);
+          });
+          keyStatus.textContent = live.length + ' live-modeller hittades.';
+          App.modal('Live-modeller på den här nyckeln', box, null, 'Stäng');
+        });
+      }));
+      aiCard.appendChild(modelRow);
       numField(aiCard, 'Sekunder ljud per input (varje input kostar ' + App.Credits.fmt(App.Credits.IN) + ')',
         'trams.segment', 15, 5, 120);
       numField(aiCard, 'Skrikgräns i lokalt läge (0–100)', 'trams.sens', 62, 20, 100);

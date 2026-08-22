@@ -27,7 +27,7 @@
     tools: [],
     timers: [],
     Store: Store,
-    version: '1.1.1',
+    version: '1.2.0',
 
     /* ---------- Komponentregister ---------- */
     register: function (tool) {
@@ -236,27 +236,42 @@
 
     /* ---------- Mikrofon: en enda delad ström för hela appen ----------
        Ljuddetektorn och tramsdetektorn kan vara igång samtidigt. Öppnar de var
-       sin ström nekar Android den andra med NotReadableError, så alla går via
-       den här hanteraren som räknar användare och delar på samma ström. */
+       sin ström nekar enheten den andra med NotReadableError, så alla går via
+       den här hanteraren som räknar användare och delar på samma ström.
+       Nekas mikrofonen provas varje inspelningsenhet i tur och ordning — på
+       smartboards är standardenheten ofta en ingång som inte går att öppna. */
     Mic: {
       stream: null,
       users: 0,
       error: '',
       pending: null,
+      lastTried: [],          /* diagnostik: vad som provades och vad som hände */
+      usingLabel: '',
 
       deviceId: function () { return Store.get('mic.deviceId', ''); },
       setDeviceId: function (id) { Store.set('mic.deviceId', id || ''); },
 
+      /* Öppnas HTML-filen direkt i en vanlig webbläsare (file://) vägrar
+         webbläsaren släppa fram mikrofonen — då hjälper inga omförsök. */
+      fileOrigin: function () {
+        return !global.AndroidBridge && location.protocol === 'file:';
+      },
       message: function (err) {
         var name = err && err.name ? err.name : String(err || 'okänt fel');
+        if (this.fileOrigin()) {
+          return 'Mikrofonen är blockerad eftersom sidan är öppnad som en fil (file://) i en ' +
+            'webbläsare. Installera APK:n på plattan, eller kör appen via en webbserver med ' +
+            'https eller localhost — då fungerar mikrofonen.';
+        }
         if (name === 'NotAllowedError' || name === 'SecurityError' || name === 'PermissionDeniedError') {
-          return 'Mikrofonen är blockerad. Tillåt mikrofon för appen i Androids inställningar och försök igen.';
+          return 'Mikrofonen är blockerad. Tillåt mikrofon för appen i enhetens inställningar och försök igen.';
         }
         if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
           return 'Ingen mikrofon hittades på enheten.';
         }
         if (name === 'NotReadableError' || name === 'TrackStartError' || name === 'AbortError') {
-          return 'Mikrofonen är upptagen av en annan app eller flik. Stäng den och tryck Starta igen.';
+          return 'Mikrofonen gick inte att öppna — någon annan app håller den, eller så klarar inte ingången det. ' +
+            'Kör Mikrofondiagnos under ⚙️ Inställningar för att se vilken enhet som krånglar.';
         }
         if (name === 'OverconstrainedError') {
           return 'Den valda mikrofonen finns inte längre — välj en annan under Inställningar.';
@@ -264,11 +279,34 @@
         return 'Mikrofonen kunde inte startas (' + name + ').';
       },
 
+      /* Alla försök som ska göras, i ordning: vald enhet, mjuka krav, allt,
+         och därefter varje enskild inspelningsenhet som enheten känner till. */
+      plan: function (cb) {
+        var saved = this.deviceId();
+        var list = [];
+        if (saved) {
+          list.push({ label: 'vald mikrofon', c: { audio: { deviceId: { exact: saved } } } });
+        }
+        list.push({ label: 'standard utan filter', c: { audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } } });
+        list.push({ label: 'standard', c: { audio: true } });
+        this.devices(function (devs) {
+          devs.forEach(function (d, i) {
+            if (!d.deviceId || d.deviceId === saved || d.deviceId === 'default') return;
+            list.push({
+              label: d.label || ('inspelningsenhet ' + (i + 1)),
+              id: d.deviceId,
+              c: { audio: { deviceId: { exact: d.deviceId } } }
+            });
+          });
+          cb(list);
+        });
+      },
+
       /* Ger tillbaka en levande ström till alla som frågar; cb(fel, ström) */
       acquire: function (cb) {
         var self = this;
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          this.error = 'Mikrofon stöds inte i den här vyn.';
+          this.error = 'Mikrofon stöds inte i den här vyn (' + location.protocol + ').';
           cb(this.error, null);
           return;
         }
@@ -283,42 +321,46 @@
           return;
         }
         this.pending = [cb];
+        this.lastTried = [];
 
-        var id = this.deviceId();
-        var tries = [];
-        if (id) tries.push({ audio: { deviceId: { exact: id }, echoCancellation: false, noiseSuppression: false } });
-        tries.push({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-        tries.push({ audio: true });
-
-        var attempt = function (i, lastErr) {
-          if (i >= tries.length) {
-            self.error = self.message(lastErr);
-            var waiting = self.pending || [];
-            self.pending = null;
-            waiting.forEach(function (fn) { fn(self.error, null); });
-            return;
-          }
-          navigator.mediaDevices.getUserMedia(tries[i])
-            .then(function (stream) {
-              self.stream = stream;
-              self.error = '';
-              /* Tappar enheten strömmen (t.ex. headset dras ur) städar vi upp */
-              stream.getAudioTracks().forEach(function (t) {
-                t.onended = function () { self.lost(); };
-              });
-              var waiting = self.pending || [];
-              self.pending = null;
-              self.users += waiting.length;
-              waiting.forEach(function (fn) { fn(null, stream); });
-            })
-            .catch(function (err) {
-              /* NotReadableError betyder oftast att enheten inte hunnit släppa
-                 mikrofonen — vänta en kort stund och prova enklare krav */
-              var wait = (err && err.name === 'NotReadableError') ? 500 : 0;
-              setTimeout(function () { attempt(i + 1, err); }, wait);
+        var done = function (err, stream) {
+          var waiting = self.pending || [];
+          self.pending = null;
+          if (stream) {
+            self.stream = stream;
+            self.error = '';
+            self.users += waiting.length;
+            stream.getAudioTracks().forEach(function (t) {
+              self.usingLabel = t.label || 'mikrofon';
+              t.onended = function () { self.lost(); };
             });
+            waiting.forEach(function (fn) { fn(null, stream); });
+          } else {
+            self.error = self.message(err);
+            waiting.forEach(function (fn) { fn(self.error, null); });
+          }
         };
-        attempt(0, null);
+
+        this.plan(function (attempts) {
+          var run = function (i, lastErr) {
+            if (i >= attempts.length) { done(lastErr, null); return; }
+            var a = attempts[i];
+            navigator.mediaDevices.getUserMedia(a.c)
+              .then(function (stream) {
+                self.lastTried.push(a.label + ': OK');
+                if (a.id) self.setDeviceId(a.id);
+                done(null, stream);
+              })
+              .catch(function (err) {
+                var name = err && err.name ? err.name : 'fel';
+                self.lastTried.push(a.label + ': ' + name + (err && err.message ? ' (' + err.message + ')' : ''));
+                /* Enheten behöver ofta en stund på sig att släppa mikrofonen */
+                var wait = (name === 'NotReadableError' || name === 'AbortError') ? 600 : 0;
+                setTimeout(function () { run(i + 1, err); }, wait);
+              });
+          };
+          run(0, null);
+        });
       },
       live: function () {
         return !!this.stream && this.stream.getAudioTracks().some(function (t) { return t.readyState === 'live'; });
@@ -329,6 +371,14 @@
           this.stream.getTracks().forEach(function (t) { t.stop(); });
           this.stream = null;
         }
+      },
+      /* Stänger allt oavsett räknare — används av "Släpp mikrofonen" */
+      hardRelease: function () {
+        if (global.Trams && Trams.armed) Trams.stop();
+        if (App.Noise && App.Noise.on) App.Noise.stop();
+        this.users = 0;
+        if (this.stream) { this.stream.getTracks().forEach(function (t) { t.stop(); }); }
+        this.stream = null;
       },
       lost: function () {
         this.users = 0;
@@ -378,6 +428,149 @@
             onDone(null, peak);
           }, 3500);
         });
+      },
+
+      /* Full diagnos: vad enheten säger, vad som finns och vad som händer när
+         man verkligen försöker öppna varje ingång. cb(rapporttext) */
+      diagnose: function (cb) {
+        var self = this;
+        var out = [];
+        out.push('Sändo Tavla ' + App.version + ' — mikrofondiagnos');
+        out.push(new Date().toLocaleString('sv-SE'));
+        out.push('Adress: ' + location.protocol + '//' + (location.host || '(fil)'));
+        out.push('Säker kontext: ' + (window.isSecureContext ? 'ja' : 'NEJ — mikrofon kan blockeras'));
+        if (self.fileOrigin()) {
+          out.push('!! Sidan körs som en fil i en webbläsare. Webbläsare släpper inte fram');
+          out.push('!! mikrofonen från file:// — använd APK:n eller kör via https/localhost.');
+        }
+        out.push('I Android-appen: ' + (global.AndroidBridge ? 'ja' : 'nej (webbläsare)'));
+        out.push('mediaDevices: ' + (navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? 'finns' : 'SAKNAS'));
+        out.push('Ljudmotor: ' + (App._ac ? App._ac.state : 'ej startad'));
+        out.push('Delad ström: ' + (self.live() ? 'aktiv (' + self.usingLabel + '), ' + self.users + ' användare' : 'ingen'));
+
+        var afterPerm = function () {
+          self.devices(function (devs) {
+            out.push('');
+            out.push('Inspelningsenheter: ' + devs.length);
+            devs.forEach(function (d, i) {
+              out.push('  ' + (i + 1) + '. ' + (d.label || '(namn dolt tills mikrofonen godkänts)') +
+                ' [' + String(d.deviceId).slice(0, 12) + '…]');
+            });
+            out.push('');
+            out.push('Öppningsförsök (detektorerna stängs av under testet):');
+            self.hardRelease();
+            var anyOk = false;
+            self.plan(function (attempts) {
+              var i = 0;
+              var next = function () {
+                if (i >= attempts.length) {
+                  out.push('');
+                  out.push(anyOk ? 'Resultat: mikrofonen fungerar. Starta detektorn igen.' :
+                    'Resultat: ingen ingång gick att öppna. Stäng andra appar som spelar in ' +
+                    '(samtal, röstinspelare, Teams/Meet, en annan flik med appen) och kör diagnosen igen.');
+                  cb(out.join('\n'));
+                  return;
+                }
+                var a = attempts[i++];
+                navigator.mediaDevices.getUserMedia(a.c)
+                  .then(function (stream) {
+                    var label = (stream.getAudioTracks()[0] || {}).label || '';
+                    anyOk = true;
+                    out.push('  ' + a.label + ': OK' + (label ? ' → ' + label : ''));
+                    stream.getTracks().forEach(function (t) { t.stop(); });
+                    setTimeout(next, 250);
+                  })
+                  .catch(function (err) {
+                    out.push('  ' + a.label + ': ' + (err && err.name ? err.name : 'fel') +
+                      (err && err.message ? ' — ' + err.message : ''));
+                    setTimeout(next, 400);
+                  });
+              };
+              next();
+            });
+          });
+        };
+
+        if (navigator.permissions && navigator.permissions.query) {
+          navigator.permissions.query({ name: 'microphone' })
+            .then(function (p) { out.push('Behörighet: ' + p.state); afterPerm(); })
+            .catch(function () { out.push('Behörighet: kan inte läsas'); afterPerm(); });
+        } else {
+          out.push('Behörighet: kan inte läsas');
+          afterPerm();
+        }
+      }
+    },
+
+    /* ---------- Gemini: nyckelhantering och test ----------
+       AI Studio-nycklar börjar med AIza och skickas som ?key=. Andra former
+       (OAuth-token, t.ex. AQ.… eller ya29.…) skickas som ?access_token=.
+       Vilket sätt som faktiskt fungerar avgörs av testet nedan. */
+    Gemini: {
+      key: function () { return Store.get('gemini.key', ''); },
+      model: function () { return Store.get('gemini.model', 'gemini-3.1-flash-live-preview'); },
+      /* Hämtar de modeller nyckeln har tillgång till och plockar ut live-modellerna */
+      liveModels: function (cb) {
+        fetch('https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(this.key()))
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            var all = (j.models || []).map(function (m) { return String(m.name).replace('models/', ''); });
+            cb(all.filter(function (m) { return m.indexOf('live') >= 0 || m.indexOf('native-audio') >= 0; }), all);
+          })
+          .catch(function () { cb([], []); });
+      },
+      /* Gemini-API:t vill ha nyckeln som ?key= — även nycklar som inte börjar
+         med AIza. ?access_token= är bara till för riktiga OAuth-token, och
+         testet nedan skriver över valet om det visar sig vara tvärtom. */
+      authMode: function () { return Store.get('gemini.auth', 'key'); },
+      setAuthMode: function (m) { Store.set('gemini.auth', m); },
+      wsParam: function () {
+        return (this.authMode() === 'key' ? 'key=' : 'access_token=') + encodeURIComponent(this.key());
+      },
+
+      /* Frågar Google vad nyckeln duger till och rapporterar svaret rakt av */
+      testKey: function (cb) {
+        var key = this.key();
+        var self = this;
+        if (!key) { cb({ ok: false, text: 'Ingen nyckel inlagd.' }); return; }
+        var base = 'https://generativelanguage.googleapis.com/v1beta/models';
+        var ways = [
+          { mode: 'key', label: '?key=', url: base + '?key=' + encodeURIComponent(key), opts: {} },
+          { mode: 'token', label: '?access_token=', url: base + '?access_token=' + encodeURIComponent(key), opts: {} },
+          { mode: 'token', label: 'Authorization: Bearer', url: base, opts: { headers: { Authorization: 'Bearer ' + key } } }
+        ];
+        var lines = [];
+        var i = 0;
+        var next = function () {
+          if (i >= ways.length) {
+            cb({ ok: false, text: lines.join('\n') + '\n\nIngen av metoderna godkändes.' });
+            return;
+          }
+          var w = ways[i++];
+          fetch(w.url, w.opts)
+            .then(function (res) {
+              return res.text().then(function (body) {
+                var msg = '';
+                try {
+                  var j = JSON.parse(body);
+                  msg = (j.error && j.error.message) ? j.error.message : '';
+                  if (!msg && j.models) msg = j.models.length + ' modeller tillgängliga';
+                } catch (e) { msg = body.slice(0, 160); }
+                lines.push(w.label + ' → HTTP ' + res.status + (msg ? ': ' + msg : ''));
+                if (res.ok) {
+                  self.setAuthMode(w.mode);
+                  cb({ ok: true, mode: w.mode, text: lines.join('\n') + '\n\nNyckeln fungerar. Appen använder ' + w.label });
+                } else {
+                  next();
+                }
+              });
+            })
+            .catch(function (err) {
+              lines.push(w.label + ' → nådde inte servern (' + (err && err.message ? err.message : 'nätverksfel') + ')');
+              next();
+            });
+        };
+        next();
       }
     },
 
@@ -622,6 +815,22 @@
       };
       document.addEventListener('touchstart', unlock);
       document.addEventListener('mousedown', unlock);
+    },
+
+    /* Kör mikrofondiagnosen och visar rapporten i en ruta som går att markera */
+    micDiagnosis: function () {
+      var box = this.el('div', 'col');
+      var info = this.el('div', 'muted', 'Testar mikrofonen — det tar några sekunder…');
+      var ta = this.el('textarea');
+      ta.style.cssText = 'width:100%;height:320px;font-family:monospace;font-size:13px';
+      ta.readOnly = true;
+      box.appendChild(info);
+      box.appendChild(ta);
+      this.modal('🩺 Mikrofondiagnos', box, null, 'Stäng');
+      this.Mic.diagnose(function (text) {
+        info.textContent = 'Klart. Markera texten om du vill skicka den vidare.';
+        ta.value = text;
+      });
     },
 
     showCredits: function () {

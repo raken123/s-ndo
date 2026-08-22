@@ -11,16 +11,36 @@
 
   var SYSTEM_PROMPT =
     'Du är "Tramsdetektorn" i ett svenskt klassrum. Du lyssnar på ljudet i rummet och är HELT TYST ' +
-    'så länge lektionen fungerar. Du svarar ALDRIG på vanligt lektionsarbete, vanliga frågor eller vanligt sorl.\n' +
-    'Du reagerar bara när någon: tramsar, skriker, härmar memes (t.ex. "Homer let the Barts out", ' +
-    '"dudududu", skrikljud, ljudmemes), eller ställer en helt ovidkommande konstig fråga mitt i lektionen ' +
-    '(t.ex. under mattelektionen: "min lillebror bor i en läskig toalett där Momo och Baldi kommer ut").\n' +
-    'Bedöm nivå:\n' +
-    '1 = lite cringe → säg till snällt och kort, med värme.\n' +
-    '2 = värre trams, upprepat eller störande skrik → säg till strängt och tydligt.\n' +
-    '3 = SUPER CRINGE, grovt eller helt omöjligt att jobba runt → eleven stängs av från klassrummet i 5 minuter.\n' +
-    'Svara ENDAST med JSON på formen {"niva":1|2|3,"replik":"...","vem":"...","vad":"..."} när du reagerar. ' +
-    'Är allt lugnt svarar du med exakt: {"niva":0}. Repliken ska vara på svenska och max 25 ord.';
+    'så länge lektionen fungerar. Vanligt lektionsarbete, vanliga frågor, vanligt sorl och tystnad ' +
+    'ska ALDRIG ge något svar — säg då ingenting alls och anropa inget verktyg.\n' +
+    'Reagera bara när någon: tramsar, skriker, härmar memes (t.ex. "Homer let the Barts out", ' +
+    '"dudududu", skrikljud, ljudmemes), eller ställer en helt ovidkommande konstig fråga mitt i ' +
+    'lektionen (t.ex. under mattelektionen: "min lillebror bor i en läskig toalett där Momo och ' +
+    'Baldi kommer ut").\n' +
+    'När det händer: anropa verktyget rapportera_trams och säg sedan repliken högt på svenska, ' +
+    'kort och tydligt.\n' +
+    'Nivåer: 1 = lite cringe, säg till snällt och varmt. 2 = värre trams, upprepat eller störande ' +
+    'skrik, säg till strängt. 3 = SUPER CRINGE, grovt eller omöjligt att jobba runt, eleven stängs ' +
+    'av från klassrummet i fem minuter — säg det bestämt men utan att kränka någon.\n' +
+    'Repliken ska vara på svenska och högst 25 ord. Peka aldrig ut någon med namn du inte hört.';
+
+  var TRAMS_TOOL = {
+    functionDeclarations: [{
+      name: 'rapportera_trams',
+      description: 'Anropas endast när någon tramsar, skriker, härmar ett meme eller ställer en ' +
+        'helt ovidkommande fråga mitt i lektionen. Anropas aldrig vid vanligt lektionsarbete.',
+      parameters: {
+        type: 'OBJECT',
+        properties: {
+          niva: { type: 'INTEGER', description: '1 = lite cringe, 2 = rejält trams, 3 = super cringe' },
+          replik: { type: 'STRING', description: 'Kort tillsägelse på svenska, högst 25 ord' },
+          vem: { type: 'STRING', description: 'Vem det gällde, om det går att höra' },
+          vad: { type: 'STRING', description: 'Vad som hördes' }
+        },
+        required: ['niva', 'replik']
+      }
+    }]
+  };
 
   /* ================== Motor (en per app — delar mikrofon och kamera) ================== */
   var Trams = {
@@ -35,6 +55,7 @@
     presence: false,
     motion: 0,
     ws: null,
+    wsState: '',
     micStream: null,
     camStream: null,
     listeners: [],
@@ -172,26 +193,33 @@
       var self = this;
       var c = this.cfg();
       if (!c.key) { this.say('Ingen API-nyckel — lägg in den under Inställningar.'); this.mode = 'lokal'; return; }
-      var auth = /^AIza/.test(c.key) ? 'key=' : 'access_token=';
       var url = 'wss://generativelanguage.googleapis.com/ws/' +
-        'google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?' +
-        auth + encodeURIComponent(c.key);
+        'google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?' + App.Gemini.wsParam();
+      this.wsState = 'ansluter';
+      this.say('Ansluter till Gemini…');
       try {
         this.ws = new WebSocket(url);
       } catch (e) {
+        this.wsState = 'fel';
         this.say('Kunde inte öppna anslutningen: ' + e.message);
         this.mode = 'lokal';
         return;
       }
+      this.turn = { toolCall: null, audio: [], heard: '', said: '' };
       this.ws.onopen = function () {
+        /* Live-modellerna svarar med ljud, inte text. Domslutet kommer därför
+           som ett verktygsanrop och repliken läses upp av modellen själv. */
         self.ws.send(JSON.stringify({
           setup: {
             model: 'models/' + c.model,
-            generationConfig: { responseModalities: ['TEXT'], temperature: 0.3 },
+            generationConfig: { responseModalities: ['AUDIO'], temperature: 0.3 },
+            inputAudioTranscription: {},
+            outputAudioTranscription: {},
+            tools: [TRAMS_TOOL],
             systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }
           }
         }));
-        self.say('Lyssnar tyst (AI)');
+        self.wsState = 'ansluten';
       };
       this.ws.onmessage = function (ev) {
         if (ev.data instanceof Blob) {
@@ -200,14 +228,17 @@
           self.handleMessage(ev.data);
         }
       };
-      this.ws.onerror = function () {
-        self.say('Anslutningsfel mot Gemini — växlar till lokalt läge.');
-        self.mode = 'lokal';
-      };
-      this.ws.onclose = function () {
+      this.ws.onerror = function () { self.wsState = 'fel'; };
+      this.ws.onclose = function (ev) {
+        var wasOpen = self.wsState === 'ansluten';
+        self.wsState = 'stängd';
         if (self.armed && self.mode === 'ai') {
-          self.say('Anslutningen stängdes — lokalt läge tar över.');
           self.mode = 'lokal';
+          self.say('Gemini stängde anslutningen' +
+            (ev && ev.code ? ' (kod ' + ev.code + (ev.reason ? ': ' + ev.reason : '') + ')' : '') +
+            '. Lokalt läge fortsätter. Testa nyckeln och modellen under Inställningar.');
+        } else if (!wasOpen) {
+          self.say('Anslutningen till Gemini stängdes.');
         }
       };
     },
@@ -235,21 +266,101 @@
       this.emit();
     },
     handleMessage: function (raw) {
+      var self = this;
       var msg;
       try { msg = JSON.parse(raw); } catch (e) { return; }
-      var parts = msg && msg.serverContent && msg.serverContent.modelTurn && msg.serverContent.modelTurn.parts;
-      if (!parts) return;
-      var text = parts.map(function (p) { return p.text || ''; }).join('').trim();
-      if (!text) return;
-      var json = text.replace(/^```(json)?/i, '').replace(/```$/, '').trim();
-      var v;
-      try { v = JSON.parse(json); } catch (e) { v = { niva: 1, replik: text }; }
-      if (!v || !v.niva) return;              /* {"niva":0} = allt lugnt, var tyst */
-      this.verdict(v, true);
+      if (!this.turn) this.turn = { toolCall: null, audio: [], heard: '', said: '' };
+
+      if (msg.setupComplete) {
+        this.say('Lyssnar tyst (AI)');
+        return;
+      }
+
+      /* Domslutet: modellen anropar verktyget bara när något faktiskt hänt */
+      if (msg.toolCall && msg.toolCall.functionCalls) {
+        var calls = msg.toolCall.functionCalls;
+        try {
+          this.ws.send(JSON.stringify({
+            toolResponse: {
+              functionResponses: calls.map(function (f) {
+                return { id: f.id, name: f.name, response: { ok: true } };
+              })
+            }
+          }));
+        } catch (e) { /* sessionen stängdes */ }
+        calls.forEach(function (f) {
+          if (f.name !== 'rapportera_trams') return;
+          var a = f.args || {};
+          self.turn.toolCall = a;
+          self.verdict({
+            niva: a.niva,
+            replik: a.replik,
+            vem: a.vem || (self.turn.heard ? 'Hörde: ' + self.turn.heard.slice(0, 40) : 'Okänd'),
+            vad: a.vad || self.turn.heard
+          }, true, true);
+        });
+        return;
+      }
+
+      var sc = msg.serverContent;
+      if (!sc) return;
+      if (sc.inputTranscription && sc.inputTranscription.text) {
+        this.turn.heard += sc.inputTranscription.text;
+      }
+      if (sc.outputTranscription && sc.outputTranscription.text) {
+        this.turn.said += sc.outputTranscription.text;
+      }
+      var parts = (sc.modelTurn && sc.modelTurn.parts) || [];
+      parts.forEach(function (p) {
+        if (p.inlineData && p.inlineData.data) self.turn.audio.push(p.inlineData.data);
+      });
+      if (sc.turnComplete) {
+        /* Bara turer med ett verktygsanrop får låta — annars skulle modellen
+           kunna prata mitt i lektionen, och det ska den aldrig göra. */
+        if (this.turn.toolCall && this.turn.audio.length) {
+          this.playAudio(this.turn.audio);
+        }
+        if (this.turn.toolCall && this.turn.said && this.lastVerdict) {
+          this.lastVerdict.replik = this.turn.said.trim() || this.lastVerdict.replik;
+          this.emit();
+        }
+        this.turn = { toolCall: null, audio: [], heard: '', said: '' };
+      }
+    },
+
+    /* Spelar upp modellens svar (PCM 24 kHz) i klassrummet */
+    playAudio: function (chunks) {
+      if (App.Store.get('mute', false)) return;
+      var ac = App.audioCtx();
+      if (!ac) return;
+      var total = 0, buffers = [], i, j;
+      chunks.forEach(function (b64) {
+        var bin;
+        try { bin = atob(b64); } catch (e) { return; }
+        var bytes = new Uint8Array(bin.length);
+        for (var k = 0; k < bin.length; k++) { bytes[k] = bin.charCodeAt(k); }
+        var pcm = new Int16Array(bytes.buffer);
+        buffers.push(pcm);
+        total += pcm.length;
+      });
+      if (!total) return;
+      var buf = ac.createBuffer(1, total, 24000);
+      var out = buf.getChannelData(0);
+      var off = 0;
+      for (i = 0; i < buffers.length; i++) {
+        for (j = 0; j < buffers[i].length; j++) { out[off++] = buffers[i][j] / 32768; }
+      }
+      var src = ac.createBufferSource();
+      src.buffer = buf;
+      src.connect(ac.destination);
+      src.start();
+      this.speaking = true;
+      var self = this;
+      src.onended = function () { self.speaking = false; };
     },
 
     /* ---------------- Domslut ---------------- */
-    verdict: function (v, costsCredits) {
+    verdict: function (v, costsCredits, spokenByModel) {
       var lvl = Math.max(1, Math.min(3, parseInt(v.niva, 10) || 1));
       if (costsCredits && !App.Credits.charge('out', 'Tramsdetektor: nivå ' + lvl)) {
         this.say('Krediterna räcker inte till fler tillsägelser.');
@@ -268,7 +379,7 @@
       this.history = this.history.slice(0, 40);
       App.Store.set('tramsLog', this.history);
 
-      App.speak(entry.replik);
+      if (!spokenByModel) App.speak(entry.replik);
       if (lvl === 1) { App.beep(660, 250); }
       if (lvl === 2) { App.beep(392, 450, 'square', 0.3); }
       if (lvl === 3) { this.startTimeout(); }
@@ -437,6 +548,7 @@
         App.modal('Rapportera trams', box, null, 'Avbryt');
       }));
       L.bar.appendChild(ctx.button('💳 Krediter', 'sm ghost', function () { App.showCredits(); }));
+      L.bar.appendChild(ctx.button('🩺 Mikrofondiagnos', 'sm ghost', function () { App.micDiagnosis(); }));
 
       function paint() {
         var t = Trams;

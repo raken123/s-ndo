@@ -58,10 +58,17 @@ att den inte krockar med mikrofonen eller drar batteri i onödan.
 reagerar på skrik och hög ljudnivå, och läraren kan rapportera trams manuellt
 med nivåknapparna. Det här läget fungerar direkt i klassrummet.
 
-**AI-läge** — ljudet strömmas till Gemini Live över WebSocket. Modellen får en
-instruktion om att vara helt tyst och bara svara med
-`{"niva":1|2|3,"replik":"…","vem":"…","vad":"…"}` när något faktiskt händer;
-`{"niva":0}` betyder "allt är lugnt" och syns aldrig i appen.
+**AI-läge** — ljudet strömmas till Gemini Live över WebSocket. Live-modellerna
+svarar med ljud, inte text, så domslutet kommer i stället som ett
+**verktygsanrop**: modellen anropar `rapportera_trams(niva, replik, vem, vad)`
+och läser sedan upp repliken själv i klassrummet. Appen spelar bara upp ljudet
+för turer som innehåller ett verktygsanrop — modellen kan alltså aldrig börja
+prata mitt i lektionen. Transkriberingen av både det som hörs och det som sägs
+följer med, så loggen visar vad detektorn faktiskt reagerade på.
+
+Standardmodell är `gemini-3.1-flash-live-preview`. Under ⚙️ Inställningar finns
+**Hämta modeller nyckeln har**, som listar kontots live-modeller att välja
+mellan.
 
 ## Krediter
 
@@ -82,13 +89,8 @@ enhetens `localStorage`. Den ligger medvetet **inte** i koden eller i repot: en
 nyckel som checkas in i ett publikt GitHub-repo blir skannad och missbrukad inom
 timmar.
 
-Appen skickar nyckeln på det sätt som formatet kräver:
-
-* börjar den med `AIza` (AI Studio-nyckel) → `?key=…`
-* annars (t.ex. ett OAuth-token som börjar med `AQ.` eller `ya29.`) →
-  `?access_token=…`
-
-Modellnamnet är också ett fält i inställningarna. Standard är
-`gemini-live-2.5-flash-preview`. Det finns ingen modell som heter "Gemini 3.5
-Flash Live Preview" — skriv in det id som gäller för ditt konto om du vill köra
-en annan.
+Nyckeln skickas som `?key=…`, vilket är vad Gemini-API:t vill ha — även för
+nycklar som inte börjar med `AIza`. Knappen **Testa API-nyckeln** frågar Google
+och visar svaret rakt av (HTTP-status och felmeddelande), och provar i tur och
+ordning `?key=`, `?access_token=` och `Authorization: Bearer`. Den metod som
+godkänns sparas och används sedan av Live-anslutningen.
