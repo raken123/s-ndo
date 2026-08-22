@@ -27,7 +27,7 @@
     tools: [],
     timers: [],
     Store: Store,
-    version: '1.3.0',
+    version: '1.4.0',
 
     /* ---------- Komponentregister ---------- */
     register: function (tool) {
@@ -581,21 +581,121 @@
       model: function () { return Store.get('gemini.model', 'gemini-3.1-flash-live-preview'); },
       /* Hämtar de modeller nyckeln har tillgång till och plockar ut live-modellerna */
       liveModels: function (cb) {
-        fetch('https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(this.key()))
-          .then(function (r) { return r.json(); })
-          .then(function (j) {
+        this.call('https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(this.key()),
+          { timeout: 30000 }, function (err, j) {
+            if (err) { cb([], []); return; }
             var all = (j.models || []).map(function (m) { return String(m.name).replace('models/', ''); });
             cb(all.filter(function (m) { return m.indexOf('live') >= 0 || m.indexOf('native-audio') >= 0; }), all);
-          })
-          .catch(function () { cb([], []); });
+          });
       },
-      /* Gemini-API:t vill ha nyckeln som ?key= — även nycklar som inte börjar
-         med AIza. ?access_token= är bara till för riktiga OAuth-token, och
-         testet nedan skriver över valet om det visar sig vara tvärtom. */
-      authMode: function () { return Store.get('gemini.auth', 'key'); },
-      setAuthMode: function (m) { Store.set('gemini.auth', m); },
-      wsParam: function () {
-        return (this.authMode() === 'key' ? 'key=' : 'access_token=') + encodeURIComponent(this.key());
+
+      /* ---- Dokumentbiblioteket: PDF:er som AI-Läraren utgår från ---- */
+      docs: {
+        all: function () {
+          return Store.get('gemini.docs', []).filter(function (d) {
+            return !d.expires || new Date(d.expires).getTime() > Date.now();
+          });
+        },
+        save: function (list) { Store.set('gemini.docs', list); },
+        add: function (doc) {
+          var list = Store.get('gemini.docs', []);
+          list.unshift(doc);
+          this.save(list);
+        },
+        remove: function (id) {
+          this.save(Store.get('gemini.docs', []).filter(function (d) { return d.id !== id; }));
+        },
+        /* Delarna som skickas med i varje fråga så att svaren håller sig till materialet */
+        parts: function (ids) {
+          return this.all()
+            .filter(function (d) { return !ids || ids.indexOf(d.id) >= 0; })
+            .map(function (d) { return { fileData: { mimeType: d.mime, fileUri: d.uri } }; });
+        },
+        summary: function () {
+          var all = this.all();
+          if (!all.length) return 'Inga dokument tillagda.';
+          return all.map(function (d) { return d.kind + ': ' + d.name; }).join(' · ');
+        }
+      },
+
+      /* Laddar upp en PDF till Gemini. Filen ligger kvar i 48 timmar hos Google
+         och räknas som en input. cb(fel, dokument) */
+      uploadFile: function (file, kind, cb) {
+        var self = this;
+        if (!this.key()) { cb('Ingen API-nyckel inlagd.'); return; }
+        if (!App.Credits.charge('in', 'Uppladdning: ' + file.name)) {
+          cb('Krediterna räcker inte till en uppladdning.');
+          return;
+        }
+        this.call('https://generativelanguage.googleapis.com/upload/v1beta/files?key=' +
+          encodeURIComponent(this.key()), {
+          method: 'POST',
+          timeout: 120000,
+          headers: {
+            'X-Goog-Upload-Protocol': 'raw',
+            'X-Goog-Upload-File-Name': file.name,
+            'Content-Type': file.type || 'application/pdf'
+          },
+          body: file
+        }, function (err, j) {
+          if (err) { cb(err); return; }
+          var f = j.file || {};
+          var doc = {
+            id: 'd' + Date.now().toString(36),
+            name: file.name,
+            kind: kind || 'material',
+            uri: f.uri,
+            mime: f.mimeType || file.type || 'application/pdf',
+            size: file.size,
+            expires: f.expirationTime || '',
+            added: Date.now()
+          };
+          self.docs.add(doc);
+          cb(null, doc);
+        });
+      },
+
+      /* Ett vanligt AI-anrop. opts: {prompt, system, docIds, history, model,
+         temperature, maxTokens, useDocs}. cb(fel, text, hela svaret) */
+      generate: function (opts, cb) {
+        var self = this;
+        if (!this.key()) { cb('Ingen API-nyckel inlagd. Lägg in den under ⚙️ Inställningar.'); return; }
+        if (!App.Credits.canAfford('in')) { cb('Krediterna är slut.'); return; }
+        var parts = [];
+        if (opts.useDocs !== false) {
+          parts = parts.concat(this.docs.parts(opts.docIds));
+        }
+        parts.push({ text: opts.prompt });
+        var contents = (opts.history || []).concat([{ role: 'user', parts: parts }]);
+        var body = {
+          contents: contents,
+          generationConfig: {
+            temperature: opts.temperature == null ? 0.4 : opts.temperature,
+            maxOutputTokens: opts.maxTokens || 4000
+          }
+        };
+        if (opts.system) body.systemInstruction = { parts: [{ text: opts.system }] };
+        App.Credits.charge('in', opts.label || 'AI-fråga');
+        var model = opts.model || this.textModel();
+        this.call('https://generativelanguage.googleapis.com/v1beta/models/' + model +
+          ':generateContent?key=' + encodeURIComponent(this.key()), {
+          method: 'POST',
+          timeout: opts.timeout || 75000,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        }, function (err, j) {
+          if (err) { cb(err); return; }
+          var c = (j.candidates || [])[0] || {};
+          var text = ((c.content || {}).parts || []).map(function (p) { return p.text || ''; }).join('').trim();
+          if (!text) {
+            cb(c.finishReason === 'MAX_TOKENS'
+              ? 'Svaret blev för långt och klipptes. Prova en kortare fråga.'
+              : 'AI:n svarade inget (' + (c.finishReason || 'okänd orsak') + ').');
+            return;
+          }
+          App.Credits.charge('out', opts.label || 'AI-svar');
+          cb(null, text, j);
+        });
       },
 
       /* Frågar Google vad nyckeln duger till och rapporterar svaret rakt av */
@@ -617,7 +717,14 @@
             return;
           }
           var w = ways[i++];
-          fetch(w.url, w.opts)
+          var init = { method: 'GET' };
+          if (w.opts && w.opts.headers) init.headers = w.opts.headers;
+          if (global.AbortController) {
+            var ctrl = new AbortController();
+            init.signal = ctrl.signal;
+            setTimeout(function () { ctrl.abort(); }, 25000);
+          }
+          fetch(w.url, init)
             .then(function (res) {
               return res.text().then(function (body) {
                 var msg = '';

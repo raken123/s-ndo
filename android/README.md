@@ -50,7 +50,7 @@ signeras manuellt med `apksigner` innan den kan installeras.
 ## Installera på platta eller smartboard
 
 ```sh
-adb install -r ../apk/sandotavla-1.3.0.apk
+adb install -r ../apk/sandotavla-1.4.0.apk
 ```
 
 Eller kopiera APK-filen till enheten och öppna den — då behöver

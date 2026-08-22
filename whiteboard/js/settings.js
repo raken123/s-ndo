@@ -273,7 +273,8 @@
       }));
       aiCard.appendChild(keyTestRow);
 
-      var modelField = textField(aiCard, 'Modell (Gemini Live)', 'gemini.model', 'gemini-3.1-flash-live-preview');
+      var modelField = textField(aiCard, 'Modell (Gemini Live, tramsdetektorn)', 'gemini.model', 'gemini-3.1-flash-live-preview');
+      textField(aiCard, 'Modell (text, övriga AI-komponenter)', 'gemini.textModel', 'gemini-3.5-flash');
       var modelRow = App.el('div', 'row');
       modelRow.style.marginBottom = '12px';
       modelRow.appendChild(App.button('📋 Hämta modeller nyckeln har', 'sm ghost', function () {
@@ -313,6 +314,63 @@
       });
       camRow.appendChild(camBtn);
       aiCard.appendChild(camRow);
+
+      /* ----- Dokument som AI-Läraren utgår från ----- */
+      var docCard = App.el('div', 'card');
+      wrap.appendChild(docCard);
+      function renderDocs() {
+        var docs = App.Gemini.docs.all();
+        docCard.innerHTML = '<h3 style="font-size:22px;margin-bottom:6px">📄 Material till AI-Läraren</h3>' +
+          '<p class="muted" style="font-size:14px;line-height:1.5;margin-bottom:12px">' +
+          'Elevernas arbetsbok och lärarhandledningen som PDF. AI-Läraren och de andra ' +
+          'AI-komponenterna utgår från dem. Filerna ligger hos Google i 48 timmar och laddas ' +
+          'sedan upp på nytt vid behov. Ladda inte upp material med elevers personuppgifter.</p>';
+        var list = App.el('div', 'list');
+        if (!docs.length) {
+          list.appendChild(App.el('div', 'muted', 'Inga dokument tillagda än.'));
+        }
+        docs.forEach(function (d) {
+          var row = App.el('div', 'list-item');
+          var timmar = d.expires ? Math.max(0, Math.round((new Date(d.expires) - Date.now()) / 3600000)) : null;
+          row.innerHTML = '<span class="pill">' + App.esc(d.kind) + '</span>' +
+            '<span class="grow">' + App.esc(d.name) + '</span>' +
+            '<span class="muted">' + (timmar === null ? '' : timmar + ' h kvar') + '</span>';
+          row.appendChild(App.button('✕', 'sm ghost', function () {
+            App.Gemini.docs.remove(d.id);
+            renderDocs();
+          }));
+          list.appendChild(row);
+        });
+        docCard.appendChild(list);
+
+        var addRow = App.el('div', 'row');
+        addRow.style.marginTop = '14px';
+        [['arbetsbok', '📘 Lägg till arbetsbok'], ['lärarhandledning', '📕 Lägg till lärarhandledning'],
+         ['material', '📄 Annat material']].forEach(function (k) {
+          addRow.appendChild(App.button(k[1], 'sm' + (k[0] === 'material' ? ' ghost' : ''), function () {
+            var file = App.el('input');
+            file.type = 'file';
+            file.accept = 'application/pdf';
+            file.style.display = 'none';
+            document.body.appendChild(file);
+            file.addEventListener('change', function () {
+              var f = file.files && file.files[0];
+              document.body.removeChild(file);
+              if (!f) return;
+              if (f.size > 18 * 1024 * 1024) { App.toast('PDF:en är för stor (max 18 MB)'); return; }
+              App.toast('Laddar upp ' + f.name + '…', 4000);
+              App.Gemini.uploadFile(f, k[0], function (err, doc) {
+                if (err) { App.toast(err, 5000); return; }
+                App.toast(doc.name + ' tillagd');
+                renderDocs();
+              });
+            });
+            file.click();
+          }));
+        });
+        docCard.appendChild(addRow);
+      }
+      renderDocs();
 
       /* ----- Krediter ----- */
       var credCard = App.el('div', 'card');

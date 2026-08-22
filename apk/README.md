@@ -1,16 +1,16 @@
-# Sändo Tavla 1.3.0 — APK
+# Sändo Tavla 1.4.0 — APK
 
 | Fil | Plattform | Storlek |
 |---|---|---|
-| `sandotavla-1.3.0.apk` | Android 8.0+ (tablet, smartboard, telefon) | 78 KB |
+| `sandotavla-1.4.0.apk` | Android 8.0+ (tablet, smartboard, telefon) | 89 KB |
 
 En whiteboard med sidor, där alla andra verktyg är komponenter man placerar ut
-på tavlan — 33 komponenter, varav tramsdetektorn är den enda AI-komponenten.
+på tavlan — 47 komponenter, varav 15 använder AI: tramsdetektorn med cringe-skanning, AI-Läraren som utgår från lärarens PDF:er, och tretton kort till för prov, planering, rättning och förklaringar.
 
 ## Installera
 
 ```sh
-adb install -r sandotavla-1.3.0.apk
+adb install -r sandotavla-1.4.0.apk
 ```
 
 Eller kopiera filen till plattan och öppna den i filhanteraren. Slå på

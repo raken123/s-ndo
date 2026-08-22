@@ -4,6 +4,28 @@ Appens enda AI-komponent. Den ligger tyst så länge lektionen fungerar och säg
 bara till när någon tramsar, skriker, härmar ljudmemes ("Homer let the Barts
 out", "dudududu") eller kastar in en helt ovidkommande fråga mitt i lektionen.
 
+## Cringe-skanningen
+
+Detektorn mäter hela tiden hur stimmigt rummet är och visar det som en siffra
+0–100 med kurva över de senaste minuterna. Mätningen är relativ: den lär sig
+rummets egen grundnivå och tittar på hur mycket ljudet ligger över den, hur
+ryckigt det är (skrik och skratt hoppar, samtal gör inte det) och hur stor del
+av de senaste fem sekunderna som varit hög. Ett enstaka skrik i ett tyst rum
+räknas därför inte som kaos — det krävs att det håller i sig.
+
+| Nivå | Vad det betyder |
+|---|---|
+| 0–24 | Lugnt |
+| 25–44 | Lite liv i luckan |
+| 45–69 | Stimmigt |
+| 70–84 | Rejält trams |
+| 85–100 | SUPER CRINGE |
+
+I lokalt läge säger detektorn till av egen kraft: 70 ger en snäll tillsägelse,
+85 en sträng, och 95 som håller i sig i tre sekunder ger utvisning. I AI-läge
+rapporterar modellen sin egen bedömning genom verktyget `cringe_niva`, minst var
+tionde sekund. Den mätningen är gratis — bara tillsägelser kostar krediter.
+
 ## Tre nivåer
 
 | Nivå | Namn | Vad som händer |

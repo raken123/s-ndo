@@ -2,6 +2,7 @@ package se.sando.tavla;
 
 import android.Manifest;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -16,6 +17,7 @@ import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.ValueCallback;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
@@ -32,6 +34,7 @@ import java.util.List;
 public class MainActivity extends android.app.Activity {
 
     private static final int REQ_MEDIA = 4711;
+    private static final int REQ_FILE = 4712;
 
     private WebView web;
     /* Flera förfrågningar kan komma tätt (mikrofon och sedan kamera) — de köas
@@ -39,6 +42,7 @@ public class MainActivity extends android.app.Activity {
     private final List<PermissionRequest> pendingMedia = new ArrayList<>();
     private boolean askingPermissions;
     private NativeMic nativeMic;
+    private ValueCallback<Uri[]> fileCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +68,26 @@ public class MainActivity extends android.app.Activity {
 
         web.setWebViewClient(new WebViewClient());
         web.setWebChromeClient(new WebChromeClient() {
+            /** Utan den här kan man inte välja PDF till AI-Läraren i en WebView. */
+            @Override
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback,
+                                             FileChooserParams params) {
+                if (fileCallback != null) {
+                    fileCallback.onReceiveValue(null);
+                }
+                fileCallback = callback;
+                try {
+                    Intent intent = params.createIntent();
+                    intent.addCategory(Intent.CATEGORY_OPENABLE);
+                    startActivityForResult(Intent.createChooser(intent, "Välj fil"), REQ_FILE);
+                    return true;
+                } catch (Exception e) {
+                    fileCallback = null;
+                    Toast.makeText(MainActivity.this, R.string.no_file_picker, Toast.LENGTH_LONG).show();
+                    return false;
+                }
+            }
+
             @Override
             public void onPermissionRequestCanceled(PermissionRequest request) {
                 pendingMedia.remove(request);
@@ -166,6 +190,31 @@ public class MainActivity extends android.app.Activity {
         if (anyDenied) {
             Toast.makeText(this, R.string.mic_denied, Toast.LENGTH_LONG).show();
         }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode != REQ_FILE) {
+            super.onActivityResult(requestCode, resultCode, data);
+            return;
+        }
+        if (fileCallback == null) {
+            return;
+        }
+        Uri[] result = null;
+        if (resultCode == RESULT_OK && data != null) {
+            if (data.getClipData() != null) {
+                int n = data.getClipData().getItemCount();
+                result = new Uri[n];
+                for (int i = 0; i < n; i++) {
+                    result[i] = data.getClipData().getItemAt(i).getUri();
+                }
+            } else if (data.getData() != null) {
+                result = new Uri[]{ data.getData() };
+            }
+        }
+        fileCallback.onReceiveValue(result);
+        fileCallback = null;
     }
 
     private void immersive(boolean on) {

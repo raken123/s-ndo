@@ -2,4 +2,5 @@
     <string name="app_name">Sändo Tavla</string>
     <string name="mic_denied">Mikrofonen behövs för ljuddetektorn och tramsdetektorn</string>
     <string name="cam_denied">Kameran behövs för kameravakten vid utvisning</string>
+    <string name="no_file_picker">Ingen filhanterare hittades på enheten</string>
 </resources>

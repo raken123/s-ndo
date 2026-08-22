@@ -19,6 +19,9 @@
     'Baldi kommer ut").\n' +
     'När det händer: anropa verktyget rapportera_trams och säg sedan repliken högt på svenska, ' +
     'kort och tydligt.\n' +
+    'Oavsett om något händer eller inte: anropa cringe_niva minst var tionde sekund med hur ' +
+    'stimmigt rummet är just nu (0–100). Det är en tyst mätning som läraren ser på tavlan, och ' +
+    'den ska aldrig läsas upp.\n' +
     'Nivåer: 1 = lite cringe, säg till snällt och varmt. 2 = värre trams, upprepat eller störande ' +
     'skrik, säg till strängt. 3 = SUPER CRINGE, grovt eller omöjligt att jobba runt, eleven stängs ' +
     'av från klassrummet i fem minuter — säg det bestämt men utan att kränka någon.\n' +
@@ -26,6 +29,18 @@
 
   var TRAMS_TOOL = {
     functionDeclarations: [{
+      name: 'cringe_niva',
+      description: 'Rapporterar hur stimmigt och tramsigt det är i rummet just nu. Anropas ofta, ' +
+        'minst var tionde sekund, även när allt är lugnt. Kostar inget och stör ingen.',
+      parameters: {
+        type: 'OBJECT',
+        properties: {
+          poang: { type: 'INTEGER', description: '0 = helt lugnt, 50 = stimmigt, 100 = fullt kaos' },
+          varfor: { type: 'STRING', description: 'Några ord om vad som hörs' }
+        },
+        required: ['poang']
+      }
+    }, {
       name: 'rapportera_trams',
       description: 'Anropas endast när någon tramsar, skriker, härmar ett meme eller ställer en ' +
         'helt ovidkommande fråga mitt i lektionen. Anropas aldrig vid vanligt lektionsarbete.',
@@ -46,6 +61,13 @@
   var Trams = {
     armed: false,
     mode: 'lokal',           /* 'lokal' eller 'ai' */
+    cringe: 0,               /* 0–100, uppdateras hela tiden */
+    cringeWhy: 'Lugnt',
+    cringeFrom: 'lokal',
+    cringeHist: [],
+    baseline: 12,
+    window: [],
+    superSince: 0,
     status: 'Avstängd',
     level: 0,
     lastVerdict: null,
@@ -110,6 +132,10 @@
       this.armed = false;
       this.stopAlarm();
       if (this.listener) { App.Mic.unsubscribe(this.listener); this.listener = null; }
+      this.cringe = 0;
+      this.cringeFrom = 'lokal';
+      this.cringeWhy = 'Lugnt';
+      this.window = [];
       if (wasArmed) App.Mic.release();
       if (this.ws) { try { this.ws.close(); } catch (e) { /* noop */ } this.ws = null; }
       this.stopCamera();
@@ -120,38 +146,85 @@
     onAudio: function (level, pcm) {
       if (!this.armed) return;
       this.level = level;
+      this.scan(level);                    /* cringe-nivån mäts i båda lägena */
       if (this.mode === 'ai') {
         this.buffer.push(pcm);
         if (Date.now() - this.segStart > this.cfg().segment * 1000) {
           this.sendSegment();
           this.segStart = Date.now();
         }
+        this.localCheck();                 /* lokal vakt går även när AI:n lyssnar */
       } else {
         this.localCheck();
       }
     },
 
-    /* ---------------- Lokalt läge: skrik och manuell rapport ---------------- */
-    localCheck: function () {
-      var c = this.cfg();
-      if (this.level >= c.sensitivity) {
-        this.loudMs += 200;
-        if (this.loudMs > 1400 && Date.now() - (this.lastLocal || 0) > 12000) {
-          this.lastLocal = Date.now();
-          this.loudMs = 0;
-          var lvl = this.level >= c.sensitivity + 20 ? 2 : 1;
-          this.verdict({
-            niva: lvl,
-            replik: lvl === 1
-              ? 'Nu blev det lite väl högt — sänk volymen så vi hör varandra.'
-              : 'Sluta skrika. Sätt dig ner och fortsätt med uppgiften, nu.',
-            vem: 'Okänd',
-            vad: 'Hög ljudnivå (' + this.level + ')'
-          }, false);
-        }
-      } else {
-        this.loudMs = Math.max(0, this.loudMs - 120);
+    /* ---------------- Cringe-skanning ----------------
+       Mäter hela tiden hur stimmigt rummet är: hur mycket ljudnivån ligger över
+       rummets egen grundnivå, hur ryckigt det är (skrik och skratt hoppar, prat
+       gör inte det) och hur stor del av de senaste sekunderna som varit hög.
+       I AI-läge skriver modellens egen bedömning över den lokala. */
+    scan: function (level) {
+      var prev = this.window.length ? this.window[this.window.length - 1] : level;
+      this.window.push(level);
+      if (this.window.length > 25) this.window.shift();       /* ~5 sekunder */
+
+      /* Grundnivån följer rummet långsamt, så en fläkt eller ett surr inte räknas */
+      this.baseline = this.baseline * 0.995 + Math.min(level, this.baseline + 4) * 0.005;
+
+      var excess = Math.max(0, level - this.baseline - 15);
+      var jump = Math.min(25, Math.abs(level - prev));
+      var n = Math.max(1, this.window.length);
+      var loud = this.window.filter(function (l) { return l > 65; }).length / n;
+      var busy = this.window.filter(function (l) { return l > 55; }).length / n;
+      /* Ett enstaka skrik i ett tyst rum är inte kaos — det krävs att det
+         håller i sig för att nivån ska nå toppen */
+      var raw = Math.min(100, Math.round((excess * 1.15 + jump * 0.6 + loud * 25) * (0.6 + 0.4 * busy)));
+
+      /* Stiger snabbt, faller långsamt — som en klassrumsstämning gör */
+      this.cringe = raw > this.cringe ? Math.round(this.cringe * 0.5 + raw * 0.5)
+        : Math.max(0, Math.round(this.cringe * 0.97));
+      if (this.cringeFrom === 'lokal') {
+        this.cringeWhy = this.cringeLabel(this.cringe);
       }
+      this.cringeHist.push(this.cringe);
+      if (this.cringeHist.length > 120) this.cringeHist.shift();
+      return this.cringe;
+    },
+    cringeLabel: function (c) {
+      if (c >= 85) return 'SUPER CRINGE';
+      if (c >= 70) return 'Rejält trams';
+      if (c >= 45) return 'Stimmigt';
+      if (c >= 25) return 'Lite liv i luckan';
+      return 'Lugnt';
+    },
+    /* Lokalt läge säger till av egen kraft när cringe-nivån går för högt */
+    localCheck: function () {
+      var c = this.cringe;
+      var now = Date.now();
+      if (c >= 95) {
+        if (!this.superSince) this.superSince = now;
+      } else if (c < 85) {
+        this.superSince = 0;
+      }
+      if (now - (this.lastLocal || 0) < 12000) return;
+      var lvl = 0;
+      if (this.superSince && now - this.superSince > 3000) lvl = 3;
+      else if (c >= 85) lvl = 2;
+      else if (c >= 70) lvl = 1;
+      if (!lvl) return;
+      this.lastLocal = now;
+      this.superSince = 0;
+      this.verdict({
+        niva: lvl,
+        replik: lvl === 1
+          ? 'Nu blev det lite väl livligt — sänk volymen så vi hör varandra.'
+          : lvl === 2
+            ? 'Sluta trams och skrik. Sätt dig ner och fortsätt med uppgiften, nu.'
+            : 'Det här går inte längre. Du går ut ur klassrummet i fem minuter.',
+        vem: 'Okänd',
+        vad: 'Cringe-nivå ' + c + ' (' + this.cringeLabel(c) + ')'
+      }, false);
     },
 
     /* ---------------- Gemini Live ---------------- */
@@ -255,6 +328,16 @@
           }));
         } catch (e) { /* sessionen stängdes */ }
         calls.forEach(function (f) {
+          if (f.name === 'cringe_niva') {
+            var p = Math.max(0, Math.min(100, parseInt((f.args || {}).poang, 10) || 0));
+            self.cringe = p;
+            self.cringeFrom = 'ai';
+            self.cringeWhy = (f.args || {}).varfor || self.cringeLabel(p);
+            self.cringeHist.push(p);
+            if (self.cringeHist.length > 120) self.cringeHist.shift();
+            self.emit();
+            return;
+          }
           if (f.name !== 'rapportera_trams') return;
           var a = f.args || {};
           self.turn.toolCall = a;
@@ -464,13 +547,32 @@
       var status = ctx.el('div', 'trams-status');
       var verdict = ctx.el('div', 'trams-verdict');
       var timeoutBox = ctx.el('div', 'trams-timeout hidden');
+
+      /* Cringe-mätaren: syns hela tiden, inte bara när något händer */
+      var gauge = ctx.el('div', 'cringe-box');
+      var gaugeHead = ctx.el('div', 'cringe-head');
+      var gaugeNum = ctx.el('div', 'cringe-num', '0');
+      var gaugeLabel = ctx.el('div', 'cringe-label', 'Lugnt');
+      gaugeHead.appendChild(gaugeNum);
+      gaugeHead.appendChild(gaugeLabel);
+      var gaugeBar = ctx.el('div', 'cringe-bar');
+      var gaugeFill = ctx.el('i');
+      gaugeBar.appendChild(gaugeFill);
+      var spark = ctx.el('canvas', 'cringe-spark');
+      spark.width = 300; spark.height = 46;
+      gauge.appendChild(gaugeHead);
+      gauge.appendChild(gaugeBar);
+      gauge.appendChild(spark);
+
       var meter = ctx.el('div', 'meter');
+      meter.style.height = '22px';
       var fill = ctx.el('div', 'meter-fill');
       meter.appendChild(fill);
       var log = ctx.el('div', 'list');
       log.style.cssText = 'margin-top:12px;max-height:34%;overflow:auto';
 
       body.appendChild(status);
+      body.appendChild(gauge);
       body.appendChild(meter);
       body.appendChild(verdict);
       body.appendChild(timeoutBox);
@@ -531,6 +633,16 @@
           '</div></div>';
         fill.style.width = (t.armed ? t.level : 0) + '%';
 
+        var c = t.armed ? t.cringe : 0;
+        var col = c >= 85 ? '#dc2626' : c >= 70 ? '#f97316' : c >= 45 ? '#f59e0b' : c >= 25 ? '#84cc16' : '#16a34a';
+        gaugeNum.textContent = c;
+        gaugeNum.style.color = col;
+        gaugeLabel.textContent = (t.armed ? t.cringeWhy : 'Avstängd') +
+          (t.armed && t.cringeFrom === 'ai' ? ' · AI mäter' : t.armed ? ' · lokal mätning' : '');
+        gaugeFill.style.width = c + '%';
+        gaugeFill.style.background = col;
+        drawSpark(t.cringeHist, col);
+
         var v = t.lastVerdict;
         if (v) {
           var lv = LEVELS[v.niva];
@@ -574,6 +686,38 @@
           log.appendChild(row);
         });
       }
+      function drawSpark(hist, col) {
+        var g = spark.getContext('2d');
+        var w = spark.width, h = spark.height;
+        g.clearRect(0, 0, w, h);
+        var cs = getComputedStyle(document.body);
+        [70, 85].forEach(function (mark) {
+          g.strokeStyle = 'rgba(150,150,170,.35)';
+          g.setLineDash([3, 4]);
+          g.beginPath();
+          g.moveTo(0, h - (mark / 100) * h);
+          g.lineTo(w, h - (mark / 100) * h);
+          g.stroke();
+          g.setLineDash([]);
+        });
+        if (!hist.length) return;
+        var n = Math.min(hist.length, 120);
+        var data = hist.slice(-n);
+        g.beginPath();
+        data.forEach(function (v, i) {
+          var x = (i / Math.max(1, n - 1)) * w;
+          var y = h - (v / 100) * h;
+          if (i === 0) g.moveTo(x, y); else g.lineTo(x, y);
+        });
+        g.strokeStyle = col;
+        g.lineWidth = 2;
+        g.stroke();
+        g.lineTo(w, h); g.lineTo(0, h); g.closePath();
+        g.fillStyle = col + '22';
+        g.fill();
+        void cs;
+      }
+
       Trams.on(paint);
       ctx.every(500, paint);
       paint();

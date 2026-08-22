@@ -8,6 +8,10 @@
     workblocks: [420, 460], groups: [660, 440], picker: [420, 420], wheel: [520, 560],
     dice: [520, 400], number: [420, 380], coin: [400, 440], seating: [640, 420],
     bingo: [700, 460], noise: [460, 540], traffic: [620, 340], worklevel: [520, 380],
+    ailarare: [640, 620], aiprov: [560, 520], aiforklara: [560, 480], airatta: [580, 540],
+    ailektion: [600, 560], aiglosor: [560, 500], aisammanfatta: [600, 520], aiexempel: [560, 500],
+    aifraga: [560, 480], aiord: [560, 480], aiskriv: [560, 480], aidiskussion: [580, 500],
+    aiexit: [540, 460], aioversatt: [560, 480],
     score: [560, 380], stars: [480, 460], poll: [620, 400], queue: [520, 460],
     attendance: [480, 480], counter: [400, 360], calc: [420, 560], math: [480, 440],
     quiz: [560, 420], breathe: [420, 480], brainbreak: [560, 340], prompt: [600, 340],
@@ -389,22 +393,29 @@
       });
       App.modal('➕ Lägg till komponent på sidan', box, null, 'Stäng');
     },
-    addWidget: function (toolId) {
-      var size = SIZES[toolId] || DEFAULT_SIZE;
+    addWidget: function (toolId, opts) {
+      opts = opts || {};
+      var size = opts.size || SIZES[toolId] || DEFAULT_SIZE;
       var p = this.page();
       var n = p.widgets.length;
       var w = {
         id: 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         tool: toolId,
-        x: 40 + (n % 5) * 40,
-        y: 40 + (n % 4) * 40,
+        x: opts.x != null ? opts.x : 40 + (n % 5) * 40,
+        y: opts.y != null ? opts.y : 40 + (n % 4) * 40,
         w: size[0],
         h: size[1]
       };
+      /* Startvärden, t.ex. när ett AI-svar läggs upp som en anteckning */
+      if (opts.store) {
+        var ctx = App.makeCtx(w.id);
+        Object.keys(opts.store).forEach(function (k) { ctx.Store.set(k, opts.store[k]); });
+      }
       p.widgets.push(w);
       this.save();
       this.mountWidget(w);
       App.toast(App.byId(toolId).name + ' tillagd');
+      return w;
     },
     loadPage: function () {
       var self = this;
