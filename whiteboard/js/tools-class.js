@@ -80,7 +80,7 @@
     id: 'noise', name: 'Ljuddetektor', icon: '🔊', cat: 'Klassrum',
     desc: 'Mäter ljudnivån och piper när det blir för högt.',
     keys: 'ljud volym buller mikrofon pip nivå',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root, { center: true });
       var box = App.el('div', 'center-stack');
       box.style.width = 'min(900px, 92%)';
@@ -106,7 +106,7 @@
       function thrTxt() { thrLbl.textContent = 'Larmgräns: ' + Noise.threshold; }
       thr.addEventListener('input', function () {
         Noise.threshold = parseInt(thr.value, 10);
-        App.Store.set('noiseThreshold', Noise.threshold);
+        window.App.Store.set('noiseThreshold', Noise.threshold);
         thrTxt();
       });
       thrTxt();
@@ -150,7 +150,7 @@
     id: 'traffic', name: 'Trafikljus', icon: '🚦', cat: 'Klassrum',
     desc: 'Visa hur arbetsron är just nu — grönt, gult eller rött.',
     keys: 'trafikljus beteende arbetsro rött grönt gult',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root, { center: true });
       var wrap = App.el('div', 'row');
       wrap.style.cssText = 'gap:40px;align-items:center;justify-content:center;flex-wrap:wrap';
@@ -226,7 +226,7 @@
     id: 'worklevel', name: 'Arbetsläge', icon: '🔈', cat: 'Klassrum',
     desc: 'Visa vilken ljudnivå som gäller: tyst, viska, par eller grupp.',
     keys: 'ljudnivå arbetsläge tyst viska samarbeta regler',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root, { center: true });
       var levels = [
         { i: '🤫', n: 'Nivå 0 — Tyst', d: 'Ingen pratar. Enskilt arbete.', c: '#4f46e5' },
@@ -264,7 +264,7 @@
     id: 'score', name: 'Poängtavla', icon: '🏆', cat: 'Klassrum',
     desc: 'Poäng för lag eller grupper — perfekt vid tävlingar.',
     keys: 'poäng tavla lag tävling resultat',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root);
       var teams = App.Store.get('teams', [{ n: 'Lag 1', p: 0 }, { n: 'Lag 2', p: 0 }]);
       var grid = App.el('div', 'row');
@@ -314,7 +314,7 @@
     id: 'stars', name: 'Stjärnor', icon: '⭐', cat: 'Klassrum',
     desc: 'Ge stjärnor till enskilda elever för bra insatser.',
     keys: 'stjärnor beröm belöning poäng elev',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root);
       var students = App.students();
       if (!students.length) {
@@ -354,7 +354,7 @@
     id: 'poll', name: 'Omröstning', icon: '📊', cat: 'Klassrum',
     desc: 'Räkna handuppräckningar och visa resultatet som stapeldiagram.',
     keys: 'omröstning rösta handuppräckning diagram',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root);
       var poll = App.Store.get('poll', { q: 'Vad vill ni jobba med?', opts: [{ t: 'Alternativ A', v: 0 }, { t: 'Alternativ B', v: 0 }] });
       var head = App.el('div', 'card');
@@ -405,7 +405,7 @@
     id: 'queue', name: 'Turordning', icon: '📋', cat: 'Klassrum',
     desc: 'Kölista för redovisning — vem står på tur just nu?',
     keys: 'turordning kö redovisning ordning lista',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root);
       var order = App.Store.get('queue', null) || App.students();
       var pos = App.Store.get('queuePos', 0);
@@ -454,7 +454,7 @@
     id: 'attendance', name: 'Närvaro', icon: '✅', cat: 'Klassrum',
     desc: 'Pricka av vilka elever som är här idag.',
     keys: 'närvaro frånvaro elever avprickning',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root);
       var students = App.students();
       if (!students.length) {
@@ -499,7 +499,7 @@
     id: 'counter', name: 'Räknare', icon: '➕', cat: 'Klassrum',
     desc: 'Enkel klickräknare — räkna svar, varv eller poäng.',
     keys: 'räknare klicka antal räkna',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root, { center: true });
       var box = App.el('div', 'center-stack');
       var val = App.Store.get('counter', 0);

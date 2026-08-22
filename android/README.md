@@ -10,8 +10,8 @@ appen.
 | Paketnamn | `se.sando.tavla` |
 | minSdk | 26 (Android 8.0) |
 | targetSdk / compileSdk | 35 (Android 15) |
-| Behörigheter | `RECORD_AUDIO` (endast ljuddetektorn) |
-| Nätverk | ingen `INTERNET`-behörighet — appen är helt offline |
+| Behörigheter | `RECORD_AUDIO`, `CAMERA`, `INTERNET` |
+| Nätverk | används bara av tramsdetektorns AI-läge (Gemini Live) |
 
 ## Bygga
 
@@ -50,7 +50,7 @@ signeras manuellt med `apksigner` innan den kan installeras.
 ## Installera på platta eller smartboard
 
 ```sh
-adb install -r ../apk/sandotavla-1.0.0.apk
+adb install -r ../apk/sandotavla-1.1.0.apk
 ```
 
 Eller kopiera APK-filen till enheten och öppna den — då behöver
@@ -63,7 +63,8 @@ Eller kopiera APK-filen till enheten och öppna den — då behöver
 
 * skärmen hålls tänd under lektionen (`FLAG_KEEP_SCREEN_ON`)
 * bakåtknappen stänger först öppet verktyg, sedan appen
-* mikrofonförfrågan från ljuddetektorn kopplas till Androids
-  runtime-behörighet i `onPermissionRequest`
+* mikrofon- och kameraförfrågningar från webbappen kopplas till Androids
+  runtime-behörigheter i `onPermissionRequest` (mikrofon till ljuddetektorn och
+  tramsdetektorn, kamera till kameravakten vid utvisning)
 * `AndroidBridge.saveImage()` sparar tavlan som PNG i galleriet
   (Bilder/Sando Tavla)

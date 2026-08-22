@@ -7,7 +7,7 @@
     id: 'calc', name: 'Miniräknare', icon: '🧮', cat: 'Lärande',
     desc: 'Stor miniräknare som syns från hela klassrummet.',
     keys: 'miniräknare räkna matte kalkylator',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root, { center: true });
       var box = App.el('div', 'center-stack');
       var disp = App.el('div');
@@ -50,7 +50,7 @@
     id: 'math', name: 'Mattetränare', icon: '✖️', cat: 'Lärande',
     desc: 'Slumpade räkneuppgifter att lösa tillsammans på tavlan.',
     keys: 'matte multiplikation tabell addition träning uppgift',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root, { center: true });
       var box = App.el('div', 'center-stack');
       var q = App.el('div', 'big-num', '—');
@@ -107,7 +107,7 @@
     id: 'quiz', name: 'Glosförhör', icon: '📖', cat: 'Lärande',
     desc: 'Egna ordlistor eller frågor — visa fråga och vänd på svaret.',
     keys: 'glosor ord quiz frågor förhör flashcard',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root, { center: true });
       var box = App.el('div', 'center-stack');
       var card = App.el('div', 'card');
@@ -165,7 +165,7 @@
     id: 'breathe', name: 'Andningsövning', icon: '🫁', cat: 'Paus',
     desc: 'Lugna klassen med guidad andning i fyra takter.',
     keys: 'andning lugn avslappning paus mindfulness',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root, { center: true });
       var box = App.el('div', 'center-stack');
       var ball = App.el('div', 'breathe-ball');
@@ -208,7 +208,7 @@
     id: 'brainbreak', name: 'Rörelsepaus', icon: '🤸', cat: 'Paus',
     desc: 'Slumpar en kort rörelse- eller hjärnpaus till klassen.',
     keys: 'paus rörelse brain break lek energi',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root, { center: true });
       var breaks = [
         '🤸 10 armhävningar mot väggen', '🦵 Stå på ett ben i 30 sekunder',
@@ -242,7 +242,7 @@
     id: 'prompt', name: 'Dagens fråga', icon: '💭', cat: 'Paus',
     desc: 'Samtalsfrågor att starta lektionen med.',
     keys: 'fråga samtal diskussion morgon start',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root, { center: true });
       var qs = App.Store.get('prompts', null) || [
         'Vad är det bästa som hänt dig den här veckan?',

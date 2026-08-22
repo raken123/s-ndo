@@ -4,39 +4,47 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#4f46e5">
-<title>Sändo Tavla — Klassrumstavla</title>
+<title>Sändo Tavla — Whiteboard för klassrummet</title>
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 
 <header id="topbar">
-  <button id="btn-home" class="icon-btn" title="Startsida" aria-label="Startsida">🏠</button>
-  <div class="brand">
-    <div class="logo-mark">S</div>
-    <div class="brand-text">
-      <h1 id="view-title">Sändo Tavla</h1>
-      <small id="view-sub">Klassrumstavla för tablet &amp; smartboard</small>
-    </div>
-  </div>
+  <div class="logo-mark">S</div>
+  <button id="btn-boards" class="board-pick" title="Alla tavlor">
+    <span id="board-name">Tavla 1</span>
+    <span class="caret">▾</span>
+  </button>
+  <div id="page-tabs" class="page-tabs"></div>
   <div class="spacer"></div>
   <div id="mini-dock"></div>
+  <div id="credit-chip" class="dock-chip" title="Användningskrediter">💳 5 000 kr</div>
   <div id="topclock" class="topclock">--:--</div>
+  <button id="btn-add" class="icon-btn primary" title="Lägg till komponent" aria-label="Lägg till komponent">➕</button>
   <button id="btn-theme" class="icon-btn" title="Mörkt/ljust läge" aria-label="Byt tema">🌙</button>
   <button id="btn-full" class="icon-btn" title="Helskärm" aria-label="Helskärm">⛶</button>
   <button id="btn-settings" class="icon-btn" title="Inställningar" aria-label="Inställningar">⚙️</button>
 </header>
 
+<div id="pen-bar" class="pen-bar"></div>
+
 <main id="main">
-  <section id="home" class="view">
-    <div class="home-head">
-      <div id="class-summary" class="class-summary"></div>
-      <div class="cat-filter" id="cat-filter"></div>
-      <input id="tool-search" class="tool-search" type="search" placeholder="Sök verktyg…" autocomplete="off">
+  <section id="board-view" class="view">
+    <div id="board-surface" class="board-surface">
+      <canvas id="page-canvas"></canvas>
+      <div id="widget-layer" class="widget-layer"></div>
     </div>
-    <div id="tool-grid" class="tool-grid"></div>
   </section>
 
-  <section id="tool-view" class="view hidden"></section>
+  <section id="overview" class="view hidden">
+    <div class="ov-head">
+      <h2>Dina whiteboards</h2>
+      <p class="muted">Varje tavla har egna sidor och egna komponenter. Skapa hur många du vill.</p>
+    </div>
+    <div id="board-grid" class="board-grid"></div>
+  </section>
+
+  <section id="full-view" class="view full-view hidden"></section>
 </main>
 
 <div id="toast" class="toast hidden"></div>
@@ -53,11 +61,13 @@
 </div>
 
 <script src="js/core.js"></script>
+<script src="js/board.js"></script>
 <script src="js/tools-board.js"></script>
 <script src="js/tools-time.js"></script>
 <script src="js/tools-random.js"></script>
 <script src="js/tools-class.js"></script>
 <script src="js/tools-learn.js"></script>
+<script src="js/tools-trams.js"></script>
 <script src="js/settings.js"></script>
 <script src="js/main.js"></script>
 </body>

@@ -17,7 +17,7 @@
     id: 'groups', name: 'Grupper', icon: '👥', cat: 'Slump',
     desc: 'Slumpa eleverna till grupper — antal grupper eller storlek.',
     keys: 'grupp grupper indelning slumpa lag',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root);
       var students = App.students();
       if (!students.length) { needStudents(L.body); return; }
@@ -94,7 +94,7 @@
     id: 'picker', name: 'Slumpa elev', icon: '🎯', cat: 'Slump',
     desc: 'Dra en elev — med eller utan återläggning.',
     keys: 'slumpa elev namn dra välj',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root, { center: true });
       var students = App.students();
       if (!students.length) { needStudents(L.body); return; }
@@ -147,7 +147,7 @@
     id: 'wheel', name: 'Lyckohjul', icon: '🎡', cat: 'Slump',
     desc: 'Snurra hjulet med elever eller egna alternativ.',
     keys: 'hjul snurra lycka slumpa',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root, { center: true });
       var box = App.el('div', 'center-stack');
       var cv = App.el('canvas'); cv.id = 'wheel-canvas'; cv.width = 620; cv.height = 620;
@@ -235,7 +235,7 @@
     id: 'dice', name: 'Tärning', icon: '🎲', cat: 'Slump',
     desc: 'Kasta 1–6 tärningar med valfritt antal sidor.',
     keys: 'tärning kast slå sexa',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root, { center: true });
       var box = App.el('div', 'center-stack');
       var faces = App.el('div', 'row');
@@ -288,7 +288,7 @@
     id: 'number', name: 'Slumptal', icon: '🔢', cat: 'Slump',
     desc: 'Dra ett slumpmässigt tal i valfritt intervall.',
     keys: 'slumptal nummer tal intervall',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root, { center: true });
       var box = App.el('div', 'center-stack');
       var out = App.el('div', 'big-num', '–');
@@ -324,7 +324,7 @@
     id: 'coin', name: 'Singla slant', icon: '🪙', cat: 'Slump',
     desc: 'Krona eller klave när klassen inte kan bestämma sig.',
     keys: 'mynt slant krona klave',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root, { center: true });
       var box = App.el('div', 'center-stack');
       var face = App.el('div'); face.style.cssText = 'font-size:clamp(100px,24vw,280px);line-height:1';
@@ -360,7 +360,7 @@
     id: 'seating', name: 'Placering', icon: '🪑', cat: 'Slump',
     desc: 'Slumpa en bordsplacering på rader och platser.',
     keys: 'placering bord platser sittplats karta',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root);
       var students = App.students();
       if (!students.length) { needStudents(L.body); return; }
@@ -399,7 +399,7 @@
     id: 'bingo', name: 'Bingo', icon: '🎱', cat: 'Slump',
     desc: 'Nummerbingo 1–75 med dragna nummer och egen bricka.',
     keys: 'bingo nummer dragning lek',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root);
       var wrap = App.el('div', 'grid2');
       var left = App.el('div', 'card');

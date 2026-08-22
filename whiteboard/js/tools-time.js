@@ -7,7 +7,7 @@
     id: 'schedule', name: 'Schema', icon: '📅', cat: 'Lektion',
     desc: 'Lektioner med start- och sluttid som räknar ner automatiskt.',
     keys: 'schema lektion timer nedräkning dag',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root);
       var lessons = App.Store.get('lessons', [
         { n: 'Lektion 1', s: '08:10', e: '09:00' },
@@ -115,7 +115,7 @@
     id: 'timer', name: 'Timer', icon: '⏳', cat: 'Lektion',
     desc: 'Nedräkning med snabbval — pip när tiden är slut.',
     keys: 'timer nedräkning äggklocka minuter',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root, { center: true });
       var box = App.el('div', 'center-stack');
       var disp = App.el('div', 'big-num', '05:00');
@@ -129,8 +129,8 @@
       L.body.appendChild(box);
 
       var duration = App.Store.get('timerDur', 300000);
-      var endAt = App.dock.timerEnd > Date.now() ? App.dock.timerEnd : 0;
-      var running = endAt > 0;
+      var endAt = App.Store.get('timerEnd', 0);
+      var running = endAt > Date.now();
       var remaining = duration;
       var fired = false;
 
@@ -140,7 +140,7 @@
         fill.style.width = Math.max(0, Math.min(100, (left / Math.max(1, duration)) * 100)) + '%';
         disp.style.color = left <= 10000 && left > 0 ? 'var(--danger)' : '';
         if (running && left <= 0 && !fired) {
-          fired = true; running = false; App.dock.timerEnd = 0;
+          fired = true; running = false; App.Store.set('timerEnd', 0);
           App.chime(4);
           document.body.style.background = '#fee2e2';
           setTimeout(function () { document.body.style.background = ''; }, 1500);
@@ -150,7 +150,7 @@
       }
       function setDur(ms) {
         duration = ms; remaining = ms; running = false; fired = false;
-        App.dock.timerEnd = 0;
+        App.Store.set('timerEnd', 0);
         App.Store.set('timerDur', ms);
         syncBtn(); paint();
       }
@@ -168,11 +168,11 @@
       startBtn = App.button('▶️ Starta', 'xl', function () {
         if (running) {
           remaining = Math.max(0, endAt - Date.now());
-          running = false; App.dock.timerEnd = 0;
+          running = false; App.Store.set('timerEnd', 0);
         } else {
           if (remaining <= 0) remaining = duration;
           endAt = Date.now() + remaining;
-          App.dock.timerEnd = endAt;
+          App.Store.set('timerEnd', endAt);
           running = true; fired = false;
           App.audioCtx();
         }
@@ -205,7 +205,7 @@
     id: 'stopwatch', name: 'Stoppur', icon: '⏱️', cat: 'Lektion',
     desc: 'Ta tid med mellantider — bra på idrotten.',
     keys: 'stoppur tid varv mellantid',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root, { center: true });
       var box = App.el('div', 'center-stack');
       var disp = App.el('div', 'big-num', '0:00.00');
@@ -253,7 +253,7 @@
     id: 'clock', name: 'Klocka', icon: '🕒', cat: 'Lektion',
     desc: 'Stor analog och digital klocka — träna klockan.',
     keys: 'klocka analog digital tid',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root, { center: true });
       var box = App.el('div', 'center-stack');
       var cv = App.el('canvas');
@@ -332,7 +332,7 @@
     id: 'workblocks', name: 'Arbetspass', icon: '🍅', cat: 'Lektion',
     desc: 'Växlar mellan arbete och paus med signal vid varje byte.',
     keys: 'pomodoro arbete paus fokus intervall',
-    mount: function (root) {
+    mount: function (root, App) {
       var L = App.layout(root, { center: true });
       var box = App.el('div', 'center-stack');
       var phase = App.el('div');

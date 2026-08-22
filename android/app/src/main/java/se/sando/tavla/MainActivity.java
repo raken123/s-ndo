@@ -22,6 +22,8 @@ import android.widget.Toast;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Sändo Tavla — klassrumstavla för tablet och smartboard.
@@ -29,10 +31,10 @@ import java.io.OutputStream;
  */
 public class MainActivity extends android.app.Activity {
 
-    private static final int REQ_MIC = 4711;
+    private static final int REQ_MEDIA = 4711;
 
     private WebView web;
-    private PermissionRequest pendingMic;
+    private PermissionRequest pendingMedia;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +64,7 @@ public class MainActivity extends android.app.Activity {
             public void onPermissionRequest(final PermissionRequest request) {
                 runOnUiThread(new Runnable() {
                     @Override
-                    public void run() { grantMic(request); }
+                    public void run() { grantMedia(request); }
                 });
             }
         });
@@ -73,37 +75,60 @@ public class MainActivity extends android.app.Activity {
         web.loadUrl("file:///android_asset/index.html");
     }
 
-    /** Ljuddetektorn behöver både Android-behörighet och WebView-tillstånd. */
-    private void grantMic(PermissionRequest request) {
-        boolean wantsAudio = false;
+    /**
+     * Ljuddetektorn och tramsdetektorn behöver mikrofon, kameravakten behöver kamera.
+     * Både Androids runtime-behörighet och WebView-tillståndet måste ges.
+     */
+    private void grantMedia(PermissionRequest request) {
+        List<String> wanted = new ArrayList<>();
+        List<String> needed = new ArrayList<>();
         for (String r : request.getResources()) {
             if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(r)) {
-                wantsAudio = true;
+                wanted.add(r);
+                if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                    needed.add(Manifest.permission.RECORD_AUDIO);
+                }
+            } else if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(r)) {
+                wanted.add(r);
+                if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                    needed.add(Manifest.permission.CAMERA);
+                }
             }
         }
-        if (!wantsAudio) {
+        if (wanted.isEmpty()) {
             request.deny();
             return;
         }
-        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-            request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+        if (needed.isEmpty()) {
+            request.grant(wanted.toArray(new String[0]));
         } else {
-            pendingMic = request;
-            requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQ_MIC);
+            pendingMedia = request;
+            requestPermissions(needed.toArray(new String[0]), REQ_MEDIA);
         }
     }
 
     @Override
     public void onRequestPermissionsResult(int code, String[] perms, int[] results) {
-        if (code == REQ_MIC && pendingMic != null) {
-            if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
-                pendingMic.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
-            } else {
-                pendingMic.deny();
-                Toast.makeText(this, R.string.mic_denied, Toast.LENGTH_LONG).show();
-            }
-            pendingMic = null;
+        if (code != REQ_MEDIA || pendingMedia == null) {
+            return;
         }
+        List<String> granted = new ArrayList<>();
+        for (String r : pendingMedia.getResources()) {
+            if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(r)
+                    && checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                granted.add(r);
+            } else if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(r)
+                    && checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                granted.add(r);
+            }
+        }
+        if (granted.isEmpty()) {
+            pendingMedia.deny();
+            Toast.makeText(this, R.string.mic_denied, Toast.LENGTH_LONG).show();
+        } else {
+            pendingMedia.grant(granted.toArray(new String[0]));
+        }
+        pendingMedia = null;
     }
 
     private void immersive(boolean on) {

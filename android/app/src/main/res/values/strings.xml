@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Sändo Tavla</string>
-    <string name="mic_denied">Mikrofonen behövs för ljuddetektorn</string>
+    <string name="mic_denied">Mikrofonen behövs för ljuddetektorn och tramsdetektorn</string>
+    <string name="cam_denied">Kameran behövs för kameravakten vid utvisning</string>
 </resources>

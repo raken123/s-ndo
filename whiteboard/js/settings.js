@@ -97,6 +97,105 @@
       }
       renderClasses();
 
+      /* ----- Tramsdetektorn och Gemini ----- */
+      var aiCard = App.el('div', 'card');
+      aiCard.innerHTML = '<h3 style="font-size:22px;margin-bottom:6px">🤖 Tramsdetektor</h3>' +
+        '<p class="muted" style="font-size:14px;line-height:1.5;margin-bottom:12px">' +
+        'Tramsdetektorn är appens enda AI-komponent. Utan API-nyckel kör den i lokalt läge, ' +
+        'som lyssnar efter skrik och hög ljudnivå utan att kosta krediter.</p>';
+      wrap.appendChild(aiCard);
+
+      function textField(parent, label, key, def, placeholder) {
+        var f = App.el('div', 'field');
+        f.style.marginBottom = '12px';
+        f.appendChild(App.el('label', '', label));
+        var i = App.el('input');
+        i.type = 'text';
+        i.value = App.Store.get(key, def);
+        if (placeholder) i.placeholder = placeholder;
+        i.addEventListener('change', function () {
+          App.Store.set(key, i.value.trim());
+          App.toast('Sparat');
+        });
+        f.appendChild(i);
+        parent.appendChild(f);
+        return i;
+      }
+      function numField(parent, label, key, def, min, max) {
+        var f = App.el('div', 'field');
+        f.style.marginBottom = '12px';
+        f.appendChild(App.el('label', '', label));
+        var i = App.el('input');
+        i.type = 'number';
+        i.min = min; i.max = max;
+        i.value = App.Store.get(key, def);
+        i.addEventListener('change', function () {
+          var v = Math.max(min, Math.min(max, parseInt(i.value, 10) || def));
+          i.value = v;
+          App.Store.set(key, v);
+        });
+        f.appendChild(i);
+        parent.appendChild(f);
+        return i;
+      }
+
+      var keyInput = textField(aiCard, 'Gemini API-nyckel (sparas bara på den här enheten)',
+        'gemini.key', '', 'AIza… eller ett OAuth-token');
+      keyInput.type = 'password';
+      var keyRow = App.el('div', 'row');
+      keyRow.style.marginBottom = '12px';
+      keyRow.appendChild(App.button('👁️ Visa/dölj nyckeln', 'sm ghost', function () {
+        keyInput.type = keyInput.type === 'password' ? 'text' : 'password';
+      }));
+      keyRow.appendChild(App.button('🗑️ Ta bort nyckeln', 'sm ghost', function () {
+        App.Store.set('gemini.key', '');
+        keyInput.value = '';
+        App.toast('Nyckeln borttagen från enheten');
+      }));
+      aiCard.appendChild(keyRow);
+
+      textField(aiCard, 'Modell (Gemini Live)', 'gemini.model', 'gemini-live-2.5-flash-preview');
+      numField(aiCard, 'Sekunder ljud per input (varje input kostar ' + App.Credits.fmt(App.Credits.IN) + ')',
+        'trams.segment', 15, 5, 120);
+      numField(aiCard, 'Skrikgräns i lokalt läge (0–100)', 'trams.sens', 62, 20, 100);
+
+      var camRow = App.el('div', 'list-item');
+      camRow.appendChild(App.el('span', 'grow', 'Kameravakt vid utvisning'));
+      var camOn = App.Store.get('trams.camera', true);
+      var camBtn = App.button(camOn ? 'PÅ' : 'AV', camOn ? 'sm' : 'sm ghost', function () {
+        camOn = !camOn;
+        App.Store.set('trams.camera', camOn);
+        camBtn.textContent = camOn ? 'PÅ' : 'AV';
+        camBtn.className = 'btn ' + (camOn ? 'sm' : 'sm ghost');
+      });
+      camRow.appendChild(camBtn);
+      aiCard.appendChild(camRow);
+
+      /* ----- Krediter ----- */
+      var credCard = App.el('div', 'card');
+      wrap.appendChild(credCard);
+      function renderCredits() {
+        var c = App.Credits;
+        credCard.innerHTML = '<h3 style="font-size:22px;margin-bottom:6px">💳 Användningskrediter</h3>' +
+          '<div class="mid-num">' + c.fmt(c.balance()) + '</div>' +
+          '<p class="muted" style="font-size:14px;line-height:1.6;margin-top:8px">' +
+          'Gratis start: ' + c.fmt(c.START) + '.<br>' +
+          'Input (ett ljudsegment som skickas till AI:n): ' + c.fmt(c.IN) + '.<br>' +
+          'Output (en tillsägelse från AI:n): ' + c.fmt(c.OUT) + '.<br>' +
+          'Lokalt läge och manuella rapporter kostar ingenting.</p>';
+        var r = App.el('div', 'row');
+        r.style.marginTop = '14px';
+        r.appendChild(App.button('📜 Visa historik', 'sm ghost', function () { App.showCredits(); }));
+        r.appendChild(App.button('↺ Återställ till ' + c.fmt(c.START), 'sm ghost', function () {
+          App.confirm('Återställ krediterna?', 'Saldot sätts tillbaka till ' + c.fmt(c.START) + '.', function () {
+            c.reset();
+            renderCredits();
+          });
+        }));
+        credCard.appendChild(r);
+      }
+      renderCredits();
+
       /* ----- App-inställningar ----- */
       var appCard = App.el('div', 'card');
       appCard.innerHTML = '<h3 style="font-size:22px;margin-bottom:12px">🎛️ Appen</h3>';
@@ -172,8 +271,8 @@
 
       var about = App.el('div', 'muted');
       about.style.cssText = 'margin-top:20px;font-size:14px;line-height:1.6';
-      about.innerHTML = 'Sändo Tavla ' + (App.version || '1.0.0') +
-        '<br>Klassrumstavla för tablet och smartboard. All data sparas lokalt på enheten.';
+      about.innerHTML = 'Sändo Tavla ' + (App.version || '1.1.0') +
+        '<br>Whiteboard för tablet och smartboard. Tavlor, sidor, komponenter och nycklar sparas lokalt på enheten.';
       appCard.appendChild(about);
     }
   });

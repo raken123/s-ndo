@@ -79,45 +79,6 @@ input, textarea { user-select: text; -webkit-user-select: text; }
 .view { position: absolute; inset: 0; overflow: auto; -webkit-overflow-scrolling: touch; }
 .hidden { display: none !important; }
 
-.home-head {
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-  padding: 16px 20px 4px;
-}
-.class-summary { font-size: 15px; color: var(--muted); }
-.class-summary b { color: var(--ink); }
-.cat-filter { display: flex; gap: 8px; flex-wrap: wrap; }
-.cat-filter button {
-  height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--border);
-  background: var(--panel); color: var(--ink); font-size: 15px; font-weight: 600; cursor: pointer;
-  font-family: inherit;
-}
-.cat-filter button.active { background: var(--brand); color: #fff; border-color: var(--brand); }
-.tool-search {
-  margin-left: auto; height: 46px; min-width: 220px; padding: 0 16px; border-radius: 14px;
-  border: 1px solid var(--border); background: var(--panel); color: var(--ink); font-size: 16px;
-  font-family: inherit;
-}
-
-.tool-grid {
-  display: grid; gap: 16px; padding: 16px 20px 40px;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-}
-.tool-card {
-  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 18px; cursor: pointer; box-shadow: var(--shadow); text-align: left;
-  display: flex; flex-direction: column; gap: 6px; min-height: 148px; font-family: inherit;
-  color: var(--ink); transition: transform .12s ease;
-}
-.tool-card:active { transform: scale(.97); border-color: var(--brand); }
-.tool-card .ic { font-size: 38px; line-height: 1; }
-.tool-card .nm { font-size: 18px; font-weight: 700; }
-.tool-card .ds { font-size: 13.5px; color: var(--muted); line-height: 1.35; }
-.tool-card .tag {
-  margin-top: auto; align-self: flex-start; font-size: 11px; text-transform: uppercase;
-  letter-spacing: .06em; color: var(--brand); background: var(--brand-soft);
-  padding: 4px 10px; border-radius: 999px; font-weight: 700;
-}
-
 /* ---------- Tool chrome ---------- */
 .tool-wrap { display: flex; flex-direction: column; height: 100%; }
 .tool-bar {
@@ -190,13 +151,6 @@ input[type="color"] { width: 56px; height: 52px; padding: 4px; border-radius: 12
 .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; }
 
 /* ---------- Verktygsspecifikt ---------- */
-/* Whiteboard */
-.board-wrap { position: relative; width: 100%; height: 100%; background: #fff; }
-html[data-theme="dark"] .board-wrap { background: #10131f; }
-#board-canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
-.swatch { width: 44px; height: 44px; border-radius: 50%; border: 3px solid var(--border); cursor: pointer; }
-.swatch.active { border-color: var(--ink); transform: scale(1.12); }
-
 /* Trafikljus */
 .tl-box { background: #1b2030; border-radius: 40px; padding: 32px; display: flex; flex-direction: column; gap: 28px; box-shadow: var(--shadow); }
 .tl-lamp { width: min(24vw, 190px); height: min(24vw, 190px); border-radius: 50%; background: #2c3348; cursor: pointer; transition: .2s; }
@@ -272,5 +226,167 @@ html[data-theme="dark"] .board-wrap { background: #10131f; }
 @media (max-width: 720px) {
   .brand-text small { display: none; }
   .topclock { display: none; }
-  .tool-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .page-tabs { max-width: 40vw; }
 }
+
+/* ============ Tavlans skal ============ */
+.board-pick {
+  display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 16px;
+  border-radius: 14px; border: 1px solid var(--border); background: var(--panel-2);
+  color: var(--ink); font-size: 18px; font-weight: 700; font-family: inherit; cursor: pointer;
+  max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.board-pick .caret { color: var(--muted); font-size: 14px; }
+.page-tabs { display: flex; gap: 6px; overflow-x: auto; max-width: 46vw; padding: 2px; }
+.page-tab {
+  height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--panel-2); color: var(--ink); font-size: 15px; font-weight: 600;
+  font-family: inherit; cursor: pointer; white-space: nowrap;
+}
+.page-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.page-tab.add { font-size: 20px; padding: 0 14px; }
+.icon-btn.primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+
+.pen-bar {
+  display: flex; align-items: center; gap: 8px; padding: 8px 16px; flex-shrink: 0;
+  background: var(--panel); border-bottom: 1px solid var(--border); overflow-x: auto;
+}
+
+.board-surface { position: absolute; inset: 0; background: var(--panel); overflow: hidden; }
+html[data-theme="dark"] .board-surface { background: #131828; }
+#page-canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+.widget-layer { position: absolute; inset: 0; pointer-events: none; }
+.widget-layer > * { pointer-events: auto; }
+
+/* ============ Komponentruta ============ */
+.widget {
+  position: absolute; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 18px;
+  box-shadow: var(--shadow); container-type: inline-size;
+}
+.widget.dragging { opacity: .92; box-shadow: 0 12px 40px rgba(20, 25, 42, .3); }
+.widget.max {
+  position: fixed !important; left: 0 !important; top: 0 !important;
+  width: 100vw !important; height: 100vh !important; border-radius: 0; z-index: 60;
+}
+.widget-head {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 14px;
+  background: var(--brand-soft); border-bottom: 1px solid var(--border);
+  cursor: grab; touch-action: none; flex-shrink: 0;
+}
+.widget.dragging .widget-head { cursor: grabbing; }
+.wh-title {
+  flex: 1; font-size: 15px; font-weight: 700; color: var(--brand);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.wh-actions { display: flex; gap: 6px; }
+.wh-btn {
+  width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--border);
+  background: var(--panel); color: var(--ink); font-size: 15px; cursor: pointer;
+}
+.widget-body { flex: 1; min-height: 0; overflow: hidden; }
+.widget-body > .tool-wrap { height: 100%; }
+.widget-grip {
+  position: absolute; right: 0; bottom: 0; width: 30px; height: 30px; cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--border) 50%); touch-action: none;
+}
+
+/* Komponenter krymper med rutan i stället för med skärmen */
+.widget .tool-bar { padding: 8px 10px; gap: 6px; }
+.widget .tool-body { padding: 12px; }
+.widget .btn { height: 42px; padding: 0 14px; font-size: 15px; border-radius: 11px; }
+.widget .btn.sm { height: 36px; padding: 0 11px; font-size: 13.5px; }
+.widget .btn.xl { height: 52px; padding: 0 20px; font-size: 18px; border-radius: 14px; }
+.widget input, .widget select, .widget textarea { height: 42px; font-size: 15px; }
+.widget textarea { height: auto; }
+.widget .big-num { font-size: 64px; font-size: clamp(34px, 22cqw, 130px); }
+.widget .mid-num { font-size: 34px; font-size: clamp(22px, 11cqw, 64px); }
+.widget .tl-text { font-size: 22px; font-size: clamp(15px, 6cqw, 34px); }
+.widget .noise-face { font-size: 74px; font-size: clamp(40px, 24cqw, 130px); }
+.widget .list-item { padding: 8px 10px; font-size: 15px; }
+.widget .card { padding: 12px; }
+.widget .center-stack { gap: 12px; }
+.widget .tl-lamp { width: 62px; height: 62px; width: clamp(38px, 15cqw, 110px); height: clamp(38px, 15cqw, 110px); }
+.widget .tl-box { padding: 14px; gap: 12px; border-radius: 22px; }
+.widget .score-card .val { font-size: 40px; }
+.widget .seat { padding: 8px 4px; font-size: 13px; }
+.widget .bingo-cell { font-size: 17px; border-radius: 8px; }
+.widget .group-card { min-width: 130px; padding: 10px; }
+.widget .group-card h3 { font-size: 16px; }
+.widget .group-card li { font-size: 15px; padding: 3px 0; }
+.widget .breathe-ball { width: 70px; height: 70px; }
+
+/* ============ Översikt över tavlor ============ */
+.ov-head { padding: 24px 26px 6px; }
+.ov-head h2 { font-size: 28px; }
+.board-grid {
+  display: grid; gap: 16px; padding: 16px 26px 40px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+.board-card {
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 18px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px;
+  min-height: 160px; color: var(--ink); font-family: inherit; text-align: left;
+}
+.board-card.active { border-color: var(--brand); border-width: 2px; }
+.board-card.new { cursor: pointer; align-items: center; justify-content: center; text-align: center; }
+.bc-name { font-size: 20px; font-weight: 700; }
+.board-card .row { margin-top: auto; }
+
+/* ============ Komponentpalett ============ */
+.palette { max-height: 62vh; overflow: auto; }
+.palette-cat {
+  font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
+  font-weight: 700; margin: 14px 0 8px;
+}
+.palette-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.palette-card {
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 14px; padding: 12px;
+  cursor: pointer; text-align: left; font-family: inherit; color: var(--ink);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.palette-card:active { border-color: var(--brand); transform: scale(.97); }
+.palette-card .ic { font-size: 26px; }
+.palette-card .nm { font-size: 15px; font-weight: 700; }
+.palette-card .ds { font-size: 12px; color: var(--muted); line-height: 1.3; }
+
+/* ============ Helskärmsvy (inställningar m.m.) ============ */
+.full-view { background: var(--bg); z-index: 70; display: flex; flex-direction: column; }
+.full-head {
+  display: flex; align-items: center; gap: 14px; padding: 14px 20px;
+  background: var(--panel); border-bottom: 1px solid var(--border);
+}
+.full-title { flex: 1; font-size: 22px; font-weight: 800; }
+.full-body { flex: 1; min-height: 0; overflow: auto; }
+
+/* ============ Tramsdetektor ============ */
+.trams-status { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.ts-dot { width: 16px; height: 16px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+.ts-dot.green { background: var(--ok); box-shadow: 0 0 14px var(--ok); }
+.ts-dot.red { background: var(--danger); box-shadow: 0 0 16px var(--danger); animation: pulse 1s infinite; }
+.ts-dot.off { background: var(--border); }
+@keyframes pulse { 50% { opacity: .3; } }
+.ts-main { font-size: 17px; font-weight: 700; }
+.ts-sub { font-size: 12.5px; }
+.trams-verdict {
+  margin-top: 12px; padding: 14px; border-radius: 14px; border: 2px solid var(--border);
+  background: var(--panel-2);
+}
+.tv-head { font-size: 17px; font-weight: 800; }
+.tv-text { font-size: 20px; font-weight: 600; margin: 6px 0; line-height: 1.3; }
+.trams-timeout {
+  margin-top: 12px; padding: 16px; border-radius: 16px; text-align: center;
+  background: #7f1d1d; color: #fff;
+}
+.tt-title { font-size: 18px; font-weight: 800; }
+.tt-time { font-size: 46px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.tt-state { font-size: 15px; margin-bottom: 10px; }
+.trams-timeout .row { justify-content: center; }
+.trams-timeout .btn.ghost { background: rgba(255,255,255,.14); color: #fff; border-color: rgba(255,255,255,.3); }
+
+/* Trafikljuset ligger vågrätt när det är en komponent på tavlan */
+.widget .tl-box { flex-direction: row; align-items: center; padding: 10px; gap: 10px; border-radius: 20px; }
+.widget .tl-lamp { width: clamp(26px, 9cqw, 74px); height: clamp(26px, 9cqw, 74px); }
+.widget .tool-body { overflow: auto; }
+.widget .btn.sm { padding: 0 9px; }
+.widget .row { row-gap: 8px; }
