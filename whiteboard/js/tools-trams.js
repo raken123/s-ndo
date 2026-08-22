@@ -232,15 +232,17 @@
       var self = this;
       var c = this.cfg();
       if (!c.key) { this.say('Ingen API-nyckel — lägg in den under Inställningar.'); this.mode = 'lokal'; return; }
-      var url = 'wss://generativelanguage.googleapis.com/ws/' +
-        'google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?' + App.Gemini.wsParam();
       this.wsState = 'ansluter';
       this.say('Ansluter till Gemini…');
       try {
+        var url = 'wss://generativelanguage.googleapis.com/ws/' +
+          'google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?' + App.Gemini.wsParam();
         this.ws = new WebSocket(url);
       } catch (e) {
+        /* Hellre lokalt läge än en detektor som slutar lyssna helt */
         this.wsState = 'fel';
-        this.say('Kunde inte öppna anslutningen: ' + e.message);
+        this.say('Kunde inte öppna AI-anslutningen: ' + (e && e.message ? e.message : e) +
+          '. Lokalt läge fortsätter.');
         this.mode = 'lokal';
         return;
       }

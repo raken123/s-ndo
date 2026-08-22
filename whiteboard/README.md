@@ -60,3 +60,14 @@ Allt sparas i `localStorage` under `sandotavla.` — tavlor, sidor, penndrag,
 klasslistor, krediter och API-nyckel. Komponentdata ligger under
 `sandotavla.w.<widgetId>.`. Inget lämnar enheten utom tramsdetektorns ljud i
 AI-läge. Under ⚙️ Inställningar finns export och import av all data som text.
+
+## Självtest
+
+```sh
+npm i -D playwright && node tools/selftest.js
+```
+
+Kör appen i en webbläsare med ett stubbat Gemini-API och kontrollerar att alla
+metoder som koden anropar finns, att varje komponent monterar, och att
+AI-vägarna fungerar. Strukturkontrollen är till för att en tappad metod annars
+bara märks som ett rött kryss ute på en platta.

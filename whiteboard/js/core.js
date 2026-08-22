@@ -27,7 +27,7 @@
     tools: [],
     timers: [],
     Store: Store,
-    version: '1.4.0',
+    version: '1.4.1',
 
     /* ---------- Komponentregister ---------- */
     register: function (tool) {
@@ -572,13 +572,56 @@
       }
     },
 
-    /* ---------- Gemini: nyckelhantering och test ----------
-       AI Studio-nycklar börjar med AIza och skickas som ?key=. Andra former
-       (OAuth-token, t.ex. AQ.… eller ya29.…) skickas som ?access_token=.
-       Vilket sätt som faktiskt fungerar avgörs av testet nedan. */
+    /* ---------- Gemini: nycklar, dokument och anrop ----------
+       Alla AI-komponenter går genom det här objektet. Håll listan komplett:
+       key, model, textModel, authMode, setAuthMode, wsParam, call, liveModels,
+       docs, uploadFile, generate, testKey. */
     Gemini: {
       key: function () { return Store.get('gemini.key', ''); },
       model: function () { return Store.get('gemini.model', 'gemini-3.1-flash-live-preview'); },
+      textModel: function () { return Store.get('gemini.textModel', 'gemini-3.5-flash'); },
+
+      /* Gemini-API:t vill ha nyckeln som ?key= — även nycklar som inte börjar
+         med AIza. ?access_token= gäller bara riktiga OAuth-token, och
+         nyckeltestet skriver över valet om det visar sig vara tvärtom. */
+      authMode: function () { return Store.get('gemini.auth', 'key'); },
+      setAuthMode: function (mode) { Store.set('gemini.auth', mode === 'token' ? 'token' : 'key'); },
+      wsParam: function () {
+        return (this.authMode() === 'key' ? 'key=' : 'access_token=') + encodeURIComponent(this.key());
+      },
+
+      /* Alla nätanrop får en tidsgräns — annars står ett kort och "tänker" för
+         evigt när skolans wifi hänger sig. cb(fel, json) */
+      call: function (url, opts, cb) {
+        var timeout = (opts && opts.timeout) || 60000;
+        var ctrl = global.AbortController ? new AbortController() : null;
+        var timedOut = false;
+        var timer = setTimeout(function () {
+          timedOut = true;
+          if (ctrl) ctrl.abort();
+        }, timeout);
+        var init = { method: (opts && opts.method) || 'GET' };
+        if (opts && opts.headers) init.headers = opts.headers;
+        if (opts && opts.body) init.body = opts.body;
+        if (ctrl) init.signal = ctrl.signal;
+        fetch(url, init)
+          .then(function (r) { return r.text().then(function (t) { return { status: r.status, text: t }; }); })
+          .then(function (res) {
+            clearTimeout(timer);
+            var json = null;
+            try { json = JSON.parse(res.text); } catch (e) { json = null; }
+            if (!json) { cb('Oväntat svar från Google (HTTP ' + res.status + ').'); return; }
+            if (json.error) { cb('Google svarade: ' + json.error.message, json); return; }
+            cb(null, json);
+          })
+          .catch(function (err) {
+            clearTimeout(timer);
+            cb(timedOut
+              ? 'AI:n svarade inte inom ' + Math.round(timeout / 1000) + ' sekunder. Kontrollera nätet och försök igen.'
+              : 'Kunde inte nå Gemini: ' + (err && err.message ? err.message : 'nätverksfel'));
+          });
+      },
+
       /* Hämtar de modeller nyckeln har tillgång till och plockar ut live-modellerna */
       liveModels: function (cb) {
         this.call('https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(this.key()),
@@ -640,7 +683,7 @@
         }, function (err, j) {
           if (err) { cb(err); return; }
           var f = j.file || {};
-          var doc = {
+          self.docs.add({
             id: 'd' + Date.now().toString(36),
             name: file.name,
             kind: kind || 'material',
@@ -649,16 +692,14 @@
             size: file.size,
             expires: f.expirationTime || '',
             added: Date.now()
-          };
-          self.docs.add(doc);
-          cb(null, doc);
+          });
+          cb(null, self.docs.all()[0]);
         });
       },
 
       /* Ett vanligt AI-anrop. opts: {prompt, system, docIds, history, model,
-         temperature, maxTokens, useDocs}. cb(fel, text, hela svaret) */
+         temperature, maxTokens, useDocs, label}. cb(fel, text, hela svaret) */
       generate: function (opts, cb) {
-        var self = this;
         if (!this.key()) { cb('Ingen API-nyckel inlagd. Lägg in den under ⚙️ Inställningar.'); return; }
         if (!App.Credits.canAfford('in')) { cb('Krediterna är slut.'); return; }
         var parts = [];
@@ -666,9 +707,8 @@
           parts = parts.concat(this.docs.parts(opts.docIds));
         }
         parts.push({ text: opts.prompt });
-        var contents = (opts.history || []).concat([{ role: 'user', parts: parts }]);
         var body = {
-          contents: contents,
+          contents: (opts.history || []).concat([{ role: 'user', parts: parts }]),
           generationConfig: {
             temperature: opts.temperature == null ? 0.4 : opts.temperature,
             maxOutputTokens: opts.maxTokens || 4000
@@ -676,9 +716,8 @@
         };
         if (opts.system) body.systemInstruction = { parts: [{ text: opts.system }] };
         App.Credits.charge('in', opts.label || 'AI-fråga');
-        var model = opts.model || this.textModel();
-        this.call('https://generativelanguage.googleapis.com/v1beta/models/' + model +
-          ':generateContent?key=' + encodeURIComponent(this.key()), {
+        this.call('https://generativelanguage.googleapis.com/v1beta/models/' +
+          (opts.model || this.textModel()) + ':generateContent?key=' + encodeURIComponent(this.key()), {
           method: 'POST',
           timeout: opts.timeout || 75000,
           headers: { 'Content-Type': 'application/json' },
@@ -700,14 +739,14 @@
 
       /* Frågar Google vad nyckeln duger till och rapporterar svaret rakt av */
       testKey: function (cb) {
-        var key = this.key();
         var self = this;
+        var key = this.key();
         if (!key) { cb({ ok: false, text: 'Ingen nyckel inlagd.' }); return; }
         var base = 'https://generativelanguage.googleapis.com/v1beta/models';
         var ways = [
-          { mode: 'key', label: '?key=', url: base + '?key=' + encodeURIComponent(key), opts: {} },
-          { mode: 'token', label: '?access_token=', url: base + '?access_token=' + encodeURIComponent(key), opts: {} },
-          { mode: 'token', label: 'Authorization: Bearer', url: base, opts: { headers: { Authorization: 'Bearer ' + key } } }
+          { mode: 'key', label: '?key=', url: base + '?key=' + encodeURIComponent(key), headers: null },
+          { mode: 'token', label: '?access_token=', url: base + '?access_token=' + encodeURIComponent(key), headers: null },
+          { mode: 'token', label: 'Authorization: Bearer', url: base, headers: { Authorization: 'Bearer ' + key } }
         ];
         var lines = [];
         var i = 0;
@@ -718,33 +757,39 @@
           }
           var w = ways[i++];
           var init = { method: 'GET' };
-          if (w.opts && w.opts.headers) init.headers = w.opts.headers;
-          if (global.AbortController) {
-            var ctrl = new AbortController();
+          if (w.headers) init.headers = w.headers;
+          var ctrl = global.AbortController ? new AbortController() : null;
+          if (ctrl) {
             init.signal = ctrl.signal;
             setTimeout(function () { ctrl.abort(); }, 25000);
           }
           fetch(w.url, init)
             .then(function (res) {
-              return res.text().then(function (body) {
+              return res.text().then(function (text) {
                 var msg = '';
                 try {
-                  var j = JSON.parse(body);
+                  var j = JSON.parse(text);
                   msg = (j.error && j.error.message) ? j.error.message : '';
                   if (!msg && j.models) msg = j.models.length + ' modeller tillgängliga';
-                } catch (e) { msg = body.slice(0, 160); }
+                } catch (e) { msg = text.slice(0, 160); }
                 lines.push(w.label + ' → HTTP ' + res.status + (msg ? ': ' + msg : ''));
-                if (res.ok) {
-                  self.setAuthMode(w.mode);
-                  cb({ ok: true, mode: w.mode, text: lines.join('\n') + '\n\nNyckeln fungerar. Appen använder ' + w.label });
-                } else {
-                  next();
-                }
+                return res.ok ? w : null;
               });
             })
             .catch(function (err) {
               lines.push(w.label + ' → nådde inte servern (' + (err && err.message ? err.message : 'nätverksfel') + ')');
-              next();
+              return null;
+            })
+            .then(function (winner) {
+              /* Utanför fetch-kedjans catch: ett fel här nere ska inte
+                 rapporteras som att servern inte gick att nå. */
+              if (!winner) { next(); return; }
+              self.setAuthMode(winner.mode);
+              cb({
+                ok: true,
+                mode: winner.mode,
+                text: lines.join('\n') + '\n\nNyckeln fungerar. Appen använder ' + winner.label
+              });
             });
         };
         next();
