@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Sändo Tavla — reklamfilm</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #0b0e17; overflow: hidden; }
+  #stage {
+    position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+    transform-origin: center center; background: #eef1f8;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  svg { display: block; }
+  text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<div id="stage"><svg id="scene" width="1920" height="1080" viewBox="0 0 1920 1080"></svg></div>
+<script>
+/* ===================================================================
+   Sändo Tavla — reklamfilm
+   Allt ritas i SVG och animeras av en egen tidslinje, så att filmen kan
+   både spelas upp i en webbläsare och renderas ruta för ruta med
+   window.__seek(ms) när den ska bli en videofil.
+   =================================================================== */
+
+var SVG = 'http://www.w3.org/2000/svg';
+var scene = document.getElementById('scene');
+var C = {
+  brand: '#4f46e5', brandDark: '#3f37c9', cyan: '#06b6d4',
+  ink: '#14192a', muted: '#6b7280', panel: '#ffffff', line: '#dbe1ee',
+  wall: '#dfe6f5', wall2: '#c9d4ea', floor: '#c8a882', floorDark: '#b3946f',
+  red: '#dc2626', green: '#16a34a', amber: '#f59e0b', orange: '#f97316'
+};
+var SKIN = ['#f5c9a6', '#e0a878', '#c68642', '#8d5524', '#ffdbac', '#a8683c'];
+var SHIRT = ['#ef4444', '#3b82f6', '#22c55e', '#a855f7', '#f59e0b', '#14b8a6', '#ec4899'];
+
+/* ---------- små hjälpare ---------- */
+function el(tag, attrs, parent) {
+  var e = document.createElementNS(SVG, tag);
+  for (var k in attrs) { if (attrs[k] != null) e.setAttribute(k, attrs[k]); }
+  (parent || scene).appendChild(e);
+  return e;
+}
+function txt(s, attrs, parent) {
+  var t = el('text', attrs, parent);
+  t.textContent = s;
+  return t;
+}
+function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+function lerp(a, b, t) { return a + (b - a) * t; }
+/* p(): 0 före start, 1 efter slut, mjuk kurva däremellan */
+function p(t, start, end, ease) {
+  var x = clamp((t - start) / Math.max(1, end - start), 0, 1);
+  if (ease === 'in') return x * x;
+  if (ease === 'out') return 1 - (1 - x) * (1 - x);
+  if (ease === 'linear') return x;
+  return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;   /* inOut */
+}
+/* Synlighet med in- och uttoning */
+function fade(t, a, b, dur) {
+  dur = dur || 400;
+  return Math.min(p(t, a, a + dur), 1 - p(t, b - dur, b));
+}
+function show(g, v) { g.setAttribute('opacity', clamp(v, 0, 1)); g.style.display = v <= 0.001 ? 'none' : ''; }
+function move(g, x, y, s) { g.setAttribute('transform', 'translate(' + x + ',' + y + ')' + (s != null ? ' scale(' + s + ')' : '')); }
+
+/* ---------- figurer ---------- */
+function kid(parent, opt) {
+  var g = el('g', {}, parent);
+  var skin = opt.skin || SKIN[0], shirt = opt.shirt || SHIRT[0];
+  var hair = opt.hair || '#3b2a1e';
+  el('rect', { x: -34, y: 6, width: 68, height: 78, rx: 26, fill: shirt }, g);          /* kropp */
+  el('rect', { x: -46, y: 18, width: 20, height: 58, rx: 10, fill: shirt, id: 'armL' }, g);
+  el('rect', { x: 26, y: 18, width: 20, height: 58, rx: 10, fill: shirt, id: 'armR' }, g);
+  var head = el('g', {}, g);
+  el('circle', { cx: 0, cy: -34, r: 40, fill: skin }, head);
+  el('path', { d: 'M-41,-42 a41,41 0 0 1 82,0 q-20,-16 -41,-10 q-21,-6 -41,10 z', fill: hair }, head);
+  el('circle', { cx: -14, cy: -36, r: 5, fill: '#1b2130', class: 'eye' }, head);
+  el('circle', { cx: 14, cy: -36, r: 5, fill: '#1b2130', class: 'eye' }, head);
+  var mouth = el('path', { d: 'M-12,-16 q12,8 24,0', stroke: '#1b2130', 'stroke-width': 4, fill: 'none', 'stroke-linecap': 'round' }, head);
+  g.mouth = mouth;
+  g.head = head;
+  g.armL = g.querySelector('#armL');
+  g.armR = g.querySelector('#armR');
+  g.setMood = function (m) {
+    if (m === 'skrik') { mouth.setAttribute('d', 'M-16,-18 a16,14 0 1 0 32,0 a16,14 0 1 0 -32,0'); mouth.setAttribute('fill', '#7f1d1d'); }
+    else if (m === 'ledsen') { mouth.setAttribute('d', 'M-12,-12 q12,-9 24,0'); mouth.setAttribute('fill', 'none'); }
+    else if (m === 'glad') { mouth.setAttribute('d', 'M-14,-18 q14,16 28,0'); mouth.setAttribute('fill', '#7f1d1d'); }
+    else { mouth.setAttribute('d', 'M-12,-16 q12,8 24,0'); mouth.setAttribute('fill', 'none'); }
+  };
+  return g;
+}
+function bubble(parent, w, h, lines, size, tail) {
+  /* tail = [x, y] dit svansen pekar, i bubblans egna koordinater */
+  var g = el('g', {}, parent);
+  if (tail) {
+    el('path', {
+      d: 'M' + (tail[0] * 0.25 - 40) + ',' + (h / 2 - 10) + ' L' + (tail[0] * 0.25 + 40) + ',' + (h / 2 - 10) +
+         ' L' + tail[0] + ',' + tail[1] + ' Z',
+      fill: '#fff', stroke: C.ink, 'stroke-width': 5, 'stroke-linejoin': 'round'
+    }, g);
+  }
+  el('rect', { x: -w / 2, y: -h / 2, width: w, height: h, rx: 30, fill: '#fff', stroke: C.ink, 'stroke-width': 5 }, g);
+  lines.forEach(function (line, i) {
+    txt(line, {
+      x: 0, y: -h / 2 + (h - lines.length * size * 1.2) / 2 + size * 0.92 + i * size * 1.2,
+      'text-anchor': 'middle', 'font-size': size, 'font-weight': 800, fill: C.ink
+    }, g);
+  });
+  return g;
+}
+
+/* ===================================================================
+   Bakgrund: klassrummet
+   =================================================================== */
+var room = el('g', {}, scene);
+el('rect', { x: 0, y: 0, width: 1920, height: 1080, fill: C.wall }, room);
+var wallGrad = el('linearGradient', { id: 'wg', x1: 0, y1: 0, x2: 0, y2: 1 }, el('defs', {}, scene));
+el('stop', { offset: 0, 'stop-color': '#e9eefb' }, wallGrad);
+el('stop', { offset: 1, 'stop-color': '#cdd8ee' }, wallGrad);
+el('rect', { x: 0, y: 0, width: 1920, height: 720, fill: 'url(#wg)' }, room);
+el('rect', { x: 0, y: 700, width: 1920, height: 380, fill: C.floor }, room);
+el('path', { d: 'M0,700 h1920 v14 h-1920 z', fill: C.floorDark }, room);
+for (var fi = 0; fi < 14; fi++) {
+  el('path', { d: 'M' + (fi * 180 - 200) + ',1080 L' + (fi * 130 + 120) + ',714', stroke: 'rgba(0,0,0,.06)', 'stroke-width': 3 }, room);
+}
+/* fönster */
+var win = el('g', {}, room);
+el('rect', { x: 90, y: 120, width: 300, height: 330, rx: 12, fill: '#bfe3ff', stroke: '#9fb2cf', 'stroke-width': 8 }, win);
+el('path', { d: 'M240,120 v330 M90,285 h300', stroke: '#9fb2cf', 'stroke-width': 8 }, win);
+el('circle', { cx: 340, cy: 180, r: 32, fill: '#ffe58a' }, win);
+/* planscher */
+el('rect', { x: 1580, y: 150, width: 220, height: 150, rx: 10, fill: '#fff', stroke: C.line, 'stroke-width': 6 }, room);
+txt('ABC', { x: 1690, y: 245, 'text-anchor': 'middle', 'font-size': 62, 'font-weight': 800, fill: C.brand }, room);
+el('rect', { x: 1580, y: 330, width: 220, height: 150, rx: 10, fill: '#fff', stroke: C.line, 'stroke-width': 6 }, room);
+txt('123', { x: 1690, y: 425, 'text-anchor': 'middle', 'font-size': 62, 'font-weight': 800, fill: C.cyan }, room);
+
+/* dörr till höger */
+var doorG = el('g', {}, room);
+el('rect', { x: 1330, y: 250, width: 200, height: 460, rx: 6, fill: '#8a5a3b' }, doorG);
+var doorPanel = el('g', {}, doorG);
+el('rect', { x: 1336, y: 256, width: 188, height: 448, rx: 4, fill: '#a3714b' }, doorPanel);
+el('rect', { x: 1360, y: 290, width: 140, height: 150, rx: 6, fill: '#b98459' }, doorPanel);
+el('circle', { cx: 1500, cy: 500, r: 10, fill: '#f0c96b' }, doorPanel);
+var doorDark = el('rect', { x: 1336, y: 256, width: 188, height: 448, fill: '#2a1f18', opacity: 0 }, doorG);
+txt('KORRIDOR', { x: 1430, y: 235, 'text-anchor': 'middle', 'font-size': 22, 'font-weight': 700, fill: C.muted }, room);
+
+/* ===================================================================
+   Smartboarden med appen
+   =================================================================== */
+var boardG = el('g', {}, scene);
+el('rect', { x: 560, y: 130, width: 700, height: 440, rx: 18, fill: '#1e2436' }, boardG);
+var screen = el('g', {}, boardG);
+el('rect', { x: 574, y: 144, width: 672, height: 412, rx: 10, fill: '#f4f6fb' }, screen);
+/* appens topbar */
+el('rect', { x: 574, y: 144, width: 672, height: 52, fill: '#fff' }, screen);
+el('rect', { x: 590, y: 156, width: 30, height: 30, rx: 9, fill: C.brand }, screen);
+txt('S', { x: 605, y: 179, 'text-anchor': 'middle', 'font-size': 20, 'font-weight': 800, fill: '#fff' }, screen);
+txt('Sändo Tavla', { x: 632, y: 178, 'font-size': 19, 'font-weight': 700, fill: C.ink }, screen);
+el('rect', { x: 1090, y: 156, width: 92, height: 30, rx: 9, fill: '#eef2ff' }, screen);
+txt('5 000 kr', { x: 1136, y: 177, 'text-anchor': 'middle', 'font-size': 15, 'font-weight': 700, fill: C.brand }, screen);
+el('rect', { x: 1192, y: 156, width: 42, height: 30, rx: 9, fill: C.brand }, screen);
+txt('+', { x: 1213, y: 180, 'text-anchor': 'middle', 'font-size': 22, 'font-weight': 700, fill: '#fff' }, screen);
+el('rect', { x: 574, y: 196, width: 672, height: 2, fill: C.line }, screen);
+
+/* tramsdetektor-widget */
+var wTrams = el('g', {}, screen);
+el('rect', { x: 600, y: 220, width: 330, height: 300, rx: 14, fill: '#fff', stroke: C.line, 'stroke-width': 2 }, wTrams);
+el('rect', { x: 600, y: 220, width: 330, height: 40, rx: 14, fill: '#eef2ff' }, wTrams);
+el('rect', { x: 600, y: 246, width: 330, height: 14, fill: '#eef2ff' }, wTrams);
+txt('🤖 Tramsdetektor', { x: 618, y: 247, 'font-size': 17, 'font-weight': 700, fill: C.brand }, wTrams);
+var cringeNum = txt('12', { x: 622, y: 330, 'font-size': 62, 'font-weight': 800, fill: C.green }, wTrams);
+var cringeLbl = txt('Lugnt', { x: 730, y: 326, 'font-size': 20, 'font-weight': 700, fill: C.muted }, wTrams);
+el('rect', { x: 620, y: 350, width: 290, height: 16, rx: 8, fill: '#e5e9f2' }, wTrams);
+var cringeBar = el('rect', { x: 620, y: 350, width: 34, height: 16, rx: 8, fill: C.green }, wTrams);
+var spark = el('path', { d: '', stroke: C.green, 'stroke-width': 3, fill: 'none' }, wTrams);
+el('rect', { x: 620, y: 470, width: 290, height: 34, rx: 8, fill: '#f4f6fb' }, wTrams);
+var boardMsg = txt('Lyssnar tyst · lokalt läge', { x: 634, y: 492, 'font-size': 15, fill: C.muted }, wTrams);
+
+/* schemat bredvid */
+var wSide = el('g', {}, screen);
+el('rect', { x: 950, y: 220, width: 276, height: 140, rx: 14, fill: '#fff', stroke: C.line, 'stroke-width': 2 }, wSide);
+el('rect', { x: 950, y: 220, width: 276, height: 36, rx: 14, fill: '#eef2ff' }, wSide);
+el('rect', { x: 950, y: 244, width: 276, height: 12, fill: '#eef2ff' }, wSide);
+txt('📅 Schema', { x: 966, y: 245, 'font-size': 16, 'font-weight': 700, fill: C.brand }, wSide);
+txt('Matte', { x: 966, y: 292, 'font-size': 19, 'font-weight': 700, fill: C.ink }, wSide);
+var sideTime = txt('22:14', { x: 966, y: 336, 'font-size': 34, 'font-weight': 800, fill: C.ink }, wSide);
+el('rect', { x: 950, y: 380, width: 276, height: 140, rx: 14, fill: '#fff', stroke: C.line, 'stroke-width': 2 }, wSide);
+el('rect', { x: 950, y: 380, width: 276, height: 36, rx: 14, fill: '#eef2ff' }, wSide);
+el('rect', { x: 950, y: 404, width: 276, height: 12, fill: '#eef2ff' }, wSide);
+txt('🚦 Trafikljus', { x: 966, y: 405, 'font-size': 16, 'font-weight': 700, fill: C.brand }, wSide);
+var lampG = el('g', {}, wSide);
+var lampRed = el('circle', { cx: 1000, cy: 465, r: 22, fill: '#3a4256' }, lampG);
+var lampYel = el('circle', { cx: 1060, cy: 465, r: 22, fill: '#3a4256' }, lampG);
+var lampGrn = el('circle', { cx: 1120, cy: 465, r: 22, fill: C.green }, lampG);
+
+/* larmoverlay på tavlan */
+var alarmG = el('g', { opacity: 0 }, screen);
+el('rect', { x: 574, y: 144, width: 672, height: 412, rx: 10, fill: '#7f1d1d' }, alarmG);
+txt('🚨 SUPER CRINGE', { x: 910, y: 250, 'text-anchor': 'middle', 'font-size': 46, 'font-weight': 800, fill: '#fff' }, alarmG);
+txt('UTVISAD FRÅN KLASSRUMMET', { x: 910, y: 300, 'text-anchor': 'middle', 'font-size': 26, 'font-weight': 700, fill: '#fecaca' }, alarmG);
+var alarmTime = txt('5:00', { x: 910, y: 430, 'text-anchor': 'middle', 'font-size': 110, 'font-weight': 800, fill: '#fff' }, alarmG);
+var alarmSub = txt('Pipet tystnar när kameran ser att du gått ut', { x: 910, y: 480, 'text-anchor': 'middle', 'font-size': 20, fill: '#fecaca' }, alarmG);
+
+/* lekläge på tavlan (scen 6) */
+var funG = el('g', { opacity: 0 }, screen);
+el('rect', { x: 574, y: 196, width: 672, height: 360, fill: '#f4f6fb' }, funG);
+var wheelG = el('g', {}, funG);
+var wheelSpin = el('g', {}, wheelG);
+var wcols = ['#4f46e5', '#06b6d4', '#16a34a', '#f59e0b', '#dc2626', '#a855f7'];
+for (var wi = 0; wi < 6; wi++) {
+  var a0 = wi * Math.PI / 3, a1 = (wi + 1) * Math.PI / 3, r = 92;
+  el('path', {
+    d: 'M0,0 L' + (Math.cos(a0) * r).toFixed(1) + ',' + (Math.sin(a0) * r).toFixed(1) +
+       ' A' + r + ',' + r + ' 0 0 1 ' + (Math.cos(a1) * r).toFixed(1) + ',' + (Math.sin(a1) * r).toFixed(1) + ' Z',
+    fill: wcols[wi]
+  }, wheelSpin);
+}
+move(wheelG, 790, 380);
+el('circle', { cx: 0, cy: 0, r: 18, fill: '#fff', stroke: C.ink, 'stroke-width': 4 }, wheelG);
+txt('🎡 Lyckohjul', { x: 790, y: 505, 'text-anchor': 'middle', 'font-size': 18, 'font-weight': 700, fill: C.ink }, funG);
+var diceG = el('g', {}, funG);
+el('rect', { x: 920, y: 300, width: 96, height: 96, rx: 18, fill: '#fff', stroke: C.brand, 'stroke-width': 5 }, diceG);
+var diceFace = txt('⚄', { x: 968, y: 380, 'text-anchor': 'middle', 'font-size': 76, fill: C.ink }, diceG);
+txt('🎲 Tärning', { x: 968, y: 430, 'text-anchor': 'middle', 'font-size': 18, 'font-weight': 700, fill: C.ink }, funG);
+var scoreG = el('g', {}, funG);
+el('rect', { x: 1050, y: 250, width: 176, height: 150, rx: 14, fill: '#fff', stroke: C.line, 'stroke-width': 2 }, scoreG);
+txt('🏆 Poängtavla', { x: 1138, y: 285, 'text-anchor': 'middle', 'font-size': 17, 'font-weight': 700, fill: C.brand }, scoreG);
+var scoreA = txt('7', { x: 1098, y: 360, 'text-anchor': 'middle', 'font-size': 52, 'font-weight': 800, fill: C.ink }, scoreG);
+var scoreB = txt('5', { x: 1182, y: 360, 'text-anchor': 'middle', 'font-size': 52, 'font-weight': 800, fill: C.ink }, scoreG);
+txt('Lag A', { x: 1098, y: 385, 'text-anchor': 'middle', 'font-size': 14, fill: C.muted }, scoreG);
+txt('Lag B', { x: 1182, y: 385, 'text-anchor': 'middle', 'font-size': 14, fill: C.muted }, scoreG);
+txt('🎯 Slumpa elev  ·  🎱 Bingo  ·  🤸 Rörelsepaus', { x: 970, y: 535, 'text-anchor': 'middle', 'font-size': 19, 'font-weight': 600, fill: C.muted }, funG);
+
+/* ===================================================================
+   Människorna
+   =================================================================== */
+var deskRow = el('g', {}, scene);
+function desk(x, y, w) {
+  var g = el('g', {}, deskRow);
+  el('rect', { x: x - w / 2, y: y, width: w, height: 16, rx: 6, fill: '#c68a52' }, g);
+  el('rect', { x: x - w / 2 + 10, y: y + 16, width: 12, height: 70, fill: '#a06f3f' }, g);
+  el('rect', { x: x + w / 2 - 22, y: y + 16, width: 12, height: 70, fill: '#a06f3f' }, g);
+  return g;
+}
+/* bakre rad elever */
+var backKids = [];
+[[700, 690], [900, 690], [1100, 690]].forEach(function (pos, i) {
+  var g = el('g', {}, scene);
+  var k = kid(g, { skin: SKIN[i % SKIN.length], shirt: SHIRT[i], hair: ['#3b2a1e', '#6b3f1d', '#20242e'][i] });
+  move(g, pos[0], pos[1], 0.85);
+  backKids.push(k);
+  desk(pos[0], pos[1] + 60, 150);
+});
+/* främre rad elever */
+var frontKids = [];
+[[560, 880], [1010, 880], [1300, 880]].forEach(function (pos, i) {
+  var g = el('g', {}, scene);
+  var k = kid(g, { skin: SKIN[(i + 3) % SKIN.length], shirt: SHIRT[i + 3], hair: ['#20242e', '#8a5a2b', '#3b2a1e'][i] });
+  move(g, pos[0], pos[1], 1.05);
+  frontKids.push(k);
+  desk(pos[0], pos[1] + 70, 200);
+});
+
+/* Milo — den som skriker */
+var miloG = el('g', {}, scene);
+var milo = kid(miloG, { skin: SKIN[1], shirt: '#f97316', hair: '#2b1c12' });
+move(miloG, 790, 880, 1.15);
+desk(790, 950, 200);
+
+/* Läraren */
+var teacherG = el('g', {}, scene);
+var teacher = el('g', {}, teacherG);
+el('rect', { x: -40, y: 10, width: 80, height: 130, rx: 30, fill: '#0f766e' }, teacher);
+el('rect', { x: -56, y: 22, width: 22, height: 74, rx: 11, fill: '#0f766e' }, teacher);
+var tArm = el('rect', { x: 34, y: 22, width: 22, height: 74, rx: 11, fill: '#0f766e' }, teacher);
+el('circle', { cx: 0, cy: -34, r: 42, fill: SKIN[4] }, teacher);
+el('path', { d: 'M-43,-40 a43,43 0 0 1 86,0 q-24,-22 -43,-14 q-19,-8 -43,14 z', fill: '#5b3a1e' }, teacher);
+el('circle', { cx: -15, cy: -36, r: 5, fill: '#1b2130' }, teacher);
+el('circle', { cx: 15, cy: -36, r: 5, fill: '#1b2130' }, teacher);
+var tMouth = el('path', { d: 'M-13,-16 q13,9 26,0', stroke: '#1b2130', 'stroke-width': 4, fill: 'none', 'stroke-linecap': 'round' }, teacher);
+move(teacherG, 380, 620, 1.0);
+
+/* ===================================================================
+   Överlägg
+   =================================================================== */
+/* Milos pratbubbla */
+var miloBubble = el('g', { opacity: 0 }, scene);
+bubble(miloBubble, 700, 210, ['JAG HATAR DIG', 'LÄRARE!!!'], 66, [-540, 500]);
+move(miloBubble, 1480, 300);
+
+/* Lärarens pratbubbla */
+var teacherBubble = el('g', { opacity: 0 }, scene);
+bubble(teacherBubble, 880, 230, ['Kom in! Men skrik inte nästa gång —', 'annars kickar smartboarden', 'ut dig igen.'], 40, [-300, 330]);
+move(teacherBubble, 700, 250);
+
+/* Installationskortet */
+var installG = el('g', { opacity: 0 }, scene);
+el('rect', { x: 0, y: 0, width: 1920, height: 1080, fill: 'rgba(10,14,25,.72)' }, installG);
+var instCard = el('g', {}, installG);
+el('rect', { x: 460, y: 330, width: 1000, height: 420, rx: 40, fill: '#fff' }, instCard);
+el('rect', { x: 890, y: 380, width: 140, height: 140, rx: 40, fill: C.brand }, instCard);
+txt('S', { x: 960, y: 492, 'text-anchor': 'middle', 'font-size': 96, 'font-weight': 800, fill: '#fff' }, instCard);
+txt('Sändo Tavla', { x: 960, y: 580, 'text-anchor': 'middle', 'font-size': 44, 'font-weight': 800, fill: C.ink }, instCard);
+var instBtn = el('g', {}, instCard);
+el('rect', { x: 560, y: 620, width: 800, height: 96, rx: 26, fill: C.brand }, instBtn);
+var instProg = el('rect', { x: 560, y: 620, width: 0, height: 96, rx: 26, fill: C.green, opacity: 0 }, instBtn);
+txt('INSTALLERA FÖR BRA ELEVER', { x: 960, y: 683, 'text-anchor': 'middle', 'font-size': 42, 'font-weight': 800, fill: '#fff' }, instBtn);
+var instDone = el('g', { opacity: 0 }, instCard);
+txt('✔ Installerad', { x: 960, y: 683, 'text-anchor': 'middle', 'font-size': 42, 'font-weight': 800, fill: '#fff' }, instDone);
+/* finger */
+var fingerG = el('g', { opacity: 0 }, installG);
+el('ellipse', { cx: 0, cy: 0, rx: 34, ry: 44, fill: '#f5c9a6', stroke: '#d3a179', 'stroke-width': 4 }, fingerG);
+el('rect', { x: -26, y: 30, width: 52, height: 120, rx: 26, fill: '#f5c9a6', stroke: '#d3a179', 'stroke-width': 4 }, fingerG);
+var ripple = el('circle', { cx: 0, cy: -10, r: 10, fill: 'none', stroke: '#fff', 'stroke-width': 6, opacity: 0 }, installG);
+
+/* Hallen (scen 6) */
+var hallG = el('g', { opacity: 0 }, scene);
+el('rect', { x: 0, y: 0, width: 640, height: 1080, fill: '#cfd8e8' }, hallG);
+el('rect', { x: 0, y: 700, width: 640, height: 380, fill: '#9fa9bb' }, hallG);
+el('rect', { x: 40, y: 260, width: 120, height: 440, rx: 8, fill: '#6b7a92' }, hallG);
+el('rect', { x: 180, y: 260, width: 120, height: 440, rx: 8, fill: '#7c8ba3' }, hallG);
+txt('KORRIDOREN', { x: 320, y: 120, 'text-anchor': 'middle', 'font-size': 30, 'font-weight': 800, fill: '#5b6779' }, hallG);
+el('rect', { x: 190, y: 840, width: 280, height: 26, rx: 10, fill: '#5b6779' }, hallG);
+el('rect', { x: 214, y: 866, width: 18, height: 60, fill: '#4c5769' }, hallG);
+el('rect', { x: 428, y: 866, width: 18, height: 60, fill: '#4c5769' }, hallG);
+var hallKidG = el('g', {}, hallG);
+var hallKid = kid(hallKidG, { skin: SKIN[1], shirt: '#f97316', hair: '#2b1c12' });
+hallKid.setMood('ledsen');
+move(hallKidG, 330, 756, 1.2);
+var hallCard = el('g', {}, hallG);
+el('rect', { x: 70, y: 200, width: 500, height: 210, rx: 26, fill: '#7f1d1d' }, hallCard);
+txt('UTVISAD', { x: 320, y: 262, 'text-anchor': 'middle', 'font-size': 34, 'font-weight': 800, fill: '#fff' }, hallCard);
+var hallTime = txt('4:37', { x: 320, y: 370, 'text-anchor': 'middle', 'font-size': 96, 'font-weight': 800, fill: '#fff' }, hallCard);
+var hallSplitLine = el('rect', { x: 634, y: 0, width: 10, height: 1080, fill: '#0b0e17', opacity: 0 }, scene);
+
+/* Bildtexter */
+var capG = el('g', { opacity: 0 }, scene);
+el('rect', { x: 300, y: 916, width: 1320, height: 132, rx: 26, fill: 'rgba(12,16,28,.86)' }, capG);
+var capTitle = txt('', { x: 960, y: 976, 'text-anchor': 'middle', 'font-size': 46, 'font-weight': 800, fill: '#fff' }, capG);
+var capSub = txt('', { x: 960, y: 1020, 'text-anchor': 'middle', 'font-size': 28, fill: '#c7cede' }, capG);
+
+/* Konfetti */
+var confG = el('g', { opacity: 0 }, scene);
+var conf = [];
+for (var ci = 0; ci < 60; ci++) {
+  var cx = 780 + Math.random() * 1140, cy = -Math.random() * 700;
+  var c = el('rect', { x: 0, y: 0, width: 14, height: 22, rx: 4, fill: wcols[ci % wcols.length] }, confG);
+  conf.push({ el: c, x: cx, y: cy, sp: 180 + Math.random() * 220, rot: Math.random() * 360, sw: 1 + Math.random() * 3 });
+}
+
+/* Slutkort */
+var endG = el('g', { opacity: 0 }, scene);
+el('rect', { x: 0, y: 0, width: 1920, height: 1080, fill: C.brand }, endG);
+el('rect', { x: 0, y: 0, width: 1920, height: 1080, fill: 'url(#eg)' }, endG);
+var eg = el('linearGradient', { id: 'eg', x1: 0, y1: 0, x2: 1, y2: 1 }, scene.querySelector('defs'));
+el('stop', { offset: 0, 'stop-color': '#4f46e5' }, eg);
+el('stop', { offset: 1, 'stop-color': '#06b6d4' }, eg);
+var endLogo = el('g', {}, endG);
+el('rect', { x: 830, y: 210, width: 260, height: 260, rx: 70, fill: '#fff' }, endLogo);
+txt('S', { x: 960, y: 420, 'text-anchor': 'middle', 'font-size': 190, 'font-weight': 800, fill: C.brand }, endLogo);
+txt('Sändo Tavla', { x: 960, y: 590, 'text-anchor': 'middle', 'font-size': 96, 'font-weight': 800, fill: '#fff' }, endG);
+txt('Whiteboarden som håller ordning i klassrummet', { x: 960, y: 660, 'text-anchor': 'middle', 'font-size': 40, fill: '#e6e9ff' }, endG);
+txt('47 komponenter  ·  15 med AI  ·  Tramsdetektor med cringe-mätare', { x: 960, y: 730, 'text-anchor': 'middle', 'font-size': 30, fill: '#dfe3ff' }, endG);
+var endBtn = el('g', {}, endG);
+el('rect', { x: 560, y: 800, width: 800, height: 110, rx: 30, fill: '#fff' }, endBtn);
+txt('INSTALLERA FÖR BRA ELEVER', { x: 960, y: 872, 'text-anchor': 'middle', 'font-size': 42, 'font-weight': 800, fill: C.brand }, endBtn);
+txt('Android 8.0+  ·  fungerar offline', { x: 960, y: 960, 'text-anchor': 'middle', 'font-size': 26, fill: '#e6e9ff' }, endG);
+
+/* ===================================================================
+   Tidslinjen
+   =================================================================== */
+var DUR = 39000;
+function fmtTime(sec) {
+  sec = Math.max(0, Math.ceil(sec));
+  return Math.floor(sec / 60) + ':' + (sec % 60 < 10 ? '0' : '') + (sec % 60);
+}
+
+function render(t) {
+  /* ---- kameraskak vid skriket ---- */
+  var shake = 0;
+  if (t > 4300 && t < 5400) shake = (1 - (t - 4300) / 1100) * 16;
+  var stage = document.getElementById('stage');
+  stage.style.setProperty('--shake', shake);
+  scene.setAttribute('transform', shake > 0
+    ? 'translate(' + (Math.sin(t / 26) * shake) + ',' + (Math.cos(t / 19) * shake * 0.6) + ')' : '');
+
+  /* ---- cringe-mätaren ---- */
+  var cringe = 12;
+  if (t < 4200) cringe = 12 + Math.sin(t / 400) * 4;
+  else if (t < 6300) cringe = lerp(14, 46, p(t, 4200, 6300, 'out'));
+  else if (t < 7900) cringe = lerp(46, 98, p(t, 6300, 7900, 'out'));
+  else if (t < 17000) cringe = 98;
+  else if (t < 27000) cringe = 30 + Math.sin(t / 500) * 10;
+  else cringe = 18;
+  cringe = Math.round(cringe);
+  cringeNum.textContent = cringe;
+  var ccol = cringe >= 85 ? C.red : cringe >= 70 ? C.orange : cringe >= 45 ? C.amber : C.green;
+  cringeNum.setAttribute('fill', ccol);
+  cringeBar.setAttribute('width', Math.max(6, cringe * 2.9));
+  cringeBar.setAttribute('fill', ccol);
+  cringeLbl.textContent = cringe >= 85 ? 'SUPER CRINGE' : cringe >= 70 ? 'Rejält trams' : cringe >= 45 ? 'Stimmigt' : 'Lugnt';
+  cringeLbl.setAttribute('fill', ccol);
+  spark.setAttribute('stroke', ccol);
+  var pts = [];
+  for (var si = 0; si <= 40; si++) {
+    var tt = t - (40 - si) * 90;
+    var v = tt < 4200 ? 12 + Math.sin(tt / 400) * 4
+      : tt < 6300 ? lerp(14, 46, clamp((tt - 4200) / 2100, 0, 1))
+      : tt < 7900 ? lerp(46, 98, clamp((tt - 6300) / 1600, 0, 1))
+      : tt < 17000 ? 98 : tt < 27000 ? 30 + Math.sin(tt / 500) * 10 : 18;
+    pts.push((620 + si * 7.2).toFixed(1) + ',' + (455 - v * 0.66).toFixed(1));
+  }
+  spark.setAttribute('d', 'M' + pts.join(' L'));
+  boardMsg.textContent = t < 6300 ? 'Lyssnar tyst · lokalt läge'
+    : t < 8200 ? 'Hörde: skrik i klassrummet'
+    : t < 28400 ? 'Utvisning pågår' : 'Lyssnar tyst · lokalt läge';
+  sideTime.textContent = fmtTime(1334 - t / 1000);
+
+  /* trafikljuset följer cringe */
+  lampRed.setAttribute('fill', cringe >= 85 ? '#ef4444' : '#3a4256');
+  lampYel.setAttribute('fill', cringe >= 45 && cringe < 85 ? '#facc15' : '#3a4256');
+  lampGrn.setAttribute('fill', cringe < 45 ? C.green : '#3a4256');
+
+  /* ---- larmoverlay ---- */
+  var alarmOn = fade(t, 8200, 17400, 260);
+  show(alarmG, alarmOn);
+  alarmTime.textContent = fmtTime(300 - (t - 8200) / 1000);
+  alarmSub.setAttribute('opacity', 0.6 + 0.4 * Math.abs(Math.sin(t / 300)));
+
+  /* ---- lekläget på tavlan ---- */
+  var funOn = fade(t, 17600, 31500, 400);
+  show(funG, funOn);
+  show(wTrams, 1 - Math.max(alarmOn, funOn));
+  show(wSide, 1 - Math.max(alarmOn, funOn));
+  wheelSpin.setAttribute('transform', 'rotate(' + (t / 3) % 360 + ')');
+  diceFace.textContent = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][Math.floor(t / 420) % 6];
+  scoreA.textContent = 3 + Math.floor(clamp((t - 18000) / 2200, 0, 5));
+  scoreB.textContent = 2 + Math.floor(clamp((t - 19000) / 2600, 0, 4));
+
+  /* ---- Milo ---- */
+  var miloX = 790, miloY = 880, miloS = 1.15, miloVis = 1;
+  milo.setMood(t > 4150 && t < 6600 ? 'skrik' : t > 6600 && t < 13000 ? 'ledsen' : t > 30000 ? 'glad' : 'neutral');
+  if (t > 4150 && t < 6600) {
+    miloY = 880 - 46 - Math.abs(Math.sin(t / 90)) * 10;                    /* reser sig och skriker */
+    milo.armL.setAttribute('transform', 'rotate(-40,-40,26)');
+    milo.armR.setAttribute('transform', 'rotate(40,40,26)');
+  } else {
+    milo.armL.setAttribute('transform', '');
+    milo.armR.setAttribute('transform', '');
+  }
+  if (t >= 6600 && t < 10400) { miloY = 834; }
+  if (t >= 10400 && t < 13000) {                                            /* går ut, framför bänkarna */
+    if (t < 11500) {
+      var wa = p(t, 10400, 11500, 'linear');
+      miloX = lerp(790, 1640, wa);
+      miloY = 940 + Math.abs(Math.sin(t / 110)) * 10;
+      miloS = 1.15;
+    } else {
+      var wb = p(t, 11500, 12700, 'linear');
+      miloX = lerp(1640, 1430, wb);
+      miloY = lerp(940, 706, wb) + Math.abs(Math.sin(t / 110)) * 8;
+      miloS = lerp(1.15, 0.8, wb);
+    }
+    miloVis = 1 - p(t, 12350, 12900);
+  }
+  if (t >= 13000 && t < 28700) { miloVis = 0; }
+  if (t >= 28700) {                                                         /* kommer in igen och sätter sig */
+    if (t < 30000) {
+      var wc = p(t, 28800, 30000, 'linear');
+      miloX = lerp(1430, 1640, wc);
+      miloY = lerp(706, 940, wc) + Math.abs(Math.sin(t / 120)) * 8;
+      miloS = lerp(0.8, 1.15, wc);
+    } else {
+      var wd = p(t, 30000, 31600, 'linear');
+      miloX = lerp(1640, 790, wd);
+      miloY = 940 - wd * 60 + (wd < 1 ? Math.abs(Math.sin(t / 120)) * 8 : 0);
+      miloS = 1.15;
+    }
+    miloVis = p(t, 28700, 29100);
+  }
+  show(miloG, miloVis);
+  move(miloG, miloX, miloY, miloS);
+
+  /* ---- dörren ---- */
+  var doorOpen = Math.max(fade(t, 12100, 13400, 250), fade(t, 28300, 29400, 250));
+  doorPanel.setAttribute('transform', 'translate(' + (1430 * doorOpen * 0) + ',0) scale(' + (1 - doorOpen * 0.86) + ',1)');
+  doorPanel.setAttribute('transform-origin', '1336px 480px');
+  doorDark.setAttribute('opacity', doorOpen);
+
+  /* ---- läraren ---- */
+  var tTalk = t > 30600 && t < 33400;
+  tMouth.setAttribute('d', tTalk && Math.floor(t / 150) % 2 ? 'M-13,-14 q13,16 26,0' : 'M-13,-16 q13,9 26,0');
+  tArm.setAttribute('transform', tTalk ? 'rotate(' + (-30 + Math.sin(t / 200) * 12) + ',45,30)' :
+    (t > 6800 && t < 10200 ? 'rotate(-52,45,30)' : ''));
+  teacher.setAttribute('transform', 'translate(0,' + (Math.sin(t / 900) * 3) + ')');
+
+  /* övriga elever tittar och lever lite */
+  backKids.concat(frontKids).forEach(function (k, i) {
+    var bob = Math.sin(t / 700 + i) * 3;
+    k.head.setAttribute('transform', 'translate(' + (t > 4200 && t < 7000 ? 6 : 0) + ',' + bob + ')');
+    k.setMood(t > 17600 && t < 31500 ? 'glad' : t > 4200 && t < 7000 ? 'ledsen' : 'neutral');
+  });
+
+  /* ---- pratbubblor ---- */
+  var mb = fade(t, 4250, 6800, 260);
+  show(miloBubble, mb);
+  move(miloBubble, 1480, 300 - (1 - p(t, 4250, 4600, 'out')) * 40, 0.9 + 0.1 * p(t, 4250, 4600, 'out'));
+  var tb = fade(t, 30700, 33300, 300);
+  show(teacherBubble, tb);
+  move(teacherBubble, 700, 250 - (1 - p(t, 30700, 31000, 'out')) * 30);
+
+  /* ---- installationskortet ---- */
+  var inst = fade(t, 13600, 17500, 350);
+  show(installG, inst);
+  var pop = p(t, 13600, 14100, 'out');
+  move(instCard, 960 * (1 - (0.9 + 0.1 * pop)), 540 * (1 - (0.9 + 0.1 * pop)), 0.9 + 0.1 * pop);
+  var pulse = 1 + Math.sin(t / 180) * 0.02 * (t < 14700 ? 1 : 0);
+  instBtn.setAttribute('transform', 'translate(' + (960 * (1 - pulse)) + ',' + (668 * (1 - pulse)) + ') scale(' + pulse + ')');
+  var fingerIn = fade(t, 14000, 16000, 250);
+  show(fingerG, fingerIn);
+  var press = t < 14700 ? p(t, 14200, 14700, 'out') : 1 - p(t, 14700, 15100, 'out');
+  move(fingerG, 1180, 700 + 90 - press * 60);
+  var rip = p(t, 14680, 15200, 'out');
+  ripple.setAttribute('opacity', t > 14680 && t < 15250 ? (1 - rip) : 0);
+  ripple.setAttribute('r', 10 + rip * 130);
+  ripple.setAttribute('cx', 1180); ripple.setAttribute('cy', 668);
+  var prog = p(t, 14800, 16300, 'linear');
+  instProg.setAttribute('opacity', t > 14800 && t < 16500 ? 1 : (t >= 16500 ? 1 : 0));
+  instProg.setAttribute('width', 800 * (t >= 16400 ? 1 : prog));
+  show(instDone, p(t, 16400, 16700));
+
+  /* ---- hallen och delad bild ---- */
+  var hall = fade(t, 17800, 28600, 400);
+  show(hallG, hall);
+  move(hallG, -660 * (1 - p(t, 17800, 18400, 'out')) + (t > 28100 ? -660 * p(t, 28100, 28600, 'in') : 0), 0);
+  hallSplitLine.setAttribute('opacity', hall);
+  hallTime.textContent = fmtTime(300 - (t - 8200) / 1000);
+  hallKidG.setAttribute('transform', 'translate(330,' + (756 + Math.sin(t / 800) * 4) + ') scale(1.2)');
+
+  /* ---- bildtexter ---- */
+  var capOn = 0;
+  if (t > 18600 && t < 23000) { capOn = fade(t, 18600, 23000, 350); capTitle.textContent = 'Inne: 47 komponenter och full fart.'; capSub.textContent = 'Lyckohjul, tärning, bingo, poängtavla, rörelsepauser.'; }
+  else if (t > 23200 && t < 27600) { capOn = fade(t, 23200, 27600, 350); capTitle.textContent = 'Ute: fem minuters eftertanke.'; capSub.textContent = 'Tramsdetektorn håller koll — läraren slipper höja rösten.'; }
+  else if (t > 8600 && t < 12000) { capOn = fade(t, 8600, 12000, 350); capTitle.textContent = 'Tramsdetektorn hörde det.'; capSub.textContent = 'Cringe-nivå 98 av 100. Utvisad i fem minuter.'; }
+  show(capG, capOn);
+
+  /* ---- konfetti ---- */
+  var confOn = fade(t, 19000, 27000, 600);
+  show(confG, confOn);
+  conf.forEach(function (c) {
+    var y = ((c.y + (t - 19000) * c.sp / 1000) % 1500) - 200;
+    c.el.setAttribute('transform', 'translate(' + c.x + ',' + y + ') rotate(' + (c.rot + t * c.sw / 12) + ')');
+  });
+
+  /* ---- slutkort ---- */
+  var end = fade(t, 33600, DUR, 500);
+  show(endG, end);
+  var epop = p(t, 33600, 34400, 'out');
+  endLogo.setAttribute('transform', 'translate(' + (960 * (1 - (0.85 + 0.15 * epop))) + ',' + (340 * (1 - (0.85 + 0.15 * epop))) + ') scale(' + (0.85 + 0.15 * epop) + ')');
+  var ep = 1 + Math.sin(t / 260) * 0.015;
+  endBtn.setAttribute('transform', 'translate(' + (960 * (1 - ep)) + ',' + (855 * (1 - ep)) + ') scale(' + ep + ')');
+}
+
+/* ---------- skalning och uppspelning ---------- */
+function fit() {
+  var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+  document.getElementById('stage').style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+}
+window.addEventListener('resize', fit);
+fit();
+
+var t0 = null, paused = false;
+function loop(now) {
+  if (!paused) {
+    if (t0 === null) t0 = now;
+    render((now - t0) % DUR);
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* Används av renderaren för att plocka ut exakta rutor */
+window.__seek = function (ms) { paused = true; render(ms); };
+window.__duration = DUR;
+render(0);
+</script>
+</body>
+</html>
