@@ -160,11 +160,44 @@
         });
       }));
       micRow.appendChild(App.button('🩺 Mikrofondiagnos', 'sm ghost', function () { App.micDiagnosis(); }));
+      if (window.AndroidBridge) {
+        micRow.appendChild(App.button('🔓 Be om mikrofonbehörighet', 'sm ghost', function () {
+          if (AndroidBridge.requestMicPermission) AndroidBridge.requestMicPermission();
+          micStatus.textContent = 'Svara ja i rutan som kommer upp, testa sedan mikrofonen igen.';
+        }));
+        micRow.appendChild(App.button('🔊 Slå av systemets mikrofonmute', 'sm ghost', function () {
+          if (AndroidBridge.unmuteMic) AndroidBridge.unmuteMic();
+          micStatus.textContent = 'Mikrofonmute avslagen. Testa mikrofonen igen.';
+        }));
+      }
       micRow.appendChild(App.button('⏹️ Släpp mikrofonen', 'sm ghost', function () {
         App.Mic.hardRelease();
         micStatus.textContent = 'Mikrofonen släppt. Alla detektorer är avstängda.';
       }));
       micCard.appendChild(micRow);
+
+      if (window.AndroidBridge && AndroidBridge.startNativeMic) {
+        var natRow = App.el('div', 'list-item');
+        natRow.style.marginTop = '12px';
+        natRow.appendChild(App.el('span', 'grow', 'Tvinga Androids egen mikrofon (AudioRecord)'));
+        var natOn = App.Store.get('mic.forceNative', false);
+        var natBtn = App.button(natOn ? 'PÅ' : 'AV', natOn ? 'sm' : 'sm ghost', function () {
+          natOn = !natOn;
+          App.Store.set('mic.forceNative', natOn);
+          natBtn.textContent = natOn ? 'PÅ' : 'AV';
+          natBtn.className = 'btn ' + (natOn ? 'sm' : 'sm ghost');
+          App.Mic.hardRelease();
+          App.toast(natOn ? 'Använder Androids mikrofon direkt' : 'Använder webbmikrofonen först');
+        });
+        natRow.appendChild(natBtn);
+        micCard.appendChild(natRow);
+        var natInfo = App.el('div', 'muted');
+        natInfo.style.cssText = 'font-size:13.5px;line-height:1.5;margin-top:8px';
+        natInfo.textContent = 'Appen provar alltid webbmikrofonen först och byter automatiskt till ' +
+          'Androids egen mikrofon om WebView svarar "Could not start audio source". Slå på det här ' +
+          'om du vill hoppa över webbförsöket direkt.';
+        micCard.appendChild(natInfo);
+      }
 
       /* ----- Tramsdetektorn och Gemini ----- */
       var aiCard = App.el('div', 'card');

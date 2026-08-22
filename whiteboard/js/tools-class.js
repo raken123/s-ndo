@@ -2,28 +2,21 @@
 (function (App) {
   'use strict';
 
-  /* ============ Ljudvakt: kör vidare även när verktyget stängs ============ */
+  /* ============ Ljudvakt: kör vidare även när verktyget stängs ============
+     Lyssnar på den delade mikrofonen i stället för att öppna en egen. */
   var Noise = {
     on: false, level: 0, peak: 0, threshold: 55, alerts: 0, alerting: false,
-    lastAlert: 0, holdMs: 800, overSince: 0, src: null, analyser: null, data: null, raf: 0,
+    lastAlert: 0, holdMs: 800, overSince: 0, listener: null,
+
     start: function (cb) {
       var self = this;
       if (this.on) { if (cb) cb(null); return; }
-      App.Mic.acquire(function (err, stream) {
+      App.Mic.start(function (err) {
         if (err) { if (cb) cb(err); return; }
-        var ac = App.audioCtx();
-        if (!ac) { App.Mic.release(); if (cb) cb('Ljudmotorn kunde inte startas'); return; }
-        var src = ac.createMediaStreamSource(stream);
-        var an = ac.createAnalyser();
-        an.fftSize = 1024;
-        an.smoothingTimeConstant = 0.6;
-        src.connect(an);
-        self.src = src;
-        self.analyser = an;
-        self.data = new Uint8Array(an.fftSize);
         self.on = true;
         App.dock.noiseOn = true;
-        self.loop();
+        self.listener = function (level) { self.onLevel(level); };
+        App.Mic.subscribe(self.listener);
         if (cb) cb(null);
       });
     },
@@ -32,29 +25,16 @@
       this.on = false;
       App.dock.noiseOn = false;
       App.dock.noiseAlert = false;
-      if (this.raf) cancelAnimationFrame(this.raf);
-      if (this.src) { try { this.src.disconnect(); } catch (e) { /* noop */ } this.src = null; }
-      this.analyser = null;
       this.level = 0;
+      if (this.listener) { App.Mic.unsubscribe(this.listener); this.listener = null; }
       App.Mic.release();
     },
-    loop: function () {
+    onLevel: function (level) {
       var self = this;
-      if (!this.on || !this.analyser) return;
-      this.analyser.getByteTimeDomainData(this.data);
-      var sum = 0, i;
-      for (i = 0; i < this.data.length; i++) {
-        var v = (this.data[i] - 128) / 128;
-        sum += v * v;
-      }
-      var rms = Math.sqrt(sum / this.data.length);
-      /* Skala om till 0–100 där normalt klassrumssorl hamnar mitt i skalan */
-      var lvl = Math.min(100, Math.max(0, Math.round((20 * Math.log10(rms + 1e-8) + 70) * 1.6)));
-      this.level = Math.round(this.level * 0.6 + lvl * 0.4);
-      if (this.level > this.peak) this.peak = this.level;
-
+      this.level = level;
+      if (level > this.peak) this.peak = level;
       var now = Date.now();
-      if (this.level >= this.threshold) {
+      if (level >= this.threshold) {
         if (!this.overSince) this.overSince = now;
         if (now - this.overSince > this.holdMs && now - this.lastAlert > 3000) {
           this.lastAlert = now;
@@ -67,7 +47,6 @@
       } else {
         this.overSince = 0;
       }
-      this.raf = requestAnimationFrame(function () { self.loop(); });
     }
   };
   App.Noise = Noise;

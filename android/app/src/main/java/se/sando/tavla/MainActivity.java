@@ -38,6 +38,7 @@ public class MainActivity extends android.app.Activity {
        så att ingen av dem tappas bort och lämnar getUserMedia hängande. */
     private final List<PermissionRequest> pendingMedia = new ArrayList<>();
     private boolean askingPermissions;
+    private NativeMic nativeMic;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,6 +77,7 @@ public class MainActivity extends android.app.Activity {
                 });
             }
         });
+        nativeMic = new NativeMic(this, web);
         web.addJavascriptInterface(new Bridge(), "AndroidBridge");
         web.setBackgroundColor(0xFFF4F6FB);
 
@@ -181,6 +183,14 @@ public class MainActivity extends android.app.Activity {
     }
 
     @Override
+    protected void onDestroy() {
+        if (nativeMic != null) {
+            nativeMic.stop();
+        }
+        super.onDestroy();
+    }
+
+    @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) {
@@ -245,6 +255,43 @@ public class MainActivity extends android.app.Activity {
         @JavascriptInterface
         public String platform() {
             return "android";
+        }
+
+        /** Vad enheten säger om mikrofonen — behörighet, ingångar och ett riktigt öppningstest. */
+        @JavascriptInterface
+        public String micStatus() {
+            return nativeMic.status();
+        }
+
+        /** Startar mikrofonen via AudioRecord när WebView vägrar. */
+        @JavascriptInterface
+        public String startNativeMic() {
+            return nativeMic.start();
+        }
+
+        @JavascriptInterface
+        public void stopNativeMic() {
+            nativeMic.stop();
+        }
+
+        @JavascriptInterface
+        public boolean nativeMicRunning() {
+            return nativeMic.isRunning();
+        }
+
+        /** Slår av systemets mikrofonmute, som annars ger tyst eller nekad inspelning. */
+        @JavascriptInterface
+        public void unmuteMic() {
+            nativeMic.unmute();
+        }
+
+        /** Ber om mikrofonbehörigheten på nytt från appens inställningar. */
+        @JavascriptInterface
+        public void requestMicPermission() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() { askUpfront(); }
+            });
         }
     }
 }

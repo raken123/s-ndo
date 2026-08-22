@@ -56,7 +56,9 @@
     motion: 0,
     ws: null,
     wsState: '',
-    micStream: null,
+    buffer: [],
+    segStart: 0,
+    listener: null,
     camStream: null,
     listeners: [],
 
@@ -88,88 +90,52 @@
         return;
       }
       this.say('Startar mikrofonen…');
-      /* Delad ström: krockar inte med ljuddetektorn om båda är igång */
-      App.Mic.acquire(function (err, stream) {
+      /* Delad ljudkälla: krockar inte med ljuddetektorn, och faller tillbaka
+         på Androids egen mikrofon om WebView vägrar. */
+      App.Mic.start(function (err) {
         if (err) { self.say(err); return; }
-        self.micStream = stream;
         self.armed = true;
-        self.startAudio(stream);
-        self.say(self.mode === 'ai' ? 'Lyssnar tyst (AI)' : 'Lyssnar tyst (lokalt läge)');
+        self.buffer = [];
+        self.segStart = Date.now();
+        self.loudMs = 0;
+        self.listener = function (level, pcm) { self.onAudio(level, pcm); };
+        App.Mic.subscribe(self.listener);
+        if (self.mode === 'ai') self.connect();
+        self.say(self.mode === 'ai' ? 'Ansluter till Gemini…' : 'Lyssnar tyst (lokalt läge · ' +
+          (App.Mic.backend === 'native' ? 'Androids mikrofon' : 'webbmikrofon') + ')');
       });
     },
     stop: function () {
       var wasArmed = this.armed;
       this.armed = false;
       this.stopAlarm();
-      if (this.src) { try { this.src.disconnect(); } catch (e) { /* noop */ } this.src = null; }
-      if (this.proc) { try { this.proc.disconnect(); } catch (e) { /* noop */ } this.proc = null; }
-      if (wasArmed && this.micStream) App.Mic.release();
-      this.micStream = null;
+      if (this.listener) { App.Mic.unsubscribe(this.listener); this.listener = null; }
+      if (wasArmed) App.Mic.release();
       if (this.ws) { try { this.ws.close(); } catch (e) { /* noop */ } this.ws = null; }
       this.stopCamera();
       this.say('Avstängd');
     },
 
-    /* ---------------- Ljudanalys ---------------- */
-    startAudio: function (stream) {
-      var self = this;
-      var ac = App.audioCtx();
-      if (!ac) { this.say('Ljudmotorn kunde inte startas'); return; }
-      var src = ac.createMediaStreamSource(stream);
-      var proc = ac.createScriptProcessor(4096, 1, 1);
-      this.src = src;
-      this.proc = proc;
-      this.buffer = [];
-      this.segStart = Date.now();
-      this.loudMs = 0;
-
-      if (this.mode === 'ai') this.connect();
-
-      proc.onaudioprocess = function (e) {
-        if (!self.armed) return;
-        var input = e.inputBuffer.getChannelData(0);
-        var sum = 0, i;
-        for (i = 0; i < input.length; i++) { sum += input[i] * input[i]; }
-        var rms = Math.sqrt(sum / input.length);
-        var lvl = Math.min(100, Math.max(0, Math.round((20 * Math.log10(rms + 1e-8) + 70) * 1.6)));
-        self.level = Math.round(self.level * 0.7 + lvl * 0.3);
-
-        if (self.mode === 'ai') {
-          self.buffer.push(self.toPcm16(input, ac.sampleRate));
-          if (Date.now() - self.segStart > self.cfg().segment * 1000) {
-            self.sendSegment();
-            self.segStart = Date.now();
-          }
-        } else {
-          self.localCheck();
+    /* ---------------- Ljudet från den delade mikrofonen ---------------- */
+    onAudio: function (level, pcm) {
+      if (!this.armed) return;
+      this.level = level;
+      if (this.mode === 'ai') {
+        this.buffer.push(pcm);
+        if (Date.now() - this.segStart > this.cfg().segment * 1000) {
+          this.sendSegment();
+          this.segStart = Date.now();
         }
-      };
-      src.connect(proc);
-      /* Nolladd utgång så att processorn körs utan att ljudet hörs igen */
-      var mute = ac.createGain();
-      mute.gain.value = 0;
-      proc.connect(mute);
-      mute.connect(ac.destination);
-      this.emit();
-    },
-    toPcm16: function (float32, sampleRate) {
-      /* Nedsamplar till 16 kHz PCM16 som Live-API:t vill ha det */
-      var ratio = sampleRate / 16000;
-      var len = Math.floor(float32.length / ratio);
-      var out = new Int16Array(len);
-      for (var i = 0; i < len; i++) {
-        var s = float32[Math.floor(i * ratio)];
-        s = Math.max(-1, Math.min(1, s));
-        out[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+      } else {
+        this.localCheck();
       }
-      return out;
     },
 
     /* ---------------- Lokalt läge: skrik och manuell rapport ---------------- */
     localCheck: function () {
       var c = this.cfg();
       if (this.level >= c.sensitivity) {
-        this.loudMs += 90;
+        this.loudMs += 200;
         if (this.loudMs > 1400 && Date.now() - (this.lastLocal || 0) > 12000) {
           this.lastLocal = Date.now();
           this.loudMs = 0;
@@ -184,7 +150,7 @@
           }, false);
         }
       } else {
-        this.loudMs = Math.max(0, this.loudMs - 60);
+        this.loudMs = Math.max(0, this.loudMs - 120);
       }
     },
 
@@ -560,7 +526,9 @@
           '<div><div class="ts-main">' + App.esc(t.status) + '</div>' +
           '<div class="muted ts-sub">' +
           (t.mode === 'ai' ? 'Gemini ' + App.esc(c.model) + ' · ' + c.segment + ' s per input' : 'Lokalt läge — ingen kostnad') +
-          ' · Saldo ' + App.Credits.fmt(App.Credits.balance()) + '</div></div>';
+          ' · Saldo ' + App.Credits.fmt(App.Credits.balance()) +
+          (App.Mic.backend ? ' · ' + (App.Mic.backend === 'native' ? 'Androids mikrofon' : 'webbmikrofon') : '') +
+          '</div></div>';
         fill.style.width = (t.armed ? t.level : 0) + '%';
 
         var v = t.lastVerdict;

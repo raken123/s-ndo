@@ -27,7 +27,7 @@
     tools: [],
     timers: [],
     Store: Store,
-    version: '1.2.0',
+    version: '1.3.0',
 
     /* ---------- Komponentregister ---------- */
     register: function (tool) {
@@ -234,34 +234,34 @@
     setActiveClass: function (i) { Store.set('activeClass', i); },
     students: function () { return (this.activeClass().students || []).slice(); },
 
-    /* ---------- Mikrofon: en enda delad ström för hela appen ----------
-       Ljuddetektorn och tramsdetektorn kan vara igång samtidigt. Öppnar de var
-       sin ström nekar enheten den andra med NotReadableError, så alla går via
-       den här hanteraren som räknar användare och delar på samma ström.
-       Nekas mikrofonen provas varje inspelningsenhet i tur och ordning — på
-       smartboards är standardenheten ofta en ingång som inte går att öppna. */
+    /* ---------- Mikrofon: en ljudkälla för hela appen ----------
+       Alla komponenter prenumererar på samma ström i stället för att öppna
+       var sin — annars nekar enheten den andra. Två motorer finns: webbens
+       getUserMedia, och Android-appens AudioRecord som reserv när WebView
+       svarar NotReadableError ("Could not start audio source"). Båda levererar
+       16 kHz PCM16, så resten av appen märker ingen skillnad. */
     Mic: {
-      stream: null,
+      backend: '',            /* '' | 'web' | 'native' */
       users: 0,
+      level: 0,
       error: '',
-      pending: null,
-      lastTried: [],          /* diagnostik: vad som provades och vad som hände */
       usingLabel: '',
+      lastTried: [],
+      subs: [],
+      pending: null,
+      stream: null,
 
       deviceId: function () { return Store.get('mic.deviceId', ''); },
       setDeviceId: function (id) { Store.set('mic.deviceId', id || ''); },
+      android: function () { return global.AndroidBridge && AndroidBridge.startNativeMic ? AndroidBridge : null; },
+      fileOrigin: function () { return !global.AndroidBridge && location.protocol === 'file:'; },
+      live: function () { return this.backend === 'native' || (!!this.stream && this.stream.getAudioTracks().some(function (t) { return t.readyState === 'live'; })); },
 
-      /* Öppnas HTML-filen direkt i en vanlig webbläsare (file://) vägrar
-         webbläsaren släppa fram mikrofonen — då hjälper inga omförsök. */
-      fileOrigin: function () {
-        return !global.AndroidBridge && location.protocol === 'file:';
-      },
       message: function (err) {
         var name = err && err.name ? err.name : String(err || 'okänt fel');
         if (this.fileOrigin()) {
           return 'Mikrofonen är blockerad eftersom sidan är öppnad som en fil (file://) i en ' +
-            'webbläsare. Installera APK:n på plattan, eller kör appen via en webbserver med ' +
-            'https eller localhost — då fungerar mikrofonen.';
+            'webbläsare. Installera APK:n på plattan, eller kör appen via https eller localhost.';
         }
         if (name === 'NotAllowedError' || name === 'SecurityError' || name === 'PermissionDeniedError') {
           return 'Mikrofonen är blockerad. Tillåt mikrofon för appen i enhetens inställningar och försök igen.';
@@ -269,169 +269,213 @@
         if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
           return 'Ingen mikrofon hittades på enheten.';
         }
-        if (name === 'NotReadableError' || name === 'TrackStartError' || name === 'AbortError') {
-          return 'Mikrofonen gick inte att öppna — någon annan app håller den, eller så klarar inte ingången det. ' +
-            'Kör Mikrofondiagnos under ⚙️ Inställningar för att se vilken enhet som krånglar.';
-        }
         if (name === 'OverconstrainedError') {
           return 'Den valda mikrofonen finns inte längre — välj en annan under Inställningar.';
         }
-        return 'Mikrofonen kunde inte startas (' + name + ').';
+        return 'Mikrofonen kunde inte startas (' + name + '). Kör 🩺 Mikrofondiagnos för att se varför.';
       },
 
-      /* Alla försök som ska göras, i ordning: vald enhet, mjuka krav, allt,
-         och därefter varje enskild inspelningsenhet som enheten känner till. */
+      /* ---- Prenumeranter: får nivå (0–100) och råljud (Int16Array, 16 kHz) ---- */
+      subscribe: function (fn) { this.subs.push(fn); },
+      unsubscribe: function (fn) { this.subs = this.subs.filter(function (f) { return f !== fn; }); },
+      feed: function (pcm) {
+        var sum = 0, i;
+        for (i = 0; i < pcm.length; i++) {
+          var v = pcm[i] / 32768;
+          sum += v * v;
+        }
+        var rms = Math.sqrt(sum / Math.max(1, pcm.length));
+        var lvl = Math.min(100, Math.max(0, Math.round((20 * Math.log10(rms + 1e-8) + 70) * 1.6)));
+        this.level = Math.round(this.level * 0.6 + lvl * 0.4);
+        var self = this;
+        this.subs.forEach(function (fn) {
+          try { fn(self.level, pcm); } catch (e) { /* en trasig lyssnare får inte stoppa resten */ }
+        });
+      },
+
+      /* ---- Start: webben först, Android-mikrofonen som reserv ---- */
+      start: function (cb) {
+        var self = this;
+        if (this.backend && this.live()) { this.users++; cb(null); return; }
+        if (this.pending) { this.pending.push(cb); return; }
+        this.pending = [cb];
+        this.lastTried = [];
+
+        var done = function (err) {
+          var waiting = self.pending || [];
+          self.pending = null;
+          if (err) {
+            self.error = err;
+            waiting.forEach(function (fn) { fn(err); });
+          } else {
+            self.error = '';
+            self.users += waiting.length;
+            waiting.forEach(function (fn) { fn(null); });
+          }
+        };
+        var goNative = function (webErr) {
+          var bridge = self.android();
+          if (!bridge || Store.get('mic.forceWeb', false)) { done(webErr); return; }
+          var res = bridge.startNativeMic();
+          self.lastTried.push('Android AudioRecord: ' + res);
+          if (res === 'ok') {
+            self.backend = 'native';
+            self.usingLabel = 'Androids mikrofon (AudioRecord)';
+            global.__nativeAudio = function (b64) { self.onNativeChunk(b64); };
+            done(null);
+          } else {
+            done(webErr + ' Androids egen mikrofon svarade: ' + res + '.');
+          }
+        };
+
+        if (Store.get('mic.forceNative', false) && this.android()) { goNative(''); return; }
+        this.webStart(function (err) {
+          if (!err) { done(null); return; }
+          goNative(err);
+        });
+      },
+      onNativeChunk: function (b64) {
+        var bin;
+        try { bin = atob(b64); } catch (e) { return; }
+        var bytes = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) { bytes[i] = bin.charCodeAt(i); }
+        this.feed(new Int16Array(bytes.buffer));
+      },
+
+      /* ---- Webbmotorn ---- */
       plan: function (cb) {
         var saved = this.deviceId();
         var list = [];
-        if (saved) {
-          list.push({ label: 'vald mikrofon', c: { audio: { deviceId: { exact: saved } } } });
-        }
+        if (saved) list.push({ label: 'vald mikrofon', c: { audio: { deviceId: { exact: saved } } } });
         list.push({ label: 'standard utan filter', c: { audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } } });
         list.push({ label: 'standard', c: { audio: true } });
         this.devices(function (devs) {
           devs.forEach(function (d, i) {
             if (!d.deviceId || d.deviceId === saved || d.deviceId === 'default') return;
-            list.push({
-              label: d.label || ('inspelningsenhet ' + (i + 1)),
-              id: d.deviceId,
-              c: { audio: { deviceId: { exact: d.deviceId } } }
-            });
+            list.push({ label: d.label || ('inspelningsenhet ' + (i + 1)), id: d.deviceId, c: { audio: { deviceId: { exact: d.deviceId } } } });
           });
           cb(list);
         });
       },
-
-      /* Ger tillbaka en levande ström till alla som frågar; cb(fel, ström) */
-      acquire: function (cb) {
+      webStart: function (cb) {
         var self = this;
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          this.error = 'Mikrofon stöds inte i den här vyn (' + location.protocol + ').';
-          cb(this.error, null);
+          cb('Mikrofon stöds inte i den här vyn (' + location.protocol + ').');
           return;
         }
-        if (this.stream && this.live()) {
-          this.users++;
-          cb(null, this.stream);
-          return;
-        }
-        this.stream = null;
-        if (this.pending) {                       /* någon annan startar redan */
-          this.pending.push(cb);
-          return;
-        }
-        this.pending = [cb];
-        this.lastTried = [];
-
-        var done = function (err, stream) {
-          var waiting = self.pending || [];
-          self.pending = null;
-          if (stream) {
-            self.stream = stream;
-            self.error = '';
-            self.users += waiting.length;
-            stream.getAudioTracks().forEach(function (t) {
-              self.usingLabel = t.label || 'mikrofon';
-              t.onended = function () { self.lost(); };
-            });
-            waiting.forEach(function (fn) { fn(null, stream); });
-          } else {
-            self.error = self.message(err);
-            waiting.forEach(function (fn) { fn(self.error, null); });
-          }
-        };
-
         this.plan(function (attempts) {
           var run = function (i, lastErr) {
-            if (i >= attempts.length) { done(lastErr, null); return; }
+            if (i >= attempts.length) { cb(self.message(lastErr)); return; }
             var a = attempts[i];
             navigator.mediaDevices.getUserMedia(a.c)
               .then(function (stream) {
                 self.lastTried.push(a.label + ': OK');
                 if (a.id) self.setDeviceId(a.id);
-                done(null, stream);
+                if (!self.attach(stream)) { cb('Ljudmotorn kunde inte startas'); return; }
+                cb(null);
               })
               .catch(function (err) {
                 var name = err && err.name ? err.name : 'fel';
                 self.lastTried.push(a.label + ': ' + name + (err && err.message ? ' (' + err.message + ')' : ''));
-                /* Enheten behöver ofta en stund på sig att släppa mikrofonen */
-                var wait = (name === 'NotReadableError' || name === 'AbortError') ? 600 : 0;
-                setTimeout(function () { run(i + 1, err); }, wait);
+                setTimeout(function () { run(i + 1, err); }, name === 'NotReadableError' || name === 'AbortError' ? 300 : 0);
               });
           };
           run(0, null);
         });
       },
-      live: function () {
-        return !!this.stream && this.stream.getAudioTracks().some(function (t) { return t.readyState === 'live'; });
+      attach: function (stream) {
+        var self = this;
+        var ac = App.audioCtx();
+        if (!ac) { stream.getTracks().forEach(function (t) { t.stop(); }); return false; }
+        var src = ac.createMediaStreamSource(stream);
+        var proc = ac.createScriptProcessor(4096, 1, 1);
+        proc.onaudioprocess = function (e) {
+          if (self.backend !== 'web') return;
+          self.feed(self.toPcm16(e.inputBuffer.getChannelData(0), ac.sampleRate));
+        };
+        src.connect(proc);
+        var mute = ac.createGain();
+        mute.gain.value = 0;
+        proc.connect(mute);
+        mute.connect(ac.destination);
+        this.stream = stream;
+        this.src = src;
+        this.proc = proc;
+        this.backend = 'web';
+        stream.getAudioTracks().forEach(function (t) {
+          self.usingLabel = t.label || 'mikrofon';
+          t.onended = function () { self.lost(); };
+        });
+        return true;
       },
+      /* Nedsamplar till 16 kHz PCM16, formatet Gemini Live vill ha */
+      toPcm16: function (float32, sampleRate) {
+        var ratio = sampleRate / 16000;
+        var len = Math.floor(float32.length / ratio);
+        var out = new Int16Array(len);
+        for (var i = 0; i < len; i++) {
+          var s = Math.max(-1, Math.min(1, float32[Math.floor(i * ratio)]));
+          out[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+        }
+        return out;
+      },
+
+      /* ---- Stopp ---- */
       release: function () {
         this.users = Math.max(0, this.users - 1);
-        if (this.users === 0 && this.stream) {
-          this.stream.getTracks().forEach(function (t) { t.stop(); });
-          this.stream = null;
-        }
+        if (this.users === 0) this.shutdown();
       },
-      /* Stänger allt oavsett räknare — används av "Släpp mikrofonen" */
       hardRelease: function () {
         if (global.Trams && Trams.armed) Trams.stop();
         if (App.Noise && App.Noise.on) App.Noise.stop();
         this.users = 0;
-        if (this.stream) { this.stream.getTracks().forEach(function (t) { t.stop(); }); }
-        this.stream = null;
+        this.shutdown();
+      },
+      shutdown: function () {
+        if (this.backend === 'native' && this.android()) {
+          try { AndroidBridge.stopNativeMic(); } catch (e) { /* noop */ }
+          global.__nativeAudio = null;
+        }
+        if (this.src) { try { this.src.disconnect(); } catch (e) { /* noop */ } this.src = null; }
+        if (this.proc) { try { this.proc.disconnect(); } catch (e) { /* noop */ } this.proc = null; }
+        if (this.stream) { this.stream.getTracks().forEach(function (t) { t.stop(); }); this.stream = null; }
+        this.backend = '';
+        this.level = 0;
+        this.usingLabel = '';
       },
       lost: function () {
         this.users = 0;
-        this.stream = null;
+        this.shutdown();
         this.error = 'Mikrofonen kopplades bort.';
         if (global.Trams && Trams.armed) Trams.stop();
         if (App.Noise && App.Noise.on) App.Noise.stop();
         App.toast('Mikrofonen kopplades bort');
       },
-      /* Listar inspelningsenheter — namn syns först efter att mikrofonen godkänts */
+
       devices: function (cb) {
         if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) { cb([]); return; }
         navigator.mediaDevices.enumerateDevices()
-          .then(function (list) {
-            cb(list.filter(function (d) { return d.kind === 'audioinput'; }));
-          })
+          .then(function (list) { cb(list.filter(function (d) { return d.kind === 'audioinput'; })); })
           .catch(function () { cb([]); });
       },
-      /* Mäter toppnivån i några sekunder så att man kan se att mikrofonen lever */
+
+      /* Mäter toppnivån i några sekunder så att man ser att mikrofonen lever */
       test: function (onLevel, onDone) {
         var self = this;
-        this.acquire(function (err, stream) {
+        this.start(function (err) {
           if (err) { onDone(err, 0); return; }
-          var ac = App.audioCtx();
-          if (!ac) { self.release(); onDone('Ljudmotorn kunde inte startas', 0); return; }
-          var src = ac.createMediaStreamSource(stream);
-          var an = ac.createAnalyser();
-          an.fftSize = 1024;
-          src.connect(an);
-          var data = new Uint8Array(an.fftSize);
           var peak = 0;
-          var iv = setInterval(function () {
-            an.getByteTimeDomainData(data);
-            var sum = 0, i;
-            for (i = 0; i < data.length; i++) {
-              var v = (data[i] - 128) / 128;
-              sum += v * v;
-            }
-            var lvl = Math.min(100, Math.max(0, Math.round((20 * Math.log10(Math.sqrt(sum / data.length) + 1e-8) + 70) * 1.6)));
-            if (lvl > peak) peak = lvl;
-            onLevel(lvl);
-          }, 100);
+          var listener = function (lvl) { if (lvl > peak) peak = lvl; onLevel(lvl); };
+          self.subscribe(listener);
           setTimeout(function () {
-            clearInterval(iv);
-            try { src.disconnect(); } catch (e) { /* noop */ }
+            self.unsubscribe(listener);
             self.release();
             onDone(null, peak);
           }, 3500);
         });
       },
 
-      /* Full diagnos: vad enheten säger, vad som finns och vad som händer när
-         man verkligen försöker öppna varje ingång. cb(rapporttext) */
+      /* Full diagnos: webbläsarens bild och Android-appens egen bild av mikrofonen */
       diagnose: function (cb) {
         var self = this;
         var out = [];
@@ -439,22 +483,42 @@
         out.push(new Date().toLocaleString('sv-SE'));
         out.push('Adress: ' + location.protocol + '//' + (location.host || '(fil)'));
         out.push('Säker kontext: ' + (window.isSecureContext ? 'ja' : 'NEJ — mikrofon kan blockeras'));
+        out.push('I Android-appen: ' + (global.AndroidBridge ? 'ja' : 'nej (webbläsare)'));
         if (self.fileOrigin()) {
           out.push('!! Sidan körs som en fil i en webbläsare. Webbläsare släpper inte fram');
           out.push('!! mikrofonen från file:// — använd APK:n eller kör via https/localhost.');
         }
-        out.push('I Android-appen: ' + (global.AndroidBridge ? 'ja' : 'nej (webbläsare)'));
         out.push('mediaDevices: ' + (navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? 'finns' : 'SAKNAS'));
         out.push('Ljudmotor: ' + (App._ac ? App._ac.state : 'ej startad'));
-        out.push('Delad ström: ' + (self.live() ? 'aktiv (' + self.usingLabel + '), ' + self.users + ' användare' : 'ingen'));
+        out.push('Aktiv motor: ' + (self.backend || 'ingen') + (self.usingLabel ? ' (' + self.usingLabel + ')' : ''));
+
+        /* Androids egen bild av läget säger mer än webbläsarens felkoder */
+        if (global.AndroidBridge && AndroidBridge.micStatus) {
+          out.push('');
+          out.push('Android:');
+          try {
+            var st = JSON.parse(AndroidBridge.micStatus());
+            out.push('  Behörighet RECORD_AUDIO: ' + st.permission);
+            out.push('  Enheten har mikrofon: ' + (st.hasMicFeature ? 'ja' : 'NEJ'));
+            out.push('  Mikrofonen mutad i systemet: ' + (st.micMuted ? 'JA — det blockerar inspelning' : 'nej'));
+            out.push('  Andra appar som spelar in: ' + (st.otherAppsRecording === undefined ? 'okänt' : st.otherAppsRecording));
+            out.push('  Ljudläge: ' + st.audioMode);
+            (st.inputs || []).forEach(function (d, i) {
+              out.push('  Ingång ' + (i + 1) + ': ' + d.type + ' — ' + d.name);
+            });
+            (st.probe || []).forEach(function (line) { out.push('  AudioRecord ' + line); });
+          } catch (e) {
+            out.push('  kunde inte läsas: ' + e.message);
+          }
+        }
 
         var afterPerm = function () {
           self.devices(function (devs) {
             out.push('');
-            out.push('Inspelningsenheter: ' + devs.length);
+            out.push('Webbläsarens inspelningsenheter: ' + devs.length);
             devs.forEach(function (d, i) {
               out.push('  ' + (i + 1) + '. ' + (d.label || '(namn dolt tills mikrofonen godkänts)') +
-                ' [' + String(d.deviceId).slice(0, 12) + '…]');
+                ' [' + (String(d.deviceId).slice(0, 12) || 'inget id') + ']');
             });
             out.push('');
             out.push('Öppningsförsök (detektorerna stängs av under testet):');
@@ -465,17 +529,23 @@
               var next = function () {
                 if (i >= attempts.length) {
                   out.push('');
-                  out.push(anyOk ? 'Resultat: mikrofonen fungerar. Starta detektorn igen.' :
-                    'Resultat: ingen ingång gick att öppna. Stäng andra appar som spelar in ' +
-                    '(samtal, röstinspelare, Teams/Meet, en annan flik med appen) och kör diagnosen igen.');
+                  if (anyOk) {
+                    out.push('Resultat: mikrofonen fungerar. Starta detektorn igen.');
+                  } else if (global.AndroidBridge && AndroidBridge.startNativeMic) {
+                    out.push('Resultat: WebView vägrar. Appen använder då Androids egen mikrofon');
+                    out.push('(AudioRecord) automatiskt — se raderna under "Android" ovan för om');
+                    out.push('någon ljudkälla svarade OK.');
+                  } else {
+                    out.push('Resultat: ingen ingång gick att öppna.');
+                  }
                   cb(out.join('\n'));
                   return;
                 }
                 var a = attempts[i++];
                 navigator.mediaDevices.getUserMedia(a.c)
                   .then(function (stream) {
-                    var label = (stream.getAudioTracks()[0] || {}).label || '';
                     anyOk = true;
+                    var label = (stream.getAudioTracks()[0] || {}).label || '';
                     out.push('  ' + a.label + ': OK' + (label ? ' → ' + label : ''));
                     stream.getTracks().forEach(function (t) { t.stop(); });
                     setTimeout(next, 250);
@@ -493,10 +563,10 @@
 
         if (navigator.permissions && navigator.permissions.query) {
           navigator.permissions.query({ name: 'microphone' })
-            .then(function (p) { out.push('Behörighet: ' + p.state); afterPerm(); })
-            .catch(function () { out.push('Behörighet: kan inte läsas'); afterPerm(); });
+            .then(function (p) { out.push('Behörighet enligt webbläsaren: ' + p.state); afterPerm(); })
+            .catch(function () { out.push('Behörighet enligt webbläsaren: kan inte läsas'); afterPerm(); });
         } else {
-          out.push('Behörighet: kan inte läsas');
+          out.push('Behörighet enligt webbläsaren: kan inte läsas');
           afterPerm();
         }
       }

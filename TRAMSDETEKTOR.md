@@ -34,6 +34,14 @@ Ljuddetektorn och tramsdetektorn delar på **en enda mikrofonström** (`App.Mic`
 med räknare på hur många som använder den. Öppnar två komponenter var sin ström
 svarar Android med `NotReadableError` och den andra får ingen mikrofon alls.
 
+Vägrar WebView helt — felet `NotReadableError`, "Could not start audio source",
+som betyder att Androids WebView inte fick igång ljudkällan — byter appen
+automatiskt till **Androids egen mikrofon** via `AudioRecord` i Java-skalet.
+Den provar fem ljudkällor i tur och ordning (MIC, VOICE_RECOGNITION, DEFAULT,
+CAMCORDER, VOICE_COMMUNICATION) och skickar 16 kHz PCM till webbappen, som
+använder det precis som vanligt ljud — både till nivåmätaren och till Gemini.
+Statusraden visar vilken mikrofon som är i bruk.
+
 Går det ändå fel visar detektorn vad som är fel och vad man gör åt det:
 
 | Fel | Vad appen säger |
@@ -44,8 +52,15 @@ Går det ändå fel visar detektorn vad som är fel och vad man gör åt det:
 | `OverconstrainedError` | Den valda mikrofonen finns inte längre |
 
 Under ⚙️ **Inställningar → Mikrofon** väljer man inspelningsenhet, testar
-mikrofonen med en nivåmätare i tre sekunder och kan tvinga fram ett släpp av
-mikrofonen om något hängt sig. Appen provar dessutom flera uppsättningar krav
+mikrofonen med en nivåmätare i tre sekunder, kan tvinga fram ett släpp av
+mikrofonen, be om mikrofonbehörigheten på nytt, slå av systemets
+mikrofonmute och tvinga fram Androids egen mikrofon.
+
+**🩺 Mikrofondiagnos** visar allt på en gång: adress och säker kontext,
+behörigheten enligt både Android och webbläsaren, om enheten över huvud taget
+har en mikrofon, om den är mutad i systemet, hur många andra appar som spelar
+in just nu, vilka ingångar Android ser, resultatet av att öppna varje ljudkälla
+med AudioRecord, och resultatet av varje försök via webbläsaren. Appen provar dessutom flera uppsättningar krav
 efter varandra och väntar en halv sekund innan omförsöket när enheten svarar att
 mikrofonen är upptagen — det räcker oftast för att den ska hinna släppas.
 
