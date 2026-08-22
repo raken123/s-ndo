@@ -28,6 +28,30 @@ kom in" och "Avbryt utvisningen" i komponenten, och kameravakten kan stängas av
 helt under ⚙️ Inställningar. Ingen bild lämnar enheten och ingenting spelas in —
 kameran jämför bara två små gråa miniatyrer med varandra.
 
+## Mikrofonen
+
+Ljuddetektorn och tramsdetektorn delar på **en enda mikrofonström** (`App.Mic`),
+med räknare på hur många som använder den. Öppnar två komponenter var sin ström
+svarar Android med `NotReadableError` och den andra får ingen mikrofon alls.
+
+Går det ändå fel visar detektorn vad som är fel och vad man gör åt det:
+
+| Fel | Vad appen säger |
+|---|---|
+| `NotReadableError` | Mikrofonen är upptagen av en annan app eller flik |
+| `NotAllowedError` | Mikrofonen är blockerad — tillåt den i Androids inställningar |
+| `NotFoundError` | Ingen mikrofon hittades på enheten |
+| `OverconstrainedError` | Den valda mikrofonen finns inte längre |
+
+Under ⚙️ **Inställningar → Mikrofon** väljer man inspelningsenhet, testar
+mikrofonen med en nivåmätare i tre sekunder och kan tvinga fram ett släpp av
+mikrofonen om något hängt sig. Appen provar dessutom flera uppsättningar krav
+efter varandra och väntar en halv sekund innan omförsöket när enheten svarar att
+mikrofonen är upptagen — det räcker oftast för att den ska hinna släppas.
+
+Kameran startas först när en utvisning börjar, och stängs när den är över, så
+att den inte krockar med mikrofonen eller drar batteri i onödan.
+
 ## Två lägen
 
 **Lokalt läge (standard)** — ingen nyckel, inget nät, inga krediter. Detektorn

@@ -5,41 +5,38 @@
   /* ============ Ljudvakt: kör vidare även när verktyget stängs ============ */
   var Noise = {
     on: false, level: 0, peak: 0, threshold: 55, alerts: 0, alerting: false,
-    lastAlert: 0, holdMs: 800, overSince: 0, stream: null, analyser: null, data: null, raf: 0,
+    lastAlert: 0, holdMs: 800, overSince: 0, src: null, analyser: null, data: null, raf: 0,
     start: function (cb) {
       var self = this;
       if (this.on) { if (cb) cb(null); return; }
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        if (cb) cb('Mikrofon stöds inte i den här vyn');
-        return;
-      }
-      navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false } })
-        .then(function (stream) {
-          var ac = App.audioCtx();
-          if (!ac) { if (cb) cb('Ljudmotorn kunde inte startas'); return; }
-          var src = ac.createMediaStreamSource(stream);
-          var an = ac.createAnalyser();
-          an.fftSize = 1024;
-          an.smoothingTimeConstant = 0.6;
-          src.connect(an);
-          self.stream = stream; self.analyser = an;
-          self.data = new Uint8Array(an.fftSize);
-          self.on = true;
-          App.dock.noiseOn = true;
-          self.loop();
-          if (cb) cb(null);
-        })
-        .catch(function (err) {
-          if (cb) cb('Mikrofonen nekades: ' + (err && err.name ? err.name : 'okänt fel'));
-        });
+      App.Mic.acquire(function (err, stream) {
+        if (err) { if (cb) cb(err); return; }
+        var ac = App.audioCtx();
+        if (!ac) { App.Mic.release(); if (cb) cb('Ljudmotorn kunde inte startas'); return; }
+        var src = ac.createMediaStreamSource(stream);
+        var an = ac.createAnalyser();
+        an.fftSize = 1024;
+        an.smoothingTimeConstant = 0.6;
+        src.connect(an);
+        self.src = src;
+        self.analyser = an;
+        self.data = new Uint8Array(an.fftSize);
+        self.on = true;
+        App.dock.noiseOn = true;
+        self.loop();
+        if (cb) cb(null);
+      });
     },
     stop: function () {
+      if (!this.on) return;
       this.on = false;
       App.dock.noiseOn = false;
       App.dock.noiseAlert = false;
       if (this.raf) cancelAnimationFrame(this.raf);
-      if (this.stream) { this.stream.getTracks().forEach(function (t) { t.stop(); }); }
-      this.stream = null; this.analyser = null; this.level = 0;
+      if (this.src) { try { this.src.disconnect(); } catch (e) { /* noop */ } this.src = null; }
+      this.analyser = null;
+      this.level = 0;
+      App.Mic.release();
     },
     loop: function () {
       var self = this;

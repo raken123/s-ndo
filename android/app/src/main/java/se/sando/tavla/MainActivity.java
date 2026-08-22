@@ -34,7 +34,10 @@ public class MainActivity extends android.app.Activity {
     private static final int REQ_MEDIA = 4711;
 
     private WebView web;
-    private PermissionRequest pendingMedia;
+    /* Flera förfrågningar kan komma tätt (mikrofon och sedan kamera) — de köas
+       så att ingen av dem tappas bort och lämnar getUserMedia hängande. */
+    private final List<PermissionRequest> pendingMedia = new ArrayList<>();
+    private boolean askingPermissions;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +64,11 @@ public class MainActivity extends android.app.Activity {
         web.setWebViewClient(new WebViewClient());
         web.setWebChromeClient(new WebChromeClient() {
             @Override
+            public void onPermissionRequestCanceled(PermissionRequest request) {
+                pendingMedia.remove(request);
+            }
+
+            @Override
             public void onPermissionRequest(final PermissionRequest request) {
                 runOnUiThread(new Runnable() {
                     @Override
@@ -71,6 +79,7 @@ public class MainActivity extends android.app.Activity {
         web.addJavascriptInterface(new Bridge(), "AndroidBridge");
         web.setBackgroundColor(0xFFF4F6FB);
 
+        askUpfront();
         immersive(true);
         web.loadUrl("file:///android_asset/index.html");
     }
@@ -79,6 +88,22 @@ public class MainActivity extends android.app.Activity {
      * Ljuddetektorn och tramsdetektorn behöver mikrofon, kameravakten behöver kamera.
      * Både Androids runtime-behörighet och WebView-tillståndet måste ges.
      */
+    /** Ber om mikrofon och kamera en gång vid start — då hinner Android bevilja
+        dem innan detektorerna anropar getUserMedia. */
+    private void askUpfront() {
+        List<String> ask = new ArrayList<>();
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ask.add(Manifest.permission.RECORD_AUDIO);
+        }
+        if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ask.add(Manifest.permission.CAMERA);
+        }
+        if (!ask.isEmpty()) {
+            askingPermissions = true;
+            requestPermissions(ask.toArray(new String[0]), REQ_MEDIA);
+        }
+    }
+
     private void grantMedia(PermissionRequest request) {
         List<String> wanted = new ArrayList<>();
         List<String> needed = new ArrayList<>();
@@ -101,34 +126,44 @@ public class MainActivity extends android.app.Activity {
         }
         if (needed.isEmpty()) {
             request.grant(wanted.toArray(new String[0]));
-        } else {
-            pendingMedia = request;
+            return;
+        }
+        pendingMedia.add(request);
+        if (!askingPermissions) {
+            askingPermissions = true;
             requestPermissions(needed.toArray(new String[0]), REQ_MEDIA);
         }
     }
 
     @Override
     public void onRequestPermissionsResult(int code, String[] perms, int[] results) {
-        if (code != REQ_MEDIA || pendingMedia == null) {
+        if (code != REQ_MEDIA) {
             return;
         }
-        List<String> granted = new ArrayList<>();
-        for (String r : pendingMedia.getResources()) {
-            if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(r)
-                    && checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                granted.add(r);
-            } else if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(r)
-                    && checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                granted.add(r);
+        askingPermissions = false;
+        boolean anyDenied = false;
+        for (PermissionRequest request : new ArrayList<>(pendingMedia)) {
+            List<String> granted = new ArrayList<>();
+            for (String r : request.getResources()) {
+                if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(r)
+                        && checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                    granted.add(r);
+                } else if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(r)
+                        && checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                    granted.add(r);
+                }
+            }
+            if (granted.isEmpty()) {
+                request.deny();
+                anyDenied = true;
+            } else {
+                request.grant(granted.toArray(new String[0]));
             }
         }
-        if (granted.isEmpty()) {
-            pendingMedia.deny();
+        pendingMedia.clear();
+        if (anyDenied) {
             Toast.makeText(this, R.string.mic_denied, Toast.LENGTH_LONG).show();
-        } else {
-            pendingMedia.grant(granted.toArray(new String[0]));
         }
-        pendingMedia = null;
     }
 
     private void immersive(boolean on) {

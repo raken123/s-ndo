@@ -27,7 +27,7 @@
     tools: [],
     timers: [],
     Store: Store,
-    version: '1.1.0',
+    version: '1.1.1',
 
     /* ---------- Komponentregister ---------- */
     register: function (tool) {
@@ -233,6 +233,153 @@
     },
     setActiveClass: function (i) { Store.set('activeClass', i); },
     students: function () { return (this.activeClass().students || []).slice(); },
+
+    /* ---------- Mikrofon: en enda delad ström för hela appen ----------
+       Ljuddetektorn och tramsdetektorn kan vara igång samtidigt. Öppnar de var
+       sin ström nekar Android den andra med NotReadableError, så alla går via
+       den här hanteraren som räknar användare och delar på samma ström. */
+    Mic: {
+      stream: null,
+      users: 0,
+      error: '',
+      pending: null,
+
+      deviceId: function () { return Store.get('mic.deviceId', ''); },
+      setDeviceId: function (id) { Store.set('mic.deviceId', id || ''); },
+
+      message: function (err) {
+        var name = err && err.name ? err.name : String(err || 'okänt fel');
+        if (name === 'NotAllowedError' || name === 'SecurityError' || name === 'PermissionDeniedError') {
+          return 'Mikrofonen är blockerad. Tillåt mikrofon för appen i Androids inställningar och försök igen.';
+        }
+        if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+          return 'Ingen mikrofon hittades på enheten.';
+        }
+        if (name === 'NotReadableError' || name === 'TrackStartError' || name === 'AbortError') {
+          return 'Mikrofonen är upptagen av en annan app eller flik. Stäng den och tryck Starta igen.';
+        }
+        if (name === 'OverconstrainedError') {
+          return 'Den valda mikrofonen finns inte längre — välj en annan under Inställningar.';
+        }
+        return 'Mikrofonen kunde inte startas (' + name + ').';
+      },
+
+      /* Ger tillbaka en levande ström till alla som frågar; cb(fel, ström) */
+      acquire: function (cb) {
+        var self = this;
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          this.error = 'Mikrofon stöds inte i den här vyn.';
+          cb(this.error, null);
+          return;
+        }
+        if (this.stream && this.live()) {
+          this.users++;
+          cb(null, this.stream);
+          return;
+        }
+        this.stream = null;
+        if (this.pending) {                       /* någon annan startar redan */
+          this.pending.push(cb);
+          return;
+        }
+        this.pending = [cb];
+
+        var id = this.deviceId();
+        var tries = [];
+        if (id) tries.push({ audio: { deviceId: { exact: id }, echoCancellation: false, noiseSuppression: false } });
+        tries.push({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+        tries.push({ audio: true });
+
+        var attempt = function (i, lastErr) {
+          if (i >= tries.length) {
+            self.error = self.message(lastErr);
+            var waiting = self.pending || [];
+            self.pending = null;
+            waiting.forEach(function (fn) { fn(self.error, null); });
+            return;
+          }
+          navigator.mediaDevices.getUserMedia(tries[i])
+            .then(function (stream) {
+              self.stream = stream;
+              self.error = '';
+              /* Tappar enheten strömmen (t.ex. headset dras ur) städar vi upp */
+              stream.getAudioTracks().forEach(function (t) {
+                t.onended = function () { self.lost(); };
+              });
+              var waiting = self.pending || [];
+              self.pending = null;
+              self.users += waiting.length;
+              waiting.forEach(function (fn) { fn(null, stream); });
+            })
+            .catch(function (err) {
+              /* NotReadableError betyder oftast att enheten inte hunnit släppa
+                 mikrofonen — vänta en kort stund och prova enklare krav */
+              var wait = (err && err.name === 'NotReadableError') ? 500 : 0;
+              setTimeout(function () { attempt(i + 1, err); }, wait);
+            });
+        };
+        attempt(0, null);
+      },
+      live: function () {
+        return !!this.stream && this.stream.getAudioTracks().some(function (t) { return t.readyState === 'live'; });
+      },
+      release: function () {
+        this.users = Math.max(0, this.users - 1);
+        if (this.users === 0 && this.stream) {
+          this.stream.getTracks().forEach(function (t) { t.stop(); });
+          this.stream = null;
+        }
+      },
+      lost: function () {
+        this.users = 0;
+        this.stream = null;
+        this.error = 'Mikrofonen kopplades bort.';
+        if (global.Trams && Trams.armed) Trams.stop();
+        if (App.Noise && App.Noise.on) App.Noise.stop();
+        App.toast('Mikrofonen kopplades bort');
+      },
+      /* Listar inspelningsenheter — namn syns först efter att mikrofonen godkänts */
+      devices: function (cb) {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) { cb([]); return; }
+        navigator.mediaDevices.enumerateDevices()
+          .then(function (list) {
+            cb(list.filter(function (d) { return d.kind === 'audioinput'; }));
+          })
+          .catch(function () { cb([]); });
+      },
+      /* Mäter toppnivån i några sekunder så att man kan se att mikrofonen lever */
+      test: function (onLevel, onDone) {
+        var self = this;
+        this.acquire(function (err, stream) {
+          if (err) { onDone(err, 0); return; }
+          var ac = App.audioCtx();
+          if (!ac) { self.release(); onDone('Ljudmotorn kunde inte startas', 0); return; }
+          var src = ac.createMediaStreamSource(stream);
+          var an = ac.createAnalyser();
+          an.fftSize = 1024;
+          src.connect(an);
+          var data = new Uint8Array(an.fftSize);
+          var peak = 0;
+          var iv = setInterval(function () {
+            an.getByteTimeDomainData(data);
+            var sum = 0, i;
+            for (i = 0; i < data.length; i++) {
+              var v = (data[i] - 128) / 128;
+              sum += v * v;
+            }
+            var lvl = Math.min(100, Math.max(0, Math.round((20 * Math.log10(Math.sqrt(sum / data.length) + 1e-8) + 70) * 1.6)));
+            if (lvl > peak) peak = lvl;
+            onLevel(lvl);
+          }, 100);
+          setTimeout(function () {
+            clearInterval(iv);
+            try { src.disconnect(); } catch (e) { /* noop */ }
+            self.release();
+            onDone(null, peak);
+          }, 3500);
+        });
+      }
+    },
 
     /* ---------- Ljud ---------- */
     audioCtx: function () {

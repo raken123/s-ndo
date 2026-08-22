@@ -97,6 +97,77 @@
       }
       renderClasses();
 
+      /* ----- Mikrofon ----- */
+      var micCard = App.el('div', 'card');
+      micCard.innerHTML = '<h3 style="font-size:22px;margin-bottom:6px">🎤 Mikrofon</h3>' +
+        '<p class="muted" style="font-size:14px;line-height:1.5;margin-bottom:12px">' +
+        'Ljuddetektorn och tramsdetektorn delar på samma mikrofonström. Får du ' +
+        '"mikrofonen är upptagen": stäng andra appar som spelar in och testa här.</p>';
+      wrap.appendChild(micCard);
+
+      var micSel = App.el('select');
+      micSel.style.width = '100%';
+      var micField = App.el('div', 'field');
+      micField.style.marginBottom = '12px';
+      micField.appendChild(App.el('label', '', 'Vilken mikrofon'));
+      micField.appendChild(micSel);
+      micCard.appendChild(micField);
+
+      function fillDevices() {
+        App.Mic.devices(function (list) {
+          var cur = App.Mic.deviceId();
+          micSel.innerHTML = '<option value="">Enhetens standardmikrofon</option>';
+          list.forEach(function (d, i) {
+            var o = App.el('option', '', d.label || ('Mikrofon ' + (i + 1)));
+            o.value = d.deviceId;
+            micSel.appendChild(o);
+          });
+          micSel.value = cur;
+        });
+      }
+      micSel.addEventListener('change', function () {
+        App.Mic.setDeviceId(micSel.value);
+        App.toast('Mikrofon vald — starta om detektorn');
+      });
+      fillDevices();
+
+      var micMeter = App.el('div', 'meter');
+      micMeter.style.marginBottom = '10px';
+      var micFill = App.el('div', 'meter-fill');
+      micMeter.appendChild(micFill);
+      micCard.appendChild(micMeter);
+      var micStatus = App.el('div', 'muted');
+      micStatus.style.cssText = 'font-size:15px;line-height:1.5;min-height:24px';
+      micCard.appendChild(micStatus);
+
+      var micRow = App.el('div', 'row');
+      micRow.style.marginTop = '12px';
+      micRow.appendChild(App.button('🎙️ Testa mikrofonen', 'sm', function () {
+        micStatus.textContent = 'Säg något — mätning pågår i tre sekunder…';
+        App.Mic.test(function (lvl) {
+          micFill.style.width = lvl + '%';
+        }, function (err, peak) {
+          micFill.style.width = '0%';
+          if (err) {
+            micStatus.innerHTML = '<span style="color:var(--danger)">' + App.esc(err) + '</span>';
+            return;
+          }
+          fillDevices();
+          micStatus.textContent = peak > 12
+            ? '✅ Mikrofonen fungerar. Toppnivå ' + peak + '.'
+            : '⚠️ Mikrofonen svarar men hörde nästan ingenting (toppnivå ' + peak +
+              '). Kontrollera att rätt mikrofon är vald och att inget täcker den.';
+        });
+      }));
+      micRow.appendChild(App.button('⏹️ Släpp mikrofonen', 'sm ghost', function () {
+        if (window.Trams && Trams.armed) Trams.stop();
+        if (App.Noise && App.Noise.on) App.Noise.stop();
+        App.Mic.users = 0;
+        App.Mic.release();
+        micStatus.textContent = 'Mikrofonen släppt. Alla detektorer är avstängda.';
+      }));
+      micCard.appendChild(micRow);
+
       /* ----- Tramsdetektorn och Gemini ----- */
       var aiCard = App.el('div', 'card');
       aiCard.innerHTML = '<h3 style="font-size:22px;margin-bottom:6px">🤖 Tramsdetektor</h3>' +

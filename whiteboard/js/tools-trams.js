@@ -67,23 +67,23 @@
         return;
       }
       this.say('Startar mikrofonen…');
-      navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false } })
-        .then(function (stream) {
-          self.micStream = stream;
-          self.armed = true;
-          self.startAudio(stream);
-          if (self.cfg().camera) self.startCamera();
-          self.say(self.mode === 'ai' ? 'Lyssnar tyst (AI)' : 'Lyssnar tyst (lokalt läge)');
-        })
-        .catch(function (err) {
-          self.say('Mikrofonen nekades: ' + (err && err.name ? err.name : 'okänt fel'));
-        });
+      /* Delad ström: krockar inte med ljuddetektorn om båda är igång */
+      App.Mic.acquire(function (err, stream) {
+        if (err) { self.say(err); return; }
+        self.micStream = stream;
+        self.armed = true;
+        self.startAudio(stream);
+        self.say(self.mode === 'ai' ? 'Lyssnar tyst (AI)' : 'Lyssnar tyst (lokalt läge)');
+      });
     },
     stop: function () {
+      var wasArmed = this.armed;
       this.armed = false;
       this.stopAlarm();
+      if (this.src) { try { this.src.disconnect(); } catch (e) { /* noop */ } this.src = null; }
       if (this.proc) { try { this.proc.disconnect(); } catch (e) { /* noop */ } this.proc = null; }
-      if (this.micStream) { this.micStream.getTracks().forEach(function (t) { t.stop(); }); this.micStream = null; }
+      if (wasArmed && this.micStream) App.Mic.release();
+      this.micStream = null;
       if (this.ws) { try { this.ws.close(); } catch (e) { /* noop */ } this.ws = null; }
       this.stopCamera();
       this.say('Avstängd');
@@ -96,6 +96,7 @@
       if (!ac) { this.say('Ljudmotorn kunde inte startas'); return; }
       var src = ac.createMediaStreamSource(stream);
       var proc = ac.createScriptProcessor(4096, 1, 1);
+      this.src = src;
       this.proc = proc;
       this.buffer = [];
       this.segStart = Date.now();
@@ -297,6 +298,7 @@
       this.timeoutIv = 0;
       this.timeoutUntil = 0;
       this.stopAlarm();
+      this.stopCamera();
       App.chime(2);
       this.say(this.armed ? (this.mode === 'ai' ? 'Lyssnar tyst (AI)' : 'Lyssnar tyst (lokalt läge)') : 'Avstängd');
       this.emit();
@@ -357,7 +359,10 @@
             self.emit();
           }, 250);
         })
-        .catch(function () { self.say('Kameran nekades — använd knapparna för in/ut i stället.'); });
+        .catch(function (err) {
+          self.say('Kameran kunde inte startas (' + (err && err.name ? err.name : 'fel') +
+            ') — använd knapparna "Eleven gick ut" och "Eleven kom in" i stället.');
+        });
     },
     stopCamera: function () {
       clearInterval(this.camIv);
