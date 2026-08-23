@@ -1,6 +1,6 @@
 # Reklamfilmer — Sändo Tavla
 
-Tre storytime-filmer i samma stil och med samma motor — två i klassrummet
+Fyra storytime-filmer i samma stil och med samma motor — tre i klassrummet
 och en ute på skolgården.
 
 | Fil | Film | Längd | Storlek |
@@ -11,10 +11,13 @@ och en ute på skolgården.
 | `sando-tavla-vikarien-1080.mp4` | Vikarien, mindre version | 44 s | 1,3 MB |
 | `sando-tavla-rasten.mp4` | **Rasten** — rastvakten på skolgården | 42 s | 3,8 MB |
 | `sando-tavla-rasten-1080.mp4` | Rasten, mindre version | 42 s | 1,5 MB |
+| `sando-tavla-presentationen.mp4` | **Presentationen** — Vera glömde allt hemma | 41 s | 3,1 MB |
+| `sando-tavla-presentationen-1080.mp4` | Presentationen, mindre version | 41 s | 1,3 MB |
 
-Källor: `reklam.html`, `reklam-vikarien.html`, `reklam-rasten.html` och den
-gemensamma motorn `filmkit.js`. Affischbilder: `affisch.png`,
-`affisch-vikarien.png`, `affisch-rasten.png`.
+Källor: `reklam.html`, `reklam-vikarien.html`, `reklam-rasten.html`,
+`reklam-presentationen.html` och den gemensamma motorn `filmkit.js`.
+Affischbilder: `affisch.png`, `affisch-vikarien.png`, `affisch-rasten.png`,
+`affisch-presentationen.png`.
 
 ## Film 1 — Skriket
 
@@ -59,6 +62,22 @@ rastvakten i stället för på smartboarden.
 | 31–36 s | Klockan ringer ut rasten. Plattan visar: **Ställ er i led — 5B, matematik, sal 12.** |
 | 36–42 s | Slutkort: *Hela skolan, inte bara klassrummet.* |
 
+## Film 4 — Presentationen
+
+Om att glömma. Redovisningen ligger hemma, läxan också, och lektionen börjar
+om två minuter.
+
+| Tid | Scen |
+|---|---|
+| 0–4 s | Redovisningsdag i 5B. Turordningen står på tavlan: 1 Milo, **2 Vera**, 3 Ali. |
+| 4–9 s | Vera rotar i väskan. Den är tom. **"Jag glömde presentationen… och läxan."** |
+| 9–13 s | Läraren: *"Lugn. Vi löser det."* Ett tryck, och Vera flyttas sist i turordningen. |
+| 13–19 s | Timern startar på 10:00. AI-Läraren plockar fram fem punkter om vulkaner ur klassens egen arbetsbok — kapitel 4, sidan 38–43. |
+| 19–25 s | Milo redovisar under tiden. Vera förbereder sig medan timern tickar. |
+| 25–32 s | Veras tur. Stödorden står på tavlan, hon berättar — och klassen applåderar. En stjärna till: *"+1 för att du löste det."* |
+| 32–37 s | Och läxan? **Arbetsboken s. 42–43 till fredag** — den har stått kvar på tavlan hela lektionen, och står kvar hela veckan. |
+| 37–41 s | Slutkort: *Ingen behöver stå där oförberedd.* |
+
 ## Så är de gjorda
 
 Varje film är en HTML-fil som ritar allt i SVG och animerar med en egen
@@ -79,9 +98,11 @@ som appen spelar vid en utvisning, och lektionssignalen är appens egen chime.
 node tools/render-reklam.js              # rutor för film 1
 node tools/render-vikarien.js            # rutor för film 2
 node tools/render-rasten.js              # rutor för film 3
+node tools/render-presentationen.js      # rutor för film 4
 python3 tools/reklam-ljud.py             # ljudspår film 1
 python3 tools/vikarien-ljud.py           # ljudspår film 2
 python3 tools/rasten-ljud.py             # ljudspår film 3
+python3 tools/presentationen-ljud.py     # ljudspår film 4
 
 ffmpeg -framerate 30 -i frames/f%05d.png -i ljud.wav \
   -c:v libx264 -preset slow -crf 20 -pix_fmt yuv420p -movflags +faststart \
