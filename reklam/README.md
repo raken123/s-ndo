@@ -1,6 +1,7 @@
 # Reklamfilmer — Sändo Tavla
 
-Två storytime-filmer med samma klassrum, samma stil och samma motor.
+Tre storytime-filmer i samma stil och med samma motor — två i klassrummet
+och en ute på skolgården.
 
 | Fil | Film | Längd | Storlek |
 |---|---|---|---|
@@ -8,9 +9,12 @@ Två storytime-filmer med samma klassrum, samma stil och samma motor.
 | `sando-tavla-reklam-1080.mp4` | Skriket, mindre version för mobil och chatt | 39 s | 2,0 MB |
 | `sando-tavla-vikarien.mp4` | **Vikarien** — hennes första lektion i 5B | 44 s | 3,0 MB |
 | `sando-tavla-vikarien-1080.mp4` | Vikarien, mindre version | 44 s | 1,3 MB |
+| `sando-tavla-rasten.mp4` | **Rasten** — rastvakten på skolgården | 42 s | 3,8 MB |
+| `sando-tavla-rasten-1080.mp4` | Rasten, mindre version | 42 s | 1,5 MB |
 
-Källor: `reklam.html`, `reklam-vikarien.html` och den gemensamma motorn
-`filmkit.js`. Affischbilder: `affisch.png`, `affisch-vikarien.png`.
+Källor: `reklam.html`, `reklam-vikarien.html`, `reklam-rasten.html` och den
+gemensamma motorn `filmkit.js`. Affischbilder: `affisch.png`,
+`affisch-vikarien.png`, `affisch-rasten.png`.
 
 ## Film 1 — Skriket
 
@@ -39,6 +43,22 @@ Källor: `reklam.html`, `reklam-vikarien.html` och den gemensamma motorn
 | 36–43 s | Exit ticket på tavlan när klockan slår 09:00. Ordinarie läraren tittar in: **"Hur gick det?"** — **"Bäst hittills."** |
 | 43–44 s | Slutkort. |
 
+## Film 3 — Rasten
+
+Utanför klassrummet, men mitt i skolan. Här är appen på en platta i handen på
+rastvakten i stället för på smartboarden.
+
+| Tid | Scen |
+|---|---|
+| 0–4 s | Klockan ringer, barnen strömmar ut på skolgården. Rasttimern startar på 15:00. |
+| 4–9 s | Två elever bråkar om lagen: **"Jag vill inte vara i hans lag!"** |
+| 9–14 s | Rastvakten slumpar två lag på plattan. De två hamnar i olika lag, och ingen väljs sist. |
+| 14–18 s | **Vem börjar?** Slumpa elev landar på Noah. Avspark. |
+| 18–24 s | Matchen rullar, poängen hålls på plattan: 2–1 till Blå. **"MÅÅÅL!"** |
+| 24–31 s | En elev sitter ensam på bänken. Rastvakten sätter sig bredvid och visar Dagens fråga: *"Om du fick välja en superkraft — vilken skulle du ta?"* En kompis slår sig ner. |
+| 31–36 s | Klockan ringer ut rasten. Plattan visar: **Ställ er i led — 5B, matematik, sal 12.** |
+| 36–42 s | Slutkort: *Hela skolan, inte bara klassrummet.* |
+
 ## Så är de gjorda
 
 Varje film är en HTML-fil som ritar allt i SVG och animerar med en egen
@@ -58,8 +78,10 @@ som appen spelar vid en utvisning, och lektionssignalen är appens egen chime.
 ```sh
 node tools/render-reklam.js              # rutor för film 1
 node tools/render-vikarien.js            # rutor för film 2
+node tools/render-rasten.js              # rutor för film 3
 python3 tools/reklam-ljud.py             # ljudspår film 1
 python3 tools/vikarien-ljud.py           # ljudspår film 2
+python3 tools/rasten-ljud.py             # ljudspår film 3
 
 ffmpeg -framerate 30 -i frames/f%05d.png -i ljud.wav \
   -c:v libx264 -preset slow -crf 20 -pix_fmt yuv420p -movflags +faststart \

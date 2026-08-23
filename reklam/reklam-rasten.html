@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Sändo Tavla — Rasten</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #0b0e17; overflow: hidden; }
+  #stage {
+    position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+    transform-origin: center center; background: #cfe6ff;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  svg { display: block; }
+  text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<div id="stage"><svg id="scene" width="1920" height="1080" viewBox="0 0 1920 1080"></svg></div>
+<script src="filmkit.js"></script>
+<script>
+/* ===================================================================
+   Sändo Tavla — "Rasten"
+   Utanför klassrummet, men mitt i skolan. Rastvakten har tavlan i
+   fickformat: samma app på en platta ute på skolgården.
+   =================================================================== */
+var K = Filmkit, scene = K.scene, C = K.C, SKIN = K.SKIN, SHIRT = K.SHIRT;
+var el = K.el, txt = K.txt, clamp = K.clamp, lerp = K.lerp, p = K.p, fade = K.fade;
+var show = K.show, move = K.move, kid = K.kid, bubble = K.bubble;
+
+var defs = el('defs', {}, scene);
+
+/* ---------- himmel, skolgård och skolbyggnad ---------- */
+var sky = el('linearGradient', { id: 'sky', x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
+el('stop', { offset: 0, 'stop-color': '#8ec9ff' }, sky);
+el('stop', { offset: 1, 'stop-color': '#dbeeff' }, sky);
+el('rect', { x: 0, y: 0, width: 1920, height: 700, fill: 'url(#sky)' }, scene);
+el('circle', { cx: 1660, cy: 140, r: 70, fill: '#ffe58a' }, scene);
+function cloud(x, y, s) {
+  var g = el('g', {}, scene);
+  el('ellipse', { cx: 0, cy: 0, rx: 90, ry: 40, fill: '#fff', opacity: 0.9 }, g);
+  el('ellipse', { cx: -60, cy: 12, rx: 55, ry: 28, fill: '#fff', opacity: 0.9 }, g);
+  el('ellipse', { cx: 62, cy: 14, rx: 60, ry: 30, fill: '#fff', opacity: 0.9 }, g);
+  move(g, x, y, s);
+  return g;
+}
+var cloud1 = cloud(430, 150, 1), cloud2 = cloud(1180, 110, 0.75);
+
+/* skolbyggnaden i bakgrunden */
+var school = el('g', {}, scene);
+el('rect', { x: -20, y: 190, width: 820, height: 440, fill: '#c94f4f' }, school);
+el('rect', { x: -20, y: 190, width: 820, height: 30, fill: '#a83c3c' }, school);
+el('rect', { x: -20, y: 600, width: 820, height: 30, fill: '#8f3131' }, school);
+for (var r = 0; r < 2; r++) {
+  for (var cIdx = 0; cIdx < 5; cIdx++) {
+    var wx = 30 + cIdx * 150, wy = 250 + r * 160;
+    el('rect', { x: wx, y: wy, width: 100, height: 110, rx: 6, fill: '#bfe3ff', stroke: '#fff', 'stroke-width': 6 }, school);
+    el('path', { d: 'M' + (wx + 50) + ',' + wy + ' v110 M' + wx + ',' + (wy + 55) + ' h100', stroke: '#fff', 'stroke-width': 5 }, school);
+  }
+}
+var entrance = el('g', {}, school);
+el('rect', { x: 620, y: 400, width: 160, height: 230, rx: 8, fill: '#7a4a2b' }, entrance);
+var yardDoor = el('rect', { x: 626, y: 406, width: 148, height: 224, rx: 6, fill: '#a3714b' }, entrance);
+el('circle', { cx: 756, cy: 520, r: 9, fill: '#f0c96b' }, entrance);
+txt('SKOLAN', { x: 700, y: 380, 'text-anchor': 'middle', 'font-size': 26, 'font-weight': 800, fill: '#fff' }, school);
+/* skolklocka på fasaden */
+var bellG = el('g', {}, school);
+el('circle', { cx: 830, cy: 250, r: 34, fill: '#e2b13c', stroke: '#a8801f', 'stroke-width': 5 }, bellG);
+txt('🔔', { x: 830, y: 264, 'text-anchor': 'middle', 'font-size': 34 }, bellG);
+
+/* mark: gräs och asfalt */
+el('rect', { x: 0, y: 630, width: 1920, height: 90, fill: '#7cbf5a' }, scene);
+el('rect', { x: 0, y: 700, width: 1920, height: 380, fill: '#9aa3ad' }, scene);
+el('path', { d: 'M0,700 h1920 v10 h-1920 z', fill: '#8b949e' }, scene);
+/* målade linjer på asfalten */
+el('path', { d: 'M280,1040 L700,760', stroke: '#e8edf2', 'stroke-width': 8, opacity: 0.7 }, scene);
+el('path', { d: 'M1720,1040 L1240,760', stroke: '#e8edf2', 'stroke-width': 8, opacity: 0.7 }, scene);
+el('path', { d: 'M700,760 h540', stroke: '#e8edf2', 'stroke-width': 8, opacity: 0.7 }, scene);
+/* fotbollsmål */
+var goal = el('g', {}, scene);
+el('rect', { x: 1500, y: 500, width: 16, height: 230, fill: '#f1f4f8' }, goal);
+el('rect', { x: 1860, y: 500, width: 16, height: 230, fill: '#f1f4f8' }, goal);
+el('rect', { x: 1500, y: 500, width: 376, height: 16, fill: '#f1f4f8' }, goal);
+for (var ni = 1; ni < 9; ni++) {
+  el('path', { d: 'M' + (1500 + ni * 42) + ',516 v214', stroke: '#fff', 'stroke-width': 2, opacity: 0.55 }, goal);
+}
+for (var nj = 1; nj < 5; nj++) {
+  el('path', { d: 'M1516,' + (516 + nj * 43) + ' h360', stroke: '#fff', 'stroke-width': 2, opacity: 0.55 }, goal);
+}
+/* bänk */
+var bench = el('g', {}, scene);
+el('rect', { x: 120, y: 770, width: 380, height: 26, rx: 8, fill: '#a06f3f' }, bench);
+el('rect', { x: 120, y: 700, width: 380, height: 20, rx: 8, fill: '#b8834c' }, bench);
+el('rect', { x: 150, y: 796, width: 22, height: 80, fill: '#6f4c2b' }, bench);
+el('rect', { x: 448, y: 796, width: 22, height: 80, fill: '#6f4c2b' }, bench);
+/* träd till höger */
+var tree = el('g', {}, scene);
+el('rect', { x: 1180, y: 560, width: 30, height: 150, fill: '#7a5230' }, tree);
+el('circle', { cx: 1195, cy: 530, r: 88, fill: '#5aa34a' }, tree);
+el('circle', { cx: 1130, cy: 566, r: 58, fill: '#68b356' }, tree);
+el('circle', { cx: 1258, cy: 566, r: 58, fill: '#68b356' }, tree);
+
+/* ---------- barnen ---------- */
+function yardKid(x, y, s, shirt, skin, hair) {
+  var g = el('g', {}, scene);
+  var k = kid(g, { shirt: shirt, skin: skin, hair: hair });
+  el('rect', { x: -24, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  el('rect', { x: 6, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  g.k = k;
+  g.base = [x, y, s];
+  move(g, x, y, s);
+  return g;
+}
+var kBrak1 = yardKid(760, 800, 1.0, SHIRT[1], SKIN[0], '#3b2a1e');   /* bråkar */
+var kBrak2 = yardKid(980, 800, 1.0, SHIRT[3], SKIN[2], '#20242e');   /* bråkar */
+var kSpel1 = yardKid(1420, 745, 0.9, SHIRT[2], SKIN[4], '#6b3f1d');  /* spelar boll */
+var kSpel2 = yardKid(1650, 800, 0.95, SHIRT[5], SKIN[1], '#2b1c12');
+var kSpel3 = yardKid(1240, 845, 1.0, SHIRT[0], SKIN[3], '#20242e');
+var kEnsam = yardKid(300, 690, 1.0, SHIRT[4], SKIN[5], '#3b2a1e');   /* sitter ensam */
+var kKompis = yardKid(1000, 800, 0.9, SHIRT[6], SKIN[0], '#8a5a2b');  /* kommer och sätter sig */
+var boll = el('g', {}, scene);
+el('circle', { cx: 0, cy: 0, r: 26, fill: '#fff', stroke: '#1b2130', 'stroke-width': 3 }, boll);
+el('path', { d: 'M-13,-8 l13,-10 l13,10 l-6,15 h-14 z', fill: '#1b2130' }, boll);
+move(boll, 1120, 930);
+
+/* ---------- rastvakten med plattan ---------- */
+var vaktG = el('g', {}, scene);
+var vakt = K.grownup(vaktG, '#334155', SKIN[4], '#5b3a1e');
+/* reflexväst */
+el('rect', { x: -34, y: 14, width: 68, height: 108, rx: 22, fill: '#eaff3a' }, vakt.body);
+el('rect', { x: -34, y: 52, width: 68, height: 12, fill: '#cfd8e3' }, vakt.body);
+el('rect', { x: -34, y: 84, width: 68, height: 12, fill: '#cfd8e3' }, vakt.body);
+txt('RASTVAKT', { x: 0, y: 44, 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 800, fill: '#1b2130' }, vakt.body);
+/* plattan i handen */
+var padG = el('g', {}, vakt.body);
+el('rect', { x: 30, y: 40, width: 78, height: 58, rx: 8, fill: '#1e2436' }, padG);
+el('rect', { x: 35, y: 45, width: 68, height: 48, rx: 4, fill: '#f4f6fb' }, padG);
+el('rect', { x: 35, y: 45, width: 68, height: 12, rx: 4, fill: C.brand }, padG);
+move(vaktG, 430, 860, 1.28);
+
+/* ---------- plattan i förstoring ---------- */
+var padBig = el('g', { opacity: 0 }, scene);
+el('rect', { x: 1180, y: 150, width: 620, height: 470, rx: 30, fill: '#1e2436' }, padBig);
+el('rect', { x: 1200, y: 176, width: 580, height: 418, rx: 12, fill: '#f4f6fb' }, padBig);
+el('rect', { x: 1200, y: 176, width: 580, height: 50, rx: 12, fill: '#fff' }, padBig);
+el('rect', { x: 1200, y: 210, width: 580, height: 16, fill: '#fff' }, padBig);
+el('rect', { x: 1218, y: 188, width: 28, height: 28, rx: 8, fill: C.brand }, padBig);
+txt('S', { x: 1232, y: 210, 'text-anchor': 'middle', 'font-size': 19, 'font-weight': 800, fill: '#fff' }, padBig);
+txt('Sändo Tavla', { x: 1258, y: 209, 'font-size': 18, 'font-weight': 700, fill: C.ink }, padBig);
+var padClock = txt('10:00', { x: 1756, y: 209, 'text-anchor': 'end', 'font-size': 18, 'font-weight': 700, fill: C.muted }, padBig);
+el('rect', { x: 1200, y: 226, width: 580, height: 2, fill: C.line }, padBig);
+
+function padCard(x, y, w, h, title) {
+  var g = el('g', {}, padBig);
+  el('rect', { x: x, y: y, width: w, height: h, rx: 14, fill: '#fff', stroke: C.line, 'stroke-width': 2 }, g);
+  el('rect', { x: x, y: y, width: w, height: 36, rx: 14, fill: '#eef2ff' }, g);
+  el('rect', { x: x, y: y + 22, width: w, height: 14, fill: '#eef2ff' }, g);
+  txt(title, { x: x + 14, y: y + 25, 'font-size': 15, 'font-weight': 700, fill: C.brand }, g);
+  return g;
+}
+
+/* rasttimer — syns nästan hela filmen */
+var padTimer = padCard(1222, 246, 250, 150, '⏳ Rasten slutar');
+var padTimerTxt = txt('15:00', { x: 1347, y: 350, 'text-anchor': 'middle', 'font-size': 62, 'font-weight': 800, fill: C.brand }, padTimer);
+var padSchema = padCard(1490, 246, 270, 150, '📅 Efter rasten');
+txt('5B · Matematik', { x: 1508, y: 310, 'font-size': 22, 'font-weight': 700, fill: C.ink }, padSchema);
+txt('Sal 12 · 10:15', { x: 1508, y: 348, 'font-size': 20, fill: C.muted }, padSchema);
+txt('Ta med linjal', { x: 1508, y: 380, 'font-size': 17, fill: C.muted }, padSchema);
+
+/* grupper: två lag */
+var padGroups = el('g', { opacity: 0 }, padBig);
+var gCard = padCard(1222, 412, 538, 168, '👥 Lag — slumpade');
+padGroups.appendChild(gCard);
+var lagNames = [['Blå', ['Noah', 'Alva', 'Ali']], ['Gul', ['Milo', 'Iris', 'Vera']]];
+var lagCards = [];
+lagNames.forEach(function (lag, i) {
+  var g = el('g', {}, padGroups);
+  var lx = 1240 + i * 262;
+  el('rect', { x: lx, y: 452, width: 244, height: 112, rx: 12, fill: i ? '#fff8dd' : '#e8f0ff', stroke: i ? '#f59e0b' : C.brand, 'stroke-width': 3 }, g);
+  txt('Lag ' + lag[0], { x: lx + 14, y: 480, 'font-size': 18, 'font-weight': 800, fill: i ? '#b45309' : C.brand }, g);
+  txt(lag[1].join('  ·  '), { x: lx + 14, y: 522, 'font-size': 20, fill: C.ink }, g);
+  txt(i ? 'Mål: 1' : 'Mål: 2', { x: lx + 14, y: 550, 'font-size': 17, 'font-weight': 700, fill: C.muted }, g);
+  lagCards.push(g);
+});
+
+/* slumpa elev */
+var padPick = el('g', { opacity: 0 }, padBig);
+var pCard = padCard(1222, 412, 538, 168, '🎯 Vem börjar?');
+padPick.appendChild(pCard);
+var pickName = txt('Noah', { x: 1491, y: 522, 'text-anchor': 'middle', 'font-size': 68, 'font-weight': 800, fill: C.ink }, padPick);
+
+/* dagens fråga */
+var padPrompt = el('g', { opacity: 0 }, padBig);
+var qCard = padCard(1222, 412, 538, 168, '💭 Dagens fråga');
+padPrompt.appendChild(qCard);
+txt('Om du fick välja en superkraft', { x: 1491, y: 490, 'text-anchor': 'middle', 'font-size': 26, 'font-weight': 700, fill: C.ink }, padPrompt);
+txt('— vilken skulle du ta?', { x: 1491, y: 528, 'text-anchor': 'middle', 'font-size': 26, 'font-weight': 700, fill: C.ink }, padPrompt);
+txt('Bra att fråga när någon sitter själv.', { x: 1491, y: 562, 'text-anchor': 'middle', 'font-size': 16, fill: C.muted }, padPrompt);
+
+/* rasten slut */
+var padEnd = el('g', { opacity: 0 }, padBig);
+var eCard = padCard(1222, 412, 538, 168, '🔔 Rasten är slut');
+padEnd.appendChild(eCard);
+txt('Ställ er i led vid entrén', { x: 1491, y: 500, 'text-anchor': 'middle', 'font-size': 28, 'font-weight': 800, fill: C.ink }, padEnd);
+txt('5B · Matematik · Sal 12', { x: 1491, y: 542, 'text-anchor': 'middle', 'font-size': 22, fill: C.muted }, padEnd);
+
+/* ---------- pratbubblor ---------- */
+function makeBubble(w, h, lines, size, tail, x, y) {
+  var g = el('g', { opacity: 0 }, scene);
+  bubble(g, w, h, lines, size, tail);
+  g.pos = [x, y];
+  return g;
+}
+var bBrak = makeBubble(640, 140, ['Jag vill inte vara i hans lag!'], 40, [0, 380], 800, 390);
+var bMal = makeBubble(320, 116, ['MÅÅÅL!'], 48, [260, 320], 880, 430);
+var bSuper = makeBubble(540, 140, ['Osynlighet. Du då?'], 40, [-200, 300], 640, 400);
+
+/* ---------- bildtexter ---------- */
+var capG = el('g', { opacity: 0 }, scene);
+el('rect', { x: 300, y: 936, width: 1320, height: 118, rx: 26, fill: 'rgba(12,16,28,.86)' }, capG);
+var capTitle = txt('', { x: 960, y: 990, 'text-anchor': 'middle', 'font-size': 46, 'font-weight': 800, fill: '#fff' }, capG);
+var capSub = txt('', { x: 960, y: 1032, 'text-anchor': 'middle', 'font-size': 28, fill: '#c7cede' }, capG);
+
+/* ---------- slutkort ---------- */
+var eg = el('linearGradient', { id: 'eg3', x1: 0, y1: 0, x2: 1, y2: 1 }, defs);
+el('stop', { offset: 0, 'stop-color': '#4f46e5' }, eg);
+el('stop', { offset: 1, 'stop-color': '#06b6d4' }, eg);
+var endG = el('g', { opacity: 0 }, scene);
+el('rect', { x: 0, y: 0, width: 1920, height: 1080, fill: 'url(#eg3)' }, endG);
+var endLogo = el('g', {}, endG);
+el('rect', { x: 830, y: 190, width: 260, height: 260, rx: 70, fill: '#fff' }, endLogo);
+txt('S', { x: 960, y: 400, 'text-anchor': 'middle', 'font-size': 190, 'font-weight': 800, fill: C.brand }, endLogo);
+txt('Sändo Tavla', { x: 960, y: 570, 'text-anchor': 'middle', 'font-size': 96, 'font-weight': 800, fill: '#fff' }, endG);
+txt('Hela skolan, inte bara klassrummet.', { x: 960, y: 640, 'text-anchor': 'middle', 'font-size': 40, fill: '#e6e9ff' }, endG);
+txt('På smartboarden i salen. På plattan ute på gården.', { x: 960, y: 706, 'text-anchor': 'middle', 'font-size': 30, fill: '#dfe3ff' }, endG);
+var endBtn = el('g', {}, endG);
+el('rect', { x: 560, y: 780, width: 800, height: 110, rx: 30, fill: '#fff' }, endBtn);
+txt('INSTALLERA FÖR BRA ELEVER', { x: 960, y: 852, 'text-anchor': 'middle', 'font-size': 42, 'font-weight': 800, fill: C.brand }, endBtn);
+txt('Android 8.0+  ·  fungerar offline', { x: 960, y: 940, 'text-anchor': 'middle', 'font-size': 26, fill: '#e6e9ff' }, endG);
+
+/* ===================================================================
+   Tidslinjen
+   =================================================================== */
+var DUR = 42000;
+function fmt(sec) {
+  sec = Math.max(0, Math.ceil(sec));
+  return Math.floor(sec / 60) + ':' + (sec % 60 < 10 ? '0' : '') + (sec % 60);
+}
+function setBubble(g, t, a, b) {
+  var v = fade(t, a, b, 280);
+  show(g, v);
+  move(g, g.pos[0], g.pos[1] - (1 - p(t, a, a + 350, 'out')) * 30);
+}
+/* studsande gång */
+function hop(g, x, y, s, t, speed) {
+  move(g, x, y - Math.abs(Math.sin(t / (speed || 130))) * 12, s);
+}
+
+function render(t) {
+  /* moln driver */
+  move(cloud1, 430 + (t / 90) % 2200 - 300, 150, 1);
+  move(cloud2, 1180 - (t / 140) % 1800, 110, 0.75);
+  /* klockan ringer i början och i slutet */
+  var ring = fade(t, 300, 1800, 120) + fade(t, 30800, 32200, 120);
+  bellG.setAttribute('transform', ring > 0.02
+    ? 'rotate(' + Math.sin(t / 40) * 12 + ',830,220)' : '');
+
+  /* entrédörren öppen medan barnen strömmar ut */
+  yardDoor.setAttribute('opacity', 1 - fade(t, 600, 4200, 300) * 0.85);
+
+  /* ---- rastvakten ---- */
+  var vX = 560, vY = 860, vS = 1.28;
+  if (t < 8600) { vX = lerp(500, 560, p(t, 2000, 6000)); }
+  else if (t < 24000) { vX = 560; }
+  else if (t < 31000) {                                  /* går bort till bänken */
+    var w = p(t, 24200, 26200, 'inOut');
+    vX = lerp(560, 500, w);
+    vY = lerp(860, 830, w);
+  } else {
+    vX = lerp(480, 660, p(t, 31200, 33200, 'inOut'));
+    vY = lerp(830, 860, p(t, 31200, 33200, 'inOut'));
+  }
+  move(vaktG, vX, vY, vS);
+  vakt.talk((t > 9000 && t < 13000) || (t > 26600 && t < 29500), t);
+  vakt.arm.setAttribute('transform', (t > 8800 && t < 15000) || (t > 26400 && t < 30000)
+    ? 'rotate(-38,45,30)' : '');
+
+  /* ---- barnen strömmar ut och leker ---- */
+  var out = p(t, 800, 4200, 'out');
+  hop(kBrak1, lerp(700, 760, out), 800, 1.0, t, 150);
+  hop(kBrak2, lerp(700, 980, out), 800, 1.0, t, 165);
+  var playing = t > 14500 && t < 31500;
+  hop(kSpel1, 1420 + (playing ? Math.sin(t / 620) * 90 : 0), 745, 0.9, t, playing ? 120 : 1e9);
+  hop(kSpel2, 1650 + (playing ? Math.cos(t / 520) * 70 : 0), 800, 0.95, t, playing ? 135 : 1e9);
+  hop(kSpel3, 1240 + (playing ? Math.sin(t / 700 + 2) * 110 : 0), 845, 1.0, t, playing ? 128 : 1e9);
+  /* bollen sparkas i väg vid avspark och rullar i mål */
+  var bx = 1120, by = 930;
+  if (t > 17800 && t < 20500) {
+    var bw = p(t, 17800, 20200, 'out');
+    bx = lerp(1120, 1690, bw);
+    by = 930 - Math.sin(bw * Math.PI) * 240;
+  } else if (t >= 20500) { bx = 1690; by = 700; }
+  move(boll, bx, by);
+  boll.setAttribute('transform', 'translate(' + bx + ',' + by + ') rotate(' + (t / 3) % 360 + ')');
+
+  /* eleven som sitter ensam, och kompisen som kommer */
+  kEnsam.k.setMood(t < 27800 ? 'ledsen' : 'glad');
+  move(kEnsam, 300, 690, 1.0);
+  var comp = p(t, 28200, 29800, 'inOut');
+  hop(kKompis, lerp(980, 420, comp), lerp(800, 690, comp), lerp(0.9, 1.0, comp), t, comp > 0 && comp < 1 ? 130 : 1e9);
+  show(kKompis, fade(t, 27900, 41000, 300));
+  kKompis.k.setMood('glad');
+
+  /* alla ställer sig i led när rasten är slut */
+  if (t > 33000) {
+    var line = p(t, 33200, 36200, 'inOut');
+    hop(kBrak1, lerp(760, 700, line), lerp(800, 760, line), lerp(1.0, 0.92, line), t, line < 1 ? 150 : 1e9);
+    hop(kBrak2, lerp(980, 800, line), lerp(800, 760, line), lerp(1.0, 0.92, line), t, line < 1 ? 165 : 1e9);
+    hop(kSpel1, lerp(1420, 900, line), lerp(745, 760, line), 0.9, t, line < 1 ? 120 : 1e9);
+    hop(kSpel3, lerp(1240, 1000, line), lerp(845, 760, line), lerp(1.0, 0.92, line), t, line < 1 ? 128 : 1e9);
+  }
+  [kBrak1, kBrak2, kSpel1, kSpel2, kSpel3].forEach(function (g, i) {
+    g.k.setMood(t > 4600 && t < 9200 && i < 2 ? 'ledsen' : t > 14000 ? 'glad' : 'neutral');
+  });
+
+  /* ---- plattan i förstoring ---- */
+  var padOn = Math.max(
+    fade(t, 8800, 23800, 400),      /* lag, avspark, mål */
+    fade(t, 26400, 31000, 400),     /* dagens fråga */
+    fade(t, 31600, 36400, 400)      /* rasten slut */
+  );
+  show(padBig, padOn);
+  var pop = p(t, 8800, 9300, 'out');
+  padBig.setAttribute('transform', 'translate(' + (1490 * (1 - (0.92 + 0.08 * pop))) + ',' +
+    (385 * (1 - (0.92 + 0.08 * pop))) + ') scale(' + (0.92 + 0.08 * pop) + ')');
+
+  var left = 900 - (t - 1000) / 1000;
+  padTimerTxt.textContent = fmt(left);
+  padTimerTxt.setAttribute('fill', left <= 60 ? C.red : left <= 180 ? C.amber : C.brand);
+  padClock.textContent = '10:' + ('0' + clamp(15 - Math.ceil(left / 60), 0, 15)).slice(-2);
+
+  show(padGroups, fade(t, 9600, 23600, 300));
+  show(padPick, fade(t, 15600, 18400, 300));
+  show(padPrompt, fade(t, 26800, 30800, 300));
+  show(padEnd, fade(t, 31900, 36200, 300));
+  /* lagen poppar in ett i taget */
+  lagCards.forEach(function (g, i) {
+    var q = p(t, 10000 + i * 400, 10500 + i * 400, 'out');
+    g.setAttribute('opacity', q);
+  });
+  /* namnet rullar innan det stannar på Noah */
+  var names = ['Alva', 'Milo', 'Iris', 'Noah', 'Ali', 'Vera'];
+  pickName.textContent = t < 17200 ? names[Math.floor(t / 90) % names.length] : 'Noah';
+  pickName.setAttribute('fill', t < 17200 ? C.muted : C.brand);
+  /* målställningen tickar upp */
+  lagCards[0].querySelectorAll('text')[2].textContent = 'Mål: ' + (t > 20500 ? 2 : t > 19000 ? 1 : 0);
+  lagCards[1].querySelectorAll('text')[2].textContent = 'Mål: ' + (t > 21800 ? 1 : 0);
+
+  /* ---- pratbubblor ---- */
+  setBubble(bBrak, t, 4800, 8800);
+  setBubble(bMal, t, 20600, 23000);
+  setBubble(bSuper, t, 29900, 32200);
+
+  /* ---- bildtexter ---- */
+  var capOn = 0;
+  if (t > 1400 && t < 4400) { capOn = fade(t, 1400, 4400, 300); capTitle.textContent = 'Rast. Femton minuter.'; capSub.textContent = 'Tavlan följer med ut — samma app på plattan.'; }
+  else if (t > 11000 && t < 14200) { capOn = fade(t, 11000, 14200, 300); capTitle.textContent = 'Lagen slumpas på tre sekunder.'; capSub.textContent = 'Ingen väljs sist. Ingen behöver bråka.'; }
+  else if (t > 16200 && t < 18200) { capOn = fade(t, 16200, 18200, 300); capTitle.textContent = 'Och vem börjar? Plattan bestämmer.'; capSub.textContent = 'Slumpa elev — utan diskussion.'; }
+  else if (t > 21000 && t < 23400) { capOn = fade(t, 21000, 23400, 300); capTitle.textContent = 'Poängen hålls på riktigt.'; capSub.textContent = '2–1 till Blå, och ingen minns fel.'; }
+  else if (t > 27200 && t < 30400) { capOn = fade(t, 27200, 30400, 300); capTitle.textContent = 'En fråga räcker ibland.'; capSub.textContent = 'Dagens fråga fungerar lika bra på en bänk som på tavlan.'; }
+  else if (t > 33600 && t < 36200) { capOn = fade(t, 33600, 36200, 300); capTitle.textContent = 'Och alla vet vart de ska.'; capSub.textContent = 'Rasten slut, matematik i sal 12 — det står på plattan.'; }
+  show(capG, capOn);
+
+  /* ---- slutkort ---- */
+  var end = fade(t, 36600, DUR, 450);
+  show(endG, end);
+  var epop = p(t, 36600, 37400, 'out');
+  endLogo.setAttribute('transform', 'translate(' + (960 * (1 - (0.85 + 0.15 * epop))) + ',' +
+    (320 * (1 - (0.85 + 0.15 * epop))) + ') scale(' + (0.85 + 0.15 * epop) + ')');
+  var ep = 1 + Math.sin(t / 260) * 0.015;
+  endBtn.setAttribute('transform', 'translate(' + (960 * (1 - ep)) + ',' + (835 * (1 - ep)) + ') scale(' + ep + ')');
+}
+
+K.play(render, DUR);
+</script>
+</body>
+</html>
