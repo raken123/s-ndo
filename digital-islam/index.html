@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0d1b17">
+<title>Digital Islam — VR / MR / XR</title>
+<meta name="description" content="An immersive VR/MR/XR companion for Muslims: Qibla, a real Qur'an book you hold and turn, a prayer mat you lay in your room, prayer times, tasbih, du'as and much more.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🕋</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+<!-- three.js is vendored in ./vendor so the app runs with no network at all -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.min.js"
+  }
+}
+</script>
+</head>
+<body>
+<div id="app"></div>
+
+<div id="boot" class="overlay">
+  <div class="card">
+    <div class="brand">
+      <div class="mark">🕋</div>
+      <div>
+        <h1>Digital Islam</h1>
+        <p class="sub">Immersive companion for VR · MR · XR</p>
+      </div>
+    </div>
+
+    <p class="lead">
+      A Qur'an you hold as a real book, a prayer mat you lay on your own floor,
+      a Qibla beam through your wall — and 20+ more features.
+    </p>
+
+    <div class="btnrow">
+      <button id="btn-vr" class="primary" disabled>Enter VR</button>
+      <button id="btn-ar" class="secondary" disabled>Enter Mixed Reality</button>
+      <button id="btn-desktop" class="ghost">Preview on this screen</button>
+    </div>
+
+    <p id="xr-status" class="status">Checking XR hardware…</p>
+
+    <details class="help">
+      <summary>Controls</summary>
+      <ul>
+        <li><b>VR/MR:</b> point with a controller or your hand, trigger / pinch to select. Grip to grab the book, mat and tasbih.</li>
+        <li><b>Desktop:</b> drag to look, <kbd>W A S D</kbd> to move, click to select, <kbd>Esc</kbd> for the menu.</li>
+        <li><b>Wrist menu:</b> look at your left wrist (or press <kbd>M</kbd>) to open the hub.</li>
+      </ul>
+    </details>
+
+    <p class="fineprint">
+      Location is used only on this device to compute Qibla direction and prayer
+      times. Nothing is uploaded. Qur'an text and recitation beyond the built-in
+      selection are fetched from public Qur'an APIs when you are online.
+    </p>
+  </div>
+</div>
+
+<div id="hud" class="hud" hidden>
+  <div id="hud-toast" class="toast" hidden></div>
+  <button id="hud-menu" title="Menu (M)">☰</button>
+  <button id="hud-exit" title="Exit">✕</button>
+</div>
+
+<noscript><p style="color:#fff;padding:2rem">Digital Islam needs JavaScript.</p></noscript>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "Digital Islam — VR/MR/XR",
+  "short_name": "Digital Islam",
+  "description": "Immersive Qur'an, Qibla, prayer mat and Islamic companion for VR, MR and XR headsets.",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0d1b17",
+  "theme_color": "#0d1b17",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%230d1b17'/%3E%3Ctext x='256' y='360' font-size='300' text-anchor='middle'%3E%F0%9F%95%8B%3C/text%3E%3C/svg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
