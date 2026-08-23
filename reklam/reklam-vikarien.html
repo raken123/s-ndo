@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Sändo Tavla — Vikarien</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #0b0e17; overflow: hidden; }
+  #stage {
+    position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+    transform-origin: center center; background: #eef1f8;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  svg { display: block; }
+  text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<div id="stage"><svg id="scene" width="1920" height="1080" viewBox="0 0 1920 1080"></svg></div>
+<script src="filmkit.js"></script>
+<script>
+/* ===================================================================
+   Sändo Tavla — "Vikarien"
+   En vikarie kommer till en klass hon aldrig träffat. Klassen testar
+   henne, och tavlan hjälper henne igenom lektionen.
+   =================================================================== */
+var K = Filmkit, scene = K.scene, C = K.C, SKIN = K.SKIN, SHIRT = K.SHIRT;
+var el = K.el, txt = K.txt, clamp = K.clamp, lerp = K.lerp, p = K.p, fade = K.fade;
+var show = K.show, move = K.move, kid = K.kid, bubble = K.bubble;
+
+/* ---------- klassrum och tavla ---------- */
+var R = K.buildRoom();
+var doorPanel = R.doorPanel, doorDark = R.doorDark;
+var B = K.buildBoard();
+var screen = B.screen;
+K.boardTopbar(screen);
+
+/* ---------- tavlans widgets, en per scen ---------- */
+/* Schema */
+var wSchema = K.widget(screen, 600, 220, 400, 300, '📅 Schema');
+txt('Matematik', { x: 620, y: 300, 'font-size': 30, 'font-weight': 800, fill: C.ink }, wSchema);
+txt('08:10 – 09:00', { x: 620, y: 336, 'font-size': 20, fill: C.muted }, wSchema);
+var schemaTime = txt('23:14', { x: 800, y: 430, 'text-anchor': 'middle', 'font-size': 86, 'font-weight': 800, fill: C.brand }, wSchema);
+txt('kvar av lektionen', { x: 800, y: 462, 'text-anchor': 'middle', 'font-size': 18, fill: C.muted }, wSchema);
+var schemaNext = K.widget(screen, 1020, 220, 210, 300, '⏭️ Nästa');
+txt('Rast', { x: 1040, y: 300, 'font-size': 28, 'font-weight': 800, fill: C.ink }, schemaNext);
+txt('09:00', { x: 1040, y: 344, 'font-size': 34, 'font-weight': 800, fill: C.green }, schemaNext);
+txt('Inte förrän då.', { x: 1040, y: 392, 'font-size': 17, fill: C.muted }, schemaNext);
+txt('🚦 Grönt läge', { x: 1040, y: 440, 'font-size': 17, fill: C.muted }, schemaNext);
+
+/* Viloläge innan hon rör tavlan */
+var wIdle = el('g', {}, screen);
+var idleBox = K.widget(screen, 700, 250, 420, 240, '👋 Välkommen');
+wIdle.appendChild(idleBox);
+txt('Klass 5B', { x: 910, y: 340, 'text-anchor': 'middle', 'font-size': 42, 'font-weight': 800, fill: C.ink }, idleBox);
+txt('Tryck för att börja lektionen', { x: 910, y: 390, 'text-anchor': 'middle', 'font-size': 20, fill: C.muted }, idleBox);
+txt('47 komponenter redo', { x: 910, y: 440, 'text-anchor': 'middle', 'font-size': 18, 'font-weight': 700, fill: C.brand }, idleBox);
+
+/* Grupper */
+var wGroups = el('g', { opacity: 0 }, screen);
+var groupCards = [];
+var groupNames = [['Alva', 'Milo', 'Sara'], ['Hugo', 'Iris', 'Noah'], ['Elin', 'Ali', 'Vera'], ['Leo', 'Maja', 'Sam']];
+groupNames.forEach(function (names, i) {
+  var gx = 600 + (i % 4) * 162, gy = 250;
+  var g = el('g', {}, wGroups);
+  el('rect', { x: gx, y: gy, width: 148, height: 250, rx: 14, fill: '#fff', stroke: C.brand, 'stroke-width': 3 }, g);
+  txt('Grupp ' + (i + 1), { x: gx + 74, y: gy + 40, 'text-anchor': 'middle', 'font-size': 20, 'font-weight': 800, fill: C.brand }, g);
+  names.forEach(function (n, j) {
+    txt(n, { x: gx + 74, y: gy + 86 + j * 46, 'text-anchor': 'middle', 'font-size': 24, fill: C.ink }, g);
+  });
+  groupCards.push(g);
+});
+txt('👥 Grupper — slumpade', { x: 600, y: 232, 'font-size': 18, 'font-weight': 700, fill: C.brand }, wGroups);
+
+/* Ljudnivå och trafikljus */
+var wNoise = el('g', { opacity: 0 }, screen);
+var nBox = K.widget(screen, 600, 220, 400, 300, '🔊 Ljuddetektor');
+wNoise.appendChild(nBox);
+var noiseFace = txt('🙂', { x: 800, y: 340, 'text-anchor': 'middle', 'font-size': 76 }, nBox);
+el('rect', { x: 626, y: 380, width: 348, height: 26, rx: 13, fill: '#e5e9f2' }, nBox);
+var noiseFill = el('rect', { x: 626, y: 380, width: 60, height: 26, rx: 13, fill: C.green }, nBox);
+var noiseTxt = txt('Ljudnivå 18 · lugnt', { x: 800, y: 448, 'text-anchor': 'middle', 'font-size': 20, 'font-weight': 600, fill: C.muted }, nBox);
+var tBox = K.widget(screen, 1020, 220, 210, 300, '🚦 Trafikljus');
+wNoise.appendChild(tBox);
+var lampR = el('circle', { cx: 1125, cy: 300, r: 32, fill: '#3a4256' }, tBox);
+var lampY = el('circle', { cx: 1125, cy: 378, r: 32, fill: '#3a4256' }, tBox);
+var lampG2 = el('circle', { cx: 1125, cy: 456, r: 32, fill: C.green }, tBox);
+
+/* AI-Lärare */
+var wAI = el('g', { opacity: 0 }, screen);
+var aiBox = K.widget(screen, 600, 220, 630, 300, '👩‍🏫 AI-Lärare');
+wAI.appendChild(aiBox);
+el('rect', { x: 620, y: 268, width: 340, height: 34, rx: 10, fill: '#eef2ff' }, aiBox);
+txt('📄 Arbetsbok 5B.pdf  ·  Lärarhandledning.pdf', { x: 632, y: 291, 'font-size': 15, 'font-weight': 600, fill: C.brand }, aiBox);
+var aiQ = txt('“Vad är fotosyntes?”', { x: 620, y: 340, 'font-size': 22, 'font-weight': 700, fill: C.ink, opacity: 0 }, aiBox);
+var aiLine1 = txt('Växten fångar solljus i bladen och gör om vatten och', { x: 620, y: 384, 'font-size': 21, fill: C.ink, opacity: 0 }, aiBox);
+var aiLine2 = txt('koldioxid till socker och syre. Det är växtens matlagning.', { x: 620, y: 414, 'font-size': 21, fill: C.ink, opacity: 0 }, aiBox);
+var aiLine3 = txt('Står i arbetsboken på sidan 42, under Gröna blad.', { x: 620, y: 452, 'font-size': 19, 'font-weight': 700, fill: C.green, opacity: 0 }, aiBox);
+var aiDots = txt('AI-Läraren läser…', { x: 620, y: 390, 'font-size': 20, fill: C.muted, opacity: 0 }, aiBox);
+
+/* Lekläge: hjul, timer, poäng */
+var wFun = el('g', { opacity: 0 }, screen);
+var wheelG = el('g', {}, wFun);
+var wheelSpin = el('g', {}, wheelG);
+var wcols = ['#4f46e5', '#06b6d4', '#16a34a', '#f59e0b', '#dc2626', '#a855f7'];
+for (var wi = 0; wi < 6; wi++) {
+  var a0 = wi * Math.PI / 3, a1 = (wi + 1) * Math.PI / 3, rr = 86;
+  el('path', {
+    d: 'M0,0 L' + (Math.cos(a0) * rr).toFixed(1) + ',' + (Math.sin(a0) * rr).toFixed(1) +
+       ' A' + rr + ',' + rr + ' 0 0 1 ' + (Math.cos(a1) * rr).toFixed(1) + ',' + (Math.sin(a1) * rr).toFixed(1) + ' Z',
+    fill: wcols[wi]
+  }, wheelSpin);
+}
+move(wheelG, 720, 360);
+el('circle', { cx: 0, cy: 0, r: 16, fill: '#fff', stroke: C.ink, 'stroke-width': 4 }, wheelG);
+var wheelPick = txt('', { x: 720, y: 490, 'text-anchor': 'middle', 'font-size': 26, 'font-weight': 800, fill: C.ink }, wFun);
+txt('🎯 Vem svarar?', { x: 720, y: 250, 'text-anchor': 'middle', 'font-size': 18, 'font-weight': 700, fill: C.brand }, wFun);
+var timerBox = K.widget(screen, 870, 220, 180, 150, '⏳ Timer');
+wFun.appendChild(timerBox);
+var timerTxt = txt('5:00', { x: 960, y: 330, 'text-anchor': 'middle', 'font-size': 52, 'font-weight': 800, fill: C.brand }, timerBox);
+var scoreBox = K.widget(screen, 870, 390, 180, 130, '🏆 Poäng');
+wFun.appendChild(scoreBox);
+var scoreTxt = txt('4 – 3', { x: 960, y: 480, 'text-anchor': 'middle', 'font-size': 44, 'font-weight': 800, fill: C.ink }, scoreBox);
+var starBox = K.widget(screen, 1070, 220, 160, 300, '⭐ Stjärnor');
+wFun.appendChild(starBox);
+var starList = ['Alva ⭐⭐⭐', 'Hugo ⭐⭐', 'Iris ⭐⭐', 'Leo ⭐'];
+starList.forEach(function (s, i) {
+  txt(s, { x: 1090, y: 300 + i * 42, 'font-size': 19, fill: C.ink }, starBox);
+});
+
+/* Exit ticket */
+var wExit = el('g', { opacity: 0 }, screen);
+var exBox = K.widget(screen, 600, 220, 630, 300, '🎫 Exit ticket');
+wExit.appendChild(exBox);
+['1. Vad gör bladen med solljuset?', '2. Räkna ut 7 × 8 och förklara hur.', '3. En sak du lärde dig idag.'].forEach(function (s, i) {
+  txt(s, { x: 630, y: 320 + i * 54, 'font-size': 24, fill: C.ink }, exBox);
+});
+txt('Skriv svaren på lappen innan du går ut.', { x: 630, y: 490, 'font-size': 19, 'font-weight': 700, fill: C.brand }, exBox);
+
+/* ---------- människorna ---------- */
+var deskRow = el('g', {}, scene);
+function desk(x, y, w) {
+  var g = el('g', {}, deskRow);
+  el('rect', { x: x - w / 2, y: y, width: w, height: 16, rx: 6, fill: '#c68a52' }, g);
+  el('rect', { x: x - w / 2 + 10, y: y + 16, width: 12, height: 70, fill: '#a06f3f' }, g);
+  el('rect', { x: x + w / 2 - 22, y: y + 16, width: 12, height: 70, fill: '#a06f3f' }, g);
+  return g;
+}
+var backKids = [];
+[[700, 690], [900, 690], [1100, 690]].forEach(function (pos, i) {
+  var g = el('g', {}, scene);
+  var k = kid(g, { skin: SKIN[i % SKIN.length], shirt: SHIRT[i], hair: ['#3b2a1e', '#6b3f1d', '#20242e'][i] });
+  move(g, pos[0], pos[1], 0.85);
+  backKids.push(k);
+  desk(pos[0], pos[1] + 60, 150);
+});
+var frontKids = [];
+[[520, 880], [790, 880], [1060, 880], [1320, 880]].forEach(function (pos, i) {
+  var g = el('g', {}, scene);
+  var k = kid(g, { skin: SKIN[(i + 2) % SKIN.length], shirt: SHIRT[i + 3], hair: ['#20242e', '#8a5a2b', '#3b2a1e', '#5b3a1e'][i] });
+  move(g, pos[0], pos[1], 1.05);
+  frontKids.push(k);
+  desk(pos[0], pos[1] + 70, 190);
+});
+var rastKid = frontKids[0];        /* den som testar med "vi brukar ha rast nu" */
+var fragaKid = frontKids[2];       /* den som frågar om fotosyntes */
+/* handen som räcks upp */
+var handG = el('g', { opacity: 0 }, scene);
+el('rect', { x: 1090, y: 760, width: 22, height: 90, rx: 11, fill: SKIN[4] }, handG);
+el('circle', { cx: 1101, cy: 756, r: 18, fill: SKIN[4] }, handG);
+
+/* vikarien */
+var subG = el('g', {}, scene);
+var sub = K.grownup(subG, '#7c3aed', SKIN[0], '#8a5a2b');
+move(subG, 1500, 640, 1.0);
+var mugG = el('g', {}, subG);
+el('rect', { x: 44, y: 40, width: 34, height: 40, rx: 6, fill: '#fff', stroke: C.ink, 'stroke-width': 3 }, mugG);
+el('path', { d: 'M78,50 a12,12 0 0 1 0,20', stroke: C.ink, 'stroke-width': 3, fill: 'none' }, mugG);
+el('rect', { x: 47, y: 43, width: 28, height: 10, fill: '#6b4226' }, mugG);
+/* svettdroppe när hon inte vet svaret */
+var sweatG = el('g', { opacity: 0 }, subG);
+el('path', { d: 'M50,-60 q10,16 0,22 q-10,-6 0,-22 z', fill: '#5fb8ff', stroke: '#2f8fd6', 'stroke-width': 2 }, sweatG);
+
+/* ordinarie läraren i dörren */
+var realG = el('g', { opacity: 0 }, scene);
+K.grownup(realG, '#0f766e', SKIN[2], '#2b1c12');
+move(realG, 1430, 660, 0.9);
+
+/* ---------- pratbubblor ---------- */
+function makeBubble(w, h, lines, size, tail, x, y) {
+  var g = el('g', { opacity: 0 }, scene);
+  bubble(g, w, h, lines, size, tail);
+  g.pos = [x, y];
+  return g;
+}
+var bRast = makeBubble(620, 150, ['Vi brukar ha rast nu!'], 46, [100, 560], 480, 300);
+var bAh = makeBubble(320, 120, ['Åhhh…'], 52, [-120, 420], 1560, 260);
+var bFraga = makeBubble(560, 130, ['Vad är fotosyntes?'], 44, [20, 540], 1080, 300);
+var bHurGick = makeBubble(420, 116, ['Hur gick det?'], 38, [-180, 430], 1630, 230);
+var bBast = makeBubble(430, 120, ['Bäst hittills.'], 42, [-260, 380], 640, 280);
+
+/* ---------- bildtexter ---------- */
+var capG = el('g', { opacity: 0 }, scene);
+el('rect', { x: 300, y: 916, width: 1320, height: 132, rx: 26, fill: 'rgba(12,16,28,.86)' }, capG);
+var capTitle = txt('', { x: 960, y: 976, 'text-anchor': 'middle', 'font-size': 46, 'font-weight': 800, fill: '#fff' }, capG);
+var capSub = txt('', { x: 960, y: 1020, 'text-anchor': 'middle', 'font-size': 28, fill: '#c7cede' }, capG);
+
+/* ---------- slutkort ---------- */
+var defs = scene.querySelector('defs');
+var eg = el('linearGradient', { id: 'eg2', x1: 0, y1: 0, x2: 1, y2: 1 }, defs);
+el('stop', { offset: 0, 'stop-color': '#4f46e5' }, eg);
+el('stop', { offset: 1, 'stop-color': '#06b6d4' }, eg);
+var endG = el('g', { opacity: 0 }, scene);
+el('rect', { x: 0, y: 0, width: 1920, height: 1080, fill: 'url(#eg2)' }, endG);
+var endLogo = el('g', {}, endG);
+el('rect', { x: 830, y: 200, width: 260, height: 260, rx: 70, fill: '#fff' }, endLogo);
+txt('S', { x: 960, y: 410, 'text-anchor': 'middle', 'font-size': 190, 'font-weight': 800, fill: C.brand }, endLogo);
+txt('Sändo Tavla', { x: 960, y: 580, 'text-anchor': 'middle', 'font-size': 96, 'font-weight': 800, fill: '#fff' }, endG);
+txt('Lektionen sköter sig själv. Nästan.', { x: 960, y: 650, 'text-anchor': 'middle', 'font-size': 40, fill: '#e6e9ff' }, endG);
+txt('Schema · Grupper · Ljuddetektor · AI-Lärare · Exit ticket · 42 till', { x: 960, y: 718, 'text-anchor': 'middle', 'font-size': 30, fill: '#dfe3ff' }, endG);
+var endBtn = el('g', {}, endG);
+el('rect', { x: 560, y: 790, width: 800, height: 110, rx: 30, fill: '#fff' }, endBtn);
+txt('INSTALLERA FÖR BRA ELEVER', { x: 960, y: 862, 'text-anchor': 'middle', 'font-size': 42, 'font-weight': 800, fill: C.brand }, endBtn);
+txt('Android 8.0+  ·  fungerar offline', { x: 960, y: 950, 'text-anchor': 'middle', 'font-size': 26, fill: '#e6e9ff' }, endG);
+
+/* ===================================================================
+   Tidslinjen
+   =================================================================== */
+var DUR = 44000;
+function fmt(sec) {
+  sec = Math.max(0, Math.ceil(sec));
+  return Math.floor(sec / 60) + ':' + (sec % 60 < 10 ? '0' : '') + (sec % 60);
+}
+function setBubble(g, t, a, b) {
+  var v = fade(t, a, b, 280);
+  show(g, v);
+  move(g, g.pos[0], g.pos[1] - (1 - p(t, a, a + 350, 'out')) * 30);
+}
+
+function render(t) {
+  /* ---- vikarien kommer in ---- */
+  var subX, subY = 780, subS = 1.0;
+  if (t < 3400) {
+    var w = p(t, 400, 3200, 'out');
+    subX = lerp(1420, 1120, w);
+    subY = lerp(700, 780, w) + Math.abs(Math.sin(t / 130)) * 7 * (1 - w);
+    subS = lerp(0.86, 1.0, w);
+  } else if (t < 9000) {
+    var w2 = p(t, 3600, 8200, 'inOut');
+    subX = lerp(1120, 430, w2);
+    subY = 780 + Math.abs(Math.sin(t / 150)) * 6 * (w2 > 0 && w2 < 1 ? 1 : 0);
+  } else {
+    subX = lerp(430, 330, p(t, 9000, 10500, 'inOut'));
+    subY = lerp(780, 700, p(t, 9000, 10500, 'inOut'));
+  }
+  move(subG, subX, subY, subS);
+  sub.talk(t > 41000 && t < 43000, t);
+  show(mugG, 1 - p(t, 8600, 9200));
+  show(sweatG, fade(t, 25200, 28200, 300));
+  sub.arm.setAttribute('transform',
+    (t > 9200 && t < 10400) || (t > 14200 && t < 15200) || (t > 26600 && t < 27600)
+      ? 'rotate(-58,45,30)' : '');
+
+  /* dörren öppnas när hon kommer in, och när ordinarie läraren tittar in */
+  var doorOpen = Math.max(fade(t, 200, 3000, 300), fade(t, 38600, 43800, 300));
+  doorPanel.setAttribute('transform-origin', '1336px 480px');
+  doorPanel.setAttribute('transform', 'scale(' + (1 - doorOpen * 0.86) + ',1)');
+  doorDark.setAttribute('opacity', doorOpen);
+  show(realG, fade(t, 39000, 43600, 300));
+
+  /* ---- eleverna ---- */
+  backKids.concat(frontKids).forEach(function (k, i) {
+    var bob = Math.sin(t / 700 + i) * 3;
+    k.head.setAttribute('transform', 'translate(0,' + bob + ')');
+    k.setMood(t > 30500 && t < 38500 ? 'glad'
+      : t > 11000 && t < 13500 ? 'ledsen'
+      : t > 4700 && t < 8800 ? 'glad' : 'neutral');
+  });
+  /* den som testar vikarien vinkar med armen */
+  rastKid.armR.setAttribute('transform', t > 4700 && t < 8600 ? 'rotate(-46,40,26)' : '');
+  /* handuppräckning inför frågan */
+  show(handG, fade(t, 24600, 27400, 200));
+  fragaKid.armR.setAttribute('transform', t > 24600 && t < 27400 ? 'rotate(-70,40,26)' : '');
+
+  /* ---- tavlan: en widget i taget ---- */
+  var scSchema = fade(t, 9400, 14300, 350);
+  var scGroups = fade(t, 14600, 19600, 350);
+  var scNoise = fade(t, 19900, 24800, 350);
+  var scAI = fade(t, 26900, 31200, 350);
+  var scFun = fade(t, 31400, 36600, 350);
+  var scExit = fade(t, 36900, 43600, 350);
+  show(wIdle, 1 - p(t, 9200, 9500));
+  show(wSchema, scSchema); show(schemaNext, scSchema);
+  show(wGroups, scGroups); show(wNoise, scNoise); show(wAI, scAI);
+  show(wFun, scFun); show(wExit, scExit);
+
+  schemaTime.textContent = fmt(1394 - t / 1000);
+  schemaTime.setAttribute('fill', t < 12000 ? C.brand : C.brand);
+
+  /* grupperna poppar in en och en */
+  groupCards.forEach(function (g, i) {
+    var q = p(t, 15000 + i * 260, 15400 + i * 260, 'out');
+    g.setAttribute('opacity', q);
+    g.setAttribute('transform', 'translate(' + ((676 + i * 162) * (1 - (0.85 + 0.15 * q))) + ',' +
+      (375 * (1 - (0.85 + 0.15 * q))) + ') scale(' + (0.85 + 0.15 * q) + ')');
+  });
+
+  /* ljudnivån stiger och sjunker igen */
+  var nl = t < 20600 ? 18 : t < 22200 ? lerp(18, 76, p(t, 20600, 22200, 'out'))
+    : t < 23000 ? 76 : lerp(76, 20, p(t, 23000, 24400, 'out'));
+  nl = Math.round(nl);
+  noiseFill.setAttribute('width', Math.max(20, nl * 3.48));
+  var ncol = nl >= 70 ? C.red : nl >= 45 ? C.amber : C.green;
+  noiseFill.setAttribute('fill', ncol);
+  noiseFace.textContent = nl >= 70 ? '🤫' : nl >= 45 ? '😐' : '🙂';
+  noiseTxt.textContent = 'Ljudnivå ' + nl + (nl >= 70 ? ' · för högt' : nl >= 45 ? ' · börjar bli stimmigt' : ' · lugnt');
+  noiseTxt.setAttribute('fill', ncol);
+  lampR.setAttribute('fill', nl >= 70 ? '#ef4444' : '#3a4256');
+  lampY.setAttribute('fill', nl >= 45 && nl < 70 ? '#facc15' : '#3a4256');
+  lampG2.setAttribute('fill', nl < 45 ? C.green : '#3a4256');
+
+  /* AI-Läraren svarar ur arbetsboken */
+  aiQ.setAttribute('opacity', p(t, 27000, 27400));
+  aiDots.setAttribute('opacity', fade(t, 27500, 28600, 200));
+  aiLine1.setAttribute('opacity', p(t, 28600, 29000));
+  aiLine2.setAttribute('opacity', p(t, 29000, 29400));
+  aiLine3.setAttribute('opacity', p(t, 29500, 29900));
+
+  /* hjulet snurrar och stannar på ett namn */
+  var spinning = t < 33200;
+  wheelSpin.setAttribute('transform', 'rotate(' + (spinning ? (t / 2.4) % 360 : 214) + ')');
+  wheelPick.textContent = spinning ? '' : '🎉 Iris';
+  timerTxt.textContent = fmt(Math.max(0, 300 - (t - 31600) / 1000));
+  scoreTxt.textContent = (4 + Math.floor(clamp((t - 32000) / 1800, 0, 3))) + ' – ' + (3 + Math.floor(clamp((t - 33000) / 2200, 0, 2)));
+
+  /* ---- pratbubblor ---- */
+  setBubble(bRast, t, 4800, 8800);
+  setBubble(bAh, t, 11200, 13600);
+  setBubble(bFraga, t, 25000, 27200);
+  setBubble(bHurGick, t, 39600, 41600);
+  setBubble(bBast, t, 41400, 43600);
+
+  /* ---- bildtexter ---- */
+  var capOn = 0;
+  if (t > 1200 && t < 4400) { capOn = fade(t, 1200, 4400, 300); capTitle.textContent = 'Måndag morgon. Vikarie i 5B.'; capSub.textContent = 'Hon har aldrig träffat klassen förut.'; }
+  else if (t > 11400 && t < 14200) { capOn = fade(t, 11400, 14200, 300); capTitle.textContent = 'Schemat vet.'; capSub.textContent = 'Rasten står på tavlan — ingen diskussion behövs.'; }
+  else if (t > 16600 && t < 19400) { capOn = fade(t, 16600, 19400, 300); capTitle.textContent = 'Grupper på tre sekunder.'; capSub.textContent = 'Inget tjafs om vem som är med vem.'; }
+  else if (t > 21600 && t < 24600) { capOn = fade(t, 21600, 24600, 300); capTitle.textContent = 'Hon behövde aldrig höja rösten.'; capSub.textContent = 'Ljuddetektorn och trafikljuset gjorde det åt henne.'; }
+  else if (t > 28800 && t < 31000) { capOn = fade(t, 28800, 31000, 300); capTitle.textContent = 'AI-Läraren läser klassens egen arbetsbok.'; capSub.textContent = 'Svaret kommer med sidhänvisning — inte påhittat.'; }
+  else if (t > 33400 && t < 36400) { capOn = fade(t, 33400, 36400, 300); capTitle.textContent = '47 komponenter. Noll förberedelser.'; capSub.textContent = 'Hjul, timer, poäng och stjärnor — allt på samma tavla.'; }
+  else if (t > 37200 && t < 39200) { capOn = fade(t, 37200, 39200, 300); capTitle.textContent = 'Och lektionen slutar i tid.'; capSub.textContent = 'Exit ticket direkt på tavlan.'; }
+  show(capG, capOn);
+
+  /* ---- slutkort ---- */
+  var end = fade(t, 43700, DUR, 400);
+  show(endG, end);
+  var epop = p(t, 43700, 44400, 'out');
+  endLogo.setAttribute('transform', 'translate(' + (960 * (1 - (0.85 + 0.15 * epop))) + ',' +
+    (330 * (1 - (0.85 + 0.15 * epop))) + ') scale(' + (0.85 + 0.15 * epop) + ')');
+  var ep = 1 + Math.sin(t / 260) * 0.015;
+  endBtn.setAttribute('transform', 'translate(' + (960 * (1 - ep)) + ',' + (845 * (1 - ep)) + ') scale(' + ep + ')');
+}
+
+K.play(render, DUR);
+</script>
+</body>
+</html>
