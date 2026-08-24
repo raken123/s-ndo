@@ -7,3 +7,9 @@ android/local.properties
 
 # Python
 __pycache__/
+
+# Android-bygge, Sändo Elev
+android-elev/build/
+android-elev/app/build/
+android-elev/.gradle/
+android-elev/local.properties

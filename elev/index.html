@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0f7b6c">
+<title>Sändo Elev</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header id="topbar">
+  <div class="brand"><span class="logo">S</span><span class="brand-name">Sändo Elev</span></div>
+  <button id="credit-chip" class="chip" type="button">💎 5 000 000</button>
+</header>
+
+<main id="view" aria-live="polite"></main>
+
+<nav id="tabs">
+  <button class="tab" data-view="bok" type="button"><span>📖</span>Boken</button>
+  <button class="tab" data-view="monni" type="button"><span>💬</span>Monni</button>
+  <button class="tab" data-view="sagor" type="button"><span>✏️</span>Sagor</button>
+  <button class="tab" data-view="mer" type="button"><span>⚙️</span>Mer</button>
+</nav>
+
+<div id="sheet" class="sheet hidden">
+  <div class="sheet-card" role="dialog" aria-modal="true">
+    <div class="sheet-grip"></div>
+    <h2 id="sheet-title">Rubrik</h2>
+    <div id="sheet-body"></div>
+    <div class="sheet-actions">
+      <button id="sheet-cancel" class="btn ghost" type="button">Avbryt</button>
+      <button id="sheet-ok" class="btn" type="button">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="js/core.js"></script>
+<script src="js/canvas.js"></script>
+<script src="js/monni.js"></script>
+<script src="js/bok.js"></script>
+<script src="js/sagor.js"></script>
+<script src="js/mer.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

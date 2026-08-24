@@ -1,0 +1,62 @@
+plugins {
+    id 'com.android.application'
+}
+
+/* Webbappen i ../../elev är enda källan — den kopieras in som assets vid bygge. */
+tasks.register('copyWebApp', Copy) {
+    from rootProject.file('../elev')
+    into layout.buildDirectory.dir('generated/webapp')
+}
+
+android {
+    namespace 'se.sando.elev'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "se.sando.elev"
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    sourceSets {
+        main {
+            assets.srcDirs += [layout.buildDirectory.dir('generated/webapp')]
+        }
+    }
+
+    signingConfigs {
+        release {
+            def props = new Properties()
+            def f = rootProject.file('keystore.properties')
+            if (f.exists()) {
+                f.withInputStream { props.load(it) }
+                storeFile rootProject.file(props['storeFile'])
+                storePassword props['storePassword']
+                keyAlias props['keyAlias']
+                keyPassword props['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (rootProject.file('keystore.properties').exists()) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+    }
+}
+
+tasks.named('preBuild') { dependsOn 'copyWebApp' }

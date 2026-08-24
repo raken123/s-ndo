@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- En uppslagen bok med en pratbubbla: arbetsboken och Monni. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- vänster boksida -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,42 C32,38 42,38 52,43 v28 C42,66 32,66 24,70 z" />
+    <!-- höger boksida -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M84,42 C76,38 66,38 56,43 v28 C66,66 76,66 84,70 z" />
+    <!-- bokrygg -->
+    <path
+        android:fillColor="#0B5E52"
+        android:pathData="M52,43 h4 v28 h-4 z" />
+    <!-- textrader -->
+    <path
+        android:strokeColor="#0F7B6C"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M31,49 h14 M31,56 h14 M63,49 h14 M63,56 h14" />
+    <!-- Monnis pratbubbla -->
+    <path
+        android:fillColor="#FFD166"
+        android:pathData="M60,20 h26 a6,6 0 0 1 6,6 v14 a6,6 0 0 1 -6,6 h-14 l-8,7 v-7 h-4 a6,6 0 0 1 -6,-6 v-14 a6,6 0 0 1 6,-6 z" />
+    <path
+        android:fillColor="#0B5E52"
+        android:pathData="M67,29 a4,4 0 1 1 8,0 c0,3 -3,3 -3,6 h-2 c0,-4 3,-4 3,-6 a2,2 0 1 0 -4,0 z M70,39 h2.6 v2.6 h-2.6 z" />
+</vector>
