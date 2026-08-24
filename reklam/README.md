@@ -1,7 +1,7 @@
 # Reklamfilmer — Sändo Tavla
 
-Fyra storytime-filmer i samma stil och med samma motor — tre i klassrummet
-och en ute på skolgården.
+Fem storytime-filmer i samma stil och med samma motor — tre i klassrummet,
+en ute på skolgården och en som börjar hemma i sängen.
 
 | Fil | Film | Längd | Storlek |
 |---|---|---|---|
@@ -13,11 +13,14 @@ och en ute på skolgården.
 | `sando-tavla-rasten-1080.mp4` | Rasten, mindre version | 42 s | 1,5 MB |
 | `sando-tavla-presentationen.mp4` | **Presentationen** — Vera glömde allt hemma | 41 s | 3,1 MB |
 | `sando-tavla-presentationen-1080.mp4` | Presentationen, mindre version | 41 s | 1,3 MB |
+| `sando-tavla-fejksjuk.mp4` | **Fejksjuk** — med hejdåsången | 48 s | 6,1 MB |
+| `sando-tavla-fejksjuk-1080.mp4` | Fejksjuk, mindre version | 48 s | 2,6 MB |
 
 Källor: `reklam.html`, `reklam-vikarien.html`, `reklam-rasten.html`,
-`reklam-presentationen.html` och den gemensamma motorn `filmkit.js`.
+`reklam-presentationen.html`, `reklam-fejksjuk.html` och den gemensamma
+motorn `filmkit.js`.
 Affischbilder: `affisch.png`, `affisch-vikarien.png`, `affisch-rasten.png`,
-`affisch-presentationen.png`.
+`affisch-presentationen.png`, `affisch-fejksjuk.png`.
 
 ## Film 1 — Skriket
 
@@ -78,6 +81,34 @@ om två minuter.
 | 32–37 s | Och läxan? **Arbetsboken s. 42–43 till fredag** — den har stått kvar på tavlan hela lektionen, och står kvar hela veckan. |
 | 37–41 s | Slutkort: *Ingen behöver stå där oförberedd.* |
 
+## Film 5 — Fejksjuk
+
+Den enda filmen med sång. Den börjar hemma i ett sovrum och slutar i
+klassrummet.
+
+| Tid | Scen |
+|---|---|
+| 0–8 s | Elias vill slippa tråkig matte och håller skrivbordslampan mot febertermometern. |
+| 8–12 s | Displayen landar på **20,0°** — alltså precis rumstemperatur. **"MAMMA! Jag är jättesjuk!"** |
+| 12–26 s | Samtidigt i skolan: mattelektionen blir dagens roligaste. Lyckohjul, mattetränare, lagtävling, bingo och konfetti. |
+| 26–36 s | Sist på dagen sjunger klassen **hejdåsången**. Texten står på tavlan med studsande boll, och musiken spelar. |
+| 36–42 s | Dörren öppnas. Elias blev plötsligt frisk — precis lagom för att missa allt. **"Är det slut redan?"** Han blir ledsen. |
+| 42–46 s | Men läraren pekar på tavlan: **imorgon gör de om alltihop.** Han är med då. |
+| 46–48 s | Slutkort: *Lektionen man inte vill missa.* |
+
+### Hejdåsången
+
+Melodin är komponerad i ljudskriptet, inte inspelad: sexton toner i C-dur
+över ackorden C–Am–F–G, med bastoner, brutna ackord och lätta handklappar.
+Bollen på tavlan studsar i exakt samma takt som tonerna — filmen och
+musiken delar samma tidtabell (`SONG_START` och `NOTE` i filmfilen,
+0,5 sekunder per ton).
+
+> Hej då, hej då — tack för idag!
+> Vi ses igen imorgon.
+> Ta med ditt skratt och ditt räknehuvud,
+> så gör vi allt det roliga en gång till!
+
 ## Så är de gjorda
 
 Varje film är en HTML-fil som ritar allt i SVG och animerar med en egen
@@ -99,10 +130,12 @@ node tools/render-reklam.js              # rutor för film 1
 node tools/render-vikarien.js            # rutor för film 2
 node tools/render-rasten.js              # rutor för film 3
 node tools/render-presentationen.js      # rutor för film 4
+node tools/render-fejksjuk.js            # rutor för film 5
 python3 tools/reklam-ljud.py             # ljudspår film 1
 python3 tools/vikarien-ljud.py           # ljudspår film 2
 python3 tools/rasten-ljud.py             # ljudspår film 3
 python3 tools/presentationen-ljud.py     # ljudspår film 4
+python3 tools/fejksjuk-ljud.py           # ljudspår film 5 (med sången)
 
 ffmpeg -framerate 30 -i frames/f%05d.png -i ljud.wav \
   -c:v libx264 -preset slow -crf 20 -pix_fmt yuv420p -movflags +faststart \
