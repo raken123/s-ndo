@@ -193,11 +193,13 @@
           document.body.removeChild(file);
           if (!f) return;
           if (f.size > 18 * 1024 * 1024) { App.toast('PDF:en är för stor (max 18 MB)'); return; }
-          App.toast('Laddar upp ' + f.name + '…', 4000);
-          App.Gemini.uploadFile(f, kind, function (err, doc) {
-            if (err) { App.toast(err, 5000); return; }
-            App.toast(doc.name + ' tillagd');
-            renderDocs();
+          App.confirmUpload(f, function () {
+            App.toast('Laddar upp ' + f.name + '…', 4000);
+            App.Gemini.uploadFile(f, kind, function (err, doc) {
+              if (err) { App.toast(err, 5000); return; }
+              App.toast(doc.name + ' tillagd');
+              renderDocs();
+            });
           });
         });
         file.click();

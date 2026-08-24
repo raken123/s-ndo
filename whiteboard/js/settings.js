@@ -321,10 +321,18 @@
       function renderDocs() {
         var docs = App.Gemini.docs.all();
         docCard.innerHTML = '<h3 style="font-size:22px;margin-bottom:6px">📄 Material till AI-Läraren</h3>' +
-          '<p class="muted" style="font-size:14px;line-height:1.5;margin-bottom:12px">' +
+          '<p class="muted" style="font-size:14px;line-height:1.5;margin-bottom:10px">' +
           'Elevernas arbetsbok och lärarhandledningen som PDF. AI-Läraren och de andra ' +
           'AI-komponenterna utgår från dem. Filerna ligger hos Google i 48 timmar och laddas ' +
-          'sedan upp på nytt vid behov. Ladda inte upp material med elevers personuppgifter.</p>';
+          'sedan upp på nytt vid behov. Ladda inte upp material med elevers personuppgifter.</p>' +
+          '<div class="card" style="border:2px solid var(--warn);border-left-width:10px;margin-bottom:12px">' +
+          '<b>⚠️ Kolla sista sidan i boken först</b>' +
+          '<p style="font-size:14px;line-height:1.6;margin-top:6px">' +
+          'Många läromedel har ett förbehåll på sista sidan, i kolofonen intill copyright ' +
+          'och ISBN. Står det där att materialet <b>inte får användas för att träna AI</b> ' +
+          '(eller för maskininlärning, textutvinning eller språkmodeller) — ladda inte upp ' +
+          'boken. Frågar du en förlagsjurist är det förbehållet som gäller, inte den här appen.</p>' +
+          '</div>';
         var list = App.el('div', 'list');
         if (!docs.length) {
           list.appendChild(App.el('div', 'muted', 'Inga dokument tillagda än.'));
@@ -358,11 +366,15 @@
               document.body.removeChild(file);
               if (!f) return;
               if (f.size > 18 * 1024 * 1024) { App.toast('PDF:en är för stor (max 18 MB)'); return; }
-              App.toast('Laddar upp ' + f.name + '…', 4000);
-              App.Gemini.uploadFile(f, k[0], function (err, doc) {
-                if (err) { App.toast(err, 5000); return; }
-                App.toast(doc.name + ' tillagd');
-                renderDocs();
+              /* Uppladdningen skickar hela boken till Google. Fråga varje gång,
+                 för förbehållet står i den enskilda boken — inte i appen. */
+              App.confirmUpload(f, function () {
+                App.toast('Laddar upp ' + f.name + '…', 4000);
+                App.Gemini.uploadFile(f, k[0], function (err, doc) {
+                  if (err) { App.toast(err, 5000); return; }
+                  App.toast(doc.name + ' tillagd');
+                  renderDocs();
+                });
               });
             });
             file.click();
@@ -372,23 +384,69 @@
       }
       renderDocs();
 
+      /* ----- Lärarverifiering ----- */
+      var verCard = App.el('div', 'card');
+      wrap.appendChild(verCard);
+      function renderVerify() {
+        var c = App.Credits;
+        var v = App.Verify.state();
+        if (v.status === 'verified') {
+          verCard.innerHTML = '<h3 style="font-size:22px;margin-bottom:6px">🪪 Lärarverifiering</h3>' +
+            '<p style="font-size:17px;line-height:1.6"><b>✓ Verifierad</b> — ' + App.esc(v.namn) +
+            ', ' + App.esc(v.skola) + '<br>' +
+            '<span class="muted" style="font-size:14px">Verifierad ' +
+            new Date(v.at).toLocaleDateString('sv-SE') + '. Kreditnivå: ' + c.fmt(c.VERIFIED) +
+            '. Bilden på kortet sparades aldrig.</span></p>';
+          var rv = App.el('div', 'row');
+          rv.style.marginTop = '12px';
+          rv.appendChild(App.button('✕ Ta bort verifieringen', 'sm ghost', function () {
+            App.confirm('Ta bort verifieringen?',
+              'Kreditnivån går tillbaka till ' + c.fmt(c.START) + ' och saldot sänks till det.',
+              function () {
+                App.Verify.clear();
+                renderVerify();
+                renderCredits();
+              });
+          }));
+          verCard.appendChild(rv);
+        } else {
+          verCard.innerHTML = '<h3 style="font-size:22px;margin-bottom:6px">🪪 Lärarverifiering</h3>' +
+            '<p style="font-size:15px;line-height:1.6">Skanna ditt id-kort eller din ' +
+            'lärarlegitimation med kameran, så höjs krediterna från ' + c.fmt(c.START) +
+            ' till <b>' + c.fmt(c.VERIFIED) + '</b>.</p>' +
+            '<p class="muted" style="font-size:14px;line-height:1.6;margin-top:8px">' +
+            'Bilden granskas på plattan och kastas direkt efteråt — den sparas inte och ' +
+            'skickas ingenstans. Kvar blir namn, skola och datum.</p>';
+          var rn = App.el('div', 'row');
+          rn.style.marginTop = '12px';
+          rn.appendChild(App.button('🪪 Skanna id-kort', 'sm', function () {
+            App.showVerify(function () { renderVerify(); renderCredits(); });
+          }));
+          verCard.appendChild(rn);
+        }
+      }
+      renderVerify();
+
       /* ----- Krediter ----- */
       var credCard = App.el('div', 'card');
       wrap.appendChild(credCard);
       function renderCredits() {
         var c = App.Credits;
+        var verifierad = App.Verify.isVerified();
         credCard.innerHTML = '<h3 style="font-size:22px;margin-bottom:6px">💳 Användningskrediter</h3>' +
-          '<div class="mid-num">' + c.fmt(c.balance()) + '</div>' +
+          App.midNum(c.fmt(c.balance()) + (verifierad ? ' ✓' : '')) +
           '<p class="muted" style="font-size:14px;line-height:1.6;margin-top:8px">' +
-          'Gratis start: ' + c.fmt(c.START) + '.<br>' +
+          (verifierad
+            ? 'Nivå: verifierad lärare — ' + c.fmt(c.VERIFIED) + '.<br>'
+            : 'Gratis start: ' + c.fmt(c.START) + '. Verifierad lärare: ' + c.fmt(c.VERIFIED) + '.<br>') +
           'Input (ett ljudsegment som skickas till AI:n): ' + c.fmt(c.IN) + '.<br>' +
           'Output (en tillsägelse från AI:n): ' + c.fmt(c.OUT) + '.<br>' +
           'Lokalt läge och manuella rapporter kostar ingenting.</p>';
         var r = App.el('div', 'row');
         r.style.marginTop = '14px';
         r.appendChild(App.button('📜 Visa historik', 'sm ghost', function () { App.showCredits(); }));
-        r.appendChild(App.button('↺ Återställ till ' + c.fmt(c.START), 'sm ghost', function () {
-          App.confirm('Återställ krediterna?', 'Saldot sätts tillbaka till ' + c.fmt(c.START) + '.', function () {
+        r.appendChild(App.button('↺ Återställ till ' + c.fmt(c.tier()), 'sm ghost', function () {
+          App.confirm('Återställ krediterna?', 'Saldot sätts tillbaka till ' + c.fmt(c.tier()) + '.', function () {
             c.reset();
             renderCredits();
           });

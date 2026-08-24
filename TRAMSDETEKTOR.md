@@ -112,12 +112,43 @@ mellan.
 | | |
 |---|---|
 | Gratis start | 5 000 kr |
+| Verifierad lärare | 5 000 000 kr |
 | Input | 80 kr per ljudsegment som skickas (15 s som standard, ställbart) |
 | Output | 300 kr per tillsägelse från AI:n |
 
 Saldot syns i topbaren, historiken bakom 💳-chipet. Går saldot under en input
 stängs AI-läget av och detektorn fortsätter i lokalt läge. Lokalt läge och
 manuella rapporter kostar ingenting.
+
+### Lärarverifiering
+
+Den högre nivån kräver att man skannar sitt id-kort eller sin lärarlegitimation
+med kameran: ⚙️ **Inställningar → Lärarverifiering → Skanna id-kort**. När det
+är gjort fylls saldot på till 5 000 000 kr.
+
+**Bilden sparas inte.** Den ligger i minnet under granskningen och kastas direkt
+efteråt — den skrivs aldrig till lagringen och skickas ingenstans, vilket är
+avsiktligt: en smartboard i ett klassrum är inte en enhet att lämna id-bilder
+på. Kvar i `localStorage` blir namn, skola och datum.
+
+Granskningen mäter fyra saker på bilden och säger till om något behöver bli
+bättre:
+
+| Mått | Underkänt om | Vad läraren får läsa |
+|---|---|---|
+| Ljus | medelvärde < 38 eller > 225 | *För mörkt — tänd mer ljus* / *För ljust — flytta bort reflexen* |
+| Kontrast | standardavvikelse < 16 | *Kortet syns knappt — lägg det mot ett mörkare underlag* |
+| Skärpa | medelbelopp av laplacian < 2,2 | *Suddigt — håll kortet stilla en sekund till* |
+| Fyllnad | < 22 % av rutan skiljer sig från kanten | *Kortet fyller för lite — håll det närmare kameran* |
+
+Gränserna är satta efter `tools/verifiering-kalibrering.js`, som ritar ett
+syntetiskt kort i olika skick och skriver ut hur granskningen dömer: ett mjukt
+men läsbart kort släpps igenom, ett suddigt eller tomt gör det inte.
+
+Appen har ingen uppkoppling mot något lärarregister och påstår inte att den har
+det — kontrollen är att bilden håller måttet och att läraren intygar sina
+uppgifter. Det står i rutan. Verifieringen kan tas bort i inställningarna, och
+då går saldot tillbaka till 5 000 kr.
 
 ## API-nyckel
 

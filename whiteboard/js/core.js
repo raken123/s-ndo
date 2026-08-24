@@ -27,7 +27,7 @@
     tools: [],
     timers: [],
     Store: Store,
-    version: '1.4.1',
+    version: '1.5.0',
 
     /* ---------- Komponentregister ---------- */
     register: function (tool) {
@@ -84,12 +84,16 @@
       this.timers = [];
     },
 
-    /* ---------- Krediter ---------- */
+    /* ---------- Krediter ----------
+       Två nivåer: alla får 5 000 kr gratis, en verifierad lärare får
+       5 000 000 kr. Nivån bestäms av App.Verify, aldrig av saldot självt. */
     Credits: {
       START: 5000,
+      VERIFIED: 5000000,
       IN: 80,
       OUT: 300,
-      balance: function () { return Store.get('credits', this.START); },
+      tier: function () { return App.Verify.isVerified() ? this.VERIFIED : this.START; },
+      balance: function () { return Store.get('credits', this.tier()); },
       log: function () { return Store.get('creditLog', []); },
       canAfford: function (kind) { return this.balance() >= (kind === 'out' ? this.OUT : this.IN); },
       charge: function (kind, note) {
@@ -97,14 +101,37 @@
         var bal = this.balance();
         if (bal < cost) return false;
         Store.set('credits', bal - cost);
-        var log = this.log();
-        log.unshift({ t: Date.now(), kind: kind, cost: cost, note: note || '' });
-        Store.set('creditLog', log.slice(0, 60));
-        App.renderCredits();
+        this.note({ kind: kind, cost: cost, note: note || '' });
         return true;
       },
-      reset: function () {
+      note: function (rad) {
+        var log = this.log();
+        rad.t = Date.now();
+        log.unshift(rad);
+        Store.set('creditLog', log.slice(0, 60));
+        App.renderCredits();
+      },
+      /* Verifieringen fyller på till den högre nivån. Redan förbrukade
+         krediter kommer inte tillbaka utöver det — saldot sätts till nivån. */
+      unlock: function () {
+        var bal = this.balance();
+        if (bal >= this.VERIFIED) return 0;
+        var pafyllning = this.VERIFIED - bal;
+        Store.set('credits', this.VERIFIED);
+        this.note({ kind: 'unlock', cost: -pafyllning, note: 'Lärarverifiering' });
+        return pafyllning;
+      },
+      /* Tas verifieringen bort går saldot tillbaka till den fria nivån. */
+      lock: function () {
+        var bal = this.balance();
+        if (bal <= this.START) { App.renderCredits(); return 0; }
+        var drag = bal - this.START;
         Store.set('credits', this.START);
+        this.note({ kind: 'lock', cost: drag, note: 'Verifieringen togs bort' });
+        return drag;
+      },
+      reset: function () {
+        Store.set('credits', this.tier());
         Store.set('creditLog', []);
         App.renderCredits();
       },
@@ -114,8 +141,92 @@
       var chip = document.getElementById('credit-chip');
       if (!chip) return;
       var b = this.Credits.balance();
-      chip.textContent = '💳 ' + this.Credits.fmt(b);
+      chip.textContent = '💳 ' + this.Credits.fmt(b) + (this.Verify.isVerified() ? ' ✓' : '');
       chip.className = 'dock-chip' + (b < this.Credits.OUT ? ' alert' : '');
+    },
+
+    /* ---------- Lärarverifiering ----------
+       Läraren skannar sitt id-kort med kameran för att komma upp på den högre
+       kreditnivån. Bilden granskas på plattan, i minnet, och kastas direkt
+       efteråt: den sparas aldrig och lämnar aldrig enheten. Det som sparas är
+       namn, skola och tidpunkt. Appen kan inte slå upp någon mot ett register
+       — kontrollen är att bilden håller måttet och att läraren intygar sina
+       uppgifter, och det står så i rutan. */
+    Verify: {
+      state: function () { return Store.get('verify', { status: 'none' }); },
+      isVerified: function () { return this.state().status === 'verified'; },
+
+      /* Granskar den skannade bilden: skärpa, kontrast och hur mycket av rutan
+         kortet fyller. Returnerar mätvärdena och vad som behöver bli bättre. */
+      inspect: function (canvas) {
+        var c = canvas.getContext('2d', { willReadFrequently: true });
+        var w = canvas.width, h = canvas.height;
+        var d = c.getImageData(0, 0, w, h).data;
+        var lum = new Float32Array(w * h);
+        var i, x, y, sum = 0;
+        for (i = 0; i < w * h; i++) {
+          lum[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+          sum += lum[i];
+        }
+        var medel = sum / (w * h);
+        var varians = 0;
+        for (i = 0; i < w * h; i++) varians += (lum[i] - medel) * (lum[i] - medel);
+        var kontrast = Math.sqrt(varians / (w * h));
+
+        /* Skärpa: medelbeloppet av en laplacian. Ett suddigt eller skakigt
+           kort ger ett lågt värde även om kontrasten är hög. */
+        var kant = 0, n = 0;
+        for (y = 1; y < h - 1; y++) {
+          for (x = 1; x < w - 1; x++) {
+            i = y * w + x;
+            kant += Math.abs(4 * lum[i] - lum[i - 1] - lum[i + 1] - lum[i - w] - lum[i + w]);
+            n++;
+          }
+        }
+        var skarpa = kant / Math.max(1, n);
+
+        /* Fyllnad: hur stor del av rutan som skiljer sig från kanten runt om.
+           Ett kort som hålls för långt bort fyller för lite. */
+        var kantSum = 0, kantN = 0;
+        for (x = 0; x < w; x++) { kantSum += lum[x] + lum[(h - 1) * w + x]; kantN += 2; }
+        for (y = 0; y < h; y++) { kantSum += lum[y * w] + lum[y * w + w - 1]; kantN += 2; }
+        var bakgrund = kantSum / kantN;
+        var traffar = 0;
+        for (i = 0; i < w * h; i++) if (Math.abs(lum[i] - bakgrund) > 26) traffar++;
+        var fyllnad = traffar / (w * h);
+
+        var fel = [];
+        if (medel < 38) fel.push('För mörkt — tänd mer ljus.');
+        else if (medel > 225) fel.push('För ljust — flytta bort reflexen.');
+        if (kontrast < 16) fel.push('Kortet syns knappt — lägg det mot ett mörkare underlag.');
+        if (skarpa < 2.2) fel.push('Suddigt — håll kortet stilla en sekund till.');
+        if (fyllnad < 0.22) fel.push('Kortet fyller för lite — håll det närmare kameran.');
+        return {
+          ok: fel.length === 0,
+          fel: fel,
+          medel: Math.round(medel),
+          kontrast: Math.round(kontrast),
+          skarpa: Math.round(skarpa * 10) / 10,
+          fyllnad: Math.round(fyllnad * 100)
+        };
+      },
+
+      approve: function (namn, skola) {
+        Store.set('verify', {
+          status: 'verified',
+          namn: String(namn || '').trim(),
+          skola: String(skola || '').trim(),
+          at: Date.now()
+        });
+        var p = App.Credits.unlock();
+        App.renderCredits();
+        return p;
+      },
+      clear: function () {
+        Store.del('verify');
+        App.Credits.lock();
+        App.renderCredits();
+      }
     },
 
     /* ---------- Tavlor och sidor ---------- */
@@ -880,19 +991,29 @@
       clearTimeout(this._toastT);
       this._toastT = setTimeout(function () { t.classList.add('hidden'); }, ms || 2200);
     },
-    modal: function (title, bodyNode, onOk, okLabel) {
+    modal: function (title, bodyNode, onOk, okLabel, onClose) {
       var m = document.getElementById('modal');
       document.getElementById('modal-title').textContent = title;
       var body = document.getElementById('modal-body');
       body.innerHTML = '';
       if (typeof bodyNode === 'string') { body.innerHTML = bodyNode; } else if (bodyNode) { body.appendChild(bodyNode); }
-      document.getElementById('modal-ok').textContent = okLabel || 'OK';
+      var ok = document.getElementById('modal-ok');
+      ok.textContent = okLabel === false ? 'OK' : (okLabel || 'OK');
+      /* okLabel === false betyder att rutan har egna knappar i kroppen —
+         då ska den delade foten inte ligga kvar med en andra Avbryt-knapp. */
+      m.querySelector('.modal-actions').classList.toggle('hidden', okLabel === false);
       m.classList.remove('hidden');
       App._modalOk = onOk || null;
+      App._modalClose = onClose || null;
     },
     hideModal: function () {
-      document.getElementById('modal').classList.add('hidden');
+      var m = document.getElementById('modal');
+      m.classList.add('hidden');
+      m.querySelector('.modal-actions').classList.remove('hidden');
       App._modalOk = null;
+      var fn = App._modalClose;
+      App._modalClose = null;
+      if (fn) fn();
     },
     confirm: function (title, text, onYes) {
       this.modal(title, '<p style="font-size:17px;line-height:1.5">' + this.esc(text) + '</p>', onYes, 'Ja');
@@ -906,6 +1027,14 @@
       wrap.appendChild(body);
       root.appendChild(wrap);
       return { bar: bar, body: body, wrap: wrap };
+    },
+    /* .mid-num är dimensionerad för korta tal som "5 000 kr". Ett sjusiffrigt
+       belopp spränger kortet, så storleken får krympa med längden. */
+    midNum: function (text) {
+      var n = String(text).length;
+      var st = n > 9 ? ' style="font-size:clamp(26px,' + (81 / n).toFixed(1) + 'vw,' +
+        Math.round(864 / n) + 'px)"' : '';
+      return '<div class="mid-num"' + st + '>' + this.esc(text) + '</div>';
     },
     button: function (label, cls, onClick) {
       var b = this.el('button', 'btn ' + (cls || ''), label);
@@ -1057,12 +1186,22 @@
 
     showCredits: function () {
       var c = this.Credits;
+      var v = this.Verify.state();
       var box = this.el('div', 'col');
       var head = this.el('div', 'card');
-      head.innerHTML = '<div class="muted">Saldo</div><div class="mid-num">' + c.fmt(c.balance()) + '</div>' +
-        '<div class="muted" style="margin-top:8px">Start: ' + c.fmt(c.START) +
-        ' · Input: ' + c.fmt(c.IN) + ' per lyssning · Output: ' + c.fmt(c.OUT) + ' per tillsägelse</div>';
+      head.innerHTML = '<div class="muted">Saldo</div>' + this.midNum(c.fmt(c.balance())) +
+        '<div class="muted" style="margin-top:8px">Nivå: ' +
+        (v.status === 'verified'
+          ? 'verifierad lärare — ' + c.fmt(c.VERIFIED)
+          : 'gratis — ' + c.fmt(c.START) + ' (verifiera dig som lärare för ' + c.fmt(c.VERIFIED) + ')') +
+        '<br>Input: ' + c.fmt(c.IN) + ' per lyssning · Output: ' + c.fmt(c.OUT) + ' per tillsägelse</div>';
       box.appendChild(head);
+      if (v.status !== 'verified') {
+        var upp = this.el('div', 'row');
+        upp.style.marginBottom = '10px';
+        upp.appendChild(this.button('🪪 Verifiera dig som lärare', 'sm', function () { App.showVerify(); }));
+        box.appendChild(upp);
+      }
       var log = c.log();
       var list = this.el('div', 'list');
       if (!log.length) {
@@ -1070,15 +1209,229 @@
       } else {
         log.slice(0, 25).forEach(function (e) {
           var row = App.el('div', 'list-item');
-          row.innerHTML = '<span class="pill">' + (e.kind === 'out' ? 'Output' : 'Input') + '</span>' +
+          var etikett = { out: 'Output', in: 'Input', unlock: 'Verifiering', lock: 'Nivå bort' }[e.kind] || 'Input';
+          row.innerHTML = '<span class="pill">' + etikett + '</span>' +
             '<span class="grow">' + App.esc(e.note || '') + '</span>' +
-            '<span class="muted">−' + c.fmt(e.cost) + '</span>' +
+            '<span class="muted">' + (e.cost < 0 ? '+' + c.fmt(-e.cost) : '−' + c.fmt(e.cost)) + '</span>' +
             '<span class="muted">' + App.fmtClock(new Date(e.t)) + '</span>';
           list.appendChild(row);
         });
       }
       box.appendChild(list);
       this.modal('💳 Användningskrediter', box, null, 'Stäng');
+    },
+
+    /* Läromedel har ofta ett förbehåll på sista sidan om AI-träning. Appen kan
+       inte läsa det åt läraren, så den frågar i stället — varje gång, eftersom
+       svaret gäller den enskilda boken. Båda uppladdningsvägarna går här. */
+    confirmUpload: function (f, fortsatt) {
+      var box = App.el('div', 'col');
+      var v = App.el('div', 'card');
+      v.style.cssText = 'border:2px solid var(--warn);border-left-width:10px';
+      v.innerHTML = '<b style="font-size:18px">⚠️ Har du läst sista sidan i boken?</b>' +
+        '<p style="font-size:16px;line-height:1.6;margin-top:8px">Innan <b>' + App.esc(f.name) +
+        '</b> laddas upp: slå upp sista sidan i boken, där copyright och ISBN står.</p>' +
+        '<p style="font-size:16px;line-height:1.6;margin-top:8px">Står det där att materialet ' +
+        '<b>inte får användas för att träna AI</b> — eller för maskininlärning, textutvinning ' +
+        'eller språkmodeller — då ska du inte ladda upp den. Avbryt här.</p>' +
+        '<p class="muted" style="font-size:14px;line-height:1.6;margin-top:10px">' +
+        'Filen skickas till Google och ligger kvar där i 48 timmar. Uppladdningen kostar ' +
+        App.Credits.fmt(App.Credits.IN) + '.</p>';
+      box.appendChild(v);
+
+      var rad = App.el('label', 'row');
+      rad.style.cssText = 'align-items:flex-start;flex-wrap:nowrap;margin:4px 2px 0;cursor:pointer';
+      var kryss = App.el('input');
+      kryss.type = 'checkbox';
+      kryss.style.width = '24px';
+      kryss.style.height = '24px';
+      kryss.style.marginTop = '2px';
+      var etikett = App.el('span', null,
+        'Jag har läst sista sidan och det står inget förbud mot att använda materialet med AI.');
+      etikett.style.cssText = 'font-size:15px;line-height:1.5;flex:1';
+      rad.appendChild(kryss);
+      rad.appendChild(etikett);
+      box.appendChild(rad);
+
+      var knappar = App.el('div', 'row');
+      knappar.style.marginTop = '12px';
+      knappar.appendChild(App.button('Avbryt', 'ghost', function () { App.hideModal(); }));
+      knappar.appendChild(App.button('⬆️ Ladda upp', '', function () {
+        if (!kryss.checked) { App.toast('Kryssa i rutan först — eller avbryt', 3000); return; }
+        App.hideModal();
+        fortsatt();
+      }));
+      box.appendChild(knappar);
+      App.modal('📄 ' + f.name, box, null, false);
+    },
+
+    /* Skanna id-kortet för att komma upp på lärarnivån. Bilden ligger bara i
+       minnet under granskningen och kastas när rutan stängs. */
+    showVerify: function (onDone) {
+      var self = this;
+      var c = this.Credits;
+      var box = this.el('div', 'col');
+      var stream = null, video = null;
+
+      function stoppa() {
+        if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+        video = null;
+      }
+
+      function steg1() {
+        box.innerHTML = '';
+        var info = self.el('div', 'card');
+        info.innerHTML =
+          '<h3 style="font-size:20px;margin-bottom:8px">Lärarnivå: ' + c.fmt(c.VERIFIED) + '</h3>' +
+          '<p style="font-size:16px;line-height:1.6">Håll ditt id-kort eller din lärarlegitimation ' +
+          'framför kameran och skanna det. Då höjs krediterna från ' + c.fmt(c.START) + ' till ' +
+          c.fmt(c.VERIFIED) + '.</p>' +
+          '<p class="muted" style="font-size:14px;line-height:1.6;margin-top:10px">' +
+          '<b>Bilden sparas inte.</b> Den granskas här på plattan och kastas direkt efteråt — ' +
+          'den skickas aldrig någonstans. Det som sparas är namnet, skolan och datumet.<br>' +
+          'Appen kan inte slå upp dig mot något lärarregister. Kontrollen är att bilden håller ' +
+          'måttet och att du intygar att uppgifterna stämmer.</p>';
+        box.appendChild(info);
+        var r = self.el('div', 'row');
+        r.appendChild(self.button('📷 Starta kameran', '', starta));
+        r.appendChild(self.button('Avbryt', 'ghost', function () { self.hideModal(); }));
+        box.appendChild(r);
+      }
+
+      function starta() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          self.toast('Den här enheten har ingen kamera som appen kommer åt', 4000);
+          return;
+        }
+        box.innerHTML = '';
+        box.appendChild(self.el('div', 'muted', 'Startar kameran…'));
+        navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false })
+          .then(function (st) {
+            stream = st;
+            video = document.createElement('video');
+            video.muted = true;
+            video.playsInline = true;
+            video.srcObject = st;
+            video.style.width = '100%';
+            video.style.maxWidth = '520px';
+            video.style.borderRadius = '14px';
+            video.style.border = '3px dashed var(--brand, #4f46e5)';
+            video.play();
+            steg2();
+          })
+          .catch(function (err) {
+            box.innerHTML = '';
+            var f = self.el('div', 'card');
+            f.innerHTML = '<p style="font-size:16px;line-height:1.6">Kameran kunde inte startas (' +
+              self.esc(err && err.name ? err.name : 'fel') + ').</p>' +
+              '<p class="muted" style="font-size:14px;line-height:1.6;margin-top:8px">' +
+              'Ge appen tillgång till kameran i systeminställningarna och försök igen.</p>';
+            box.appendChild(f);
+            var r = self.el('div', 'row');
+            r.appendChild(self.button('↺ Försök igen', 'sm', starta));
+            r.appendChild(self.button('Avbryt', 'sm ghost', function () { self.hideModal(); }));
+            box.appendChild(r);
+          });
+      }
+
+      function steg2(varning) {
+        box.innerHTML = '';
+        var t = self.el('div', 'muted', 'Fyll ut rutan med kortet, håll det stilla och skanna.');
+        t.style.marginBottom = '8px';
+        box.appendChild(t);
+        if (video) box.appendChild(video);
+        if (varning) {
+          var w = self.el('div', 'card');
+          w.style.marginTop = '10px';
+          w.innerHTML = '<b>Bilden dög inte:</b><ul style="margin:8px 0 0 20px;line-height:1.6">' +
+            varning.fel.map(function (f) { return '<li>' + App.esc(f) + '</li>'; }).join('') + '</ul>' +
+            '<p class="muted" style="font-size:13px;margin-top:8px">Skärpa ' + varning.skarpa +
+            ' · kontrast ' + varning.kontrast + ' · kortet fyller ' + varning.fyllnad + ' % av rutan</p>';
+          box.appendChild(w);
+        }
+        var r = self.el('div', 'row');
+        r.style.marginTop = '10px';
+        r.appendChild(self.button('📸 Skanna kortet', '', skanna));
+        r.appendChild(self.button('Avbryt', 'ghost', function () { self.hideModal(); }));
+        box.appendChild(r);
+      }
+
+      function skanna() {
+        if (!video) { steg2(); return; }
+        var cv = document.createElement('canvas');
+        cv.width = 320;
+        cv.height = 200;
+        try {
+          cv.getContext('2d').drawImage(video, 0, 0, cv.width, cv.height);
+        } catch (e) {
+          self.toast('Kameran hann inte starta — försök igen');
+          return;
+        }
+        var res = self.Verify.inspect(cv);
+        /* Bilden behövs inte längre: nolla ytan direkt. */
+        cv.width = 1; cv.height = 1;
+        if (!res.ok) { steg2(res); return; }
+        stoppa();
+        steg3(res);
+      }
+
+      function steg3(res) {
+        box.innerHTML = '';
+        var kvitto = self.el('div', 'card');
+        kvitto.innerHTML = '<b>✓ Kortet är skannat och bilden är kastad.</b>' +
+          '<p class="muted" style="font-size:13px;margin-top:6px">Skärpa ' + res.skarpa +
+          ' · kontrast ' + res.kontrast + ' · kortet fyllde ' + res.fyllnad + ' % av rutan</p>';
+        box.appendChild(kvitto);
+
+        var form = self.el('div', 'card');
+        form.innerHTML = '<h3 style="font-size:19px;margin-bottom:10px">Dina uppgifter</h3>';
+        var namn = self.el('input');
+        namn.type = 'text';
+        namn.style.width = '100%';
+        namn.placeholder = 'Namn som det står på kortet';
+        namn.value = (self.Verify.state().namn || '');
+        var skola = self.el('input');
+        skola.type = 'text';
+        skola.style.width = '100%';
+        skola.style.marginTop = '8px';
+        skola.placeholder = 'Skola';
+        skola.value = (self.Verify.state().skola || '');
+        form.appendChild(namn);
+        form.appendChild(skola);
+
+        var intyg = self.el('label', 'row');
+        intyg.style.cssText = 'align-items:flex-start;flex-wrap:nowrap;margin-top:12px;cursor:pointer';
+        var kryss = self.el('input');
+        kryss.type = 'checkbox';
+        kryss.style.width = '24px';
+        kryss.style.height = '24px';
+        kryss.style.marginTop = '2px';
+        var txt = self.el('span', null,
+          'Jag intygar att jag arbetar som lärare och att kortet jag skannade är mitt eget.');
+        txt.style.cssText = 'font-size:15px;line-height:1.5;flex:1';
+        intyg.appendChild(kryss);
+        intyg.appendChild(txt);
+        form.appendChild(intyg);
+        box.appendChild(form);
+
+        var r = self.el('div', 'row');
+        r.appendChild(self.button('Avbryt', 'ghost', function () { self.hideModal(); }));
+        var klar = self.button('✓ Verifiera och hämta ' + c.fmt(c.VERIFIED), '', function () {
+          if (!namn.value.trim() || !skola.value.trim()) { self.toast('Fyll i namn och skola'); return; }
+          if (!kryss.checked) { self.toast('Du måste intyga uppgifterna'); return; }
+          var p = self.Verify.approve(namn.value, skola.value);
+          self.hideModal();
+          self.toast('Verifierad — ' + c.fmt(p) + ' tillagt', 4000);
+        });
+        r.appendChild(klar);
+        box.appendChild(r);
+      }
+
+      steg1();
+      this.modal('🪪 Verifiera dig som lärare', box, null, false, function () {
+        stoppa();
+        if (onDone) onDone(self.Verify.isVerified());
+      });
     }
   };
 

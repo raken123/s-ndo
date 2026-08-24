@@ -40,6 +40,24 @@ Dokumenten hanteras på två ställen: i AI-Lärarens egen ruta och under
 uppladdat och hur länge det ligger kvar. Ladda inte upp material med elevers
 personuppgifter — filerna lämnar enheten.
 
+### Kolla sista sidan i boken först
+
+Båda uppladdningsvägarna går genom samma varning innan filen skickas iväg:
+
+> **⚠️ Har du läst sista sidan i boken?**
+> Slå upp sista sidan, där copyright och ISBN står. Står det där att materialet
+> **inte får användas för att träna AI** — eller för maskininlärning,
+> textutvinning eller språkmodeller — ska boken inte laddas upp.
+
+Många läromedel har ett sådant förbehåll i kolofonen, och det är förlagets
+villkor som gäller, inte appens. Rutan går inte att klicka förbi: knappen
+**Ladda upp** gör ingenting förrän läraren kryssat i att sista sidan är läst
+och att det inte står något förbud där. Frågan ställs vid varje uppladdning,
+eftersom svaret gäller den enskilda boken.
+
+Kontrollen ligger i `App.confirmUpload()` i `core.js`, så en framtida
+uppladdningsväg som inte går genom den syns direkt i självtestet.
+
 ## Modeller och krediter
 
 * Tramsdetektorn använder en Live-modell (standard `gemini-3.1-flash-live-preview`).
@@ -47,7 +65,9 @@ personuppgifter — filerna lämnar enheten.
 * Båda går att ändra under ⚙️ Inställningar.
 
 Varje fråga kostar 80 kr (input) och varje svar 300 kr (output) ur
-kreditsaldot. En PDF-uppladdning räknas som en input. Cringe-mätningen och
+kreditsaldot. En PDF-uppladdning räknas som en input. Gratisnivån är 5 000 kr;
+en lärare som verifierar sig med sitt id-kort får 5 000 000 kr (se
+TRAMSDETEKTOR.md → Lärarverifiering). Cringe-mätningen och
 tramsdetektorns lokala läge kostar ingenting.
 
 Alla anrop har en tidsgräns — hänger nätet får man ett besked i stället för ett

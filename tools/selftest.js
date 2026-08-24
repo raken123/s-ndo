@@ -50,9 +50,10 @@ const { chromium } = require('playwright');
       'App.Gemini': ['key','model','textModel','authMode','setAuthMode','wsParam','call','liveModels','uploadFile','generate','testKey'],
       'App.Gemini.docs': ['all','save','add','remove','parts','summary'],
       'App.Mic': ['start','release','hardRelease','subscribe','unsubscribe','feed','devices','test','diagnose','message','plan','webStart','attach','toPcm16','onNativeChunk','shutdown','lost','live','fileOrigin'],
-      'App.Credits': ['balance','charge','canAfford','reset','fmt','log'],
+      'App.Credits': ['balance','charge','canAfford','reset','fmt','log','tier','note','unlock','lock'],
+      'App.Verify': ['state','isVerified','inspect','approve','clear'],
       'App.Boards': ['all','persist','save','blank','blankPage','active','activePage','setActive','setActivePage','activeId','activeIndex' in App ? 'activePageIndex' : 'activePageIndex'],
-      'App': ['register','byId','makeCtx','open','home','handleBack','layout','button','el','esc','toast','modal','beep','chime','speak','micDiagnosis','showCredits','renderCredits'],
+      'App': ['register','byId','makeCtx','open','home','handleBack','layout','button','el','esc','toast','modal','hideModal','midNum','beep','chime','speak','micDiagnosis','showCredits','renderCredits','showVerify','confirmUpload'],
       'Board': ['init','showBoard','showOverview','addWidget','mountWidget','removeWidget','loadPage','redraw','save','page','board','showPalette','exportPage']
     };
     const fel = [];
@@ -108,7 +109,72 @@ const { chromium } = require('playwright');
     return !inp.disabled;
   }));
 
-  // 5) Alla komponenter monterar fortfarande
+  // 5) Lärarverifiering: bildgranskningen, nivåerna och saldot
+  const ver = await p.evaluate(() => {
+    // en syntetisk "bild": vitt kort med svart text mot mörkt underlag
+    function duk(rita) {
+      const c = document.createElement('canvas'); c.width = 320; c.height = 200;
+      rita(c.getContext('2d'), c); return c;
+    }
+    const tomt = duk(g => { g.fillStyle = '#111'; g.fillRect(0, 0, 320, 200); });
+    const kort = duk(g => {
+      g.fillStyle = '#111'; g.fillRect(0, 0, 320, 200);
+      g.fillStyle = '#f2f2f0'; g.fillRect(22, 20, 276, 160);
+      g.fillStyle = '#1a1a1a';
+      for (let i = 0; i < 7; i++) g.fillRect(40, 44 + i * 19, 150 + (i % 3) * 60, 9);
+      g.fillStyle = '#7a8'; g.fillRect(215, 44, 66, 74);
+    });
+    const start = App.Credits.balance();
+    const a = App.Verify.inspect(tomt);
+    const b = App.Verify.inspect(kort);
+    const paf = App.Verify.approve('Anna Lind', 'Sändo skola');
+    const efter = { saldo: App.Credits.balance(), nivo: App.Credits.tier(), verifierad: App.Verify.isVerified() };
+    App.Verify.clear();
+    return {
+      tomtOk: a.ok, tomtFel: a.fel.length,
+      kortOk: b.ok, kortFel: b.fel, matt: { skarpa: b.skarpa, kontrast: b.kontrast, fyllnad: b.fyllnad },
+      start, pafyllning: paf, efter,
+      tillbaka: { saldo: App.Credits.balance(), nivo: App.Credits.tier(), verifierad: App.Verify.isVerified() }
+    };
+  });
+  console.log('verifiering: ' + JSON.stringify(ver));
+  const verFel = [];
+  if (ver.tomtOk) verFel.push('en tom/mörk bild godkändes');
+  if (!ver.kortOk) verFel.push('ett tydligt kort underkändes: ' + ver.kortFel.join(' '));
+  if (ver.efter.saldo !== 5000000 || ver.efter.nivo !== 5000000) verFel.push('nivån blev inte 5 000 000');
+  if (!ver.efter.verifierad) verFel.push('status blev inte verifierad');
+  if (ver.tillbaka.saldo !== 5000 || ver.tillbaka.verifierad) verFel.push('borttagen verifiering sänkte inte saldot');
+  console.log('verifieringsfel: ' + (verFel.length ? verFel.join(' | ') : 'inga'));
+
+  // 6) PDF-varningen måste komma innan uppladdningen och kräva kryss
+  const varn = await p.evaluate(() => new Promise(r => {
+    const f = new File([new Blob(['%PDF-1.4 x'])], 'kapitel4.pdf', { type: 'application/pdf' });
+    let slappt = false;
+    App.confirmUpload(f, () => { slappt = true; });
+    const txt = document.getElementById('modal-body').textContent;
+    const ok = Array.from(document.querySelectorAll('#modal-body .btn')).find(b => b.textContent.includes('Ladda upp'));
+    ok.click();                                   // utan kryss: ska inte släppa igenom
+    const utanKryss = slappt;
+    document.querySelector('#modal-body input[type=checkbox]').checked = true;
+    ok.click();                                   // med kryss: ska släppa igenom
+    setTimeout(() => r({
+      namnger: txt.indexOf('kapitel4.pdf') >= 0,
+      sistaSidan: txt.indexOf('sista sidan') >= 0,
+      tranaAI: txt.indexOf('träna AI') >= 0,
+      utanKryss, medKryss: slappt,
+      stangd: document.getElementById('modal').classList.contains('hidden')
+    }), 50);
+  }));
+  console.log('pdf-varning: ' + JSON.stringify(varn));
+  const varnFel = [];
+  if (!varn.namnger) varnFel.push('filnamnet nämns inte');
+  if (!varn.sistaSidan || !varn.tranaAI) varnFel.push('varningstexten saknar sista sidan / träna AI');
+  if (varn.utanKryss) varnFel.push('uppladdningen släpptes igenom utan kryss');
+  if (!varn.medKryss) varnFel.push('uppladdningen släpptes inte igenom med kryss');
+  if (!varn.stangd) varnFel.push('rutan stängdes inte');
+  console.log('varningsfel: ' + (varnFel.length ? varnFel.join(' | ') : 'inga'));
+
+  // 7) Alla komponenter monterar fortfarande
   const bad = await p.evaluate(async () => {
     const fel = [];
     for (const t of App.tools) {
@@ -121,5 +187,5 @@ const { chromium } = require('playwright');
 
   console.log('\nfel: ' + errors.length); errors.slice(0, 10).forEach(e => console.log(' - ' + e));
   await b.close();
-  process.exit(errors.length || saknas.length || bad.length ? 1 : 0);
+  process.exit(errors.length || saknas.length || bad.length || verFel.length || varnFel.length ? 1 : 0);
 })();

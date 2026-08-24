@@ -59,7 +59,12 @@ standardstorlek i `SIZES` i `board.js`.
 Allt sparas i `localStorage` under `sandotavla.` — tavlor, sidor, penndrag,
 klasslistor, krediter och API-nyckel. Komponentdata ligger under
 `sandotavla.w.<widgetId>.`. Inget lämnar enheten utom tramsdetektorns ljud i
-AI-läge. Under ⚙️ Inställningar finns export och import av all data som text.
+AI-läge och de PDF:er man själv laddar upp. Under ⚙️ Inställningar finns export
+och import av all data som text.
+
+Lärarverifieringen sparar `sandotavla.verify` med namn, skola och datum.
+**Bilden på id-kortet sparas inte** — den granskas i minnet och kastas direkt.
+En smartboard i ett klassrum är ingen enhet att lämna id-bilder på.
 
 ## Självtest
 
@@ -70,4 +75,15 @@ npm i -D playwright && node tools/selftest.js
 Kör appen i en webbläsare med ett stubbat Gemini-API och kontrollerar att alla
 metoder som koden anropar finns, att varje komponent monterar, och att
 AI-vägarna fungerar. Strukturkontrollen är till för att en tappad metod annars
-bara märks som ett rött kryss ute på en platta.
+bara märks som ett rött kryss ute på en platta. Testet täcker också
+lärarverifieringen (att en tom bild nekas, ett tydligt kort godkänns och
+kreditnivån följer med i båda riktningarna) och PDF-varningen (att
+uppladdningen inte släpps igenom utan kryss).
+
+```sh
+node tools/verifiering-kalibrering.js
+```
+
+Ritar ett syntetiskt id-kort i olika skick — skarpt, mjukt, suddigt, brusigt, i
+mörkt rum, överexponerat, tomt — och skriver ut hur bildgranskningen dömer
+vart och ett. Gränserna i `App.Verify.inspect` är satta efter den tabellen.
