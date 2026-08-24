@@ -1,7 +1,7 @@
 # Reklamfilmer — Sändo Tavla
 
-Fem storytime-filmer i samma stil och med samma motor — tre i klassrummet,
-en ute på skolgården och en som börjar hemma i sängen.
+Sex storytime-filmer i samma stil och med samma motor — tre i klassrummet,
+en på skolgården, en som börjar hemma i sängen och en i matsalen.
 
 | Fil | Film | Längd | Storlek |
 |---|---|---|---|
@@ -15,12 +15,14 @@ en ute på skolgården och en som börjar hemma i sängen.
 | `sando-tavla-presentationen-1080.mp4` | Presentationen, mindre version | 41 s | 1,3 MB |
 | `sando-tavla-fejksjuk.mp4` | **Fejksjuk** — med hejdåsången | 48 s | 6,1 MB |
 | `sando-tavla-fejksjuk-1080.mp4` | Fejksjuk, mindre version | 48 s | 2,6 MB |
+| `sando-tavla-matsalen.mp4` | **Matsalen** — skolans högljuddaste rum | 41 s | 3,6 MB |
+| `sando-tavla-matsalen-1080.mp4` | Matsalen, mindre version | 41 s | 1,6 MB |
 
 Källor: `reklam.html`, `reklam-vikarien.html`, `reklam-rasten.html`,
-`reklam-presentationen.html`, `reklam-fejksjuk.html` och den gemensamma
-motorn `filmkit.js`.
+`reklam-presentationen.html`, `reklam-fejksjuk.html`, `reklam-matsalen.html`
+och den gemensamma motorn `filmkit.js`.
 Affischbilder: `affisch.png`, `affisch-vikarien.png`, `affisch-rasten.png`,
-`affisch-presentationen.png`, `affisch-fejksjuk.png`.
+`affisch-presentationen.png`, `affisch-fejksjuk.png`, `affisch-matsalen.png`.
 
 ## Film 1 — Skriket
 
@@ -109,6 +111,24 @@ musiken delar samma tidtabell (`SONG_START` och `NOTE` i filmfilen,
 > Ta med ditt skratt och ditt räknehuvud,
 > så gör vi allt det roliga en gång till!
 
+## Film 6 — Matsalen
+
+Skolans högljuddaste rum, med en skärm på väggen i stället för en smartboard.
+
+| Tid | Scen |
+|---|---|
+| 0–7 s | Matsalen fylls och sorlet stiger. Ljudmätaren klättrar från 42 till **86**. |
+| 7–11 s | Skärmen slår om till rött: **FÖR HÖGT — sänk volymen vid borden.** Alla tittar upp, och sorlet sjunker till 38. Ingen behövde ropa "TYSTNAD!". |
+| 11–16 s | Turordningen visar vem som får hämta mat: nu 5B, sedan 4A. Den som försöker tränga sig får gå tillbaka sist. |
+| 16–22 s | Dagens fråga står på skärmen: *"Vad är det bästa som hänt den här veckan?"* — något att prata om vid bordet. |
+| 22–31 s | Omröstning om fredagens meny. Staplarna växer live: tacos 18, pannkakor 12, fiskgratäng 3. **Tacos vinner** och matsalen jublar. |
+| 31–36 s | Två minuter kvar. Brickorna ställs in och alla går ut lugnt. |
+| 36–41 s | Slutkort: *Även i matsalen.* |
+
+Ljudspåret följer samma kurva som bilden: sorlet i ljudfilen räknas fram ur
+exakt samma funktion som styr ljudmätaren på skärmen, så det man hör och det
+skärmen visar är samma sak.
+
 ## Så är de gjorda
 
 Varje film är en HTML-fil som ritar allt i SVG och animerar med en egen
@@ -131,11 +151,13 @@ node tools/render-vikarien.js            # rutor för film 2
 node tools/render-rasten.js              # rutor för film 3
 node tools/render-presentationen.js      # rutor för film 4
 node tools/render-fejksjuk.js            # rutor för film 5
+node tools/render-matsalen.js            # rutor för film 6
 python3 tools/reklam-ljud.py             # ljudspår film 1
 python3 tools/vikarien-ljud.py           # ljudspår film 2
 python3 tools/rasten-ljud.py             # ljudspår film 3
 python3 tools/presentationen-ljud.py     # ljudspår film 4
 python3 tools/fejksjuk-ljud.py           # ljudspår film 5 (med sången)
+python3 tools/matsalen-ljud.py           # ljudspår film 6
 
 ffmpeg -framerate 30 -i frames/f%05d.png -i ljud.wav \
   -c:v libx264 -preset slow -crf 20 -pix_fmt yuv420p -movflags +faststart \

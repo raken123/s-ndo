@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Sändo Tavla — Matsalen</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #0b0e17; overflow: hidden; }
+  #stage {
+    position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+    transform-origin: center center; background: #f0efe8;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  svg { display: block; }
+  text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<div id="stage"><svg id="scene" width="1920" height="1080" viewBox="0 0 1920 1080"></svg></div>
+<script src="filmkit.js"></script>
+<script>
+/* ===================================================================
+   Sändo Tavla — "Matsalen"
+   Skolans högljuddaste rum. Samma app, en skärm på väggen.
+   =================================================================== */
+var K = Filmkit, scene = K.scene, C = K.C, SKIN = K.SKIN, SHIRT = K.SHIRT;
+var el = K.el, txt = K.txt, clamp = K.clamp, lerp = K.lerp, p = K.p, fade = K.fade;
+var show = K.show, move = K.move, kid = K.kid, bubble = K.bubble;
+var defs = el('defs', {}, scene);
+
+/* ---------- matsalen ---------- */
+var wall = el('linearGradient', { id: 'mw', x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
+el('stop', { offset: 0, 'stop-color': '#f6f4ec' }, wall);
+el('stop', { offset: 1, 'stop-color': '#e3e0d4' }, wall);
+el('rect', { x: 0, y: 0, width: 1920, height: 640, fill: 'url(#mw)' }, scene);
+el('rect', { x: 0, y: 640, width: 1920, height: 440, fill: '#cbb79b' }, scene);
+el('rect', { x: 0, y: 640, width: 1920, height: 14, fill: '#b3a084' }, scene);
+/* klinkergolv */
+for (var gx = 0; gx < 16; gx++) {
+  el('path', { d: 'M' + (gx * 190 - 300) + ',1080 L' + (gx * 120 + 160) + ',654', stroke: 'rgba(255,255,255,.25)', 'stroke-width': 3 }, scene);
+}
+for (var gy = 1; gy < 5; gy++) {
+  el('path', { d: 'M0,' + (654 + gy * gy * 22) + ' h1920', stroke: 'rgba(255,255,255,.25)', 'stroke-width': 3 }, scene);
+}
+/* fönsterrad */
+for (var wx = 0; wx < 3; wx++) {
+  var g = el('g', {}, scene);
+  el('rect', { x: 640 + wx * 170, y: 120, width: 130, height: 200, rx: 8, fill: '#bfe3ff', stroke: '#fff', 'stroke-width': 8 }, g);
+  el('path', { d: 'M' + (705 + wx * 170) + ',120 v200', stroke: '#fff', 'stroke-width': 6 }, g);
+}
+/* matsedel på väggen */
+var menuG = el('g', {}, scene);
+el('rect', { x: 250, y: 120, width: 300, height: 220, rx: 12, fill: '#fff', stroke: '#c9c2ad', 'stroke-width': 8 }, menuG);
+txt('MATSEDEL', { x: 400, y: 168, 'text-anchor': 'middle', 'font-size': 26, 'font-weight': 800, fill: C.ink }, menuG);
+txt('Idag: Köttbullar', { x: 400, y: 214, 'text-anchor': 'middle', 'font-size': 22, fill: C.ink }, menuG);
+txt('Vegetariskt: Bönbiff', { x: 400, y: 250, 'text-anchor': 'middle', 'font-size': 20, fill: C.muted }, menuG);
+txt('Fredag: ?', { x: 400, y: 300, 'text-anchor': 'middle', 'font-size': 26, 'font-weight': 800, fill: C.brand }, menuG);
+
+/* serveringsdisken */
+var counter = el('g', {}, scene);
+el('rect', { x: 40, y: 470, width: 520, height: 40, rx: 10, fill: '#cfd6df' }, counter);
+el('rect', { x: 40, y: 510, width: 520, height: 210, rx: 8, fill: '#9aa6b4' }, counter);
+el('rect', { x: 40, y: 510, width: 520, height: 26, fill: '#7f8b99' }, counter);
+/* karotter */
+[[90, '#c98b4b'], [210, '#8bb35a'], [330, '#e0c15c'], [450, '#b46a4a']].forEach(function (pan) {
+  el('rect', { x: pan[0], y: 440, width: 96, height: 34, rx: 8, fill: '#dfe5ec' }, counter);
+  el('rect', { x: pan[0] + 8, y: 446, width: 80, height: 22, rx: 6, fill: pan[1] }, counter);
+});
+el('rect', { x: 30, y: 380, width: 540, height: 8, rx: 4, fill: '#d8dee6' }, counter);
+el('rect', { x: 30, y: 388, width: 8, height: 60, fill: '#d8dee6' }, counter);
+el('rect', { x: 562, y: 388, width: 8, height: 60, fill: '#d8dee6' }, counter);
+txt('LUNCH', { x: 300, y: 420, 'text-anchor': 'middle', 'font-size': 24, 'font-weight': 800, fill: C.muted }, counter);
+/* matsalspersonal bakom disken */
+var kockG = el('g', {}, scene);
+var kock = K.grownup(kockG, '#5b8dbf', SKIN[3], '#2b1c12');
+el('rect', { x: -30, y: 30, width: 60, height: 86, rx: 16, fill: '#fff', stroke: '#cbd5e1', 'stroke-width': 3 }, kock.body);
+el('rect', { x: -30, y: -92, width: 60, height: 34, rx: 12, fill: '#fff' }, kock.body);
+move(kockG, 300, 438, 0.9);
+
+/* ---------- skärmen på väggen ---------- */
+var scr = el('g', {}, scene);
+el('rect', { x: 1120, y: 90, width: 720, height: 440, rx: 20, fill: '#1e2436' }, scr);
+var screen = el('g', {}, scr);
+el('rect', { x: 1136, y: 106, width: 688, height: 408, rx: 10, fill: '#f4f6fb' }, screen);
+el('rect', { x: 1136, y: 106, width: 688, height: 50, fill: '#fff' }, screen);
+el('rect', { x: 1154, y: 118, width: 28, height: 28, rx: 8, fill: C.brand }, screen);
+txt('S', { x: 1168, y: 140, 'text-anchor': 'middle', 'font-size': 19, 'font-weight': 800, fill: '#fff' }, screen);
+txt('Sändo Tavla · Matsalen', { x: 1194, y: 139, 'font-size': 18, 'font-weight': 700, fill: C.ink }, screen);
+var scrClock = txt('11:22', { x: 1802, y: 139, 'text-anchor': 'end', 'font-size': 18, 'font-weight': 700, fill: C.muted }, screen);
+el('rect', { x: 1136, y: 156, width: 688, height: 2, fill: C.line }, screen);
+
+/* ljudmätare + trafikljus */
+var wNoise = el('g', {}, screen);
+var nBox = K.widget(screen, 1156, 176, 420, 200, '🔊 Ljudnivå i matsalen');
+wNoise.appendChild(nBox);
+var noiseFace = txt('🙂', { x: 1240, y: 292, 'text-anchor': 'middle', 'font-size': 62 }, nBox);
+var noiseNum = txt('42', { x: 1330, y: 288, 'font-size': 52, 'font-weight': 800, fill: C.green }, nBox);
+el('rect', { x: 1176, y: 320, width: 380, height: 22, rx: 11, fill: '#e5e9f2' }, nBox);
+var noiseFill = el('rect', { x: 1176, y: 320, width: 150, height: 22, rx: 11, fill: C.green }, nBox);
+var noiseMsg = txt('Lagom ljudnivå — bra jobbat!', { x: 1176, y: 362, 'font-size': 18, 'font-weight': 600, fill: C.muted }, nBox);
+var tBox = K.widget(screen, 1596, 176, 210, 200, '🚦');
+wNoise.appendChild(tBox);
+var lampR = el('circle', { cx: 1701, cy: 240, r: 24, fill: '#3a4256' }, tBox);
+var lampY = el('circle', { cx: 1701, cy: 296, r: 24, fill: '#3a4256' }, tBox);
+var lampG = el('circle', { cx: 1701, cy: 352, r: 24, fill: C.green }, tBox);
+
+/* nedre kortet byts ut scen för scen */
+var wQueue = el('g', {}, screen);
+var qBox = K.widget(screen, 1156, 392, 650, 108, '📋 Turordning till maten');
+wQueue.appendChild(qBox);
+var queueNow = txt('Nu: 5B', { x: 1176, y: 464, 'font-size': 28, 'font-weight': 800, fill: C.brand }, qBox);
+var queueNext = txt('Sedan: 4A  ·  6C  ·  3B', { x: 1400, y: 464, 'font-size': 22, fill: C.muted }, qBox);
+
+var wFraga = el('g', { opacity: 0 }, screen);
+var fBox = K.widget(screen, 1156, 392, 650, 108, '💭 Dagens fråga vid bordet');
+wFraga.appendChild(fBox);
+txt('Vad är det bästa som hänt den här veckan?', { x: 1481, y: 462, 'text-anchor': 'middle', 'font-size': 25, 'font-weight': 700, fill: C.ink }, fBox);
+
+var wVote = el('g', { opacity: 0 }, screen);
+var vBox = K.widget(screen, 1156, 176, 650, 324, '📊 Omröstning — fredagens meny');
+wVote.appendChild(vBox);
+var voteRows = [];
+[['🌮 Tacos', C.brand], ['🥞 Pannkakor', C.cyan], ['🐟 Fiskgratäng', C.amber]].forEach(function (v, i) {
+  var g = el('g', {}, wVote);
+  var y = 250 + i * 74;
+  txt(v[0], { x: 1176, y: y + 8, 'font-size': 22, 'font-weight': 700, fill: C.ink }, g);
+  el('rect', { x: 1370, y: y - 22, width: 340, height: 34, rx: 10, fill: '#e9edf5' }, g);
+  var bar = el('rect', { x: 1370, y: y - 22, width: 10, height: 34, rx: 10, fill: v[1] }, g);
+  var num = txt('0', { x: 1730, y: y + 6, 'font-size': 24, 'font-weight': 800, fill: C.muted }, g);
+  voteRows.push({ bar: bar, num: num, g: g });
+});
+var voteWin = txt('', { x: 1481, y: 486, 'text-anchor': 'middle', 'font-size': 26, 'font-weight': 800, fill: C.green }, wVote);
+
+var wSlut = el('g', { opacity: 0 }, screen);
+var sBox = K.widget(screen, 1156, 392, 650, 108, '⏳ Lunchen slutar');
+wSlut.appendChild(sBox);
+var slutTxt = txt('2:00', { x: 1260, y: 468, 'text-anchor': 'middle', 'font-size': 40, 'font-weight': 800, fill: C.amber }, sBox);
+txt('Ställ in brickan och gå ut lugnt', { x: 1560, y: 464, 'text-anchor': 'middle', 'font-size': 22, fill: C.muted }, sBox);
+
+/* ---------- borden och eleverna ---------- */
+function bord(x, y, w) {
+  var g = el('g', {}, scene);
+  el('rect', { x: x, y: y, width: w, height: 22, rx: 8, fill: '#d9b98c' }, g);
+  el('rect', { x: x + 40, y: y + 22, width: 16, height: 90, fill: '#b3946f' }, g);
+  el('rect', { x: x + w - 56, y: y + 22, width: 16, height: 90, fill: '#b3946f' }, g);
+  el('rect', { x: x - 10, y: y + 74, width: w + 20, height: 14, rx: 6, fill: '#c2a276' }, g);
+  return g;
+}
+function bricka(x, y, s) {
+  var g = el('g', {}, scene);
+  el('rect', { x: -52, y: -22, width: 104, height: 44, rx: 8, fill: '#8fbf6a' }, g);
+  el('circle', { cx: -22, cy: 0, r: 13, fill: '#e6d3a3' }, g);
+  el('circle', { cx: 6, cy: -4, r: 9, fill: '#b4643f' }, g);
+  el('rect', { x: 22, y: -12, width: 24, height: 24, rx: 5, fill: '#cfe3f5' }, g);
+  move(g, x, y, s || 1);
+  return g;
+}
+var bord1 = bord(300, 700, 700);
+var matKids = [];
+[[400, 620, 0.8], [590, 620, 0.8], [780, 620, 0.8]].forEach(function (pos, i) {
+  var g = el('g', {}, scene);
+  var k = kid(g, { skin: SKIN[i % SKIN.length], shirt: SHIRT[i], hair: ['#3b2a1e', '#6b3f1d', '#20242e'][i] });
+  g.k = k; g.home = pos;
+  move(g, pos[0], pos[1], pos[2]);
+  matKids.push(g);
+  bricka(pos[0], 692, 0.72);
+});
+var bord2 = bord(700, 880, 860);
+[[820, 790, 1.0], [1080, 790, 1.0], [1340, 790, 1.0]].forEach(function (pos, i) {
+  var g = el('g', {}, scene);
+  var k = kid(g, { skin: SKIN[(i + 3) % SKIN.length], shirt: SHIRT[i + 3], hair: ['#20242e', '#8a5a2b', '#3b2a1e'][i] });
+  g.k = k; g.home = pos;
+  move(g, pos[0], pos[1], pos[2]);
+  matKids.push(g);
+  bricka(pos[0], 868, 0.95);
+});
+/* kön vid disken */
+var koKids = [];
+[[660, 556, 0.78], [800, 568, 0.8], [940, 582, 0.82]].forEach(function (pos, i) {
+  var g = el('g', {}, scene);
+  var k = kid(g, { skin: SKIN[(i + 1) % SKIN.length], shirt: SHIRT[i + 2], hair: ['#8a5a2b', '#20242e', '#3b2a1e'][i] });
+  g.k = k; g.home = pos;
+  move(g, pos[0], pos[1], pos[2]);
+  koKids.push(g);
+});
+/* den som försöker tränga sig */
+var trangG = el('g', {}, scene);
+var trang = kid(trangG, { skin: SKIN[5], shirt: '#f97316', hair: '#2b1c12' });
+move(trangG, 1090, 598, 0.84);
+
+/* ---------- pratbubblor ---------- */
+function makeBubble(w, h, lines, size, tail, x, y) {
+  var g = el('g', { opacity: 0 }, scene);
+  bubble(g, w, h, lines, size, tail);
+  g.pos = [x, y];
+  return g;
+}
+var bHall = makeBubble(560, 150, ['Ställ dig sist, 4A!'], 40, [-60, 320], 780, 320);
+var bTacos = makeBubble(400, 130, ['TACOS!'], 52, [-120, 400], 620, 300);
+
+/* ---------- bildtexter ---------- */
+var capG = el('g', { opacity: 0 }, scene);
+el('rect', { x: 300, y: 936, width: 1320, height: 118, rx: 26, fill: 'rgba(12,16,28,.86)' }, capG);
+var capTitle = txt('', { x: 960, y: 990, 'text-anchor': 'middle', 'font-size': 44, 'font-weight': 800, fill: '#fff' }, capG);
+var capSub = txt('', { x: 960, y: 1032, 'text-anchor': 'middle', 'font-size': 27, fill: '#c7cede' }, capG);
+
+/* ---------- slutkort ---------- */
+var eg = el('linearGradient', { id: 'eg6', x1: 0, y1: 0, x2: 1, y2: 1 }, defs);
+el('stop', { offset: 0, 'stop-color': '#4f46e5' }, eg);
+el('stop', { offset: 1, 'stop-color': '#06b6d4' }, eg);
+var endG = el('g', { opacity: 0 }, scene);
+el('rect', { x: 0, y: 0, width: 1920, height: 1080, fill: 'url(#eg6)' }, endG);
+var endLogo = el('g', {}, endG);
+el('rect', { x: 830, y: 190, width: 260, height: 260, rx: 70, fill: '#fff' }, endLogo);
+txt('S', { x: 960, y: 400, 'text-anchor': 'middle', 'font-size': 190, 'font-weight': 800, fill: C.brand }, endLogo);
+txt('Sändo Tavla', { x: 960, y: 570, 'text-anchor': 'middle', 'font-size': 96, 'font-weight': 800, fill: '#fff' }, endG);
+txt('Även i matsalen.', { x: 960, y: 640, 'text-anchor': 'middle', 'font-size': 40, fill: '#e6e9ff' }, endG);
+txt('Ljudnivå · Turordning · Dagens fråga · Omröstning · Timer', { x: 960, y: 706, 'text-anchor': 'middle', 'font-size': 29, fill: '#dfe3ff' }, endG);
+var endBtn = el('g', {}, endG);
+el('rect', { x: 560, y: 780, width: 800, height: 110, rx: 30, fill: '#fff' }, endBtn);
+txt('INSTALLERA FÖR BRA ELEVER', { x: 960, y: 852, 'text-anchor': 'middle', 'font-size': 42, 'font-weight': 800, fill: C.brand }, endBtn);
+txt('Android 8.0+  ·  fungerar offline', { x: 960, y: 940, 'text-anchor': 'middle', 'font-size': 26, fill: '#e6e9ff' }, endG);
+
+/* ===================================================================
+   Tidslinjen
+   =================================================================== */
+var DUR = 41000;
+function fmt(sec) {
+  sec = Math.max(0, Math.ceil(sec));
+  return Math.floor(sec / 60) + ':' + (sec % 60 < 10 ? '0' : '') + (sec % 60);
+}
+function setBubble(g, t, a, b) {
+  var v = fade(t, a, b, 280);
+  show(g, v);
+  move(g, g.pos[0], g.pos[1] - (1 - p(t, a, a + 350, 'out')) * 30);
+}
+/* ljudnivån genom filmen: stiger, larmar, lugnar sig, håller sig lagom */
+function noiseAt(t) {
+  if (t < 1500) return 42;
+  if (t < 6200) return lerp(42, 86, p(t, 1500, 6200, 'out'));
+  if (t < 7600) return 86;
+  if (t < 10200) return lerp(86, 38, p(t, 7600, 10200, 'inOut'));
+  if (t < 27500) return 38 + Math.sin(t / 900) * 8;
+  if (t < 29200) return lerp(46, 72, p(t, 27500, 29200, 'out'));   /* jubel när tacos vinner */
+  return lerp(72, 40, p(t, 29200, 31500, 'out'));
+}
+
+function render(t) {
+  var nl = Math.round(noiseAt(t));
+  var loud = nl >= 70;
+  scrClock.textContent = '11:' + ('0' + (22 + Math.floor(t / 2000))).slice(-2);
+
+  /* ---- ljudmätaren och trafikljuset ---- */
+  noiseNum.textContent = nl;
+  var ncol = nl >= 70 ? C.red : nl >= 55 ? C.amber : C.green;
+  noiseNum.setAttribute('fill', ncol);
+  noiseFill.setAttribute('width', Math.max(20, nl * 3.8));
+  noiseFill.setAttribute('fill', ncol);
+  noiseFace.textContent = nl >= 70 ? '🤫' : nl >= 55 ? '😐' : '🙂';
+  noiseMsg.textContent = nl >= 70 ? 'FÖR HÖGT — sänk volymen vid borden'
+    : nl >= 55 ? 'Det börjar bli stimmigt' : 'Lagom ljudnivå — bra jobbat!';
+  noiseMsg.setAttribute('fill', ncol);
+  lampR.setAttribute('fill', nl >= 70 ? '#ef4444' : '#3a4256');
+  lampY.setAttribute('fill', nl >= 55 && nl < 70 ? '#facc15' : '#3a4256');
+  lampG.setAttribute('fill', nl < 55 ? C.green : '#3a4256');
+  /* skärmen blinkar rött när det är för högt */
+  scr.setAttribute('transform', loud ? 'translate(' + (Math.sin(t / 40) * 3) + ',0)' : '');
+  nBox.setAttribute('opacity', loud && Math.floor(t / 220) % 2 ? 0.72 : 1);
+
+  /* ---- kort på skärmen ---- */
+  var scQueue = fade(t, 0, 16600, 300);
+  var scFraga = fade(t, 16900, 22200, 300);
+  var scVote = fade(t, 22500, 30600, 300);
+  var scSlut = fade(t, 30900, 36600, 300);
+  show(wQueue, scQueue * (1 - scVote));
+  show(wFraga, scFraga * (1 - scVote));
+  show(wSlut, scSlut);
+  show(wVote, scVote);
+  show(wNoise, 1 - scVote);
+  queueNow.textContent = t < 12800 ? 'Nu: 5B' : 'Nu: 4A';
+  queueNext.textContent = t < 12800 ? 'Sedan: 4A · 6C · 3B' : 'Sedan: 6C · 3B';
+  slutTxt.textContent = fmt(120 - (t - 31000) / 1000);
+
+  /* omröstningen fylls på live */
+  var votes = [
+    Math.round(lerp(0, 18, p(t, 23400, 28600, 'out'))),
+    Math.round(lerp(0, 12, p(t, 23400, 28600, 'out'))),
+    Math.round(lerp(0, 3, p(t, 23400, 27400, 'out')))
+  ];
+  voteRows.forEach(function (r, i) {
+    r.bar.setAttribute('width', Math.max(10, votes[i] * 18));
+    r.num.textContent = votes[i];
+    r.num.setAttribute('fill', i === 0 && t > 28600 ? C.green : C.muted);
+  });
+  voteWin.textContent = t > 28800 ? '🌮 Tacos vinner — fredagens meny är klar' : '';
+
+  /* ---- eleverna vid borden ---- */
+  matKids.forEach(function (g, i) {
+    var b = g.home;
+    var talk = !loud && t > 16900 && t < 22400;
+    var cheer = t > 28700 && t < 31000;
+    var bob = cheer ? Math.abs(Math.sin(t / 150 + i)) * 20 : Math.sin(t / 700 + i) * 3;
+    move(g, b[0], b[1] - bob, b[2]);
+    g.k.setMood(loud ? 'neutral' : cheer || talk ? 'glad' : 'neutral');
+    g.k.armL.setAttribute('transform', cheer ? 'rotate(' + (44 + Math.sin(t / 120 + i) * 26) + ',-36,26)' : '');
+    g.k.armR.setAttribute('transform', cheer ? 'rotate(' + (-44 - Math.sin(t / 120 + i) * 26) + ',36,26)' : '');
+    /* alla tittar upp på skärmen när det larmar */
+    g.k.head.setAttribute('transform', loud ? 'translate(6,-4)' : 'translate(0,' + Math.sin(t / 700 + i) * 3 + ')');
+    /* städar undan brickan på slutet */
+    if (t > 33000) {
+      var leave = p(t, 33200 + i * 240, 35600 + i * 240, 'inOut');
+      move(g, lerp(b[0], 300, leave), lerp(b[1] - bob, 520, leave), lerp(b[2], 0.7, leave));
+      g.setAttribute('opacity', 1 - p(t, 34600 + i * 240, 35800 + i * 240));
+    } else {
+      g.setAttribute('opacity', 1);
+    }
+  });
+
+  /* ---- kön ---- */
+  koKids.forEach(function (g, i) {
+    var b = g.home;
+    var step = t > 11800 ? p(t, 11800 + i * 200, 13400 + i * 200, 'inOut') : 0;
+    move(g, lerp(b[0], b[0] - 90, step), lerp(b[1], b[1] - 6, step), b[2]);
+    g.k.setMood(loud ? 'neutral' : 'glad');
+    g.setAttribute('opacity', 1 - p(t, 15600, 16900));
+  });
+  /* den som försöker tränga sig — och ställer sig sist igen */
+  var cut = t > 11400 && t < 15400;
+  var back = p(t, 14000, 15400, 'inOut');
+  move(trangG, cut ? lerp(1090, 830, p(t, 11400, 13000, 'inOut')) + back * 320 : 1090,
+    596 + (cut ? Math.abs(Math.sin(t / 140)) * 6 : 0), 0.84);
+  trang.setMood(t > 13200 && t < 15200 ? 'ledsen' : 'neutral');
+  show(trangG, 1 - p(t, 15600, 16900));
+
+  /* kocken vinkar in nästa klass */
+  kock.talk(t > 11800 && t < 13600, t);
+  kock.arm.setAttribute('transform', t > 11800 && t < 13600 ? 'rotate(-50,45,30)' : '');
+
+  /* ---- pratbubblor ---- */
+  setBubble(bHall, t, 13000, 15400);
+  setBubble(bTacos, t, 28900, 31200);
+
+  /* ---- bildtexter ---- */
+  var capOn = 0;
+  if (t > 4200 && t < 7200) { capOn = fade(t, 4200, 7200, 300); capTitle.textContent = 'Matsalen klockan halv tolv.'; capSub.textContent = 'Ljudnivån 86 av 100. Alla pratar, ingen hör.'; }
+  else if (t > 8000 && t < 11000) { capOn = fade(t, 8000, 11000, 300); capTitle.textContent = 'Ingen behövde ropa "TYSTNAD!".'; capSub.textContent = 'Skärmen sa till — och alla såg det själva.'; }
+  else if (t > 13200 && t < 16200) { capOn = fade(t, 13200, 16200, 300); capTitle.textContent = 'Och kön sköter sig själv.'; capSub.textContent = 'Turordningen står på skärmen: nu 5B, sedan 4A.'; }
+  else if (t > 18200 && t < 21800) { capOn = fade(t, 18200, 21800, 300); capTitle.textContent = 'Dagens fråga funkar vid bordet också.'; capSub.textContent = 'Något att prata om som inte är vem som fick mest.'; }
+  else if (t > 24200 && t < 27800) { capOn = fade(t, 24200, 27800, 300); capTitle.textContent = 'Fredagens meny röstar de fram själva.'; capSub.textContent = 'Omröstningen räknas live på skärmen.'; }
+  else if (t > 31400 && t < 35400) { capOn = fade(t, 31400, 35400, 300); capTitle.textContent = 'Och alla vet när det är dags att gå.'; capSub.textContent = 'Två minuter kvar — brickan in, ut lugnt.'; }
+  show(capG, capOn);
+
+  /* ---- slutkort ---- */
+  var end = fade(t, 36400, DUR, 450);
+  show(endG, end);
+  var epop = p(t, 36400, 37200, 'out');
+  endLogo.setAttribute('transform', 'translate(' + (960 * (1 - (0.85 + 0.15 * epop))) + ',' +
+    (320 * (1 - (0.85 + 0.15 * epop))) + ') scale(' + (0.85 + 0.15 * epop) + ')');
+  var ep = 1 + Math.sin(t / 260) * 0.015;
+  endBtn.setAttribute('transform', 'translate(' + (960 * (1 - ep)) + ',' + (835 * (1 - ep)) + ') scale(' + ep + ')');
+}
+
+K.play(render, DUR);
+</script>
+</body>
+</html>
