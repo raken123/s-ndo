@@ -52,12 +52,14 @@ def sing(t0, f, dur, gain=0.15):
     """Melodistämma med mjuk ansats — sjungande snarare än pipande"""
     n = int(dur * SR)
     tt = np.arange(n) / SR
-    vib = 1 + 0.006 * np.sin(2*np.pi*5.2*tt)
-    w = (np.sin(2*np.pi*f*tt*vib)
-         + 0.34*np.sin(4*np.pi*f*tt*vib)
-         + 0.14*np.sin(6*np.pi*f*tt*vib))
+    # Vibratot ska läggas på den momentana frekvensen och integreras till fas.
+    # Att gånga in det i fasen (2*pi*f*t*vib) ger ett fel som växer med t —
+    # mätt till +45 cent på en halvsekundston, alltså en sång som ligger fel.
+    inst = f * (1 + 0.006 * np.sin(2*np.pi*5.2*tt))
+    ph = 2*np.pi*np.cumsum(inst)/SR
+    w = np.sin(ph) + 0.34*np.sin(2*ph) + 0.14*np.sin(3*ph)
     add(t0, w * env(n, 0.05, dur*0.45), gain)
-    add(t0, np.sin(2*np.pi*(f/2)*tt) * env(n, 0.06, dur*0.5), gain*0.3)
+    add(t0, np.sin(ph/2) * env(n, 0.06, dur*0.5), gain*0.3)
 
 def arp(t0, chord, dur=2.0, gain=0.055):
     """Ackordet som brutna toner under melodin"""
