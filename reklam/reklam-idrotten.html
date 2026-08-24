@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Sändo Tavla — Idrotten</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #0b0e17; overflow: hidden; }
+  #stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+    transform-origin: center center; background: #f7e9c9;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  svg { display: block; }
+  text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<div id="stage"><svg id="scene" width="1920" height="1080" viewBox="0 0 1920 1080"></svg></div>
+<script src="filmkit.js"></script>
+<script src="miljoer.js"></script>
+<script>
+/* ===================================================================
+   Sändo Tavla — "Idrotten"
+   Stafett i gympasalen — och ingen som blir vald sist.
+   =================================================================== */
+var K = Filmkit, M = Miljoer, scene = K.scene, C = K.C, SKIN = K.SKIN, SHIRT = K.SHIRT;
+var el = K.el, txt = K.txt, clamp = K.clamp, lerp = K.lerp, p = K.p, fade = K.fade;
+var show = K.show, move = K.move, kid = K.kid, bubble = K.bubble;
+
+/* Stående figur med ben */
+function person(x, y, s, opts) {
+  var g = el('g', {}, scene);
+  var k = kid(g, opts || {});
+  el('rect', { x: -24, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  el('rect', { x: 6, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  g.k = k; g.home = [x, y, s];
+  move(g, x, y, s);
+  return g;
+}
+function hop(g, x, y, s, t, fart) {
+  move(g, x, y - Math.abs(Math.sin(t / (fart || 130))) * 12, s);
+}
+function fmt(sec) {
+  sec = Math.max(0, Math.ceil(sec));
+  return Math.floor(sec / 60) + ':' + (sec % 60 < 10 ? '0' : '') + (sec % 60);
+}
+
+
+M.gym();
+var sc = K.wallScreen(1180, 110, 700, 430, 'Idrotten');
+
+/* stoppur */
+var wUr = K.widget(sc, 1210, 200, 380, 190, '⏱️ Stoppur — stafett');
+var urTxt = txt('0:00.0', { x: 1400, y: 320, 'text-anchor': 'middle', 'font-size': 62, 'font-weight': 800, fill: C.brand }, wUr);
+var varvTxt = txt('Varv 0 av 3', { x: 1400, y: 362, 'text-anchor': 'middle', 'font-size': 20, fill: C.muted }, wUr);
+/* poäng */
+var wPo = K.widget(sc, 1610, 200, 240, 190, '🏆 Ställning');
+var poTxt = txt('0 – 0', { x: 1730, y: 310, 'text-anchor': 'middle', 'font-size': 46, 'font-weight': 800, fill: C.ink }, wPo);
+var bastTxt = txt('', { x: 1730, y: 356, 'text-anchor': 'middle', 'font-size': 17, 'font-weight': 700, fill: C.green }, wPo);
+/* lagen */
+var wLag = el('g', { opacity: 0 }, sc);
+var lagCard = K.widget(sc, 1210, 406, 640, 116, '👥 Lag — slumpade');
+wLag.appendChild(lagCard);
+var lagG = [];
+[['Blå', 'Sara · Noah · Ali', '#e8f0ff', C.brand], ['Gul', 'Iris · Milo · Vera', '#fff8dd', '#b45309']].forEach(function (l, i) {
+  var g = el('g', {}, wLag);
+  var x = 1228 + i * 312;
+  el('rect', { x: x, y: 446, width: 296, height: 62, rx: 12, fill: l[2], stroke: i ? '#f59e0b' : C.brand, 'stroke-width': 3 }, g);
+  txt('Lag ' + l[0], { x: x + 14, y: 472, 'font-size': 17, 'font-weight': 800, fill: l[3] }, g);
+  txt(l[1], { x: x + 14, y: 496, 'font-size': 17, fill: C.ink }, g);
+  lagG.push(g);
+});
+/* stjärna */
+var wStj = el('g', { opacity: 0 }, sc);
+var stjCard = K.widget(sc, 1210, 406, 640, 116, '⭐ Dagens stjärna');
+wStj.appendChild(stjCard);
+txt('Sara — bästa varvtiden, 12,4 sekunder', { x: 1530, y: 482, 'text-anchor': 'middle', 'font-size': 26, 'font-weight': 800, fill: C.ink }, stjCard);
+
+/* folk */
+var larare = el('g', {}, scene);
+var lar = K.grownup(larare, '#0f766e', SKIN[2], '#5b3a1e');
+move(larare, 250, 800, 1.2);
+var sara = person(700, 820, 1.05, { skin: SKIN[4], shirt: '#ec4899', hair: '#8a5a2b' });
+var barn = [];
+[[880, 800, 1.0, 0], [1010, 810, 1.0, 1], [420, 790, 0.95, 2], [560, 800, 0.95, 3], [1130, 820, 1.0, 4]].forEach(function (b, i) {
+  barn.push(person(b[0], b[1], b[2], { skin: SKIN[i % 6], shirt: SHIRT[i], hair: ['#3b2a1e', '#20242e', '#6b3f1d', '#8a5a2b', '#2b1c12'][i] }));
+});
+
+var bSist = K.speech(560, 140, ['…och så Sara. Antar jag.'], 38, [-160, 380], 620, 380);
+var bHeja = K.speech(430, 130, ['HEJA SARA!'], 46, [180, 420], 560, 320);
+var cap = K.captionBar();
+var slut = K.endCard('Ingen väljs sist.', 'Grupper · Stoppur · Poängtavla · Stjärnor', 'egIdrott');
+
+var DUR = 40000;
+function render(t) {
+  /* stoppuret */
+  var run = t > 15000 && t < 27500;
+  var ur = run ? (t - 15000) / 1000 : t >= 27500 ? 12.5 : 0;
+  urTxt.textContent = Math.floor(ur / 60) + ':' + ('0' + Math.floor(ur % 60)).slice(-2) + '.' + Math.floor((ur * 10) % 10);
+  varvTxt.textContent = 'Varv ' + clamp(Math.floor((t - 15000) / 4200) + 1, 0, 3) + ' av 3';
+  poTxt.textContent = (t > 24000 ? 2 : t > 19000 ? 1 : 0) + ' – ' + (t > 21500 ? 1 : 0);
+  bastTxt.textContent = t > 26800 ? 'Bästa varv: 12,4 s' : '';
+  sc.clock.textContent = '10:' + ('0' + (12 + Math.floor(t / 4000))).slice(-2);
+  show(wLag, fade(t, 9600, 34000, 350) * (1 - fade(t, 28600, 36000, 350)));
+  show(wStj, fade(t, 28600, 36000, 350));
+  lagG.forEach(function (g, i) { g.setAttribute('opacity', p(t, 10200 + i * 500, 10800 + i * 500, 'out')); });
+
+  /* läraren */
+  lar.talk((t > 4600 && t < 8600) || (t > 28800 && t < 32000), t);
+  lar.arm.setAttribute('transform', (t > 9000 && t < 10600) || (t > 28600 && t < 30000) ? 'rotate(-56,45,30)' : '');
+
+  /* barnen: står i klump, springer sedan stafett */
+  barn.forEach(function (g, i) {
+    var b = g.home;
+    var running = t > 15000 && t < 27000;
+    var lane = 640 + i * 40;
+    var x = running ? b[0] + Math.sin(t / (520 + i * 60) + i) * 320 : b[0];
+    hop(g, x, b[1], b[2], t, running ? 110 : 700);
+    g.k.setMood(t > 26800 ? 'glad' : t < 9000 && i < 2 ? 'neutral' : 'glad');
+    var cheer = t > 26800 && t < 34000;
+    g.k.armL.setAttribute('transform', cheer ? 'rotate(' + (44 + Math.sin(t / 130 + i) * 26) + ',-36,26)' : '');
+    g.k.armR.setAttribute('transform', cheer ? 'rotate(' + (-44 - Math.sin(t / 130 + i) * 26) + ',36,26)' : '');
+    void lane;
+  });
+  /* Sara: står ensam kvar, springer sedan sitt varv */
+  var sx = 700, sy = 820, ss = 1.05;
+  if (t > 4000 && t < 9400) { sx = 700; }
+  if (t > 20000 && t < 27200) {
+    var w = p(t, 20200, 26600, 'inOut');
+    sx = lerp(560, 1520, w);
+    sy = 820 - Math.abs(Math.sin(t / 105)) * 16;
+    ss = lerp(1.05, 0.95, w);
+  } else if (t >= 27200) { sx = 1520; ss = 0.95; }
+  move(sara, sx, sy, ss);
+  sara.k.setMood(t > 4000 && t < 9400 ? 'ledsen' : t > 20000 ? 'glad' : 'neutral');
+  sara.k.armR.setAttribute('transform', t > 20000 && t < 27000 ? 'rotate(' + (-50 + Math.sin(t / 110) * 40) + ',36,26)' : '');
+  sara.k.armL.setAttribute('transform', t > 20000 && t < 27000 ? 'rotate(' + (50 - Math.sin(t / 110) * 40) + ',-36,26)' : '');
+
+  bSist.play(t, 4800, 9000);
+  bHeja.play(t, 23200, 26800);
+  cap.play(t, [
+    [1200, 4000, 'Idrott. Stafett i gympasalen.', 'Två kaptener ska välja lag. Igen.'],
+    [5200, 9000, 'Att bli vald sist är alltid lika kul.', 'Sara står kvar. Som vanligt.'],
+    [10800, 14200, 'Så gör de inte längre.', 'Lagen slumpas på tavlan — tre sekunder.'],
+    [16400, 19400, 'Stoppuret sköter tiden.', 'Varv, mellantider och ställning på skärmen.'],
+    [24000, 27400, 'Och Sara sprang dagens bästa varv.', '12,4 sekunder. Det syns på skärmen för alla.'],
+    [29400, 33400, 'Dagens stjärna: Sara.', 'Ingen behövde bli vald sist för att komma dit.']
+  ]);
+  slut.play(t, 34400, DUR);
+}
+
+
+K.play(render, DUR);
+</script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Sändo Tavla — Utvecklingssamtalet</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #0b0e17; overflow: hidden; }
+  #stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+    transform-origin: center center; background: #eef1f8;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  svg { display: block; }
+  text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<div id="stage"><svg id="scene" width="1920" height="1080" viewBox="0 0 1920 1080"></svg></div>
+<script src="filmkit.js"></script>
+<script src="miljoer.js"></script>
+<script>
+/* ===================================================================
+   Sändo Tavla — "Utvecklingssamtalet"
+   Terminen sammanfattad på tavlan i stället för i en pärm.
+   =================================================================== */
+var K = Filmkit, M = Miljoer, scene = K.scene, C = K.C, SKIN = K.SKIN, SHIRT = K.SHIRT;
+var el = K.el, txt = K.txt, clamp = K.clamp, lerp = K.lerp, p = K.p, fade = K.fade;
+var show = K.show, move = K.move, kid = K.kid, bubble = K.bubble;
+
+/* Stående figur med ben */
+function person(x, y, s, opts) {
+  var g = el('g', {}, scene);
+  var k = kid(g, opts || {});
+  el('rect', { x: -24, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  el('rect', { x: 6, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  g.k = k; g.home = [x, y, s];
+  move(g, x, y, s);
+  return g;
+}
+function hop(g, x, y, s, t, fart) {
+  move(g, x, y - Math.abs(Math.sin(t / (fart || 130))) * 12, s);
+}
+function fmt(sec) {
+  sec = Math.max(0, Math.ceil(sec));
+  return Math.floor(sec / 60) + ':' + (sec % 60 < 10 ? '0' : '') + (sec % 60);
+}
+
+
+var R = K.buildRoom();
+/* kvällsljus — läggs före tavlan, annars dimmas rummets enda ljuskälla ner */
+var kvall = el('rect', { x: 0, y: 0, width: 1920, height: 1080, fill: '#1a1f38', opacity: 0.34 }, scene);
+el('circle', { cx: 240, cy: 180, r: 60, fill: '#ffe9a8', opacity: 0.35 }, scene);
+var B = K.buildBoard();
+var screen = B.screen;
+K.boardTopbar(screen);
+
+var wStj = el('g', {}, screen);
+var sCard = K.widget(screen, 600, 216, 400, 300, '⭐ Terminen i korthet');
+wStj.appendChild(sCard);
+['Närvaro: 96 %', 'Stjärnor: 14', 'Redovisningar: 3 av 3', 'Läxor: 18 av 20'].forEach(function (s, i) {
+  txt(s, { x: 622, y: 290 + i * 52, 'font-size': 24, fill: C.ink }, sCard);
+});
+var wAI = el('g', { opacity: 0 }, screen);
+var aCard = K.widget(screen, 1020, 216, 210, 300, '👩‍🏫 AI-Lärare');
+wAI.appendChild(aCard);
+var aiRader = [];
+['Starkast: läsning', 'och samarbete i grupp.', '', 'Nästa steg: våga', 'räcka upp handen', 'i helklass.'].forEach(function (s, i) {
+  aiRader.push(txt(s, { x: 1040, y: 282 + i * 34, 'font-size': 17, fill: i > 2 ? C.green : C.ink, opacity: 0 }, aCard));
+});
+var wMal = el('g', { opacity: 0 }, screen);
+var mCard = K.widget(screen, 600, 216, 630, 300, '🎯 Målet till våren');
+wMal.appendChild(mCard);
+txt('Räcka upp handen en gång per lektion.', { x: 915, y: 330, 'text-anchor': 'middle', 'font-size': 30, 'font-weight': 800, fill: C.ink }, mCard);
+txt('Vi räknar det på tavlan — bara Vera och jag ser det.', { x: 915, y: 386, 'text-anchor': 'middle', 'font-size': 21, fill: C.muted }, mCard);
+txt('Nästa avstämning: vecka 8', { x: 915, y: 452, 'text-anchor': 'middle', 'font-size': 22, 'font-weight': 700, fill: C.green }, mCard);
+
+/* tre personer runt ett bord */
+K.table(680, 830, 520, '#b3844f');
+var larG = el('g', {}, scene);
+var lar = K.grownup(larG, '#0f766e', SKIN[2], '#5b3a1e');
+move(larG, 560, 760, 1.05);
+var forG = el('g', {}, scene);
+var foralder = K.grownup(forG, '#8e5b9c', SKIN[4], '#3b2a1e');
+move(forG, 1180, 770, 1.05);
+var veraG = el('g', {}, scene);
+var vera = kid(veraG, { skin: SKIN[4], shirt: '#ec4899', hair: '#8a5a2b' });
+move(veraG, 880, 800, 1.0);
+
+var bStolt = K.speech(560, 140, ['Det där visste jag inte.'], 38, [180, 330], 1080, 420);
+var cap = K.captionBar();
+var slut = K.endCard('Terminen på en skärm, inte i en pärm.', 'Stjärnor · Närvaro · AI-Lärare · Mål', 'egUtv');
+
+var DUR = 38000;
+function render(t) {
+  show(wAI, fade(t, 12000, 25000, 350));
+  show(wStj, 1 - fade(t, 25400, 33000, 350));
+  show(wMal, fade(t, 25400, 33000, 350));
+  aiRader.forEach(function (r, i) { r.setAttribute('opacity', p(t, 13400 + i * 420, 13900 + i * 420)); });
+  screen.parentNode.setAttribute('opacity', 1);
+
+  lar.talk((t > 2400 && t < 8000) || (t > 13000 && t < 20000) || (t > 26000 && t < 31000), t);
+  lar.arm.setAttribute('transform', (t > 11400 && t < 13000) || (t > 25200 && t < 26600) ? 'rotate(-56,45,30)' : '');
+  foralder.talk(t > 20600 && t < 24000, t);
+  foralder.body.setAttribute('transform', 'translate(0,' + Math.sin(t / 900) * 3 + ')');
+  vera.setMood(t < 10000 ? 'neutral' : t > 26000 ? 'glad' : 'neutral');
+  vera.head.setAttribute('transform', 'translate(0,' + Math.sin(t / 700) * 3 + ')');
+  vera.armR.setAttribute('transform', t > 27000 && t < 29000 ? 'rotate(-70,36,26)' : '');
+
+  bStolt.play(t, 20800, 24200);
+  cap.play(t, [
+    [1600, 5400, 'Utvecklingssamtal, klockan sex på kvällen.', 'Mamma, Vera och läraren.'],
+    [7000, 10800, 'Allt som hänt i höst finns kvar.', 'Närvaro, stjärnor, redovisningar, läxor.'],
+    [14000, 18400, 'AI-Läraren sammanfattar terminen.', 'Utifrån klassens eget material — inte magkänsla.'],
+    [21000, 24400, '“Det där visste jag inte.”', 'Mamma ser samma sak som läraren ser.'],
+    [26600, 31000, 'Och målet blir konkret.', 'En gång per lektion. Vi stämmer av i vecka 8.']
+  ]);
+  slut.play(t, 33400, DUR);
+}
+
+
+K.play(render, DUR);
+</script>
+</body>
+</html>

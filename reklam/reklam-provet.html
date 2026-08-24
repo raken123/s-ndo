@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Sändo Tavla — Provet</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #0b0e17; overflow: hidden; }
+  #stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+    transform-origin: center center; background: #eef1f8;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  svg { display: block; }
+  text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<div id="stage"><svg id="scene" width="1920" height="1080" viewBox="0 0 1920 1080"></svg></div>
+<script src="filmkit.js"></script>
+<script src="miljoer.js"></script>
+<script>
+/* ===================================================================
+   Sändo Tavla — "Provet"
+   Fyrtio minuter, tjugo magknip — och en timer som lugnar.
+   =================================================================== */
+var K = Filmkit, M = Miljoer, scene = K.scene, C = K.C, SKIN = K.SKIN, SHIRT = K.SHIRT;
+var el = K.el, txt = K.txt, clamp = K.clamp, lerp = K.lerp, p = K.p, fade = K.fade;
+var show = K.show, move = K.move, kid = K.kid, bubble = K.bubble;
+
+/* Stående figur med ben */
+function person(x, y, s, opts) {
+  var g = el('g', {}, scene);
+  var k = kid(g, opts || {});
+  el('rect', { x: -24, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  el('rect', { x: 6, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  g.k = k; g.home = [x, y, s];
+  move(g, x, y, s);
+  return g;
+}
+function hop(g, x, y, s, t, fart) {
+  move(g, x, y - Math.abs(Math.sin(t / (fart || 130))) * 12, s);
+}
+function fmt(sec) {
+  sec = Math.max(0, Math.ceil(sec));
+  return Math.floor(sec / 60) + ':' + (sec % 60 < 10 ? '0' : '') + (sec % 60);
+}
+
+
+var R = K.buildRoom();
+var B = K.buildBoard();
+var screen = B.screen;
+K.boardTopbar(screen);
+
+var wTid = K.widget(screen, 600, 216, 400, 300, '⏳ Provet');
+var tidTxt = txt('40:00', { x: 800, y: 356, 'text-anchor': 'middle', 'font-size': 76, 'font-weight': 800, fill: C.brand }, wTid);
+var tidSub = txt('Ta den tid du behöver', { x: 800, y: 404, 'text-anchor': 'middle', 'font-size': 20, fill: C.muted }, wTid);
+var tidRegel = txt('Räck upp handen om något är otydligt', { x: 800, y: 466, 'text-anchor': 'middle', 'font-size': 17, fill: C.muted }, wTid);
+var wRegler = K.widget(screen, 1020, 216, 210, 300, '📌 Så funkar det');
+['Skriv namn först', 'Alla får extra tid', 'Ingen jämför svar', 'Lämna in när du är klar'].forEach(function (s, i) {
+  txt('• ' + s, { x: 1040, y: 288 + i * 46, 'font-size': 16, fill: C.ink }, wRegler);
+});
+var wExit = el('g', { opacity: 0 }, screen);
+var eCard = K.widget(screen, 600, 216, 630, 300, '🎫 Efter provet');
+wExit.appendChild(eCard);
+txt('Hur kändes det?', { x: 915, y: 320, 'text-anchor': 'middle', 'font-size': 36, 'font-weight': 800, fill: C.ink }, eCard);
+var exitRader = [];
+[['😀 Lätt', C.green, 6], ['🙂 Lagom', C.brand, 11], ['😬 Svårt', C.amber, 4]].forEach(function (v, i) {
+  var g = el('g', {}, wExit);
+  var y = 386 + i * 44;
+  txt(v[0], { x: 650, y: y + 6, 'font-size': 22, fill: C.ink }, g);
+  el('rect', { x: 790, y: y - 16, width: 300, height: 28, rx: 8, fill: '#e9edf5' }, g);
+  var bar = el('rect', { x: 790, y: y - 16, width: 8, height: 28, rx: 8, fill: v[1] }, g);
+  var num = txt('0', { x: 1120, y: y + 6, 'font-size': 20, 'font-weight': 800, fill: C.muted }, g);
+  exitRader.push({ bar: bar, num: num, mal: v[2] });
+});
+
+var larG = el('g', {}, scene);
+var lar = K.grownup(larG, '#0f766e', SKIN[2], '#5b3a1e');
+move(larG, 300, 700, 1.15);
+var barn = [];
+[[700, 690, 0.85], [900, 690, 0.85], [1100, 690, 0.85], [1010, 880, 1.05], [1300, 880, 1.05]].forEach(function (b, i) {
+  var g = el('g', {}, scene);
+  var k = kid(g, { skin: SKIN[i % 6], shirt: SHIRT[i], hair: ['#3b2a1e', '#6b3f1d', '#20242e', '#8a5a2b', '#2b1c12'][i] });
+  g.k = k; g.home = b;
+  move(g, b[0], b[1], b[2]);
+  barn.push(g);
+  K.table(b[0] - (b[2] > 1 ? 95 : 75), b[1] + (b[2] > 1 ? 70 : 60), b[2] > 1 ? 190 : 150);
+});
+/* Sam är stressad */
+var samG = el('g', {}, scene);
+var sam = kid(samG, { skin: SKIN[1], shirt: '#f97316', hair: '#2b1c12' });
+move(samG, 620, 880, 1.05);
+K.table(525, 950, 190);
+var svett = el('g', { opacity: 0 }, samG);
+el('path', { d: 'M46,-58 q9,15 0,21 q-9,-6 0,-21 z', fill: '#5fb8ff', stroke: '#2f8fd6', 'stroke-width': 2 }, svett);
+
+var bHinner = K.speech(520, 140, ['Jag hinner aldrig…'], 38, [-140, 350], 900, 400);
+var cap = K.captionBar();
+var slut = K.endCard('Prov utan stressen.', 'Timer · Regler på tavlan · Exit ticket', 'egProv');
+
+var DUR = 38000;
+function render(t) {
+  var kvar = 2400 - (t - 6000) / 1000 * 60;
+  tidTxt.textContent = fmt(t < 6000 ? 2400 : kvar);
+  tidTxt.setAttribute('fill', kvar < 300 ? C.amber : C.brand);
+  tidSub.textContent = kvar < 300 ? 'Fem minuter kvar — ingen stress' : 'Ta den tid du behöver';
+  tidRegel.setAttribute('opacity', t > 12000 && t < 20000 ? 1 : 0.55);
+  show(wExit, fade(t, 25400, 33200, 350));
+  show(wTid, 1 - fade(t, 25400, 33200, 350));
+  show(wRegler, 1 - fade(t, 25400, 33200, 350));
+  exitRader.forEach(function (r, i) {
+    var v = Math.round(lerp(0, r.mal, p(t, 26400 + i * 300, 30400 + i * 300, 'out')));
+    r.bar.setAttribute('width', Math.max(8, v * 26));
+    r.num.textContent = v;
+  });
+  sc_clock();
+  function sc_clock() { }
+
+  lar.talk((t > 2000 && t < 5600) || (t > 26000 && t < 30000), t);
+  lar.arm.setAttribute('transform', (t > 5200 && t < 6600) || (t > 25000 && t < 26400) ? 'rotate(-56,45,30)' : '');
+
+  barn.forEach(function (g, i) {
+    var b = g.home;
+    move(g, b[0], b[1] + Math.sin(t / 900 + i) * 2, b[2]);
+    g.k.setMood(t > 26000 ? 'glad' : 'neutral');
+    g.k.armR.setAttribute('transform', t > 7000 && t < 25000 ? 'rotate(' + (-18 + Math.sin(t / (200 + i * 30)) * 14) + ',36,26)' : '');
+  });
+  /* Sam: stressad, tittar upp på tavlan, lugnar sig */
+  svett.setAttribute('opacity', t > 8000 && t < 15000 ? 1 : 0);
+  sam.setMood(t < 8000 ? 'neutral' : t < 15600 ? 'ledsen' : t > 26000 ? 'glad' : 'neutral');
+  sam.head.setAttribute('transform', t > 13000 && t < 16000 ? 'translate(0,-6)' : 'translate(0,' + Math.sin(t / 800) * 2 + ')');
+  sam.armR.setAttribute('transform', t > 16000 && t < 25000 ? 'rotate(' + (-18 + Math.sin(t / 210) * 14) + ',36,26)' : '');
+  move(samG, 620, 880 + Math.sin(t / 900) * 2, 1.05);
+
+  bHinner.play(t, 9000, 13000);
+  cap.play(t, [
+    [1400, 5200, 'Matteprov i 5B.', 'Fyrtio minuter, tjugo magknip.'],
+    [9200, 13400, '“Jag hinner aldrig…”', 'Sam har fastnat på fråga tre.'],
+    [14200, 19000, 'Men tiden står på tavlan.', 'Alla ser den, ingen behöver fråga hur länge till.'],
+    [16600, 21000, 'Och reglerna står bredvid.', 'Alla får extra tid. Ingen jämför svar.'],
+    [27000, 31400, 'Efteråt: hur kändes det?', 'Exit ticket direkt på tavlan — elva svarade lagom.']
+  ]);
+  slut.play(t, 33600, DUR);
+}
+
+
+K.play(render, DUR);
+</script>
+</body>
+</html>

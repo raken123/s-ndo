@@ -186,6 +186,99 @@ function grownup(parent, color, skin, hair) {
   return g;
 }
 
+
+/* ---- Delade byggstenar som alla filmer efter de sex första använder ---- */
+
+/* En skärm på väggen med appens topbar. Returnerar skärmgruppen. */
+function wallScreen(x, y, w, h, label) {
+  var g = el('g', {}, scene);
+  el('rect', { x: x, y: y, width: w, height: h, rx: 20, fill: '#1e2436' }, g);
+  var sc = el('g', {}, g);
+  el('rect', { x: x + 16, y: y + 16, width: w - 32, height: h - 32, rx: 10, fill: '#f4f6fb' }, sc);
+  el('rect', { x: x + 16, y: y + 16, width: w - 32, height: 50, fill: '#fff' }, sc);
+  el('rect', { x: x + 34, y: y + 28, width: 28, height: 28, rx: 8, fill: C.brand }, sc);
+  txt('S', { x: x + 48, y: y + 50, 'text-anchor': 'middle', 'font-size': 19, 'font-weight': 800, fill: '#fff' }, sc);
+  txt('Sändo Tavla' + (label ? ' · ' + label : ''), { x: x + 74, y: y + 49, 'font-size': 18, 'font-weight': 700, fill: C.ink }, sc);
+  var clock = txt('', { x: x + w - 34, y: y + 49, 'text-anchor': 'end', 'font-size': 18, 'font-weight': 700, fill: C.muted }, sc);
+  el('rect', { x: x + 16, y: y + 66, width: w - 32, height: 2, fill: C.line }, sc);
+  sc.frame = g;
+  sc.clock = clock;
+  return sc;
+}
+
+/* Bildtextraden längst ner */
+function captionBar() {
+  var g = el('g', { opacity: 0 }, scene);
+  el('rect', { x: 300, y: 936, width: 1320, height: 118, rx: 26, fill: 'rgba(12,16,28,.86)' }, g);
+  var title = txt('', { x: 960, y: 990, 'text-anchor': 'middle', 'font-size': 44, 'font-weight': 800, fill: '#fff' }, g);
+  var sub = txt('', { x: 960, y: 1032, 'text-anchor': 'middle', 'font-size': 27, fill: '#c7cede' }, g);
+  /* rows: [[från, till, rubrik, underrubrik], …] */
+  g.play = function (t, rows) {
+    var on = 0;
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (t > r[0] && t < r[1]) {
+        on = fade(t, r[0], r[1], 300);
+        title.textContent = r[2];
+        sub.textContent = r[3];
+        break;
+      }
+    }
+    show(g, on);
+  };
+  return g;
+}
+
+/* Slutkortet, likadant i alla filmer */
+function endCard(tagline, features, gradId) {
+  var defs = scene.querySelector('defs') || el('defs', {}, scene);
+  var lg = el('linearGradient', { id: gradId || 'endgrad', x1: 0, y1: 0, x2: 1, y2: 1 }, defs);
+  el('stop', { offset: 0, 'stop-color': '#4f46e5' }, lg);
+  el('stop', { offset: 1, 'stop-color': '#06b6d4' }, lg);
+  var g = el('g', { opacity: 0 }, scene);
+  el('rect', { x: 0, y: 0, width: 1920, height: 1080, fill: 'url(#' + (gradId || 'endgrad') + ')' }, g);
+  var logo = el('g', {}, g);
+  el('rect', { x: 830, y: 190, width: 260, height: 260, rx: 70, fill: '#fff' }, logo);
+  txt('S', { x: 960, y: 400, 'text-anchor': 'middle', 'font-size': 190, 'font-weight': 800, fill: C.brand }, logo);
+  txt('Sändo Tavla', { x: 960, y: 570, 'text-anchor': 'middle', 'font-size': 96, 'font-weight': 800, fill: '#fff' }, g);
+  txt(tagline, { x: 960, y: 640, 'text-anchor': 'middle', 'font-size': 40, fill: '#e6e9ff' }, g);
+  txt(features, { x: 960, y: 706, 'text-anchor': 'middle', 'font-size': 29, fill: '#dfe3ff' }, g);
+  var btn = el('g', {}, g);
+  el('rect', { x: 560, y: 780, width: 800, height: 110, rx: 30, fill: '#fff' }, btn);
+  txt('INSTALLERA FÖR BRA ELEVER', { x: 960, y: 852, 'text-anchor': 'middle', 'font-size': 42, 'font-weight': 800, fill: C.brand }, btn);
+  txt('Android 8.0+  ·  fungerar offline', { x: 960, y: 940, 'text-anchor': 'middle', 'font-size': 26, fill: '#e6e9ff' }, g);
+  g.play = function (t, from, dur) {
+    var v = fade(t, from, dur, 450);
+    show(g, v);
+    var pop = p(t, from, from + 800, 'out'), s1 = 0.85 + 0.15 * pop;
+    logo.setAttribute('transform', 'translate(' + (960 * (1 - s1)) + ',' + (320 * (1 - s1)) + ') scale(' + s1 + ')');
+    var s2 = 1 + Math.sin(t / 260) * 0.015;
+    btn.setAttribute('transform', 'translate(' + (960 * (1 - s2)) + ',' + (835 * (1 - s2)) + ') scale(' + s2 + ')');
+  };
+  return g;
+}
+
+/* Pratbubbla som vet var den ska stå och vem den pekar på */
+function speech(w, h, lines, size, tail, x, y) {
+  var g = el('g', { opacity: 0 }, scene);
+  bubble(g, w, h, lines, size, tail);
+  g.play = function (t, a, b) {
+    var v = fade(t, a, b, 280);
+    show(g, v);
+    move(g, x, y - (1 - p(t, a, a + 350, 'out')) * 30);
+  };
+  return g;
+}
+
+/* Enkel möbel: bord med ben */
+function table(x, y, w, color) {
+  var g = el('g', {}, scene);
+  el('rect', { x: x, y: y, width: w, height: 20, rx: 8, fill: color || '#c68a52' }, g);
+  el('rect', { x: x + 16, y: y + 20, width: 14, height: 80, fill: '#a06f3f' }, g);
+  el('rect', { x: x + w - 30, y: y + 20, width: 14, height: 80, fill: '#a06f3f' }, g);
+  return g;
+}
+
 /* Skalning i fönstret och uppspelning i loop */
 function play(render, duration) {
   function fit() {
@@ -212,8 +305,9 @@ function play(render, duration) {
 global.Filmkit = {
   SVG: SVG, scene: scene, C: C, SKIN: SKIN, SHIRT: SHIRT,
   el: el, txt: txt, clamp: clamp, lerp: lerp, p: p, fade: fade, show: show, move: move,
-  kid: kid, bubble: bubble, grownup: grownup,
+  kid: kid, bubble: bubble, grownup: grownup, speech: speech,
   buildRoom: buildRoom, buildBoard: buildBoard, boardTopbar: boardTopbar, widget: widget,
+  wallScreen: wallScreen, captionBar: captionBar, endCard: endCard, table: table,
   play: play
 };
 })(window);

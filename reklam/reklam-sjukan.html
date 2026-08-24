@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Sändo Tavla — Sjukrummet</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #0b0e17; overflow: hidden; }
+  #stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+    transform-origin: center center; background: #e7f2f6;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  svg { display: block; }
+  text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<div id="stage"><svg id="scene" width="1920" height="1080" viewBox="0 0 1920 1080"></svg></div>
+<script src="filmkit.js"></script>
+<script src="miljoer.js"></script>
+<script>
+/* ===================================================================
+   Sändo Tavla — "Sjukrummet"
+   Skrubbsår, kylpåse och tio minuter som faktiskt är tio minuter.
+   =================================================================== */
+var K = Filmkit, M = Miljoer, scene = K.scene, C = K.C, SKIN = K.SKIN, SHIRT = K.SHIRT;
+var el = K.el, txt = K.txt, clamp = K.clamp, lerp = K.lerp, p = K.p, fade = K.fade;
+var show = K.show, move = K.move, kid = K.kid, bubble = K.bubble;
+
+/* Stående figur med ben */
+function person(x, y, s, opts) {
+  var g = el('g', {}, scene);
+  var k = kid(g, opts || {});
+  el('rect', { x: -24, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  el('rect', { x: 6, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  g.k = k; g.home = [x, y, s];
+  move(g, x, y, s);
+  return g;
+}
+function hop(g, x, y, s, t, fart) {
+  move(g, x, y - Math.abs(Math.sin(t / (fart || 130))) * 12, s);
+}
+function fmt(sec) {
+  sec = Math.max(0, Math.ceil(sec));
+  return Math.floor(sec / 60) + ':' + (sec % 60 < 10 ? '0' : '') + (sec % 60);
+}
+
+
+M.sjukrum();
+var sc = K.wallScreen(1180, 130, 680, 420, 'Sjukrummet');
+
+var wIs = K.widget(sc, 1210, 216, 380, 170, '🧊 Kylpåse');
+var isTxt = txt('10:00', { x: 1400, y: 316, 'text-anchor': 'middle', 'font-size': 54, 'font-weight': 800, fill: C.brand }, wIs);
+var isKlar = txt('håll kvar tills det ringer', { x: 1400, y: 358, 'text-anchor': 'middle', 'font-size': 16, fill: C.muted }, wIs);
+var wNarv = K.widget(sc, 1610, 216, 220, 170, '✅ Anmält');
+txt('Vera, 5B', { x: 1630, y: 282, 'font-size': 20, 'font-weight': 700, fill: C.ink }, wNarv);
+txt('Hos skolsyster', { x: 1630, y: 312, 'font-size': 16, fill: C.muted }, wNarv);
+var narvKlar = txt('', { x: 1630, y: 348, 'font-size': 16, 'font-weight': 700, fill: C.green }, wNarv);
+
+var wFraga = el('g', { opacity: 0 }, sc);
+var fCard = K.widget(sc, 1210, 402, 620, 118, '💭 Dagens fråga');
+wFraga.appendChild(fCard);
+txt('Vilket är ditt bästa minne från i somras?', { x: 1520, y: 470, 'text-anchor': 'middle', 'font-size': 24, 'font-weight': 700, fill: C.ink }, fCard);
+txt('Bra att prata om medan det gör lite ont.', { x: 1520, y: 502, 'text-anchor': 'middle', 'font-size': 16, fill: C.muted }, fCard);
+
+var wTillbaka = el('g', { opacity: 0 }, sc);
+var tCard = K.widget(sc, 1210, 402, 620, 118, '🔙 Tillbaka till lektionen');
+wTillbaka.appendChild(tCard);
+txt('5B · Bild i sal 9 · pågår i 22 min till', { x: 1520, y: 478, 'text-anchor': 'middle', 'font-size': 25, 'font-weight': 800, fill: C.ink }, tCard);
+
+var systerG = el('g', {}, scene);
+var syster = K.grownup(systerG, '#2e86c1', SKIN[0], '#5b3a1e');
+el('rect', { x: -32, y: 22, width: 64, height: 92, rx: 18, fill: '#fff', stroke: '#cbd5e1', 'stroke-width': 3 }, syster.body);
+move(systerG, 300, 830, 1.2);
+/* Vera sitter på britsen */
+var veraG = el('g', {}, scene);
+var vera = kid(veraG, { skin: SKIN[4], shirt: '#ec4899', hair: '#8a5a2b' });
+el('rect', { x: -24, y: 78, width: 18, height: 60, rx: 9, fill: '#2f3a4d' }, vera);
+el('rect', { x: 6, y: 78, width: 18, height: 60, rx: 9, fill: '#2f3a4d' }, vera);
+var plaster = el('rect', { x: 2, y: 116, width: 26, height: 14, rx: 4, fill: '#f2c9a0', stroke: '#d99f6c', 'stroke-width': 2, opacity: 0 }, vera);
+var ispase = el('rect', { x: -2, y: 108, width: 34, height: 26, rx: 8, fill: '#9fd8f5', stroke: '#5fb8e8', 'stroke-width': 3, opacity: 0 }, vera);
+move(veraG, 700, 620, 1.15);
+
+var bAj = K.speech(400, 130, ['Aj, aj, aj…'], 42, [-60, 300], 700, 380);
+var bBra = K.speech(520, 130, ['Det gick faktiskt bra.'], 36, [-120, 320], 760, 380);
+var cap = K.captionBar();
+var slut = K.endCard('Även tio minuter behöver en timer.', 'Timer · Närvaro · Dagens fråga · Schema', 'egSjuk');
+
+var DUR = 36000;
+function render(t) {
+  var kvar = 600 - (t - 7000) / 1000 * 60;
+  isTxt.textContent = fmt(t < 7000 ? 600 : kvar);
+  isTxt.setAttribute('fill', kvar <= 0 ? C.green : C.brand);
+  isKlar.textContent = kvar <= 0 ? '✅ Klart — testa att böja på knät' : 'håll kvar tills det ringer';
+  narvKlar.textContent = t > 24000 ? '↩︎ Tillbaka 10:41' : '';
+  sc.clock.textContent = '10:' + ('0' + (28 + Math.floor(t / 2600))).slice(-2);
+  show(wFraga, fade(t, 11000, 23000, 350));
+  show(wTillbaka, fade(t, 23400, 31000, 350));
+
+  syster.talk((t > 2600 && t < 6400) || (t > 12000 && t < 16000) || (t > 24000 && t < 27000), t);
+  syster.arm.setAttribute('transform', (t > 5200 && t < 7400) || (t > 23600 && t < 25000) ? 'rotate(-54,45,30)' : '');
+
+  ispase.setAttribute('opacity', t > 6600 && t < 20000 ? 1 : 0);
+  plaster.setAttribute('opacity', t > 5400 ? 1 : 0);
+  vera.setMood(t < 6000 ? 'ledsen' : t < 12000 ? 'neutral' : 'glad');
+  vera.armR.setAttribute('transform', t > 6600 && t < 20000 ? 'rotate(46,36,26)' : '');
+  /* hon hoppar ner och går tillbaka till lektionen */
+  var vx = 700, vy = 620, vs = 1.15;
+  if (t > 25000) {
+    var w = p(t, 25200, 28800, 'inOut');
+    vx = lerp(700, 1560, w); vy = lerp(620, 700, w) - Math.abs(Math.sin(t / 130)) * 10 * (w < 1 ? 1 : 0);
+    vs = lerp(1.15, 0.9, w);
+  }
+  move(veraG, vx, vy, vs);
+  show(veraG, 1 - p(t, 29200, 30400));
+
+  bAj.play(t, 1400, 5200);
+  bBra.play(t, 20600, 23400);
+  cap.play(t, [
+    [2000, 5600, 'Skrubbsår på rasten.', 'Det gör ont, och lektionen har redan börjat.'],
+    [7200, 10600, 'Tio minuter med kylpåse.', 'Timern på skärmen — ingen behöver hålla räkningen.'],
+    [12600, 16400, 'Och något att prata om under tiden.', 'Dagens fråga fungerar även på en brits.'],
+    [21000, 24200, 'Klassen vet var hon är.', 'Frånvaron är noterad, ingen letar efter henne.'],
+    [25600, 29400, 'Nu vet hon precis vart hon ska.', 'Bild i sal 9, tjugotvå minuter kvar av lektionen.']
+  ]);
+  slut.play(t, 30800, DUR);
+}
+
+
+K.play(render, DUR);
+</script>
+</body>
+</html>

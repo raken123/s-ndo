@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Sändo Tavla — Fritids</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #0b0e17; overflow: hidden; }
+  #stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+    transform-origin: center center; background: #fdf0e2;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  svg { display: block; }
+  text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<div id="stage"><svg id="scene" width="1920" height="1080" viewBox="0 0 1920 1080"></svg></div>
+<script src="filmkit.js"></script>
+<script src="miljoer.js"></script>
+<script>
+/* ===================================================================
+   Sändo Tavla — "Fritids"
+   Eftermiddagen när alla frågar vad man ska göra nu.
+   =================================================================== */
+var K = Filmkit, M = Miljoer, scene = K.scene, C = K.C, SKIN = K.SKIN, SHIRT = K.SHIRT;
+var el = K.el, txt = K.txt, clamp = K.clamp, lerp = K.lerp, p = K.p, fade = K.fade;
+var show = K.show, move = K.move, kid = K.kid, bubble = K.bubble;
+
+/* Stående figur med ben */
+function person(x, y, s, opts) {
+  var g = el('g', {}, scene);
+  var k = kid(g, opts || {});
+  el('rect', { x: -24, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  el('rect', { x: 6, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  g.k = k; g.home = [x, y, s];
+  move(g, x, y, s);
+  return g;
+}
+function hop(g, x, y, s, t, fart) {
+  move(g, x, y - Math.abs(Math.sin(t / (fart || 130))) * 12, s);
+}
+function fmt(sec) {
+  sec = Math.max(0, Math.ceil(sec));
+  return Math.floor(sec / 60) + ':' + (sec % 60 < 10 ? '0' : '') + (sec % 60);
+}
+
+
+M.fritids();
+var sc = K.wallScreen(1080, 120, 760, 430, 'Fritids');
+
+/* lyckohjulet väljer aktivitet */
+var wHjul = K.widget(sc, 1110, 206, 360, 320, '🎡 Vad gör vi nu?');
+var hjulG = el('g', {}, wHjul);
+var hjulSpin = el('g', {}, hjulG);
+var farger = ['#4f46e5', '#06b6d4', '#16a34a', '#f59e0b', '#dc2626', '#a855f7'];
+for (var i = 0; i < 6; i++) {
+  var a0 = i * Math.PI / 3, a1 = (i + 1) * Math.PI / 3, r = 78;
+  el('path', { d: 'M0,0 L' + (Math.cos(a0) * r).toFixed(1) + ',' + (Math.sin(a0) * r).toFixed(1) +
+    ' A' + r + ',' + r + ' 0 0 1 ' + (Math.cos(a1) * r).toFixed(1) + ',' + (Math.sin(a1) * r).toFixed(1) + ' Z', fill: farger[i] }, hjulSpin);
+}
+move(hjulG, 1290, 350);
+el('circle', { cx: 0, cy: 0, r: 14, fill: '#fff', stroke: C.ink, 'stroke-width': 4 }, hjulG);
+var hjulVal = txt('', { x: 1290, y: 476, 'text-anchor': 'middle', 'font-size': 28, 'font-weight': 800, fill: C.ink }, wHjul);
+/* poäng och städtimer */
+var wPo = K.widget(sc, 1490, 206, 320, 150, '🏆 Pysseltävling');
+var poTxt = txt('0 – 0', { x: 1650, y: 306, 'text-anchor': 'middle', 'font-size': 42, 'font-weight': 800, fill: C.ink }, wPo);
+var wStad = K.widget(sc, 1490, 376, 320, 150, '🧹 Städa undan');
+var stadTxt = txt('5:00', { x: 1650, y: 462, 'text-anchor': 'middle', 'font-size': 40, 'font-weight': 800, fill: C.brand }, wStad);
+var stadSub = txt('innan hämtning', { x: 1650, y: 496, 'text-anchor': 'middle', 'font-size': 16, fill: C.muted }, wStad);
+
+var perG = el('g', {}, scene);
+var per = K.grownup(perG, '#0f766e', SKIN[0], '#5b3a1e');
+move(perG, 240, 800, 1.15);
+var barn = [];
+[[520, 830, 1.0], [680, 850, 1.0], [860, 830, 1.0], [1000, 860, 1.0]].forEach(function (b, i) {
+  barn.push(person(b[0], b[1], b[2], { skin: SKIN[i + 1], shirt: SHIRT[i + 1], hair: ['#3b2a1e', '#20242e', '#6b3f1d', '#8a5a2b'][i] }));
+});
+
+var bVad = K.speech(560, 140, ['Vad ska vi göra nu då?'], 38, [-140, 340], 780, 430);
+var bJa = K.speech(360, 130, ['PYSSEL!'], 46, [140, 380], 760, 380);
+var cap = K.captionBar();
+var slut = K.endCard('Eftermiddagen har också ett schema.', 'Lyckohjul · Poäng · Timer · Turordning', 'egFritids');
+
+var DUR = 36000;
+function render(t) {
+  var snurrar = t > 8000 && t < 12600;
+  hjulSpin.setAttribute('transform', 'rotate(' + (snurrar ? (t / 2.2) % 360 : t < 8000 ? 0 : 148) + ')');
+  hjulVal.textContent = t > 12600 ? '🎨 Pyssel!' : snurrar ? '' : 'Snurra hjulet';
+  poTxt.textContent = (Math.floor(clamp((t - 16000) / 2400, 0, 4))) + ' – ' + (Math.floor(clamp((t - 17000) / 2900, 0, 3)));
+  var kvar = 300 - (t - 24000) / 1000 * 30;
+  stadTxt.textContent = fmt(t < 24000 ? 300 : kvar);
+  stadTxt.setAttribute('fill', t > 24000 && kvar < 120 ? C.amber : C.brand);
+  stadSub.textContent = t > 24000 ? 'innan hämtning' : 'startar 16:30';
+  sc.clock.textContent = '16:' + ('0' + (12 + Math.floor(t / 2200))).slice(-2);
+
+  per.talk((t > 2200 && t < 6000) || (t > 24200 && t < 27000), t);
+  per.arm.setAttribute('transform', (t > 7200 && t < 8600) || (t > 23800 && t < 25200) ? 'rotate(-56,45,30)' : '');
+
+  barn.forEach(function (g, i) {
+    var b = g.home;
+    var jubel = t > 12600 && t < 16000;
+    var pysslar = t > 16000 && t < 24000;
+    var stadar = t > 24600;
+    var y = b[1] - (jubel ? Math.abs(Math.sin(t / 160 + i)) * 22 : 0);
+    var x = b[0] + (stadar ? Math.sin(t / 500 + i) * 60 : 0);
+    move(g, x, y + Math.sin(t / 800 + i) * 3, b[2]);
+    g.k.setMood(t > 8000 ? 'glad' : 'neutral');
+    g.k.armL.setAttribute('transform', jubel ? 'rotate(' + (44 + Math.sin(t / 130 + i) * 26) + ',-36,26)' :
+      pysslar ? 'rotate(' + (22 + Math.sin(t / 260 + i) * 16) + ',-36,26)' :
+      stadar ? 'rotate(' + (30 + Math.sin(t / 200 + i) * 24) + ',-36,26)' : '');
+    g.k.armR.setAttribute('transform', jubel ? 'rotate(' + (-44 - Math.sin(t / 130 + i) * 26) + ',36,26)' :
+      pysslar ? 'rotate(' + (-22 - Math.sin(t / 260 + i) * 16) + ',36,26)' :
+      stadar ? 'rotate(' + (-30 - Math.sin(t / 200 + i) * 24) + ',36,26)' : '');
+  });
+
+  bVad.play(t, 3000, 6800);
+  bJa.play(t, 12800, 15600);
+  cap.play(t, [
+    [1600, 5200, 'Klockan är kvart över fyra.', 'Alla frågar samma sak: vad ska vi göra nu?'],
+    [9000, 12200, 'Hjulet får bestämma.', 'Ingen kan tjata sig till sin egen favorit.'],
+    [13400, 16800, 'Pyssel, alltså.', 'Och en tävling med poäng på skärmen.'],
+    [24600, 28600, 'Fem minuter kvar: städa undan.', 'Timern räknar ner innan föräldrarna kommer.'],
+    [29000, 31400, 'Ingen behöver ropa tre gånger.', 'Det står ju på skärmen.']
+  ]);
+  slut.play(t, 31600, DUR);
+}
+
+
+K.play(render, DUR);
+</script>
+</body>
+</html>

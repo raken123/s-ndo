@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Sändo Tavla — Skolavslutningen</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #0b0e17; overflow: hidden; }
+  #stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+    transform-origin: center center; background: #2b2740;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  svg { display: block; }
+  text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<div id="stage"><svg id="scene" width="1920" height="1080" viewBox="0 0 1920 1080"></svg></div>
+<script src="filmkit.js"></script>
+<script src="miljoer.js"></script>
+<script>
+/* ===================================================================
+   Sändo Tavla — "Skolavslutningen"
+   Hela skolan i aulan, sommarsången och ett helt läsår på samma tavla.
+   =================================================================== */
+var K = Filmkit, M = Miljoer, scene = K.scene, C = K.C, SKIN = K.SKIN, SHIRT = K.SHIRT;
+var el = K.el, txt = K.txt, clamp = K.clamp, lerp = K.lerp, p = K.p, fade = K.fade;
+var show = K.show, move = K.move, kid = K.kid, bubble = K.bubble;
+
+/* Stående figur med ben */
+function person(x, y, s, opts) {
+  var g = el('g', {}, scene);
+  var k = kid(g, opts || {});
+  el('rect', { x: -24, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  el('rect', { x: 6, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  g.k = k; g.home = [x, y, s];
+  move(g, x, y, s);
+  return g;
+}
+function hop(g, x, y, s, t, fart) {
+  move(g, x, y - Math.abs(Math.sin(t / (fart || 130))) * 12, s);
+}
+function fmt(sec) {
+  sec = Math.max(0, Math.ceil(sec));
+  return Math.floor(sec / 60) + ':' + (sec % 60 < 10 ? '0' : '') + (sec % 60);
+}
+
+
+M.aula();
+var sc = K.wallScreen(560, 150, 800, 400, 'Aulan');
+
+var wSang = el('g', {}, sc);
+var sCard = K.widget(sc, 590, 236, 740, 290, '🔠 Sommarsången');
+wSang.appendChild(sCard);
+var rader = ['Tack för i år, tack för allt vi hann,', 'för alla frågor och alla svar.', 'Ha en sommar full av sol och skratt —', 'vi ses igen till hösten!'];
+var radTxt = [];
+rader.forEach(function (r, i) {
+  radTxt.push(txt(r, { x: 960, y: 306 + i * 52, 'text-anchor': 'middle', 'font-size': 27, 'font-weight': 700, fill: C.muted }, sCard));
+});
+var boll = el('circle', { cx: 960, cy: 282, r: 12, fill: C.amber, opacity: 0 }, sCard);
+var wTack = el('g', { opacity: 0 }, sc);
+var tCard = K.widget(sc, 590, 236, 740, 290, '🎓 Läsåret i siffror');
+wTack.appendChild(tCard);
+['178 skoldagar', '1 240 lektioner', '86 redovisningar', '4 utvisade (alla kom tillbaka)'].forEach(function (s, i) {
+  txt(s, { x: 960, y: 312 + i * 52, 'text-anchor': 'middle', 'font-size': 28, 'font-weight': 700, fill: i === 3 ? C.green : C.ink }, tCard);
+});
+
+/* rektor på scen och hela skolan i publiken */
+var rekG = el('g', {}, scene);
+var rektor = K.grownup(rekG, '#8e5b9c', SKIN[2], '#3b2a1e');
+move(rekG, 1500, 600, 1.05);
+var publik = [];
+for (var r = 0; r < 2; r++) {
+  for (var c = 0; c < 7; c++) {
+    var x = 260 + c * 230 + r * 70, y = 820 + r * 120;
+    var g = el('g', {}, scene);
+    var k = kid(g, { skin: SKIN[(r * 7 + c) % 6], shirt: SHIRT[(r * 3 + c) % 7], hair: ['#3b2a1e', '#20242e', '#6b3f1d', '#8a5a2b'][(c + r) % 4] });
+    g.k = k; g.home = [x, y, r ? 1.05 : 0.9];
+    move(g, x, y, r ? 1.05 : 0.9);
+    publik.push(g);
+  }
+}
+var cap = K.captionBar();
+var slut = K.endCard('Tack för i år.', 'Ett helt läsår på samma tavla · 47 komponenter', 'egAvsl');
+
+var SANG = 14000, TON = 520;
+var DUR = 40000;
+function render(t) {
+  sc.clock.textContent = '11:' + ('0' + (10 + Math.floor(t / 3000))).slice(-2);
+  show(wSang, 1 - fade(t, 30000, 36000, 350));
+  show(wTack, fade(t, 30000, 36000, 350));
+
+  var sjunger = t >= SANG && t < SANG + 16 * TON;
+  boll.setAttribute('opacity', sjunger ? 1 : 0);
+  var ton = Math.floor((t - SANG) / TON), rad = clamp(Math.floor(ton / 4), 0, 3);
+  radTxt.forEach(function (l, i) {
+    l.setAttribute('fill', sjunger && i === rad ? C.ink : C.muted);
+    l.setAttribute('font-size', sjunger && i === rad ? 29 : 26);
+  });
+  if (sjunger) {
+    var it = ((t - SANG) % TON) / TON, kol = ton % 4;
+    boll.setAttribute('cx', 700 + kol * 174);
+    boll.setAttribute('cy', 306 + rad * 52 - 26 - Math.sin(it * Math.PI) * 30);
+  }
+
+  rektor.talk((t > 2000 && t < 8000) || (t > 31000 && t < 35000), t);
+  rektor.arm.setAttribute('transform', sjunger ? 'rotate(' + (-40 + Math.sin(t / 260) * 24) + ',45,30)' :
+    (t > 12400 && t < 14000 ? 'rotate(-56,45,30)' : ''));
+
+  publik.forEach(function (g, i) {
+    var b = g.home;
+    var gunga = sjunger ? Math.sin(t / 270 + i * 0.4) * 9 : Math.sin(t / 800 + i) * 3;
+    var vinkar = t > 32000;
+    move(g, b[0] + gunga, b[1] - (vinkar ? Math.abs(Math.sin(t / 200 + i)) * 10 : 0), b[2]);
+    g.k.setMood('glad');
+    g.k.armL.setAttribute('transform', sjunger || vinkar ? 'rotate(' + (34 + Math.sin(t / (vinkar ? 150 : 270) + i) * 26) + ',-36,26)' : '');
+    g.k.armR.setAttribute('transform', sjunger || vinkar ? 'rotate(' + (-34 - Math.sin(t / (vinkar ? 150 : 270) + i) * 26) + ',36,26)' : '');
+  });
+
+  cap.play(t, [
+    [1800, 5400, 'Sista dagen. Hela skolan i aulan.', 'Sommarlovet börjar om nitton minuter.'],
+    [8200, 12000, 'Ingen kan texten utantill.', 'Det behöver ingen heller.'],
+    [15400, 20000, 'Sommarsången, med texten på skärmen.', 'Sexhundra elever i takt med samma boll.'],
+    [24000, 28000, 'Från första skoldagen till den här.', 'Samma tavla har följt med hela vägen.'],
+    [31000, 35400, 'Fyra blev utvisade i fem minuter.', 'Alla fyra kom tillbaka. Det är också ett resultat.']
+  ]);
+  slut.play(t, 36400, DUR);
+}
+
+
+K.play(render, DUR);
+</script>
+</body>
+</html>

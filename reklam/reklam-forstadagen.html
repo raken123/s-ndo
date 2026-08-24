@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Sändo Tavla — Första skoldagen</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #0b0e17; overflow: hidden; }
+  #stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+    transform-origin: center center; background: #eef1f8;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  svg { display: block; }
+  text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<div id="stage"><svg id="scene" width="1920" height="1080" viewBox="0 0 1920 1080"></svg></div>
+<script src="filmkit.js"></script>
+<script src="miljoer.js"></script>
+<script>
+/* ===================================================================
+   Sändo Tavla — "Första skoldagen"
+   Nya klassen, nya namn — och en elev som inte vågar fråga.
+   =================================================================== */
+var K = Filmkit, M = Miljoer, scene = K.scene, C = K.C, SKIN = K.SKIN, SHIRT = K.SHIRT;
+var el = K.el, txt = K.txt, clamp = K.clamp, lerp = K.lerp, p = K.p, fade = K.fade;
+var show = K.show, move = K.move, kid = K.kid, bubble = K.bubble;
+
+/* Stående figur med ben */
+function person(x, y, s, opts) {
+  var g = el('g', {}, scene);
+  var k = kid(g, opts || {});
+  el('rect', { x: -24, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  el('rect', { x: 6, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  g.k = k; g.home = [x, y, s];
+  move(g, x, y, s);
+  return g;
+}
+function hop(g, x, y, s, t, fart) {
+  move(g, x, y - Math.abs(Math.sin(t / (fart || 130))) * 12, s);
+}
+function fmt(sec) {
+  sec = Math.max(0, Math.ceil(sec));
+  return Math.floor(sec / 60) + ':' + (sec % 60 < 10 ? '0' : '') + (sec % 60);
+}
+
+
+var R = K.buildRoom();
+var B = K.buildBoard();
+var screen = B.screen;
+K.boardTopbar(screen);
+
+var wVal = el('g', {}, screen);
+var vCard = K.widget(screen, 600, 216, 630, 300, '🔠 Storskärmstext');
+wVal.appendChild(vCard);
+txt('Välkomna till 4B!', { x: 915, y: 320, 'text-anchor': 'middle', 'font-size': 52, 'font-weight': 800, fill: C.brand }, vCard);
+txt('Idag lär vi känna varandra.', { x: 915, y: 380, 'text-anchor': 'middle', 'font-size': 26, fill: C.muted }, vCard);
+txt('Ingen behöver kunna allas namn ännu.', { x: 915, y: 430, 'text-anchor': 'middle', 'font-size': 22, fill: C.muted }, vCard);
+
+var wGrupp = el('g', { opacity: 0 }, screen);
+var gCard = K.widget(screen, 600, 216, 630, 300, '👥 Lär-känna-grupper');
+wGrupp.appendChild(gCard);
+var gruppG = [];
+[['Alva · Noor · Ali'], ['Milo · Iris · Sam'], ['Vera · Leo · Maja']].forEach(function (g0, i) {
+  var g = el('g', {}, wGrupp);
+  el('rect', { x: 622, y: 268 + i * 82, width: 586, height: 68, rx: 12, fill: '#eef2ff', stroke: C.brand, 'stroke-width': 2 }, g);
+  txt('Grupp ' + (i + 1), { x: 642, y: 296 + i * 82, 'font-size': 16, 'font-weight': 800, fill: C.brand }, g);
+  txt(g0[0], { x: 642, y: 322 + i * 82, 'font-size': 22, fill: C.ink }, g);
+  gruppG.push(g);
+});
+
+var wFraga = el('g', { opacity: 0 }, screen);
+var fCard = K.widget(screen, 600, 216, 630, 300, '💭 Fråga varandra');
+wFraga.appendChild(fCard);
+['Vad heter du och vad tycker du om att göra?', 'Vilken är din favoritmat?', 'Vad ser du mest fram emot i år?'].forEach(function (s, i) {
+  txt(s, { x: 915, y: 320 + i * 56, 'text-anchor': 'middle', 'font-size': 25, 'font-weight': 600, fill: C.ink }, fCard);
+});
+
+var larG = el('g', {}, scene);
+var lar = K.grownup(larG, '#0f766e', SKIN[2], '#5b3a1e');
+move(larG, 300, 700, 1.15);
+var barn = [];
+[[700, 690, 0.85], [900, 690, 0.85], [1100, 690, 0.85], [620, 880, 1.05], [1010, 880, 1.05], [1300, 880, 1.05]].forEach(function (b, i) {
+  var g = el('g', {}, scene);
+  var k = kid(g, { skin: SKIN[i % 6], shirt: SHIRT[i], hair: ['#3b2a1e', '#6b3f1d', '#20242e', '#8a5a2b', '#2b1c12', '#5b3a1e'][i] });
+  g.k = k; g.home = b;
+  move(g, b[0], b[1], b[2]);
+  barn.push(g);
+  K.table(b[0] - (b[2] > 1 ? 95 : 75), b[1] + (b[2] > 1 ? 70 : 60), b[2] > 1 ? 190 : 150);
+});
+/* Noor är ny och sitter längst bak */
+var noor = barn[2];
+
+var bHej = K.speech(560, 140, ['Hej! Vad heter du?'], 40, [-200, 360], 900, 360);
+var cap = K.captionBar();
+var slut = K.endCard('Första dagen behöver inte vara läskig.', 'Storskärmstext · Grupper · Dagens fråga · Närvaro', 'egForsta');
+
+var DUR = 36000;
+function render(t) {
+  show(wVal, 1 - p(t, 10400, 10900));
+  show(wGrupp, fade(t, 10600, 20400, 350));
+  show(wFraga, fade(t, 20700, 30000, 350));
+  gruppG.forEach(function (g, i) { g.setAttribute('opacity', p(t, 11200 + i * 500, 11800 + i * 500, 'out')); });
+
+  lar.talk((t > 2000 && t < 7000) || (t > 21000 && t < 24000), t);
+  lar.arm.setAttribute('transform', (t > 9800 && t < 11400) || (t > 20600 && t < 22000) ? 'rotate(-56,45,30)' : '');
+
+  barn.forEach(function (g, i) {
+    var b = g.home;
+    var pratar = t > 21000 && t < 30000;
+    move(g, b[0] + (pratar ? Math.sin(t / 420 + i) * 8 : 0), b[1] + Math.sin(t / 800 + i) * 3, b[2]);
+    g.k.setMood(t > 13000 ? 'glad' : t < 9000 && i === 2 ? 'ledsen' : 'neutral');
+    g.k.head.setAttribute('transform', pratar ? 'translate(' + Math.sin(t / 500 + i) * 5 + ',0)' : 'translate(0,0)');
+    g.k.armR.setAttribute('transform', pratar ? 'rotate(' + (-26 + Math.sin(t / 300 + i) * 18) + ',36,26)' : '');
+  });
+  /* Noor vänder sig mot sin nya grupp */
+  noor.k.head.setAttribute('transform', t > 13000 ? 'translate(-6,0)' : 'translate(0,0)');
+
+  bHej.play(t, 22600, 26400);
+  cap.play(t, [
+    [1400, 5000, 'Första skoldagen i 4B.', 'Nio av tjugo har aldrig träffats förut.'],
+    [6200, 9600, 'Noor kan inte ett enda namn.', 'Och vågar inte fråga.'],
+    [12000, 16000, 'Grupperna slumpas fram.', 'Ingen behöver välja, ingen blir över.'],
+    [17000, 20000, 'Namnen står på tavlan.', 'Man kan titta upp i stället för att gissa.'],
+    [22600, 26600, 'Och det finns färdiga frågor att börja med.', 'Svårare att vara tyst när frågan redan är ställd.'],
+    [27200, 29800, 'Efter en kvart kan alla tre namn.', 'Det räcker för dag ett.']
+  ]);
+  slut.play(t, 30600, DUR);
+}
+
+
+K.play(render, DUR);
+</script>
+</body>
+</html>
