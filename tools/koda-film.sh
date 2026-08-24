@@ -12,7 +12,7 @@ export NODE_PATH=/opt/node22/lib/node_modules
 
 mkdir -p "$arb"
 node "$rot/tools/render-film.js" "$namn" "$arb"
-python3 "$rot/tools/tio-ljud.py" "$arb" "$namn"
+python3 "$rot/tools/film-ljud.py" "$arb" "$namn"
 
 frames="$arb/frames-$namn"
 ljud="$arb/ljud-$namn.wav"

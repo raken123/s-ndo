@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Sändo Tavla — Dramat</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #0b0e17; overflow: hidden; }
+  #stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+    transform-origin: center center; background: #eef1f8;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  svg { display: block; }
+  text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<div id="stage"><svg id="scene" width="1920" height="1080" viewBox="0 0 1920 1080"></svg></div>
+<script src="filmkit.js"></script>
+<script src="miljoer.js"></script>
+<script>
+/* ===================================================================
+   Sändo Tavla — "Dramat"
+   Högstadiet, gruppchatten och ett skärmklipp taget ur sitt sammanhang.
+   =================================================================== */
+var K = Filmkit, M = Miljoer, scene = K.scene, C = K.C, SKIN = K.SKIN, SHIRT = K.SHIRT;
+var el = K.el, txt = K.txt, clamp = K.clamp, lerp = K.lerp, p = K.p, fade = K.fade;
+var show = K.show, move = K.move, kid = K.kid, bubble = K.bubble;
+
+/* Stående figur med ben */
+function person(x, y, s, opts) {
+  var g = el('g', {}, scene);
+  var k = kid(g, opts || {});
+  el('rect', { x: -24, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  el('rect', { x: 6, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  g.k = k; g.home = [x, y, s];
+  move(g, x, y, s);
+  return g;
+}
+function hop(g, x, y, s, t, fart) {
+  move(g, x, y - Math.abs(Math.sin(t / (fart || 130))) * 12, s);
+}
+function fmt(sec) {
+  sec = Math.max(0, Math.ceil(sec));
+  return Math.floor(sec / 60) + ':' + (sec % 60 < 10 ? '0' : '') + (sec % 60);
+}
+
+
+/* ---------- telefon som lyser i handen ---------- */
+function telefon(parent, x, y) {
+  var g = el('g', {}, parent);
+  el('rect', { x: -15, y: -28, width: 30, height: 56, rx: 7, fill: '#1b2130' }, g);
+  var sk = el('rect', { x: -11, y: -24, width: 22, height: 44, rx: 4, fill: '#9ad0ff' }, g);
+  el('circle', { cx: 0, cy: 22, r: 3, fill: '#3a4256' }, g);
+  g.sk = sk;
+  g.vila = [x, y];
+  move(g, x, y);
+  return g;
+}
+
+/* ---------- tavlan ---------- */
+var R = K.buildRoom();
+var B = K.buildBoard();
+var sc = B.screen;
+K.boardTopbar(sc);
+
+/* tramsdetektorn med cringe-mätaren */
+var wTrams = K.widget(sc, 594, 216, 322, 314, '🤡 Tramsdetektor');
+var cNum = txt('14', { x: 755, y: 350, 'text-anchor': 'middle', 'font-size': 84, 'font-weight': 800, fill: C.green }, wTrams);
+var cTxt = txt('Lugnt', { x: 755, y: 392, 'text-anchor': 'middle', 'font-size': 24, 'font-weight': 800, fill: C.green }, wTrams);
+el('rect', { x: 622, y: 426, width: 266, height: 26, rx: 13, fill: '#e7ebf5' }, wTrams);
+var cBar = el('rect', { x: 622, y: 426, width: 40, height: 26, rx: 13, fill: C.green }, wTrams);
+var cSub = txt('', { x: 755, y: 486, 'text-anchor': 'middle', 'font-size': 19, fill: C.muted }, wTrams);
+
+/* grupperna */
+var wGrupp = K.widget(sc, 932, 216, 296, 158, '🎲 Grupper');
+var gRader = [];
+[['Grupp 1', 'Milo · Sam'], ['Grupp 2', 'Alva · Nour'], ['Grupp 3', 'Ida · Elias']].forEach(function (r, i) {
+  var g = el('g', { opacity: 0 }, wGrupp);
+  if (i === 1) el('rect', { x: 946, y: 268 + i * 34 - 21, width: 268, height: 30, rx: 8, fill: '#eef2ff' }, g);
+  txt(r[0], { x: 956, y: 268 + i * 34, 'font-size': 17, 'font-weight': 800, fill: i === 1 ? C.brand : C.ink }, g);
+  txt(r[1], { x: 1204, y: 268 + i * 34, 'text-anchor': 'end', 'font-size': 17, fill: i === 1 ? C.brand : C.muted }, g);
+  gRader.push(g);
+});
+var gVantar = txt('Tryck för att slumpa', { x: 1080, y: 300, 'text-anchor': 'middle', 'font-size': 19, fill: C.muted }, wGrupp);
+
+/* timer och dagens fråga */
+var wTid = K.widget(sc, 932, 388, 296, 142, '⏳ Grupparbete');
+var tidTxt = txt('15:00', { x: 1010, y: 452, 'text-anchor': 'middle', 'font-size': 42, 'font-weight': 800, fill: C.brand }, wTid);
+var fragaTxt = el('g', {}, wTid);
+txt('Dagens fråga:', { x: 1218, y: 434, 'text-anchor': 'end', 'font-size': 15, 'font-weight': 700, fill: C.muted }, fragaTxt);
+txt('Vad är svårast', { x: 1218, y: 458, 'text-anchor': 'end', 'font-size': 16, fill: C.ink }, fragaTxt);
+txt('med att säga förlåt?', { x: 1218, y: 480, 'text-anchor': 'end', 'font-size': 16, fill: C.ink }, fragaTxt);
+
+/* röda larmet över hela skärmen */
+var larm = el('g', { opacity: 0 }, sc);
+var larmBg = el('rect', { x: 574, y: 198, width: 672, height: 358, fill: '#dc2626' }, larm);
+txt('SUPER CRINGE', { x: 910, y: 330, 'text-anchor': 'middle', 'font-size': 62, 'font-weight': 800, fill: '#fff' }, larm);
+txt('Lägg undan telefonerna', { x: 910, y: 388, 'text-anchor': 'middle', 'font-size': 30, fill: '#ffe4e4' }, larm);
+txt('Nivå 91 av 100', { x: 910, y: 450, 'text-anchor': 'middle', 'font-size': 24, 'font-weight': 700, fill: '#ffd0d0' }, larm);
+
+/* ---------- folk ---------- */
+var larG = el('g', {}, scene);
+var lar = K.grownup(larG, '#0f766e', SKIN[2], '#4b3220');
+move(larG, 250, 800, 1.15);
+
+var alva = person(430, 840, 1.08, { skin: SKIN[1], shirt: '#ec4899', hair: '#2b1d12' });
+var nour = person(1560, 840, 1.08, { skin: SKIN[3], shirt: '#8b5cf6', hair: '#141414' });
+var alvaTel = telefon(alva, 54, 44);
+var nourTel = telefon(nour, -54, 44);
+
+var publik = [];
+[[720, '#ef4444', 0], [880, '#3b82f6', 2], [1060, '#22c55e', 1], [1220, '#f59e0b', 3]].forEach(function (b, i) {
+  var g = person(b[0], 856, 0.98, { skin: SKIN[b[2]], shirt: b[1] });
+  g.tel = telefon(g, i % 2 ? -52 : 52, 46);
+  g.sida = i < 2 ? 'alva' : 'nour';
+  publik.push(g);
+});
+
+/* ---------- repliker ---------- */
+var bSa = K.speech(600, 190, ['HON SA ATT JAG SA', 'ATT HON SA 💅'], 40, [-180, 130], 590, 640);
+var bChock = K.speech(560, 190, ['Jag är LITERALLY', 'chockad 😭'], 40, [190, 130], 1420, 660);
+var bTyst = K.speech(280, 116, ['…'], 54, [0, 88], 1040, 660);
+var bSaJag = K.speech(600, 190, ['Men jag sa ju', 'aldrig det??'], 40, [140, 130], 760, 660);
+var bKlipp = K.speech(640, 190, ['Skärmklippet var', 'klippt mitt i 🫠'], 38, [-160, 130], 1340, 660);
+var bLaddare = K.speech(660, 130, ['VEM TOG MIN LADDARE 💅'], 36, [170, 90], 1500, 640);
+
+var cap = K.captionBar();
+var slut = K.endCard('Dramat löser sig fortare i grupp 2.', 'Tramsdetektor · Grupper · Timer · Dagens fråga', 'egDrama');
+
+/* ---------- cringe-kurvan: samma tal på tavlan som i ljudspåret ---------- */
+function cringe(t) {
+  if (t < 3600) return 14;
+  if (t < 12800) return 14 + (91 - 14) * Math.pow((t - 3600) / 9200, 1.5);
+  if (t < 16800) return 91;
+  if (t < 20000) return 91 - 83 * ((t - 16800) / 3200);
+  if (t < 37600) return 8;
+  if (t < 40000) return 8 + 34 * ((t - 37600) / 2400);
+  return 42;
+}
+
+var DUR = 44000;
+function render(t) {
+  var niva = Math.round(cringe(t));
+  var larmPa = t > 12800 && t < 16800;
+  cNum.textContent = niva;
+  var farg = niva > 70 ? C.red : niva > 35 ? C.amber : C.green;
+  cNum.setAttribute('fill', farg);
+  cTxt.setAttribute('fill', farg);
+  cTxt.textContent = niva > 70 ? 'SUPER CRINGE' : niva > 35 ? 'Livligt' : 'Lugnt';
+  cBar.setAttribute('width', 40 + 226 * (niva / 100));
+  cBar.setAttribute('fill', farg);
+  cSub.textContent = t > 20000 && t < 37600 ? 'Ingen tillsägelse behövdes' : t > 3600 && t < 17000 ? 'Lyssnar…' : '';
+  show(larm, larmPa ? 1 : 0);
+  larmBg.setAttribute('fill', larmPa && Math.floor(t / 220) % 2 ? '#ef4444' : '#dc2626');
+
+  /* grupperna slumpas fram vid 17,4 s */
+  gVantar.setAttribute('opacity', 1 - fade(t, 17400, 44000, 300));
+  gRader.forEach(function (g, i) { g.setAttribute('opacity', p(t, 17600 + i * 340, 18100 + i * 340, 'out')); });
+  show(wTid, fade(t, 22200, 44000, 350));
+  tidTxt.textContent = fmt(900 - Math.max(0, t - 22600) / 1000 * 8);
+
+  /* telefonerna: upp under bråket, ner när tavlan säger till */
+  var upp = t > 6800 && t < 16400;
+  function tel(g, riktning) {
+    var v = g.vila;
+    move(g, v[0], v[1] - (upp ? 26 : 0));
+    g.setAttribute('transform', g.getAttribute('transform') + ' rotate(' + (upp ? riktning * 12 : 0) + ')');
+    g.sk.setAttribute('fill', upp ? (Math.floor(t / 140) % 2 ? '#bfe0ff' : '#9ad0ff') : '#6b7c93');
+  }
+  tel(alvaTel, 1);
+  tel(nourTel, -1);
+  publik.forEach(function (g, i) { tel(g.tel, i % 2 ? -1 : 1); });
+
+  /* läraren står bara där och låter tavlan sköta det */
+  lar.talk(t > 20400 && t < 23000, t);
+  lar.arm.setAttribute('transform', t > 17000 && t < 18400 ? 'rotate(-58,45,30)' : '');
+
+  /* Alva och Nour: från var sitt hörn till samma bord */
+  var w = p(t, 20200, 24400, 'inOut');
+  var ax = lerp(430, 900, w), nx = lerp(1560, 1180, w);
+  hop(alva, ax, 840, 1.08, t, t > 20200 && t < 24400 ? 150 : 900);
+  hop(nour, nx, 840, 1.08, t, t > 20200 && t < 24400 ? 150 : 900);
+  function humor(g, skrikFran, skrikTill) {
+    g.k.setMood(t > 33000 ? 'glad' : t > skrikFran && t < skrikTill ? 'skrik' : t > 12600 ? 'ledsen' : 'neutral');
+  }
+  humor(alva, 4200, 12400);
+  humor(nour, 8400, 12400);
+  var pekar = t > 4600 && t < 9000;
+  alva.k.armR.setAttribute('transform', pekar ? 'rotate(-42,36,26)' : '');
+  nour.k.armL.setAttribute('transform', t > 8600 && t < 12000 ? 'rotate(42,-36,26)' : '');
+
+  /* publiken vänder sig mot den som pratar, tittar upp när tavlan larmar */
+  /* publiken drar sig åt sidorna när grupperna är satta, så grupp 2 syns */
+  var undan = p(t, 19600, 23400, 'inOut');
+  publik.forEach(function (g, i) {
+    var b = g.home;
+    var lut = larmPa ? 0 : (g.sida === 'alva' ? -6 : 6) * (t > 4200 && t < 16400 ? 1 : 0);
+    hop(g, lerp(b[0], [430, 610, 1500, 1680][i], undan), b[1], b[2], t, larmPa ? 320 : 900);
+    g.k.head.setAttribute('transform', 'rotate(' + lut + ',0,-20)');
+    g.k.setMood(i === 3 && t > 37800 && t < 40400 ? 'skrik'
+      : t > 12800 && t < 17600 ? 'ledsen' : t > 33000 && t < 38000 ? 'glad' : 'neutral');
+    g.k.armL.setAttribute('transform', t > 33200 && t < 37000 ? 'rotate(' + (40 + Math.sin(t / 150 + i) * 20) + ',-36,26)' : '');
+  });
+
+  bSa.play(t, 4600, 9000);
+  bChock.play(t, 8800, 12600);
+  bTyst.play(t, 24800, 27600);
+  bSaJag.play(t, 28800, 31800);
+  bKlipp.play(t, 32000, 35000);
+  bLaddare.play(t, 37800, 40400);
+
+  cap.play(t, [
+    [1200, 4400, 'Högstadiet. 9C efter lunch.', 'Något har hänt i gruppchatten.'],
+    [5200, 8600, '“Hon sa att jag sa att hon sa.”', 'Ingen vet längre vem som sa vad.'],
+    [9800, 12600, 'Hela klassen tar parti.', 'Telefonerna upp. Lektionen är slut.'],
+    [13400, 16600, 'Tavlan säger till i stället för läraren.', 'Cringe-nivå 91 — och rummet blir tyst.'],
+    [18000, 21600, 'Grupperna slumpas.', 'Alva och Nour hamnar i samma grupp. Så klart.'],
+    [24800, 28400, 'Femton minuter och en fråga att svara på.', 'Någon måste säga något.'],
+    [29200, 32800, '“…så du sa aldrig det?”', 'Skärmklippet var klippt mitt i en mening.'],
+    [35400, 37600, 'Sams. Tretton minuter kvar.', 'Läraren hann aldrig höja rösten.'],
+    [38200, 40200, 'Sedan försvann någons laddare.', 'Och då börjar allt om igen. 💅']
+  ]);
+  slut.play(t, 40600, DUR);
+}
+
+
+K.play(render, DUR);
+</script>
+</body>
+</html>

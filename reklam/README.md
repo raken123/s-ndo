@@ -1,10 +1,10 @@
 # Reklamfilmer — Sändo Tavla
 
-Sexton storytime-filmer i samma stil och med samma motor. De sex första
+Sjutton storytime-filmer i samma stil och med samma motor. De sex första
 utspelar sig i klassrummet, på skolgården, hemma i sängen och i matsalen. De
-tio senare tar samma tavla till resten av skolan: gympasalen, biblioteket,
+tio därpå tar samma tavla till resten av skolan: gympasalen, biblioteket,
 musiksalen, slöjden, skolsköterskan, första skoldagen, utvecklingssamtalet,
-provet, fritids och avslutningen i aulan.
+provet, fritids och avslutningen i aulan. Den sjuttonde går upp på högstadiet.
 
 | Fil | Film | Längd | Storlek |
 |---|---|---|---|
@@ -40,13 +40,15 @@ provet, fritids och avslutningen i aulan.
 | `sando-tavla-fritids-1080.mp4` | Fritids, mindre version | 36 s | 1,7 MB |
 | `sando-tavla-avslutningen.mp4` | **Avslutningen** — hela skolan i aulan, med sång | 40 s | 4,1 MB |
 | `sando-tavla-avslutningen-1080.mp4` | Avslutningen, mindre version | 40 s | 2,2 MB |
+| `sando-tavla-dramat.mp4` | **Dramat** — högstadiet och gruppchatten | 44 s | 4,3 MB |
+| `sando-tavla-dramat-1080.mp4` | Dramat, mindre version | 44 s | 2,3 MB |
 
 Källor: `reklam.html`, `reklam-vikarien.html`, `reklam-rasten.html`,
 `reklam-presentationen.html`, `reklam-fejksjuk.html`, `reklam-matsalen.html`
 samt `reklam-idrotten.html`, `reklam-biblioteket.html`, `reklam-musiksalen.html`,
 `reklam-slojden.html`, `reklam-sjukan.html`, `reklam-forstadagen.html`,
-`reklam-utvecklingssamtalet.html`, `reklam-provet.html`, `reklam-fritids.html`
-och `reklam-avslutningen.html` — alla ovanpå den gemensamma motorn `filmkit.js`
+`reklam-utvecklingssamtalet.html`, `reklam-provet.html`, `reklam-fritids.html`,
+`reklam-avslutningen.html` och `reklam-dramat.html` — alla ovanpå motorn `filmkit.js`
 och miljöbiblioteket `miljoer.js`.
 Varje film har en affischbild: `affisch.png` för den första och
 `affisch-<namn>.png` för de övriga.
@@ -315,6 +317,28 @@ filmen med sång, och den enda som blickar tillbaka på de andra.
 Sommarsången är sexton toner i F-dur från 14,0 s, 0,52 sekunder per ton, med
 andrastämma i tersen på sista raden — samma tidtabell som bollen på skärmen.
 
+## Film 17 — Dramat
+
+Enda filmen på högstadiet, och den enda där konflikten är helt social. Ingen
+har gjort något fel — någon har bara klippt en skärmdump mitt i en mening.
+
+| Tid | Scen |
+|---|---|
+| 0–5 s | 9C efter lunch. Något har hänt i gruppchatten. Notiserna tickar. |
+| 5–9 s | Alva: **"HON SA ATT JAG SA ATT HON SA 💅"** Cringe-nivån börjar klättra. |
+| 9–13 s | Nour: **"Jag är LITERALLY chockad 😭"** Hela klassen tar parti, telefonerna upp. |
+| 13–17 s | Tavlan slår om till rött: **SUPER CRINGE, nivå 91 — lägg undan telefonerna.** Läraren behövde inte säga något. |
+| 17–22 s | Grupperna slumpas. **Grupp 2: Alva · Nour.** Så klart. |
+| 22–28 s | Timern går, dagens fråga står bredvid: *Vad är svårast med att säga förlåt?* Tystnad. |
+| 28–35 s | **"Men jag sa ju aldrig det??"** — **"Skärmklippet var klippt mitt i 🫠"** |
+| 35–38 s | Sams. Tretton minuter kvar av lektionen, cringe-nivån nere på 8. |
+| 38–40 s | Sedan försvann någons laddare. **"VEM TOG MIN LADDARE 💅"** Nivån tickar upp igen. |
+| 40–44 s | Slutkort: *Dramat löser sig fortare i grupp 2.* |
+
+Cringe-nivån på skärmen och spänningstonen i ljudspåret räknas fram ur samma
+kurva, och larmet är appens riktiga: 1480/1180 Hz fyrkantvåg, samma toner som
+`App.beep` spelar vid en utvisning.
+
 ## Så är de gjorda
 
 Varje film är en HTML-fil som ritar allt i SVG och animerar med en egen
@@ -337,20 +361,23 @@ som appen spelar vid en utvisning, och lektionssignalen är appens egen chime.
 
 ### Rendera om
 
-De tio senare filmerna har ett gemensamt ljudskript och ett gemensamt
-renderingsskript, eftersom tio nästan identiska filer inte hade tillfört något:
+Film 7 och framåt delar ljudskript och renderingsskript, eftersom elva nästan
+identiska filer inte hade tillfört något:
 
 ```sh
 tools/koda-film.sh idrotten              # renderar, ljudsätter och kodar en film
-for n in idrotten biblioteket musiksalen slojden sjukan \
-         forstadagen utvecklingssamtalet provet fritids avslutningen; do
-  tools/koda-film.sh "$n"                # alla tio
+for n in idrotten biblioteket musiksalen slojden sjukan forstadagen \
+         utvecklingssamtalet provet fritids avslutningen dramat; do
+  tools/koda-film.sh "$n"                # allihop
 done
 
-node tools/render-film.js provet         # bara rutorna till en av de tio
-python3 tools/tio-ljud.py . provet       # bara ljudspåret till en av de tio
-python3 tools/tio-ljud.py .              # alla tio ljudspår
+node tools/render-film.js provet         # bara rutorna till en film
+python3 tools/film-ljud.py . provet      # bara ljudspåret till en film
+python3 tools/film-ljud.py .             # alla ljudspår
 ```
+
+Ljudet är deterministiskt: fröet till bruset sätts om per film, så en film
+låter likadant oavsett om den renderas ensam eller i en batch.
 
 De sex första filmerna har varsitt par av skript:
 

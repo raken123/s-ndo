@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Ljudspår till de tio reklamfilmerna (Idrotten … Avslutningen).
+"""Ljudspår till reklamfilmerna från Idrotten och framåt.
 
-Ett skript per film blev tio nästan identiska filer, så alla tio ligger här.
-Varje film har en cue-funktion som lägger ljud på filmens egna tidpunkter —
-samma millisekunder som cap.play()/bubblorna i motsvarande reklam-*.html.
+Ett skript per film blev nästan identiska filer, så de ligger alla här. Varje
+film har en cue-funktion som lägger ljud på filmens egna tidpunkter — samma
+millisekunder som cap.play()/bubblorna i motsvarande reklam-*.html.
 
 Kräver numpy.  Användning:
-    python3 tools/tio-ljud.py [utkatalog]        # alla tio
-    python3 tools/tio-ljud.py [utkatalog] idrotten provet   # bara vissa
+    python3 tools/film-ljud.py [utkatalog]                  # alla
+    python3 tools/film-ljud.py [utkatalog] idrotten provet  # bara vissa
 """
 import numpy as np, wave, os, sys
 
@@ -30,9 +30,12 @@ class Spar:
 
 def env(n, a=0.01, r=0.05):
     e = np.ones(n)
-    ai, ri = int(a * SR), int(r * SR)
-    if ai: e[:ai] = np.linspace(0, 1, ai)
-    if ri: e[-ri:] = np.linspace(1, 0, ri)
+    # En ton kortare än sin egen release sprängde broadcasten — klipp bägge
+    # flankerna mot tonens längd i stället.
+    ai = min(int(a * SR), n)
+    ri = min(int(r * SR), n - ai)
+    if ai > 0: e[:ai] = np.linspace(0, 1, ai)
+    if ri > 0: e[-ri:] = np.linspace(1, 0, ri)
     return e
 
 def tone(f, dur, kind='sine', a=0.01, r=0.06):
@@ -128,6 +131,12 @@ def varning(s, t0, gain=0.14):
 def klapp(s, t0, antal=14, spann=1.1, gain=0.07):
     for i in range(antal):
         s.add(t0 + i*(spann/antal) + np.random.uniform(0, 0.02), noise(0.05, 0.04), gain)
+
+def applarm(s, t0, ganger=6, gain=0.13):
+    """Appens utvisningslarm: 1480/1180 Hz fyrkantvåg, samma som App.beep spelar."""
+    for i in range(ganger):
+        s.add(t0 + i*0.6, tone(1480, 0.26, 'square'), gain)
+        s.add(t0 + i*0.6 + 0.3, tone(1180, 0.26, 'square'), gain)
 
 def slutkort(s, t0):
     """Samma avslut som i de sex första filmerna."""
@@ -383,6 +392,54 @@ def avslutningen(s):                   # 40 s — hela skolan i aulan, sång 14.
 
 
 # namn, längd, cue-funktion, grundnivå för rumstonen
+def dramat(s):                         # 44 s — högstadiedrama och ett skärmklipp
+    rumsljud(s, 0.2, 4.2, 0.34, 3.4)                      # sorl i 9C efter lunch
+    for i in range(7):                                    # notiser i gruppchatten
+        s.add(0.6 + i*0.5, tone(1760 + (i % 3)*180, 0.07, 'tri'), 0.07)
+        s.add(0.68 + i*0.5, tone(2093, 0.06, 'tri'), 0.05)
+    rost(s, 4.6, 340, 620, 0.6, 0.15)                     # "HON SA ATT JAG SA…"
+    rost(s, 5.5, 620, 400, 0.5, 0.13)
+    rost(s, 6.4, 380, 660, 0.55, 0.13)
+    rumsljud(s, 5.0, 8.0, 0.34, 4.4)                      # klassen tar parti
+    rost(s, 8.8, 380, 700, 0.6, 0.15)                     # "Jag är LITERALLY chockad"
+    rost(s, 9.9, 700, 420, 0.55, 0.13)
+    for i in range(18):                                   # telefoner som surrar och pingar
+        s.add(6.9 + i*0.52, tone(1900 + (i*137 % 400), 0.06, 'tri', 0.004, 0.05), 0.05)
+        if i % 3 == 0:
+            s.add(7.1 + i*0.52, tone(140, 0.18, 'sine', 0.01, 0.14), 0.05)
+    # spänningston som stiger med cringe-nivån
+    n = int(9.0*SR); tt = np.arange(n)/SR
+    stig = np.linspace(150, 330, n)
+    s.add(4.0, np.sin(2*np.pi*np.cumsum(stig)/SR) * np.linspace(0.2, 1.0, n) * env(n, 1.2, 0.6), 0.05)
+    applarm(s, 12.9, 6)                                   # SUPER CRINGE
+    s.add(12.9, sweep(300, 90, 1.0), 0.09)
+    for i in range(6):                                    # telefonerna läggs ner
+        s.add(16.5 + i*0.14, noise(0.06, 0.05), 0.06)
+    s.add(16.8, tone(87.31, 2.6, 'sine', 0.5, 2.0), 0.045)  # tystnaden efteråt
+    uiTva(s, 17.4)                                        # grupperna slumpas
+    for i, f in enumerate([N['C5'], N['E5'], N['G5']]):
+        pling(s, 17.7 + i*0.34, f, 0.3, 0.11)
+    for i in range(9):                                    # steg mot samma bord
+        s.add(20.6 + i*0.42, noise(0.06, 0.05), 0.05)
+    uiTva(s, 22.3, 523.25, 783.99, 0.12)                  # timern startar
+    for i in range(12):                                   # pinsam tystnad: klockan
+        s.add(24.6 + i*0.5, tone(1150 if i % 2 == 0 else 880, 0.05, 'sine', 0.004, 0.04), 0.035)
+    rost(s, 28.9, 330, 520, 0.55, 0.12)                   # "Men jag sa ju aldrig det??"
+    rost(s, 29.9, 520, 330, 0.5, 0.10)
+    rost(s, 32.1, 420, 300, 0.6, 0.12)                    # "Skärmklippet var klippt mitt i"
+    rost(s, 33.1, 300, 460, 0.5, 0.10)
+    for i, f in enumerate([N['F4'], N['A4'], N['C5'], N['F5']]):   # lättnaden
+        pling(s, 33.6 + i*0.16, f, 0.44, 0.13)
+    klapp(s, 34.0, 12, 1.3, 0.055)
+    rumsljud(s, 34.2, 3.4, 0.20, 2.8)
+    rost(s, 37.9, 360, 700, 0.7, 0.16)                    # "VEM TOG MIN LADDARE"
+    rost(s, 39.0, 700, 420, 0.5, 0.12)
+    for i in range(5):                                    # och nivån tickar upp igen
+        pling(s, 38.4 + i*0.4, 660 + i*90, 0.14, 0.07)
+    rumsljud(s, 38.2, 2.6, 0.30, 4.2)
+    slutkort(s, 40.8)
+
+
 FILMER = [
     ('idrotten',            40.5, idrotten,            0.075),  # ekande gympasal
     ('biblioteket',         38.5, biblioteket,         0.030),  # tyst bibliotek
@@ -394,6 +451,7 @@ FILMER = [
     ('provet',              38.5, provet,              0.032),  # provtystnad
     ('fritids',             36.5, fritids,             0.075),
     ('avslutningen',        40.5, avslutningen,        0.085),  # aula med sexhundra
+    ('dramat',              44.5, dramat,              0.070),
 ]
 
 
@@ -407,13 +465,15 @@ def skriv_wav(path, buf):
 
 
 if __name__ == '__main__':
-    np.random.seed(7)
     utkatalog = sys.argv[1] if len(sys.argv) > 1 else '.'
     valda = set(sys.argv[2:])
     os.makedirs(utkatalog, exist_ok=True)
     for namn, dur, cue, botten in FILMER:
         if valda and namn not in valda:
             continue
+        # Fröet sätts om per film, inte en gång per körning: annars låter en
+        # film olika beroende på om den renderades ensam eller i en batch.
+        np.random.seed(7)
         s = Spar(dur)
         rumsbotten(s, botten)
         cue(s)
