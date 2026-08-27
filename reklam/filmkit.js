@@ -206,6 +206,66 @@ function wallScreen(x, y, w, h, label) {
   return sc;
 }
 
+/* En telefon med Sändo Elev på skärmen. Samma roll som buildBoard, fast för
+   den appen: ramen och topbaren ritas här, innehållet fyller filmen själv. */
+function phone(x, y, w, label) {
+  var h = Math.round(w * 2.02);
+  var g = el('g', {}, scene);
+  el('rect', { x: x - 12, y: y - 12, width: w + 24, height: h + 24, rx: 46, fill: '#0d1614' }, g);
+  el('rect', { x: x, y: y, width: w, height: h, rx: 36, fill: '#f3f6f7' }, g);
+  el('rect', { x: x + w / 2 - 34, y: y + 14, width: 68, height: 9, rx: 5, fill: '#0d1614' }, g);
+  var sc = el('g', {}, g);
+  el('rect', { x: x, y: y + 34, width: w, height: 74, fill: '#fff' }, sc);
+  el('rect', { x: x + 20, y: y + 52, width: 40, height: 40, rx: 13, fill: '#0f7b6c' }, sc);
+  txt('S', { x: x + 40, y: y + 81, 'text-anchor': 'middle', 'font-size': 25, 'font-weight': 800, fill: '#fff' }, sc);
+  txt('Sändo Elev' + (label ? ' \u00b7 ' + label : ''), { x: x + 72, y: y + 80, 'font-size': 22, 'font-weight': 800, fill: '#10201d' }, sc);
+  el('rect', { x: x + w - 186, y: y + 52, width: 166, height: 40, rx: 20, fill: '#dff3ef' }, sc);
+  var kred = txt('5 000 000', { x: x + w - 103, y: y + 79, 'text-anchor': 'middle', 'font-size': 20, 'font-weight': 700, fill: '#0b5e52' }, sc);
+  el('rect', { x: x, y: y + 108, width: w, height: 2, fill: '#dbe5e4' }, sc);
+  var tabbar = el('g', {}, sc);
+  el('rect', { x: x, y: y + h - 96, width: w, height: 96, fill: '#fff' }, tabbar);
+  el('rect', { x: x, y: y + h - 96, width: w, height: 2, fill: '#dbe5e4' }, tabbar);
+  var flikar = [];
+  ['Boken', 'Monni', 'Sagor', 'Mer'].forEach(function (namn, i) {
+    var bx = x + w / 4 * i + w / 8;
+    var mark = el('rect', { x: bx - 42, y: y + h - 84, width: 84, height: 68, rx: 18, fill: '#dff3ef', opacity: 0 }, tabbar);
+    txt(['\ud83d\udcd6', '\ud83d\udcac', '\u270f\ufe0f', '\u2699\ufe0f'][i], { x: bx, y: y + h - 50, 'text-anchor': 'middle', 'font-size': 30 }, tabbar);
+    txt(namn, { x: bx, y: y + h - 24, 'text-anchor': 'middle', 'font-size': 15, 'font-weight': 700, fill: '#5d7370' }, tabbar);
+    flikar.push(mark);
+  });
+  sc.kred = kred;
+  sc.flikar = flikar;
+  sc.omrade = { x: x + 16, y: y + 122, w: w - 32, h: h - 96 - 134 };
+  sc.ram = g;
+  return sc;
+}
+
+/* Ett kort på telefonskärmen, som i appen */
+function phoneCard(sc, y, h, titel, parent) {
+  var o = sc.omrade;
+  var g = el('g', {}, parent || sc);
+  el('rect', { x: o.x, y: y, width: o.w, height: h, rx: 22, fill: '#fff', stroke: '#dbe5e4', 'stroke-width': 2 }, g);
+  if (titel) txt(titel, { x: o.x + 20, y: y + 36, 'font-size': 21, 'font-weight': 800, fill: '#10201d' }, g);
+  return g;
+}
+
+/* En chattbubbla på telefonskärmen */
+function phoneBubble(sc, y, h, rader, fran, parent) {
+  var o = sc.omrade;
+  var g = el('g', {}, parent || sc);
+  var langst = rader.reduce(function (m, r) { return Math.max(m, r.length); }, 0);
+  var bredd = Math.max(140, Math.min(o.w - 30, 40 + langst * 11));
+  var bx = fran === 'jag' ? o.x + o.w - bredd : o.x;
+  el('rect', { x: bx, y: y, width: bredd, height: h, rx: 20, fill: fran === 'jag' ? '#0f7b6c' : '#fff',
+    stroke: fran === 'jag' ? 'none' : '#dbe5e4', 'stroke-width': 2 }, g);
+  if (fran !== 'jag') txt('Monni', { x: bx + 18, y: y + 28, 'font-size': 16, 'font-weight': 800, fill: '#0b5e52' }, g);
+  rader.forEach(function (r, i) {
+    txt(r, { x: bx + 18, y: y + (fran === 'jag' ? 34 : 56) + i * 26, 'font-size': 19,
+      fill: fran === 'jag' ? '#fff' : '#10201d', 'font-weight': fran === 'jag' ? 600 : 400 }, g);
+  });
+  return g;
+}
+
 /* Bildtextraden längst ner */
 function captionBar() {
   var g = el('g', { opacity: 0 }, scene);
@@ -230,23 +290,26 @@ function captionBar() {
 }
 
 /* Slutkortet, likadant i alla filmer */
-function endCard(tagline, features, gradId) {
+function endCard(tagline, features, gradId, opt) {
+  /* opt: {namn, knapp, fot, farg1, farg2} — utan opt blir det Sändo Tavlas
+     slutkort precis som förut, så de sjutton första filmerna är orörda. */
+  opt = opt || {};
   var defs = scene.querySelector('defs') || el('defs', {}, scene);
   var lg = el('linearGradient', { id: gradId || 'endgrad', x1: 0, y1: 0, x2: 1, y2: 1 }, defs);
-  el('stop', { offset: 0, 'stop-color': '#4f46e5' }, lg);
-  el('stop', { offset: 1, 'stop-color': '#06b6d4' }, lg);
+  el('stop', { offset: 0, 'stop-color': opt.farg1 || '#4f46e5' }, lg);
+  el('stop', { offset: 1, 'stop-color': opt.farg2 || '#06b6d4' }, lg);
   var g = el('g', { opacity: 0 }, scene);
   el('rect', { x: 0, y: 0, width: 1920, height: 1080, fill: 'url(#' + (gradId || 'endgrad') + ')' }, g);
   var logo = el('g', {}, g);
   el('rect', { x: 830, y: 190, width: 260, height: 260, rx: 70, fill: '#fff' }, logo);
-  txt('S', { x: 960, y: 400, 'text-anchor': 'middle', 'font-size': 190, 'font-weight': 800, fill: C.brand }, logo);
-  txt('Sändo Tavla', { x: 960, y: 570, 'text-anchor': 'middle', 'font-size': 96, 'font-weight': 800, fill: '#fff' }, g);
+  txt('S', { x: 960, y: 400, 'text-anchor': 'middle', 'font-size': 190, 'font-weight': 800, fill: opt.farg1 || C.brand }, logo);
+  txt(opt.namn || 'Sändo Tavla', { x: 960, y: 570, 'text-anchor': 'middle', 'font-size': 96, 'font-weight': 800, fill: '#fff' }, g);
   txt(tagline, { x: 960, y: 640, 'text-anchor': 'middle', 'font-size': 40, fill: '#e6e9ff' }, g);
   txt(features, { x: 960, y: 706, 'text-anchor': 'middle', 'font-size': 29, fill: '#dfe3ff' }, g);
   var btn = el('g', {}, g);
   el('rect', { x: 560, y: 780, width: 800, height: 110, rx: 30, fill: '#fff' }, btn);
-  txt('INSTALLERA FÖR BRA ELEVER', { x: 960, y: 852, 'text-anchor': 'middle', 'font-size': 42, 'font-weight': 800, fill: C.brand }, btn);
-  txt('Android 8.0+  ·  fungerar offline', { x: 960, y: 940, 'text-anchor': 'middle', 'font-size': 26, fill: '#e6e9ff' }, g);
+  txt(opt.knapp || 'INSTALLERA FÖR BRA ELEVER', { x: 960, y: 852, 'text-anchor': 'middle', 'font-size': 42, 'font-weight': 800, fill: opt.farg1 || C.brand }, btn);
+  txt(opt.fot || 'Android 8.0+  ·  fungerar offline', { x: 960, y: 940, 'text-anchor': 'middle', 'font-size': 26, fill: '#e6e9ff' }, g);
   g.play = function (t, from, dur) {
     var v = fade(t, from, dur, 450);
     show(g, v);
@@ -308,6 +371,7 @@ global.Filmkit = {
   kid: kid, bubble: bubble, grownup: grownup, speech: speech,
   buildRoom: buildRoom, buildBoard: buildBoard, boardTopbar: boardTopbar, widget: widget,
   wallScreen: wallScreen, captionBar: captionBar, endCard: endCard, table: table,
+  phone: phone, phoneCard: phoneCard, phoneBubble: phoneBubble,
   play: play
 };
 })(window);

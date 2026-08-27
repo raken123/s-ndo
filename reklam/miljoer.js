@@ -197,6 +197,52 @@
     return {};
   }
 
+  /* ---------- Köket hemma: läxor efter middagen ---------- */
+  function kok() {
+    vagg('#eae2d4', '#d8cbb6', 700);
+    golv(700, '#9d7b53', '#8a6a45');
+    /* fönster mot kvällsmörker */
+    var f = el('g', {}, scene);
+    el('rect', { x: 120, y: 130, width: 320, height: 330, rx: 10, fill: '#1b2436' }, f);
+    el('circle', { cx: 208, cy: 202, r: 26, fill: '#f2efd9', opacity: 0.9 }, f);
+    for (var i = 0; i < 11; i++) {
+      el('circle', { cx: 145 + (i * 97) % 280, cy: 165 + (i * 61) % 270, r: 2.5, fill: '#dfe6ff', opacity: 0.75 }, f);
+    }
+    el('rect', { x: 120, y: 130, width: 320, height: 330, rx: 10, fill: 'none', stroke: '#b9a887', 'stroke-width': 10 }, f);
+    el('path', { d: 'M280,130 v330 M120,295 h320', stroke: '#b9a887', 'stroke-width': 10 }, f);
+    /* köksskåp och bänk */
+    el('rect', { x: 1180, y: 150, width: 620, height: 200, rx: 10, fill: '#c9b696' }, scene);
+    el('rect', { x: 1192, y: 162, width: 292, height: 176, rx: 6, fill: '#d8c8ac' }, scene);
+    el('rect', { x: 1496, y: 162, width: 292, height: 176, rx: 6, fill: '#d8c8ac' }, scene);
+    el('rect', { x: 1330, y: 240, width: 16, height: 30, rx: 8, fill: '#8a7550' }, scene);
+    el('rect', { x: 1634, y: 240, width: 16, height: 30, rx: 8, fill: '#8a7550' }, scene);
+    el('rect', { x: 1180, y: 470, width: 620, height: 26, rx: 8, fill: '#b8a482' }, scene);
+    var kanna = el('g', {}, scene);
+    el('rect', { x: 1618, y: 386, width: 74, height: 84, rx: 10, fill: '#3f4a5c' }, kanna);
+    el('rect', { x: 1634, y: 366, width: 42, height: 24, rx: 6, fill: '#5a6879' }, kanna);
+    /* väggklocka — visarna går att styra från filmen */
+    var kl = el('g', {}, scene);
+    el('circle', { cx: 830, cy: 200, r: 58, fill: '#fff', stroke: '#8a7550', 'stroke-width': 9 }, kl);
+    for (var t = 0; t < 12; t++) {
+      var a = t / 12 * Math.PI * 2;
+      el('circle', { cx: 830 + Math.sin(a) * 44, cy: 200 - Math.cos(a) * 44, r: 2.6, fill: '#8a7550' }, kl);
+    }
+    var minutv = el('line', { x1: 830, y1: 200, x2: 830, y2: 158, stroke: '#10201d', 'stroke-width': 5, 'stroke-linecap': 'round' }, kl);
+    var timv = el('line', { x1: 830, y1: 200, x2: 858, y2: 200, stroke: '#10201d', 'stroke-width': 7, 'stroke-linecap': 'round' }, kl);
+    el('circle', { cx: 830, cy: 200, r: 5, fill: '#10201d' }, kl);
+    /* ställer klockan på ett klockslag */
+    function stall(timme, minut) {
+      var am = minut / 60 * Math.PI * 2, at = ((timme % 12) + minut / 60) / 12 * Math.PI * 2;
+      minutv.setAttribute('x2', 830 + Math.sin(am) * 42);
+      minutv.setAttribute('y2', 200 - Math.cos(am) * 42);
+      timv.setAttribute('x2', 830 + Math.sin(at) * 28);
+      timv.setAttribute('y2', 200 - Math.cos(at) * 28);
+    }
+    stall(19, 40);
+    return { stallKlockan: stall };
+  }
+
   global.Miljoer = { gym: gym, bibliotek: bibliotek, musiksal: musiksal, slojd: slojd,
-    sjukrum: sjukrum, fritids: fritids, aula: aula, golv: golv, vagg: vagg, fonsterrad: fonsterrad };
+    sjukrum: sjukrum, fritids: fritids, aula: aula, kok: kok,
+    golv: golv, vagg: vagg, fonsterrad: fonsterrad };
 })(window, window.Filmkit);

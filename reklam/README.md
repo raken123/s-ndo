@@ -1,6 +1,10 @@
-# Reklamfilmer — Sändo Tavla
+# Reklamfilmer
 
-Sjutton storytime-filmer i samma stil och med samma motor. De sex första
+Arton storytime-filmer i samma stil och med samma motor. De sjutton första
+handlar om **Sändo Tavla**, den artonde om **Sändo Elev** — samma motor, en
+annan app, och ett kök i stället för ett klassrum.
+
+De sex första om Sändo Tavla
 utspelar sig i klassrummet, på skolgården, hemma i sängen och i matsalen. De
 tio därpå tar samma tavla till resten av skolan: gympasalen, biblioteket,
 musiksalen, slöjden, skolsköterskan, första skoldagen, utvecklingssamtalet,
@@ -42,13 +46,15 @@ provet, fritids och avslutningen i aulan. Den sjuttonde går upp på högstadiet
 | `sando-tavla-avslutningen-1080.mp4` | Avslutningen, mindre version | 40 s | 2,2 MB |
 | `sando-tavla-dramat.mp4` | **Dramat** — högstadiet och gruppchatten | 44 s | 4,3 MB |
 | `sando-tavla-dramat-1080.mp4` | Dramat, mindre version | 44 s | 2,3 MB |
+| `sando-elev-laxan.mp4` | **Läxan** — Sändo Elev, kvällen vid köksbordet | 46 s | 2,4 MB |
+| `sando-elev-laxan-1080.mp4` | Läxan, mindre version | 46 s | 1,6 MB |
 
 Källor: `reklam.html`, `reklam-vikarien.html`, `reklam-rasten.html`,
 `reklam-presentationen.html`, `reklam-fejksjuk.html`, `reklam-matsalen.html`
 samt `reklam-idrotten.html`, `reklam-biblioteket.html`, `reklam-musiksalen.html`,
 `reklam-slojden.html`, `reklam-sjukan.html`, `reklam-forstadagen.html`,
 `reklam-utvecklingssamtalet.html`, `reklam-provet.html`, `reklam-fritids.html`,
-`reklam-avslutningen.html` och `reklam-dramat.html` — alla ovanpå motorn `filmkit.js`
+`reklam-avslutningen.html` `reklam-dramat.html` och `reklam-elev.html` — alla ovanpå motorn `filmkit.js`
 och miljöbiblioteket `miljoer.js`.
 Varje film har en affischbild: `affisch.png` för den första och
 `affisch-<namn>.png` för de övriga.
@@ -339,6 +345,33 @@ Cringe-nivån på skärmen och spänningstonen i ljudspåret räknas fram ur sam
 kurva, och larmet är appens riktiga: 1480/1180 Hz fyrkantvåg, samma toner som
 `App.beep` spelar vid en utvisning.
 
+## Film 18 — Läxan
+
+Den enda filmen om **Sändo Elev**, och den enda som utspelar sig hemma. Ingen
+tavla, ingen lärare — en telefon, en arbetsbok och en uppgift som inte lossnar.
+
+| Tid | Scen |
+|---|---|
+| 0–5 s | Kvart i åtta på kvällen. Elias sitter med uppgift 12b. Väggklockan tickar. |
+| 5–9 s | **"MAMMA! Vad är 8 gånger 7?"** — *"Jag kommer strax!"* Hon kommer inte. |
+| 9–14 s | Han tar upp telefonen. Sändo Elev, hans egen arbetsbok uppladdad som PDF. |
+| 15–20 s | Han frågar Monni. Monni svarar med **en fråga tillbaka**. |
+| 21–26 s | **"bara säg svaret"** — *"Nej. Det svaret får du komma fram till själv."* 🔒 |
+| 27–33 s | I stället kommer en canvas: en talrad han kan dra i, med **andra siffror** än hans egen uppgift. |
+| 33–37 s | Då lossnar det. Han skriver ner sitt eget svar. Klockan är 19:52. |
+| 37–43 s | Mamma tittar in: **"Behövde du hjälp?"** — *"Nej — jag löste den själv."* |
+| 43–46 s | Slutkort: *Monni säger aldrig svaret.* |
+
+Väggklockan går från 19:40 till 19:52 medan filmen rullar — tolv minuter, från
+fastnad till löst. Telefonen på skärmen visar appens riktiga gränssnitt:
+arbetsboken, chatten, låsraden och talraden.
+
+Till den här filmen fick `filmkit.js` en telefon (`phone`, `phoneCard`,
+`phoneBubble`) och `endCard` blev utbytbar, så att slutkortet kan säga
+**Sändo Elev** och *Installera för elever* i stället för Sändo Tavlas. De
+sjutton första filmerna är orörda — utan options blir slutkortet exakt som
+förut. `miljoer.js` fick ett kök med en väggklocka man kan ställa.
+
 ## Så är de gjorda
 
 Varje film är en HTML-fil som ritar allt i SVG och animerar med en egen
@@ -367,7 +400,7 @@ identiska filer inte hade tillfört något:
 ```sh
 tools/koda-film.sh idrotten              # renderar, ljudsätter och kodar en film
 for n in idrotten biblioteket musiksalen slojden sjukan forstadagen \
-         utvecklingssamtalet provet fritids avslutningen dramat; do
+         utvecklingssamtalet provet fritids avslutningen dramat elev; do
   tools/koda-film.sh "$n"                # allihop
 done
 

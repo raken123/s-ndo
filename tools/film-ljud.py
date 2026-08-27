@@ -440,6 +440,45 @@ def dramat(s):                         # 44 s — högstadiedrama och ett skärm
     slutkort(s, 40.8)
 
 
+def elev(s):                           # 46 s — Sändo Elev vid köksbordet
+    for i in range(58):                                   # väggklockan tickar hela kvällen
+        s.add(0.4 + i*0.78, tone(1150 if i % 2 == 0 else 880, 0.05, 'sine', 0.004, 0.04), 0.035)
+    for i in range(5):                                    # pennan knackar mot bordet
+        s.add(1.2 + i*0.44, noise(0.04, 0.03), 0.05)
+    rost(s, 3.0, 330, 720, 0.7, 0.15)                     # "MAMMA! Vad är 8 gånger 7?"
+    rost(s, 3.9, 600, 380, 0.5, 0.12)
+    rost(s, 6.0, 300, 360, 0.7, 0.06)                     # mamma, dämpat från andra rummet
+    s.add(8.6, sweep(300, 190, 0.9), 0.07)                # sucken
+    pling(s, 9.4, 987.77, 0.14, 0.10)                     # telefonen vaknar
+    uiTva(s, 9.9, 587.33, 880.0, 0.11)
+    for i in range(7):                                    # uppladdningen räknar upp
+        pling(s, 10.6 + i*0.19, 900 + i*70, 0.08, 0.06)
+    uiTva(s, 12.0, 659.25, 1046.5, 0.13)                  # boken är uppe
+    s.add(15.6, sweep(520, 940, 0.22), 0.10)              # meddelandet skickas
+    pling(s, 17.3, 880.0, 0.2, 0.10)                      # Monni svarar
+    pling(s, 17.5, 1174.7, 0.24, 0.08)
+    s.add(21.2, sweep(520, 940, 0.22), 0.10)              # "bara säg svaret"
+    pling(s, 22.7, 830.61, 0.2, 0.10)
+    pling(s, 22.9, 659.25, 0.3, 0.09)                     # ett vänligt nej: nedåt i stället för uppåt
+    s.add(24.1, tone(392, 0.26, 'tri'), 0.09)             # låset
+    s.add(24.4, tone(311.13, 0.34, 'tri'), 0.09)
+    uiTva(s, 27.5, 523.25, 783.99, 0.12)                  # canvasen dyker upp
+    tp = 28.7                                             # kulan dras längs talraden
+    while tp < 33.9:
+        s.add(tp, tone(1500 + (tp*97 % 260), 0.035, 'sine', 0.003, 0.03), 0.055)
+        tp += 0.2
+    for i, f in enumerate([N['C5'], N['E5'], N['G5'], N['C5']*2]):   # det lossnar
+        pling(s, 34.6 + i*0.15, f, 0.4, 0.13)
+    for i in range(9):                                    # han skriver ner sitt eget svar
+        s.add(35.5 + i*0.16, noise(0.035, 0.03), 0.045)
+    for i in range(7):                                    # mammas steg
+        s.add(37.3 + i*0.34, noise(0.06, 0.05), 0.05)
+    rost(s, 39.7, 300, 430, 0.6, 0.11)                    # "Behövde du hjälp?"
+    rost(s, 41.9, 340, 560, 0.55, 0.12)                   # "Nej — jag löste den själv."
+    rost(s, 42.7, 560, 360, 0.5, 0.10)
+    slutkort(s, 42.8)
+
+
 FILMER = [
     ('idrotten',            40.5, idrotten,            0.075),  # ekande gympasal
     ('biblioteket',         38.5, biblioteket,         0.030),  # tyst bibliotek
@@ -452,6 +491,7 @@ FILMER = [
     ('fritids',             36.5, fritids,             0.075),
     ('avslutningen',        40.5, avslutningen,        0.085),  # aula med sexhundra
     ('dramat',              44.5, dramat,              0.070),
+    ('elev',                46.5, elev,                0.030),  # tyst kök på kvällen
 ]
 
 

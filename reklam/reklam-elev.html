@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Sändo Tavla — Sändo Elev — Läxan</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #0b0e17; overflow: hidden; }
+  #stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+    transform-origin: center center; background: #efeade;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  svg { display: block; }
+  text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<div id="stage"><svg id="scene" width="1920" height="1080" viewBox="0 0 1920 1080"></svg></div>
+<script src="filmkit.js"></script>
+<script src="miljoer.js"></script>
+<script>
+/* ===================================================================
+   Sändo Tavla — "Sändo Elev — Läxan"
+   Kvällen vid köksbordet: uppgift 12b, en mamma som inte kommer, och Monni som inte säger svaret.
+   =================================================================== */
+var K = Filmkit, M = Miljoer, scene = K.scene, C = K.C, SKIN = K.SKIN, SHIRT = K.SHIRT;
+var el = K.el, txt = K.txt, clamp = K.clamp, lerp = K.lerp, p = K.p, fade = K.fade;
+var show = K.show, move = K.move, kid = K.kid, bubble = K.bubble;
+
+/* Stående figur med ben */
+function person(x, y, s, opts) {
+  var g = el('g', {}, scene);
+  var k = kid(g, opts || {});
+  el('rect', { x: -24, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  el('rect', { x: 6, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  g.k = k; g.home = [x, y, s];
+  move(g, x, y, s);
+  return g;
+}
+function hop(g, x, y, s, t, fart) {
+  move(g, x, y - Math.abs(Math.sin(t / (fart || 130))) * 12, s);
+}
+function fmt(sec) {
+  sec = Math.max(0, Math.ceil(sec));
+  return Math.floor(sec / 60) + ':' + (sec % 60 < 10 ? '0' : '') + (sec % 60);
+}
+
+
+var milj = M.kok();
+
+/* ---------- köksbordet ---------- */
+K.table(300, 780, 700, '#a97c4e');
+/* arbetsboken och blocket på bordet */
+var bok = el('g', {}, scene);
+el('rect', { x: 330, y: 726, width: 200, height: 58, rx: 6, fill: '#f4f1e8', stroke: '#c9bda2', 'stroke-width': 3 }, bok);
+el('rect', { x: 330, y: 726, width: 18, height: 58, fill: '#c0392b' }, bok);
+txt('12b', { x: 442, y: 764, 'text-anchor': 'middle', 'font-size': 22, 'font-weight': 800, fill: '#8a7550' }, bok);
+var block = el('g', {}, scene);
+el('rect', { x: 780, y: 730, width: 200, height: 54, rx: 5, fill: '#fff', stroke: '#c9bda2', 'stroke-width': 3 }, block);
+var skrivet = txt('', { x: 880, y: 768, 'text-anchor': 'middle', 'font-size': 26, 'font-weight': 800, fill: '#1d4ed8' }, block);
+
+/* ---------- telefonen ---------- */
+var tel = K.phone(1250, 62, 420);
+var o = tel.omrade;
+/* mörk skärm tills den väcks */
+var slack = el('rect', { x: 1250, y: 96, width: 420, height: 806, rx: 10, fill: '#0d1614' }, tel.ram);
+
+/* vy: Boken */
+var vyBok = el('g', { opacity: 0 }, tel);
+var bokKort = K.phoneCard(tel, o.y + 20, 150, '📖 Din arbetsbok', vyBok);
+txt('Matte Direkt 5', { x: o.x + 20, y: o.y + 92, 'font-size': 20, fill: '#10201d' }, bokKort);
+txt('arbetsbok.pdf · 48 h kvar', { x: o.x + 20, y: o.y + 124, 'font-size': 16, fill: '#5d7370' }, bokKort);
+var laddaKnapp = el('g', {}, vyBok);
+el('rect', { x: o.x, y: o.y + 196, width: o.w, height: 66, rx: 18, fill: '#0f7b6c' }, laddaKnapp);
+txt('⬆️ Ladda upp arbetsbok', { x: o.x + o.w / 2, y: o.y + 238, 'text-anchor': 'middle', 'font-size': 21, 'font-weight': 700, fill: '#fff' }, laddaKnapp);
+
+/* vy: Monni-chatten */
+var vyMonni = el('g', { opacity: 0 }, tel);
+var b1 = K.phoneBubble(tel, o.y + 16, 76, ['Jag har fastnat på 12b.', '8 × 7'], 'jag', vyMonni);
+var b2 = K.phoneBubble(tel, o.y + 108, 138, ['Vad frågar uppgiften', 'efter — hur många', 'grupper, eller hur många', 'i varje grupp?'], 'monni', vyMonni);
+var b3 = K.phoneBubble(tel, o.y + 262, 54, ['bara säg svaret'], 'jag', vyMonni);
+var b4 = K.phoneBubble(tel, o.y + 332, 130, ['Nej. Det svaret får du', 'komma fram till själv —', 'men jag stannar kvar', 'och hjälper dig dit.'], 'monni', vyMonni);
+var lasrad = el('g', { opacity: 0 }, vyMonni);
+txt('🔒 Monni säger aldrig svaret', { x: o.x + o.w / 2, y: o.y + 492, 'text-anchor': 'middle', 'font-size': 17, 'font-weight': 700, fill: '#5d7370' }, lasrad);
+[b1, b2, b3, b4].forEach(function (b) { b.setAttribute('opacity', 0); });
+
+/* vy: canvas på telefonen */
+var vyCanvas = el('g', { opacity: 0 }, tel);
+var cKort = K.phoneCard(tel, o.y + 20, 300, '🧩 Talrad', vyCanvas);
+txt('Dra kulan. Bågen visar hoppet.', { x: o.x + 20, y: o.y + 96, 'font-size': 16, fill: '#5d7370' }, cKort);
+var tlY = o.y + 170, tlX0 = o.x + 34, tlX1 = o.x + o.w - 34;
+el('line', { x1: tlX0, y1: tlY, x2: tlX1, y2: tlY, stroke: '#94a3b8', 'stroke-width': 4 }, cKort);
+for (var i = 0; i <= 8; i++) {
+  var xx = tlX0 + (tlX1 - tlX0) * i / 8;
+  el('line', { x1: xx, y1: tlY - 9, x2: xx, y2: tlY + 9, stroke: '#94a3b8', 'stroke-width': 3 }, cKort);
+  txt(i * 5, { x: xx, y: tlY + 34, 'text-anchor': 'middle', 'font-size': 15, fill: '#5d7370' }, cKort);
+}
+var bage = el('path', { fill: 'none', stroke: '#f59e0b', 'stroke-width': 5, 'stroke-linecap': 'round' }, cKort);
+var malKula = el('circle', { r: 11, cy: tlY, fill: '#f59e0b' }, cKort);
+var kula = el('circle', { r: 16, cy: tlY, fill: '#0f7b6c', stroke: '#fff', 'stroke-width': 4 }, cKort);
+var avlast = txt('', { x: o.x + o.w / 2, y: o.y + 268, 'text-anchor': 'middle', 'font-size': 24, 'font-weight': 800, fill: '#10201d' }, cKort);
+var cSvar = K.phoneCard(tel, o.y + 344, 168, '💬 Monni', vyCanvas);
+txt('Dela upp åttan: 8 × 5', { x: o.x + 20, y: o.y + 414, 'font-size': 19, fill: '#10201d' }, cSvar);
+txt('plus 8 × 2. Vilka två tal', { x: o.x + 20, y: o.y + 444, 'font-size': 19, fill: '#10201d' }, cSvar);
+txt('blir det?', { x: o.x + 20, y: o.y + 474, 'font-size': 19, fill: '#10201d' }, cSvar);
+
+/* ---------- folk ---------- */
+var elias = person(620, 800, 1.12, { skin: SKIN[0], shirt: '#3b82f6', hair: '#4a3520' });
+var mammaG = el('g', {}, scene);
+var mamma = K.grownup(mammaG, '#b45309', SKIN[1], '#3b2a1e');
+move(mammaG, -160, 800, 1.12);
+
+/* ---------- repliker ---------- */
+var bMamma = K.speech(560, 130, ['MAMMA! Vad är 8 gånger 7?'], 31, [-70, 92], 640, 500);
+var bStrax = K.speech(420, 120, ['Jag kommer strax!'], 32, [-150, 88], 380, 250);
+var bLoste = K.speech(520, 130, ['Nej — jag löste den själv.'], 30, [-40, 92], 700, 540);
+var bBehovde = K.speech(430, 120, ['Behövde du hjälp?'], 30, [-180, 92], 470, 560);
+
+var cap = K.captionBar();
+var slut = K.endCard('Monni säger aldrig svaret.', 'Din arbetsbok · Hjälp i fyra steg · Canvas · Sagor', 'egElev', {
+  namn: 'Sändo Elev',
+  knapp: 'INSTALLERA FÖR ELEVER',
+  fot: 'Android 8.0+  ·  5 000 000 krediter gratis',
+  farg1: '#0f7b6c', farg2: '#16a34a'
+});
+
+var DUR = 46000;
+function render(t) {
+  /* klockan på väggen: 19:40 → 19:52 */
+  var min = 40 + Math.floor(clamp((t - 2000) / 34000, 0, 1) * 12);
+  milj.stallKlockan(19, min);
+
+  /* telefonen vaknar vid 9,4 s */
+  show(slack, 1 - fade(t, 9400, 44000, 400));
+  show(vyBok, fade(t, 9800, 15000, 300));
+  show(vyMonni, fade(t, 15200, 27200, 300));
+  show(vyCanvas, fade(t, 27400, 44000, 300));
+  tel.flikar.forEach(function (f, i) {
+    var pa = t < 15000 ? 0 : (t < 38000 ? 1 : 1);
+    f.setAttribute('opacity', i === pa ? 1 : 0);
+  });
+  laddaKnapp.setAttribute('opacity', t < 11800 ? 1 : 0);
+  bokKort.setAttribute('opacity', p(t, 11800, 12400, 'out'));
+
+  b1.setAttribute('opacity', p(t, 15600, 16100, 'out'));
+  b2.setAttribute('opacity', p(t, 17200, 17800, 'out'));
+  b3.setAttribute('opacity', p(t, 21200, 21600, 'out'));
+  b4.setAttribute('opacity', p(t, 22600, 23200, 'out'));
+  lasrad.setAttribute('opacity', p(t, 24000, 24600, 'out'));
+
+  /* talraden: Elias drar kulan från 0 till 40, hoppet är 16 */
+  /* kulan stannar där hoppet fortfarande får plats — annars står det
+     "40 + 16 = 40" på skärmen, vilket inte är ett exempel på något */
+  var dragT = clamp((t - 28600) / 5200, 0, 1);
+  var pos = Math.round(dragT * 24);
+  var till = pos + 16;
+  function xAv(v) { return tlX0 + (tlX1 - tlX0) * v / 40; }
+  kula.setAttribute('cx', xAv(pos));
+  malKula.setAttribute('cx', xAv(till));
+  bage.setAttribute('d', 'M' + xAv(pos) + ',' + (tlY - 8) + ' Q' + ((xAv(pos) + xAv(till)) / 2) + ',' + (tlY - 62) + ' ' + xAv(till) + ',' + (tlY - 8));
+  avlast.textContent = pos + ' + 16 = ' + till;
+
+  /* Elias skriver ner sitt eget svar */
+  skrivet.textContent = t > 35400 ? '12b) 56' : '';
+
+  /* han själv */
+  var lutar = t > 2600 && t < 9000;
+  elias.k.setMood(t > 34600 ? 'glad' : lutar ? 'ledsen' : t > 21000 && t < 26000 ? 'ledsen' : 'neutral');
+  elias.k.head.setAttribute('transform', 'rotate(' + (t > 9400 && t < 38000 ? 12 : lutar ? -8 : 0) + ',0,-20)');
+  elias.k.armR.setAttribute('transform', t > 9400 && t < 38000 ? 'rotate(-58,36,26)' : t > 34600 && t < 38000 ? 'rotate(-30,36,26)' : '');
+  move(elias, 620, 800 + (lutar ? 10 : 0), 1.12);
+
+  /* mamma tittar in på slutet */
+  var mx = t < 37000 ? -160 : lerp(-200, 250, p(t, 37200, 39400, 'inOut'));
+  move(mammaG, mx, 800, 1.12);
+  mamma.talk(t > 39600 && t < 41400, t);
+
+  bMamma.play(t, 3000, 6600);
+  bStrax.play(t, 6000, 8800);
+  bBehovde.play(t, 39600, 41600);
+  bLoste.play(t, 41800, 44000);
+
+  cap.play(t, [
+    [900, 4200, 'Kvart i åtta på kvällen.', 'Uppgift 12b vill inte lossna.'],
+    [5200, 8800, '“MAMMA! Vad är 8 gånger 7?”', '“Jag kommer strax!” Hon kommer inte.'],
+    [10000, 14400, 'Sändo Elev. Din egen arbetsbok.', 'Ladda upp PDF:en en gång — Monni läser din bok.'],
+    [15600, 19800, 'Fråga när du fastnar.', 'Monni svarar med en fråga tillbaka.'],
+    [21400, 25800, '“bara säg svaret”', 'Nej. Det gör Monni aldrig — hur du än ber.'],
+    [27800, 32400, 'Men du får något att dra i.', 'Ett exempel med andra siffror, som du kan prova själv.'],
+    [33400, 37000, 'Och då lossnar det.', 'Sista steget är alltid ditt.'],
+    [39800, 43600, '“Behövde du hjälp?”', '“Nej — jag löste den själv.”']
+  ]);
+  slut.play(t, 42600, DUR);
+}
+
+
+K.play(render, DUR);
+</script>
+</body>
+</html>
