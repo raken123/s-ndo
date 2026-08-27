@@ -1,8 +1,8 @@
-# Sändo Tavla 1.5.0 — APK
+# Sändo Tavla 1.5.1 — APK
 
 | Fil | Plattform | Storlek |
 |---|---|---|
-| `sandotavla-1.5.0.apk` | Android 8.0+ (tablet, smartboard, telefon) | 96 KB |
+| `sandotavla-1.5.1.apk` | Android 8.0+ (tablet, smartboard, telefon) | 96 KB |
 
 En whiteboard med sidor, där alla andra verktyg är komponenter man placerar ut
 på tavlan — 47 komponenter, varav 15 använder AI: tramsdetektorn med cringe-skanning, AI-Läraren som utgår från lärarens PDF:er, och tretton kort till för prov, planering, rättning och förklaringar.
@@ -10,7 +10,7 @@ på tavlan — 47 komponenter, varav 15 använder AI: tramsdetektorn med cringe-
 ## Installera
 
 ```sh
-adb install -r sandotavla-1.5.0.apk
+adb install -r sandotavla-1.5.1.apk
 ```
 
 Eller kopiera filen till plattan och öppna den i filhanteraren. Slå på
@@ -25,6 +25,13 @@ Eller kopiera filen till plattan och öppna den i filhanteraren. Slå på
 | Internet | tramsdetektorns AI-läge mot Gemini Live, AI-komponenterna och PDF-uppladdningen |
 
 Allt annat i appen fungerar offline och all data ligger kvar på enheten.
+
+## Rättat i 1.5.1
+
+Textmodellen är en tänkande modell och tanken ryms i samma budget som svaret —
+uppmätt ~700 tokens per fråga, som betalades i krediter utan att någon fick se
+dem. Tänkandet är avstängt nu, svaren kommer snabbare och kostar mindre, och
+ett avhugget svar märks ut i stället för att se ut som ett helt.
 
 ## Nytt i 1.5.0
 

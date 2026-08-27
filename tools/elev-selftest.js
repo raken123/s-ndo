@@ -194,6 +194,13 @@ const path = require('path');
   if (/\b56\b/.test(runda.text || '')) problem.push('svaret 56 gick ut till eleven');
   if (runda.canvas !== 'talrad') problem.push('canvasen kom inte med');
 
+  const cfg = runda.skickat.generationConfig;
+  console.log('  generationConfig: ' + JSON.stringify(cfg));
+  if (!cfg.thinkingConfig || cfg.thinkingConfig.thinkingBudget !== 0) {
+    problem.push('tänkandet är inte avstängt — tanken äter svarets budget');
+  }
+  if (cfg.maxOutputTokens < 2000) problem.push('för snål maxOutputTokens (' + cfg.maxOutputTokens + ')');
+
   const sys = (runda.skickat.systemInstruction.parts[0].text || '');
   const doks = JSON.stringify(runda.skickat.contents);
   console.log('  systemprompt: ' + sys.length + ' tecken, boken med i frågan: ' + (doks.indexOf('files/bok') >= 0));
@@ -218,6 +225,48 @@ const path = require('path');
   console.log('hjälpsteg: ' + stegen.spar.map(s => s.steg).join(',') + '  tjat räknat: ' + stegen.tjat);
   if (Math.max(...stegen.spar.map(s => s.steg)) > 3) problem.push('hjälpen gick förbi steg 4');
   if (stegen.tjat !== 4) problem.push('tjatet räknades fel (' + stegen.tjat + ')');
+
+  // Avhugget svar ska märkas, inte visas som ett helt
+  const hugget = await p.evaluate(() => new Promise(r => {
+    const orig = window.fetch;
+    window.fetch = () => Promise.resolve(new Response(JSON.stringify({
+      candidates: [{ content: { parts: [{ text: 'Multiplikation handlar om att lägga ihop samma tal' }] },
+                     finishReason: 'MAX_TOKENS' }]
+    }), { status: 200 }));
+    App.Gemini.generate({ prompt: 'x', useDocs: false }, (err, text) => {
+      window.fetch = orig;
+      r({ err, text });
+    });
+  }));
+  console.log('avhugget svar: ' + JSON.stringify(hugget.text));
+  if (!/tog utrymmet slut/.test(hugget.text || '')) problem.push('avhugget svar visas som helt');
+
+  // LaTeX och markdown ska bort innan eleven ser texten
+  const stadat = await p.evaluate(() => {
+    const fall = [
+      ['Räkna ut $8 \\times 7$ genom att dela upp.', '8 × 7'],
+      ['Ta $\\frac{3}{4}$ av talet.', '3/4'],
+      ['Det är **viktigt** att börja med tiotalen.', '**'],
+      ['## Rubrik\nSedan kommer texten.', '#']
+    ];
+    return fall.map(([f, spar]) => ({ fore: f, efter: Monni.stada(f) }));
+  });
+  stadat.forEach(r => console.log('  städat: ' + JSON.stringify(r.fore) + ' → ' + JSON.stringify(r.efter)));
+  if (stadat.some(r => /\$|\\times|\\frac|\*\*|^#/.test(r.efter))) problem.push('städningen lämnade kvar LaTeX/markdown');
+
+  // Utan nyckel ska vyerna säga vad som saknas
+  const utanNyckel = await p.evaluate(() => {
+    const spar = App.Gemini.key();
+    App.Gemini.setKey('');
+    const har = ['bok', 'monni', 'sagor'].map(v => {
+      App.open(v);
+      return document.body.textContent.indexOf('Lägg in API-nyckeln först') >= 0;
+    });
+    App.Gemini.setKey(spar);
+    return har;
+  });
+  console.log('nyckelrutan syns i bok/monni/sagor: ' + JSON.stringify(utanNyckel));
+  if (utanNyckel.some(v => !v)) problem.push('nyckelrutan saknas i någon vy');
 
   const saga = await p.evaluate(() => new Promise(r => {
     window.__svar = 'IDÉ: En katt hittar en dörr.\nFÖRSTA MENINGEN: Det regnade. Sedan hände allt det andra, och katten sprang. Och sedan slutade det.\nVÄNDNING: Dörren låser sig.';

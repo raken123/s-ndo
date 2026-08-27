@@ -35,6 +35,8 @@
         'Du är Monni, studiekompis i appen Sändo Elev. Du pratar med en elev i grundskolan eller på gymnasiet.',
         'Språk: svenska, du-tilltal, varm och rak. Inga smicker, ingen svada.',
         'Längd: högst 110 ord. Skärmen är en mobil.',
+        'Format: ren text. Ingen LaTeX ($...$, \\times, \\frac), ingen markdown, inga stjärnor',
+        'runt ord. Skriv gångertecken som × och bråk som 3/4. Texten visas som den står.',
         '',
         'DEN ENDA REGEL SOM INTE FÅR BRYTAS:',
         'Du säger aldrig svaret på en uppgift. Aldrig det färdiga talet, aldrig den färdiga meningen,',
@@ -122,6 +124,22 @@
 
     KNUFF: 'Det svaret får du komma fram till själv — men jag stannar kvar och hjälper dig dit.',
 
+    /* Modellen skriver LaTeX och markdown även när den blivit tillsagd att
+       låta bli. I en chattbubbla renderas ingetdera, så "$8 \\times 7$" blir
+       stående som just det. Städas bort innan eleven ser det. */
+    stada: function (text) {
+      return String(text || '')
+        .replace(/\$\$?([^$]*)\$\$?/g, '$1')
+        .replace(/\\times/g, '×').replace(/\\cdot/g, '·').replace(/\\div/g, '÷')
+        .replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g, '$1/$2')
+        .replace(/\\left|\\right|\\quad|\\,/g, '')
+        .replace(/\*\*([^*]+)\*\*/g, '$1')
+        .replace(/(^|\s)\*([^*\n]+)\*(?=\s|$)/g, '$1$2')
+        .replace(/^#{1,6}\s+/gm, '')
+        .replace(/[ \t]{2,}/g, ' ')
+        .trim();
+    },
+
     vakt: function (svar, elevText) {
       var text = String(svar || '');
       var andrad = false;
@@ -179,12 +197,11 @@
         system: this.system(steg, this.tjat()),
         history: this.historik(),
         temperature: 0.7,
-        maxTokens: 900,
         label: 'Monni: hjälp'
       }, function (err, text) {
         if (err) { cb(err); return; }
         var delat = Canvas.plocka(text);
-        var granskat = self.vakt(delat.text, elevText);
+        var granskat = self.vakt(self.stada(delat.text), elevText);
         self.sparaTur('elev', elevText);
         self.sparaTur('monni', granskat.text);
         self.sparaLogg({ t: Date.now(), fraga: elevText, steg: steg, vakt: granskat.andrad });
@@ -204,6 +221,7 @@
   /* ================== vyn ================== */
   App.registrera('monni', function (wrap, arg) {
     var bok = App.Gemini.docs.aktiv();
+    App.saknasNyckel(wrap);
 
     var topp = App.el('div', 'row');
     var rubrik = App.el('div', 'grow');

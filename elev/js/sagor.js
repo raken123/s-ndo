@@ -48,7 +48,6 @@
         system: this.system(),
         useDocs: false,
         temperature: 1.0,
-        maxTokens: 900,
         label: 'Monni: sagoidé'
       }, function (err, text) {
         if (err) { cb(err); return; }
@@ -61,6 +60,7 @@
 
   App.registrera('sagor', function (wrap) {
     wrap.appendChild(App.el('h2', 'rubrik', '✏️ Sagor'));
+    App.saknasNyckel(wrap);
     wrap.appendChild(App.el('p', 'ingress',
       'Vet du inte vad du ska skriva om? Välj en känsla och en längd, så ger Monni uppslag. ' +
       'Sagan skriver du själv — det är den roliga delen.'));

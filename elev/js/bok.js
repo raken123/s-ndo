@@ -4,6 +4,7 @@
 
   App.registrera('bok', function (wrap) {
     wrap.appendChild(App.el('h2', 'rubrik', '📖 Boken'));
+    App.saknasNyckel(wrap);
     wrap.appendChild(App.el('p', 'ingress',
       'Ladda upp din arbetsbok som PDF. Då kan Monni hjälpa dig med just dina uppgifter, ' +
       'med rätt kapitel och rätt sidor.'));

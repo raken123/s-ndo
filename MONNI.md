@@ -126,6 +126,18 @@ canvasen är trygg att lita på: den är inte kod, den är parametrar.
 Canvasen ska vara ett **exempel med andra siffror** än elevens uppgift. En
 canvas byggd på elevens eget tal vore ett facit man kan dra i.
 
+## Att en modell tänker syns inte i svaret
+
+Textmodellen tänker innan den svarar, och tanken ryms i samma `maxOutputTokens`
+som svaret. Det märks ingenstans i det man får tillbaka utom i
+`usageMetadata.thoughtsTokenCount` — och i att svaret plötsligt är avhugget.
+I Sändo Elev 1.0.0 åt tanken 862 av 900 tokens och lämnade 34 till Monni, som
+därmed svarade en halv mening. Appen såg trasig ut fast anropet gick igenom
+med HTTP 200.
+
+Monni skickar `thinkingConfig: { thinkingBudget: 0 }`. En knuff behöver ingen
+tankekedja, och det eleven betalar för ska vara det eleven ser.
+
 ## Krediter
 
 Eleven börjar med **5 000 000 krediter**. En fråga kostar 80, ett svar 300, och

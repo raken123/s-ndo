@@ -22,7 +22,7 @@
   };
 
   var App = {
-    version: '1.0.0',
+    version: '1.0.1',
     Store: Store,
     vyer: {},
     aktivVy: '',
@@ -68,6 +68,13 @@
        anrop, och arbetsboken som fileData-delar i varje fråga. Monni är en
        ren textmodell — appen ber aldrig om ljud eller bild. */
     Gemini: {
+      /* Adressen till API:t ligger på ett ställe. I appen är den alltid
+         Googles — det finns ingen inställning för den. Att den går att byta
+         i kod är en testkrok: tools/elev-livetest.js pekar om den till en
+         lokal relä för att kunna köra appens riktiga kod mot riktiga svar. */
+      BAS: 'https://generativelanguage.googleapis.com',
+      bas: function () { return this.BAS; },
+
       key: function () { return Store.get('gemini.key', ''); },
       setKey: function (k) { Store.set('gemini.key', String(k || '').trim()); },
       model: function () { return Store.get('gemini.model', 'gemini-3.5-flash'); },
@@ -145,7 +152,7 @@
           cb('Krediterna räcker inte till en uppladdning.');
           return;
         }
-        this.call('https://generativelanguage.googleapis.com/upload/v1beta/files?key=' +
+        this.call(this.bas() + '/upload/v1beta/files?key=' +
           encodeURIComponent(this.key()), {
           method: 'POST',
           timeout: 120000,
@@ -183,13 +190,19 @@
           contents: (opts.history || []).concat([{ role: 'user', parts: parts }]),
           generationConfig: {
             temperature: opts.temperature == null ? 0.6 : opts.temperature,
-            maxOutputTokens: opts.maxTokens || 1400,
-            responseModalities: ['TEXT']
+            maxOutputTokens: opts.maxTokens || 2600,
+            responseModalities: ['TEXT'],
+            /* gemini-3.5-flash är en tänkande modell och tanken ryms i samma
+               budget som svaret. Mätt mot API:t åt den 862 av 900 tokens och
+               lämnade ett avhugget svar på 34 — appen såg ut att vara trasig.
+               Monni behöver ingen lång tankekedja för att ge en knuff, så
+               tänkandet är avstängt om anropet inte ber om något annat. */
+            thinkingConfig: { thinkingBudget: opts.thinkingBudget == null ? 0 : opts.thinkingBudget }
           }
         };
         if (opts.system) body.systemInstruction = { parts: [{ text: opts.system }] };
         App.Credits.charge('in', opts.label || 'Fråga till Monni');
-        this.call('https://generativelanguage.googleapis.com/v1beta/models/' +
+        this.call(this.bas() + '/v1beta/models/' +
           this.model() + ':generateContent?key=' + encodeURIComponent(this.key()), {
           method: 'POST',
           timeout: opts.timeout || 75000,
@@ -201,9 +214,14 @@
           var text = ((c.content || {}).parts || []).map(function (p) { return p.text || ''; }).join('').trim();
           if (!text) {
             cb(c.finishReason === 'MAX_TOKENS'
-              ? 'Svaret blev för långt. Prova att fråga om en sak i taget.'
+              ? 'Monnis svar fick inte plats. Prova att fråga om en sak i taget.'
               : 'Monni svarade inget (' + (c.finishReason || 'okänd orsak') + ').');
             return;
+          }
+          /* Ett avhugget svar är inte ett svar. Utan den här kontrollen visas
+             en halv mening som om den vore hel. */
+          if (c.finishReason === 'MAX_TOKENS') {
+            text += '\n\n(Här tog utrymmet slut. Fråga vidare så fortsätter jag.)';
           }
           App.Credits.charge('out', opts.label || 'Svar från Monni');
           cb(null, text);
@@ -213,7 +231,7 @@
       /* Frågar Google vad nyckeln duger till. cb({ok, text}) */
       testKey: function (cb) {
         if (!this.key()) { cb({ ok: false, text: 'Ingen nyckel inlagd.' }); return; }
-        this.call('https://generativelanguage.googleapis.com/v1beta/models?key=' +
+        this.call(this.bas() + '/v1beta/models?key=' +
           encodeURIComponent(this.key()), { timeout: 30000 }, function (err, j) {
           if (err) { cb({ ok: false, text: err }); return; }
           var n = (j.models || []).length;
@@ -272,6 +290,21 @@
 
     /* ---------- vyer ---------- */
     registrera: function (namn, bygg) { this.vyer[namn] = bygg; },
+
+    /* Utan API-nyckel gör Monni ingenting, och en app som bara svarar med ett
+       felmeddelande ser trasig ut. Vyerna sätter den här rutan överst i
+       stället, med vägen till det som saknas. */
+    saknasNyckel: function (wrap) {
+      if (this.Gemini.key()) return false;
+      var k = this.el('div', 'card varning');
+      k.innerHTML = '<h3>🔑 Lägg in API-nyckeln först</h3>' +
+        '<p class="muted">Monni behöver en Gemini-nyckel för att svara. Utan den händer ' +
+        'ingenting när du frågar. Nyckeln sparas bara på den här telefonen.</p>';
+      k.appendChild(this.button('Gå till nyckeln', 'liten', function () { App.open('mer'); }));
+      k.lastChild.style.marginTop = '12px';
+      wrap.appendChild(k);
+      return true;
+    },
     open: function (namn, arg) {
       var bygg = this.vyer[namn];
       if (!bygg) return;

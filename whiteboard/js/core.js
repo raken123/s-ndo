@@ -27,7 +27,7 @@
     tools: [],
     timers: [],
     Store: Store,
-    version: '1.5.0',
+    version: '1.5.1',
 
     /* ---------- Komponentregister ---------- */
     register: function (tool) {
@@ -822,7 +822,12 @@
           contents: (opts.history || []).concat([{ role: 'user', parts: parts }]),
           generationConfig: {
             temperature: opts.temperature == null ? 0.4 : opts.temperature,
-            maxOutputTokens: opts.maxTokens || 4000
+            maxOutputTokens: opts.maxTokens || 4000,
+            /* Textmodellen är tänkande och tanken ryms i samma budget som
+               svaret — uppmätt åt den ~700 tokens per fråga, som eleven
+               betalar för i krediter utan att se något av det. Korten här
+               behöver ingen lång tankekedja. */
+            thinkingConfig: { thinkingBudget: opts.thinkingBudget == null ? 0 : opts.thinkingBudget }
           }
         };
         if (opts.system) body.systemInstruction = { parts: [{ text: opts.system }] };
@@ -839,9 +844,13 @@
           var text = ((c.content || {}).parts || []).map(function (p) { return p.text || ''; }).join('').trim();
           if (!text) {
             cb(c.finishReason === 'MAX_TOKENS'
-              ? 'Svaret blev för långt och klipptes. Prova en kortare fråga.'
+              ? 'Svaret fick inte plats. Prova en kortare fråga.'
               : 'AI:n svarade inget (' + (c.finishReason || 'okänd orsak') + ').');
             return;
+          }
+          /* Ett avhugget svar ska inte se ut som ett helt. */
+          if (c.finishReason === 'MAX_TOKENS') {
+            text += '\n\n(Här tog utrymmet slut.)';
           }
           App.Credits.charge('out', opts.label || 'AI-svar');
           cb(null, text, j);
