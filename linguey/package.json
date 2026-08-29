@@ -1,0 +1,31 @@
+{
+  "name": "com.linguey.app",
+  "displayName": "Linguey",
+  "version": "1.0.0",
+  "description": "Linguey — lär dig språk med spelifierade lektioner och ett 3D-spelarläge som bonuslektion.",
+  "scripts": {
+    "build": "cordova build android --debug"
+  },
+  "keywords": [
+    "ecosystem:cordova",
+    "språk",
+    "språkinlärning",
+    "3d",
+    "webgl"
+  ],
+  "author": "Linguey",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "cordova-android": "^15.1.0",
+    "cordova-plugin-screen-orientation": "^3.0.4",
+    "es6-promise-plugin": "^4.2.2"
+  },
+  "cordova": {
+    "platforms": [
+      "android"
+    ],
+    "plugins": {
+      "cordova-plugin-screen-orientation": {}
+    }
+  }
+}

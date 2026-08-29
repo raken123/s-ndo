@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7c5cff"/>
+      <stop offset="0.55" stop-color="#5b4bf0"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.3" cy="0.2" r="0.85">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="beak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd15c"/>
+      <stop offset="1" stop-color="#f59e0b"/>
+    </linearGradient>
+    <clipPath id="round">
+      <rect x="0" y="0" width="1024" height="1024" rx="224" ry="224"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#round)">
+    <rect width="1024" height="1024" fill="url(#bg)"/>
+    <rect width="1024" height="1024" fill="url(#glow)"/>
+
+    <!-- Jordglob-textur i bakgrunden (språk = världen) -->
+    <g stroke="#ffffff" stroke-opacity="0.16" fill="none" stroke-width="10">
+      <circle cx="512" cy="512" r="430"/>
+      <ellipse cx="512" cy="512" rx="180" ry="430"/>
+      <ellipse cx="512" cy="512" rx="340" ry="430"/>
+      <path d="M100 400 H924"/>
+      <path d="M100 624 H924"/>
+    </g>
+
+    <!-- Uggla -->
+    <g>
+      <!-- Öron -->
+      <path d="M250 330 L318 132 L410 300 Z" fill="#ffffff"/>
+      <path d="M774 330 L706 132 L614 300 Z" fill="#ffffff"/>
+
+      <!-- Kropp -->
+      <ellipse cx="512" cy="566" rx="304" ry="318" fill="#ffffff"/>
+
+      <!-- Vingar -->
+      <path d="M232 520 q-40 150 60 268 q-92 -110 -60 -268 Z" fill="#e7e9ff"/>
+      <path d="M792 520 q40 150 -60 268 q92 -110 60 -268 Z" fill="#e7e9ff"/>
+
+      <!-- Ögon -->
+      <circle cx="404" cy="500" r="118" fill="#eceeff"/>
+      <circle cx="620" cy="500" r="118" fill="#eceeff"/>
+      <circle cx="404" cy="500" r="118" fill="none" stroke="#5b4bf0" stroke-opacity="0.25" stroke-width="12"/>
+      <circle cx="620" cy="500" r="118" fill="none" stroke="#5b4bf0" stroke-opacity="0.25" stroke-width="12"/>
+      <circle cx="412" cy="506" r="56" fill="#1b1f45"/>
+      <circle cx="628" cy="506" r="56" fill="#1b1f45"/>
+      <circle cx="392" cy="486" r="20" fill="#ffffff"/>
+      <circle cx="608" cy="486" r="20" fill="#ffffff"/>
+
+      <!-- Näbb -->
+      <path d="M512 566 L568 618 L512 684 L456 618 Z" fill="url(#beak)"/>
+
+      <!-- Bröstmönster -->
+      <g stroke="#dfe2ff" stroke-width="14" fill="none" stroke-linecap="round">
+        <path d="M430 740 q82 54 164 0"/>
+        <path d="M456 806 q56 38 112 0"/>
+      </g>
+
+      <!-- Fötter -->
+      <path d="M430 866 q-8 44 -44 56 M430 866 q8 44 44 56" stroke="#f59e0b" stroke-width="20" fill="none" stroke-linecap="round"/>
+      <path d="M594 866 q-8 44 -44 56 M594 866 q8 44 44 56" stroke="#f59e0b" stroke-width="20" fill="none" stroke-linecap="round"/>
+    </g>
+
+    <!-- Pratbubbla med 3D-kub (bonusläget) -->
+    <g>
+      <path d="M756 660 h198 a34 34 0 0 1 34 34 v122 a34 34 0 0 1 -34 34 h-96 l-58 56 v-56 h-44 a34 34 0 0 1 -34 -34 v-122 a34 34 0 0 1 34 -34 Z"
+            fill="#0f1226" fill-opacity="0.9"/>
+      <g fill="none" stroke="#22d3ee" stroke-width="14" stroke-linejoin="round">
+        <path d="M855 692 l62 34 v66 l-62 34 l-62 -34 v-66 Z"/>
+        <path d="M793 726 l62 34 l62 -34 M855 760 v76"/>
+      </g>
+    </g>
+  </g>
+</svg>
