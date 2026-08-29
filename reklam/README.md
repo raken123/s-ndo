@@ -1,8 +1,8 @@
 # Reklamfilmer
 
-Arton storytime-filmer i samma stil och med samma motor. De sjutton första
-handlar om **Sändo Tavla**, den artonde om **Sändo Elev** — samma motor, en
-annan app, och ett kök i stället för ett klassrum.
+Nitton storytime-filmer i samma stil och med samma motor. De sjutton första
+handlar om **Sändo Tavla**, de två sista om **Sändo Elev** — samma motor, en
+annan app, och ett kök och en baksätesresa i stället för ett klassrum.
 
 De sex första om Sändo Tavla
 utspelar sig i klassrummet, på skolgården, hemma i sängen och i matsalen. De
@@ -48,13 +48,16 @@ provet, fritids och avslutningen i aulan. Den sjuttonde går upp på högstadiet
 | `sando-tavla-dramat-1080.mp4` | Dramat, mindre version | 44 s | 2,3 MB |
 | `sando-elev-laxan.mp4` | **Läxan** — Sändo Elev, kvällen vid köksbordet | 46 s | 2,4 MB |
 | `sando-elev-laxan-1080.mp4` | Läxan, mindre version | 46 s | 1,6 MB |
+| `sando-elev-android.mp4` | **Tre timmar dit** — Android, Android Auto och Matteplatser | 52 s | 4,0 MB |
+| `sando-elev-android-1080.mp4` | Tre timmar dit, mindre version | 52 s | 2,4 MB |
 
 Källor: `reklam.html`, `reklam-vikarien.html`, `reklam-rasten.html`,
 `reklam-presentationen.html`, `reklam-fejksjuk.html`, `reklam-matsalen.html`
 samt `reklam-idrotten.html`, `reklam-biblioteket.html`, `reklam-musiksalen.html`,
 `reklam-slojden.html`, `reklam-sjukan.html`, `reklam-forstadagen.html`,
 `reklam-utvecklingssamtalet.html`, `reklam-provet.html`, `reklam-fritids.html`,
-`reklam-avslutningen.html` `reklam-dramat.html` och `reklam-elev.html` — alla ovanpå motorn `filmkit.js`
+`reklam-avslutningen.html`, `reklam-dramat.html`, `reklam-elev.html` och
+`reklam-android.html` — alla ovanpå motorn `filmkit.js`
 och miljöbiblioteket `miljoer.js`.
 Varje film har en affischbild: `affisch.png` för den första och
 `affisch-<namn>.png` för de övriga.
@@ -372,6 +375,32 @@ Till den här filmen fick `filmkit.js` en telefon (`phone`, `phoneCard`,
 sjutton första filmerna är orörda — utan options blir slutkortet exakt som
 förut. `miljoer.js` fick ett kök med en väggklocka man kan ställa.
 
+## Film 19 — Tre timmar dit
+
+Android-versionen. Den enda av de nitton som börjar med att appen inte
+fungerar, för det var där den här versionen började.
+
+| Tid | Scen |
+|---|---|
+| 0–8 s | Baksätet på E4:an, tre timmar till mormor. Eliot trycker tre gånger. "Kunde inte nå Monni: Failed to fetch". Ingen kvitteringston någonstans — tystnaden efter varje tryck är hela poängen. |
+| 8–14 s | Mellanspel: `file:///android_asset/…` byts mot `https://appassets.androidplatform.net/…`. En sida på file:// har inget ursprung och får inte prata med nätet. |
+| 14–18 s | Monni svarar. "3/4 av 48" — och en fråga tillbaka, inte ett svar. |
+| 17–21 s | Bilskärmen fylls rad för rad: Matteplatser, Monnis knuffar, saldot. Android Auto, läsbart under färd. |
+| 21–26 s | Framme. Fritid. Fem kartnålar landar inom 400 meter. |
+| 26–31 s | Han går dit. Avståndet räknas ner medan han går — 120 m blir 12 m. |
+| 31–41 s | Rundan. 9 × 7, klockan från 20, svaret knappas in. +900 krediter, och saldot i toppen räknas upp. |
+| 41–46 s | "Han gick tolv kilometer den veckan." |
+| 46–52 s | Slutkort. |
+
+Två saker i filmen är avsiktligt fula att visa: felmeddelandet i början, och
+att bilskärmen inte har något att skriva i. Det första för att det var sant,
+det andra för att det ska förbli sant — en reklamfilm som visar ett
+tangentbord på en bilskärm ljuger om vad appen får göra.
+
+Motorn växte med `bilskarm()` (Android Auto-mallen), en femte flik i
+`phone()` — Matteplatser — och två miljöer: `baksate()` med vägen i tre
+parallaxlager, och `gangvag()`.
+
 ## Så är de gjorda
 
 Varje film är en HTML-fil som ritar allt i SVG och animerar med en egen
@@ -383,7 +412,7 @@ webbläsare och renderas ruta för ruta med `window.__seek(ms)`.
 Till de tio senare filmerna växte `filmkit.js` med `wallScreen()` (skärm på
 vägg i stället för smartboard), `captionBar()`, `endCard()` och `table()`, och
 rummen flyttade ut i `miljoer.js`: gympasal, bibliotek, musiksal, slöjdsal,
-sjukrum, fritidsrum och aula. Det är därför de tio filmerna är korta filer —
+sjukrum, fritidsrum, aula, kök, baksäte och gångväg. Det är därför de tio filmerna är korta filer —
 de består nästan bara av sitt eget manus.
 
 Tavlan i filmerna visar appens riktiga gränssnitt: cringe-mätaren, schemat,
@@ -400,7 +429,7 @@ identiska filer inte hade tillfört något:
 ```sh
 tools/koda-film.sh idrotten              # renderar, ljudsätter och kodar en film
 for n in idrotten biblioteket musiksalen slojden sjukan forstadagen \
-         utvecklingssamtalet provet fritids avslutningen dramat elev; do
+         utvecklingssamtalet provet fritids avslutningen dramat elev android; do
   tools/koda-film.sh "$n"                # allihop
 done
 

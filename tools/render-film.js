@@ -15,7 +15,12 @@ const html = path.resolve(__dirname, '../reklam/reklam-' + namn + '.html');
 (async () => {
   fs.rmSync(dir, { recursive: true, force: true });
   fs.mkdirSync(dir, { recursive: true });
-  const b = await chromium.launch({ args: ['--force-device-scale-factor=1', '--hide-scrollbars'] });
+  /* Runnern har en förinstallerad Chromium som inte matchar playwrights egen
+   revision, och den går inte att ladda ner härifrån. Finns den, används den. */
+  const egen = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+  const b = await chromium.launch(Object.assign(
+    { args: ['--force-device-scale-factor=1', '--hide-scrollbars'] },
+    fs.existsSync(egen) ? { executablePath: egen } : {}));
   const p = await b.newPage({ viewport: { width: 1920, height: 1080 } });
   const fel = [];
   p.on('pageerror', e => fel.push(String(e)));

@@ -111,6 +111,29 @@ def rumsbotten(s, level=0.05):
     s.add(0, np.sin(2*np.pi*98*tt) * (0.7 + 0.3*np.sin(2*np.pi*0.21*tt)) * env(n, 1.2, 1.6), level*0.16)
     s.add(0, np.sin(2*np.pi*147*tt) * env(n, 1.6, 2.0), level*0.07)
 
+def motor(s, t0, dur, level=0.16):
+    """Bilen inifrån: däckbrus, motorvarv och vägfogar.
+
+    Rumsbotten räcker inte här. Ett kök är tyst mellan replikerna, en bil är
+    aldrig tyst — och skillnaden mellan de två scenerna i den här filmen är
+    just att den ena låter hela tiden."""
+    n = int(dur * SR)
+    tt = np.arange(n) / SR
+    # däckbruset: brett brus, hårt lågpassat
+    dack = lowpass(np.random.uniform(-1, 1, n), 90)
+    dack *= 0.85 + 0.15 * np.sin(2*np.pi*0.17*tt)
+    s.add(t0, dack * env(n, 0.9, 1.2), level)
+    # motorn: en grundton med övertoner som varvar långsamt upp och ner
+    varv = 62 + 5 * np.sin(2*np.pi*0.075*tt)
+    fas = 2*np.pi*np.cumsum(varv)/SR
+    mot = np.sin(fas) + 0.42*np.sin(2*fas) + 0.2*np.sin(3*fas)
+    s.add(t0, mot * env(n, 1.4, 1.6), level*0.30)
+    # vägfogar: en dov duns med jämna mellanrum
+    tp = t0 + 1.1
+    while tp < t0 + dur - 0.3:
+        s.add(tp, lowpass(np.random.uniform(-1, 1, int(0.06*SR)), 40) * env(int(0.06*SR), 0.004, 0.05), level*0.55)
+        tp += 2.35
+
 def rost(s, t0, f0, f1, dur=0.4, gain=0.12):
     """Antydd replik: en tonhöjdskurva, inga ord."""
     s.add(t0, sweep(f0, f1, dur), gain)
@@ -479,6 +502,80 @@ def elev(s):                           # 46 s — Sändo Elev vid köksbordet
     slutkort(s, 42.8)
 
 
+def android(s):                        # 52 s — Android: bilen, felet, Matteplatser
+    motor(s, 0.0, 21.4, 0.17)                             # baksätet, hela vägen till scenbytet
+
+    # Tre tryck på en app som inte svarar. Ingen kvitteringston någonstans —
+    # tystnaden efter varje tryck är hela poängen med scenen.
+    for i, tp in enumerate([2.4, 4.0, 5.4]):
+        s.add(tp, noise(0.035, 0.03), 0.075)              # fingret mot glaset
+        s.add(tp + 0.30, tone(233.08, 0.30, 'square', 0.01, 0.22), 0.075)   # felton, nedåt
+        s.add(tp + 0.52, tone(174.61, 0.36, 'square', 0.01, 0.28), 0.070)
+    s.add(6.4, sweep(300, 185, 1.0), 0.075)               # sucken
+
+    # Mellanspelet: bilen tystnar, en rad byts, och det klickar till.
+    s.add(8.3, tone(N['E4'], 0.5, 'sine', 0.02, 0.42), 0.055)
+    s.add(10.2, noise(0.03, 0.025), 0.09)                 # raden byts
+    uiTva(s, 10.4, 523.25, 783.99, 0.12)
+    s.add(11.5, tone(N['C4'], 1.6, 'sine', 0.35, 1.3), 0.05)
+
+    # Tillbaka i bilen, och nu svarar den.
+    s.add(14.4, sweep(520, 940, 0.22), 0.11)              # frågan skickas
+    pling(s, 15.9, 880.0, 0.20, 0.11)                     # Monni svarar
+    pling(s, 16.1, 1174.7, 0.24, 0.09)
+    for i in range(3):                                    # bilskärmens rader tickar in
+        pling(s, 16.7 + i*0.5, 659.25 + i*130, 0.13, 0.075)
+    s.add(17.8, sweep(520, 940, 0.22), 0.10)              # "säg bara svaret"
+    pling(s, 19.0, 830.61, 0.20, 0.10)                    # ett vänligt nej: nedåt
+    pling(s, 19.2, 659.25, 0.32, 0.09)
+
+    # Scenbyte: bildörren, och sedan är det tyst ute.
+    s.add(20.7, lowpass(np.random.uniform(-1, 1, int(0.22*SR)), 55) * env(int(0.22*SR), 0.004, 0.19), 0.20)
+    for i, (tp, f0, f1) in enumerate([(22.4, 2600, 3300), (23.9, 3100, 2400), (27.6, 2700, 3400),
+                                      (33.2, 2500, 3100), (43.0, 2900, 2300)]):
+        s.add(tp, sweep(f0, f1, 0.16), 0.05)              # fåglar, glest
+
+    # Fem kartnålar landar.
+    for i in range(5):
+        pling(s, 23.5 + i*0.26, 587.33 + i*98, 0.16, 0.085)
+    uiTva(s, 25.0, 659.25, 987.77, 0.10)
+
+    # Han går dit. Grus.
+    tp = 25.8
+    while tp < 30.0:
+        s.add(tp, noise(0.07, 0.055), 0.062)
+        tp += 0.42
+
+    # Rundan: tjugo sekunder, en ton per sekund, tätare och ljusare på slutet.
+    for i in range(20):
+        tp = 32.2 + i
+        if tp > 41.0:
+            break
+        brand = i >= 15
+        s.add(tp, tone(1480 if brand else 1050, 0.05, 'sine', 0.004, 0.045), 0.055 if brand else 0.038)
+    tp = 36.6                                             # svaret knappas in
+    for f in [880, 1040]:
+        s.add(tp, tone(f, 0.07, 'tri', 0.004, 0.06), 0.075)
+        tp += 0.28
+    s.add(39.7, sweep(600, 1100, 0.2), 0.10)              # "Svara"
+
+    # Rätt. Krediterna trillar in.
+    for i, f in enumerate([N['C5'], N['E5'], N['G5'], N['C5']*2]):
+        s.add(39.9 + i*0.13, tone(f, 0.42, 'tri', 0.008, 0.34), 0.135)
+    for i in range(9):                                    # mynten
+        s.add(40.6 + i*0.075, tone(1750 + (i*137 % 420), 0.06, 'sine', 0.003, 0.05), 0.05)
+
+    # Sekund 41–47 låg på 0,009 i RMS — inte tyst, men nästan. Två döda
+    # sekunder mitt i ett slut är hörbara. En varm ackordmatta bär över till
+    # slutkortet i stället.
+    for f in [N['C4'], N['E4'], N['G4'], N['C5']]:
+        s.add(41.4, tone(f, 5.6, 'sine', 1.2, 3.2), 0.042)
+    for i in range(6):                                    # sista stegen på gruset
+        s.add(42.2 + i*0.46, noise(0.07, 0.055), 0.045)
+
+    slutkort(s, 46.8)
+
+
 FILMER = [
     ('idrotten',            40.5, idrotten,            0.075),  # ekande gympasal
     ('biblioteket',         38.5, biblioteket,         0.030),  # tyst bibliotek
@@ -492,6 +589,7 @@ FILMER = [
     ('avslutningen',        40.5, avslutningen,        0.085),  # aula med sexhundra
     ('dramat',              44.5, dramat,              0.070),
     ('elev',                46.5, elev,                0.030),  # tyst kök på kvällen
+    ('android',             52.5, android,             0.026),  # bilen har eget motorljud
 ]
 
 

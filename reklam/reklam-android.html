@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Sändo Elev — Tre timmar dit</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #0b0e17; overflow: hidden; }
+  #stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+    transform-origin: center center; background: #efeade;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  svg { display: block; }
+  text { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<div id="stage"><svg id="scene" width="1920" height="1080" viewBox="0 0 1920 1080"></svg></div>
+<script src="filmkit.js"></script>
+<script src="miljoer.js"></script>
+<script>
+/* ===================================================================
+   Sändo Elev — "Tre timmar dit"
+   Android-versionen. Läxan ligger vid mormor, tre timmar bort på E4:an.
+   Appen svarade inte alls förut — det är där filmen börjar, för det är där
+   den här versionen börjar.
+   =================================================================== */
+var K = Filmkit, M = Miljoer, scene = K.scene, C = K.C, SKIN = K.SKIN, SHIRT = K.SHIRT;
+var el = K.el, txt = K.txt, clamp = K.clamp, lerp = K.lerp, p = K.p, fade = K.fade;
+var show = K.show, move = K.move, kid = K.kid;
+
+function person(x, y, s, opts) {
+  var g = el('g', {}, scene);
+  var k = kid(g, opts || {});
+  el('rect', { x: -24, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  el('rect', { x: 6, y: 80, width: 18, height: 46, rx: 9, fill: '#2f3a4d' }, k);
+  g.k = k; g.home = [x, y, s];
+  move(g, x, y, s);
+  return g;
+}
+
+/* ================== scen 1: baksätet ================== */
+var scen1 = el('g', {}, scene);
+var forut = scen1;                 /* allt i scen 1 hängs under den här */
+var bil = (function () {
+  var innan = scene.childNodes.length;
+  var b = M.baksate();
+  /* Miljöfunktionerna ritar direkt i scene. Flytta över dem till scen 1 så
+     att hela scenen kan tonas bort på en gång. */
+  while (scene.childNodes.length > innan) forut.appendChild(scene.childNodes[innan]);
+  return b;
+})();
+
+/* Android Auto i mittkonsolen */
+var auto = K.bilskarm(690, 650, 430, 262, 'Sändo Elev');
+forut.appendChild(auto);
+var aRad1 = auto.rad(0, 'Matteplatser', '5 i närheten · närmast 120 m', null);
+var aRad2 = auto.rad(1, 'Monnis senaste knuffar', '3 sparade', null);
+var aRad3 = auto.rad(2, 'Krediter', '5 000 000', null);
+
+/* Eliots telefon, i knät i baksätet */
+var tel = K.phone(1256, 118, 380, '', true);
+forut.appendChild(tel.ram);
+var o = tel.omrade;
+
+/* vy: det gamla felet */
+var vyFel = el('g', { opacity: 0 }, tel);
+var felKort = K.phoneCard(tel, o.y + 40, 210, '', vyFel);
+txt('⚠️', { x: o.x + o.w / 2, y: o.y + 118, 'text-anchor': 'middle', 'font-size': 54 }, felKort);
+txt('Kunde inte nå Monni:', { x: o.x + o.w / 2, y: o.y + 168, 'text-anchor': 'middle', 'font-size': 21, 'font-weight': 700, fill: '#dc2626' }, felKort);
+txt('Failed to fetch', { x: o.x + o.w / 2, y: o.y + 202, 'text-anchor': 'middle', 'font-size': 20, fill: '#5d7370' }, felKort);
+var forsok = txt('', { x: o.x + o.w / 2, y: o.y + 300, 'text-anchor': 'middle', 'font-size': 19, fill: '#5d7370' }, vyFel);
+
+/* vy: Monni svarar */
+var vyMonni = el('g', { opacity: 0 }, tel);
+var mb1 = K.phoneBubble(tel, o.y + 20, 76, ['Jag fastnar på 7c.', '3/4 av 48'], 'jag', vyMonni);
+var mb2 = K.phoneBubble(tel, o.y + 112, 136, ['Vad är en fjärdedel', 'av 48? Ta det först,', 'så tar vi tre av dem', 'sen.'], 'monni', vyMonni);
+var mb3 = K.phoneBubble(tel, o.y + 266, 54, ['säg bara svaret'], 'jag', vyMonni);
+var mb4 = K.phoneBubble(tel, o.y + 336, 108, ['Nej. Men jag sitter', 'kvar här hela vägen', 'till Gävle.'], 'monni', vyMonni);
+[mb1, mb2, mb3, mb4].forEach(function (b) { b.setAttribute('opacity', 0); });
+
+/* ================== scen 2: gångvägen ================== */
+var scen2 = el('g', { opacity: 0 }, scene);
+(function () {
+  var innan = scene.childNodes.length;
+  M.gangvag();
+  while (scene.childNodes.length > innan) scen2.appendChild(scene.childNodes[innan]);
+})();
+
+/* kartnålar över gången — Matteplatserna */
+/* Nålarna får bara stå där telefonen inte står — allt till höger om 1180 är
+   skymt. Djupet ligger i y: längre bort är högre upp och mindre. */
+/* Ingen nål ovanför horisonten (y 620) — då hänger den i luften. Djupet
+   ligger i y och skala: längre bort är högre upp och mindre. Den sista är
+   målet: närmast, störst, och den enda han går fram till. */
+var NALAR = [
+  { x: 210, y: 706, m: 395, niva: 2, s: 0.62 },
+  { x: 440, y: 672, m: 380, niva: 1, s: 0.56 },
+  { x: 760, y: 660, m: 310, niva: 1, s: 0.54 },
+  { x: 1128, y: 646, m: 260, niva: 3, s: 0.55 },
+  { x: 1140, y: 812, m: 120, niva: 2, s: 0.92 }
+];
+var nalar = NALAR.map(function (n) {
+  var g = el('g', { opacity: 0 }, scen2);
+  el('path', { d: 'M0,0 c-26,-30 -34,-46 -34,-64 a34,34 0 1 1 68,0 c0,18 -8,34 -34,64 z',
+    fill: n.niva === 3 ? '#dc2626' : n.niva === 2 ? '#f59e0b' : '#0f7b6c',
+    stroke: '#fff', 'stroke-width': 5 }, g);
+  txt(String(n.niva), { x: 0, y: -52, 'text-anchor': 'middle', 'font-size': 30, 'font-weight': 800, fill: '#fff' }, g);
+  var etikett = el('g', {}, g);
+  el('rect', { x: -74, y: 12, width: 148, height: 38, rx: 14, fill: 'rgba(12,16,28,.86)' }, etikett);
+  var mtxt = txt(n.m + ' m', { x: 0, y: 38, 'text-anchor': 'middle', 'font-size': 22, 'font-weight': 700, fill: '#fff' }, etikett);
+  g.mtxt = mtxt;
+  g.data = n;
+  move(g, n.x, n.y, n.s);
+  return g;
+});
+
+/* radiecirkeln: 400 meter runt Eliot */
+var ring = el('g', { opacity: 0 }, scen2);
+el('ellipse', { cx: 700, cy: 880, rx: 660, ry: 218, fill: 'none', stroke: '#0f7b6c',
+  'stroke-width': 7, 'stroke-dasharray': '20 15', opacity: 0.9 }, ring);
+/* Etiketten hamnar till vänster om bildtextraden (som börjar på x 300),
+   annars ligger två texter ovanpå varandra i var tredje bildruta. */
+el('rect', { x: 62, y: 968, width: 216, height: 46, rx: 16, fill: 'rgba(12,16,28,.86)' }, ring);
+txt('400 m radie', { x: 170, y: 1000, 'text-anchor': 'middle', 'font-size': 25, 'font-weight': 800, fill: '#fff' }, ring);
+
+var eliotUte = person(500, 800, 1.05, { skin: SKIN[0], shirt: '#3b82f6', hair: '#4a3520' });
+scen2.appendChild(eliotUte);
+
+/* telefonen i handen, större: rundan */
+var tel2 = K.phone(1330, 78, 400, '', true);
+scen2.appendChild(tel2.ram);
+var o2 = tel2.omrade;
+
+/* vy: platslistan */
+var vyLista = el('g', { opacity: 0 }, tel2);
+K.phoneCard(tel2, o2.y + 10, 92, '📍 5 platser inom 400 m', vyLista);
+txt('Positionen lämnar aldrig telefonen', { x: o2.x + 20, y: o2.y + 78, 'font-size': 15, fill: '#5d7370' }, vyLista);
+[['Bråkbacken', '120 m · nivå 2 · 900 kr/rätt', 2],
+ ['Talstigen', '260 m · nivå 3 · 1600 kr/rätt', 3],
+ ['Kvotkullen', '310 m · nivå 1 · 400 kr/rätt', 1]].forEach(function (rad, i) {
+  var g = K.phoneCard(tel2, o2.y + 120 + i * 104, 90, '', vyLista);
+  txt(rad[0], { x: o2.x + 20, y: o2.y + 158 + i * 104, 'font-size': 21, 'font-weight': 800, fill: '#10201d' }, g);
+  txt(rad[1], { x: o2.x + 20, y: o2.y + 186 + i * 104, 'font-size': 15, fill: '#5d7370' }, g);
+  el('rect', { x: o2.x + o2.w - 62, y: o2.y + 136 + i * 104, width: 42, height: 42, rx: 13, fill: '#dff3ef' }, g);
+  txt(String(rad[2]), { x: o2.x + o2.w - 41, y: o2.y + 166 + i * 104, 'text-anchor': 'middle', 'font-size': 20, 'font-weight': 800, fill: '#0b5e52' }, g);
+});
+var startKnapp = el('g', { opacity: 0 }, vyLista);
+el('rect', { x: o2.x, y: o2.y + 440, width: o2.w, height: 66, rx: 18, fill: '#0f7b6c' }, startKnapp);
+txt('Starta · 5 frågor', { x: o2.x + o2.w / 2, y: o2.y + 482, 'text-anchor': 'middle', 'font-size': 21, 'font-weight': 700, fill: '#fff' }, startKnapp);
+
+/* vy: rundan */
+var vyRunda = el('g', { opacity: 0 }, tel2);
+var rHuvud = txt('Bråkbacken · fråga 1 av 5', { x: o2.x, y: o2.y + 30, 'font-size': 16, fill: '#5d7370' }, vyRunda);
+var rRatt = txt('✅ 0', { x: o2.x + o2.w, y: o2.y + 30, 'text-anchor': 'end', 'font-size': 16, fill: '#5d7370' }, vyRunda);
+/* Höjderna räknas ur o2.h (578 px): klocka, stapel, tal, svarsrad och fyra
+   knappraders 58-pitch går precis ihop. Första försöket lade knappsatsen
+   ovanpå flikraden. */
+var klocka = txt('20', { x: o2.x + o2.w / 2, y: o2.y + 88, 'text-anchor': 'middle', 'font-size': 56, 'font-weight': 800, fill: '#0f7b6c' }, vyRunda);
+el('rect', { x: o2.x, y: o2.y + 104, width: o2.w, height: 10, rx: 5, fill: '#eef3f4' }, vyRunda);
+var stapel = el('rect', { x: o2.x, y: o2.y + 104, width: o2.w, height: 10, rx: 5, fill: '#0f7b6c' }, vyRunda);
+var taletKort = K.phoneCard(tel2, o2.y + 132, 108, '', vyRunda);
+var talet = txt('9 × 7', { x: o2.x + o2.w / 2, y: o2.y + 202, 'text-anchor': 'middle', 'font-size': 48, 'font-weight': 800, fill: '#10201d' }, taletKort);
+var matat = txt('–', { x: o2.x + o2.w / 2, y: o2.y + 288, 'text-anchor': 'middle', 'font-size': 40, 'font-weight': 800, fill: '#0b5e52' }, vyRunda);
+/* knappsatsen */
+var sats = el('g', {}, vyRunda);
+'123456789−0⌫'.split('').forEach(function (tecken, i) {
+  var cx = o2.x + (o2.w / 3) * (i % 3) + o2.w / 6;
+  var cy = o2.y + 312 + Math.floor(i / 3) * 58;
+  el('rect', { x: cx - o2.w / 6 + 5, y: cy, width: o2.w / 3 - 10, height: 50, rx: 14,
+    fill: '#fff', stroke: '#dbe5e4', 'stroke-width': 2 }, sats);
+  txt(tecken, { x: cx, y: cy + 34, 'text-anchor': 'middle', 'font-size': 24, 'font-weight': 700, fill: '#10201d' }, sats);
+});
+/* kreditbrickan som flyger upp när svaret är rätt */
+var vinst = el('g', { opacity: 0 }, scen2);
+el('rect', { x: -110, y: -34, width: 220, height: 68, rx: 24, fill: '#16a34a' }, vinst);
+var vinstTxt = txt('+900 💎', { x: 0, y: 12, 'text-anchor': 'middle', 'font-size': 34, 'font-weight': 800, fill: '#fff' }, vinst);
+
+/* ================== scen 3: felet, förklarat ================== */
+/* Ett kort mellanspel. Hela buggen var ett ursprung, och det går att visa. */
+var scen3 = el('g', { opacity: 0 }, scene);
+el('rect', { x: 0, y: 0, width: 1920, height: 1080, fill: '#0e1a18' }, scen3);
+txt('Felet satt i ett enda ord.', { x: 960, y: 300, 'text-anchor': 'middle', 'font-size': 62, 'font-weight': 800, fill: '#fff' }, scen3);
+var kodFore = el('g', {}, scen3);
+el('rect', { x: 330, y: 400, width: 1260, height: 110, rx: 20, fill: '#1b2b28' }, kodFore);
+txt('file:///android_asset/index.html', { x: 380, y: 470, 'font-size': 40, 'font-family': 'monospace', fill: '#f87171' }, kodFore);
+txt('✕', { x: 1520, y: 472, 'text-anchor': 'middle', 'font-size': 44, 'font-weight': 800, fill: '#f87171' }, kodFore);
+var kodEfter = el('g', { opacity: 0 }, scen3);
+el('rect', { x: 330, y: 540, width: 1260, height: 110, rx: 20, fill: '#14322d' }, kodEfter);
+txt('https://appassets.androidplatform.net/…', { x: 380, y: 610, 'font-size': 40, 'font-family': 'monospace', fill: '#3ec7ad' }, kodEfter);
+txt('✓', { x: 1520, y: 612, 'text-anchor': 'middle', 'font-size': 44, 'font-weight': 800, fill: '#3ec7ad' }, kodEfter);
+var kodText = el('g', { opacity: 0 }, scen3);
+txt('En sida på file:// har inget ursprung, och får inte prata med nätet.', { x: 960, y: 730, 'text-anchor': 'middle', 'font-size': 32, fill: '#9fbdb6' }, kodText);
+txt('WebView:n svalde varje anrop innan det blev ett anrop.', { x: 960, y: 782, 'text-anchor': 'middle', 'font-size': 32, fill: '#9fbdb6' }, kodText);
+
+var cap = K.captionBar();
+var slut = K.endCard('Läxan följer med. Krediterna tjänar du in själv.', 'Matteplatser · Android Auto · Monni · Din arbetsbok', 'egAndroid', {
+  namn: 'Sändo Elev',
+  knapp: 'INSTALLERA FÖR ANDROID',
+  fot: 'Android 8.0+  ·  Android Auto  ·  5 000 000 krediter gratis',
+  farg1: '#0f7b6c', farg2: '#3ddc84'
+});
+
+/* ================== tidslinjen ================== */
+var DUR = 52000;
+
+function render(t) {
+  /* --- scenbyten --- */
+  var s1 = t < 20600 ? 1 : 1 - p(t, 20600, 21100);
+  var s3on = fade(t, 8200, 13600, 320);
+  var s2on = fade(t, 21000, 47000, 400);
+  show(scen1, s1);
+  show(scen3, s3on);
+  show(scen2, s2on);
+
+  /* --- scen 1: bilen rullar --- */
+  bil.rulla(t);
+
+  /* telefonen: felet först, sedan Monni */
+  show(vyFel, fade(t, 1200, 8000, 300));
+  show(vyMonni, fade(t, 14200, 20400, 300));
+
+  /* tre försök, och inget händer. Det är det som är poängen. */
+  var n = t < 2600 ? 0 : t < 4200 ? 1 : t < 5600 ? 2 : 3;
+  forsok.textContent = n ? 'Försök ' + n + ' av 3' : '';
+
+  mb1.setAttribute('opacity', p(t, 14600, 15100, 'out'));
+  mb2.setAttribute('opacity', p(t, 15900, 16400, 'out'));
+  mb3.setAttribute('opacity', p(t, 17800, 18200, 'out'));
+  mb4.setAttribute('opacity', p(t, 19000, 19500, 'out'));
+
+  /* bilskärmen fylls rad för rad, efter att appen börjat fungera */
+  aRad1.setAttribute('opacity', p(t, 16600, 17100, 'out'));
+  aRad2.setAttribute('opacity', p(t, 17100, 17600, 'out'));
+  aRad3.setAttribute('opacity', p(t, 17600, 18100, 'out'));
+  tel.flikar.forEach(function (f, i) { f.setAttribute('opacity', i === 1 ? 1 : 0); });
+  tel2.flikar.forEach(function (f, i) { f.setAttribute('opacity', i === 3 ? 1 : 0); });
+
+  /* --- scen 3: felet, förklarat --- */
+  kodEfter.setAttribute('opacity', p(t, 10200, 10700, 'out'));
+  kodText.setAttribute('opacity', p(t, 11400, 12000, 'out'));
+
+  /* --- scen 2: ute --- */
+  /* ringen och nålarna tonar in */
+  ring.setAttribute('opacity', p(t, 22400, 23200, 'out') * (1 - p(t, 40000, 40600)));
+  nalar.forEach(function (g, i) {
+    var pa = p(t, 23400 + i * 260, 23900 + i * 260, 'out');
+    /* nålen guppar lite, så att den ser utsatt ut och inte klistrad */
+    move(g, g.data.x, g.data.y + Math.sin((t + i * 700) / 620) * 7, g.data.s);
+    g.setAttribute('opacity', pa * (1 - p(t, 40000, 40600)));
+  });
+
+  /* Eliot går fram mot närmaste nål */
+  var gang = p(t, 25600, 30000, 'inOut');
+  var ex = lerp(500, 1010, gang), ey = lerp(800, 812, gang);
+  var kliv = gang > 0 && gang < 1 ? Math.abs(Math.sin(t / 150)) * 11 : 0;
+  move(eliotUte, ex, ey - kliv, 1.05 - gang * 0.03);
+  eliotUte.k.setMood(t > 38400 ? 'glad' : 'neutral');
+
+  /* avståndet till närmaste plats räknas ner medan han går */
+  nalar[4].mtxt.textContent = Math.round(lerp(120, 12, gang)) + ' m';
+
+  /* telefonen: listan, sedan rundan */
+  show(vyLista, fade(t, 23000, 31400, 300));
+  show(vyRunda, fade(t, 31600, 41200, 300));
+  startKnapp.setAttribute('opacity', p(t, 29600, 30100, 'out'));
+
+  /* Rundan. Klockan hör till frågan, inte till scenen: när fråga två börjar
+     står den på 20 igen. Att låta den räkna vidare vore att visa en app som
+     inte finns. */
+  if (t > 31600 && t < 41400) {
+    var q = t < 39800 ? 1 : 2;
+    var rt = (t - (q === 1 ? 32200 : 39800)) / 1000;
+    var kvar = clamp(20 - rt, 0, 20);
+    klocka.textContent = String(Math.ceil(kvar));
+    klocka.setAttribute('fill', kvar <= 5 ? '#dc2626' : '#0f7b6c');
+    stapel.setAttribute('width', Math.max(0, o2.w * kvar / 20));
+    stapel.setAttribute('fill', kvar <= 5 ? '#dc2626' : '#0f7b6c');
+    /* svaret knappas in vid 4,6 s och skickas vid 7,6 s */
+    matat.textContent = q === 2 ? '–' : rt < 4.6 ? '–' : rt < 5.1 ? '6' : '63';
+    rRatt.textContent = q === 2 ? '✅ 1' : '✅ 0';
+    rHuvud.textContent = 'Bråkbacken · fråga ' + q + ' av 5';
+    talet.textContent = q === 1 ? '9 × 7' : '25 % av 160';
+    /* saldot i toppen räknas upp, annars är belöningen bara en bricka */
+    tel2.kred.textContent = q === 2 ? '5 000 900' : '5 000 000';
+  }
+
+  /* kreditbrickan flyger ur telefonen, inte ovanpå knappsatsen */
+  var vinstP = p(t, 39800, 41000, 'out');
+  vinst.setAttribute('opacity', p(t, 39800, 40100, 'out') * (1 - p(t, 41000, 41500)));
+  move(vinst, 1206, lerp(770, 560, vinstP));
+  vinstTxt.textContent = '+900 💎';
+
+  cap.play(t, [
+    [700, 4600, 'Tre timmar till mormor. Läxan följer med.', 'Appen svarade inte. Inte en enda gång.'],
+    [5200, 7800, 'Inte ett felmeddelande från Google.', 'Anropet dog inne i appen, innan det blev ett anrop.'],
+    [8600, 13400, 'Så vi letade rätt på det.', 'En rad, och allt det andra gick att bygga ovanpå.'],
+    [14400, 17400, 'Monni svarar nu. Hela vägen till Gävle.', 'Fyra hjälpsteg — och aldrig svaret.'],
+    [17800, 20400, 'Och bilskärmen får med sig knuffarna.', 'Android Auto. Läsbart, inget att skriva i.'],
+    [22600, 25400, 'Framme. Fritid.', '📍 Matteplatser: fem stycken inom 400 meter.'],
+    [26200, 30200, 'Du måste faktiskt gå dit.', 'Inom 40 meter, annars öppnas ingenting.'],
+    [31800, 36400, 'Fem frågor. Tjugo sekunder var.', 'Räknas fram i telefonen — inget nät, ingen väntan.'],
+    [37000, 40600, 'Rätt svar betalar tillbaka.', '400, 900 eller 1600 krediter beroende på nivå.'],
+    [41600, 45600, 'Krediterna tog aldrig slut igen.', 'Han gick tolv kilometer den veckan.']
+  ]);
+  slut.play(t, 46600, DUR);
+}
+
+K.play(render, DUR);
+</script>
+</body>
+</html>

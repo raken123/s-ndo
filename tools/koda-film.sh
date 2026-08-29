@@ -19,8 +19,9 @@ ljud="$arb/ljud-$namn.wav"
 # Filmerna om Sändo Tavla och den om Sändo Elev är olika produkter och ska
 # inte heta samma sak.
 case "$namn" in
-  elev) ut="$rot/reklam/sando-elev-laxan" ;;
-  *)    ut="$rot/reklam/sando-tavla-$namn" ;;
+  elev)    ut="$rot/reklam/sando-elev-laxan" ;;
+  android) ut="$rot/reklam/sando-elev-android" ;;
+  *)       ut="$rot/reklam/sando-tavla-$namn" ;;
 esac
 
 "$ff" -y -loglevel error -framerate 30 -i "$frames/f%05d.png" -i "$ljud" \

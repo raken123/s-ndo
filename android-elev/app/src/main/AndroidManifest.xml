@@ -45,10 +45,12 @@
 
         <!-- Bilskärmen. Kategorin är POI: det appen visar i bilen är platser
              i närheten, inte läxhjälp under körning. Se bil/SandoBilTjanst. -->
+        <!-- Ingen foregroundServiceType: tjänsten kör inte i förgrunden och
+             behöver inte positionen. Bilen visar det telefonen redan räknat
+             fram. -->
         <service
             android:name=".bil.SandoBilTjanst"
-            android:exported="true"
-            android:foregroundServiceType="location">
+            android:exported="true">
             <intent-filter>
                 <action android:name="androidx.car.app.CarAppService" />
                 <category android:name="androidx.car.app.category.POI" />

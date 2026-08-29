@@ -242,7 +242,106 @@
     return { stallKlockan: stall };
   }
 
+  /* ---------- Baksätet ----------
+     Kameran sitter bakom framsätena och tittar ut genom vindrutan. Vägen
+     rullar förbi i tre lager med olika fart — det är parallaxen som gör att
+     bilen ser ut att röra sig i stället för att landskapet gör det.
+
+     Höjderna är valda efter var bildtextraden ligger (y 936–1054): allt som
+     ska gå att läsa håller sig ovanför den.
+
+     Rutan lämnar tillbaka rulla(t), som filmen kallar varje bildruta. */
+  function baksate() {
+    var HORISONT = 400, VAG = 620, BRADA = 620;
+    var defs = scene.querySelector('defs') || el('defs', {}, scene);
+    var lg = el('linearGradient', { id: 'himmelgrad', x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
+    el('stop', { offset: 0, 'stop-color': '#9ec9f0' }, lg);
+    el('stop', { offset: 1, 'stop-color': '#dbeaf6' }, lg);
+    el('rect', { x: 0, y: 0, width: 1920, height: HORISONT, fill: 'url(#himmelgrad)' }, scene);
+
+    /* fjärran bergrygg: rör sig knappt */
+    var berg = el('g', {}, scene);
+    for (var i = -1; i < 15; i++) {
+      var bx = i * 190;
+      el('path', { d: 'M' + bx + ',' + HORISONT + ' l95,-118 l95,118 z', fill: '#8fa9be', opacity: 0.6 }, berg);
+    }
+    /* granar: mellanfart */
+    var skog = el('g', {}, scene);
+    for (var j = -1; j < 27; j++) {
+      var sx = j * 130, sh = 84 + ((j * 37) % 54);
+      var tr = el('g', {}, skog);
+      el('rect', { x: sx + 16, y: HORISONT - 18, width: 10, height: 20, fill: '#4a3a24' }, tr);
+      el('path', { d: 'M' + sx + ',' + (HORISONT - 12) + ' l21,' + (-sh) + ' l21,' + sh + ' z', fill: '#2f6b47' }, tr);
+    }
+    /* vägen: snabbast */
+    el('rect', { x: 0, y: HORISONT, width: 1920, height: VAG - HORISONT, fill: '#6b7280' }, scene);
+    el('rect', { x: 0, y: HORISONT - 6, width: 1920, height: 10, fill: '#e5e7eb' }, scene);
+    var streck = el('g', {}, scene);
+    for (var k = -1; k < 23; k++) {
+      el('rect', { x: k * 190, y: HORISONT + 90, width: 96, height: 14, rx: 7, fill: '#f3f4f6' }, streck);
+    }
+
+    /* Kupén ritas sist och lägger sig över landskapet: tak, stolpar och
+       instrumentbräda är det som gör bilden till en bil och inte en väg. */
+    var kupe = el('g', {}, scene);
+    el('rect', { x: 0, y: 0, width: 1920, height: 96, fill: '#1a1f26' }, kupe);
+    el('path', { d: 'M0,96 h1920 v34 h-140 v-24 h-1640 v24 h-140 z', fill: '#1a1f26' }, kupe);
+    el('rect', { x: 0, y: 0, width: 140, height: 1080, fill: '#232a33' }, kupe);
+    el('rect', { x: 1780, y: 0, width: 140, height: 1080, fill: '#232a33' }, kupe);
+    /* instrumentbrädan */
+    el('rect', { x: 0, y: BRADA, width: 1920, height: 1080 - BRADA, fill: '#2b323c' }, kupe);
+    el('rect', { x: 0, y: BRADA - 10, width: 1920, height: 20, rx: 10, fill: '#39424e' }, kupe);
+    /* ratten, halvt utanför bild till vänster */
+    var ratt = el('g', {}, kupe);
+    el('circle', { cx: 330, cy: 830, r: 132, fill: 'none', stroke: '#11161c', 'stroke-width': 30 }, ratt);
+    el('rect', { x: 234, y: 814, width: 192, height: 28, rx: 14, fill: '#11161c' }, ratt);
+    el('circle', { cx: 330, cy: 830, r: 34, fill: '#11161c' }, ratt);
+    /* framsätenas ryggstöd, ett i varje nederkant */
+    el('path', { d: 'M120,1080 v-190 a56,56 0 0 1 56,-56 h300 a56,56 0 0 1 56,56 v190 z', fill: '#39424e' }, kupe);
+    el('path', { d: 'M1388,1080 v-190 a56,56 0 0 1 56,-56 h300 a56,56 0 0 1 56,56 v190 z', fill: '#39424e' }, kupe);
+
+    function rulla(t) {
+      /* Tre farter. Modulo på bredden gör slingan sömlös. */
+      move(berg, -((t * 0.014) % 190), 0);
+      move(skog, -((t * 0.10) % 130), 0);
+      move(streck, -((t * 0.42) % 190), 0);
+    }
+    rulla(0);
+    return { rulla: rulla, kupe: kupe, BRADA: BRADA };
+  }
+
+  /* ---------- Gångvägen ----------
+     Utomhus, dit man går på fritiden. Ljus, öppen, och med plats för
+     kartnålar i ovankant. */
+  function gangvag() {
+    var defs = scene.querySelector('defs') || el('defs', {}, scene);
+    var lg = el('linearGradient', { id: 'utegrad', x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
+    el('stop', { offset: 0, 'stop-color': '#bfe0f5' }, lg);
+    el('stop', { offset: 1, 'stop-color': '#e8f3ea' }, lg);
+    el('rect', { x: 0, y: 0, width: 1920, height: 620, fill: 'url(#utegrad)' }, scene);
+    golv(620, '#7fae6a', '#6f9c5b');
+    /* grusgången, i perspektiv mot horisonten */
+    el('path', { d: 'M560,620 L860,620 L900,1080 L200,1080 z', fill: '#d9cdb4' }, scene);
+    el('path', { d: 'M560,620 L860,620 L900,1080 L200,1080 z', fill: 'none', stroke: '#c4b696', 'stroke-width': 6 }, scene);
+    /* buskar och träd längs kanten */
+    for (var i = 0; i < 10; i++) {
+      var x = 60 + i * 205, r = 40 + ((i * 53) % 24);
+      if (x > 520 && x < 900) continue;          /* gången ska ligga fri */
+      var b = el('g', {}, scene);
+      el('rect', { x: x - 7, y: 620 - r * 0.5, width: 14, height: r * 0.9, fill: '#6b4f2e' }, b);
+      el('circle', { cx: x, cy: 620 - r * 0.95, r: r, fill: '#3f8b52' }, b);
+    }
+    /* en bänk att gå förbi */
+    var bank = el('g', {}, scene);
+    el('rect', { x: 60, y: 700, width: 230, height: 16, rx: 6, fill: '#a97c4e' }, bank);
+    el('rect', { x: 60, y: 662, width: 230, height: 14, rx: 6, fill: '#a97c4e' }, bank);
+    el('rect', { x: 78, y: 716, width: 12, height: 56, fill: '#6b7280' }, bank);
+    el('rect', { x: 258, y: 716, width: 12, height: 56, fill: '#6b7280' }, bank);
+    return {};
+  }
+
   global.Miljoer = { gym: gym, bibliotek: bibliotek, musiksal: musiksal, slojd: slojd,
     sjukrum: sjukrum, fritids: fritids, aula: aula, kok: kok,
+    baksate: baksate, gangvag: gangvag,
     golv: golv, vagg: vagg, fonsterrad: fonsterrad };
 })(window, window.Filmkit);

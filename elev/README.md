@@ -18,6 +18,7 @@ js/monni.js         systemprompt, hjälpsteg, svarsvakt och chatten
 js/bok.js           arbetsboken: uppladdning, val och varningen om sista sidan
 js/sagor.js         sagouppslag — idéer, inte färdig text
 js/repet.js         repetition att lyssna på i bilen (formatet CarPlay läser)
+js/platser.js       Matteplatser: rutnätet, frågegeneratorn och rundan
 js/mer.js           krediter, API-nyckel, canvas-provrum, tema, rensa data
 js/main.js          start
 ```
@@ -25,13 +26,14 @@ js/main.js          start
 Ingen byggkedja, inga beroenden. Skripten laddas i ordning och vyerna
 registrerar sig själva med `App.registrera(namn, bygg)`.
 
-## De fyra vyerna
+## De fem vyerna
 
 | Tabb | Vad den gör |
 |---|---|
 | 📖 Boken | Ladda upp arbetsboken som PDF, välj vilken som gäller, ta bort |
 | 💬 Monni | Chatten. Hjälpsteg, svarsvakt och interaktiva exempel |
 | ✏️ Sagor | Välj genre och längd, få uppslag att skriva vidare på |
+| 📍 Platser | Matteplatser i närheten. Fem frågor, tjugo sekunder var |
 | ⚙️ Mer | Krediter, API-nyckel, canvas-provrum, tema, rensa data |
 
 ## Monni
@@ -45,6 +47,46 @@ läser Monnis text innan eleven ser den.
 
 5 000 000 gratis. En fråga kostar 80, ett svar 300, en uppladdad bok 80.
 Saldot syns i topbaren och historiken ligger under ⚙️ Mer.
+
+Matteplatser betalar åt andra hållet: 400, 900 eller 1600 per rätt svar,
+beroende på platsens nivå. En budget som bara krymper slutar med att eleven
+slutar fråga, och det är fel sak att lära ut.
+
+## Matteplatser
+
+Inom 400 meter från där du står ligger fem platser. Gå dit — inom 40 meter —
+och svara på fem frågor med tjugo sekunder på dig per fråga.
+
+**Platserna räknas fram lokalt.** Positionen lämnar aldrig telefonen. Det finns
+ingen karttjänst att fråga och ingen lista att ladda ner: världen delas in i
+rutor om ungefär 400 meter, och varje ruta får sina platser ur en
+slumpgenerator som såddes med rutans eget nummer. Två elever som står på samma
+gata ser samma platser, i dag och nästa år, utan att någon någonsin fick veta
+var de stod.
+
+Rutan räknas om efter breddgraden. En longitudgrad är 111 km vid ekvatorn och
+39 km i Kiruna — utan omräkningen hade rutorna i norra Sverige blivit smala
+remsor och platserna dragits ut på bredden.
+
+**Frågorna kan inte komma från Monni.** Tjugo sekunder räcker inte till ett
+API-anrop, och en fråga som kostar krediter att ställa är fel sätt att dela ut
+krediter. De räknas fram lokalt ur samma sorts generator, sådd med platsen och
+dagens datum: nya frågor varje dag, samma frågor hela dagen. Att ladda om
+sidan mitt i en runda ger alltså inte lättare tal.
+
+| Nivå | Frågorna | Per rätt svar |
+|---|---|---|
+| 1 | addition och subtraktion under 100 | 400 |
+| 2 | tabellerna, och division som går jämnt ut | 900 |
+| 3 | två steg, procent och bråkdel av ett tal | 1600 |
+
+Svaret är alltid ett heltal. En tidtagen fråga får inte förloras på ett
+avrundningsfel.
+
+**Man måste faktiskt gå dit.** Startknappen dyker inte upp längre bort än 40
+meter, och positionen följs under hela rundan — går man därifrån avbryts den.
+En plats betalar en gång per dag, annars vore det bara att stå still och
+trycka om.
 
 ## Data
 
@@ -123,7 +165,7 @@ NODE_PATH=/opt/node22/lib/node_modules node tools/elev-selftest.js
 Kör appen i en mobilstor webbläsare med ett stubbat Gemini-API och
 kontrollerar:
 
-* att alla metoder koden anropar finns, och att alla fyra vyer monterar
+* att alla metoder koden anropar finns, och att alla fem vyer monterar
 * att startkrediterna är 5 000 000
 * **att svarsvakten stoppar sju levererade svar och släpper igenom sex
   förklaringar** — båda tabellerna måste gå
@@ -142,6 +184,28 @@ kontrollerar:
   nyckelrutan syns i alla tre vyer när nyckeln saknas
 * att en repetition inte kan bära ett facit, och att ett trasigt svar ger ett
   besked i stället för en trasig repetition
+* **hela Matteplats-rundan med en påhittad position**: att startknappen bara
+  syns när man står på platsen, att klockan börjar på 20, att ett fel svar
+  betalar noll, att ett rätt svar betalar precis nivåns belopp, och att
+  platsen försvinner ur listan 500 meter bort
+
+Generatorn har ett eget test, eftersom det den gör inte syns på en skärm:
+
+```sh
+node tools/platser-selftest.js
+```
+
+* att samma position ger exakt samma platser, och att tio meter norrut ger
+  samma platser med nya avstånd
+* att ingenting hamnar utanför radien — på fyra breddgrader från ekvatorn till
+  Svalbard
+* att haversine stämmer mot kända avstånd (en latitudgrad, en longitudgrad
+  på 70°)
+* att 12 000 frågor har heltalssvar, och att svaren stämmer när texten räknas
+  ut på nytt av testet
+* att nivåerna faktiskt skiljer sig åt, mätt på frågeform och inte på svarens
+  storlek — första försöket mätte storleken och underkände nivå 3, vilket var
+  testets fel: 96 ÷ 8 har ett litet svar och är ändå svårare än 74 + 39
 
 ## Skarpt prov
 

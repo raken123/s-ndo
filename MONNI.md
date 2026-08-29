@@ -145,3 +145,13 @@ en uppladdad arbetsbok 80. Canvasen kostar ingenting extra — den ritas lokalt.
 
 Siffrorna är inga pengar som byter ägare. De gör kostnaden för varje fråga
 synlig, vilket är hela poängen: det ska märkas att man frågar.
+
+Sedan **Matteplatser** kom till går de också åt andra hållet: 400, 900 eller
+1600 per rätt svar, beroende på platsens nivå. En budget som bara krymper
+slutar med att eleven slutar fråga, och det är fel sak att lära ut.
+
+De frågorna kommer inte från Monni, och det är inget undantag från regeln
+ovan — det är samma regel. En matteplatsfråga är ett prov med tjugo sekunders
+klocka, och den som ställer frågan måste veta svaret. Monni gör aldrig det:
+Monni ställer frågor tillbaka. Platsfrågorna räknas därför fram lokalt av en
+slumpgenerator som varken har någon systemprompt eller något att säga.

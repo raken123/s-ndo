@@ -208,7 +208,10 @@ function wallScreen(x, y, w, h, label) {
 
 /* En telefon med Sändo Elev på skärmen. Samma roll som buildBoard, fast för
    den appen: ramen och topbaren ritas här, innehållet fyller filmen själv. */
-function phone(x, y, w, label) {
+function phone(x, y, w, label, flikar5) {
+  /* flikar5: appen har fem flikar sedan Matteplatser kom till. De sjutton
+     första filmerna ritades med fyra och ska fortsätta göra det, så den
+     femte är ett tillval och inte ett nytt utseende för alla. */
   var h = Math.round(w * 2.02);
   var g = el('g', {}, scene);
   el('rect', { x: x - 12, y: y - 12, width: w + 24, height: h + 24, rx: 46, fill: '#0d1614' }, g);
@@ -226,11 +229,16 @@ function phone(x, y, w, label) {
   el('rect', { x: x, y: y + h - 96, width: w, height: 96, fill: '#fff' }, tabbar);
   el('rect', { x: x, y: y + h - 96, width: w, height: 2, fill: '#dbe5e4' }, tabbar);
   var flikar = [];
-  ['Boken', 'Monni', 'Sagor', 'Mer'].forEach(function (namn, i) {
-    var bx = x + w / 4 * i + w / 8;
-    var mark = el('rect', { x: bx - 42, y: y + h - 84, width: 84, height: 68, rx: 18, fill: '#dff3ef', opacity: 0 }, tabbar);
-    txt(['\ud83d\udcd6', '\ud83d\udcac', '\u270f\ufe0f', '\u2699\ufe0f'][i], { x: bx, y: y + h - 50, 'text-anchor': 'middle', 'font-size': 30 }, tabbar);
-    txt(namn, { x: bx, y: y + h - 24, 'text-anchor': 'middle', 'font-size': 15, 'font-weight': 700, fill: '#5d7370' }, tabbar);
+  var namnen = flikar5 ? ['Boken', 'Monni', 'Sagor', 'Platser', 'Mer']
+                       : ['Boken', 'Monni', 'Sagor', 'Mer'];
+  var ikoner = flikar5 ? ['\ud83d\udcd6', '\ud83d\udcac', '\u270f\ufe0f', '\ud83d\udccd', '\u2699\ufe0f']
+                       : ['\ud83d\udcd6', '\ud83d\udcac', '\u270f\ufe0f', '\u2699\ufe0f'];
+  var n = namnen.length, bredd = w / n;
+  namnen.forEach(function (namn, i) {
+    var bx = x + bredd * i + bredd / 2;
+    var mark = el('rect', { x: bx - bredd / 2 + 6, y: y + h - 84, width: bredd - 12, height: 68, rx: 18, fill: '#dff3ef', opacity: 0 }, tabbar);
+    txt(ikoner[i], { x: bx, y: y + h - 50, 'text-anchor': 'middle', 'font-size': flikar5 ? 26 : 30 }, tabbar);
+    txt(namn, { x: bx, y: y + h - 24, 'text-anchor': 'middle', 'font-size': flikar5 ? 13 : 15, 'font-weight': 700, fill: '#5d7370' }, tabbar);
     flikar.push(mark);
   });
   sc.kred = kred;
@@ -263,6 +271,42 @@ function phoneBubble(sc, y, h, rader, fran, parent) {
     txt(r, { x: bx + 18, y: y + (fran === 'jag' ? 34 : 56) + i * 26, 'font-size': 19,
       fill: fran === 'jag' ? '#fff' : '#10201d', 'font-weight': fran === 'jag' ? 600 : 400 }, g);
   });
+  return g;
+}
+
+/* Android Auto-skärmen i mittkonsolen.
+   En bilskärm ritar inte vyer utan mallar, och det syns: mörk botten, feta
+   rader, och ingenting att skriva i. Så ser den ut på riktigt, och så ska den
+   se ut här — en reklamfilm som visar en tangentbordsruta på en bilskärm
+   ljuger om vad appen får göra. */
+function bilskarm(x, y, w, h, rubrik) {
+  var g = el('g', {}, scene);
+  el('rect', { x: x - 10, y: y - 10, width: w + 20, height: h + 20, rx: 20, fill: '#0a0d12' }, g);
+  el('rect', { x: x, y: y, width: w, height: h, rx: 12, fill: '#15191f' }, g);
+  var topp = el('g', {}, g);
+  el('rect', { x: x, y: y, width: w, height: 52, rx: 12, fill: '#1d232b' }, topp);
+  el('rect', { x: x, y: y + 40, width: w, height: 12, fill: '#1d232b' }, topp);
+  el('rect', { x: x + 16, y: y + 13, width: 26, height: 26, rx: 9, fill: '#0f7b6c' }, topp);
+  txt('S', { x: x + 29, y: y + 33, 'text-anchor': 'middle', 'font-size': 17, 'font-weight': 800, fill: '#fff' }, topp);
+  var rub = txt(rubrik || 'Sändo Elev', { x: x + 54, y: y + 33, 'font-size': 20, 'font-weight': 700, fill: '#e8edf2' }, topp);
+
+  var rader = [];
+  function rad(i, titel, under, marke) {
+    var ry = y + 66 + i * 58;
+    var r = el('g', { opacity: 0 }, g);
+    el('rect', { x: x + 10, y: ry, width: w - 20, height: 50, rx: 10, fill: '#1e242c' }, r);
+    if (marke != null) {
+      el('circle', { cx: x + 38, cy: ry + 25, r: 15, fill: '#0f7b6c' }, r);
+      txt(marke, { x: x + 38, y: ry + 31, 'text-anchor': 'middle', 'font-size': 15, 'font-weight': 800, fill: '#fff' }, r);
+    }
+    txt(titel, { x: x + (marke != null ? 62 : 26), y: ry + 22, 'font-size': 18, 'font-weight': 700, fill: '#e8edf2' }, r);
+    txt(under, { x: x + (marke != null ? 62 : 26), y: ry + 42, 'font-size': 15, fill: '#95a3b3' }, r);
+    rader.push(r);
+    return r;
+  }
+  g.rad = rad;
+  g.rader = rader;
+  g.rubrik = rub;
   return g;
 }
 
@@ -371,7 +415,7 @@ global.Filmkit = {
   kid: kid, bubble: bubble, grownup: grownup, speech: speech,
   buildRoom: buildRoom, buildBoard: buildBoard, boardTopbar: boardTopbar, widget: widget,
   wallScreen: wallScreen, captionBar: captionBar, endCard: endCard, table: table,
-  phone: phone, phoneCard: phoneCard, phoneBubble: phoneBubble,
+  phone: phone, phoneCard: phoneCard, phoneBubble: phoneBubble, bilskarm: bilskarm,
   play: play
 };
 })(window);
