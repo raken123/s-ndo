@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- CarPlay-rätten. Apple delar ut den bara till en fast lista av
+         kategorier och en studieapp finns inte på listan — se ios/README.md.
+         Utan entitlementet startar appen som vanligt på telefonen; det är bara
+         bilskärmen som förblir tom. -->
+    <key>com.apple.developer.carplay-communication</key>
+    <true/>
+    <!-- Delat lager mellan telefonen och bilen. Telefonen skriver, bilen läser. -->
+    <key>com.apple.security.application-groups</key>
+    <array>
+        <string>group.se.sando.elev</string>
+    </array>
+</dict>
+</plist>

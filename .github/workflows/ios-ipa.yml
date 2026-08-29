@@ -1,0 +1,87 @@
+# Bygger Sändo Elev för iPhone och CarPlay på en macOS-runner, kör testerna
+# och lägger upp en IPA som artefakt.
+#
+# Varför här och inte lokalt: en iOS-app kräver Xcode och macOS. Utvecklings-
+# maskinen i det här projektet är Linux utan Swift, så den enda platsen koden
+# faktiskt kompileras är den här körningen.
+#
+# IPA:n är **osignerad**. Den installeras inte genom att bara kopieras till en
+# telefon — den behöver signeras med ett certifikat, med Xcode, AltStore eller
+# Sideloadly. Att bygga den osignerad är avsiktligt: alternativet vore att
+# lägga in någons signeringsnyckel i ett publikt repo.
+name: iOS — bygg IPA
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-ipa.yml'
+
+jobs:
+  bygg:
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Välj Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Visa verktygen
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Installera XcodeGen
+        run: brew install xcodegen
+
+      - name: Generera projektet
+        working-directory: ios
+        run: xcodegen generate
+
+      # Testerna först. En IPA av kod som inte klarar svarsvakten är inte värd
+      # att bygga.
+      - name: Kör testerna
+        working-directory: ios
+        run: |
+          xcodebuild test \
+            -project SandoElev.xcodeproj \
+            -scheme SandoElev \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty && exit ${PIPESTATUS[0]}
+
+      - name: Arkivera
+        working-directory: ios
+        run: |
+          xcodebuild archive \
+            -project SandoElev.xcodeproj \
+            -scheme SandoElev \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/SandoElev.xcarchive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            | xcpretty && exit ${PIPESTATUS[0]}
+
+      # En IPA är en zip med Payload/<app>.app i sig. Utan signering finns
+      # ingen exportArchive-väg, så den packas för hand.
+      - name: Packa IPA
+        working-directory: ios
+        run: |
+          APP="build/SandoElev.xcarchive/Products/Applications/SandoElev.app"
+          test -d "$APP" || { echo "hittade ingen .app i arkivet"; ls -R build; exit 1; }
+          mkdir -p build/Payload
+          cp -R "$APP" build/Payload/
+          (cd build && zip -qry SandoElev-osignerad.ipa Payload)
+          ls -lh build/SandoElev-osignerad.ipa
+          unzip -l build/SandoElev-osignerad.ipa | head -20
+          file "build/Payload/SandoElev.app/SandoElev"
+
+      - name: Ladda upp IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: SandoElev-ipa
+          path: ios/build/SandoElev-osignerad.ipa
+          if-no-files-found: error
