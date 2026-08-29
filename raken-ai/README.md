@@ -57,9 +57,18 @@ gradle wrapper --gradle-version 8.7   # once, if you have no wrapper
 # app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Needs JDK 17 and the Android SDK (compileSdk 34, minSdk 24). If you would rather not install
-either, run the **Build RAKEN AI APK** workflow from the Actions tab and download the
-`raken-ai-debug-apk` artifact.
+Needs JDK 17 and the Android SDK (compileSdk 34, minSdk 24).
+
+If you would rather not install either, CI builds it for you. Every push that touches
+`raken-ai/` runs the **Build RAKEN AI APK** workflow, which
+
+* uploads the APK as the `raken-ai-debug-apk` run artifact (needs a GitHub login, expires
+  after 90 days), and
+* commits it to this branch as **`raken-ai/dist/raken-ai-debug.apk`**, which is the easy
+  link to hand to someone.
+
+It is a *debug* build signed with the throwaway debug key, so Android will ask you to allow
+installs from unknown sources. That is expected for a UI test — do not ship it.
 
 ## Files
 
