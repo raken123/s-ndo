@@ -78,10 +78,9 @@ final class CarPlayScenDelegat: UIResponder, CPTemplateApplicationSceneDelegate 
     /// Delar Monnis svar i korta stycken. CarPlay visar ett begränsat antal
     /// poster, så resten kapas hellre än att trängas.
     private func stycken(_ text: String) -> [String] {
-        text.components(separatedBy: "\n")
+        let rader = text.components(separatedBy: "\n")
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
-            .prefix(6)
-            .map(String.init)
+        return Array(rader.prefix(6))
     }
 }

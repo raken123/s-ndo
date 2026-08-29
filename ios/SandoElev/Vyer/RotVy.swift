@@ -7,6 +7,7 @@ enum Färg {
     static let varning = Color(red: 0.961, green: 0.620, blue: 0.043)
 }
 
+@MainActor
 struct RotVy: View {
     @EnvironmentObject private var krediter: Krediter
     /* Samma kreditinstans som vyerna visar — annars rör sig inte siffran i
