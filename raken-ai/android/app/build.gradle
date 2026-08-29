@@ -24,10 +24,6 @@ android {
     }
 }
 
-dependencies {
-    implementation "androidx.appcompat:appcompat:1.7.0"
-}
-
 /* The UI lives once, in ../../ — copy it into assets at build time so the web
    prototype and the APK can never drift apart. */
 tasks.register("copyWebUi", Copy) {

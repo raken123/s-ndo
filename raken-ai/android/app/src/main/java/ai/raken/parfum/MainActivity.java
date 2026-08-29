@@ -1,6 +1,7 @@
 package ai.raken.parfum;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
@@ -9,13 +10,11 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 /**
  * RAKEN AI — UI prototype shell.
  * The whole interface is the local web app in assets/; nothing is loaded from the network.
  */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
 
     private WebView web;
 
