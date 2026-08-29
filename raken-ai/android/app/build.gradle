@@ -1,0 +1,42 @@
+plugins { id "com.android.application" }
+
+android {
+    namespace "ai.raken.parfum"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "ai.raken.parfum"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation "androidx.appcompat:appcompat:1.7.0"
+}
+
+/* The UI lives once, in ../../ — copy it into assets at build time so the web
+   prototype and the APK can never drift apart. */
+tasks.register("copyWebUi", Copy) {
+    from("$rootDir/..") {
+        include "index.html"
+        include "manifest.webmanifest"
+        include "assets/**"
+    }
+    into layout.buildDirectory.dir("webui")
+}
+android.sourceSets.main.assets.srcDir(layout.buildDirectory.dir("webui"))
+tasks.named("preBuild") { dependsOn("copyWebUi") }

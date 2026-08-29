@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<title>RAKEN AI — The World's First AI Parfum</title>
+<style>
+:root{
+  --gold-1:#fff3c4;
+  --gold-2:#f3d68b;
+  --gold-3:#d4af37;
+  --gold-4:#a67c1a;
+  --ink:#050505;
+  --panel:rgba(255,255,255,.038);
+  --panel-2:rgba(255,255,255,.06);
+  --line:rgba(212,175,55,.22);
+  --line-soft:rgba(255,255,255,.08);
+  --txt:#f4ecd8;
+  --muted:#9a927f;
+  --warn:#ffb020;
+  --r:20px;
+  --grad-gold:linear-gradient(135deg,var(--gold-1) 0%,var(--gold-2) 22%,var(--gold-3) 48%,var(--gold-4) 76%,var(--gold-2) 100%);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:"SF Pro Display",-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  background:
+    radial-gradient(1200px 700px at 50% -10%,rgba(212,175,55,.13),transparent 60%),
+    radial-gradient(900px 600px at 110% 110%,rgba(166,124,26,.10),transparent 60%),
+    #000;
+  color:var(--txt);
+  display:flex;align-items:center;justify-content:center;
+  min-height:100dvh;overflow:hidden;
+}
+
+/* ---------- phone shell ---------- */
+.phone{
+  position:relative;width:min(430px,100vw);height:min(932px,100dvh);
+  background:linear-gradient(180deg,#0a0908 0%,#050505 40%,#000 100%);
+  overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:0 0 0 1px rgba(212,175,55,.18),0 40px 120px rgba(0,0,0,.9),0 0 140px rgba(212,175,55,.07);
+}
+@media(min-width:520px) and (min-height:800px){ .phone{border-radius:44px} }
+.phone::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(120% 60% at 50% 0%,rgba(212,175,55,.16),transparent 55%),
+             radial-gradient(80% 40% at 50% 100%,rgba(166,124,26,.12),transparent 60%);
+}
+.grain{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.5;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence baseFrequency='.85' numOctaves='3'/></filter><rect width='120' height='120' filter='url(%23n)' opacity='.35'/></svg>")}
+
+/* ---------- status bar ---------- */
+.statusbar{position:relative;z-index:3;display:flex;justify-content:space-between;align-items:center;
+  padding:14px 26px 4px;font-size:13px;font-weight:600;letter-spacing:.4px;color:#e8dcc0}
+.sb-right{display:flex;align-items:center;gap:6px}
+.batt{width:24px;height:12px;border:1px solid rgba(232,220,192,.7);border-radius:3px;position:relative;padding:1.5px}
+.batt::after{content:"";position:absolute;right:-3px;top:3.5px;width:2px;height:5px;background:rgba(232,220,192,.7);border-radius:0 1px 1px 0}
+.batt i{display:block;height:100%;width:78%;background:var(--grad-gold);border-radius:1px}
+
+/* ---------- header ---------- */
+header{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;padding:6px 20px 12px}
+.brand{display:flex;align-items:center;gap:11px}
+.mono{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;
+  background:linear-gradient(160deg,rgba(212,175,55,.22),rgba(0,0,0,.6));
+  border:1px solid var(--line);box-shadow:inset 0 1px 0 rgba(255,243,196,.25)}
+.mono span{font-family:"Didot","Bodoni MT",Georgia,serif;font-size:17px;font-weight:700;letter-spacing:.5px;
+  background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand h1{font-family:"Didot","Bodoni MT",Georgia,serif;font-size:17px;font-weight:600;letter-spacing:3.4px;
+  background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand p{font-size:9px;letter-spacing:2.6px;color:var(--muted);margin-top:2px;text-transform:uppercase}
+.gold{background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.iconbtn{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--panel);
+  border:1px solid var(--line-soft);color:var(--gold-2);cursor:pointer;transition:.2s}
+.iconbtn:active{transform:scale(.93);background:var(--panel-2)}
+
+/* ---------- screens ---------- */
+main{position:relative;z-index:2;flex:1;overflow-y:auto;overflow-x:hidden;padding:0 18px 120px;scrollbar-width:none}
+main::-webkit-scrollbar{display:none}
+.screen{display:none;animation:fade .38s ease both}
+.screen.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+.card{background:linear-gradient(165deg,rgba(255,255,255,.055),rgba(255,255,255,.018));
+  border:1px solid var(--line-soft);border-radius:var(--r);padding:16px;backdrop-filter:blur(14px);position:relative;overflow:hidden}
+.card.gilt{border-color:var(--line);box-shadow:inset 0 1px 0 rgba(255,243,196,.14),0 10px 30px rgba(0,0,0,.5)}
+.card-t{font-size:10px;letter-spacing:2.2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+
+/* ---------- hero / device ---------- */
+.stage{position:relative;height:376px;border-radius:26px;overflow:hidden;margin-bottom:14px;
+  background:radial-gradient(75% 62% at 50% 46%,rgba(212,175,55,.16),rgba(0,0,0,0) 68%),#000;
+  border:1px solid var(--line-soft)}
+.halo{position:absolute;left:50%;top:48%;translate:-50% -50%;width:300px;height:300px;border-radius:50%;
+  background:radial-gradient(circle,rgba(212,175,55,.30),rgba(212,175,55,.06) 45%,transparent 70%);
+  filter:blur(14px);animation:breathe 5s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.55;scale:1}50%{opacity:1;scale:1.09}}
+.shot{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .6s ease,transform .6s cubic-bezier(.2,.9,.25,1);transform:scale(.94)}
+.shot.on{opacity:1;transform:scale(1)}
+.shot img{height:100%;width:auto;max-width:100%;object-fit:contain;display:block;filter:drop-shadow(0 22px 44px rgba(0,0,0,.85))}
+#imgSolo img{clip-path:inset(3.5% 4% 6.5% 4%);transform:scale(1.1)}
+#imgDock img{clip-path:inset(2.5% 3% 10% 3%);transform:scale(1.12)}
+.stage-top{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:flex-start;z-index:4}
+.stage-bot{position:absolute;bottom:12px;left:12px;right:12px;display:flex;gap:8px;z-index:4}
+.scrim{position:absolute;left:0;right:0;bottom:0;height:150px;z-index:3;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(0,0,0,.55) 45%,rgba(0,0,0,.88))}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;font-size:10.5px;
+  letter-spacing:1.4px;text-transform:uppercase;font-weight:600;backdrop-filter:blur(10px);
+  background:rgba(0,0,0,.55);border:1px solid var(--line-soft);color:var(--muted)}
+.pill.ok{color:#0d0b05;background:var(--grad-gold);border-color:transparent;box-shadow:0 6px 18px rgba(212,175,55,.3)}
+.pill.warn{color:var(--warn);border-color:rgba(255,176,32,.4);background:rgba(255,176,32,.1)}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
+.dot.live{animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.stat-mini{flex:1;background:rgba(0,0,0,.55);backdrop-filter:blur(10px);border:1px solid var(--line-soft);
+  border-radius:14px;padding:9px 11px}
+.stat-mini b{display:block;font-size:17px;font-weight:600;letter-spacing:.3px;
+  background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat-mini small{font-size:8.5px;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted)}
+
+.scanline{position:absolute;left:0;right:0;height:130px;z-index:3;display:none;
+  background:linear-gradient(180deg,transparent,rgba(212,175,55,.22) 45%,rgba(255,243,196,.55) 50%,rgba(212,175,55,.22) 55%,transparent)}
+.scanning .scanline{display:block;animation:sweep 1.05s linear infinite}
+@keyframes sweep{0%{top:-130px}100%{top:100%}}
+.scan-msg{position:absolute;inset:0;z-index:5;display:none;place-items:center;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(3px)}
+.scanning .scan-msg{display:grid}
+.scan-msg p{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-2);margin-top:12px}
+.ring{width:54px;height:54px;border-radius:50%;border:2px solid rgba(212,175,55,.2);border-top-color:var(--gold-2);animation:spin .8s linear infinite;margin:0 auto}
+@keyframes spin{to{rotate:360deg}}
+
+/* ---------- gauges ---------- */
+.gauges{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.gauge{display:flex;flex-direction:column;align-items:center;gap:8px}
+.gauge svg{width:104px;height:104px;transform:rotate(-90deg)}
+.gauge .track{fill:none;stroke:rgba(255,255,255,.07);stroke-width:8}
+.gauge .val{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dasharray .7s cubic-bezier(.3,.9,.3,1)}
+.gauge-wrap{position:relative;width:104px;height:104px}
+.gauge-mid{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.gauge-mid b{font-size:21px;font-weight:600;letter-spacing:-.4px;display:block;
+  background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.gauge-mid small{font-size:8px;letter-spacing:1.8px;color:var(--muted);text-transform:uppercase}
+.gauge>span{font-size:9.5px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+
+/* ---------- buttons ---------- */
+.btn{width:100%;border:none;border-radius:16px;padding:15px;font-size:12px;font-weight:700;letter-spacing:2.2px;
+  text-transform:uppercase;cursor:pointer;transition:.18s;font-family:inherit}
+.btn-gold{background:var(--grad-gold);color:#0c0a04;box-shadow:0 10px 26px rgba(212,175,55,.26)}
+.btn-ghost{background:var(--panel);color:var(--gold-2);border:1px solid var(--line)}
+.btn:active{transform:scale(.975)}
+.btn[disabled]{opacity:.38;box-shadow:none;cursor:not-allowed}
+.btn-row{display:flex;gap:10px;margin-bottom:14px}
+
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 15px;
+  background:var(--panel);border:1px solid var(--line-soft);border-radius:16px;margin-bottom:12px}
+.switch-row h4{font-size:12.5px;font-weight:600;letter-spacing:.2px}
+.switch-row p{font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:.4px}
+.sw{width:50px;height:29px;border-radius:999px;background:rgba(255,255,255,.1);position:relative;cursor:pointer;
+  transition:.28s;border:1px solid var(--line-soft);flex:none}
+.sw i{position:absolute;top:2.5px;left:3px;width:22px;height:22px;border-radius:50%;background:#8b8477;transition:.28s cubic-bezier(.3,1.4,.5,1)}
+.sw.on{background:linear-gradient(135deg,rgba(212,175,55,.5),rgba(166,124,26,.5));border-color:var(--line)}
+.sw.on i{left:24px;background:var(--grad-gold);box-shadow:0 0 12px rgba(212,175,55,.7)}
+
+/* ---------- lists ---------- */
+.rows{display:flex;flex-direction:column;gap:1px;border-radius:16px;overflow:hidden;border:1px solid var(--line-soft)}
+.row{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;background:rgba(255,255,255,.035);gap:10px}
+.row span{font-size:11.5px;color:var(--muted);letter-spacing:.5px;flex:none}
+.row b{font-size:12.5px;font-weight:600;letter-spacing:.3px;color:var(--txt);text-align:right}
+.row b.g{background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sect{font-size:10px;letter-spacing:2.6px;text-transform:uppercase;color:var(--muted);margin:20px 4px 10px}
+.hair{height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent);margin:18px 0}
+
+/* ---------- chat ---------- */
+.chat{display:flex;flex-direction:column;gap:12px;padding-top:4px}
+.msg{max-width:86%;padding:12px 15px;border-radius:18px;font-size:13px;line-height:1.55;letter-spacing:.2px;
+  animation:pop .3s ease both}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+.msg.ai{align-self:flex-start;background:linear-gradient(150deg,rgba(212,175,55,.14),rgba(255,255,255,.04));
+  border:1px solid var(--line);border-bottom-left-radius:6px;color:#f6ecd6}
+.msg.me{align-self:flex-end;background:var(--grad-gold);color:#0c0a04;font-weight:500;border-bottom-right-radius:6px}
+.msg.sys{align-self:center;background:transparent;border:1px dashed var(--line-soft);color:var(--muted);
+  font-size:10px;letter-spacing:1.6px;text-transform:uppercase;padding:7px 13px;border-radius:999px;text-align:center}
+.typing{display:flex;gap:4px;align-items:center}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--gold-2);animation:bounce 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-4px)}}
+
+.formula{align-self:stretch;background:linear-gradient(165deg,rgba(212,175,55,.13),rgba(0,0,0,.5));
+  border:1px solid var(--line);border-radius:20px;padding:16px;animation:pop .35s ease both}
+.formula h3{font-family:"Didot","Bodoni MT",Georgia,serif;font-size:19px;letter-spacing:.6px;margin-bottom:2px;
+  background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.formula .sub{font-size:9px;letter-spacing:2.4px;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.note-line{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.note-line span{font-size:8.5px;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);width:40px;flex:none}
+.bar{flex:1;height:6px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--grad-gold);width:0;transition:width .9s cubic-bezier(.2,.9,.3,1)}
+.note-line b{font-size:10.5px;color:#e9dcbe;font-weight:500;width:110px;flex:none;text-align:right;letter-spacing:.2px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:12px 2px 4px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;padding:9px 14px;border-radius:999px;font-size:11px;letter-spacing:.6px;white-space:nowrap;
+  background:var(--panel);border:1px solid var(--line-soft);color:var(--gold-2);cursor:pointer;transition:.2s}
+.chip:active{background:var(--panel-2);transform:scale(.95)}
+
+.composer{position:absolute;bottom:86px;left:18px;right:18px;z-index:6;display:flex;gap:9px;align-items:center;
+  background:rgba(10,9,8,.94);backdrop-filter:blur(20px);border:1px solid var(--line);border-radius:20px;padding:7px 7px 7px 16px}
+.composer input{flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:13.5px;font-family:inherit;letter-spacing:.2px;min-width:0}
+.composer input::placeholder{color:#6d6656}
+.send{width:42px;height:42px;border-radius:14px;border:none;background:var(--grad-gold);color:#0c0a04;
+  display:grid;place-items:center;cursor:pointer;flex:none;transition:.18s}
+.send:active{transform:scale(.9)}
+.send[disabled]{opacity:.4}
+
+/* ---------- library ---------- */
+.lib{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.scent{border-radius:18px;padding:14px;border:1px solid var(--line-soft);position:relative;overflow:hidden;
+  background:linear-gradient(165deg,rgba(255,255,255,.06),rgba(255,255,255,.015));cursor:pointer;transition:.2s}
+.scent:active{transform:scale(.97)}
+.scent .swatch{width:34px;height:34px;border-radius:11px;margin-bottom:11px;box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+.scent h4{font-family:"Didot","Bodoni MT",Georgia,serif;font-size:14px;letter-spacing:.4px;margin-bottom:3px;color:#f2e6c9}
+.scent p{font-size:9.5px;color:var(--muted);letter-spacing:.5px;line-height:1.5}
+.scent .pc{position:absolute;top:12px;right:12px;font-size:9px;letter-spacing:1px;color:var(--gold-3)}
+
+/* ---------- water screen ---------- */
+.tank{position:relative;height:200px;border-radius:22px;overflow:hidden;border:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(0,0,0,.4));margin-bottom:14px}
+.water{position:absolute;left:0;right:0;bottom:0;transition:height 1s cubic-bezier(.3,.9,.3,1);
+  background:linear-gradient(180deg,rgba(212,175,55,.55),rgba(166,124,26,.75))}
+.water::before,.water::after{content:"";position:absolute;top:-11px;left:-30%;width:160%;height:22px;border-radius:50%;
+  background:rgba(255,243,196,.55);animation:wave 5s ease-in-out infinite}
+.water::after{animation-duration:7.5s;animation-delay:-2s;opacity:.3;top:-7px;background:rgba(255,255,255,.6)}
+@keyframes wave{0%{transform:translate(-5%,0)}50%{transform:translate(5%,-4px)}100%{transform:translate(-5%,0)}}
+.tank-txt{position:absolute;inset:0;display:grid;place-items:center;text-align:center;z-index:2}
+.tank-txt b{font-size:44px;font-weight:300;letter-spacing:-1.5px;display:block;color:#fff8e6;text-shadow:0 3px 20px rgba(0,0,0,.7)}
+.tank-txt b em{font-style:normal;font-size:18px;letter-spacing:1px;opacity:.75}
+.tank-txt small{font-size:9.5px;letter-spacing:2.6px;text-transform:uppercase;color:rgba(255,248,230,.72)}
+.bubbles{position:absolute;inset:0;overflow:hidden}
+.bubbles i{position:absolute;bottom:-10px;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.5);
+  animation:rise 4s ease-in infinite}
+@keyframes rise{0%{transform:translateY(0) scale(.6);opacity:0}20%{opacity:.9}100%{transform:translateY(-170px) scale(1.2);opacity:0}}
+.spark{display:flex;gap:5px;height:46px;align-items:flex-end;margin-top:4px}
+.spark i{flex:1;border-radius:3px 3px 0 0;background:linear-gradient(180deg,var(--gold-2),rgba(166,124,26,.25))}
+
+/* ---------- nav ---------- */
+nav{position:absolute;bottom:0;left:0;right:0;z-index:7;display:flex;justify-content:space-around;align-items:center;
+  padding:12px 10px calc(18px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,rgba(0,0,0,.4),rgba(0,0,0,.96) 55%);backdrop-filter:blur(22px);
+  border-top:1px solid var(--line-soft)}
+.nav-i{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:4px 12px;
+  color:#6d6656;transition:.22s;font-size:8.5px;letter-spacing:1.5px;text-transform:uppercase}
+.nav-i svg{width:21px;height:21px;stroke-width:1.6}
+.nav-i.on{color:var(--gold-2)}
+.nav-i.on svg{filter:drop-shadow(0 0 8px rgba(212,175,55,.6))}
+.nav-i:active{transform:scale(.9)}
+
+/* ---------- toast + sheet ---------- */
+.toast{position:absolute;left:50%;bottom:104px;translate:-50% 0;z-index:20;padding:12px 20px;border-radius:14px;
+  background:rgba(12,10,8,.96);border:1px solid var(--line);color:var(--gold-2);font-size:11.5px;letter-spacing:.6px;
+  backdrop-filter:blur(14px);box-shadow:0 14px 40px rgba(0,0,0,.7);opacity:0;pointer-events:none;transition:.32s;
+  max-width:86%;text-align:center}
+.toast.on{opacity:1;translate:-50% -12px}
+.sheet{position:absolute;inset:0;z-index:30;display:none;align-items:flex-end;background:rgba(0,0,0,.72);backdrop-filter:blur(6px)}
+.sheet.on{display:flex;animation:fade .25s ease}
+.sheet-in{width:100%;max-height:80%;overflow-y:auto;background:linear-gradient(180deg,#141210,#0a0908);border:1px solid var(--line);
+  border-radius:26px 26px 0 0;padding:10px 20px calc(28px + env(safe-area-inset-bottom));animation:up .34s cubic-bezier(.2,.9,.3,1);scrollbar-width:none}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+.grab{width:38px;height:4px;border-radius:9px;background:rgba(255,255,255,.2);margin:0 auto 18px}
+.sheet-in h3{font-family:"Didot","Bodoni MT",Georgia,serif;font-size:20px;margin-bottom:6px;
+  background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sheet-in p{font-size:12px;color:var(--muted);line-height:1.65;margin-bottom:18px}
+.tag{display:inline-block;font-size:8.5px;letter-spacing:1.8px;text-transform:uppercase;padding:4px 9px;border-radius:6px;
+  border:1px solid var(--line);color:var(--gold-3);margin-bottom:10px}
+.mist{position:absolute;width:9px;height:9px;border-radius:50%;background:rgba(255,243,196,.85);pointer-events:none;z-index:9}
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+  <div class="grain"></div>
+
+  <div class="statusbar">
+    <span id="clock">9:41</span>
+    <div class="sb-right">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><path d="M1 8h2v3H1zM5 5.5h2V11H5zM9 3h2v8H9zM13 .5h2V11h-2z" fill="#e8dcc0"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none"><path d="M7.5 9.6 9.9 7a3.4 3.4 0 0 0-4.8 0l2.4 2.6ZM11.6 5.3a6 6 0 0 0-8.2 0l1.3 1.3a4.2 4.2 0 0 1 5.6 0l1.3-1.3ZM13.7 3.1a9 9 0 0 0-12.4 0l1.3 1.3a7.2 7.2 0 0 1 9.8 0l1.3-1.3Z" fill="#e8dcc0"/></svg>
+      <div class="batt"><i></i></div>
+    </div>
+  </div>
+
+  <header>
+    <div class="brand">
+      <div class="mono"><span>RA</span></div>
+      <div>
+        <h1>RAKEN AI</h1>
+        <p>Eau de Parfum · Neural</p>
+      </div>
+    </div>
+    <div class="iconbtn" onclick="openSheet('about')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01" stroke-linecap="round"/></svg>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- ============ DOCK / HOME ============ -->
+    <section class="screen on" id="s-dock">
+      <div class="stage" id="stage">
+        <div class="halo"></div>
+        <div class="shot" id="imgSolo"><img src="assets/bottle-solo.png" alt="RAKEN AI flacon"></div>
+        <div class="shot on" id="imgDock"><img src="assets/bottle-docked.png" alt="RAKEN AI flacon seated on the water dock"></div>
+        <div class="scanline"></div>
+        <div class="scan-msg"><div><div class="ring"></div><p>Scanning dock…</p></div></div>
+        <div class="stage-top">
+          <div class="pill ok" id="dockPill"><i class="dot live"></i><span>In dock</span></div>
+          <div class="pill" id="syncPill"><i class="dot"></i>NFC link</div>
+        </div>
+        <div class="scrim"></div>
+        <div class="stage-bot" id="stageStats">
+          <div class="stat-mini"><b id="mWater">0.42 L</b><small>Water</small></div>
+          <div class="stat-mini"><b id="mCharge">73%</b><small>Charge</small></div>
+          <div class="stat-mini"><b id="mVol">100 ml</b><small>Flacon</small></div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-gold" onclick="runScan()">Scan dock</button>
+        <button class="btn btn-ghost" onclick="go('compose')">Compose</button>
+      </div>
+
+      <div class="switch-row">
+        <div>
+          <h4>Flacon placed in dock</h4>
+          <p>Simulates the dock proximity sensor</p>
+        </div>
+        <div class="sw on" id="swDock" onclick="toggleDock()"><i></i></div>
+      </div>
+
+      <div class="gauges">
+        <div class="card gilt gauge">
+          <div class="gauge-wrap">
+            <svg viewBox="0 0 100 100">
+              <defs><linearGradient id="gg1" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#fff3c4"/><stop offset="55%" stop-color="#d4af37"/><stop offset="100%" stop-color="#a67c1a"/>
+              </linearGradient></defs>
+              <circle class="track" cx="50" cy="50" r="42"/>
+              <circle class="val" id="gWater" cx="50" cy="50" r="42" stroke="url(#gg1)" stroke-dasharray="0 264"/>
+            </svg>
+            <div class="gauge-mid"><div><b id="gWaterTxt">0.42</b><small>Liter</small></div></div>
+          </div>
+          <span>Reservoir</span>
+        </div>
+        <div class="card gilt gauge">
+          <div class="gauge-wrap">
+            <svg viewBox="0 0 100 100">
+              <circle class="track" cx="50" cy="50" r="42"/>
+              <circle class="val" id="gChg" cx="50" cy="50" r="42" stroke="url(#gg1)" stroke-dasharray="0 264"/>
+            </svg>
+            <div class="gauge-mid"><div><b id="gChgTxt">73%</b><small id="chgState">Charging</small></div></div>
+          </div>
+          <span>Hydro cell</span>
+        </div>
+      </div>
+
+      <div class="card gilt">
+        <div class="card-t"><span>Device telemetry</span><span id="telTime">live</span></div>
+        <div class="rows">
+          <div class="row"><span>Dock status</span><b class="g" id="tDock">Docked · seated</b></div>
+          <div class="row"><span>Water level</span><b id="tWater">0.42 L / 0.50 L</b></div>
+          <div class="row"><span>Water purity</span><b id="tPure">99.2 % · distilled</b></div>
+          <div class="row"><span>Hydro charge</span><b id="tChg">73 % · +1.4 %/min</b></div>
+          <div class="row"><span>Atomiser</span><b id="tAtom">Ready</b></div>
+          <div class="row"><span>Loaded accord</span><b id="tScent">Rose Nébuleuse</b></div>
+          <div class="row"><span>Firmware</span><b>RA-OS 2.4.1</b></div>
+        </div>
+      </div>
+
+      <div class="sect">Quick actions</div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="diffuse()">Diffuse 1 mist</button>
+        <button class="btn btn-ghost" onclick="go('water')">Water</button>
+      </div>
+    </section>
+
+    <!-- ============ COMPOSE / AI ============ -->
+    <section class="screen" id="s-compose" style="padding-bottom:64px">
+      <div class="card gilt" style="margin-bottom:14px">
+        <div class="card-t"><span>Neural nose · online</span><span id="cxState">Dock linked</span></div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div class="mono" style="width:46px;height:46px;border-radius:15px;flex:none"><span style="font-size:18px">RA</span></div>
+          <div style="flex:1">
+            <div class="gold" style="font-family:Didot,Georgia,serif;font-size:16px;letter-spacing:.4px">Tell me how you want to smell</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:.5px;line-height:1.5">Describe a memory, a mood or a place — I compose the accord and load it into the flacon.</div>
+          </div>
+        </div>
+      </div>
+      <div class="chat" id="chat"></div>
+      <div class="chips" id="chips"></div>
+    </section>
+
+    <!-- ============ WATER ============ -->
+    <section class="screen" id="s-water">
+      <div class="tank">
+        <div class="water" id="tankFill" style="height:84%"></div>
+        <div class="bubbles" id="bub"></div>
+        <div class="tank-txt">
+          <div>
+            <b id="tankL">0.42<em> L</em></b>
+            <small>of 0.50 L capacity</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-gold" onclick="fillWater()">Refill dock</button>
+        <button class="btn btn-ghost" onclick="drainWater()">Use 0.05 L</button>
+      </div>
+
+      <div class="card gilt" style="margin-bottom:14px">
+        <div class="card-t"><span>Hydro-electric charging</span><span id="chgRate">+1.4 %/min</span></div>
+        <div class="rows">
+          <div class="row"><span>Cell charge</span><b class="g" id="wChg">73 %</b></div>
+          <div class="row"><span>Water → charge</span><b>0.01 L ≈ 3 %</b></div>
+          <div class="row"><span>Full in</span><b id="wEta">19 min</b></div>
+          <div class="row"><span>Cycles</span><b>147</b></div>
+          <div class="row"><span>Last refill</span><b>Today · 08:12</b></div>
+        </div>
+      </div>
+
+      <div class="card gilt">
+        <div class="card-t"><span>Water usage · 7 days</span><span>1.85 L</span></div>
+        <div class="spark" id="spark"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:8.5px;letter-spacing:1.4px;color:var(--muted)">
+          <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
+        </div>
+      </div>
+
+      <div class="sect">Safety</div>
+      <div class="rows">
+        <div class="row"><span>Dock lock</span><b class="g">Spray disabled off-dock</b></div>
+        <div class="row"><span>Water sensor</span><b class="g">Optical + conductive</b></div>
+      </div>
+    </section>
+
+    <!-- ============ LIBRARY ============ -->
+    <section class="screen" id="s-lib">
+      <div class="sect" style="margin-top:4px">Your accords</div>
+      <div class="lib" id="lib"></div>
+      <div class="hair"></div>
+      <div class="card gilt">
+        <div class="card-t"><span>Molecule bank</span><span>412 notes</span></div>
+        <div class="rows">
+          <div class="row"><span>Florals</span><b>96</b></div>
+          <div class="row"><span>Woods &amp; resins</span><b>88</b></div>
+          <div class="row"><span>Citrus &amp; aromatics</span><b>74</b></div>
+          <div class="row"><span>Gourmand</span><b>61</b></div>
+          <div class="row"><span>Musks &amp; ambers</span><b>93</b></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="composer" id="composer" style="display:none">
+    <input id="inp" placeholder="e.g. rainy roses, warm oud, salt air…" autocomplete="off">
+    <button class="send" id="sendBtn" onclick="sendMsg()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+
+  <nav>
+    <div class="nav-i on" data-s="dock" onclick="go('dock')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 2h6v3l2 3v11a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3V8l2-3V2Z" stroke-linejoin="round"/><path d="M7 13h10"/></svg>
+      Dock
+    </div>
+    <div class="nav-i" data-s="compose" onclick="go('compose')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3.2"/></svg>
+      Compose
+    </div>
+    <div class="nav-i" data-s="water" onclick="go('water')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linejoin="round"><path d="M12 3s6 6.6 6 10.5A6 6 0 0 1 6 13.5C6 9.6 12 3 12 3Z"/></svg>
+      Water
+    </div>
+    <div class="nav-i" data-s="lib" onclick="go('lib')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h3v18H6a2 2 0 0 1-2-2V5ZM11 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3V3Z"/><path d="M18 6l2.6 12.6"/></svg>
+      Library
+    </div>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="sheet" id="sheet" onclick="if(event.target===this)closeSheet()">
+    <div class="sheet-in" id="sheetIn"></div>
+  </div>
+</div>
+<script>
+/* ============================================================
+   RAKEN AI — UI prototype
+   Everything here is simulated: no real device, no real AI call.
+   ============================================================ */
+const CAP = 0.50;                 // dock reservoir capacity in liters
+const state = {
+  docked: true,
+  water: 0.42,                    // liters
+  charge: 73,                     // %
+  scent: 'Rose Nébuleuse',
+  scanning: false,
+  busy: false
+};
+
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => Math.max(a, Math.min(b,v));
+const L = v => v.toFixed(2) + ' L';
+
+/* ---------------- navigation ---------------- */
+function go(s){
+  document.querySelectorAll('.screen').forEach(x => x.classList.remove('on'));
+  $('s-' + s).classList.add('on');
+  document.querySelectorAll('.nav-i').forEach(n => n.classList.toggle('on', n.dataset.s === s));
+  $('composer').style.display = (s === 'compose') ? 'flex' : 'none';
+  $('main').scrollTop = 0;
+  if (s === 'compose') setTimeout(scrollChat, 60);
+}
+
+/* ---------------- toast ---------------- */
+let toastT;
+function toast(msg){
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('on'), 2400);
+}
+
+/* ---------------- bottom sheet ---------------- */
+const SHEETS = {
+  about: `<div class="grab"></div><span class="tag">UI prototype</span>
+    <h3>RAKEN AI</h3>
+    <p>The world's first AI-powered parfum. The flacon holds 100 ml of neutral base;
+    the Water Dock underneath turns distilled water into the power that runs the
+    micro-atomiser and the on-board scent synthesiser.<br><br>
+    Describe a scent in the Compose tab and the neural nose builds the accord,
+    then loads it into the flacon — but only while the flacon is seated in the dock.</p>
+    <button class="btn btn-gold" onclick="closeSheet()">Close</button>`,
+  offdock: `<div class="grab"></div><span class="tag">Dock required</span>
+    <h3>Flacon is not in the dock</h3>
+    <p>Synthesis and diffusion need power from the Water Dock. Place the flacon on the
+    dock and make sure there is water in the reservoir, then try again.</p>
+    <button class="btn btn-gold" onclick="closeSheet();runScan()">Scan for dock</button>`,
+  nowater: `<div class="grab"></div><span class="tag">Reservoir empty</span>
+    <h3>Add water to the dock</h3>
+    <p>The hydro cell is dry. Pour distilled water into the Water Dock — 0.01 L gives
+    roughly 3 % charge. Capacity is 0.50 L.</p>
+    <button class="btn btn-gold" onclick="closeSheet();go('water');fillWater()">Refill now</button>`
+};
+function openSheet(k, html){
+  $('sheetIn').innerHTML = html || SHEETS[k] || '';
+  $('sheet').classList.add('on');
+}
+function closeSheet(){ $('sheet').classList.remove('on'); }
+
+/* ---------------- render ---------------- */
+const C = 2 * Math.PI * 42; // gauge circumference
+
+function render(){
+  const d = state.docked;
+  const pct = state.water / CAP;
+
+  /* hero image: docked → photo with the pink water dock, undocked → flacon only */
+  $('imgDock').classList.toggle('on', d);
+  $('imgSolo').classList.toggle('on', !d);
+
+  /* dock pill */
+  const pill = $('dockPill');
+  pill.className = 'pill ' + (d ? 'ok' : 'warn');
+  pill.innerHTML = d
+    ? '<i class="dot live"></i><span>In dock</span>'
+    : '<i class="dot"></i><span>Not docked</span>';
+
+  $('syncPill').style.opacity = d ? 1 : .45;
+  $('stageStats').style.opacity = d ? 1 : .55;
+
+  /* stage stats */
+  $('mWater').textContent  = d ? L(state.water) : '— L';
+  $('mCharge').textContent = d ? Math.round(state.charge) + '%' : '—';
+
+  /* gauges */
+  const wLen = d ? pct * C : 0, cLen = d ? state.charge / 100 * C : 0;
+  $('gWater').setAttribute('stroke-dasharray', wLen.toFixed(1) + ' ' + C);
+  $('gChg').setAttribute('stroke-dasharray',  cLen.toFixed(1) + ' ' + C);
+  $('gWater').style.opacity = wLen > 0.5 ? 1 : 0;
+  $('gChg').style.opacity   = cLen > 0.5 ? 1 : 0;
+  $('gWaterTxt').textContent = d ? state.water.toFixed(2) : '—';
+  $('gChgTxt').textContent   = d ? Math.round(state.charge) + '%' : '—';
+  $('chgState').textContent  = !d ? 'Off dock' : (state.water <= 0 ? 'Dry' : (state.charge >= 100 ? 'Full' : 'Charging'));
+
+  /* telemetry */
+  $('tDock').textContent  = d ? 'Docked · seated' : 'Removed from dock';
+  $('tDock').className    = d ? 'g' : '';
+  $('tDock').style.color  = d ? '' : 'var(--warn)';
+  $('tWater').textContent = d ? L(state.water) + ' / ' + L(CAP) : 'No dock signal';
+  $('tPure').textContent  = d ? (state.water > 0 ? '99.2 % · distilled' : 'Reservoir dry') : '—';
+  $('tChg').textContent   = d ? Math.round(state.charge) + ' % · ' + (state.water > 0 && state.charge < 100 ? '+1.4 %/min' : 'idle') : Math.round(state.charge) + ' % · reserve';
+  $('tAtom').textContent  = !d ? 'Locked — off dock' : (state.water <= 0 ? 'Locked — no water' : 'Ready');
+  $('tAtom').style.color  = (d && state.water > 0) ? '' : 'var(--warn)';
+  $('tScent').textContent = state.scent;
+
+  /* water screen */
+  $('tankFill').style.height = (pct * 100).toFixed(1) + '%';
+  $('tankL').innerHTML = state.water.toFixed(2) + '<em> L</em>';
+  $('wChg').textContent = Math.round(state.charge) + ' %';
+  const eta = state.water > 0 ? Math.max(0, Math.round((100 - state.charge) / 1.4)) : '—';
+  $('wEta').textContent = state.charge >= 100 ? 'Charged' : (state.water > 0 ? eta + ' min' : 'No water');
+  $('chgRate').textContent = (d && state.water > 0 && state.charge < 100) ? '+1.4 %/min' : 'paused';
+
+  /* compose header */
+  $('cxState').textContent = d ? (state.water > 0 ? 'Dock linked' : 'No water') : 'Off dock';
+  $('cxState').style.color = (d && state.water > 0) ? 'var(--gold-2)' : 'var(--warn)';
+}
+
+/* ---------------- dock scan ---------------- */
+function runScan(){
+  if (state.scanning) return;
+  state.scanning = true;
+  $('stage').classList.add('scanning');
+  setTimeout(() => {
+    state.scanning = false;
+    $('stage').classList.remove('scanning');
+    render();
+    toast(state.docked
+      ? 'Flacon detected in dock · ' + L(state.water) + ' of water'
+      : 'No dock detected — flacon is standing free');
+  }, 1900);
+}
+
+function toggleDock(){
+  state.docked = !state.docked;
+  $('swDock').classList.toggle('on', state.docked);
+  runScan();
+}
+
+/* ---------------- water ---------------- */
+function fillWater(){
+  if (!state.docked){ openSheet('offdock'); return; }
+  state.water = CAP;
+  render();
+  toast('Reservoir filled · ' + L(CAP));
+}
+function drainWater(){
+  if (!state.docked){ openSheet('offdock'); return; }
+  state.water = clamp(state.water - 0.05, 0, CAP);
+  render();
+  toast(state.water > 0 ? 'Water level ' + L(state.water) : 'Reservoir empty — add water');
+}
+
+/* ---------------- diffuse ---------------- */
+function diffuse(){
+  if (!state.docked){ openSheet('offdock'); return; }
+  if (state.water <= 0){ openSheet('nowater'); return; }
+  state.water = clamp(state.water - 0.004, 0, CAP);
+  state.charge = clamp(state.charge - 0.6, 0, 100);
+  mist();
+  render();
+  toast('1 mist of ' + state.scent + ' diffused');
+}
+function mist(){
+  const stage = $('stage');
+  for (let i = 0; i < 14; i++){
+    const p = document.createElement('div');
+    p.className = 'mist';
+    p.style.left = '50%'; p.style.top = '26%';
+    p.style.opacity = 0;
+    stage.appendChild(p);
+    const dx = (Math.random() - .5) * 190, dy = -Math.random() * 90 - 20;
+    p.animate(
+      [{transform:'translate(0,0) scale(.4)',opacity:.95},
+       {transform:`translate(${dx}px,${dy}px) scale(${1.6 + Math.random()})`,opacity:0}],
+      {duration:900 + Math.random() * 700, easing:'cubic-bezier(.2,.7,.3,1)'}
+    ).onfinish = () => p.remove();
+  }
+}
+
+/* ============================================================
+   Neural nose — keyword driven accord builder (all local)
+   ============================================================ */
+const FAMILY = [
+  {k:['rose','roses','flower','floral','bloom','petal','romantic','love'],
+   name:'Rose', top:['Turkish rose petal','Pink pepper'], heart:['Damask rose absolute','Peony'], base:['White musk','Papyrus'], sw:'#e9a2b6'},
+  {k:['oud','wood','woody','warm','smoke','smoky','fire','leather','dark','night'],
+   name:'Oud', top:['Saffron','Black pepper'], heart:['Cambodian oud','Cedarwood'], base:['Leather','Labdanum'], sw:'#7a4a25'},
+  {k:['vanilla','sweet','gourmand','caramel','sugar','cozy','warm hug','dessert'],
+   name:'Vanilla', top:['Bergamot zest','Almond'], heart:['Madagascar vanilla','Tonka bean'], base:['Benzoin','Sandalwood'], sw:'#dcb583'},
+  {k:['citrus','lemon','orange','fresh','bright','morning','energy','bergamot','grapefruit'],
+   name:'Citrus', top:['Calabrian bergamot','Grapefruit'], heart:['Neroli','Petitgrain'], base:['Vetiver','Clean musk'], sw:'#e7cf6a'},
+  {k:['ocean','sea','salt','water','rain','rainy','marine','beach','aqua','storm','wet'],
+   name:'Aquatic', top:['Sea salt','Ozone accord'], heart:['Water lily','Sage'], base:['Driftwood','Ambergris'], sw:'#8fc6d8'},
+  {k:['jasmine','white flower','night bloom','tuberose','gardenia','elegant','wedding'],
+   name:'White floral', top:['Green mandarin','Violet leaf'], heart:['Sambac jasmine','Tuberose'], base:['Orris butter','Soft amber'], sw:'#f2e7cf'},
+  {k:['coffee','chocolate','cacao','espresso','bitter','mocha'],
+   name:'Coffee', top:['Roasted coffee','Cardamom'], heart:['Dark cacao','Rum accord'], base:['Patchouli','Vanilla bourbon'], sw:'#6b4630'},
+  {k:['forest','green','pine','moss','earth','rain forest','grass','herbal','mint'],
+   name:'Green', top:['Crushed mint','Galbanum'], heart:['Pine needle','Fig leaf'], base:['Oakmoss','Wet stone'], sw:'#7f9a6a'},
+  {k:['musk','skin','clean','soft','cotton','linen','powder','minimal','quiet'],
+   name:'Musk', top:['Aldehydes','Pear skin'], heart:['Iris','Cashmeran'], base:['White musk','Blond woods'], sw:'#d8cfc0'},
+  {k:['spice','spicy','cinnamon','pepper','ginger','clove','winter','christmas'],
+   name:'Spice', top:['Ginger','Pink pepper'], heart:['Cinnamon bark','Clove'], base:['Amber','Guaiac wood'], sw:'#b5663a'}
+];
+const PRE = ['Nocturne','Éclat','Velours','Sillage','Aurore','Obsidienne','Reverie','Or Fumé','Mirage','Solstice'];
+const SUF = ['No. 7','Extrait','Absolu','Intense','Nébuleuse','Privé','Noir','Doré'];
+
+/* a name the library is not already using */
+function newName(){
+  for (let i = 0; i < 40; i++){
+    const n = PRE[Math.floor(Math.random()*PRE.length)] + ' ' + SUF[Math.floor(Math.random()*SUF.length)];
+    if (!SAVED.some(s => s.n === n)) return n;
+  }
+  return PRE[Math.floor(Math.random()*PRE.length)] + ' ' + (SAVED.length + 1);
+}
+
+function analyse(text){
+  const t = text.toLowerCase();
+  const hits = FAMILY.filter(f => f.k.some(k => t.includes(k)));
+  if (!hits.length) hits.push(FAMILY[Math.floor(Math.random() * FAMILY.length)]);
+  const a = hits[0], b = hits[1] || FAMILY[(FAMILY.indexOf(a) + 3) % FAMILY.length];
+  return {
+    name: newName(),
+    fam: hits.map(h => h.name).slice(0,2).join(' × '),
+    sw: a.sw,
+    top:   [a.top[0], b.top[1] || b.top[0]],
+    heart: [a.heart[0], b.heart[0]],
+    base:  [a.base[0], b.base[1] || b.base[0]],
+    w: [55 + Math.random()*30, 60 + Math.random()*30, 65 + Math.random()*30],
+    longevity: (6 + Math.random()*4).toFixed(1),
+    sillage: ['Intimate','Moderate','Bold'][Math.floor(Math.random()*3)],
+    ml: (0.8 + Math.random()*1.4).toFixed(1)
+  };
+}
+
+/* ---------------- chat ---------------- */
+const chat = () => $('chat');
+function scrollChat(){
+  if (!$('s-compose').classList.contains('on')) return;   // never scroll another screen
+  $('main').scrollTop = $('main').scrollHeight;
+}
+
+function bubble(cls, html){
+  const d = document.createElement('div');
+  d.className = 'msg ' + cls;
+  d.innerHTML = html;
+  chat().appendChild(d);
+  scrollChat();
+  return d;
+}
+function typing(){
+  const d = bubble('ai', '<div class="typing"><i></i><i></i><i></i></div>');
+  return d;
+}
+
+function sendMsg(text){
+  const inp = $('inp');
+  const v = (typeof text === 'string' ? text : inp.value).trim();
+  if (!v || state.busy) return;
+  inp.value = '';
+  bubble('me', v);
+
+  if (!state.docked){
+    setTimeout(() => {
+      bubble('ai', 'I can hear you, but the flacon is off the dock — I have no power to synthesise. Put it back on the Water Dock and I will compose this right away.');
+      bubble('sys', 'Synthesis locked · not docked');
+      openSheet('offdock');
+    }, 620);
+    return;
+  }
+  if (state.water <= 0){
+    setTimeout(() => {
+      bubble('ai', 'The reservoir is dry. Pour distilled water into the dock and I will build the accord — 0.01 L is about 3 % charge.');
+      bubble('sys', 'Synthesis locked · no water');
+      openSheet('nowater');
+    }, 620);
+    return;
+  }
+
+  state.busy = true;
+  const t = typing();
+  setTimeout(() => {
+    t.remove();
+    const f = analyse(v);
+    bubble('ai', 'Reading your description… I hear <b>' + f.fam.toLowerCase() +
+      '</b>. Here is the accord I would wear for that.');
+    setTimeout(() => { formulaCard(f); state.busy = false; }, 480);
+  }, 1250);
+}
+
+function formulaCard(f){
+  const d = document.createElement('div');
+  d.className = 'formula';
+  d.innerHTML = `
+    <div style="display:flex;gap:12px;align-items:flex-start">
+      <div style="width:34px;height:34px;border-radius:11px;flex:none;background:${f.sw};box-shadow:inset 0 1px 0 rgba(255,255,255,.35)"></div>
+      <div style="flex:1">
+        <h3>${f.name}</h3>
+        <div class="sub">${f.fam} · ${f.sillage} sillage</div>
+      </div>
+    </div>
+    <div class="note-line"><span>Top</span><div class="bar"><i data-w="${f.w[0]}"></i></div><b>${f.top.join(', ')}</b></div>
+    <div class="note-line"><span>Heart</span><div class="bar"><i data-w="${f.w[1]}"></i></div><b>${f.heart.join(', ')}</b></div>
+    <div class="note-line"><span>Base</span><div class="bar"><i data-w="${f.w[2]}"></i></div><b>${f.base.join(', ')}</b></div>
+    <div class="rows" style="margin:14px 0 12px">
+      <div class="row"><span>Longevity</span><b class="g">${f.longevity} h</b></div>
+      <div class="row"><span>Water cost</span><b>${(f.ml/1000*10).toFixed(3)} L</b></div>
+      <div class="row"><span>Fills</span><b>${f.ml} ml into flacon</b></div>
+    </div>
+    <button class="btn btn-gold" onclick='synth(${JSON.stringify(f).replace(/'/g,"&#39;")}, this)'>Synthesise into flacon</button>`;
+  chat().appendChild(d);
+  requestAnimationFrame(() => d.querySelectorAll('.bar i').forEach(b => b.style.width = b.dataset.w + '%'));
+  scrollChat();
+}
+
+function synth(f, btn){
+  if (!state.docked){ openSheet('offdock'); return; }
+  if (state.water <= 0){ openSheet('nowater'); return; }
+  btn.disabled = true;
+  btn.textContent = 'Synthesising…';
+  let p = 0;
+  const iv = setInterval(() => {
+    p += 6 + Math.random() * 9;
+    btn.textContent = 'Synthesising… ' + Math.min(100, Math.round(p)) + '%';
+    if (p >= 100){
+      clearInterval(iv);
+      state.water = clamp(state.water - f.ml / 1000 * 10, 0, CAP);
+      state.charge = clamp(state.charge - 4, 0, 100);
+      state.scent = f.name;
+      SAVED.unshift({n:f.name, f:f.fam, sw:f.sw, pc:'new'});
+      renderLib();
+      render();
+      btn.textContent = 'Loaded into flacon ✓';
+      bubble('sys', f.name + ' loaded · ' + f.ml + ' ml · water now ' + L(state.water));
+      mist();
+      toast('“' + f.name + '” is now in the flacon');
+    }
+  }, 260);
+}
+
+/* ---------------- library ---------------- */
+let SAVED = [
+  {n:'Rose Nébuleuse', f:'Rose × Musk',     sw:'#e9a2b6', pc:'wearing'},
+  {n:'Or Fumé No. 7',  f:'Oud × Spice',     sw:'#7a4a25', pc:'12×'},
+  {n:'Sel & Soleil',   f:'Aquatic × Citrus',sw:'#8fc6d8', pc:'8×'},
+  {n:'Velours Noir',   f:'Vanilla × Coffee',sw:'#6b4630', pc:'5×'},
+  {n:'Aurore Verte',   f:'Green × Musk',    sw:'#7f9a6a', pc:'3×'},
+  {n:'Nuit Blanche',   f:'White floral',    sw:'#f2e7cf', pc:'2×'}
+];
+function renderLib(){
+  $('lib').innerHTML = SAVED.map((s,i) => `
+    <div class="scent" onclick="wear(${i})">
+      <span class="pc">${s.pc}</span>
+      <div class="swatch" style="background:${s.sw}"></div>
+      <h4>${s.n}</h4>
+      <p>${s.f}</p>
+    </div>`).join('');
+}
+function wear(i){
+  const s = SAVED[i];
+  openSheet(null, `<div class="grab"></div><span class="tag">${s.f}</span>
+    <h3>${s.n}</h3>
+    <p>Load this accord into the flacon. The dock rebuilds it from the molecule bank
+    using roughly 0.01 L of water.</p>
+    <button class="btn btn-gold" onclick="loadScent('${s.n.replace(/'/g,"\\'")}')">Load into flacon</button>
+    <div style="height:10px"></div>
+    <button class="btn btn-ghost" onclick="closeSheet()">Cancel</button>`);
+}
+function loadScent(n){
+  closeSheet();
+  if (!state.docked){ openSheet('offdock'); return; }
+  if (state.water <= 0){ openSheet('nowater'); return; }
+  state.water = clamp(state.water - 0.01, 0, CAP);
+  state.scent = n;
+  render();
+  toast(n + ' loaded into the flacon');
+}
+
+/* ---------------- ambience ---------------- */
+function buildBubbles(){
+  const b = $('bub');
+  for (let i = 0; i < 9; i++){
+    const s = document.createElement('i');
+    s.style.left = (8 + Math.random() * 84) + '%';
+    s.style.animationDelay = (Math.random() * 4) + 's';
+    s.style.animationDuration = (3 + Math.random() * 3) + 's';
+    b.appendChild(s);
+  }
+}
+function buildSpark(){
+  [42,66,30,80,54,72,38].forEach(h => {
+    const i = document.createElement('i');
+    i.style.height = h + '%';
+    $('spark').appendChild(i);
+  });
+}
+function tickClock(){
+  const d = new Date();
+  $('clock').textContent = d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+/* charging loop: water in the dock slowly becomes charge */
+setInterval(() => {
+  if (state.docked && state.water > 0 && state.charge < 100){
+    state.charge = clamp(state.charge + 0.35, 0, 100);
+    state.water  = clamp(state.water - 0.0012, 0, CAP);
+    render();
+  }
+}, 2600);
+
+/* boot */
+$('inp').addEventListener('keydown', e => { if (e.key === 'Enter') sendMsg(); });
+buildBubbles(); buildSpark(); renderLib(); render(); tickClock();
+setInterval(tickClock, 20000);
+
+setTimeout(() => {
+  bubble('sys', 'Neural nose connected · dock linked');
+  setTimeout(() => bubble('ai', 'Good evening. The flacon is seated and I read ' + L(state.water) +
+    ' of water in the dock — enough for about 40 syntheses. What should you smell like today?'), 700);
+}, 400);
+
+const CHIPS = ['Rainy roses at midnight','Warm oud and leather','Salt air on hot skin',
+  'Vanilla and dark coffee','Green forest after rain','Clean skin, nothing loud'];
+$('chips').innerHTML = CHIPS.map(c => `<div class="chip" onclick="sendMsg('${c}')">${c}</div>`).join('');
+</script>
+</body>
+</html>
