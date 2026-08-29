@@ -9,7 +9,7 @@ on:
       - '.github/workflows/raken-apk.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   apk:
@@ -39,3 +39,21 @@ jobs:
           name: raken-ai-debug-apk
           path: raken-ai/android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      # Actions artifacts expire and need a GitHub login to fetch, so the APK is
+      # also committed to the branch. '[skip ci]' keeps this from re-triggering
+      # the workflow.
+      - name: Publish APK to the branch
+        run: |
+          mkdir -p raken-ai/dist
+          cp raken-ai/android/app/build/outputs/apk/debug/app-debug.apk \
+             raken-ai/dist/raken-ai-debug.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f raken-ai/dist/raken-ai-debug.apk
+          if git diff --cached --quiet; then
+            echo "APK unchanged — nothing to commit"
+          else
+            git commit -m "Publish RAKEN AI debug APK [skip ci]"
+            git push origin HEAD:${GITHUB_REF_NAME}
+          fi
