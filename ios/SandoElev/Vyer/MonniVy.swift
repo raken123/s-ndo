@@ -1,4 +1,5 @@
 import SwiftUI
+import SandoKarna
 
 struct MonniVy: View {
     @ObservedObject var samtal: Samtal

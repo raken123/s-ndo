@@ -1,4 +1,5 @@
 import SwiftUI
+import SandoKarna
 
 struct MerVy: View {
     @EnvironmentObject private var krediter: Krediter

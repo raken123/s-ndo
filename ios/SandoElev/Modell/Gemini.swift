@@ -1,4 +1,5 @@
 import Foundation
+import SandoKarna
 
 /// Nätanropen. Samma väg som Android-appen: nyckeln som ?key=, tidsgräns på
 /// varje anrop, och arbetsboken som fileData-del i varje fråga.

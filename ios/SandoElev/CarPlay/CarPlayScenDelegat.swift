@@ -1,4 +1,5 @@
 import CarPlay
+import SandoKarna
 
 /// CarPlay-scenen.
 ///

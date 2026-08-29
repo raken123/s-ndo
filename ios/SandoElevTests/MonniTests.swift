@@ -1,5 +1,5 @@
 import XCTest
-@testable import SandoElev
+@testable import SandoKarna
 
 /// Samma tabeller som webbappens självtest kör. Två implementationer av samma
 /// regel ska hållas till en specifikation, annars glider de isär.

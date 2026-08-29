@@ -12,14 +12,14 @@ import Foundation
 /// Vakten är testad i SandoElevTests med samma tabeller som webbappens
 /// självtest: sju svar som ska stoppas och sex förklaringar som absolut inte
 /// får stoppas. En vakt som tar allt är lika oanvändbar som ingen vakt.
-enum Monni {
+public enum Monni {
 
     // MARK: - hjälpstegen
 
-    enum Steg: Int, CaseIterable {
+    public enum Steg: Int, CaseIterable {
         case förstå = 0, metod, förstaSteget, nästanHelaVägen
 
-        var namn: String {
+        public var namn: String {
             switch self {
             case .förstå: return "Förstå frågan"
             case .metod: return "Välj metod"
@@ -28,7 +28,7 @@ enum Monni {
             }
         }
 
-        var order: String {
+        public var order: String {
             switch self {
             case .förstå:
                 return "Hjälp eleven förstå vad uppgiften frågar efter. Ställ en fråga tillbaka. Räkna ingenting."
@@ -42,12 +42,12 @@ enum Monni {
         }
 
         /// Nästa steg, men aldrig förbi det fjärde. Det finns inget steg fem.
-        var nästa: Steg { Steg(rawValue: min(rawValue + 1, Steg.allCases.count - 1))! }
+        public var nästa: Steg { Steg(rawValue: min(rawValue + 1, Steg.allCases.count - 1))! }
     }
 
     // MARK: - systemprompten
 
-    static func systemprompt(steg: Steg, tjat: Int, bok: String?) -> String {
+    public static func systemprompt(steg: Steg, tjat: Int, bok: String?) -> String {
         var rader = [
             "Du är Monni, studiekompis i appen Sändo Elev. Du pratar med en elev i grundskolan eller på gymnasiet.",
             "Språk: svenska, du-tilltal, varm och rak. Inga smicker, ingen svada.",
@@ -109,7 +109,7 @@ enum Monni {
     /// Känner igen att eleven ber om själva svaret, så att hjälpstegen inte
     /// flyttas fram av ett tjat — annars hade fyra "säg svaret" räckt för att
     /// pressa fram den största hjälpen appen har.
-    static func berOmSvar(_ text: String) -> Bool {
+    public static func berOmSvar(_ text: String) -> Bool {
         let t = " " + text.lowercased()
             .replacingOccurrences(of: #"[^\wåäöéü ]+"#, with: " ", options: .regularExpression) + " "
         return tjatmönster.contains { t.range(of: $0, options: .regularExpression) != nil }
@@ -117,13 +117,13 @@ enum Monni {
 
     // MARK: - svarsvakten
 
-    static let knuff = "Det svaret får du komma fram till själv — men jag stannar kvar och hjälper dig dit."
+    public static let knuff = "Det svaret får du komma fram till själv — men jag stannar kvar och hjälper dig dit."
 
     private static let levererandeFraser =
         #"(?:^|[.!?]\s|\n)[^.!?\n]*\b(svaret (?:är|blir)|rätta svaret|rätt svar är|facit (?:är|blir)|lösningen (?:är|blir)|resultatet (?:är|blir)|du (?:får|ska få) svaret)\b[^.!?\n]*[.!?]?"#
 
     /// Räknar ut elevens eget tal, om frågan innehåller ett entydigt sådant.
-    static func elevensTal(_ text: String) -> Double? {
+    public static func elevensTal(_ text: String) -> Double? {
         let mönster = #"(-?\d+(?:[.,]\d+)?)\s*([+\-*x×/:÷])\s*(-?\d+(?:[.,]\d+)?)"#
         guard let re = try? NSRegularExpression(pattern: mönster),
               let m = re.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
@@ -148,7 +148,7 @@ enum Monni {
     /// Läser det Monni skrev innan eleven ser det. Två kontroller:
     /// levererande fraser, och ekot av elevens eget tal där det står som ett
     /// levererat svar. Returnerar texten och om något byttes ut.
-    static func vakt(_ svar: String, elevText: String) -> (text: String, ändrad: Bool) {
+    public static func vakt(_ svar: String, elevText: String) -> (text: String, ändrad: Bool) {
         var text = svar
         var ändrad = false
 
@@ -194,7 +194,7 @@ enum Monni {
     /// Modellen skriver LaTeX och markdown även när den blivit tillsagd att låta
     /// bli. En chattbubbla renderar ingetdera, så "$8 \times 7$" blir stående
     /// som just det.
-    static func städa(_ text: String) -> String {
+    public static func städa(_ text: String) -> String {
         var t = text
         let byten: [(String, String)] = [
             (#"\$\$?([^$]*)\$\$?"#, "$1"),

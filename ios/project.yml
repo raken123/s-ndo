@@ -24,11 +24,26 @@ settings:
     ENABLE_USER_SCRIPT_SANDBOXING: "YES"
 
 targets:
+  # Reglerna — Monni och det delade lagret — ligger i ett eget bibliotek.
+  # Testerna kan då köras utan testvärd: de startar aldrig appen, och en app
+  # som inte startar kan inte hänga testkörningen. Det gör dem också snabba.
+  SandoKarna:
+    type: framework
+    platform: iOS
+    sources:
+      - path: SandoKarna
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: se.sando.elev.karna
+        GENERATE_INFOPLIST_FILE: "YES"
+
   SandoElev:
     type: application
     platform: iOS
     sources:
       - path: SandoElev
+    dependencies:
+      - target: SandoKarna
     info:
       path: SandoElev/Info.plist
       properties:
@@ -47,17 +62,21 @@ targets:
     sources:
       - path: SandoElevTests
     dependencies:
-      - target: SandoElev
+      - target: SandoKarna
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: se.sando.elev.tests
         GENERATE_INFOPLIST_FILE: "YES"
+        # Ingen testvärd: testerna rör bara reglerna, inte gränssnittet.
+        TEST_HOST: ""
+        BUNDLE_LOADER: ""
 
 schemes:
   SandoElev:
     build:
       targets:
         SandoElev: all
+        SandoKarna: all
         SandoElevTests: [test]
     test:
       targets:

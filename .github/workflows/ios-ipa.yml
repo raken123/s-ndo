@@ -41,20 +41,34 @@ jobs:
         working-directory: ios
         run: xcodegen generate
 
+      - name: Vilka simulatorer finns
+        run: xcrun simctl list devices available | grep -A3 'iOS' | head -30
+
       # Testerna först. En IPA av kod som inte klarar svarsvakten är inte värd
       # att bygga.
+      #
+      # Testerna har ingen testvärd — reglerna ligger i SandoKarna och appen
+      # startas aldrig. Första försöket hängde i över en kvart på just det:
+      # xcodebuild väntade på att appen skulle starta i simulatorn.
       - name: Kör testerna
         working-directory: ios
+        timeout-minutes: 12
+        env:
+          NSUnbufferedIO: "YES"
         run: |
+          SIM=$(xcrun simctl list devices available | grep -Eo 'iPhone [0-9A-Za-z ]+' | head -1 | sed 's/ *$//')
+          test -n "$SIM" || { echo "hittade ingen iPhone-simulator"; exit 1; }
+          echo "simulator: $SIM"
           xcodebuild test \
             -project SandoElev.xcodeproj \
             -scheme SandoElev \
-            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
-            CODE_SIGNING_ALLOWED=NO \
-            | xcpretty && exit ${PIPESTATUS[0]}
+            -destination "platform=iOS Simulator,name=$SIM" \
+            -resultBundlePath build/Test.xcresult \
+            CODE_SIGNING_ALLOWED=NO
 
       - name: Arkivera
         working-directory: ios
+        timeout-minutes: 12
         run: |
           xcodebuild archive \
             -project SandoElev.xcodeproj \
@@ -62,8 +76,7 @@ jobs:
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath build/SandoElev.xcarchive \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
-            | xcpretty && exit ${PIPESTATUS[0]}
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
 
       # En IPA är en zip med Payload/<app>.app i sig. Utan signering finns
       # ingen exportArchive-väg, så den packas för hand.

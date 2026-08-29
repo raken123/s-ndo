@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import SandoKarna
 
 /// Samtalet med Monni: hjälpsteget, tjatet, historiken och bubblorna.
 @MainActor
