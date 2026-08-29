@@ -47,11 +47,22 @@ systemprompten, de fyra hjälpstegen, och svarsvakten som läser Monnis text
 innan eleven ser den.
 
 Skillnaden mot webbappen är att **här är regeln testad av en kompilator**.
-`SandoElevTests/MonniTests.swift` kör samma två tabeller som webbappens
-självtest — sju svar som ska stoppas och sex förklaringar som absolut inte får
-stoppas — plus hjälpstegen, tjatdetektorn, städningen av LaTeX och att talet
-självt aldrig står kvar i texten när vakten slagit till. Testerna körs i CI
-före varje bygge; en IPA av kod som inte klarar svarsvakten byggs inte.
+Reglerna ligger i `Karna/` som ett vanligt Swift-paket, och
+`Karna/Tests/SandoKarnaTests/MonniTests.swift` kör samma två tabeller som
+webbappens självtest — sju svar som ska stoppas och sex förklaringar som
+absolut inte får stoppas — plus hjälpstegen, tjatdetektorn, städningen av
+LaTeX och att talet självt aldrig står kvar i texten när vakten slagit till.
+
+```sh
+cd ios/Karna && swift test
+```
+
+Att de ligger i ett eget paket är inte bokföring: det gör att de går att köra
+**utan simulator**, direkt på macOS, på någon sekund. Som iOS-testbundle
+krävdes en simulator som startade, och där fastnade bygget två gånger.
+Appen läser samma filer via `project.yml` — en kopia av källan, två
+byggsystem. Testerna körs i CI före varje bygge; en IPA av kod som inte klarar
+svarsvakten byggs inte.
 
 ## Bygga
 

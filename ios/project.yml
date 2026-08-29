@@ -31,7 +31,7 @@ targets:
     type: framework
     platform: iOS
     sources:
-      - path: SandoKarna
+      - path: Karna/Sources/SandoKarna
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: se.sando.elev.karna
@@ -56,28 +56,9 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: "NO"
 
-  SandoElevTests:
-    type: bundle.unit-test
-    platform: iOS
-    sources:
-      - path: SandoElevTests
-    dependencies:
-      - target: SandoKarna
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: se.sando.elev.tests
-        GENERATE_INFOPLIST_FILE: "YES"
-        # Ingen testvärd: testerna rör bara reglerna, inte gränssnittet.
-        TEST_HOST: ""
-        BUNDLE_LOADER: ""
-
 schemes:
   SandoElev:
     build:
       targets:
         SandoElev: all
         SandoKarna: all
-        SandoElevTests: [test]
-    test:
-      targets:
-        - SandoElevTests
