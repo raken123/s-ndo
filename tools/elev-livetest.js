@@ -12,6 +12,10 @@
  * anrop.
  */
 const { chromium } = require('playwright');
+/* Runnern har en förinstallerad Chromium som inte matchar playwrights egen
+   revision, och den går inte att ladda ner härifrån. Finns den, används den. */
+const BROWSER = require('fs').existsSync('/opt/pw-browsers/chromium-1194/chrome-linux/chrome')
+  ? { executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' } : {};
 const path = require('path');
 
 const KEY = process.env.GEMINI_KEY;
@@ -71,7 +75,7 @@ function startaRela() {
 
 (async () => {
   const rela = await startaRela();
-  const b = await chromium.launch();
+  const b = await chromium.launch(BROWSER);
   const p = await b.newPage({ viewport: { width: 390, height: 844 } });
   const konsol = [];
   p.on('pageerror', e => konsol.push('PAGEERROR: ' + e.message));

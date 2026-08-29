@@ -16,3 +16,8 @@ android-elev/local.properties
 
 # Genereras av tools/carplay-selftest.js
 carplay/forhandsvisning/mallar.png
+
+# playwright installeras vid behov, den hör inte hemma i repot
+node_modules/
+package-lock.json
+package.json

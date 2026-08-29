@@ -205,6 +205,7 @@
         self.sparaTur('elev', elevText);
         self.sparaTur('monni', granskat.text);
         self.sparaLogg({ t: Date.now(), fraga: elevText, steg: steg, vakt: granskat.andrad });
+        App.sparaKnuff(elevText, granskat.text, steg);
         cb(null, {
           text: granskat.text,
           canvas: delat.canvas,

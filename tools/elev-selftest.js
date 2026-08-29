@@ -10,10 +10,15 @@
  * stoppas, för en vakt som tar allt är lika oanvändbar som ingen vakt.
  */
 const { chromium } = require('playwright');
+/* Runnern har en förinstallerad Chromium som inte matchar playwrights egen
+   revision, och den går inte att ladda ner härifrån. Finns den, används den. */
+const BROWSER = require('fs').existsSync('/opt/pw-browsers/chromium-1194/chrome-linux/chrome')
+  ? { executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' } : {};
 const path = require('path');
 
 (async () => {
-  const b = await chromium.launch();
+  const Platser_SEKUNDER = 20;
+  const b = await chromium.launch(BROWSER);
   const p = await b.newPage({ viewport: { width: 390, height: 844 } });
   const fel = [];
   p.on('pageerror', e => fel.push('PAGEERROR: ' + e.message));
@@ -330,7 +335,7 @@ const path = require('path');
   // 7) Alla vyer monterar
   const vyfel = await p.evaluate(() => {
     const f = [];
-    ['bok', 'monni', 'sagor', 'mer'].forEach(v => {
+    ['bok', 'monni', 'sagor', 'platser', 'mer'].forEach(v => {
       try { App.open(v); } catch (e) { f.push(v + ': ' + e.message); }
     });
     return f;
@@ -339,10 +344,97 @@ const path = require('path');
   console.log('vyer som kraschar: ' + (vyfel.length ? vyfel.join(' | ') : 'inga'));
   if (vyfel.length) problem.push('vyer kraschar');
 
+  // 7b) Matteplatser: hela rundan, med en påhittad position.
+  //     geolocation finns inte i en file://-sida, så den byts ut här. Det som
+  //     testas är appens egen logik: att man måste vara nära, att klockan
+  //     räknar ner, att fel svar inte betalar och att rätt svar gör det.
+  const plats = await p.evaluate(() => new Promise(klar => {
+    const nara = Platser.naraMig(62.3908, 17.3069)[0];
+    const ut = { namn: nara.namn, steg: [] };
+
+    /* Ställ oss exakt på platsen, så att knappen "Starta" alls dyker upp. */
+    let jag = { lat: nara.lat, lon: nara.lon };
+    /* navigator.geolocation är en skrivskyddad accessor — en vanlig
+       tilldelning här försvinner tyst. */
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition: cb =>
+          cb({ coords: { latitude: jag.lat, longitude: jag.lon, accuracy: 8 } }),
+        watchPosition: () => 1,
+        clearWatch: () => {}
+      }
+    });
+
+    App.Store.del('platser.klara');
+    const fore = App.Credits.balance();
+    App.open('platser');
+
+    setTimeout(() => {
+      const knapp = [...document.querySelectorAll('#view button')]
+        .find(b => /^Starta/.test(b.textContent));
+      ut.startknappFanns = !!knapp;
+      if (!knapp) { klar(ut); return; }
+
+      const fragor = Platser.fragor(nara);
+      knapp.click();
+
+      setTimeout(() => {
+        ut.klockaVidStart = document.querySelector('.klocka')
+          ? +document.querySelector('.klocka').textContent : null;
+        ut.taletSyns = !!document.querySelector('.talet');
+
+        /* Fråga 1: svara fel med flit. */
+        const knappa = txt => [...document.querySelectorAll('.knappsats button')]
+          .find(b => b.textContent === txt).click();
+        String(fragor[0].svar + 1).split('').forEach(knappa);
+        [...document.querySelectorAll('#view button')]
+          .find(b => b.textContent === 'Svara').click();
+        ut.efterFel = App.Credits.balance() - fore;
+
+        setTimeout(() => {
+          /* Fråga 2: svara rätt. */
+          String(fragor[1].svar).split('').forEach(knappa);
+          [...document.querySelectorAll('#view button')]
+            .find(b => b.textContent === 'Svara').click();
+          ut.efterRatt = App.Credits.balance() - fore;
+          ut.belon = Platser.belon(nara.niva);
+
+          setTimeout(() => {
+            /* Avbryt, och gå sedan 500 meter bort. Då ska platsen försvinna
+               ur listan helt — den ligger inte längre inom radien. */
+            [...document.querySelectorAll('#view button')]
+              .find(b => /Avbryt rundan/.test(b.textContent)).click();
+            App.hideSheet();
+            jag = { lat: nara.lat + 0.0045, lon: nara.lon };
+            App.open('platser');
+            setTimeout(() => {
+              ut.kvarEfterFlytt = [...document.querySelectorAll('#view h3')]
+                .some(h => h.textContent === nara.namn);
+              ut.bronFick = App.Store.get('knuffar', []) !== null;
+              klar(ut);
+            }, 120);
+          }, 1100);
+        }, 1100);
+      }, 120);
+    }, 120);
+  }));
+  console.log('matteplatser: ' + JSON.stringify(plats));
+  if (!plats.startknappFanns) problem.push('ingen startknapp trots att vi stod på platsen');
+  if (plats.klockaVidStart !== Platser_SEKUNDER) {
+    problem.push('klockan startade på ' + plats.klockaVidStart + ' i stället för ' + Platser_SEKUNDER);
+  }
+  if (!plats.taletSyns) problem.push('talet visades inte');
+  if (plats.efterFel !== 0) problem.push('fel svar gav ' + plats.efterFel + ' krediter');
+  if (plats.efterRatt !== plats.belon) {
+    problem.push('rätt svar gav ' + plats.efterRatt + ', skulle ge ' + plats.belon);
+  }
+  if (plats.kvarEfterFlytt) problem.push('platsen låg kvar i listan 500 m bort');
+
   // 8) Mobilbredd: inget får sticka ut i sidled
   const bredd = await p.evaluate(() => {
     const ut = [];
-    ['bok', 'monni', 'sagor', 'mer'].forEach(v => {
+    ['bok', 'monni', 'sagor', 'platser', 'mer'].forEach(v => {
       App.open(v);
       if (document.documentElement.scrollWidth > window.innerWidth + 1) {
         ut.push(v + ' (' + document.documentElement.scrollWidth + 'px)');

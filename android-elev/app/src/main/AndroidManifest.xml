@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Sändo Elev ber om internet och ingenting annat. Monni är en textmodell:
-         appen rör aldrig mikrofonen, kameran eller kontakterna. -->
+    <!-- Sändo Elev ber om internet och positionen, och ingenting annat. Monni
+         är en textmodell: appen rör aldrig mikrofonen, kameran eller
+         kontakterna. Positionen används bara till Matteplatser och lämnar
+         aldrig telefonen — platserna räknas fram lokalt. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <uses-feature android:name="android.hardware.touchscreen" android:required="true" />
+    <!-- GPS är inte ett krav. Utan den försvinner Matteplatser, inte appen. -->
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -17,6 +23,11 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
+        <!-- Android Auto hittar appen genom den här, inte genom tjänsten. -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
 
         <activity
             android:name=".MainActivity"
@@ -31,5 +42,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Bilskärmen. Kategorin är POI: det appen visar i bilen är platser
+             i närheten, inte läxhjälp under körning. Se bil/SandoBilTjanst. -->
+        <service
+            android:name=".bil.SandoBilTjanst"
+            android:exported="true"
+            android:foregroundServiceType="location">
+            <intent-filter>
+                <action android:name="androidx.car.app.CarAppService" />
+                <category android:name="androidx.car.app.category.POI" />
+            </intent-filter>
+        </service>
+
+        <meta-data
+            android:name="androidx.car.app.minCarApiLevel"
+            android:value="1" />
     </application>
 </manifest>

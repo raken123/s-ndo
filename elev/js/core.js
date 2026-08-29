@@ -48,6 +48,19 @@
         App.renderCredits();
         return true;
       },
+      /* Krediter går också åt andra hållet. Matteplatser betalar — det är
+         hela poängen med dem: en budget som bara krymper gör att eleven till
+         slut slutar fråga, och det är fel sak att lära ut. */
+      reward: function (n, note) {
+        n = Math.max(0, Math.round(n || 0));
+        if (!n) return 0;
+        Store.set('credits', this.balance() + n);
+        var log = this.log();
+        log.unshift({ t: Date.now(), kind: 'in+', cost: -n, note: note || 'Matteplats' });
+        Store.set('creditLog', log.slice(0, 60));
+        App.renderCredits();
+        return n;
+      },
       reset: function () {
         Store.set('credits', this.START);
         Store.set('creditLog', []);
@@ -61,6 +74,45 @@
       var b = this.Credits.balance();
       chip.textContent = '💎 ' + this.Credits.fmt(b);
       chip.className = 'chip' + (b < this.Credits.OUT ? ' alert' : '');
+      this.Bro.spara('krediter', String(b));
+    },
+
+    /* ---------- bron till bilskärmen ----------
+       Android Auto ritar mallar i en egen tjänst som inte kan läsa
+       localStorage. Telefonen lämnar därför över det bilen ska visa, och bara
+       det. Riktningen är enkelriktad: bilen visar, den ändrar aldrig något.
+       I en vanlig webbläsare finns ingen bro och allt här blir tomma anrop. */
+    Bro: {
+      finns: function () {
+        return typeof global.SandoBro !== 'undefined' && global.SandoBro !== null;
+      },
+      harBil: function () {
+        try { return this.finns() && !!global.SandoBro.harBil(); } catch (e) { return false; }
+      },
+      spara: function (nyckel, varde) {
+        if (!this.finns()) return;
+        try {
+          global.SandoBro.spara(nyckel,
+            typeof varde === 'string' ? varde : JSON.stringify(varde));
+        } catch (e) { /* bron är en bekvämlighet, inte ett krav */ }
+      }
+    },
+
+    /* Det Monni senast sa, i den form bilskärmen visar det. Knuffar, inte
+       svar: Monni ger aldrig ett svar någonstans, och allra minst på en skärm
+       där ingen kan räkna efter. */
+    knuffar: function () { return Store.get('knuffar', []); },
+    sparaKnuff: function (fraga, svar, steg) {
+      var lista = this.knuffar();
+      lista.unshift({
+        fraga: String(fraga || '').slice(0, 200),
+        svar: String(svar || '').slice(0, 600),
+        steg: (steg || 0) + 1,
+        tid: Date.now()
+      });
+      lista = lista.slice(0, 8);
+      Store.set('knuffar', lista);
+      this.Bro.spara('knuffar', lista);
     },
 
     /* ---------- Gemini ----------

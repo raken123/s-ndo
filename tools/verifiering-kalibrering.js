@@ -9,8 +9,12 @@
  * ett mjukt men läsbart kort ska släppas igenom, ett suddigt eller tomt inte.
  */
 const { chromium } = require('playwright');
+/* Runnern har en förinstallerad Chromium som inte matchar playwrights egen
+   revision, och den går inte att ladda ner härifrån. Finns den, används den. */
+const BROWSER = require('fs').existsSync('/opt/pw-browsers/chromium-1194/chrome-linux/chrome')
+  ? { executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' } : {};
 (async () => {
-  const b = await chromium.launch();
+  const b = await chromium.launch(BROWSER);
   const p = await b.newPage();
   await p.goto('file://' + require('path').resolve(__dirname, '../whiteboard/index.html'));
   await p.waitForTimeout(400);

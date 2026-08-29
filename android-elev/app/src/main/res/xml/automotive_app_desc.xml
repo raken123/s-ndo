@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android Auto letar efter den här filen för att alls visa appen i bilen.
+     "template" betyder att appen ritar Googles mallar och inte egna vyer —
+     det är hela poängen: layouten är bilens, inte vår, och den är gjord för
+     att kunna läsas på en armslängds avstånd. -->
+<automotiveApp>
+    <uses name="template" />
+</automotiveApp>
