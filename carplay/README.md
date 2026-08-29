@@ -40,6 +40,17 @@ frågor och pauser, och det går inte att uttrycka ett facit i den även om man
 vill. Självtestet kontrollerar det: skulle någon lägga till ett svarsfält i
 formatet faller testet.
 
+## Var repetitionen kommer ifrån
+
+Telefonappen gör den. Under 📖 Boken i Sändo Elev finns **Repet till bilen**:
+Monni läser kapitlet i elevens uppladdade arbetsbok och lämnar tillbaka frågor
+i det här formatet. `Repet.validera()` i `elev/js/repet.js` bygger om svaret
+från grunden och tar bara med fält den känner igen — kommer Monni på att lägga
+till ett `svar`-fält försvinner det där, innan filen ens finns.
+
+Det är den delen som går att köra i dag: `tools/elev-selftest.js` matar in ett
+svar med både `svar` och `facit` i och kontrollerar att ingetdera överlever.
+
 ## Vad som finns här
 
 ```

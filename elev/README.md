@@ -17,6 +17,7 @@ js/canvas.js        de interaktiva exemplen, och valideringen av dem
 js/monni.js         systemprompt, hjälpsteg, svarsvakt och chatten
 js/bok.js           arbetsboken: uppladdning, val och varningen om sista sidan
 js/sagor.js         sagouppslag — idéer, inte färdig text
+js/repet.js         repetition att lyssna på i bilen (formatet CarPlay läser)
 js/mer.js           krediter, API-nyckel, canvas-provrum, tema, rensa data
 js/main.js          start
 ```
@@ -66,6 +67,25 @@ systemets textstorlek inte spränger den.
 
 Självtestet kör i 390 × 844 och kontrollerar bland annat att ingen vy spiller
 över i sidled.
+
+## Repet — frågor att lyssna på
+
+Under 📖 Boken finns **Repet till bilen**: Monni plockar frågor ur kapitlet och
+lägger dem i formatet `sandoelev.repet/1`, det format CarPlay-appen i
+[`../carplay`](../carplay/README.md) läser. En repetition är frågor och pauser
+— eleven lyssnar och svarar högt.
+
+Formatet har **inget fält för svar**. I chatten läser svarsvakten Monnis text
+innan eleven ser den; i en bil finns ingen sådan väg, för ljudet är redan i
+luften när någon hör det. Därför ligger regeln i formatet:
+`Repet.validera()` bygger om det Monni skickade från grunden och tar bara med
+fält den känner igen, och letar sedan igenom resultatet efter allt som ens
+heter något som liknar ett facit. Hittar den något blir det inget repet.
+
+Självtestet matar in ett svar där Monni lagt in både `svar: ['42','32']` och
+`facit`, plus ett skräpigt id, en fråga utan skiljetecken, ett avsnitt med en
+enda fråga och kodstaket runt alltihop. Efteråt ska svaren vara borta, id:t
+städat, frågan ha fått sitt frågetecken och det tunna avsnittet vara kastat.
 
 ## Tänkande modell, avstängt tänkande
 
@@ -120,6 +140,8 @@ kontrollerar:
 * att tänkandet är avstängt och budgeten tilltagen i det som faktiskt skickas
 * att ett avhugget svar märks ut, att LaTeX och markdown städas bort, och att
   nyckelrutan syns i alla tre vyer när nyckeln saknas
+* att en repetition inte kan bära ett facit, och att ett trasigt svar ger ett
+  besked i stället för en trasig repetition
 
 ## Skarpt prov
 

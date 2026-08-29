@@ -36,7 +36,8 @@ const path = require('path');
       'Monni': ['system', 'steg', 'setSteg', 'nyUppgift', 'tjat', 'berOmSvar', 'elevensTal',
                 'vakt', 'historik', 'sparaTur', 'fraga'],
       'Canvas': ['plocka', 'validera', 'rita', 'beskrivning'],
-      'Sagor': ['system', 'kortaForstaMeningen', 'fraga']
+      'Sagor': ['system', 'kortaForstaMeningen', 'fraga'],
+      'Repet': ['system', 'validera', 'letaSvarsfalt', 'plockaJson', 'senaste', 'antalFragor', 'skapa']
     };
     const f = [];
     Object.keys(krav).forEach(sok => {
@@ -274,6 +275,57 @@ const path = require('path');
   }));
   console.log('saga: ' + JSON.stringify(saga.text));
   if (/Sedan hände allt det andra/.test(saga.text || '')) problem.push('sagan fick en hel text som "första mening"');
+
+  // Repet: formatet som CarPlay-appen läser får aldrig kunna bära ett facit
+  const repet = await p.evaluate(() => new Promise(r => {
+    const svar = {
+      titel: 'Matte Direkt 5 — kapitel 4',
+      underrubrik: 'Multiplikation',
+      avsnitt: [
+        { id: 'k4 tabeller!', titel: 'Tabellerna', sidor: '42-45',
+          'frågor': ['Sex gånger sju', 'Åtta gånger fyra.', 'x', 'Sju gånger sju?'],
+          svar: ['42', '32'], facit: 'ligger här' },
+        { id: 'k4-ord', titel: 'Orden', sidor: '46-47',
+          'frågor': ['Vad heter svaret på en multiplikation?', 'Vad heter talet man delar med?'] },
+        { id: 'tom', titel: 'Tom', sidor: '48', 'frågor': ['bara en'] }
+      ]
+    };
+    // det Monni faktiskt skickar: JSON i kodstaket
+    window.__svar = '```json\n' + JSON.stringify(svar) + '\n```';
+    Repet.skapa('kapitel 4', (err, rep) => r({
+      err,
+      rep,
+      svarsfalt: rep ? Repet.letaSvarsfalt(rep) : null,
+      sparad: !!App.Store.get('repet.senaste', null)
+    }));
+  }));
+  console.log('repet: ' + (repet.err ? 'FEL ' + repet.err : JSON.stringify({
+    avsnitt: repet.rep.avsnitt.length,
+    frågor: repet.rep.avsnitt.map(a => a['frågor'].length),
+    id: repet.rep.avsnitt.map(a => a.id),
+    svarsfalt: repet.svarsfalt
+  })));
+  if (repet.err) problem.push('repet kunde inte skapas: ' + repet.err);
+  else {
+    const alla = JSON.stringify(repet.rep);
+    if (repet.svarsfalt.length) problem.push('repet bar svarsfält: ' + repet.svarsfalt.join(', '));
+    if (/facit|"svar"/.test(alla)) problem.push('facit följde med in i repetitionen');
+    if (repet.rep.format !== 'sandoelev.repet/1') problem.push('fel formatversion');
+    if (repet.rep.avsnitt.length !== 2) problem.push('avsnitt med för få frågor kastades inte');
+    if (!repet.rep.avsnitt.every(a => a['frågor'].every(f => /[?.!]$/.test(f)))) {
+      problem.push('en fråga saknar skiljetecken');
+    }
+    if (repet.rep.avsnitt.some(a => /[^\w-]/.test(a.id))) problem.push('id städades inte');
+    if (!repet.sparad) problem.push('repetitionen sparades inte');
+  }
+
+  // Ett tomt eller trasigt svar ska ge ett besked, inte en trasig repetition
+  const trasigt = await p.evaluate(() => new Promise(r => {
+    window.__svar = 'Jag kan tyvärr inte göra det.';
+    Repet.skapa('kapitel 4', err => r(err || 'inget fel alls'));
+  }));
+  console.log('repet på trasigt svar: ' + JSON.stringify(trasigt));
+  if (!/JSON/.test(String(trasigt))) problem.push('trasigt svar gav inte ett vettigt besked');
 
   // 7) Alla vyer monterar
   const vyfel = await p.evaluate(() => {

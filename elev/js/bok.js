@@ -63,6 +63,68 @@
 
       var ladda = App.button('⬆️ Ladda upp arbetsbok (PDF)', 'bred', valjFil);
       lista.appendChild(ladda);
+
+      if (aktivId) lista.appendChild(repetKort());
+    }
+
+    /* Repet: frågor ur boken att lyssna på i bilen. Formatet är detsamma som
+       CarPlay-appen läser — se ../carplay/. Frågor och pauser, inga svar. */
+    function repetKort() {
+      var kort = App.el('div', 'card');
+      var rep = Repet.senaste();
+      kort.innerHTML = '<h3>🚗 Repet till bilen</h3>' +
+        '<p class="muted">Monni plockar frågor ur kapitlet som du kan lyssna på och svara ' +
+        'högt på i bilen. Bara frågor — svaren säger Monni aldrig, inte här heller.</p>';
+      if (rep) {
+        var sam = App.el('div', 'rad');
+        sam.innerHTML = '<span class="pill">' + rep.avsnitt.length + ' avsnitt</span>' +
+          '<span class="grow">' + App.esc(rep.titel) + '</span>' +
+          '<span class="muted">' + Repet.antalFragor(rep) + ' frågor</span>';
+        sam.style.marginTop = '12px';
+        kort.appendChild(sam);
+      }
+      var kapitel = App.el('input', 'falt');
+      kapitel.type = 'text';
+      kapitel.placeholder = 'Vilket kapitel? (t.ex. kapitel 4)';
+      kapitel.style.marginTop = '12px';
+      kapitel.value = App.Store.get('repet.kapitel', '');
+      kapitel.addEventListener('input', function () { App.Store.set('repet.kapitel', kapitel.value); });
+      kort.appendChild(kapitel);
+
+      var r = App.el('div', 'row');
+      r.style.marginTop = '12px';
+      var knapp = App.button('🎧 Gör en repetition', 'liten', function () {
+        knapp.disabled = true;
+        App.toast('Monni läser kapitlet…', 6000);
+        Repet.skapa(kapitel.value, function (err, ny) {
+          knapp.disabled = false;
+          if (err) { App.toast(err, 6000); return; }
+          App.toast(Repet.antalFragor(ny) + ' frågor klara');
+          rita();
+        });
+      });
+      r.appendChild(knapp);
+      if (rep) {
+        r.appendChild(App.button('Visa', 'ghost liten', function () {
+          var box = App.el('div', 'col');
+          rep.avsnitt.forEach(function (a) {
+            var k = App.el('div', 'card');
+            k.innerHTML = '<h3>' + App.esc(a.titel) + '</h3><p class="muted">s. ' + App.esc(a.sidor) + '</p>';
+            var l = App.el('div', 'lista');
+            l.style.marginTop = '10px';
+            a['frågor'].forEach(function (f, i) {
+              var rad = App.el('div', 'rad');
+              rad.innerHTML = '<span class="pill">' + (i + 1) + '</span><span class="grow">' + App.esc(f) + '</span>';
+              l.appendChild(rad);
+            });
+            k.appendChild(l);
+            box.appendChild(k);
+          });
+          App.sheet('🎧 ' + rep.titel, box, null, 'Stäng');
+        }));
+      }
+      kort.appendChild(r);
+      return kort;
     }
 
     function valjFil() {

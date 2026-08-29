@@ -1,8 +1,8 @@
-# Sändo Elev 1.0.1 — APK
+# Sändo Elev 1.0.2 — APK
 
 | Fil | Plattform | Storlek |
 |---|---|---|
-| `sandoelev-1.0.1.apk` | Android 8.0+ (mobil) | 43 KB |
+| `sandoelev-1.0.2.apk` | Android 8.0+ (mobil) | 47 KB |
 
 En studieapp för elever. Ladda upp din arbetsbok som PDF, så hjälper **Monni**
 dig när du fastnar — utan att säga svaret.
@@ -10,7 +10,7 @@ dig när du fastnar — utan att säga svaret.
 ## Installera
 
 ```sh
-adb install -r sandoelev-1.0.1.apk
+adb install -r sandoelev-1.0.2.apk
 ```
 
 Eller kopiera filen till telefonen och öppna den i filhanteraren. Slå på
@@ -39,6 +39,13 @@ i appen och det finns ingen väg runt den — se
 
 Ingen mikrofon, ingen kamera. Allt utom arbetsboken och frågorna stannar på
 telefonen.
+
+## Nytt i 1.0.2
+
+**🚗 Repet till bilen.** Under Boken kan Monni plocka frågor ur kapitlet som du
+kan lyssna på och svara högt på i bilen. Bara frågor — formatet har inget fält
+för svar, så ett facit går inte att uttrycka i det. Samma format som
+CarPlay-appen i `../carplay/` läser.
 
 ## Rättat i 1.0.1
 
