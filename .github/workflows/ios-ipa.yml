@@ -75,6 +75,18 @@ jobs:
           unzip -l build/SandoElev-osignerad.ipa | head -20
           file "build/Payload/SandoElev.app/SandoElev"
 
+      # En app utan scenmanifest dyker aldrig upp på bilskärmen, och det syns
+      # inte i något byggfel. Första IPA:n byggdes så.
+      - name: Kontrollera att CarPlay-scenen kom med
+        working-directory: ios
+        run: |
+          PLIST="build/Payload/SandoElev.app/Info.plist"
+          /usr/libexec/PlistBuddy -c \
+            "Print :UIApplicationSceneManifest:UISceneConfigurations:CPTemplateApplicationSceneSessionRoleApplication:0:UISceneDelegateClassName" \
+            "$PLIST"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$PLIST"
+
       - name: Ladda upp IPA
         uses: actions/upload-artifact@v4
         with:

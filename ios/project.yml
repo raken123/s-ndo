@@ -44,10 +44,9 @@ targets:
       - path: SandoElev
     dependencies:
       - target: SandoKarna
-    info:
-      path: SandoElev/Info.plist
-      properties:
-        CFBundleDisplayName: Sändo Elev
+    # Inget info:-block. XcodeGen genererar då en egen Info.plist och skriver
+    # över den handskrivna — första IPA:n byggdes utan scenmanifest, alltså
+    # utan CarPlay, och det syntes inte i något byggfel.
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: se.sando.elev
