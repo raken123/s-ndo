@@ -1,0 +1,47 @@
+{
+  "format": "sandoelev.repet/1",
+  "titel": "Matte Direkt 5 — kapitel 4",
+  "underrubrik": "Multiplikation och division",
+  "bok": "Matte Direkt 5, arbetsbok",
+  "rost": "sv-SE",
+  "pausSekunder": 6,
+  "avsnitt": [
+    {
+      "id": "k4-tabeller",
+      "titel": "Tabellerna 6, 7 och 8",
+      "sidor": "42–45",
+      "frågor": [
+        "Sex gånger sju.",
+        "Åtta gånger fyra.",
+        "Sju gånger sju.",
+        "Sex gånger nio.",
+        "Åtta gånger sju.",
+        "Fyrtiotvå delat med sex.",
+        "Femtiosex delat med åtta.",
+        "Sextiotre delat med sju."
+      ]
+    },
+    {
+      "id": "k4-uppdelning",
+      "titel": "Dela upp talet",
+      "sidor": "46–47",
+      "frågor": [
+        "Hur kan du dela upp åtta gånger sju i två lättare tal?",
+        "Hur kan du dela upp nio gånger sex i två lättare tal?",
+        "Om du vet att fem gånger sju är trettiofem — hur hjälper det dig med sex gånger sju?",
+        "Vilken tabell tycker du är svårast? Säg den högt och förklara varför."
+      ]
+    },
+    {
+      "id": "k4-ord",
+      "titel": "Orden i kapitlet",
+      "sidor": "42–49",
+      "frågor": [
+        "Vad heter talen man multiplicerar med varandra?",
+        "Vad heter svaret på en multiplikation?",
+        "Vad heter talet man delar med?",
+        "Vad betyder det att två tal är lika mycket värda?"
+      ]
+    }
+  ]
+}

@@ -13,3 +13,6 @@ android-elev/build/
 android-elev/app/build/
 android-elev/.gradle/
 android-elev/local.properties
+
+# Genereras av tools/carplay-selftest.js
+carplay/forhandsvisning/mallar.png
