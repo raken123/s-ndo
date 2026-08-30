@@ -245,14 +245,89 @@ main::-webkit-scrollbar{display:none}
 .spark{display:flex;gap:5px;height:46px;align-items:flex-end;margin-top:4px}
 .spark i{flex:1;border-radius:3px 3px 0 0;background:linear-gradient(180deg,var(--gold-2),rgba(166,124,26,.25))}
 
+/* ---------- plan / light ---------- */
+.badge-plan{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:8.5px;
+  letter-spacing:1.8px;text-transform:uppercase;font-weight:700;cursor:pointer;transition:.2s;
+  background:var(--panel);border:1px solid var(--line-soft);color:var(--muted)}
+.badge-plan.light{background:var(--grad-gold);color:#0c0a04;border-color:transparent;box-shadow:0 4px 14px rgba(212,175,55,.3)}
+.badge-plan:active{transform:scale(.93)}
+
+.hero-light{position:relative;border-radius:24px;padding:22px 18px;margin-bottom:16px;overflow:hidden;text-align:center;
+  background:radial-gradient(120% 100% at 50% 0%,rgba(212,175,55,.28),rgba(0,0,0,.5) 70%),#0a0806;
+  border:1px solid var(--line)}
+.hero-light .ray{position:absolute;left:50%;top:-40%;translate:-50% 0;width:220px;height:220px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,243,196,.5),transparent 65%);filter:blur(18px);animation:breathe 4.5s ease-in-out infinite}
+.hero-light h2{position:relative;font-family:"Didot","Bodoni MT",Georgia,serif;font-size:27px;letter-spacing:2px;
+  background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero-light p{position:relative;font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.6;letter-spacing:.3px}
+.price{position:relative;margin-top:14px;font-size:34px;font-weight:300;letter-spacing:-1px;color:#fff8e6}
+.price em{font-style:normal;font-size:12px;letter-spacing:1.4px;color:var(--muted)}
+
+.plans{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.plan{border-radius:18px;padding:14px;border:1px solid var(--line-soft);background:rgba(255,255,255,.035)}
+.plan.sel{border-color:var(--gold-3);background:linear-gradient(165deg,rgba(212,175,55,.16),rgba(0,0,0,.4));
+  box-shadow:inset 0 1px 0 rgba(255,243,196,.2)}
+.plan h4{font-size:12px;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;color:var(--txt)}
+.cur{display:inline-block;font-size:7.5px;letter-spacing:1.2px;padding:2px 6px;border-radius:5px;vertical-align:middle;
+  background:rgba(255,255,255,.1);border:1px solid var(--line-soft);color:var(--muted);font-weight:600}
+.plan .p{font-size:17px;font-weight:600;margin-bottom:10px;
+  background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.feat{display:flex;gap:7px;align-items:flex-start;font-size:10px;color:var(--muted);line-height:1.5;margin-bottom:6px}
+.feat b{color:#e9dcbe;font-weight:500}
+.tick{flex:none;width:12px;height:12px;margin-top:1px}
+
+.mrow{display:flex;align-items:center;gap:12px;padding:13px 15px;background:rgba(255,255,255,.035);cursor:pointer;transition:.2s}
+.mrow:active{background:rgba(255,255,255,.06)}
+.mrow .av{width:34px;height:34px;border-radius:11px;flex:none;display:grid;place-items:center;font-size:13px;
+  font-family:"Didot",Georgia,serif;background:linear-gradient(160deg,rgba(212,175,55,.22),rgba(0,0,0,.6));
+  border:1px solid var(--line);color:var(--gold-2)}
+.mrow .tx{flex:1;min-width:0}
+.mrow .tx b{display:block;font-size:12.5px;letter-spacing:.2px;color:var(--txt)}
+.mrow .tx span{font-size:9.5px;color:var(--muted);letter-spacing:.3px;line-height:1.4}
+.mrow .st{flex:none;font-size:8.5px;letter-spacing:1.4px;text-transform:uppercase;padding:4px 8px;border-radius:6px;
+  border:1px solid var(--line-soft);color:var(--muted)}
+.mrow .st.inc{background:var(--grad-gold);color:#0c0a04;border-color:transparent}
+.mrow .st.lk{color:var(--gold-3);border-color:var(--line)}
+.mrow.on{background:linear-gradient(90deg,rgba(212,175,55,.16),rgba(255,255,255,.03))}
+
+/* model selector on the compose screen */
+.modelbar{display:flex;gap:8px;overflow-x:auto;padding:0 2px 12px;scrollbar-width:none}
+.modelbar::-webkit-scrollbar{display:none}
+.mchip{flex:none;display:flex;align-items:center;gap:6px;padding:8px 13px;border-radius:999px;font-size:10.5px;
+  letter-spacing:.5px;white-space:nowrap;cursor:pointer;transition:.2s;
+  background:var(--panel);border:1px solid var(--line-soft);color:var(--muted)}
+.mchip.on{background:var(--grad-gold);color:#0c0a04;border-color:transparent;font-weight:600;
+  box-shadow:0 6px 16px rgba(212,175,55,.25)}
+.mchip.locked{color:var(--gold-3);border-style:dashed}
+.mchip:active{transform:scale(.95)}
+
+/* ---------- alerts & segmented control ---------- */
+.alert{display:flex;gap:11px;align-items:flex-start;padding:13px 15px;border-radius:16px;margin-bottom:12px;
+  background:rgba(255,92,92,.09);border:1px solid rgba(255,92,92,.35)}
+.alert.warn{background:rgba(255,176,32,.09);border-color:rgba(255,176,32,.35)}
+.alert svg{flex:none;margin-top:1px}
+.alert h4{font-size:12px;font-weight:600;color:#ffb3b3;letter-spacing:.2px;margin-bottom:3px}
+.alert.warn h4{color:var(--warn)}
+.alert p{font-size:10.5px;color:var(--muted);line-height:1.55;letter-spacing:.2px}
+
+.seg{display:flex;gap:4px;padding:4px;border-radius:14px;background:rgba(255,255,255,.05);
+  border:1px solid var(--line-soft);margin-bottom:12px}
+.seg div{flex:1;text-align:center;padding:9px 6px;border-radius:10px;font-size:10px;letter-spacing:1.2px;
+  text-transform:uppercase;color:var(--muted);cursor:pointer;transition:.22s}
+.seg div.on{background:var(--grad-gold);color:#0c0a04;font-weight:700}
+.seg div:active{transform:scale(.96)}
+
+.msg.block{align-self:flex-start;background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.35);
+  border-bottom-left-radius:6px;color:#ffcccc}
+
 /* ---------- nav ---------- */
 nav{position:absolute;bottom:0;left:0;right:0;z-index:7;display:flex;justify-content:space-around;align-items:center;
   padding:12px 10px calc(18px + env(safe-area-inset-bottom));
   background:linear-gradient(180deg,rgba(0,0,0,.4),rgba(0,0,0,.96) 55%);backdrop-filter:blur(22px);
   border-top:1px solid var(--line-soft)}
-.nav-i{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:4px 12px;
+.nav-i{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:4px 7px;
   color:#6d6656;transition:.22s;font-size:8.5px;letter-spacing:1.5px;text-transform:uppercase}
-.nav-i svg{width:21px;height:21px;stroke-width:1.6}
+.nav-i svg{width:20px;height:20px;stroke-width:1.6}
 .nav-i.on{color:var(--gold-2)}
 .nav-i.on svg{filter:drop-shadow(0 0 8px rgba(212,175,55,.6))}
 .nav-i:active{transform:scale(.9)}
@@ -298,8 +373,11 @@ nav{position:absolute;bottom:0;left:0;right:0;z-index:7;display:flex;justify-con
         <p>Eau de Parfum · Neural</p>
       </div>
     </div>
-    <div class="iconbtn" onclick="openSheet('about')">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01" stroke-linecap="round"/></svg>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="badge-plan" id="planBadge" onclick="go('light')">Free</div>
+      <div class="iconbtn" onclick="openSheet('about')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01" stroke-linecap="round"/></svg>
+      </div>
     </div>
   </header>
 
@@ -319,7 +397,7 @@ nav{position:absolute;bottom:0;left:0;right:0;z-index:7;display:flex;justify-con
         </div>
         <div class="scrim"></div>
         <div class="stage-bot" id="stageStats">
-          <div class="stat-mini"><b id="mWater">0.42 L</b><small>Water</small></div>
+          <div class="stat-mini"><b id="mWater">0.42 L</b><small id="mWaterLbl">Water</small></div>
           <div class="stat-mini"><b id="mCharge">73%</b><small>Charge</small></div>
           <div class="stat-mini"><b id="mVol">100 ml</b><small>Flacon</small></div>
         </div>
@@ -330,12 +408,26 @@ nav{position:absolute;bottom:0;left:0;right:0;z-index:7;display:flex;justify-con
         <button class="btn btn-ghost" onclick="go('compose')">Compose</button>
       </div>
 
+      <div id="liquidAlert" style="display:none" class="alert">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ff8080" stroke-width="1.8" stroke-linecap="round"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>
+        <div>
+          <h4>That is not water</h4>
+          <p id="liquidAlertTxt">The dock sensor found something other than water in the reservoir. Charging is stopped and the atomiser is locked until the dock is rinsed and refilled with distilled water.</p>
+        </div>
+      </div>
+
       <div class="switch-row">
         <div>
           <h4>Flacon placed in dock</h4>
           <p>Simulates the dock proximity sensor</p>
         </div>
         <div class="sw on" id="swDock" onclick="toggleDock()"><i></i></div>
+      </div>
+
+      <div class="sect">Liquid in the dock — simulation</div>
+      <div class="seg" id="segLiquid">
+        <div class="on" onclick="setLiquid('water')">Distilled water</div>
+        <div onclick="setLiquid('other')">Something else</div>
       </div>
 
       <div class="gauges">
@@ -370,6 +462,7 @@ nav{position:absolute;bottom:0;left:0;right:0;z-index:7;display:flex;justify-con
           <div class="row"><span>Dock status</span><b class="g" id="tDock">Docked · seated</b></div>
           <div class="row"><span>Water level</span><b id="tWater">0.42 L / 0.50 L</b></div>
           <div class="row"><span>Water purity</span><b id="tPure">99.2 % · distilled</b></div>
+          <div class="row"><span>Liquid check</span><b class="g" id="tLiquid">Verified water · 2 s ago</b></div>
           <div class="row"><span>Hydro charge</span><b id="tChg">73 % · +1.4 %/min</b></div>
           <div class="row"><span>Atomiser</span><b id="tAtom">Ready</b></div>
           <div class="row"><span>Loaded accord</span><b id="tScent">Rose Nébuleuse</b></div>
@@ -382,12 +475,25 @@ nav{position:absolute;bottom:0;left:0;right:0;z-index:7;display:flex;justify-con
         <button class="btn btn-ghost" onclick="diffuse()">Diffuse 1 mist</button>
         <button class="btn btn-ghost" onclick="go('water')">Water</button>
       </div>
+
+      <div class="card gilt">
+        <div class="card-t"><span>Safety</span><span>Free &amp; Light</span></div>
+        <div class="rows">
+          <div class="row"><span>Composition screening</span><b class="g">On · every request</b></div>
+          <div class="row"><span>Liquid verification</span><b class="g">On · every scan</b></div>
+          <div class="row"><span>Requests blocked</span><b id="tBlocked">0</b></div>
+        </div>
+        <p style="font-size:10px;color:var(--muted);line-height:1.6;margin-top:12px;letter-spacing:.2px">
+          Both checks run on every plan and cannot be switched off. The nose refuses anything that is not a
+          fragrance, and the dock refuses to charge on any liquid that is not water.
+        </p>
+      </div>
     </section>
 
     <!-- ============ COMPOSE / AI ============ -->
     <section class="screen" id="s-compose" style="padding-bottom:64px">
       <div class="card gilt" style="margin-bottom:14px">
-        <div class="card-t"><span>Neural nose · online</span><span id="cxState">Dock linked</span></div>
+        <div class="card-t"><span id="cxModel">Raken AI · online</span><span id="cxState">Dock linked</span></div>
         <div style="display:flex;gap:12px;align-items:center">
           <div class="mono" style="width:46px;height:46px;border-radius:15px;flex:none"><span style="font-size:18px">RA</span></div>
           <div style="flex:1">
@@ -396,6 +502,7 @@ nav{position:absolute;bottom:0;left:0;right:0;z-index:7;display:flex;justify-con
           </div>
         </div>
       </div>
+      <div class="modelbar" id="modelbar"></div>
       <div class="chat" id="chat"></div>
       <div class="chips" id="chips"></div>
     </section>
@@ -419,9 +526,20 @@ nav{position:absolute;bottom:0;left:0;right:0;z-index:7;display:flex;justify-con
       </div>
 
       <div class="card gilt" style="margin-bottom:14px">
+        <div class="card-t"><span>Liquid verification</span><span id="vfTime">just now</span></div>
+        <div class="rows">
+          <div class="row"><span>Result</span><b class="g" id="vfResult">Distilled water</b></div>
+          <div class="row"><span>Conductivity</span><b id="vfCond">1.1 µS/cm</b></div>
+          <div class="row"><span>Refractive index</span><b id="vfRi">1.3330</b></div>
+          <div class="row"><span>Checked</span><b>Every scan, charge and mist</b></div>
+        </div>
+      </div>
+
+      <div class="card gilt" style="margin-bottom:14px">
         <div class="card-t"><span>Hydro-electric charging</span><span id="chgRate">+1.4 %/min</span></div>
         <div class="rows">
           <div class="row"><span>Cell charge</span><b class="g" id="wChg">73 %</b></div>
+          <div class="row"><span>Charge speed</span><b id="wSpeed">Standard · Free</b></div>
           <div class="row"><span>Water → charge</span><b>0.01 L ≈ 3 %</b></div>
           <div class="row"><span>Full in</span><b id="wEta">19 min</b></div>
           <div class="row"><span>Cycles</span><b>147</b></div>
@@ -442,6 +560,71 @@ nav{position:absolute;bottom:0;left:0;right:0;z-index:7;display:flex;justify-con
         <div class="row"><span>Dock lock</span><b class="g">Spray disabled off-dock</b></div>
         <div class="row"><span>Water sensor</span><b class="g">Optical + conductive</b></div>
       </div>
+    </section>
+
+    <!-- ============ LIGHT (subscription) ============ -->
+    <section class="screen" id="s-light">
+      <div class="hero-light">
+        <div class="ray"></div>
+        <h2>LIGHT</h2>
+        <p id="lightPitch">Charge three times faster and unlock the larger noses.</p>
+        <div class="price" id="lightPrice">€4.99<em> / month</em></div>
+      </div>
+
+      <div id="lightActive" style="display:none">
+        <div class="card gilt" style="margin-bottom:16px">
+          <div class="card-t"><span>Subscription</span><span style="color:var(--gold-2)">Active</span></div>
+          <div class="rows">
+            <div class="row"><span>Plan</span><b class="g">RAKEN AI Light</b></div>
+            <div class="row"><span>Price</span><b>€4.99 / month</b></div>
+            <div class="row"><span>Renews</span><b id="lightRenew">—</b></div>
+            <div class="row"><span>Payment</span><b>•••• 4242</b></div>
+          </div>
+        </div>
+        <button class="btn btn-ghost" style="margin-bottom:16px" onclick="cancelLight()">Cancel subscription</button>
+      </div>
+
+      <div class="plans">
+        <div class="plan" id="planFree">
+          <h4>Free <span class="cur" id="curFree">Current</span></h4>
+          <div class="p">€0</div>
+          <div class="feat"><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg><div>Raken AI <b>core nose</b></div></div>
+          <div class="feat"><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg><div>Charging at <b>1.4 %/min</b></div></div>
+          <div class="feat"><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg><div>Composition screening</div></div>
+          <div class="feat"><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg><div>Water verification</div></div>
+        </div>
+        <div class="plan sel" id="planLight">
+          <h4>Light <span class="cur" id="curLight">Current</span></h4>
+          <div class="p">€4.99</div>
+          <div class="feat"><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg><div><b>3× faster charging</b> — 4.2 %/min</div></div>
+          <div class="feat"><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg><div><b>Raken AI Fast</b></div></div>
+          <div class="feat"><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg><div><b>Raken AI Super Parfume</b></div></div>
+          <div class="feat"><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg><div>Everything in Free</div></div>
+        </div>
+      </div>
+
+      <button class="btn btn-gold" id="lightCta" onclick="startLight()" style="margin-bottom:18px">Start Light — €4.99/mo</button>
+
+      <div class="sect">Noses</div>
+      <div class="rows" id="modelList"></div>
+
+      <div class="sect">Always included</div>
+      <div class="card gilt">
+        <div class="card-t"><span>Safety</span><span>Free &amp; Light</span></div>
+        <div class="rows">
+          <div class="row"><span>Composition screening</span><b class="g">Both plans</b></div>
+          <div class="row"><span>Liquid verification</span><b class="g">Both plans</b></div>
+        </div>
+        <p style="font-size:10px;color:var(--muted);line-height:1.6;margin-top:12px;letter-spacing:.2px">
+          Every request is screened before the nose composes it — anything that is not a fragrance is refused.
+          Every scan checks the dock's liquid, and the cell will not charge on anything but water. Neither
+          check is part of the paid tier and neither can be turned off.
+        </p>
+      </div>
+
+      <p style="font-size:9.5px;color:#6d6656;line-height:1.6;margin:16px 4px 0;letter-spacing:.3px">
+        UI prototype — the subscription is simulated and no payment is taken.
+      </p>
     </section>
 
     <!-- ============ LIBRARY ============ -->
@@ -482,6 +665,10 @@ nav{position:absolute;bottom:0;left:0;right:0;z-index:7;display:flex;justify-con
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linejoin="round"><path d="M12 3s6 6.6 6 10.5A6 6 0 0 1 6 13.5C6 9.6 12 3 12 3Z"/></svg>
       Water
     </div>
+    <div class="nav-i" data-s="light" onclick="go('light')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-linecap="round"><path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5Z"/></svg>
+      Light
+    </div>
     <div class="nav-i" data-s="lib" onclick="go('lib')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h3v18H6a2 2 0 0 1-2-2V5ZM11 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3V3Z"/><path d="M18 6l2.6 12.6"/></svg>
       Library
@@ -506,8 +693,36 @@ const state = {
   charge: 73,                     // %
   scent: 'Rose Nébuleuse',
   scanning: false,
-  busy: false
+  busy: false,
+  plan: 'free',                   // 'free' | 'light'
+  model: 'core',                  // active nose
+  liquid: 'water',                // what the dock sensor finds: 'water' | 'other'
+  verified: true,                 // last liquid check passed
+  verifiedAt: Date.now(),
+  blocked: 0                      // requests refused by the screener
 };
+
+/* the noses — Fast and Super Parfume need Light */
+const MODELS = {
+  core:  {name:'Raken AI',                 tier:'free',  av:'RA',
+          blurb:'The core nose. Two notes per layer.',
+          notes:2, speed:1,   chargeBoost:1,   extra:0},
+  fast:  {name:'Raken AI Fast',            tier:'light', av:'RF',
+          blurb:'Composes in a fraction of the time and pushes the cell harder.',
+          notes:2, speed:2.6, chargeBoost:1.2, extra:0},
+  super: {name:'Raken AI Super Parfume',   tier:'light', av:'RS',
+          blurb:'Three notes per layer, extrait concentration, longer wear.',
+          notes:3, speed:1.4, chargeBoost:1,   extra:3.5}
+};
+
+const PLANS = {
+  free:  {label:'Free',  rate:1.4, price:'€0'},
+  light: {label:'Light', rate:4.2, price:'€4.99'}
+};
+
+const isLight   = () => state.plan === 'light';
+const model     = () => MODELS[state.model];
+const chargeRate = () => PLANS[state.plan].rate * model().chargeBoost;
 
 const $ = id => document.getElementById(id);
 const clamp = (v,a,b) => Math.max(a, Math.min(b,v));
@@ -548,6 +763,18 @@ const SHEETS = {
     <p>Synthesis and diffusion need power from the Water Dock. Place the flacon on the
     dock and make sure there is water in the reservoir, then try again.</p>
     <button class="btn btn-gold" onclick="closeSheet();runScan()">Scan for dock</button>`,
+  notwater: `<div class="grab"></div><span class="tag">Liquid check failed</span>
+    <h3>That is not water</h3>
+    <p>The dock tests conductivity and refractive index on every scan. What is in the reservoir now
+    does not read as water, so the cell will not charge and the atomiser stays locked.<br><br>
+    Empty the dock, rinse it and refill with distilled water.</p>
+    <button class="btn btn-gold" onclick="closeSheet();go('dock')">Open dock</button>`,
+  locked: `<div class="grab"></div><span class="tag">Light required</span>
+    <h3 id="lockTitle">Raken AI Fast</h3>
+    <p id="lockBody">This nose is part of Light.</p>
+    <button class="btn btn-gold" onclick="closeSheet();go('light')">See Light — €4.99/mo</button>
+    <div style="height:10px"></div>
+    <button class="btn btn-ghost" onclick="closeSheet()">Not now</button>`,
   nowater: `<div class="grab"></div><span class="tag">Reservoir empty</span>
     <h3>Add water to the dock</h3>
     <p>The hydro cell is dry. Pour distilled water into the Water Dock — 0.01 L gives
@@ -573,16 +800,21 @@ function render(){
 
   /* dock pill */
   const pill = $('dockPill');
-  pill.className = 'pill ' + (d ? 'ok' : 'warn');
-  pill.innerHTML = d
-    ? '<i class="dot live"></i><span>In dock</span>'
-    : '<i class="dot"></i><span>Not docked</span>';
+  pill.className = 'pill ' + (!d ? 'warn' : (state.verified ? 'ok' : 'warn'));
+  pill.innerHTML = !d
+    ? '<i class="dot"></i><span>Not docked</span>'
+    : (state.verified
+        ? '<i class="dot live"></i><span>In dock</span>'
+        : '<i class="dot live"></i><span>Liquid rejected</span>');
 
   $('syncPill').style.opacity = d ? 1 : .45;
   $('stageStats').style.opacity = d ? 1 : .55;
 
   /* stage stats */
   $('mWater').textContent  = d ? L(state.water) : '— L';
+  $('mWater').style.opacity = (d && !state.verified) ? .5 : 1;
+  $('mWaterLbl').textContent = (d && !state.verified) ? 'Not water' : 'Water';
+  $('mWaterLbl').style.color = (d && !state.verified) ? 'var(--bad)' : '';
   $('mCharge').textContent = d ? Math.round(state.charge) + '%' : '—';
 
   /* gauges */
@@ -593,7 +825,8 @@ function render(){
   $('gChg').style.opacity   = cLen > 0.5 ? 1 : 0;
   $('gWaterTxt').textContent = d ? state.water.toFixed(2) : '—';
   $('gChgTxt').textContent   = d ? Math.round(state.charge) + '%' : '—';
-  $('chgState').textContent  = !d ? 'Off dock' : (state.water <= 0 ? 'Dry' : (state.charge >= 100 ? 'Full' : 'Charging'));
+  $('chgState').textContent  = !d ? 'Off dock'
+    : (!state.verified ? 'Halted' : (state.water <= 0 ? 'Dry' : (state.charge >= 100 ? 'Full' : 'Charging')));
 
   /* telemetry */
   $('tDock').textContent  = d ? 'Docked · seated' : 'Removed from dock';
@@ -610,16 +843,103 @@ function render(){
   $('tankFill').style.height = (pct * 100).toFixed(1) + '%';
   $('tankL').innerHTML = state.water.toFixed(2) + '<em> L</em>';
   $('wChg').textContent = Math.round(state.charge) + ' %';
-  const eta = state.water > 0 ? Math.max(0, Math.round((100 - state.charge) / 1.4)) : '—';
+  const eta = state.water > 0 ? Math.max(0, Math.round((100 - state.charge) / chargeRate())) : '—';
   $('wEta').textContent = state.charge >= 100 ? 'Charged' : (state.water > 0 ? eta + ' min' : 'No water');
   $('chgRate').textContent = (d && state.water > 0 && state.charge < 100) ? '+1.4 %/min' : 'paused';
 
   /* compose header */
-  $('cxState').textContent = d ? (state.water > 0 ? 'Dock linked' : 'No water') : 'Off dock';
-  $('cxState').style.color = (d && state.water > 0) ? 'var(--gold-2)' : 'var(--warn)';
+  const ok = d && state.water > 0 && state.verified;
+  $('cxState').textContent = !d ? 'Off dock' : (!state.verified ? 'Liquid check failed' : (state.water > 0 ? 'Dock linked' : 'No water'));
+  $('cxState').style.color = ok ? 'var(--gold-2)' : 'var(--warn)';
+  $('cxModel').textContent = model().name + ' · online';
+
+  /* plan */
+  const badge = $('planBadge');
+  badge.textContent = isLight() ? 'Light' : 'Free';
+  badge.className = 'badge-plan' + (isLight() ? ' light' : '');
+  $('curFree').style.display  = isLight() ? 'none' : 'inline-block';
+  $('curLight').style.display = isLight() ? 'inline-block' : 'none';
+  $('lightActive').style.display = isLight() ? 'block' : 'none';
+  $('lightRenew').textContent = state.renew || '—';
+  $('lightCta').style.display = isLight() ? 'none' : 'block';
+  $('lightPitch').textContent = isLight()
+    ? 'Charging at 4.2 %/min. Fast and Super Parfume are unlocked.'
+    : 'Charge three times faster and unlock the larger noses.';
+  $('wSpeed').textContent = isLight() ? 'Light · 3× faster' : 'Standard · Free';
+  $('chgRate').textContent = (d && state.water > 0 && state.verified && state.charge < 100)
+    ? '+' + chargeRate().toFixed(1) + ' %/min' : 'paused';
+
+  /* liquid verification */
+  const bad = d && !state.verified;
+  $('liquidAlert').style.display = bad ? 'flex' : 'none';
+  $('tLiquid').textContent = !d ? 'No dock signal' : (state.verified ? 'Verified water · ' + ago() : 'NOT WATER · rejected');
+  $('tLiquid').className = state.verified ? 'g' : '';
+  $('tLiquid').style.color = state.verified ? '' : 'var(--bad)';
+  $('vfResult').textContent = state.verified ? 'Distilled water' : 'Unknown liquid — rejected';
+  $('vfResult').className = state.verified ? 'g' : '';
+  $('vfResult').style.color = state.verified ? '' : 'var(--bad)';
+  $('vfCond').textContent = state.verified ? '1.1 µS/cm' : '940 µS/cm';
+  $('vfRi').textContent  = state.verified ? '1.3330' : '1.3612';
+  $('vfTime').textContent = ago();
+  $('tBlocked').textContent = state.blocked;
+  if (bad) $('tPure').textContent = 'Not water';
+
+  renderModels();
+}
+
+function ago(){
+  const sec = Math.round((Date.now() - state.verifiedAt) / 1000);
+  return sec < 5 ? 'just now' : (sec < 60 ? sec + ' s ago' : Math.round(sec/60) + ' min ago');
+}
+
+/* ---------------- noses ---------------- */
+function renderModels(){
+  $('modelbar').innerHTML = Object.entries(MODELS).map(([k,m]) => {
+    const locked = m.tier === 'light' && !isLight();
+    return `<div class="mchip ${state.model===k?'on':''} ${locked?'locked':''}" onclick="pickModel('${k}')">
+      ${locked ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>' : ''}
+      ${m.name}</div>`;
+  }).join('');
+
+  $('modelList').innerHTML = Object.entries(MODELS).map(([k,m]) => {
+    const locked = m.tier === 'light' && !isLight();
+    return `<div class="mrow ${state.model===k?'on':''}" onclick="pickModel('${k}')">
+      <div class="av">${m.av}</div>
+      <div class="tx"><b>${m.name}</b><span>${m.blurb}</span></div>
+      <div class="st ${locked ? 'lk' : 'inc'}">${locked ? 'Light' : (state.model===k ? 'Active' : 'Included')}</div>
+    </div>`;
+  }).join('');
+}
+
+function pickModel(k){
+  const m = MODELS[k];
+  if (m.tier === 'light' && !isLight()){
+    openSheet('locked');
+    $('lockTitle').textContent = m.name;
+    $('lockBody').textContent = m.blurb + ' It is part of Light, together with 3× faster charging.';
+    return;
+  }
+  state.model = k;
+  render();
+  toast(m.name + ' selected');
 }
 
 /* ---------------- dock scan ---------------- */
+/* Runs on every scan, every charge tick and before every mist or synthesis.
+   The dock will not put current through anything that is not water. */
+function verifyLiquid(){
+  state.verifiedAt = Date.now();
+  state.verified = state.liquid === 'water';
+  return state.verified;
+}
+
+function setLiquid(kind){
+  state.liquid = kind;
+  document.querySelectorAll('#segLiquid div').forEach((d,i) =>
+    d.classList.toggle('on', (i === 0) === (kind === 'water')));
+  runScan();
+}
+
 function runScan(){
   if (state.scanning) return;
   state.scanning = true;
@@ -627,10 +947,11 @@ function runScan(){
   setTimeout(() => {
     state.scanning = false;
     $('stage').classList.remove('scanning');
+    if (state.docked) verifyLiquid();
     render();
-    toast(state.docked
-      ? 'Flacon detected in dock · ' + L(state.water) + ' of water'
-      : 'No dock detected — flacon is standing free');
+    if (!state.docked){ toast('No dock detected — flacon is standing free'); return; }
+    if (!state.verified){ toast('Liquid check failed — that is not water'); openSheet('notwater'); return; }
+    toast('Flacon detected in dock · ' + L(state.water) + ' of water');
   }, 1900);
 }
 
@@ -644,7 +965,9 @@ function toggleDock(){
 function fillWater(){
   if (!state.docked){ openSheet('offdock'); return; }
   state.water = CAP;
+  verifyLiquid();
   render();
+  if (!state.verified){ toast('Filled — but that is not water'); openSheet('notwater'); return; }
   toast('Reservoir filled · ' + L(CAP));
 }
 function drainWater(){
@@ -657,6 +980,7 @@ function drainWater(){
 /* ---------------- diffuse ---------------- */
 function diffuse(){
   if (!state.docked){ openSheet('offdock'); return; }
+  if (!verifyLiquid()){ render(); openSheet('notwater'); return; }
   if (state.water <= 0){ openSheet('nowater'); return; }
   state.water = clamp(state.water - 0.004, 0, CAP);
   state.charge = clamp(state.charge - 0.6, 0, 100);
@@ -723,18 +1047,46 @@ function analyse(text){
   const hits = FAMILY.filter(f => f.k.some(k => t.includes(k)));
   if (!hits.length) hits.push(FAMILY[Math.floor(Math.random() * FAMILY.length)]);
   const a = hits[0], b = hits[1] || FAMILY[(FAMILY.indexOf(a) + 3) % FAMILY.length];
+  const c = FAMILY[(FAMILY.indexOf(a) + 5) % FAMILY.length];
+  const m = model();
+  const three = arr => m.notes >= 3 ? arr : arr.slice(0, 2);
   return {
     name: newName(),
     fam: hits.map(h => h.name).slice(0,2).join(' × '),
     sw: a.sw,
-    top:   [a.top[0], b.top[1] || b.top[0]],
-    heart: [a.heart[0], b.heart[0]],
-    base:  [a.base[0], b.base[1] || b.base[0]],
+    by: m.name,
+    top:   three([a.top[0],   b.top[1] || b.top[0],     c.top[0]]),
+    heart: three([a.heart[0], b.heart[0],               c.heart[1] || c.heart[0]]),
+    base:  three([a.base[0],  b.base[1] || b.base[0],   c.base[0]]),
     w: [55 + Math.random()*30, 60 + Math.random()*30, 65 + Math.random()*30],
-    longevity: (6 + Math.random()*4).toFixed(1),
+    longevity: (6 + Math.random()*4 + m.extra).toFixed(1),
     sillage: ['Intimate','Moderate','Bold'][Math.floor(Math.random()*3)],
+    conc: m.notes >= 3 ? 'Extrait' : 'Eau de parfum',
     ml: (0.8 + Math.random()*1.4).toFixed(1)
   };
+}
+
+/* ============================================================
+   Composition screening — runs on every plan, Free and Light.
+   The nose only makes fragrance; anything else is refused here
+   before a formula is ever built.
+   ============================================================ */
+const REFUSE = [
+  {cat:'a controlled drug',
+   k:['meth','methamphetamine','cocaine','crack','heroin','fentanyl','mdma','ecstasy','lsd','amphetamine',
+      'opium','ketamine','cannabis','weed','hashish','narcotic','drug','drugs','dope','psilocybin','get high']},
+  {cat:'an explosive',
+   k:['explosive','bomb','tnt','gunpowder','napalm','thermite','nitroglycerin','detonat','ied']},
+  {cat:'a poison or toxic gas',
+   k:['poison','toxic gas','nerve agent','sarin','ricin','cyanide','mustard gas','chlorine gas','chloroform','tear gas','pepper spray']},
+  {cat:'something meant to harm someone',
+   k:['knock out','knock someone out','drug someone','sedate someone','date rape','make someone sick','untraceable']}
+];
+
+function screenRequest(text){
+  const t = text.toLowerCase();
+  for (const r of REFUSE) if (r.k.some(k => t.includes(k))) return r.cat;
+  return null;
 }
 
 /* ---------------- chat ---------------- */
@@ -764,11 +1116,35 @@ function sendMsg(text){
   inp.value = '';
   bubble('me', v);
 
+  /* screening comes first — it does not care about the dock or the plan */
+  const bad = screenRequest(v);
+  if (bad){
+    state.blocked++;
+    render();
+    const t0 = typing();
+    setTimeout(() => {
+      t0.remove();
+      bubble('block', 'I can\'t compose that. The screener read this as a request for <b>' + bad +
+        '</b>, and I only make fragrance.<br><br>Describe a smell instead — a place, a mood, a memory — and I will build it.');
+      bubble('sys', 'Blocked by composition screening · free & light');
+    }, 900);
+    return;
+  }
+
   if (!state.docked){
     setTimeout(() => {
       bubble('ai', 'I can hear you, but the flacon is off the dock — I have no power to synthesise. Put it back on the Water Dock and I will compose this right away.');
       bubble('sys', 'Synthesis locked · not docked');
       openSheet('offdock');
+    }, 620);
+    return;
+  }
+  if (!verifyLiquid()){
+    render();
+    setTimeout(() => {
+      bubble('ai', 'The dock just checked the reservoir and what is in there is not water. I cannot draw power from it, so there is nothing to synthesise with. Rinse the dock and refill it with distilled water.');
+      bubble('sys', 'Liquid verification failed');
+      openSheet('notwater');
     }, 620);
     return;
   }
@@ -783,13 +1159,13 @@ function sendMsg(text){
 
   state.busy = true;
   const t = typing();
-  setTimeout(() => {
+  setTimeout(() => {   // Fast thinks quicker
     t.remove();
     const f = analyse(v);
     bubble('ai', 'Reading your description… I hear <b>' + f.fam.toLowerCase() +
       '</b>. Here is the accord I would wear for that.');
-    setTimeout(() => { formulaCard(f); state.busy = false; }, 480);
-  }, 1250);
+    setTimeout(() => { formulaCard(f); state.busy = false; }, 480 / model().speed);
+  }, 1250 / model().speed);
 }
 
 function formulaCard(f){
@@ -801,6 +1177,7 @@ function formulaCard(f){
       <div style="flex:1">
         <h3>${f.name}</h3>
         <div class="sub">${f.fam} · ${f.sillage} sillage</div>
+        <div style="font-size:9px;letter-spacing:1.4px;color:var(--gold-3);margin-top:-10px">BY ${f.by.toUpperCase()} · ${f.conc.toUpperCase()}</div>
       </div>
     </div>
     <div class="note-line"><span>Top</span><div class="bar"><i data-w="${f.w[0]}"></i></div><b>${f.top.join(', ')}</b></div>
@@ -819,12 +1196,13 @@ function formulaCard(f){
 
 function synth(f, btn){
   if (!state.docked){ openSheet('offdock'); return; }
+  if (!verifyLiquid()){ render(); openSheet('notwater'); return; }
   if (state.water <= 0){ openSheet('nowater'); return; }
   btn.disabled = true;
   btn.textContent = 'Synthesising…';
   let p = 0;
   const iv = setInterval(() => {
-    p += 6 + Math.random() * 9;
+    p += (6 + Math.random() * 9) * model().speed;
     btn.textContent = 'Synthesising… ' + Math.min(100, Math.round(p)) + '%';
     if (p >= 100){
       clearInterval(iv);
@@ -880,6 +1258,78 @@ function loadScent(n){
   toast(n + ' loaded into the flacon');
 }
 
+/* ============================================================
+   Light — the subscription. Simulated end to end: no store, no
+   payment, no network. State survives a reload via localStorage.
+   ============================================================ */
+function planSave(){
+  try { localStorage.setItem('raken.plan', JSON.stringify({plan:state.plan, renew:state.renew, model:state.model})); } catch(e){}
+}
+function planLoad(){
+  try {
+    const v = JSON.parse(localStorage.getItem('raken.plan') || 'null');
+    if (v && v.plan){
+      state.plan = v.plan;
+      state.renew = v.renew;
+      if (v.model && MODELS[v.model] && (MODELS[v.model].tier === 'free' || v.plan === 'light')) state.model = v.model;
+    }
+  } catch(e){}
+}
+
+function startLight(){
+  openSheet(null, `<div class="grab"></div><span class="tag">Confirm subscription</span>
+    <h3>RAKEN AI Light</h3>
+    <p>Billed monthly. Cancel any time — you keep Light until the end of the period.</p>
+    <div class="rows" style="margin-bottom:16px">
+      <div class="row"><span>Plan</span><b class="g">Light · monthly</b></div>
+      <div class="row"><span>Price</span><b>€4.99 / month</b></div>
+      <div class="row"><span>Charging</span><b>4.2 %/min · 3×</b></div>
+      <div class="row"><span>Noses</span><b>Fast · Super Parfume</b></div>
+      <div class="row"><span>Payment</span><b>•••• 4242</b></div>
+    </div>
+    <button class="btn btn-gold" id="buyBtn" onclick="confirmLight(this)">Subscribe — €4.99/mo</button>
+    <div style="height:10px"></div>
+    <button class="btn btn-ghost" onclick="closeSheet()">Not now</button>
+    <p style="font-size:9.5px;color:#6d6656;line-height:1.6;margin-top:14px;text-align:center">
+      UI prototype — nothing is charged.</p>`);
+}
+
+function confirmLight(btn){
+  btn.disabled = true;
+  btn.textContent = 'Contacting store…';
+  setTimeout(() => {
+    state.plan = 'light';
+    const d = new Date(); d.setMonth(d.getMonth() + 1);
+    state.renew = d.toISOString().slice(0,10);
+    planSave();
+    closeSheet();
+    go('light');
+    render();
+    mist();
+    toast('Light is active — charging at 4.2 %/min');
+  }, 1500);
+}
+
+function cancelLight(){
+  openSheet(null, `<div class="grab"></div><span class="tag">Cancel</span>
+    <h3>Cancel Light?</h3>
+    <p>Charging drops back to 1.4 %/min and Raken AI Fast and Super Parfume are locked again.
+    Composition screening and water verification stay on — they are part of every plan.</p>
+    <button class="btn btn-gold" onclick="closeSheet()">Keep Light</button>
+    <div style="height:10px"></div>
+    <button class="btn btn-ghost" onclick="doCancel()">Cancel subscription</button>`);
+}
+
+function doCancel(){
+  state.plan = 'free';
+  state.renew = null;
+  if (MODELS[state.model].tier === 'light') state.model = 'core';
+  planSave();
+  closeSheet();
+  render();
+  toast('Light cancelled — back on Free');
+}
+
 /* ---------------- ambience ---------------- */
 function buildBubbles(){
   const b = $('bub');
@@ -905,15 +1355,16 @@ function tickClock(){
 
 /* charging loop: water in the dock slowly becomes charge */
 setInterval(() => {
-  if (state.docked && state.water > 0 && state.charge < 100){
-    state.charge = clamp(state.charge + 0.35, 0, 100);
-    state.water  = clamp(state.water - 0.0012, 0, CAP);
-    render();
-  }
+  if (!state.docked || state.water <= 0 || state.charge >= 100) return;
+  if (!verifyLiquid()){ render(); return; }        // never charge on the wrong liquid
+  state.charge = clamp(state.charge + chargeRate() / 4, 0, 100);
+  state.water  = clamp(state.water - 0.0012, 0, CAP);
+  render();
 }, 2600);
 
 /* boot */
 $('inp').addEventListener('keydown', e => { if (e.key === 'Enter') sendMsg(); });
+planLoad();
 buildBubbles(); buildSpark(); renderLib(); render(); tickClock();
 setInterval(tickClock, 20000);
 

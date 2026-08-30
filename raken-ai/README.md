@@ -13,7 +13,45 @@ sensor reading and "neural" response is simulated in the browser.
 | **Dock** | Live device view. Shows the docked product shot when the flacon is seated, and the flacon-only shot when it is not. Water in litres, hydro-cell charge, full telemetry. |
 | **Compose** | Chat with the neural nose. Describe a smell, get a full accord (top / heart / base notes, longevity, sillage, water cost) and load it into the flacon. |
 | **Water** | Reservoir tank in litres, refill / use, hydro-electric charging figures, 7-day usage. |
+| **Light** | The subscription. Plan comparison, the three noses, and the mock purchase flow. |
 | **Library** | Saved accords and the molecule bank. |
+
+## Light — the subscription
+
+Simulated end to end: no store, no payment, no network. The chosen plan is kept in
+`localStorage`, so it survives a reload.
+
+| | Free | Light — €4.99/mo |
+| --- | --- | --- |
+| Charging | 1.4 %/min | **4.2 %/min (3×)** |
+| Raken AI (core nose) | ✓ | ✓ |
+| Raken AI Fast | — | ✓ |
+| Raken AI Super Parfume | — | ✓ |
+| Composition screening | ✓ | ✓ |
+| Water verification | ✓ | ✓ |
+
+The three noses differ in what they actually produce:
+
+* **Raken AI** — two notes per layer, eau de parfum.
+* **Raken AI Fast** — composes roughly 2.6× quicker and pushes the cell a little harder.
+* **Raken AI Super Parfume** — three notes per layer, extrait concentration, ~3.5 h more wear.
+
+A locked nose opens the paywall instead of composing. Cancelling drops charging back to
+1.4 %/min and pushes the active nose back to the core one.
+
+## The two checks
+
+Both run on **every plan**, cannot be switched off, and are not part of what Light sells.
+
+* **Composition screening** — every request is screened before a formula is built. Anything
+  that reads as drugs, explosives, poisons or harming someone is refused in the chat with the
+  category named, the request is counted on the dock's safety card, and no accord is produced.
+  Screening runs before the dock and plan checks, so it applies even with the flacon off the dock.
+* **Liquid verification** — the dock measures conductivity and refractive index on every scan,
+  every charge tick, and before every synthesis or mist. If what is in the reservoir is not
+  water, charging halts, the atomiser locks, the hero reads *Liquid rejected*, and the nose
+  refuses to synthesise. The **Liquid in the dock** simulation on the Dock screen switches
+  between distilled water and something else.
 
 ## The dock rules
 
@@ -27,6 +65,7 @@ The dock state drives the whole interface:
 
 Two ways to change it: the **Scan dock** button (runs the scan animation, then reports what it
 found) or the **Flacon placed in dock** switch, which stands in for the dock proximity sensor.
+Every scan also verifies the liquid — see below.
 
 Reservoir capacity is `0.50 L`; roughly `0.01 L` of water is worth `3 %` of charge, and a
 synthesis costs about `0.016 L`.
