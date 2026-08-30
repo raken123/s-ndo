@@ -5,6 +5,7 @@ public class Canvas {
     public void restore() { }
     public void translate(float dx, float dy) { }
     public void rotate(float degrees, float px, float py) { }
+    public void scale(float sx, float sy, float px, float py) { }
     public void drawRect(float l, float t, float r, float b, Paint p) { }
     public void drawRect(RectF rect, Paint p) { }
     public void drawRoundRect(RectF rect, float rx, float ry, Paint p) { }

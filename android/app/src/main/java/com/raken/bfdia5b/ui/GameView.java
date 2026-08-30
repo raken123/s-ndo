@@ -192,7 +192,7 @@ public final class GameView extends SurfaceView implements Runnable, SurfaceHold
         try {
             canvas = holder.lockCanvas();
             if (canvas == null) return;
-            draw(canvas);
+            renderFrame(canvas);
         } catch (IllegalArgumentException | IllegalStateException e) {
             Log.w(TAG, "dropped a frame", e);
         } finally {
@@ -206,7 +206,7 @@ public final class GameView extends SurfaceView implements Runnable, SurfaceHold
         }
     }
 
-    private void draw(Canvas canvas) {
+    private void renderFrame(Canvas canvas) {
         if (controls.width == 0) {
             controls.layout(getWidth(), getHeight(), pack == null ? 0 : pack.size());
         }

@@ -2,11 +2,9 @@ package com.raken.bfdia5b.ui;
 
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
-import android.graphics.Shader;
 
 import com.raken.bfdia5b.core.Player;
 import com.raken.bfdia5b.core.Tiles;
@@ -67,7 +65,7 @@ final class Art {
      * {@code phase} is a free-running clock used for the wobbling liquids.
      */
     void tile(Canvas canvas, char t, float x, float y, float size, float burn, float phase,
-              boolean doorsLocked, boolean gateOpen) {
+              boolean doorsLocked, boolean buttonHeld) {
         switch (t) {
             case Tiles.BRICK:
                 brick(canvas, x, y, size);
@@ -98,10 +96,10 @@ final class Art {
                 door(canvas, x, y, size, doorsLocked);
                 break;
             case Tiles.GATE:
-                gate(canvas, x, y, size, gateOpen);
+                gate(canvas, x, y, size, buttonHeld);
                 break;
             case Tiles.BUTTON:
-                button(canvas, x, y, size, !gateOpen);
+                button(canvas, x, y, size, buttonHeld);
                 break;
             case Tiles.TRAMPOLINE:
                 trampoline(canvas, x, y, size);
@@ -342,13 +340,18 @@ final class Art {
         path.lineTo(l + bw * 0.18f, bottom - bh * 0.86f);
         path.lineTo(l, bottom - bh * 0.52f);
         path.close();
-        fill.setShader(new LinearGradient(cx, bottom, cx, bottom - bh * 1.06f,
-                FIREY, FIREY_HOT, Shader.TileMode.CLAMP));
-        canvas.drawPath(path, fill);
         fill.setShader(null);
+        fill.setColor(FIREY);
+        canvas.drawPath(path, fill);
         line.setColor(0xFFE07A12);
         line.setStrokeWidth(Math.max(1.2f, w * 0.07f));
         canvas.drawPath(path, line);
+        // The same flame again, smaller, for the hot core the icon has.
+        canvas.save();
+        canvas.scale(0.60f, 0.60f, cx, bottom - bh * 0.22f);
+        fill.setColor(FIREY_HOT);
+        canvas.drawPath(path, fill);
+        canvas.restore();
     }
 
     private void leafyBody(Canvas canvas, float cx, float bottom, float w, float h) {
@@ -360,10 +363,14 @@ final class Art {
         path.cubicTo(r, top + bh * 0.26f, r, bottom - bh * 0.22f, cx, bottom);
         path.cubicTo(l, bottom - bh * 0.22f, l, top + bh * 0.26f, cx, top);
         path.close();
-        fill.setShader(new LinearGradient(l, top, r, bottom,
-                LEAFY_LIGHT, LEAFY, Shader.TileMode.CLAMP));
-        canvas.drawPath(path, fill);
         fill.setShader(null);
+        fill.setColor(LEAFY);
+        canvas.drawPath(path, fill);
+        canvas.save();
+        canvas.scale(0.72f, 0.86f, cx, bottom - bh * 0.5f);
+        fill.setColor(LEAFY_LIGHT);
+        canvas.drawPath(path, fill);
+        canvas.restore();
         line.setColor(0xFF3E9420);
         line.setStrokeWidth(Math.max(1.2f, w * 0.07f));
         canvas.drawPath(path, line);

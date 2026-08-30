@@ -1,6 +1,7 @@
 package android.view;
 
 import android.content.Context;
+import android.graphics.Canvas;
 
 public class View {
     public static final int SYSTEM_UI_FLAG_LAYOUT_STABLE = 0x100;
@@ -15,6 +16,9 @@ public class View {
     public int getWidth() { return 0; }
     public int getHeight() { return 0; }
     public void setSystemUiVisibility(int visibility) { }
+    public void draw(Canvas canvas) { }
+    protected void onDraw(Canvas canvas) { }
+    public void invalidate() { }
     public boolean onTouchEvent(MotionEvent event) { return false; }
     public boolean onKeyDown(int keyCode, KeyEvent event) { return false; }
     public boolean onKeyUp(int keyCode, KeyEvent event) { return false; }

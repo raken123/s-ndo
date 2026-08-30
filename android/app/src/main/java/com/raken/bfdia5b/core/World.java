@@ -74,6 +74,9 @@ public final class World {
     /** Set for one frame when something happened worth a sound effect. */
     public boolean sfxJump, sfxSwap, sfxPickup, sfxDeath, sfxBounce, sfxWin, sfxBurn;
 
+    /** Reused so a step never allocates. */
+    private final Input sliceInput = new Input();
+
     public World(Level level) {
         this.level = level;
         reset(true);
@@ -156,20 +159,14 @@ public final class World {
     public void step(float dt, Input in) {
         clearSfx();
         if (dt > 0.25f) dt = 0.25f;
+        sliceInput.copyFrom(in);
         while (dt > 0) {
             float slice = Math.min(dt, MAX_STEP);
-            substep(slice, in);
-            // A swap or a queued jump must only fire once per frame.
-            in = consume(in);
+            substep(slice, sliceInput);
+            // A swap must fire once per frame, not once per substep.
+            sliceInput.swap = false;
             dt -= slice;
         }
-    }
-
-    private Input consume(Input in) {
-        Input next = new Input();
-        next.copyFrom(in);
-        next.swap = false;
-        return next;
     }
 
     private void clearSfx() {

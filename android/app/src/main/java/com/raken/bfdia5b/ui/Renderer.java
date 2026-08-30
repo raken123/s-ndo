@@ -25,9 +25,13 @@ final class Renderer {
     private final Path path = new Path();
     private final RectF rect = new RectF();
 
-    /** Pixels per tile, and the top-left corner of the view in tile space. */
+    /** Pixels per tile, the top-left corner of the view in tile space, and its size. */
     private float scale;
     private float camX, camY;
+    private float viewTilesX, viewTilesY;
+
+    private LinearGradient backdrop;
+    private int backdropHeight;
 
     Renderer() {
         text.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
@@ -37,8 +41,13 @@ final class Renderer {
     // -------------------------------------------------------------- helpers
 
     private void background(Canvas canvas, int w, int h) {
-        paint.setShader(new LinearGradient(0, 0, 0, h, Art.CREAM, Art.CREAM_DEEP,
-                Shader.TileMode.CLAMP));
+        if (backdrop == null || backdropHeight != h) {
+            backdrop = new LinearGradient(0, 0, 0, h, Art.CREAM, Art.CREAM_DEEP,
+                    Shader.TileMode.CLAMP);
+            backdropHeight = h;
+        }
+        paint.setStyle(Paint.Style.FILL);
+        paint.setShader(backdrop);
         canvas.drawRect(0, 0, w, h, paint);
         paint.setShader(null);
     }
@@ -176,6 +185,8 @@ final class Renderer {
         scale = Math.max(fitAll, Math.min(comfortable, h / 9f));
 
         float viewW = w / scale, viewH = h / scale;
+        viewTilesX = viewW;
+        viewTilesY = viewH;
         Player p = world.activePlayer();
         camX = p.centerX() - viewW / 2;
         camY = p.centerY() - viewH / 2;
@@ -197,8 +208,8 @@ final class Renderer {
 
         int c0 = (int) Math.max(0, Math.floor(camX) - 1);
         int r0 = (int) Math.max(0, Math.floor(camY) - 1);
-        int c1 = (int) Math.min(level.width - 1, camX + canvasTiles(true) + 1);
-        int r1 = (int) Math.min(level.height - 1, camY + canvasTiles(false) + 1);
+        int c1 = (int) Math.min(level.width - 1, camX + viewTilesX + 1);
+        int r1 = (int) Math.min(level.height - 1, camY + viewTilesY + 1);
 
         for (int r = r0; r <= r1; r++) {
             for (int c = c0; c <= c1; c++) {
@@ -217,10 +228,6 @@ final class Renderer {
 
         drawPlayer(canvas, world, world.idlePlayer(), false);
         drawPlayer(canvas, world, world.activePlayer(), true);
-    }
-
-    private float canvasTiles(boolean horizontal) {
-        return (horizontal ? 4000 : 2400) / scale;
     }
 
     private void drawPlayer(Canvas canvas, World world, Player p, boolean isActive) {
