@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RAKEN AI — reel</title>
+<style>
+
+:root{
+  --g1:#fff6d8; --g2:#f3d68b; --g3:#d4af37; --g4:#a67c1a;
+  --txt:#f6efdd; --muted:#9d9480; --bad:#ff6b6b;
+  --gold:linear-gradient(135deg,var(--g1) 0%,var(--g2) 24%,var(--g3) 52%,var(--g4) 78%,var(--g2) 100%);
+  --serif:"Liberation Serif","DejaVu Serif",Georgia,serif;
+  --sans:"Liberation Sans","DejaVu Sans",Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#111;font-family:var(--sans);-webkit-font-smoothing:antialiased}
+
+.ad{
+  position:relative;width:1080px;height:1920px;overflow:hidden;margin:0 auto 40px;
+  background:#000;color:var(--txt);
+}
+.ad::after{ /* film grain + vignette */
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:60;
+  background:radial-gradient(120% 80% at 50% 45%,transparent 40%,rgba(0,0,0,.55) 100%);
+}
+.glow{position:absolute;border-radius:50%;filter:blur(60px);pointer-events:none}
+
+/* type */
+.eyebrow{font-size:25px;letter-spacing:11px;text-transform:uppercase;color:var(--g3);font-weight:700}
+.head{font-family:var(--serif);font-weight:400;line-height:1;letter-spacing:1px;
+  background:var(--gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.h1{font-size:132px}
+.h2{font-size:104px}
+.body{font-size:30px;line-height:1.62;color:var(--muted);letter-spacing:.4px;max-width:760px}
+.body b{color:var(--txt);font-weight:600}
+.rule{height:1px;background:linear-gradient(90deg,rgba(212,175,55,.7),rgba(212,175,55,.05))}
+
+/* brand lockup */
+.lockup{display:flex;align-items:center;gap:26px}
+.mono{width:96px;height:96px;border-radius:28px;display:grid;place-items:center;flex:none;
+  background:linear-gradient(160deg,rgba(212,175,55,.26),rgba(0,0,0,.7));
+  border:1px solid rgba(212,175,55,.4);box-shadow:inset 0 2px 0 rgba(255,246,216,.3)}
+.mono span{font-family:var(--serif);font-size:40px;letter-spacing:1px;
+  background:var(--gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lockup .nm{font-family:var(--serif);font-size:42px;letter-spacing:13px;
+  background:var(--gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lockup .sub{font-size:19px;letter-spacing:7px;color:var(--muted);text-transform:uppercase;margin-top:8px}
+
+/* product shots */
+.shot{position:absolute;display:block}
+.shot img{display:block;height:100%;width:auto;filter:saturate(.92) contrast(1.04);
+  -webkit-mask-image:radial-gradient(68% 60% at 50% 48%,#000 52%,rgba(0,0,0,.65) 76%,transparent 95%);
+  mask-image:radial-gradient(68% 60% at 50% 48%,#000 52%,rgba(0,0,0,.65) 76%,transparent 95%)}
+.solo img{clip-path:inset(3.5% 4% 6.5% 4%)}
+.dock img{clip-path:inset(2.5% 3% 10% 3%)}
+.scrim-b{position:absolute;left:0;right:0;bottom:0;z-index:20;
+  background:linear-gradient(180deg,transparent,rgba(0,0,0,.75) 45%,#000 88%)}
+.scrim-t{position:absolute;left:0;right:0;top:0;z-index:20;
+  background:linear-gradient(180deg,#000 12%,rgba(0,0,0,.8) 45%,transparent)}
+
+/* chips, cards */
+.pill{display:inline-flex;align-items:center;gap:12px;padding:15px 28px;border-radius:999px;
+  font-size:21px;letter-spacing:4px;text-transform:uppercase;font-weight:700;
+  background:rgba(0,0,0,.55);border:1px solid rgba(212,175,55,.35);color:var(--g2)}
+.pill.solid{background:var(--gold);color:#0b0904;border-color:transparent}
+.cta{display:inline-block;padding:30px 62px;border-radius:22px;background:var(--gold);color:#0b0904;
+  font-size:27px;font-weight:700;letter-spacing:5px;text-transform:uppercase}
+.cta.ghost{background:none;border:1px solid rgba(212,175,55,.5);color:var(--g2)}
+.card{background:linear-gradient(165deg,rgba(255,255,255,.07),rgba(255,255,255,.02));
+  border:1px solid rgba(212,175,55,.28);border-radius:32px;padding:38px}
+.legal{font-size:17px;letter-spacing:3px;color:#6a6353;text-transform:uppercase}
+
+.stat{font-family:var(--serif);font-size:150px;line-height:.9;
+  background:var(--gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat small{font-size:44px;letter-spacing:2px}
+.lab{font-size:20px;letter-spacing:6px;text-transform:uppercase;color:var(--muted);margin-top:14px}
+
+.tick{display:flex;gap:18px;align-items:flex-start;font-size:27px;color:var(--txt);margin-bottom:22px;letter-spacing:.3px}
+.tick svg{flex:none;margin-top:6px}
+.tick span{color:var(--muted)}
+
+/* chat mock */
+.bub{max-width:640px;padding:26px 34px;border-radius:34px;font-size:29px;line-height:1.5;letter-spacing:.2px}
+.bub.me{background:var(--gold);color:#0b0904;border-bottom-right-radius:10px;margin-left:auto;font-weight:500}
+.bub.ai{background:rgba(212,175,55,.14);border:1px solid rgba(212,175,55,.4);color:#f7edd7;border-bottom-left-radius:10px}
+.note{display:flex;align-items:center;gap:20px;margin-bottom:16px}
+.note i{font-style:normal;font-size:18px;letter-spacing:3px;color:var(--muted);width:86px;text-transform:uppercase}
+.note u{text-decoration:none;font-size:24px;color:#eadfc2;letter-spacing:.2px}
+.bar{height:8px;border-radius:99px;background:rgba(255,255,255,.09);flex:1;overflow:hidden}
+.bar b{display:block;height:100%;background:var(--gold);border-radius:99px}
+
+/* ── reel timeline ─────────────────────────────────────────────
+   Every animation is paused and seeked frame by frame, so the
+   render is deterministic rather than wall-clock dependent.     */
+body{background:#000;margin:0}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#000}
+#stage *{animation-play-state:paused !important}
+.ad.slide{position:absolute;inset:0;margin:0;opacity:0;
+  animation:slideIn .75s ease both;animation-delay:var(--s)}
+@keyframes slideIn{from{opacity:0}to{opacity:1}}
+#ad1{animation-duration:.45s}   /* open faster so frame 0 is not a long black hold */
+
+/* slow push on the product shot */
+.slide .shot img{animation:ken 5s cubic-bezier(.25,.6,.3,1) both;animation-delay:var(--s)}
+@keyframes ken{from{transform:scale(1.075)}to{transform:scale(1)}}
+
+/* the light behind the bottle breathes */
+.slide .glow{animation:pulse 5s ease-in-out both;animation-delay:var(--s)}
+@keyframes pulse{0%{opacity:.55;transform:scale(.94)}55%{opacity:1;transform:scale(1.04)}100%{opacity:.8;transform:scale(1)}}
+
+/* copy rises in, staggered per block and per line */
+.anim > *{opacity:0;animation:rise .95s cubic-bezier(.2,.85,.25,1) both;
+  animation-delay:calc(var(--s) + var(--d))}
+.anim.d1{--d:.40s} .anim.d2{--d:.95s} .anim.d3{--d:1.35s}
+@keyframes rise{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
+.anim > *:nth-child(2){animation-delay:calc(var(--s) + var(--d) + .14s)}
+.anim > *:nth-child(3){animation-delay:calc(var(--s) + var(--d) + .28s)}
+.anim > *:nth-child(4){animation-delay:calc(var(--s) + var(--d) + .42s)}
+.anim > *:nth-child(5){animation-delay:calc(var(--s) + var(--d) + .56s)}
+.anim > *:nth-child(6){animation-delay:calc(var(--s) + var(--d) + .70s)}
+.anim > *:nth-child(7){animation-delay:calc(var(--s) + var(--d) + .84s)}
+
+/* gold sweeps across the headline once it has landed */
+.slide .head{background-size:230% 100%;
+  animation:rise .95s cubic-bezier(.2,.85,.25,1) both,
+            sweep 2.6s cubic-bezier(.4,0,.3,1) both;
+  animation-delay:calc(var(--s) + .55s), calc(var(--s) + .95s)}
+@keyframes sweep{from{background-position:0% 0}to{background-position:100% 0}}
+
+/* end card */
+#endcard{position:absolute;inset:0;z-index:40;background:#000;opacity:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;
+  animation:slideIn .9s ease both;animation-delay:20.00s}
+#endcard .glowe{position:absolute;left:50%;top:50%;translate:-50% -50%;width:900px;height:900px;
+  border-radius:50%;filter:blur(70px);
+  background:radial-gradient(circle,rgba(212,175,55,.30),transparent 66%);
+  animation:pulse 3s ease-in-out both;animation-delay:20.00s}
+#endcard .mono{width:190px;height:190px;border-radius:56px;position:relative}
+#endcard .mono span{font-size:78px}
+#endcard .nm{position:relative;font-family:var(--serif);font-size:70px;letter-spacing:22px;
+  background:var(--gold);-webkit-background-clip:text;background-clip:text;color:transparent;
+  background-size:230% 100%;animation:sweep 2.4s cubic-bezier(.4,0,.3,1) both;
+  animation-delay:20.50s}
+#endcard .sub{position:relative;font-size:26px;letter-spacing:11px;color:var(--muted);text-transform:uppercase}
+</style>
+</head>
+<body>
+<div id="stage">
+<div class="ad slide" id="ad1" style="--s:0.00s;z-index:10">
+  <div class="glow" style="left:50%;top:46%;width:1100px;height:1100px;translate:-50% -50%;
+       background:radial-gradient(circle,rgba(212,175,55,.30),rgba(212,175,55,.06) 45%,transparent 70%)"></div>
+  <div class="shot dock" style="left:50%;top:250px;translate:-50% 0;height:1460px">
+    <img src="../assets/bottle-docked.png" alt="">
+  </div>
+  <div class="scrim-t" style="height:560px"></div>
+  <div class="scrim-b" style="height:640px"></div>
+
+  <div class="anim d1" style="position:absolute;left:90px;top:120px;z-index:30">
+    <div class="eyebrow">The world's first</div>
+    <div class="head h1" style="margin-top:34px">AI&nbsp;PARFUM</div>
+    <div class="rule" style="width:420px;margin-top:44px"></div>
+  </div>
+
+  <div class="anim d2" style="position:absolute;left:90px;right:90px;bottom:110px;z-index:30">
+    <p class="body" style="margin-bottom:54px">
+      A 100&nbsp;ml flacon that composes its own scent — and charges on nothing but
+      <b>water</b>.
+    </p>
+    <div class="lockup">
+      <div class="mono"><span>RA</span></div>
+      <div>
+        <div class="nm">RAKEN AI</div>
+        <div class="sub">Eau de Parfum</div>
+      </div>
+    </div>
+  </div>
+</div><div class="ad slide" id="ad2" style="--s:4.00s;z-index:11">
+  <div class="glow" style="left:62%;top:64%;width:1000px;height:1000px;translate:-50% -50%;
+       background:radial-gradient(circle,rgba(212,175,55,.26),transparent 68%)"></div>
+  <div class="shot dock" style="right:-190px;bottom:330px;height:1180px"><img src="../assets/bottle-docked.png" alt=""></div>
+  <div class="scrim-t" style="height:820px"></div>
+  <div style="position:absolute;inset:0;z-index:21;background:linear-gradient(90deg,#000 16%,rgba(0,0,0,.45) 46%,transparent 72%)"></div>
+  <div class="scrim-b" style="height:560px;z-index:22;background:linear-gradient(180deg,transparent,rgba(0,0,0,.9) 42%,#000 72%)"></div>
+
+  <div class="anim d1" style="position:absolute;left:90px;top:130px;z-index:30">
+    <div class="eyebrow">No cable. No plug.</div>
+    <div class="head h1" style="margin-top:34px;font-size:124px">IT RUNS<br>ON WATER</div>
+    <p class="body" style="margin-top:46px;max-width:600px">
+      Pour distilled water into the dock. The hydro cell turns it into the power that
+      runs the atomiser — <b>0.01 L is about 3&nbsp;%</b>.
+    </p>
+  </div>
+
+  <div class="anim d2" style="position:absolute;left:90px;bottom:150px;z-index:30;display:flex;gap:96px;align-items:flex-end">
+    <div>
+      <div class="stat">0.50<small> L</small></div>
+      <div class="lab">Reservoir</div>
+    </div>
+    <div>
+      <div class="stat">4.2<small> %/min</small></div>
+      <div class="lab">Charging · Light</div>
+    </div>
+  </div>
+
+  <div class="anim d3" style="position:absolute;left:90px;bottom:70px;z-index:30" class="legal">Raken AI · Eau de Parfum</div>
+</div><div class="ad slide" id="ad3" style="--s:8.00s;z-index:12">
+  <div class="glow" style="left:50%;top:78%;width:1200px;height:900px;translate:-50% -50%;
+       background:radial-gradient(circle,rgba(212,175,55,.22),transparent 68%)"></div>
+  <div class="shot solo" style="left:50%;bottom:-90px;translate:-50% 0;height:1120px;opacity:.9">
+    <img src="../assets/bottle-solo.png" alt="">
+  </div>
+  <div class="scrim-t" style="height:1080px"></div>
+
+  <div class="anim d1" style="position:absolute;left:90px;top:120px;right:90px;z-index:30">
+    <div class="eyebrow">Tell it. Wear it.</div>
+    <div class="head h2" style="margin-top:32px">DESCRIBE<br>A FEELING.</div>
+
+    <div style="margin-top:70px;display:flex;flex-direction:column;gap:26px">
+      <div class="bub me">rainy roses at midnight</div>
+      <div class="bub ai">I hear <b>rose × oud</b>. Here is the accord I would wear for that.</div>
+    </div>
+
+    <div class="card" style="margin-top:34px;background:linear-gradient(165deg,rgba(212,175,55,.14),rgba(0,0,0,.72))">
+      <div style="font-family:var(--serif);font-size:52px;letter-spacing:1px;background:var(--gold);
+           -webkit-background-clip:text;background-clip:text;color:transparent">Sillage No.&nbsp;7</div>
+      <div style="font-size:18px;letter-spacing:5px;color:var(--muted);text-transform:uppercase;margin:10px 0 34px">
+        Extrait · 10 h · Bold sillage</div>
+      <div class="note"><i>Top</i><span class="bar"><b style="width:72%"></b></span><u>Turkish rose, Pink pepper</u></div>
+      <div class="note"><i>Heart</i><span class="bar"><b style="width:84%"></b></span><u>Damask rose, Cambodian oud</u></div>
+      <div class="note" style="margin-bottom:0"><i>Base</i><span class="bar"><b style="width:90%"></b></span><u>White musk, Labdanum</u></div>
+    </div>
+  </div>
+
+  <div class="scrim-b" style="height:420px;z-index:25;background:linear-gradient(180deg,transparent,rgba(0,0,0,.88) 45%,#000 80%)"></div>
+  <div class="anim d2" style="position:absolute;left:90px;bottom:80px;z-index:30" class="lockup">
+    <div class="mono"><span>RA</span></div>
+    <div><div class="nm">RAKEN AI</div><div class="sub">The neural nose</div></div>
+  </div>
+</div><div class="ad slide" id="ad4" style="--s:12.00s;z-index:13">
+  <div class="glow" style="left:50%;top:20%;width:1100px;height:900px;translate:-50% -50%;
+       background:radial-gradient(circle,rgba(255,246,216,.28),rgba(212,175,55,.10) 45%,transparent 70%)"></div>
+  <div class="shot solo" style="left:50%;bottom:-140px;translate:-50% 0;height:1000px;opacity:.55">
+    <img src="../assets/bottle-solo.png" alt="">
+  </div>
+  <div class="scrim-t" style="height:1150px"></div>
+  <div class="scrim-b" style="height:420px"></div>
+
+  <div class="anim d1" style="position:absolute;left:90px;right:90px;top:130px;z-index:30">
+    <div class="pill solid" style="margin-bottom:44px">
+      <svg width="17" height="22" viewBox="0 0 24 24" fill="#0b0904"><path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5Z"/></svg> Light</div>
+    <div class="head h1" style="font-size:126px">3× FASTER.<br>TWO MORE<br>NOSES.</div>
+
+    <div style="margin-top:64px;display:flex;align-items:baseline;gap:20px">
+      <div style="font-family:var(--serif);font-size:104px;color:#fff8e6">€4.99</div>
+      <div style="font-size:26px;letter-spacing:5px;color:var(--muted);text-transform:uppercase">/ month</div>
+    </div>
+
+    <div class="rule" style="width:100%;margin:52px 0 46px"></div>
+
+    <div class="tick"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="3.4"><path d="M4 12l6 6L20 6"/></svg>
+      <div>Charging at <b>4.2 %/min</b> <span>— up from 1.4</span></div></div>
+    <div class="tick"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="3.4"><path d="M4 12l6 6L20 6"/></svg>
+      <div>Raken AI Fast <span>— composes in a fraction of the time</span></div></div>
+    <div class="tick"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="3.4"><path d="M4 12l6 6L20 6"/></svg>
+      <div>Raken AI Super Parfume <span>— three notes per layer, extrait</span></div></div>
+  </div>
+
+  <div class="scrim-b" style="height:520px;z-index:25;background:linear-gradient(180deg,transparent,rgba(0,0,0,.85) 45%,#000 78%)"></div>
+  <div class="anim d2" style="position:absolute;left:90px;right:90px;bottom:110px;z-index:30;display:flex;align-items:center;justify-content:space-between">
+    <div class="cta">Start Light</div>
+    <div class="lockup"><div class="mono"><span>RA</span></div></div>
+  </div>
+</div><div class="ad slide" id="ad5" style="--s:16.00s;z-index:14">
+  <div class="glow" style="left:50%;top:52%;width:1000px;height:1000px;translate:-50% -50%;
+       background:radial-gradient(circle,rgba(212,175,55,.16),transparent 70%)"></div>
+  <div class="shot dock" style="left:50%;top:520px;translate:-50% 0;height:900px;opacity:.42">
+    <img src="../assets/bottle-docked.png" alt="">
+  </div>
+  <div class="scrim-t" style="height:700px"></div>
+  <div class="scrim-b" style="height:900px"></div>
+
+  <div class="anim d1" style="position:absolute;left:90px;right:90px;top:130px;z-index:30">
+    <div class="eyebrow">On every plan</div>
+    <div class="head h2" style="margin-top:32px;font-size:96px">IT KNOWS<br>WHAT NOT<br>TO MAKE.</div>
+  </div>
+
+  <div class="anim d2" style="position:absolute;left:90px;right:90px;bottom:250px;z-index:30;display:flex;flex-direction:column;gap:26px">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:20px;margin-bottom:20px">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.9"><path d="M12 3l8 3v6c0 5-3.4 8.4-8 9-4.6-.6-8-4-8-9V6l8-3Z" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke-linecap="round"/></svg>
+        <div style="font-size:31px;letter-spacing:2px;color:var(--txt);font-weight:600">Composition screening</div>
+      </div>
+      <div style="font-size:26px;line-height:1.6;color:var(--muted)">
+        Every request is read before a formula exists. It makes fragrance — nothing else.</div>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:20px;margin-bottom:20px">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.9" stroke-linejoin="round"><path d="M12 3s6 6.6 6 10.5A6 6 0 0 1 6 13.5C6 9.6 12 3 12 3Z"/></svg>
+        <div style="font-size:31px;letter-spacing:2px;color:var(--txt);font-weight:600">Liquid verification</div>
+      </div>
+      <div style="font-size:26px;line-height:1.6;color:var(--muted)">
+        The dock tests what you pour in, every time. If it is not water, it will not charge.</div>
+    </div>
+  </div>
+
+  <div class="anim d3" style="position:absolute;left:90px;right:90px;bottom:110px;z-index:30;display:flex;align-items:center;justify-content:space-between">
+    <div class="lockup">
+      <div class="mono"><span>RA</span></div>
+      <div><div class="nm">RAKEN AI</div><div class="sub">Free &amp; Light</div></div>
+    </div>
+  </div>
+</div>
+  <div id="endcard">
+    <div class="glowe"></div>
+    <div class="mono"><span>RA</span></div>
+    <div class="nm">RAKEN AI</div>
+    <div class="sub">Eau de Parfum</div>
+  </div>
+</div>
+<script>
+/* seek(t): place every animation at exactly t seconds, then the renderer
+   grabs one frame. No wall-clock, no dropped frames. */
+window.TOTAL = 22.6;
+window.seek = t => {
+  document.getAnimations().forEach(a => { try { a.currentTime = t * 1000; } catch (e) {} });
+};
+</script>
+</body>
+</html>
