@@ -11,6 +11,33 @@ black-and-gold system as the app and the product renders in `../assets/`.
 | `raken-ai-ad-04-light.png` | Subscription | **3× faster. Two more noses.** |
 | `raken-ai-ad-05-safety.png` | Trust | **It knows what not to make** |
 
+## Video
+
+| File | |
+| --- | --- |
+| `raken-ai-reel.mp4` | All five ads plus a brand end card — **22.6 s, 1080×1920, H.264** |
+| `raken-ai-ad-0*.mp4` | The same ads as standalone 4 s cuts, each fading up from black |
+
+`reel.html` reuses the artboards from `ads.html` verbatim and adds the timeline:
+each board fades up, its copy rises in staggered blocks, gold sweeps across the
+headline, and the product shot pushes in. Silent — social autoplay is muted anyway.
+
+Frames are not captured in real time. `render-reel.js` seeks every animation to an
+exact timestamp (`seek(t)`) and screenshots it, so the render is deterministic and
+cannot drop or duplicate frames. Encoding needs libx264, so the
+**Render RAKEN AI reel** workflow does it on every push that touches this folder,
+extracts frames back out of the finished file into `verify/` as proof it decodes,
+and commits the MP4s to the branch.
+
+To render locally you need Playwright plus a full ffmpeg on `PATH`:
+
+```bash
+node raken-ai/ads/render-reel.js raken-ai/ads
+SAMPLE_FRAMES=12 node raken-ai/ads/render-reel.js /tmp   # spot-check the timeline
+```
+
+## Stills
+
 `ads.html` is the source — all five artboards on one page, no build step and no
 network. Re-render after an edit with Playwright:
 
