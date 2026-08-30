@@ -1,0 +1,10 @@
+// Top-level build file. The app module deliberately has zero library
+// dependencies, so the Android Gradle Plugin is the only artifact this
+// build has to resolve.
+plugins {
+    id 'com.android.application' version '8.7.3' apply false
+}
+
+tasks.register('clean', Delete) {
+    delete rootProject.layout.buildDirectory
+}
