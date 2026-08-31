@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#05070c">
+<meta name="description" content="ReeOS — bilhållarens operativsystem. Navigation, musik, samtal och röststyrning, plus funktioner CarPlay och Android Auto inte har.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ReeOS</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="stylesheet" href="css/reeos.css">
+</head>
+<body data-theme="night">
+
+<div id="boot" class="boot">
+  <div class="boot-mark">Ree<span>OS</span></div>
+  <div class="boot-bar"><i></i></div>
+  <p class="boot-tip">Fäst telefonen i hållaren innan du kör.</p>
+</div>
+
+<div id="shell" class="shell" hidden>
+
+  <header class="statusbar" id="statusbar">
+    <button class="sb-btn" id="btn-home" aria-label="Hem">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+    </button>
+    <button class="sb-btn" id="btn-back" aria-label="Tillbaka" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg>
+    </button>
+
+    <div class="sb-title" id="sb-title">Hem</div>
+
+    <div class="sb-live">
+      <span class="sb-speed" id="sb-speed"><b>–</b><small>km/h</small></span>
+      <span class="sb-chip" id="sb-gps" title="GPS-status">GPS</span>
+      <span class="sb-chip" id="sb-drive" hidden>KÖR</span>
+    </div>
+
+    <div class="sb-right">
+      <span class="sb-batt" id="sb-batt" hidden></span>
+      <span class="sb-clock" id="sb-clock">--:--</span>
+      <button class="sb-btn sb-mic" id="btn-mic" aria-label="Röststyrning">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="viewport" id="viewport" tabindex="-1"></main>
+
+  <nav class="dock" id="dock" aria-label="Snabbstart"></nav>
+
+  <div class="toast-stack" id="toasts" aria-live="polite"></div>
+  <div class="assistant-overlay" id="assistant-overlay" hidden></div>
+  <div class="alert-overlay" id="alert-overlay" hidden></div>
+</div>
+
+<noscript><p style="color:#fff;padding:2rem;font:16px system-ui">ReeOS kräver JavaScript.</p></noscript>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
