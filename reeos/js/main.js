@@ -157,7 +157,8 @@ async function boot() {
   boot.classList.add('gone');
   setTimeout(() => boot.remove(), 500);
 
-  if ('serviceWorker' in navigator) {
+  // På file:// finns ingen service worker att registrera; hoppa över tyst.
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     navigator.serviceWorker.register('sw.js').catch(() => { /* offline-läget är en bonus */ });
   }
 }

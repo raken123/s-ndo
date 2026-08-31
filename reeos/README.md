@@ -10,6 +10,16 @@ resor, platser, kontakter och klipp ligger kvar i telefonen.
 **Öppna:** `reeos/index.html` (publiceras via GitHub Pages på `/reeos/`).
 Lägg till den på hemskärmen så startar den i helskärm som en vanlig app.
 
+**Eller: `reeos/ReeOS.html`** — hela appen i en enda fil, att dubbelklicka på
+eller mejla vidare. Den behöver ingen webbserver. Skillnaden mot mappversionen
+är att den saknar service worker och manifest, så den cachar inget och startar
+i webbläsarfliken i stället för i helskärm. I övrigt är den identisk, och
+byggs om med:
+
+```
+python3 reeos/build-single-file.py
+```
+
 ## Vanliga funktioner
 
 | Funktion | Vad den gör |
@@ -79,6 +89,8 @@ reeos/
   js/core/              bus, store, ui, sensors, speech, router
   js/apps/              en fil per app
   sw.js                 offline-cache
+  build-single-file.py  bygger ReeOS.html
+  ReeOS.html            enfilsversionen (genererad)
 ```
 
 Kärnan delar en enda GPS-prenumeration mellan alla appar — flera

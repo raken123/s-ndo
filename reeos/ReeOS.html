@@ -1,0 +1,4013 @@
+<!-- ReeOS — enfilsversion. Hela appen ligger i den här filen och kan
+     öppnas direkt i webbläsaren. Källkoden per modul finns i reeos/. -->
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#05070c">
+<meta name="description" content="ReeOS — bilhållarens operativsystem. Navigation, musik, samtal och röststyrning, plus funktioner CarPlay och Android Auto inte har.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ReeOS</title>
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IlJlZU9TIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMzOGJkZjgiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjNjM2NmYxIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0iIzA1MDcwYyIvPgogIDxjaXJjbGUgY3g9IjI1NiIgY3k9IjI1NiIgcj0iMTUwIiBmaWxsPSJub25lIiBzdHJva2U9InVybCgjZykiIHN0cm9rZS13aWR0aD0iMjYiLz4KICA8cGF0aCBkPSJNMjU2IDE1MCBMMzE4IDMzMCBMMjU2IDI5MiBMMTk0IDMzMCBaIiBmaWxsPSJ1cmwoI2cpIi8+Cjwvc3ZnPgo=" type="image/svg+xml">
+<style>
+/* ReeOS — bilhållarens gränssnitt.
+   Designregler: minst 56px träffytor, minst 17px text, hög kontrast,
+   inga tunna linjer, ingenting som kräver precision i en gupp. */
+
+:root {
+  --r-bg: #05070c;
+  --r-panel: #101623;
+  --r-panel-2: #172032;
+  --r-line: #26324a;
+  --r-ink: #eef3ff;
+  --r-muted: #93a1bd;
+  --r-brand: #38bdf8;
+  --r-brand-ink: #062434;
+  --r-amber: #fbbf24;
+  --r-green: #34d399;
+  --r-red: #fb7185;
+  --r-violet: #a78bfa;
+  --r-radius: 20px;
+  --r-gap: 14px;
+  --r-tap: 60px;
+  --r-shadow: 0 10px 30px rgba(0, 0, 0, .45);
+  --r-safe-t: env(safe-area-inset-top, 0px);
+  --r-safe-b: env(safe-area-inset-bottom, 0px);
+  --r-safe-l: env(safe-area-inset-left, 0px);
+  --r-safe-r: env(safe-area-inset-right, 0px);
+}
+
+/* Dagläge: samma layout, ljusare panel — läsbart i direkt solljus. */
+body[data-theme="day"] {
+  --r-bg: #eef2f8;
+  --r-panel: #ffffff;
+  --r-panel-2: #f2f5fa;
+  --r-line: #d3dbe8;
+  --r-ink: #101828;
+  --r-muted: #5a6880;
+  --r-brand: #0369a1;
+  --r-brand-ink: #ffffff;
+  --r-amber: #b45309;
+  --r-green: #047857;
+  --r-red: #be123c;
+  --r-violet: #6d28d9;
+  --r-shadow: 0 8px 24px rgba(16, 24, 40, .12);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+/* hidden-attributet måste slå igenom på element som annars har display satt. */
+[hidden] { display: none !important; }
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  background: var(--r-bg);
+  color: var(--r-ink);
+  font: 500 17px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  user-select: none;
+  transition: background .3s ease, color .3s ease;
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+button { background: none; border: 0; cursor: pointer; }
+svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+svg.filled { fill: currentColor; stroke: none; }
+
+/* ---------- Boot ---------- */
+.boot {
+  position: fixed; inset: 0; z-index: 90;
+  display: grid; place-content: center; justify-items: center; gap: 22px;
+  background: radial-gradient(120% 90% at 50% 0%, #12203a 0%, #05070c 62%);
+}
+.boot.gone { opacity: 0; pointer-events: none; transition: opacity .45s ease; }
+.boot-mark { font-size: 54px; font-weight: 800; letter-spacing: -2px; color: #eef3ff; }
+.boot-mark span { color: var(--r-brand); }
+.boot-bar { width: 210px; height: 5px; border-radius: 99px; background: #1d2942; overflow: hidden; }
+.boot-bar i { display: block; height: 100%; width: 40%; border-radius: 99px; background: var(--r-brand); animation: boot-slide 1.1s ease-in-out infinite; }
+@keyframes boot-slide { 0% { transform: translateX(-110%);} 100% { transform: translateX(320%);} }
+.boot-tip { color: #7f8daa; font-size: 15px; }
+
+/* ---------- Skal ---------- */
+.shell {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: var(--r-safe-t) var(--r-safe-r) var(--r-safe-b) var(--r-safe-l);
+}
+
+/* ---------- Statusrad ---------- */
+.statusbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px;
+  background: var(--r-panel);
+  border-bottom: 1px solid var(--r-line);
+}
+.sb-btn {
+  width: 46px; height: 46px; flex: none;
+  display: grid; place-items: center; padding: 11px;
+  border-radius: 14px; background: var(--r-panel-2); color: var(--r-ink);
+}
+.sb-btn:active { transform: scale(.94); }
+.sb-mic { background: var(--r-brand); color: var(--r-brand-ink); }
+.sb-mic.listening { animation: mic-pulse 1s ease-in-out infinite; }
+@keyframes mic-pulse { 50% { box-shadow: 0 0 0 10px rgba(56, 189, 248, .18); } }
+.sb-title { font-weight: 700; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-live { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.sb-speed { display: flex; align-items: baseline; gap: 4px; color: var(--r-muted); }
+.sb-speed b { font-size: 21px; font-weight: 800; color: var(--r-ink); }
+.sb-speed small { font-size: 12px; }
+.sb-chip {
+  font-size: 12px; font-weight: 800; letter-spacing: .06em;
+  padding: 5px 9px; border-radius: 9px;
+  background: var(--r-panel-2); color: var(--r-muted);
+}
+.sb-chip.ok { background: rgba(52, 211, 153, .16); color: var(--r-green); }
+.sb-chip.warn { background: rgba(251, 191, 36, .16); color: var(--r-amber); }
+.sb-chip.live { background: rgba(56, 189, 248, .18); color: var(--r-brand); }
+.sb-right { display: flex; align-items: center; gap: 10px; }
+.sb-clock { font-size: 19px; font-weight: 700; }
+.sb-batt { font-size: 13px; color: var(--r-muted); }
+
+/* ---------- Vy ---------- */
+.viewport { position: relative; overflow: hidden; }
+.screen {
+  position: absolute; inset: 0;
+  overflow-y: auto; overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--r-gap);
+  animation: screen-in .18s ease-out;
+}
+.screen.flush { padding: 0; overflow: hidden; }
+@keyframes screen-in { from { opacity: 0; transform: translateY(8px); } }
+
+/* ---------- Dock ---------- */
+.dock {
+  display: flex; gap: 8px; padding: 8px 14px 10px;
+  background: var(--r-panel); border-top: 1px solid var(--r-line);
+  overflow-x: auto; scrollbar-width: none;
+}
+.dock::-webkit-scrollbar { display: none; }
+.dock-item {
+  flex: 1 0 auto; min-width: 74px;
+  display: grid; justify-items: center; gap: 3px;
+  padding: 7px 10px; border-radius: 16px; color: var(--r-muted);
+}
+.dock-item i { display: block; width: 26px; height: 26px; }
+.dock-item span { font-size: 11px; font-weight: 700; letter-spacing: .02em; }
+.dock-item.active { background: var(--r-panel-2); color: var(--r-ink); }
+.dock-item:active { transform: scale(.95); }
+
+/* ---------- Byggstenar ---------- */
+.grid { display: grid; gap: var(--r-gap); grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); }
+.row { display: flex; gap: var(--r-gap); flex-wrap: wrap; }
+.spread { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.stack { display: grid; gap: var(--r-gap); }
+.grow { flex: 1; min-width: 0; }
+
+.card {
+  background: var(--r-panel); border: 1px solid var(--r-line);
+  border-radius: var(--r-radius); padding: 16px;
+}
+.card.tight { padding: 12px 14px; }
+.card h3 { font-size: 15px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--r-muted); margin-bottom: 10px; }
+
+.tile {
+  position: relative; display: grid; align-content: space-between; gap: 12px;
+  min-height: 132px; padding: 16px;
+  border-radius: var(--r-radius); background: var(--r-panel);
+  border: 1px solid var(--r-line); color: var(--r-ink); text-align: left;
+}
+.tile:active { transform: scale(.97); }
+.tile i { display: block; width: 32px; height: 32px; color: var(--r-brand); }
+.tile b { font-size: 19px; font-weight: 700; display: block; }
+.tile small { display: block; font-size: 13px; color: var(--r-muted); font-weight: 500; margin-top: 2px; }
+.tile .badge {
+  position: absolute; top: 12px; right: 12px;
+  font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 8px;
+  background: var(--r-panel-2); color: var(--r-muted);
+}
+.tile .badge.hot { background: rgba(251, 113, 133, .18); color: var(--r-red); }
+.tile .badge.live { background: rgba(52, 211, 153, .18); color: var(--r-green); }
+.tile.special { border-color: rgba(167, 139, 250, .45); background: linear-gradient(160deg, rgba(167, 139, 250, .12), transparent 60%), var(--r-panel); }
+.tile.special i { color: var(--r-violet); }
+.tile.wide { grid-column: 1 / -1; min-height: 0; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: var(--r-tap); padding: 0 22px;
+  border-radius: 16px; background: var(--r-panel-2); color: var(--r-ink);
+  font-weight: 700; font-size: 17px; border: 1px solid var(--r-line);
+}
+.btn i { width: 22px; height: 22px; flex: none; }
+.btn:active { transform: scale(.97); }
+.btn.primary { background: var(--r-brand); color: var(--r-brand-ink); border-color: transparent; }
+.btn.danger { background: var(--r-red); color: #2b0710; border-color: transparent; }
+.btn.ghost { background: transparent; }
+.btn.block { display: flex; width: 100%; }
+.btn.small { min-height: 46px; padding: 0 15px; font-size: 15px; border-radius: 13px; }
+.btn[disabled] { opacity: .42; pointer-events: none; }
+.btn.on { background: var(--r-green); color: #04231a; border-color: transparent; }
+
+.field { display: grid; gap: 7px; }
+.field label { font-size: 13px; font-weight: 700; color: var(--r-muted); }
+.input {
+  min-height: var(--r-tap); width: 100%;
+  padding: 0 16px; border-radius: 15px;
+  background: var(--r-panel-2); border: 1px solid var(--r-line); color: var(--r-ink);
+  user-select: text;
+}
+textarea.input { padding: 14px 16px; min-height: 100px; resize: none; line-height: 1.45; }
+select.input { appearance: none; padding-right: 40px; }
+
+.list { display: grid; gap: 8px; }
+.list-item {
+  display: flex; align-items: center; gap: 14px; text-align: left; width: 100%;
+  min-height: var(--r-tap); padding: 12px 14px;
+  background: var(--r-panel); border: 1px solid var(--r-line); border-radius: 16px; color: var(--r-ink);
+}
+.list-item:active { transform: scale(.985); }
+.list-item .avatar {
+  width: 44px; height: 44px; flex: none; border-radius: 50%;
+  display: grid; place-items: center; font-weight: 800; font-size: 17px;
+  background: var(--r-panel-2); color: var(--r-brand);
+}
+.list-item .li-main { flex: 1; min-width: 0; }
+.list-item .li-main b { display: block; font-size: 17px; font-weight: 700; }
+.list-item .li-main small { display: block; font-size: 13px; color: var(--r-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list-item .li-end { font-size: 14px; color: var(--r-muted); font-weight: 700; flex: none; }
+
+.toggle { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: var(--r-tap); width: 100%; text-align: left; }
+.toggle .t-main b { display: block; font-size: 17px; }
+.toggle .t-main small { display: block; font-size: 13px; color: var(--r-muted); }
+.switch { width: 60px; height: 34px; flex: none; border-radius: 99px; background: var(--r-line); position: relative; transition: background .18s; }
+.switch::after { content: ""; position: absolute; top: 4px; left: 4px; width: 26px; height: 26px; border-radius: 50%; background: #fff; transition: transform .18s; }
+.switch.on { background: var(--r-green); }
+.switch.on::after { transform: translateX(26px); }
+
+.empty { display: grid; gap: 8px; justify-items: center; text-align: center; padding: 34px 18px; color: var(--r-muted); }
+.empty b { font-size: 18px; color: var(--r-ink); }
+.hint { font-size: 13px; color: var(--r-muted); line-height: 1.5; }
+.hint.warn { color: var(--r-amber); }
+.pill { display: inline-block; font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 99px; background: var(--r-panel-2); color: var(--r-muted); }
+.pill.green { background: rgba(52, 211, 153, .16); color: var(--r-green); }
+.pill.amber { background: rgba(251, 191, 36, .16); color: var(--r-amber); }
+.pill.red { background: rgba(251, 113, 133, .16); color: var(--r-red); }
+.pill.violet { background: rgba(167, 139, 250, .18); color: var(--r-violet); }
+.big-num { font-size: 46px; font-weight: 800; line-height: 1; letter-spacing: -1.5px; }
+.big-num small { font-size: 16px; font-weight: 600; color: var(--r-muted); margin-left: 6px; letter-spacing: 0; }
+.divider { height: 1px; background: var(--r-line); margin: 4px 0; }
+
+/* ---------- Toaster ---------- */
+.toast-stack { position: fixed; left: 50%; bottom: calc(96px + var(--r-safe-b)); transform: translateX(-50%); display: grid; gap: 8px; z-index: 70; width: min(92vw, 460px); }
+.toast {
+  padding: 14px 18px; border-radius: 15px; font-weight: 600;
+  background: var(--r-panel-2); color: var(--r-ink);
+  border: 1px solid var(--r-line); box-shadow: var(--r-shadow);
+  animation: toast-in .2s ease-out;
+}
+.toast.ok { border-color: rgba(52, 211, 153, .5); }
+.toast.warn { border-color: rgba(251, 191, 36, .5); }
+.toast.err { border-color: rgba(251, 113, 133, .5); }
+.toast.out { opacity: 0; transition: opacity .25s ease; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(10px); } }
+
+/* ---------- Assistent ---------- */
+.assistant-overlay {
+  position: fixed; inset: 0; z-index: 80;
+  display: grid; place-content: center; justify-items: center; gap: 24px; padding: 30px;
+  background: rgba(5, 7, 12, .93); backdrop-filter: blur(10px);
+  text-align: center;
+}
+.orb { width: 130px; height: 130px; border-radius: 50%; background: radial-gradient(circle at 34% 30%, #7dd3fc, #0284c7 62%, #0c4a6e); box-shadow: 0 0 62px rgba(56, 189, 248, .45); animation: orb-breathe 1.5s ease-in-out infinite; }
+@keyframes orb-breathe { 50% { transform: scale(1.09); } }
+.assistant-overlay .heard { font-size: 25px; font-weight: 700; max-width: 22ch; min-height: 1.4em; }
+.assistant-overlay .said { color: var(--r-muted); max-width: 30ch; }
+
+/* ---------- Fullskärmslarm ---------- */
+.alert-overlay {
+  position: fixed; inset: 0; z-index: 85;
+  display: grid; place-content: center; justify-items: center; gap: 22px; padding: 28px;
+  text-align: center; background: rgba(120, 20, 40, .96);
+  animation: alert-flash 1.1s ease-in-out infinite;
+}
+.alert-overlay.calm { background: rgba(12, 74, 110, .96); animation: none; }
+@keyframes alert-flash { 50% { background: rgba(158, 30, 55, .97); } }
+.alert-overlay h2 { font-size: 34px; font-weight: 800; color: #fff; }
+.alert-overlay p { font-size: 19px; color: rgba(255, 255, 255, .88); max-width: 26ch; }
+.alert-overlay .btn { background: #fff; color: #111; border: 0; min-width: 220px; }
+
+/* ---------- Kartduk ---------- */
+.map-wrap { position: absolute; inset: 0; }
+.map-canvas { display: block; width: 100%; height: 100%; background: #070c16; }
+body[data-theme="day"] .map-canvas { background: #dfe6ef; }
+.map-overlay { position: absolute; inset: 0; pointer-events: none; padding: var(--r-gap); display: grid; grid-template-rows: auto 1fr auto; gap: 12px; }
+.map-overlay > * { pointer-events: auto; }
+.turn-card { display: flex; align-items: center; gap: 16px; padding: 15px 18px; border-radius: var(--r-radius); background: rgba(16, 22, 35, .93); border: 1px solid var(--r-line); box-shadow: var(--r-shadow); }
+body[data-theme="day"] .turn-card { background: rgba(255, 255, 255, .95); }
+.turn-card .turn-icon { width: 52px; height: 52px; flex: none; color: var(--r-brand); }
+.turn-card .turn-dist { font-size: 27px; font-weight: 800; }
+.turn-card .turn-street { color: var(--r-muted); font-size: 15px; }
+.eta-bar { display: flex; align-items: center; justify-content: space-around; gap: 12px; padding: 13px; border-radius: var(--r-radius); background: rgba(16, 22, 35, .93); border: 1px solid var(--r-line); }
+body[data-theme="day"] .eta-bar { background: rgba(255, 255, 255, .95); }
+.eta-bar div { text-align: center; }
+.eta-bar b { display: block; font-size: 22px; font-weight: 800; }
+.eta-bar small { font-size: 12px; color: var(--r-muted); }
+.map-side { display: grid; gap: 10px; align-content: start; justify-items: end; }
+.map-fab { width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; padding: 15px; background: rgba(16, 22, 35, .93); border: 1px solid var(--r-line); color: var(--r-ink); }
+body[data-theme="day"] .map-fab { background: rgba(255, 255, 255, .95); }
+
+/* ---------- Musik ---------- */
+.player { display: grid; gap: 18px; justify-items: center; text-align: center; padding: 8px 0 14px; }
+.art { width: min(46vh, 210px); aspect-ratio: 1; border-radius: 26px; background: linear-gradient(150deg, #1e3a8a, #0ea5e9 55%, #7c3aed); display: grid; place-items: center; color: rgba(255, 255, 255, .82); box-shadow: var(--r-shadow); overflow: hidden; }
+.art svg { width: 44%; height: 44%; }
+.art.spin { animation: art-spin 9s linear infinite; }
+@keyframes art-spin { to { transform: rotate(360deg); } }
+.track-title { font-size: 22px; font-weight: 800; max-width: 26ch; }
+.track-sub { color: var(--r-muted); font-size: 15px; }
+.seek { width: 100%; display: grid; gap: 6px; }
+.seek-rail { height: 8px; border-radius: 99px; background: var(--r-line); overflow: hidden; }
+.seek-rail i { display: block; height: 100%; background: var(--r-brand); width: 0; }
+.seek-times { display: flex; justify-content: space-between; font-size: 12px; color: var(--r-muted); }
+.transport { display: flex; align-items: center; justify-content: center; gap: 18px; }
+.tbtn { width: 66px; height: 66px; border-radius: 50%; display: grid; place-items: center; padding: 18px; background: var(--r-panel-2); color: var(--r-ink); border: 1px solid var(--r-line); }
+.tbtn.play { width: 86px; height: 86px; padding: 24px; background: var(--r-brand); color: var(--r-brand-ink); border-color: transparent; }
+.tbtn:active { transform: scale(.94); }
+.tbtn.tiny { width: 50px; height: 50px; padding: 14px; }
+.tbtn.on { color: var(--r-brand); border-color: var(--r-brand); }
+
+/* ---------- Knappsats ---------- */
+.dialpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 380px; margin: 0 auto; width: 100%; }
+.dialpad button { min-height: 68px; border-radius: 18px; background: var(--r-panel-2); border: 1px solid var(--r-line); font-size: 26px; font-weight: 700; }
+.dialpad button:active { transform: scale(.95); }
+.dial-readout { text-align: center; font-size: 32px; font-weight: 800; min-height: 46px; letter-spacing: 1px; user-select: text; }
+
+/* ---------- HUD (speglad för vindruta) ---------- */
+.hud { position: absolute; inset: 0; background: #000; color: #7ef6c8; display: grid; place-content: center; justify-items: center; gap: 10px; transform: scaleY(-1); }
+.hud.no-mirror { transform: none; }
+.hud .hud-speed { font-size: 27vh; font-weight: 800; line-height: .9; letter-spacing: -6px; }
+.hud .hud-unit { font-size: 4vh; font-weight: 700; letter-spacing: 6px; opacity: .75; }
+.hud .hud-row { display: flex; gap: 30px; font-size: 3.6vh; font-weight: 700; opacity: .82; }
+.hud .hud-exit { position: absolute; inset: 0; transform: scaleY(-1); opacity: 0; }
+.hud.warn { color: #ffb4b4; }
+
+/* ---------- Dashcam / kamera ---------- */
+.cam-stage { position: absolute; inset: 0; background: #000; }
+.cam-stage video { width: 100%; height: 100%; object-fit: cover; }
+.cam-hud { position: absolute; inset: 0; padding: var(--r-gap); display: grid; grid-template-rows: auto 1fr auto; pointer-events: none; }
+.cam-hud > * { pointer-events: auto; }
+.rec-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--r-red); animation: rec-blink 1.1s steps(2, start) infinite; }
+@keyframes rec-blink { 50% { opacity: .15; } }
+.cam-bar { display: flex; align-items: center; gap: 10px; padding: 11px 15px; border-radius: 15px; background: rgba(0, 0, 0, .62); color: #fff; backdrop-filter: blur(6px); font-size: 15px; font-weight: 700; align-self: start; justify-self: start; }
+.cam-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+/* ---------- Diverse ---------- */
+.compass { width: 132px; height: 132px; margin: 0 auto; position: relative; border-radius: 50%; border: 3px solid var(--r-line); display: grid; place-items: center; }
+.compass .needle { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 54px solid var(--r-brand); transform-origin: 50% 76%; transition: transform .3s ease-out; }
+.bar-meter { height: 12px; border-radius: 99px; background: var(--r-line); overflow: hidden; }
+.bar-meter i { display: block; height: 100%; background: var(--r-green); transition: width .4s ease, background .4s ease; }
+.bar-meter i.mid { background: var(--r-amber); }
+.bar-meter i.high { background: var(--r-red); }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip-btn { min-height: 48px; padding: 0 16px; border-radius: 99px; background: var(--r-panel-2); border: 1px solid var(--r-line); font-weight: 700; font-size: 15px; }
+.chip-btn.on { background: var(--r-brand); color: var(--r-brand-ink); border-color: transparent; }
+.chip-btn:active { transform: scale(.96); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+@media (max-width: 560px) {
+  .grid { grid-template-columns: repeat(auto-fill, minmax(146px, 1fr)); }
+  .sb-title { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+</style>
+</head>
+<body data-theme="night">
+
+<div id="boot" class="boot">
+  <div class="boot-mark">Ree<span>OS</span></div>
+  <div class="boot-bar"><i></i></div>
+  <p class="boot-tip">Fäst telefonen i hållaren innan du kör.</p>
+</div>
+
+<div id="shell" class="shell" hidden>
+
+  <header class="statusbar" id="statusbar">
+    <button class="sb-btn" id="btn-home" aria-label="Hem">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+    </button>
+    <button class="sb-btn" id="btn-back" aria-label="Tillbaka" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg>
+    </button>
+
+    <div class="sb-title" id="sb-title">Hem</div>
+
+    <div class="sb-live">
+      <span class="sb-speed" id="sb-speed"><b>–</b><small>km/h</small></span>
+      <span class="sb-chip" id="sb-gps" title="GPS-status">GPS</span>
+      <span class="sb-chip" id="sb-drive" hidden>KÖR</span>
+    </div>
+
+    <div class="sb-right">
+      <span class="sb-batt" id="sb-batt" hidden></span>
+      <span class="sb-clock" id="sb-clock">--:--</span>
+      <button class="sb-btn sb-mic" id="btn-mic" aria-label="Röststyrning">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="viewport" id="viewport" tabindex="-1"></main>
+
+  <nav class="dock" id="dock" aria-label="Snabbstart"></nav>
+
+  <div class="toast-stack" id="toasts" aria-live="polite"></div>
+  <div class="assistant-overlay" id="assistant-overlay" hidden></div>
+  <div class="alert-overlay" id="alert-overlay" hidden></div>
+</div>
+
+<noscript><p style="color:#fff;padding:2rem;font:16px system-ui">ReeOS kräver JavaScript.</p></noscript>
+<script type="module">
+/* ===== js/core/ui.js ===== */
+/** DOM-hjälpare, ikoner och notifieringar. Inga ramverk — ska starta direkt. */
+
+function el(tag, props = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [key, value] of Object.entries(props)) {
+    if (value === null || value === undefined || value === false) continue;
+    if (key === 'class') node.className = value;
+    else if (key === 'html') node.innerHTML = value;
+    else if (key === 'text') node.textContent = value;
+    else if (key === 'dataset') Object.assign(node.dataset, value);
+    else if (key.startsWith('on') && typeof value === 'function') node.addEventListener(key.slice(2).toLowerCase(), value);
+    else if (key === 'value') node.value = value;
+    else node.setAttribute(key, value === true ? '' : value);
+  }
+  for (const child of children.flat()) {
+    if (child === null || child === undefined || child === false) continue;
+    node.append(child.nodeType ? child : document.createTextNode(child));
+  }
+  return node;
+}
+
+/** Byt ut ett elements innehåll. Till skillnad från replaceChildren() slänger
+ *  den villkorliga null-barn i stället för att skriva ut texten "null". */
+function setKids(node, ...children) {
+  node.replaceChildren(...children.flat().filter((c) => c !== null && c !== undefined && c !== false && c !== ''));
+}
+
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+/* ---------- Ikoner (stroke-baserade, skalar utan att bli suddiga) ---------- */
+const PATHS = {
+  home: '<path d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  nav: '<path d="M12 2 3 21l9-4 9 4z"/>',
+  music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+  phone: '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>',
+  message: '<path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  mic: '<path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+  cam: '<path d="M23 7l-7 5 7 5z"/><rect x="1" y="5" width="15" height="14" rx="2"/>',
+  road: '<path d="M4 21 7 3M20 21 17 3M12 4v3M12 11v3M12 18v3"/>',
+  parking: '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M9.5 17V7.5h3.2a2.9 2.9 0 0 1 0 5.8H9.5"/>',
+  eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
+  book: '<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22z"/><path d="M4 17.5A2.5 2.5 0 0 1 6.5 15H20"/>',
+  hud: '<path d="M3 8h18M6 8v9a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8M9 12h6"/>',
+  gear: '<circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.6 7a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 7 2.6h.1A1.7 1.7 0 0 0 8.9 1V1a2 2 0 1 1 4 0v.1A1.7 1.7 0 0 0 15 2.6a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  play: '<path d="M7 4.5 19 12 7 19.5z" fill="currentColor" stroke-linejoin="round"/>',
+  pause: '<path d="M8 4v16M16 4v16" stroke-width="3.4"/>',
+  next: '<path d="M6 5l10 7-10 7z" fill="currentColor"/><path d="M19 5v14"/>',
+  prev: '<path d="M18 5 8 12l10 7z" fill="currentColor"/><path d="M5 5v14"/>',
+  shuffle: '<path d="M16 4h5v5M21 4l-7 7M4 20l7-7M16 20h5v-5M4 4l16 16"/>',
+  repeat: '<path d="M17 2l4 4-4 4"/><path d="M3 12V10a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 12v2a4 4 0 0 1-4 4H3"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  trash: '<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M6 6l1 14a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-14"/>',
+  check: '<path d="M4 12.5 9.5 18 20 6"/>',
+  x: '<path d="M6 6l12 12M18 6 6 18"/>',
+  warn: '<path d="M12 3 2.5 20h19z"/><path d="M12 10v4M12 17.2v.1"/>',
+  coffee: '<path d="M4 9h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 10h2a2.5 2.5 0 0 1 0 5h-2"/><path d="M7 2v3M11 2v3"/>',
+  target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
+  download: '<path d="M12 3v12M7 11l5 5 5-5M4 21h16"/>',
+  upload: '<path d="M12 21V9M7 13l5-5 5 5M4 3h16"/>',
+  car: '<path d="M5 13l1.6-4.6A2 2 0 0 1 8.5 7h7a2 2 0 0 1 1.9 1.4L19 13"/><rect x="3" y="13" width="18" height="6" rx="2"/><path d="M7 19v2M17 19v2"/>',
+  moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  sun: '<circle cx="12" cy="12" r="4.5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>',
+  volume: '<path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>',
+  arrowUp: '<path d="M12 20V5M6 11l6-6 6 6"/>',
+  arrowLeft: '<path d="M20 12H5M11 6l-6 6 6 6"/>',
+  arrowRight: '<path d="M4 12h15M13 6l6 6-6 6"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5.5l3.5 2"/>',
+  share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/>',
+};
+
+function icon(name, className = '') {
+  const span = document.createElement('i');
+  if (className) span.className = className;
+  span.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${PATHS[name] ?? PATHS.target}</svg>`;
+  return span;
+}
+
+const iconSVG = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true">${PATHS[name] ?? PATHS.target}</svg>`;
+
+/* ---------- Notifieringar ---------- */
+function toast(message, kind = '', ms = 3200) {
+  const stack = document.getElementById('toasts');
+  if (!stack) return;
+  const node = el('div', { class: `toast ${kind}`.trim(), text: message });
+  stack.append(node);
+  setTimeout(() => {
+    node.classList.add('out');
+    setTimeout(() => node.remove(), 260);
+  }, ms);
+  return node;
+}
+
+/** Kort vibration som kvittens — fungerar där Vibration API finns. */
+function buzz(pattern = 18) {
+  try { navigator.vibrate?.(pattern); } catch { /* ignoreras */ }
+}
+
+/* ---------- Formatering ---------- */
+const pad2 = (n) => String(n).padStart(2, '0');
+
+function fmtClock(date = new Date()) {
+  return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+}
+
+function fmtDuration(ms) {
+  const total = Math.max(0, Math.round(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return h ? `${h} h ${pad2(m)} min` : m ? `${m} min ${pad2(s)} s` : `${s} s`;
+}
+
+function fmtTime(sec) {
+  if (!Number.isFinite(sec)) return '0:00';
+  const m = Math.floor(sec / 60);
+  return `${m}:${pad2(Math.floor(sec % 60))}`;
+}
+
+function fmtDistance(meters) {
+  if (!Number.isFinite(meters)) return '–';
+  if (meters < 950) return `${Math.round(meters / 10) * 10} m`;
+  return `${(meters / 1000).toFixed(meters < 10000 ? 1 : 0)} km`;
+}
+
+function fmtDate(ts) {
+  return new Date(ts).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+}
+
+function fmtDateTime(ts) {
+  return new Date(ts).toLocaleString('sv-SE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+/** Ladda ner text som fil — används för export av färddagbok m.m. */
+function downloadFile(filename, content, type = 'text/plain;charset=utf-8') {
+  const blob = content instanceof Blob ? content : new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement('a'), { href: url, download: filename });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+/** Enkel bekräftelseruta med bilstora knappar. */
+function confirmBig(title, body, confirmLabel = 'Ja') {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('alert-overlay');
+    overlay.className = 'alert-overlay calm';
+    overlay.hidden = false;
+    setKids(overlay, 
+      el('h2', { text: title }),
+      body ? el('p', { text: body }) : null,
+      el('div', { class: 'row' },
+        el('button', { class: 'btn', onClick: () => { overlay.hidden = true; resolve(false); }, text: 'Avbryt' }),
+        el('button', { class: 'btn primary', onClick: () => { overlay.hidden = true; resolve(true); }, text: confirmLabel }),
+      ),
+    );
+  });
+}
+
+/* ===== js/core/bus.js ===== */
+/** Enkel händelsebuss. Apparna pratar aldrig direkt med varandra. */
+const listeners = new Map();
+
+function on(event, fn) {
+  if (!listeners.has(event)) listeners.set(event, new Set());
+  listeners.get(event).add(fn);
+  return () => off(event, fn);
+}
+
+function off(event, fn) {
+  listeners.get(event)?.delete(fn);
+}
+
+function once(event, fn) {
+  const unbind = on(event, (payload) => { unbind(); fn(payload); });
+  return unbind;
+}
+
+function emit(event, payload) {
+  for (const fn of listeners.get(event) ?? []) {
+    try { fn(payload); } catch (err) { console.error(`[bus] ${event}`, err); }
+  }
+}
+
+/* ===== js/core/store.js ===== */
+/** localStorage-backad state. Allt överlever att telefonen låser sig i hållaren. */
+
+const KEY = 'reeos.v1';
+
+const DEFAULTS = {
+  settings: {
+    theme: 'auto',            // auto | night | day
+    units: 'metric',
+    voice: true,              // läs upp med talsyntes
+    voiceRate: 1.05,
+    speedVolume: true,        // höj volymen med farten
+    wakeLock: true,           // låt skärmen vara tänd
+    lockWhileDriving: true,   // blockera textinmatning i rörelse
+    speedWarnAt: 0,           // 0 = av, annars km/h
+    hudMirror: true,
+    autoTripLog: true,
+    breakAfterMin: 90,        // pausvarning efter X min körning
+  },
+  contacts: [
+    { id: 'c1', name: 'Hemma', number: '', note: 'Lägg till ditt eget nummer' },
+  ],
+  places: [
+    { id: 'p1', label: 'Hem', lat: null, lon: null },
+    { id: 'p2', label: 'Jobb', lat: null, lon: null },
+  ],
+  quickReplies: [
+    'Jag kör just nu, ringer sen.',
+    'Är på väg — 10 minuter kvar.',
+    'Kan du köra? Jag är trött.',
+    'Framme om en stund.',
+  ],
+  trips: [],       // { id, start, end, km, from, to, purpose, note }
+  parking: null,   // { lat, lon, at, note, photo, meterEndsAt, level }
+  hazards: [],     // { id, lat, lon, kind, at, note }
+  clips: [],       // dashcam-metadata; blobbar ligger i IndexedDB
+  stats: { totalKm: 0, breaks: 0, driveMs: 0 },
+};
+
+function deepMerge(base, patch) {
+  if (Array.isArray(base) || typeof base !== 'object' || base === null) return patch ?? base;
+  const out = { ...base };
+  for (const [k, v] of Object.entries(patch ?? {})) {
+    out[k] = (v && typeof v === 'object' && !Array.isArray(v)) ? deepMerge(base[k] ?? {}, v) : v;
+  }
+  return out;
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    return raw ? deepMerge(DEFAULTS, JSON.parse(raw)) : structuredClone(DEFAULTS);
+  } catch {
+    return structuredClone(DEFAULTS);
+  }
+}
+
+const state = load();
+
+let saveTimer = null;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch (err) { console.warn('[store] kunde inte spara', err); }
+  }, 120);
+}
+
+/** Skriv en inställning och meddela lyssnare. */
+function setSetting(key, value) {
+  state.settings[key] = value;
+  save();
+  emit('settings:changed', { key, value });
+}
+
+/** Lägg till i en lista, spara och notifiera. */
+function push(listName, item) {
+  state[listName].push(item);
+  save();
+  emit(`${listName}:changed`, state[listName]);
+  return item;
+}
+
+function replace(listName, items) {
+  state[listName] = items;
+  save();
+  emit(`${listName}:changed`, items);
+}
+
+function remove(listName, id) {
+  replace(listName, state[listName].filter((x) => x.id !== id));
+}
+
+function setValue(key, value) {
+  state[key] = value;
+  save();
+  emit(`${key}:changed`, value);
+}
+
+function resetAll() {
+  localStorage.removeItem(KEY);
+  Object.assign(state, structuredClone(DEFAULTS));
+  emit('store:reset');
+}
+
+function exportJSON() {
+  return JSON.stringify({ app: 'ReeOS', version: 1, exportedAt: Date.now(), data: state }, null, 2);
+}
+
+function importJSON(text) {
+  const parsed = JSON.parse(text);
+  const data = parsed?.data ?? parsed;
+  if (!data || typeof data !== 'object') throw new Error('Filen innehåller ingen ReeOS-data.');
+  Object.assign(state, deepMerge(DEFAULTS, data));
+  save();
+  emit('store:imported');
+}
+
+const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+
+/* ===== js/core/router.js ===== */
+/** Appregister och vy-växling. En app åt gången — delad skärm hör inte hemma
+ *  i en bil i rörelse. */
+
+
+const apps = new Map();
+let current = null;
+let currentTeardown = null;
+const history = [];
+
+function register(app) {
+  apps.set(app.id, app);
+}
+
+const getApp = (id) => apps.get(id);
+const allApps = () => [...apps.values()];
+const currentApp = () => current;
+
+/** Öppna en app. `params` skickas vidare till dess mount(). */
+function open(id, params = {}) {
+  const app = apps.get(id);
+  if (!app) { console.warn(`[router] okänd app: ${id}`); return; }
+
+  if (current) {
+    try { currentTeardown?.(); } catch (err) { console.error('[router] teardown', err); }
+    if (current.id !== id) history.push(current.id);
+    if (history.length > 12) history.shift();
+  }
+
+  const viewport = $('#viewport');
+  const screen = document.createElement('section');
+  screen.className = `screen${app.flush ? ' flush' : ''}`;
+  screen.dataset.app = id;
+  viewport.replaceChildren(screen);
+  viewport.scrollTop = 0;
+
+  current = app;
+  currentTeardown = null;
+  try {
+    currentTeardown = app.mount(screen, params) ?? null;
+  } catch (err) {
+    console.error(`[router] ${id} kraschade`, err);
+    screen.innerHTML = `<div class="empty"><b>${app.name} kunde inte öppnas</b><span class="hint">${err.message}</span></div>`;
+  }
+
+  location.hash = id === 'home' ? '' : `#${id}`;
+  emit('router:changed', { id, app, params });
+}
+
+function back() {
+  const previous = history.pop();
+  open(previous ?? 'home');
+  // open() la tillbaka den vi lämnade; ta bort så bakåt inte pendlar.
+  history.pop();
+}
+
+const canGoBack = () => history.length > 0;
+
+function startRouter(defaultId = 'home') {
+  const fromHash = location.hash.replace('#', '');
+  open(apps.has(fromHash) ? fromHash : defaultId);
+
+  window.addEventListener('hashchange', () => {
+    const id = location.hash.replace('#', '') || 'home';
+    if (apps.has(id) && current?.id !== id) open(id);
+  });
+}
+
+/* ===== js/core/sensors.js ===== */
+/** Position, fart, riktning, batteri och skärmlås.
+ *  En enda GPS-prenumeration som alla appar delar — flera watchPosition
+ *  parallellt dränerar batteriet i onödan. */
+
+
+const sensors = {
+  supported: 'geolocation' in navigator,
+  status: 'idle',        // idle | pending | live | denied | error
+  lat: null,
+  lon: null,
+  accuracy: null,
+  heading: null,         // grader, 0 = norr
+  speed: 0,              // m/s
+  speedKmh: 0,
+  altitude: null,
+  updatedAt: 0,
+  driving: false,
+  batteryLevel: null,
+  batteryCharging: null,
+};
+
+const R_EARTH = 6371000;
+const toRad = (deg) => (deg * Math.PI) / 180;
+const toDeg = (rad) => (rad * 180) / Math.PI;
+
+/** Avstånd i meter mellan två WGS84-punkter. */
+function distanceBetween(a, b) {
+  if (!a || !b || a.lat == null || b.lat == null) return NaN;
+  const dLat = toRad(b.lat - a.lat);
+  const dLon = toRad(b.lon - a.lon);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  return 2 * R_EARTH * Math.asin(Math.sqrt(h));
+}
+
+/** Kompassbäring i grader från a till b. */
+function bearingBetween(a, b) {
+  if (!a || !b || a.lat == null || b.lat == null) return NaN;
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const dLon = toRad(b.lon - a.lon);
+  const y = Math.sin(dLon) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+  return (toDeg(Math.atan2(y, x)) + 360) % 360;
+}
+
+const compassName = (deg) =>
+  ['N', 'NO', 'O', 'SO', 'S', 'SV', 'V', 'NV'][Math.round(((deg % 360) + 360) % 360 / 45) % 8];
+
+/* ---------- Fartutjämning ----------
+   Rå GPS-fart hoppar; ett litet glidande medelvärde gör siffran läsbar
+   utan att göra den märkbart fördröjd. */
+const speedWindow = [];
+let lastFix = null;
+
+function smoothSpeed(raw) {
+  speedWindow.push(raw);
+  if (speedWindow.length > 5) speedWindow.shift();
+  return speedWindow.reduce((a, b) => a + b, 0) / speedWindow.length;
+}
+
+let watchId = null;
+
+function startGPS() {
+  if (!sensors.supported) {
+    sensors.status = 'error';
+    emit('sensors:status', sensors);
+    return;
+  }
+  if (watchId !== null) return;
+  sensors.status = 'pending';
+  emit('sensors:status', sensors);
+
+  watchId = navigator.geolocation.watchPosition(onFix, onFixError, {
+    enableHighAccuracy: true,
+    maximumAge: 1000,
+    timeout: 20000,
+  });
+}
+
+function stopGPS() {
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+  sensors.status = 'idle';
+  emit('sensors:status', sensors);
+}
+
+function onFix(pos) {
+  const { latitude, longitude, accuracy, heading, speed, altitude } = pos.coords;
+  const now = pos.timestamp || Date.now();
+  const here = { lat: latitude, lon: longitude };
+
+  // Vissa enheter lämnar speed = null. Räkna då fram den ur två fixar.
+  let mps = Number.isFinite(speed) && speed !== null ? speed : 0;
+  if ((!Number.isFinite(speed) || speed === null) && lastFix) {
+    const dt = (now - lastFix.t) / 1000;
+    const dist = distanceBetween(lastFix, here);
+    if (dt > 0.4 && dt < 30 && Number.isFinite(dist)) mps = dist / dt;
+  }
+  // Stillastående GPS driver runt några meter — under 0,7 m/s är det brus.
+  if (mps < 0.7) mps = 0;
+
+  sensors.lat = latitude;
+  sensors.lon = longitude;
+  sensors.accuracy = accuracy;
+  sensors.altitude = altitude;
+  sensors.speed = smoothSpeed(mps);
+  sensors.speedKmh = sensors.speed * 3.6;
+  if (Number.isFinite(heading) && heading !== null && mps > 1) sensors.heading = heading;
+  sensors.updatedAt = now;
+  sensors.status = 'live';
+  lastFix = { ...here, t: now };
+
+  const wasDriving = sensors.driving;
+  if (sensors.speedKmh > 8) sensors.driving = true;
+  else if (sensors.speedKmh < 3) sensors.driving = false;
+
+  emit('sensors:fix', sensors);
+  if (wasDriving !== sensors.driving) emit('sensors:driving', sensors.driving);
+
+  const warnAt = state.settings.speedWarnAt;
+  if (warnAt > 0 && sensors.speedKmh > warnAt) emit('sensors:overspeed', sensors.speedKmh);
+}
+
+function onFixError(err) {
+  sensors.status = err.code === err.PERMISSION_DENIED ? 'denied' : 'error';
+  emit('sensors:status', sensors);
+}
+
+/** Nuvarande position, eller null innan första fixen. */
+const here = () => (sensors.lat == null ? null : { lat: sensors.lat, lon: sensors.lon });
+
+/** En enstaka färsk position — för "spara p-plats" där det måste vara nu. */
+function fixOnce(timeout = 12000) {
+  return new Promise((resolve, reject) => {
+    if (!sensors.supported) { reject(new Error('Ingen GPS i den här enheten.')); return; }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude, accuracy: pos.coords.accuracy }),
+      (err) => reject(new Error(err.code === err.PERMISSION_DENIED ? 'Platsåtkomst nekad.' : 'Ingen position ännu.')),
+      { enableHighAccuracy: true, timeout, maximumAge: 0 },
+    );
+  });
+}
+
+/* ---------- Skärmlås ---------- */
+let wakeLock = null;
+
+async function keepScreenAwake(on = true) {
+  if (!('wakeLock' in navigator)) return false;
+  try {
+    if (on) {
+      wakeLock ??= await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener?.('release', () => { wakeLock = null; });
+      return true;
+    }
+    await wakeLock?.release();
+    wakeLock = null;
+    return false;
+  } catch {
+    wakeLock = null;
+    return false;
+  }
+}
+
+// Skärmlåset släpps när fliken göms; ta det igen när den syns.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && state.settings.wakeLock) keepScreenAwake(true);
+});
+
+/* ---------- Batteri ---------- */
+async function watchBattery() {
+  if (!navigator.getBattery) return;
+  try {
+    const battery = await navigator.getBattery();
+    const sync = () => {
+      sensors.batteryLevel = Math.round(battery.level * 100);
+      sensors.batteryCharging = battery.charging;
+      emit('sensors:battery', sensors);
+    };
+    battery.addEventListener('levelchange', sync);
+    battery.addEventListener('chargingchange', sync);
+    sync();
+  } catch { /* batteristatus är trevligt men inte nödvändigt */ }
+}
+
+/* ---------- Enhetsriktning (kompass utan fart) ---------- */
+let orientationBound = false;
+
+function watchOrientation() {
+  if (orientationBound) return;
+  orientationBound = true;
+  window.addEventListener('deviceorientationabsolute', onOrientation, true);
+  window.addEventListener('deviceorientation', onOrientation, true);
+}
+
+function onOrientation(event) {
+  const deg = event.webkitCompassHeading ?? (event.absolute && event.alpha !== null ? 360 - event.alpha : null);
+  if (deg === null || !Number.isFinite(deg)) return;
+  // GPS-riktningen är pålitligare i fart; kompassen får ta över när bilen står still.
+  if (sensors.speed < 1.5) sensors.heading = deg;
+}
+
+/** iOS kräver ett användarklick innan kompassen får läsas. */
+async function requestOrientationPermission() {
+  const api = window.DeviceOrientationEvent;
+  if (api && typeof api.requestPermission === 'function') {
+    try { return (await api.requestPermission()) === 'granted'; } catch { return false; }
+  }
+  return true;
+}
+
+/* ===== js/core/speech.js ===== */
+/** Tal in och ut. Allt som går att göra med rösten ska gå att göra med rösten —
+ *  händerna hör hemma på ratten. */
+
+
+const synth = window.speechSynthesis;
+let voices = [];
+
+function loadVoices() {
+  voices = synth?.getVoices?.() ?? [];
+}
+loadVoices();
+synth?.addEventListener?.('voiceschanged', loadVoices);
+
+function pickVoice() {
+  if (!voices.length) loadVoices();
+  return voices.find((v) => v.lang === 'sv-SE')
+    ?? voices.find((v) => v.lang?.startsWith('sv'))
+    ?? voices.find((v) => v.default)
+    ?? voices[0]
+    ?? null;
+}
+
+/** Säg något. `force` läser upp även när röstsvar är avslaget (t.ex. larm). */
+function say(text, { force = false, interrupt = true } = {}) {
+  if (!synth || !text) return;
+  if (!state.settings.voice && !force) return;
+  if (interrupt) synth.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  const voice = pickVoice();
+  if (voice) utter.voice = voice;
+  utter.lang = voice?.lang ?? 'sv-SE';
+  utter.rate = state.settings.voiceRate ?? 1;
+  utter.pitch = 1;
+  synth.speak(utter);
+}
+
+function hush() {
+  synth?.cancel();
+}
+
+/* ---------- Igenkänning ---------- */
+const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+const canListen = Boolean(Recognition);
+
+let recognition = null;
+let listening = false;
+
+function listen() {
+  return new Promise((resolve, reject) => {
+    if (!Recognition) { reject(new Error('Rösttolkning stöds inte i den här webbläsaren.')); return; }
+    if (listening) { stopListening(); }
+
+    recognition = new Recognition();
+    recognition.lang = 'sv-SE';
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+    recognition.continuous = false;
+
+    let finalText = '';
+    let settled = false;
+
+    recognition.onresult = (event) => {
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const result = event.results[i];
+        if (result.isFinal) finalText += result[0].transcript;
+        else interim += result[0].transcript;
+      }
+      emit('speech:partial', (finalText + interim).trim());
+    };
+    recognition.onerror = (event) => {
+      if (settled) return;
+      settled = true;
+      listening = false;
+      const msg = event.error === 'not-allowed'
+        ? 'Mikrofonen är blockerad. Tillåt mikrofon för ReeOS.'
+        : event.error === 'no-speech' ? 'Hörde inget.' : 'Rösttolkningen avbröts.';
+      reject(new Error(msg));
+    };
+    recognition.onend = () => {
+      listening = false;
+      emit('speech:end');
+      if (settled) return;
+      settled = true;
+      const text = finalText.trim();
+      if (text) resolve(text);
+      else reject(new Error('Hörde inget.'));
+    };
+
+    listening = true;
+    emit('speech:start');
+    try { recognition.start(); }
+    catch { listening = false; reject(new Error('Kunde inte starta mikrofonen.')); }
+  });
+}
+
+function stopListening() {
+  try { recognition?.stop(); } catch { /* redan stoppad */ }
+  listening = false;
+}
+
+const isListening = () => listening;
+
+/* ===== js/apps/triplog.js ===== */
+/** Färddagbok. Loggar sträckan automatiskt så att milersättningen inte
+ *  behöver rekonstrueras ur minnet en söndag i januari. */
+
+
+
+
+const STOP_AFTER_MS = 3 * 60 * 1000;   // stillastående så länge = resan är slut
+
+let active = null;      // { id, start, meters, from, lastPoint, lastMoveAt }
+
+function tripStatus() {
+  return {
+    active: Boolean(active),
+    km: active ? active.meters / 1000 : 0,
+    durationMs: active ? Date.now() - active.start : 0,
+    id: active?.id ?? null,
+  };
+}
+
+function startTrip(manual = false) {
+  if (active) return active;
+  const point = here();
+  active = {
+    id: uid(),
+    start: Date.now(),
+    meters: 0,
+    from: point ? { ...point } : null,
+    lastPoint: point ? { ...point } : null,
+    lastMoveAt: Date.now(),
+  };
+  emit('trip:changed', tripStatus());
+  if (manual) toast('Resan loggas.', 'ok');
+  return active;
+}
+
+function endTrip({ purpose = 'privat', note = '' } = {}) {
+  if (!active) return null;
+  const trip = {
+    id: active.id,
+    start: active.start,
+    end: Date.now(),
+    km: Number((active.meters / 1000).toFixed(2)),
+    from: active.from,
+    to: here(),
+    purpose,
+    note,
+  };
+  active = null;
+  // Under 300 m är det mest GPS-brus på en parkering, inte en resa.
+  trip.recorded = trip.km >= 0.3;
+  if (trip.recorded) {
+    push('trips', trip);
+    state.stats.totalKm = Number((state.stats.totalKm + trip.km).toFixed(2));
+    state.stats.driveMs += trip.end - trip.start;
+    save();
+    toast(`Resa sparad: ${trip.km.toFixed(1)} km.`, 'ok');
+  }
+  emit('trip:changed', tripStatus());
+  return trip;
+}
+
+/** Kopplas in från main.js och matas av samma GPS-ström som resten. */
+function initTripLogger() {
+  on('sensors:fix', () => {
+    const point = here();
+    if (!point) return;
+
+    if (!active) {
+      if (state.settings.autoTripLog && sensors.driving) startTrip();
+      return;
+    }
+
+    if (active.lastPoint) {
+      const step = distanceBetween(active.lastPoint, point);
+      // Kasta hopp som är brus (<8 m) eller orimliga (>500 m mellan två fixar).
+      if (Number.isFinite(step) && step >= 8 && step < 500) {
+        active.meters += step;
+        active.lastPoint = { ...point };
+        active.lastMoveAt = Date.now();
+      }
+    } else {
+      active.lastPoint = { ...point };
+      active.from ??= { ...point };
+    }
+
+    if (sensors.speedKmh > 5) active.lastMoveAt = Date.now();
+    if (Date.now() - active.lastMoveAt > STOP_AFTER_MS) endTrip();
+  });
+}
+
+function toCSV(trips) {
+  const rows = [['Datum', 'Start', 'Slut', 'Kilometer', 'Ärende', 'Anteckning', 'Från', 'Till']];
+  for (const trip of trips) {
+    const coord = (p) => (p ? `${p.lat.toFixed(5)} ${p.lon.toFixed(5)}` : '');
+    rows.push([
+      new Date(trip.start).toLocaleDateString('sv-SE'),
+      new Date(trip.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
+      new Date(trip.end).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
+      trip.km.toFixed(2).replace('.', ','),
+      trip.purpose,
+      trip.note ?? '',
+      coord(trip.from),
+      coord(trip.to),
+    ]);
+  }
+  return rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(';')).join('\r\n');
+}
+
+const tripApp = {
+  id: 'triplog',
+  name: 'Färddagbok',
+  icon: 'book',
+
+  mount(root) {
+    const live = el('div', { class: 'card' });
+    const list = el('div', { class: 'list' });
+    const totals = el('div', { class: 'row' });
+
+    root.append(
+      live,
+      el('div', { style: 'height:12px' }),
+      totals,
+      el('div', { style: 'height:12px' }),
+      el('div', { class: 'card' },
+        el('div', { class: 'spread', style: 'margin-bottom:10px' },
+          el('h3', { style: 'margin:0', text: 'Resor' }),
+          el('div', { class: 'row' },
+            el('button', {
+              class: 'btn small',
+              onClick: () => {
+                if (!state.trips.length) { toast('Inga resor att exportera.', 'warn'); return; }
+                downloadFile(`reeos-farddagbok-${new Date().toISOString().slice(0, 10)}.csv`,
+                  '﻿' + toCSV(state.trips), 'text/csv;charset=utf-8');
+              },
+            }, icon('download'), 'CSV'),
+            el('button', {
+              class: 'btn small ghost',
+              onClick: async () => {
+                if (!state.trips.length) return;
+                if (await confirmBig('Radera alla resor?', 'Färddagboken töms permanent.', 'Radera')) {
+                  replace('trips', []);
+                  state.stats.totalKm = 0;
+                  save();
+                  render();
+                }
+              },
+            }, icon('trash'), 'Töm'),
+          ),
+        ),
+        list,
+      ),
+    );
+
+    function renderLive() {
+      const status = tripStatus();
+      setKids(live, 
+        el('div', { class: 'spread' },
+          el('div', {},
+            el('div', { class: 'big-num' }, status.km.toFixed(1), el('small', { text: 'km' })),
+            el('div', { class: 'hint', text: status.active ? `Pågår · ${fmtDuration(status.durationMs)}` : 'Ingen resa pågår' }),
+          ),
+          el('span', { class: `pill ${status.active ? 'green' : ''}`, text: status.active ? 'LOGGAR' : 'VILAR' }),
+        ),
+        el('div', { style: 'height:14px' }),
+        status.active
+          ? el('div', { class: 'row' },
+              el('button', { class: 'btn grow', onClick: () => { endTrip({ purpose: 'tjänst' }); render(); } }, icon('check'), 'Avsluta som tjänst'),
+              el('button', { class: 'btn grow', onClick: () => { endTrip({ purpose: 'privat' }); render(); } }, icon('check'), 'Avsluta som privat'),
+            )
+          : el('button', { class: 'btn block primary', onClick: () => { startTrip(true); render(); } }, icon('play'), 'Starta resa manuellt'),
+      );
+    }
+
+    function renderTotals() {
+      const work = state.trips.filter((t) => t.purpose === 'tjänst').reduce((sum, t) => sum + t.km, 0);
+      const priv = state.trips.filter((t) => t.purpose !== 'tjänst').reduce((sum, t) => sum + t.km, 0);
+      const card = (label, value, hint) => el('div', { class: 'card grow', style: 'min-width:140px' },
+        el('div', { class: 'big-num', style: 'font-size:32px' }, value, el('small', { text: 'km' })),
+        el('div', { class: 'hint', text: label }),
+        hint ? el('div', { class: 'hint', text: hint }) : null,
+      );
+      setKids(totals, 
+        card('Tjänsteresor', work.toFixed(1), `${(work * 25).toFixed(0)} kr vid 25 kr/mil`),
+        card('Privat', priv.toFixed(1)),
+      );
+    }
+
+    function renderList() {
+      const sorted = [...state.trips].sort((a, b) => b.start - a.start);
+      setKids(list, 
+        ...sorted.slice(0, 60).map((trip) => el('div', { class: 'list-item' },
+          el('span', { class: 'avatar' }, icon('car')),
+          el('button', {
+            class: 'li-main', style: 'background:none;border:0;text-align:left',
+            onClick: () => {
+              const note = prompt('Anteckning för resan:', trip.note ?? '');
+              if (note === null) return;
+              trip.note = note;
+              save();
+              renderList();
+            },
+          },
+            el('b', { text: `${trip.km.toFixed(1)} km · ${trip.purpose}` }),
+            el('small', { text: `${fmtDateTime(trip.start)} · ${fmtDuration(trip.end - trip.start)}${trip.note ? ` · ${trip.note}` : ''}` }),
+          ),
+          el('button', {
+            class: 'btn small ghost', 'aria-label': 'Ta bort resan',
+            onClick: () => { remove('trips', trip.id); render(); },
+          }, icon('trash')),
+        )),
+        sorted.length ? null : el('div', { class: 'empty' },
+          el('b', { text: 'Inga resor än' }),
+          el('span', { class: 'hint', text: 'Dagboken startar av sig själv när bilen rullar över 8 km/h.' })),
+      );
+    }
+
+    const render = () => { renderLive(); renderTotals(); renderList(); };
+    render();
+    const timer = setInterval(renderLive, 3000);
+    const unbind = on('trip:changed', render);
+    return () => { clearInterval(timer); unbind(); };
+  },
+};
+
+/* ===== js/apps/fatigue.js ===== */
+/** Trötthetsvakt.
+ *  Räknar sammanhängande körtid, väger in klockslaget och påminner om paus.
+ *  Varningen tar aldrig över skärmen medan bilen rullar — då kommer den som
+ *  röst och banner, och helskärmen väntar tills du står stilla. */
+
+
+
+
+
+const BREAK_MS = 10 * 60 * 1000;   // stillastående så länge räknas som rast
+
+const watch = {
+  drivingMs: 0,
+  lastTick: Date.now(),
+  stoppedSince: null,
+  warned: 0,          // 0 = inget, 1 = förvarning, 2 = full varning
+  lastCheckAt: 0,
+  reactionMs: null,
+};
+
+/** 0–1. Riktvärde, inte en medicinsk bedömning. */
+function riskScore() {
+  const limitMs = state.settings.breakAfterMin * 60 * 1000;
+  const fromTime = Math.min(watch.drivingMs / limitMs, 1.3) * 0.6;
+  const hour = new Date().getHours();
+  // Dygnsrytmens två svackor: natten och tidiga eftermiddagen.
+  const fromHour = (hour >= 1 && hour < 6) ? 0.34 : (hour >= 13 && hour < 15) ? 0.16 : (hour >= 22 || hour < 1) ? 0.2 : 0;
+  const fromReaction = watch.reactionMs && watch.reactionMs > 420 ? 0.14 : 0;
+  return Math.min(1, fromTime + fromHour + fromReaction);
+}
+
+function fatigueStatus() {
+  const limitMs = state.settings.breakAfterMin * 60 * 1000;
+  return {
+    drivingMs: watch.drivingMs,
+    limitMs,
+    dueForBreak: watch.drivingMs >= limitMs,
+    risk: riskScore(),
+    reactionMs: watch.reactionMs,
+    sinceBreak: watch.stoppedSince,
+  };
+}
+
+function takeBreak(quiet = false) {
+  watch.drivingMs = 0;
+  watch.warned = 0;
+  state.stats.breaks += 1;
+  save();
+  emit('fatigue:changed', fatigueStatus());
+  if (!quiet) toast('Körtiden nollställd. Kör försiktigt.', 'ok');
+}
+
+function initFatigueWatch() {
+  setInterval(() => {
+    const now = Date.now();
+    const delta = now - watch.lastTick;
+    watch.lastTick = now;
+    if (delta > 60000) return;   // fliken har legat i bakgrunden
+
+    if (sensors.driving) {
+      watch.drivingMs += delta;
+      watch.stoppedSince = null;
+    } else {
+      watch.stoppedSince ??= now;
+      if (now - watch.stoppedSince >= BREAK_MS && watch.drivingMs > 0) {
+        takeBreak(true);
+        toast('Rasten är räknad — körtiden nollställd.', 'ok');
+      }
+    }
+
+    const { limitMs, dueForBreak } = fatigueStatus();
+    if (watch.warned < 1 && watch.drivingMs > limitMs * 0.85) {
+      watch.warned = 1;
+      say('Du har snart kört i ' + Math.round(limitMs / 60000) + ' minuter. Leta upp ett bra ställe att stanna på.', { force: true });
+      toast('Paus om ungefär en kvart — börja titta efter en rastplats.', 'warn', 6000);
+    } else if (watch.warned < 2 && dueForBreak) {
+      watch.warned = 2;
+      buzz([80, 120, 80, 120, 80]);
+      say('Dags för paus. Du har kört i ' + fmtDuration(watch.drivingMs) + ' utan rast.', { force: true });
+      if (sensors.speedKmh < 3) showBreakOverlay();
+      else toast('Dags för paus — stanna vid nästa möjlighet.', 'err', 8000);
+    }
+    emit('fatigue:tick', fatigueStatus());
+  }, 5000);
+
+  // Står bilen stilla när full varning redan gått ut? Då kommer helskärmen.
+  on('sensors:driving', (driving) => {
+    if (!driving && watch.warned >= 2 && watch.drivingMs >= fatigueStatus().limitMs) showBreakOverlay();
+  });
+}
+
+function showBreakOverlay() {
+  const overlay = document.getElementById('alert-overlay');
+  if (!overlay || !overlay.hidden) return;
+  overlay.className = 'alert-overlay';
+  overlay.hidden = false;
+  setKids(overlay, 
+    el('h2', { text: 'Ta en paus' }),
+    el('p', { text: `Du har kört ${fmtDuration(watch.drivingMs)} utan rast. Femton minuter och lite frisk luft gör verklig skillnad.` }),
+    el('div', { class: 'row', style: 'justify-content:center' },
+      el('button', { class: 'btn', onClick: () => { overlay.hidden = true; }, text: 'Senare' }),
+      el('button', { class: 'btn', onClick: () => { overlay.hidden = true; takeBreak(); }, text: 'Jag rastar nu' }),
+    ),
+  );
+}
+
+const fatigueApp = {
+  id: 'fatigue',
+  name: 'Trötthetsvakt',
+  icon: 'coffee',
+
+  mount(root) {
+    const summary = el('div', { class: 'card' });
+    const test = el('div', { class: 'card' });
+
+    root.append(
+      summary,
+      el('div', { style: 'height:12px' }),
+      test,
+      el('div', { style: 'height:12px' }),
+      el('div', { class: 'card stack' },
+        el('h3', { style: 'margin:0', text: 'Pausintervall' }),
+        el('div', { class: 'chips' },
+          ...[45, 60, 90, 120].map((min) => el('button', {
+            class: `chip-btn${state.settings.breakAfterMin === min ? ' on' : ''}`,
+            onClick: (ev) => {
+              state.settings.breakAfterMin = min;
+              save();
+              [...ev.currentTarget.parentElement.children].forEach((c) => c.classList.remove('on'));
+              ev.currentTarget.classList.add('on');
+              render();
+            },
+            text: `${min} min`,
+          })),
+        ),
+        el('p', { class: 'hint', text: 'Vakten räknar bara tid då bilen faktiskt rullar. Tio minuter stillastående nollställer räknaren automatiskt.' }),
+      ),
+      el('div', { style: 'height:12px' }),
+      el('p', { class: 'hint', text: 'ReeOS mäter körtid och klockslag — inte ditt medicinska tillstånd. Känner du dig trött ska du stanna oavsett vad appen säger.' }),
+    );
+
+    function render() {
+      const status = fatigueStatus();
+      const pct = Math.min(100, (status.drivingMs / status.limitMs) * 100);
+      const risk = status.risk;
+      const bar = el('i', { class: risk > 0.75 ? 'high' : risk > 0.45 ? 'mid' : '' });
+      bar.style.width = `${Math.max(3, risk * 100)}%`;
+
+      setKids(summary, 
+        el('div', { class: 'spread' },
+          el('div', {},
+            el('div', { class: 'big-num', text: fmtDuration(status.drivingMs) }),
+            el('div', { class: 'hint', text: `av ${state.settings.breakAfterMin} min till nästa paus` }),
+          ),
+          el('span', { class: `pill ${risk > 0.75 ? 'red' : risk > 0.45 ? 'amber' : 'green'}`,
+            text: risk > 0.75 ? 'HÖG RISK' : risk > 0.45 ? 'VAR VAKSAM' : 'PIGG' }),
+        ),
+        el('div', { style: 'height:12px' }),
+        el('div', { class: 'bar-meter' }, bar),
+        el('div', { class: 'hint', style: 'margin-top:8px', text: `Körtid ${Math.round(pct)} % · klockslag väger in mellan 01–06 och 13–15.` }),
+        el('div', { style: 'height:14px' }),
+        el('div', { class: 'row' },
+          el('button', { class: 'btn primary grow', onClick: () => { takeBreak(); render(); } }, icon('coffee'), 'Jag tar paus nu'),
+        ),
+        el('div', { class: 'hint', style: 'margin-top:10px', text: `Totalt ${state.stats.breaks} registrerade pauser.` }),
+      );
+    }
+
+    /* Vakenhetskoll: enkel reaktionsmätning, bara när bilen står still. */
+    function renderTest(phase = 'idle', payload = null) {
+      if (sensors.driving) {
+        setKids(test, 
+          el('h3', { text: 'Vakenhetskoll' }),
+          el('div', { class: 'hint warn', text: 'Testet går bara att göra när bilen står stilla.' }),
+        );
+        return;
+      }
+
+      if (phase === 'idle') {
+        setKids(test, 
+          el('h3', { text: 'Vakenhetskoll' }),
+          el('p', { class: 'hint', style: 'margin-bottom:12px', text: 'Tryck när rutan blir grön. Under 400 ms är normalt utvilat.' }),
+          watch.reactionMs ? el('div', { class: 'hint', style: 'margin-bottom:10px', text: `Senaste: ${watch.reactionMs} ms` }) : null,
+          el('button', { class: 'btn block primary', onClick: runTest }, icon('eye'), 'Starta test'),
+        );
+      } else if (phase === 'wait') {
+        setKids(test, 
+          el('h3', { text: 'Vakenhetskoll' }),
+          el('button', { class: 'btn block', id: 'reaction-pad', style: 'min-height:150px;font-size:20px', text: 'Vänta på grönt…' }),
+        );
+      } else if (phase === 'go') {
+        const pad = el('button', { class: 'btn block', style: 'min-height:150px;font-size:20px;background:var(--r-green);color:#04231a', text: 'TRYCK!' });
+        pad.addEventListener('click', payload, { once: true });
+        setKids(test, el('h3', { text: 'Vakenhetskoll' }), pad);
+      } else if (phase === 'done') {
+        const ms = payload;
+        setKids(test, 
+          el('h3', { text: 'Vakenhetskoll' }),
+          el('div', { class: 'big-num' }, String(ms), el('small', { text: 'ms' })),
+          el('p', { class: 'hint', style: 'margin:10px 0', text: ms < 400
+            ? 'Normal reaktionstid. Kör vidare, men glöm inte pausen.'
+            : ms < 550 ? 'Något långsamt. Överväg en kort paus.'
+            : 'Klart långsammare än vaket normalläge. Stanna och vila.' }),
+          el('button', { class: 'btn block', onClick: () => renderTest('idle') }, 'Kör om testet'),
+        );
+      }
+    }
+
+    let testTimer = null;
+    function runTest() {
+      renderTest('wait');
+      testTimer = setTimeout(() => {
+        const startedAt = performance.now();
+        renderTest('go', () => {
+          const ms = Math.round(performance.now() - startedAt);
+          watch.reactionMs = ms;
+          watch.lastCheckAt = Date.now();
+          buzz();
+          renderTest('done', ms);
+          render();
+        });
+      }, 1600 + Math.random() * 2600);
+    }
+
+    render();
+    renderTest();
+    const timer = setInterval(() => { render(); if (!testTimer) renderTest(); }, 4000);
+    const unbind = on('fatigue:changed', render);
+    return () => { clearInterval(timer); clearTimeout(testTimer); unbind(); };
+  },
+};
+
+/* ===== js/apps/alerts.js ===== */
+/** Väglag och varningar.
+ *  Markera hål, halka, vilt eller kö där du möter det. ReeOS varnar när du
+ *  närmar dig en markering igen — din egen, eller en du fått delad till dig.
+ *  Ingen server: listan bor i telefonen och byts som fil mellan bilar. */
+
+
+
+
+
+const HAZARD_KINDS = {
+  pothole: { label: 'Hål i vägen', voice: 'Hål i vägen', icon: 'warn' },
+  ice: { label: 'Halka', voice: 'Risk för halka', icon: 'warn' },
+  wildlife: { label: 'Vilt', voice: 'Viltstråk', icon: 'warn' },
+  queue: { label: 'Kö', voice: 'Köbildning', icon: 'car' },
+  roadwork: { label: 'Vägarbete', voice: 'Vägarbete', icon: 'road' },
+  camera: { label: 'Fartkamera', voice: 'Fartkamera', icon: 'cam' },
+};
+
+const announced = new Map();   // id -> tidpunkt, så samma varning inte upprepas
+
+function reportHazard(kind, note = '') {
+  const pos = here();
+  if (!pos) { toast('Ingen position ännu — kan inte markera.', 'warn'); return null; }
+  const hazard = { id: uid(), kind, note, lat: pos.lat, lon: pos.lon, at: Date.now() };
+  push('hazards', hazard);
+  buzz([20, 50]);
+  toast(`${HAZARD_KINDS[kind]?.label ?? 'Markering'} sparad här.`, 'ok');
+  return hazard;
+}
+
+/** Närmaste markering framför dig inom `radius` meter. */
+function nearestHazard(pos, radius = 500) {
+  if (!pos) return null;
+  let best = null;
+  for (const hazard of state.hazards) {
+    const distance = distanceBetween(pos, hazard);
+    if (!Number.isFinite(distance) || distance > radius) continue;
+    if (!best || distance < best.distance) {
+      best = { ...hazard, distance, label: HAZARD_KINDS[hazard.kind]?.label ?? 'Varning' };
+    }
+  }
+  return best;
+}
+
+/** Bakgrundsvakt: säger till i god tid, men bara för det som ligger framåt. */
+function initHazardWatch() {
+  on('sensors:fix', () => {
+    if (!sensors.driving) return;
+    const pos = here();
+    // Ju fortare du kör, desto tidigare behöver du veta — ca 20 sekunders varsel.
+    const radius = Math.max(220, sensors.speed * 20);
+
+    for (const hazard of state.hazards) {
+      const distance = distanceBetween(pos, hazard);
+      if (!Number.isFinite(distance) || distance > radius) continue;
+
+      // Ligger den bakom oss? Då är den redan passerad.
+      if (Number.isFinite(sensors.heading)) {
+        const bearing = bearingBetween(pos, hazard);
+        const offset = Math.abs(((bearing - sensors.heading + 540) % 360) - 180);
+        if (offset > 70) continue;
+      }
+
+      const lastTime = announced.get(hazard.id) ?? 0;
+      if (Date.now() - lastTime < 5 * 60000) continue;
+      announced.set(hazard.id, Date.now());
+
+      const kind = HAZARD_KINDS[hazard.kind];
+      buzz([30, 60, 30]);
+      say(`${kind?.voice ?? 'Varning'} om ${fmtDistance(distance)}.`, { force: true });
+      toast(`${kind?.label ?? 'Varning'} · ${fmtDistance(distance)} framåt`, 'warn', 6000);
+      emit('hazard:near', hazard);
+      break;
+    }
+  });
+
+  on('alerts:quickreport', () => openQuickReport());
+}
+
+/** Ett tryck, sex val, klart — tänkt att gå att träffa utan att titta länge. */
+function openQuickReport() {
+  const overlay = document.getElementById('alert-overlay');
+  if (!overlay) return;
+  overlay.className = 'alert-overlay calm';
+  overlay.hidden = false;
+  setKids(overlay, 
+    el('h2', { text: 'Vad ser du?' }),
+    el('div', { class: 'row', style: 'justify-content:center;max-width:560px' },
+      ...Object.entries(HAZARD_KINDS).map(([key, kind]) => el('button', {
+        class: 'btn', style: 'min-width:150px',
+        onClick: () => { overlay.hidden = true; reportHazard(key); },
+      }, icon(kind.icon), kind.label)),
+    ),
+    el('button', { class: 'btn ghost', style: 'color:#fff;border-color:rgba(255,255,255,.4)', onClick: () => { overlay.hidden = true; }, text: 'Avbryt' }),
+  );
+}
+
+const alertsApp = {
+  id: 'alerts',
+  name: 'Väglag',
+  icon: 'warn',
+
+  mount(root) {
+    const list = el('div', { class: 'list' });
+
+    root.append(
+      el('div', { class: 'card' },
+        el('h3', { text: 'Markera här' }),
+        el('div', { class: 'grid', style: 'grid-template-columns:repeat(auto-fill,minmax(150px,1fr))' },
+          ...Object.entries(HAZARD_KINDS).map(([key, kind]) => el('button', {
+            class: 'btn', style: 'min-height:74px',
+            onClick: () => { reportHazard(key); render(); },
+          }, icon(kind.icon), kind.label)),
+        ),
+        el('p', { class: 'hint', style: 'margin-top:10px', text: 'Markeringen läggs på din nuvarande position. Under körning finns samma knappar bakom varningsikonen i kartvyn.' }),
+      ),
+      el('div', { style: 'height:12px' }),
+      el('div', { class: 'card' },
+        el('div', { class: 'spread', style: 'margin-bottom:10px' },
+          el('h3', { style: 'margin:0', text: 'Mina markeringar' }),
+          el('div', { class: 'row' },
+            el('button', {
+              class: 'btn small',
+              onClick: () => {
+                if (!state.hazards.length) { toast('Inget att dela.', 'warn'); return; }
+                downloadFile(`reeos-vaglag-${new Date().toISOString().slice(0, 10)}.json`,
+                  JSON.stringify({ app: 'ReeOS', kind: 'hazards', hazards: state.hazards }, null, 2), 'application/json');
+              },
+            }, icon('download'), 'Dela'),
+            el('button', { class: 'btn small', onClick: () => importInput.click() }, icon('upload'), 'Läs in'),
+          ),
+        ),
+        list,
+      ),
+      el('div', { style: 'height:12px' }),
+      el('p', { class: 'hint', text: 'Markeringarna ligger bara i den här telefonen. Vill du dela med någon annan bil exporterar du filen och läser in den där.' }),
+    );
+
+    const importInput = el('input', { type: 'file', accept: 'application/json,.json', class: 'sr-only' });
+    importInput.addEventListener('change', async () => {
+      const file = importInput.files?.[0];
+      importInput.value = '';
+      if (!file) return;
+      try {
+        const parsed = JSON.parse(await file.text());
+        const incoming = Array.isArray(parsed) ? parsed : parsed.hazards;
+        if (!Array.isArray(incoming)) throw new Error('Filen innehåller inga markeringar.');
+        const known = new Set(state.hazards.map((h) => `${h.lat.toFixed(5)}|${h.lon.toFixed(5)}|${h.kind}`));
+        const fresh = incoming
+          .filter((h) => Number.isFinite(h.lat) && Number.isFinite(h.lon) && HAZARD_KINDS[h.kind])
+          .filter((h) => !known.has(`${h.lat.toFixed(5)}|${h.lon.toFixed(5)}|${h.kind}`))
+          .map((h) => ({ id: uid(), kind: h.kind, note: h.note ?? '', lat: h.lat, lon: h.lon, at: h.at ?? Date.now() }));
+        replace('hazards', [...state.hazards, ...fresh]);
+        toast(`${fresh.length} nya markeringar inlästa.`, 'ok');
+        render();
+      } catch (err) { toast(err.message, 'err'); }
+    });
+    root.append(importInput);
+
+    function render() {
+      const pos = here();
+      const sorted = [...state.hazards].sort((a, b) => {
+        if (!pos) return b.at - a.at;
+        return distanceBetween(pos, a) - distanceBetween(pos, b);
+      });
+      setKids(list, 
+        ...sorted.map((hazard) => {
+          const kind = HAZARD_KINDS[hazard.kind] ?? { label: 'Varning', icon: 'warn' };
+          const distance = distanceBetween(pos, hazard);
+          return el('div', { class: 'list-item' },
+            el('span', { class: 'avatar' }, icon(kind.icon)),
+            el('div', { class: 'li-main' },
+              el('b', { text: kind.label }),
+              el('small', { text: `${fmtDate(hazard.at)}${hazard.note ? ` · ${hazard.note}` : ''}` }),
+            ),
+            el('span', { class: 'li-end', text: Number.isFinite(distance) ? fmtDistance(distance) : '' }),
+            el('button', { class: 'btn small ghost', 'aria-label': 'Ta bort', onClick: () => { remove('hazards', hazard.id); render(); } }, icon('trash')),
+          );
+        }),
+        sorted.length ? null : el('div', { class: 'empty' },
+          el('b', { text: 'Inga markeringar' }),
+          el('span', { class: 'hint', text: 'Markera det du möter — hålet finns kvar nästa gång du kör här.' })),
+      );
+    }
+
+    render();
+    const unbind = on('hazards:changed', render);
+    return () => unbind();
+  },
+};
+
+/* ===== js/apps/home.js ===== */
+/** Startskärmen: stora brickor, viktigast överst, inget som kräver läsning i fart. */
+
+
+
+
+
+
+
+
+const STANDARD = [
+  { id: 'nav', icon: 'nav', title: 'Navigation', sub: 'Karta och färdmål' },
+  { id: 'music', icon: 'music', title: 'Musik', sub: 'Spela från telefonen' },
+  { id: 'phone', icon: 'phone', title: 'Telefon', sub: 'Ring handsfree' },
+  { id: 'messages', icon: 'message', title: 'Meddelanden', sub: 'Diktera och svara' },
+];
+
+const SPECIAL = [
+  { id: 'fatigue', icon: 'coffee', title: 'Trötthetsvakt', sub: 'Paus i rätt tid' },
+  { id: 'parking', icon: 'parking', title: 'Parkering', sub: 'Hitta tillbaka' },
+  { id: 'dashcam', icon: 'cam', title: 'Dashcam', sub: 'Rullande 60 s' },
+  { id: 'triplog', icon: 'book', title: 'Färddagbok', sub: 'Milersättning' },
+  { id: 'alerts', icon: 'warn', title: 'Väglag', sub: 'Varningar på vägen' },
+  { id: 'hud', icon: 'hud', title: 'HUD', sub: 'Spegla i vindrutan' },
+];
+
+const home = {
+  id: 'home',
+  name: 'Hem',
+  icon: 'home',
+  dock: true,
+
+  mount(root) {
+    const summary = el('div', { class: 'stack' });
+    const grid = el('div', { class: 'grid' });
+    const specialGrid = el('div', { class: 'grid' });
+
+    const tile = (spec, special = false) => {
+      const badge = el('span', { class: 'badge', hidden: true });
+      const node = el('button', {
+        class: `tile${special ? ' special' : ''}`,
+        onClick: () => open(spec.id),
+      },
+        icon(spec.icon),
+        el('span', {}, el('b', { text: spec.title }), el('small', { text: spec.sub })),
+        badge,
+      );
+      node.badge = badge;
+      return node;
+    };
+
+    const tiles = new Map();
+    for (const spec of STANDARD) { const t = tile(spec); tiles.set(spec.id, t); grid.append(t); }
+    for (const spec of SPECIAL) { const t = tile(spec, true); tiles.set(spec.id, t); specialGrid.append(t); }
+
+    root.append(
+      summary,
+      el('h3', { class: 'card-label', style: 'font-size:14px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--r-muted);margin:6px 2px' , text: 'Vanliga' }),
+      grid,
+      el('h3', { style: 'font-size:14px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--r-violet);margin:16px 2px 6px', text: 'Bara i ReeOS' }),
+      specialGrid,
+      el('div', { style: 'height:8px' }),
+      el('button', { class: 'btn block ghost', onClick: () => open('settings') }, icon('gear'), 'Inställningar'),
+    );
+
+    function renderSummary() {
+      const cards = [];
+      const trip = tripStatus();
+      const fatigue = fatigueStatus();
+      const park = state.parking;
+
+      if (fatigue.dueForBreak) {
+        cards.push(el('button', { class: 'card tight', style: 'border-color:var(--r-amber);text-align:left', onClick: () => open('fatigue') },
+          el('div', { class: 'spread' },
+            el('div', {}, el('b', { style: 'font-size:18px', text: 'Dags för paus' }),
+              el('div', { class: 'hint', text: `Du har kört ${fmtDuration(fatigue.drivingMs)} utan rast.` })),
+            icon('coffee', 'grow-0'),
+          )));
+      }
+
+      if (trip.active) {
+        cards.push(el('button', { class: 'card tight', style: 'text-align:left', onClick: () => open('triplog') },
+          el('div', { class: 'spread' },
+            el('div', {}, el('b', { text: 'Resa pågår' }),
+              el('div', { class: 'hint', text: `${trip.km.toFixed(1)} km · ${fmtDuration(trip.durationMs)}` })),
+            el('span', { class: 'pill green', text: 'LOGGAR' }),
+          )));
+      }
+
+      if (park) {
+        const dist = distanceBetween(here(), park);
+        const left = park.meterEndsAt ? park.meterEndsAt - Date.now() : null;
+        cards.push(el('button', { class: 'card tight', style: `text-align:left${left !== null && left < 0 ? ';border-color:var(--r-red)' : ''}`, onClick: () => open('parking') },
+          el('div', { class: 'spread' },
+            el('div', {}, el('b', { text: 'Sparad p-plats' }),
+              el('div', { class: 'hint', text: Number.isFinite(dist) ? `${fmtDistance(dist)} härifrån` : (park.note || 'Position sparad') })),
+            left === null ? icon('parking')
+              : el('span', { class: `pill ${left < 0 ? 'red' : left < 600000 ? 'amber' : 'green'}`, text: left < 0 ? 'TIDEN UTE' : fmtDuration(left) }),
+          )));
+      }
+
+      const hazard = nearestHazard(here(), 800);
+      if (hazard) {
+        cards.push(el('button', { class: 'card tight', style: 'border-color:var(--r-amber);text-align:left', onClick: () => open('alerts') },
+          el('div', { class: 'spread' },
+            el('div', {}, el('b', { text: hazard.label }),
+              el('div', { class: 'hint', text: `${fmtDistance(hazard.distance)} framåt` })),
+            icon('warn'),
+          )));
+      }
+
+      setKids(summary, ...cards);
+    }
+
+    function renderBadges() {
+      const trip = tripStatus();
+      const fatigue = fatigueStatus();
+      const setBadge = (id, text, kind = '') => {
+        const t = tiles.get(id);
+        if (!t) return;
+        t.badge.hidden = !text;
+        t.badge.textContent = text ?? '';
+        t.badge.className = `badge ${kind}`.trim();
+      };
+      setBadge('triplog', trip.active ? 'PÅ' : (state.trips.length ? String(state.trips.length) : null), trip.active ? 'live' : '');
+      setBadge('fatigue', fatigue.dueForBreak ? 'PAUS' : null, 'hot');
+      setBadge('parking', state.parking ? 'SPARAD' : null);
+      setBadge('alerts', state.hazards.length ? String(state.hazards.length) : null);
+      setBadge('dashcam', state.clips.length ? String(state.clips.length) : null);
+    }
+
+    renderSummary();
+    renderBadges();
+
+    const timer = setInterval(() => { renderSummary(); renderBadges(); }, 5000);
+    const unbind = [
+      on('sensors:fix', renderSummary),
+      on('trip:changed', () => { renderSummary(); renderBadges(); }),
+      on('parking:changed', renderSummary),
+    ];
+
+    return () => { clearInterval(timer); unbind.forEach((fn) => fn()); };
+  },
+};
+
+/* ===== js/apps/nav.js ===== */
+/** Navigation.
+ *  Online: OpenStreetMap-rutor + OSRM-rutt med svängar.
+ *  Offline: kompassläge med bäring och fågelvägen — hellre en ärlig pil
+ *  än en karta som ljuger när täckningen tar slut. */
+
+
+
+
+
+const TILE = 256;
+const tileCache = new Map();     // "z/x/y" -> Image
+const MAX_TILES = 260;
+
+/* navigator.onLine kan säga "uppkopplad" när rutorna ändå inte kommer fram
+   (tunnel, blockerad brandvägg, död wifi). Vi litar på utfallet, inte flaggan. */
+const tileHealth = { ok: 0, fail: 0, since: Date.now() };
+
+function tilesUsable() {
+  if (Date.now() - tileHealth.since > 30000) {
+    // Ge nätet en ny chans med jämna mellanrum.
+    tileHealth.ok = 0;
+    tileHealth.fail = 0;
+    tileHealth.since = Date.now();
+  }
+  return !(tileHealth.fail >= 5 && tileHealth.ok === 0);
+}
+
+const nav = {
+  destination: null,   // { label, lat, lon }
+  route: null,         // { coords: [[lat,lon]], steps: [...], distance, duration }
+  stepIndex: 0,
+  zoom: 15,
+  headingUp: true,
+  online: navigator.onLine,
+  spokenStep: -1,
+};
+
+/* ---------- Web Mercator ---------- */
+const lon2x = (lon, z) => ((lon + 180) / 360) * 2 ** z;
+const lat2y = (lat, z) => {
+  const r = (lat * Math.PI) / 180;
+  return ((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * 2 ** z;
+};
+
+function getTile(z, x, y) {
+  const max = 2 ** z;
+  if (y < 0 || y >= max) return null;
+  const wrapped = ((x % max) + max) % max;
+  const key = `${z}/${wrapped}/${y}`;
+  let img = tileCache.get(key);
+  if (!img) {
+    img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.referrerPolicy = 'strict-origin-when-cross-origin';
+    img.decoding = 'async';
+    img.src = `https://tile.openstreetmap.org/${z}/${wrapped}/${y}.png`;
+    img.onload = () => { tileHealth.ok += 1; };
+    img.onerror = () => { img.failed = true; tileHealth.fail += 1; };
+    tileCache.set(key, img);
+    if (tileCache.size > MAX_TILES) tileCache.delete(tileCache.keys().next().value);
+  }
+  return img.failed ? null : img;
+}
+
+/* ---------- Sökning och ruttberäkning ---------- */
+async function geocode(query) {
+  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&accept-language=sv&q=${encodeURIComponent(query)}`;
+  const res = await fetch(url, { headers: { Accept: 'application/json' } });
+  if (!res.ok) throw new Error('Sökningen svarade inte.');
+  const rows = await res.json();
+  return rows.map((r) => ({
+    label: r.display_name.split(',').slice(0, 2).join(',').trim(),
+    full: r.display_name,
+    lat: Number(r.lat),
+    lon: Number(r.lon),
+  }));
+}
+
+async function fetchRoute(from, to) {
+  const url = `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}`
+    + '?overview=full&geometries=geojson&steps=true&annotations=false';
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Ruttjänsten svarade inte.');
+  const data = await res.json();
+  const leg = data?.routes?.[0];
+  if (!leg) throw new Error('Hittade ingen körbar väg dit.');
+  return {
+    coords: leg.geometry.coordinates.map(([lon, lat]) => [lat, lon]),
+    distance: leg.distance,
+    duration: leg.duration,
+    steps: (leg.legs?.[0]?.steps ?? []).map((s) => ({
+      lat: s.maneuver.location[1],
+      lon: s.maneuver.location[0],
+      type: s.maneuver.type,
+      modifier: s.maneuver.modifier,
+      name: s.name || '',
+      distance: s.distance,
+    })),
+  };
+}
+
+const TURN_TEXT = {
+  left: 'Sväng vänster', right: 'Sväng höger',
+  'slight left': 'Håll vänster', 'slight right': 'Håll höger',
+  'sharp left': 'Skarp vänster', 'sharp right': 'Skarp höger',
+  straight: 'Fortsätt rakt fram', uturn: 'Vänd',
+};
+
+function stepText(step) {
+  if (!step) return 'Fortsätt';
+  if (step.type === 'arrive') return 'Framme';
+  if (step.type === 'depart') return 'Kör iväg';
+  if (step.type === 'roundabout' || step.type === 'rotary') return 'In i rondellen';
+  return TURN_TEXT[step.modifier] ?? 'Fortsätt';
+}
+
+const stepIcon = (step) => {
+  const m = step?.modifier ?? '';
+  if (step?.type === 'arrive') return 'target';
+  if (m.includes('left')) return 'arrowLeft';
+  if (m.includes('right')) return 'arrowRight';
+  return 'arrowUp';
+};
+
+/** Sätt färdmål utifrån röstkommando eller val i listan. */
+async function navigateTo(place) {
+  nav.destination = place;
+  nav.route = null;
+  nav.stepIndex = 0;
+  nav.spokenStep = -1;
+  emit('nav:changed', nav);
+
+  const origin = here() ?? await fixOnce().catch(() => null);
+  if (!origin) { toast('Väntar på GPS innan rutten kan beräknas.', 'warn'); return; }
+  try {
+    nav.route = await fetchRoute(origin, place);
+    emit('nav:changed', nav);
+    say(`Rutt till ${place.label}. ${fmtDistance(nav.route.distance)}, ${Math.round(nav.route.duration / 60)} minuter.`);
+  } catch (err) {
+    toast(`${err.message} Visar riktning i stället.`, 'warn', 4200);
+    say(`${place.label}. ${fmtDistance(distanceBetween(origin, place))} fågelvägen.`);
+  }
+}
+
+const currentDestination = () => nav.destination;
+
+function clearRoute() {
+  nav.destination = null;
+  nav.route = null;
+  emit('nav:changed', nav);
+}
+
+/* ---------- Appen ---------- */
+const navApp = {
+  id: 'nav',
+  name: 'Navigation',
+  icon: 'nav',
+  dock: true,
+  flush: true,
+
+  mount(root) {
+    const canvas = el('canvas', { class: 'map-canvas' });
+    const turnCard = el('div', { class: 'turn-card', hidden: true });
+    const etaBar = el('div', { class: 'eta-bar' });
+    const side = el('div', { class: 'map-side' });
+    const panel = el('div', { class: 'screen', style: 'background:var(--r-bg);z-index:5', hidden: true });
+
+    const fab = (name, label, onClick) =>
+      el('button', { class: 'map-fab', 'aria-label': label, onClick }, icon(name));
+
+    side.append(
+      fab('target', 'Sök färdmål', () => { panel.hidden = false; }),
+      fab('nav', 'Växla kartriktning', () => {
+        nav.headingUp = !nav.headingUp;
+        toast(nav.headingUp ? 'Karta i färdriktning' : 'Karta med norr uppåt');
+      }),
+      fab('plus', 'Zooma in', () => { nav.zoom = Math.min(18, nav.zoom + 1); }),
+      fab('warn', 'Rapportera hinder', () => { emit('alerts:quickreport'); }),
+    );
+
+    root.append(
+      el('div', { class: 'map-wrap' }, canvas),
+      el('div', { class: 'map-overlay' }, turnCard, side, etaBar),
+      panel,
+    );
+
+    buildSearchPanel(panel);
+
+    /* ----- ritning ----- */
+    const ctx = canvas.getContext('2d');
+    let raf = 0;
+
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = canvas.clientWidth * dpr;
+      canvas.height = canvas.clientHeight * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    const observer = new ResizeObserver(resize);
+    observer.observe(canvas);
+    resize();
+
+    function draw() {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      const night = document.body.dataset.theme !== 'day';
+      ctx.save();
+      ctx.fillStyle = night ? '#070c16' : '#dfe6ef';
+      ctx.fillRect(0, 0, w, h);
+
+      const pos = here();
+      if (!pos) {
+        ctx.fillStyle = night ? '#7c8aa6' : '#4a5568';
+        ctx.font = '600 17px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(sensors.status === 'denied' ? 'Platsåtkomst nekad' : 'Söker satelliter…', w / 2, h / 2);
+        ctx.restore();
+        raf = requestAnimationFrame(draw);
+        return;
+      }
+
+      const z = nav.zoom;
+      const cx = lon2x(pos.lon, z) * TILE;
+      const cy = lat2y(pos.lat, z) * TILE;
+      // Föraren ser mest värde framåt — lägg egen position en bit ned på skärmen.
+      const anchorY = h * 0.68;
+      const rot = nav.headingUp && Number.isFinite(sensors.heading) ? (-sensors.heading * Math.PI) / 180 : 0;
+
+      ctx.save();
+      ctx.translate(w / 2, anchorY);
+      ctx.rotate(rot);
+      ctx.translate(-w / 2, -anchorY);
+
+      const project = (lat, lon) => [
+        lon2x(lon, z) * TILE - cx + w / 2,
+        lat2y(lat, z) * TILE - cy + anchorY,
+      ];
+
+      if (nav.online && tilesUsable()) {
+        const span = Math.hypot(w, h);
+        const x0 = Math.floor((cx - span) / TILE);
+        const x1 = Math.ceil((cx + span) / TILE);
+        const y0 = Math.floor((cy - span) / TILE);
+        const y1 = Math.ceil((cy + span) / TILE);
+        ctx.globalAlpha = night ? 0.72 : 1;
+        for (let tx = x0; tx <= x1; tx += 1) {
+          for (let ty = y0; ty <= y1; ty += 1) {
+            const img = getTile(z, tx, ty);
+            if (!img?.complete || !img.naturalWidth) continue;
+            ctx.drawImage(img, tx * TILE - cx + w / 2, ty * TILE - cy + anchorY, TILE, TILE);
+          }
+        }
+        ctx.globalAlpha = 1;
+        if (night) { // dämpa kartan så den inte bländar i mörker
+          ctx.fillStyle = 'rgba(6,10,20,.45)';
+          ctx.fillRect(-span, -span, w + span * 2, h + span * 2);
+        }
+      } else {
+        drawFallbackGrid(ctx, w, h, cx, cy, night);
+      }
+
+      if (nav.route?.coords?.length) {
+        ctx.lineWidth = 11;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = 'rgba(4,20,32,.55)';
+        traceRoute(ctx, nav.route.coords, project);
+        ctx.lineWidth = 7;
+        ctx.strokeStyle = '#38bdf8';
+        traceRoute(ctx, nav.route.coords, project);
+      } else if (nav.destination) {
+        const [dx, dy] = project(nav.destination.lat, nav.destination.lon);
+        ctx.setLineDash([12, 10]);
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.moveTo(w / 2, anchorY);
+        ctx.lineTo(dx, dy);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      for (const hazard of state.hazards) {
+        const [hx, hy] = project(hazard.lat, hazard.lon);
+        if (hx < -60 || hy < -60 || hx > w + 60 || hy > h + 60) continue;
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(hx, hy, 9, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      if (state.parking) {
+        const [px, py] = project(state.parking.lat, state.parking.lon);
+        ctx.fillStyle = '#a78bfa';
+        ctx.fillRect(px - 9, py - 9, 18, 18);
+      }
+
+      if (nav.destination) {
+        const [dx, dy] = project(nav.destination.lat, nav.destination.lon);
+        ctx.fillStyle = '#34d399';
+        ctx.beginPath();
+        ctx.arc(dx, dy, 11, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#04231a';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      drawOwnMarker(ctx, w / 2, anchorY, nav.headingUp ? 0 : ((sensors.heading ?? 0) * Math.PI) / 180);
+
+      ctx.font = '500 11px system-ui, sans-serif';
+      if (nav.online && tilesUsable()) {
+        ctx.fillStyle = night ? 'rgba(200,215,240,.55)' : 'rgba(30,40,60,.65)';
+        ctx.textAlign = 'right';
+        ctx.fillText('© OpenStreetMap-bidragsgivare', w - 8, h - 7);
+      } else {
+        ctx.fillStyle = night ? 'rgba(160,180,215,.72)' : 'rgba(40,60,90,.7)';
+        ctx.textAlign = 'left';
+        ctx.font = '600 12px system-ui, sans-serif';
+        ctx.fillText(navigator.onLine
+          ? 'Ingen kartdata — rutnätet visar skala, inte gator'
+          : 'Offline — rutnätet visar skala, inte gator', 12, h - 8);
+      }
+      ctx.restore();
+      raf = requestAnimationFrame(draw);
+    }
+
+    raf = requestAnimationFrame(draw);
+
+    /* ----- textpanelerna ----- */
+    function renderGuidance() {
+      const pos = here();
+      const dest = nav.destination;
+
+      if (!dest) {
+        turnCard.hidden = true;
+        setKids(etaBar, 
+          el('div', {}, el('b', { text: Math.round(sensors.speedKmh) || '–' }), el('small', { text: 'km/h' })),
+          el('div', {}, el('b', { text: Number.isFinite(sensors.heading) ? compassName(sensors.heading) : '–' }), el('small', { text: 'riktning' })),
+          el('div', {}, el('b', { text: sensors.accuracy ? `±${Math.round(sensors.accuracy)} m` : '–' }), el('small', { text: 'GPS' })),
+        );
+        return;
+      }
+
+      const remaining = pos ? distanceBetween(pos, dest) : NaN;
+
+      if (nav.route?.steps?.length && pos) {
+        // Nästa manöver = första steget vi ännu inte passerat.
+        while (nav.stepIndex < nav.route.steps.length - 1
+          && distanceBetween(pos, nav.route.steps[nav.stepIndex]) < 25) nav.stepIndex += 1;
+        const step = nav.route.steps[nav.stepIndex];
+        const toStep = distanceBetween(pos, step);
+
+        turnCard.hidden = false;
+        setKids(turnCard, 
+          icon(stepIcon(step), 'turn-icon'),
+          el('div', { class: 'grow' },
+            el('div', { class: 'turn-dist', text: `${fmtDistance(toStep)} · ${stepText(step)}` }),
+            el('div', { class: 'turn-street', text: step.name || dest.label }),
+          ),
+        );
+
+        // Säg svängen en gång, ca 200 m innan.
+        if (toStep < 220 && nav.spokenStep !== nav.stepIndex && step.type !== 'depart') {
+          nav.spokenStep = nav.stepIndex;
+          say(`Om ${fmtDistance(toStep)}, ${stepText(step)}${step.name ? ` mot ${step.name}` : ''}.`);
+          buzz([25, 60, 25]);
+        }
+      } else {
+        const bearing = pos ? bearingBetween(pos, dest) : NaN;
+        turnCard.hidden = false;
+        setKids(turnCard, 
+          icon('target', 'turn-icon'),
+          el('div', { class: 'grow' },
+            el('div', { class: 'turn-dist', text: fmtDistance(remaining) }),
+            el('div', { class: 'turn-street', text: Number.isFinite(bearing) ? `${dest.label} · mot ${compassName(bearing)}` : dest.label }),
+          ),
+        );
+      }
+
+      const speed = sensors.speedKmh > 5 ? sensors.speedKmh : 50;
+      const secs = nav.route ? (remaining / Math.max(nav.route.distance, 1)) * nav.route.duration
+        : (remaining / (speed / 3.6));
+      const eta = new Date(Date.now() + secs * 1000);
+
+      setKids(etaBar, 
+        el('div', {}, el('b', { text: fmtDistance(remaining) }), el('small', { text: 'kvar' })),
+        el('div', {}, el('b', { text: Number.isFinite(secs) ? fmtDuration(secs * 1000) : '–' }), el('small', { text: 'restid' })),
+        el('div', {}, el('b', { text: Number.isFinite(secs) ? eta.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }) : '–' }), el('small', { text: 'framme' })),
+        el('button', { class: 'btn small', onClick: () => { clearRoute(); renderGuidance(); } }, 'Avsluta'),
+      );
+
+      if (Number.isFinite(remaining) && remaining < 60) {
+        clearRoute();
+        say('Du är framme.');
+        toast('Framme vid färdmålet.', 'ok');
+      }
+    }
+
+    renderGuidance();
+    const unbind = [
+      on('sensors:fix', renderGuidance),
+      on('nav:changed', renderGuidance),
+      on('online:changed', (isOnline) => { nav.online = isOnline; }),
+    ];
+    const tick = setInterval(renderGuidance, 2000);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      observer.disconnect();
+      clearInterval(tick);
+      unbind.forEach((fn) => fn());
+    };
+  },
+};
+
+function traceRoute(ctx, coords, project) {
+  ctx.beginPath();
+  coords.forEach(([lat, lon], i) => {
+    const [x, y] = project(lat, lon);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+}
+
+function drawOwnMarker(ctx, x, y, rot) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+  ctx.fillStyle = 'rgba(56,189,248,.22)';
+  ctx.beginPath();
+  ctx.arc(0, 0, 26, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#38bdf8';
+  ctx.strokeStyle = '#04202e';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(0, -17);
+  ctx.lineTo(12, 14);
+  ctx.lineTo(0, 8);
+  ctx.lineTo(-12, 14);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+/** Offline-rutnät: ger rörelsekänsla och skala utan att påstå att det är gator. */
+function drawFallbackGrid(ctx, w, h, cx, cy, night) {
+  const spacing = 64;
+  ctx.strokeStyle = night ? 'rgba(120,150,200,.16)' : 'rgba(40,60,90,.16)';
+  ctx.lineWidth = 1;
+  const ox = -(cx % spacing);
+  const oy = -(cy % spacing);
+  ctx.beginPath();
+  for (let x = ox - spacing; x < w + spacing * 2; x += spacing) { ctx.moveTo(x, -spacing); ctx.lineTo(x, h + spacing); }
+  for (let y = oy - spacing; y < h + spacing * 2; y += spacing) { ctx.moveTo(-spacing, y); ctx.lineTo(w + spacing, y); }
+  ctx.stroke();
+}
+
+/* ---------- Sök- och favoritpanel ---------- */
+function buildSearchPanel(panel) {
+  const input = el('input', { class: 'input', type: 'search', placeholder: 'Adress eller plats', enterkeyhint: 'search' });
+  const results = el('div', { class: 'list' });
+  const favorites = el('div', { class: 'list' });
+
+  async function runSearch() {
+    const query = input.value.trim();
+    if (query.length < 3) { toast('Skriv minst tre tecken.', 'warn'); return; }
+    setKids(results, el('div', { class: 'hint', text: 'Söker…' }));
+    try {
+      const hits = await geocode(query);
+      if (!hits.length) { setKids(results, el('div', { class: 'hint', text: 'Inga träffar.' })); return; }
+      setKids(results, ...hits.map((hit) => el('button', {
+        class: 'list-item',
+        onClick: () => { navigateTo(hit); panel.hidden = true; },
+      },
+        icon('target'),
+        el('div', { class: 'li-main' }, el('b', { text: hit.label }), el('small', { text: hit.full })),
+        el('button', {
+          class: 'btn small',
+          onClick: (ev) => { ev.stopPropagation(); saveFavorite(hit); renderFavorites(); },
+          text: 'Spara',
+        }),
+      )));
+    } catch {
+      setKids(results, el('div', { class: 'hint warn', text: 'Sökning kräver nätverk. Använd en sparad plats i stället.' }));
+    }
+  }
+
+  function renderFavorites() {
+    const items = state.places.filter((p) => p.lat != null);
+    setKids(favorites, 
+      ...items.map((place) => el('button', {
+        class: 'list-item',
+        onClick: () => { navigateTo(place); panel.hidden = true; },
+      },
+        el('span', { class: 'avatar', text: place.label.slice(0, 1).toUpperCase() }),
+        el('div', { class: 'li-main' },
+          el('b', { text: place.label }),
+          el('small', { text: `${place.lat.toFixed(4)}, ${place.lon.toFixed(4)}` })),
+        el('span', { class: 'li-end', text: here() ? fmtDistance(distanceBetween(here(), place)) : '' }),
+      )),
+      items.length ? null : el('div', { class: 'hint', text: 'Inga sparade platser än. Sök fram en adress och tryck Spara, eller spara var du står nu.' }),
+    );
+  }
+
+  panel.append(
+    el('div', { class: 'spread' },
+      el('h3', { style: 'font-size:20px;font-weight:800', text: 'Vart ska du?' }),
+      el('button', { class: 'btn small', onClick: () => { panel.hidden = true; } }, icon('x'), 'Stäng'),
+    ),
+    el('div', { class: 'row', style: 'margin:12px 0' },
+      el('div', { class: 'grow' }, input),
+      el('button', { class: 'btn primary', onClick: runSearch }, 'Sök'),
+    ),
+    results,
+    el('div', { class: 'divider', style: 'margin:16px 0' }),
+    el('div', { class: 'spread', style: 'margin-bottom:10px' },
+      el('h3', { style: 'font-size:15px;text-transform:uppercase;letter-spacing:.05em;color:var(--r-muted)', text: 'Sparade platser' }),
+      el('button', {
+        class: 'btn small',
+        onClick: async () => {
+          try {
+            const pos = await fixOnce();
+            const label = prompt('Namn på platsen?', 'Ny plats');
+            if (!label) return;
+            push('places', { id: uid(), label, lat: pos.lat, lon: pos.lon });
+            renderFavorites();
+            toast('Platsen sparad.', 'ok');
+          } catch (err) { toast(err.message, 'err'); }
+        },
+      }, icon('plus'), 'Spara här'),
+    ),
+    favorites,
+  );
+
+  input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') runSearch(); });
+  renderFavorites();
+  on('places:changed', renderFavorites);
+}
+
+function saveFavorite(hit) {
+  const existing = state.places.find((p) => p.label === hit.label);
+  if (existing) { existing.lat = hit.lat; existing.lon = hit.lon; save(); }
+  else push('places', { id: uid(), label: hit.label, lat: hit.lat, lon: hit.lon });
+  toast(`${hit.label} sparad.`, 'ok');
+}
+
+/* ===== js/apps/music.js ===== */
+/** Musik från telefonens egna filer. Ingen inloggning, ingen strömning —
+ *  spellistan fungerar i tunneln och på grusvägen. */
+
+
+
+
+const audio = new Audio();
+audio.preload = 'metadata';
+
+const player = {
+  queue: [],       // { id, title, artist, url, file }
+  index: -1,
+  shuffle: false,
+  repeat: false,
+  baseVolume: 0.8,
+};
+
+/* ---------- Fartanpassad volym ----------
+   Vägbruset ökar ungefär med farten. Lyft volymen sakta upp till +25 %
+   mellan 50 och 120 km/h så att man slipper skruva under körning. */
+function applyVolume() {
+  let volume = player.baseVolume;
+  if (state.settings.speedVolume) {
+    const kmh = Math.min(Math.max(sensors.speedKmh, 50), 120);
+    volume *= 1 + ((kmh - 50) / 70) * 0.25;
+  }
+  audio.volume = Math.min(1, Math.max(0, volume));
+}
+
+function titleFromFile(name) {
+  const clean = name.replace(/\.[a-z0-9]+$/i, '').replace(/_/g, ' ');
+  const parts = clean.split(' - ');
+  return parts.length > 1
+    ? { artist: parts[0].trim(), title: parts.slice(1).join(' - ').trim() }
+    : { artist: 'Okänd artist', title: clean.trim() };
+}
+
+function addFiles(fileList) {
+  const added = [...fileList]
+    .filter((file) => file.type.startsWith('audio/') || /\.(mp3|m4a|aac|ogg|opus|wav|flac)$/i.test(file.name))
+    .map((file) => ({ id: `${file.name}-${file.size}`, ...titleFromFile(file.name), url: URL.createObjectURL(file), file }));
+
+  if (!added.length) { toast('Inga ljudfiler i urvalet.', 'warn'); return 0; }
+  player.queue.push(...added);
+  emit('music:queue', player.queue);
+  if (player.index < 0) playAt(0);
+  return added.length;
+}
+
+function playAt(index) {
+  if (!player.queue.length) return;
+  player.index = (index + player.queue.length) % player.queue.length;
+  const track = player.queue[player.index];
+  audio.src = track.url;
+  applyVolume();
+  audio.play().catch(() => toast('Tryck på play för att starta ljudet.', 'warn'));
+  emit('music:track', track);
+}
+
+function togglePlay() {
+  if (!player.queue.length) { toast('Lägg till musik först.', 'warn'); return; }
+  if (audio.paused) audio.play().catch(() => {}); else audio.pause();
+}
+
+const next = () => {
+  if (!player.queue.length) return;
+  playAt(player.shuffle ? Math.floor(Math.random() * player.queue.length) : player.index + 1);
+};
+
+const prev = () => {
+  if (!player.queue.length) return;
+  if (audio.currentTime > 4) { audio.currentTime = 0; return; }
+  playAt(player.index - 1);
+};
+
+const isPlaying = () => !audio.paused && player.queue.length > 0;
+const currentTrack = () => player.queue[player.index] ?? null;
+
+function setVolume(value) {
+  player.baseVolume = Math.min(1, Math.max(0, value));
+  applyVolume();
+}
+
+audio.addEventListener('ended', () => {
+  if (player.repeat) { audio.currentTime = 0; audio.play(); return; }
+  next();
+});
+audio.addEventListener('play', () => emit('music:state', true));
+audio.addEventListener('pause', () => emit('music:state', false));
+on('sensors:fix', applyVolume);
+
+/* Låsskärmens mediaknappar och rattens knappar går via Media Session. */
+if ('mediaSession' in navigator) {
+  navigator.mediaSession.setActionHandler('play', () => audio.play());
+  navigator.mediaSession.setActionHandler('pause', () => audio.pause());
+  navigator.mediaSession.setActionHandler('nexttrack', next);
+  navigator.mediaSession.setActionHandler('previoustrack', prev);
+  on('music:track', (track) => {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.title, artist: track.artist, album: 'ReeOS',
+    });
+  });
+}
+
+const musicApp = {
+  id: 'music',
+  name: 'Musik',
+  icon: 'music',
+  dock: true,
+
+  mount(root) {
+    const art = el('div', { class: 'art' }, icon('music'));
+    const title = el('div', { class: 'track-title', text: 'Ingen låt vald' });
+    const sub = el('div', { class: 'track-sub', text: 'Lägg till musik från telefonen' });
+    const seekFill = el('i');
+    const timeNow = el('span', { text: '0:00' });
+    const timeEnd = el('span', { text: '0:00' });
+    const playBtn = el('button', { class: 'tbtn play', 'aria-label': 'Spela', onClick: () => { togglePlay(); buzz(); } }, icon('play'));
+    const shuffleBtn = el('button', { class: 'tbtn tiny', 'aria-label': 'Blanda', onClick: () => { player.shuffle = !player.shuffle; syncModes(); } }, icon('shuffle'));
+    const repeatBtn = el('button', { class: 'tbtn tiny', 'aria-label': 'Upprepa', onClick: () => { player.repeat = !player.repeat; syncModes(); } }, icon('repeat'));
+    const queueList = el('div', { class: 'list' });
+
+    const picker = el('input', { type: 'file', accept: 'audio/*', multiple: true, class: 'sr-only' });
+    picker.addEventListener('change', () => {
+      const count = addFiles(picker.files);
+      if (count) toast(`${count} låtar tillagda.`, 'ok');
+      picker.value = '';
+      renderQueue();
+    });
+
+    const seekRail = el('div', { class: 'seek-rail' }, seekFill);
+    seekRail.addEventListener('click', (ev) => {
+      if (!audio.duration) return;
+      const rect = seekRail.getBoundingClientRect();
+      audio.currentTime = ((ev.clientX - rect.left) / rect.width) * audio.duration;
+    });
+
+    const volume = el('input', { type: 'range', min: '0', max: '100', value: String(player.baseVolume * 100), class: 'grow' });
+    volume.addEventListener('input', () => setVolume(Number(volume.value) / 100));
+
+    root.append(
+      el('div', { class: 'player' },
+        art, title, sub,
+        el('div', { class: 'seek' }, seekRail, el('div', { class: 'seek-times' }, timeNow, timeEnd)),
+        el('div', { class: 'transport' },
+          shuffleBtn,
+          el('button', { class: 'tbtn', 'aria-label': 'Föregående', onClick: prev }, icon('prev')),
+          playBtn,
+          el('button', { class: 'tbtn', 'aria-label': 'Nästa', onClick: next }, icon('next')),
+          repeatBtn,
+        ),
+        el('div', { class: 'row', style: 'width:100%;align-items:center;gap:12px' }, icon('volume'), volume),
+      ),
+      el('div', { class: 'card' },
+        el('div', { class: 'spread', style: 'margin-bottom:10px' },
+          el('h3', { style: 'margin:0', text: 'Spellista' }),
+          el('button', { class: 'btn small primary', onClick: () => picker.click() }, icon('plus'), 'Lägg till'),
+        ),
+        queueList,
+        picker,
+      ),
+      el('p', { class: 'hint', style: 'margin-top:10px', text: state.settings.speedVolume
+        ? 'Fartanpassad volym är på — ljudet lyfts något i högre fart.'
+        : 'Fartanpassad volym är av. Slå på den i Inställningar.' }),
+    );
+
+    function syncModes() {
+      shuffleBtn.classList.toggle('on', player.shuffle);
+      repeatBtn.classList.toggle('on', player.repeat);
+    }
+
+    function renderNow() {
+      const track = currentTrack();
+      title.textContent = track?.title ?? 'Ingen låt vald';
+      sub.textContent = track ? track.artist : 'Lägg till musik från telefonen';
+      setKids(playBtn, icon(isPlaying() ? 'pause' : 'play'));
+      art.classList.toggle('spin', isPlaying());
+      renderQueue();
+    }
+
+    function renderProgress() {
+      const ratio = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+      seekFill.style.width = `${ratio}%`;
+      timeNow.textContent = fmtTime(audio.currentTime);
+      timeEnd.textContent = fmtTime(audio.duration);
+    }
+
+    function renderQueue() {
+      setKids(queueList, 
+        ...player.queue.map((track, i) => el('button', {
+          class: 'list-item', onClick: () => playAt(i),
+          style: i === player.index ? 'border-color:var(--r-brand)' : null,
+        },
+          el('span', { class: 'avatar' }, icon(i === player.index && isPlaying() ? 'pause' : 'play')),
+          el('div', { class: 'li-main' }, el('b', { text: track.title }), el('small', { text: track.artist })),
+        )),
+        player.queue.length ? null : el('div', { class: 'empty' },
+          el('b', { text: 'Tom spellista' }),
+          el('span', { class: 'hint', text: 'Välj låtar från telefonens minne. De ligger kvar så länge ReeOS är öppet.' })),
+      );
+    }
+
+    syncModes();
+    renderNow();
+    renderProgress();
+
+    const unbind = [on('music:track', renderNow), on('music:state', renderNow), on('music:queue', renderQueue)];
+    audio.addEventListener('timeupdate', renderProgress);
+    audio.addEventListener('loadedmetadata', renderProgress);
+
+    return () => {
+      unbind.forEach((fn) => fn());
+      audio.removeEventListener('timeupdate', renderProgress);
+      audio.removeEventListener('loadedmetadata', renderProgress);
+    };
+  },
+};
+
+/* ===== js/apps/phone.js ===== */
+/** Telefon. Webben får inte ringa själv — ReeOS lämnar över till telefonens
+ *  egen appellare via tel:, vilket i praktiken är ett tryck för föraren. */
+
+
+
+const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'];
+
+function callNumber(number) {
+  const clean = String(number).replace(/[^\d+*#]/g, '');
+  if (!clean) { toast('Inget nummer att ringa.', 'warn'); return false; }
+  buzz([20, 40, 20]);
+  location.href = `tel:${clean}`;
+  return true;
+}
+
+/** Ring en kontakt på namn — används av röstassistenten. */
+function callContactByName(name) {
+  const needle = name.toLowerCase().trim();
+  const match = state.contacts.find((c) => c.name.toLowerCase() === needle)
+    ?? state.contacts.find((c) => c.name.toLowerCase().includes(needle));
+  if (!match) return { ok: false, reason: `Hittar ingen kontakt som heter ${name}.` };
+  if (!match.number) return { ok: false, reason: `${match.name} saknar telefonnummer.` };
+  callNumber(match.number);
+  return { ok: true, contact: match };
+}
+
+const phoneApp = {
+  id: 'phone',
+  name: 'Telefon',
+  icon: 'phone',
+  dock: true,
+
+  mount(root) {
+    const contactList = el('div', { class: 'list' });
+    const readout = el('div', { class: 'dial-readout', text: '' });
+    const pad = el('div', { class: 'dialpad' });
+    let typed = '';
+
+    const setTyped = (value) => { typed = value.slice(0, 20); readout.textContent = typed; };
+
+    for (const key of KEYS) {
+      pad.append(el('button', { onClick: () => { setTyped(typed + key); buzz(12); }, text: key }));
+    }
+
+    const dialView = el('div', { class: 'stack', hidden: true },
+      readout,
+      pad,
+      el('div', { class: 'row', style: 'justify-content:center;margin-top:6px' },
+        el('button', { class: 'btn', onClick: () => setTyped(typed.slice(0, -1)) }, icon('x'), 'Radera'),
+        el('button', { class: 'btn primary', onClick: () => callNumber(typed) }, icon('phone'), 'Ring'),
+      ),
+      el('button', {
+        class: 'btn block ghost',
+        onClick: () => {
+          if (!typed) { toast('Slå ett nummer först.', 'warn'); return; }
+          const name = prompt('Vad heter kontakten?');
+          if (!name) return;
+          push('contacts', { id: uid(), name, number: typed, note: '' });
+          setTyped('');
+          renderContacts();
+          toast('Kontakt sparad.', 'ok');
+        },
+      }, icon('plus'), 'Spara som kontakt'),
+    );
+
+    const toggleDial = el('button', {
+      class: 'btn block',
+      onClick: () => {
+        dialView.hidden = !dialView.hidden;
+        toggleDial.lastChild.textContent = dialView.hidden ? 'Knappsats' : 'Dölj knappsats';
+      },
+    }, icon('phone'), el('span', { text: 'Knappsats' }));
+
+    root.append(
+      el('div', { class: 'card' },
+        el('div', { class: 'spread', style: 'margin-bottom:10px' },
+          el('h3', { style: 'margin:0', text: 'Snabbval' }),
+          el('button', {
+            class: 'btn small',
+            onClick: () => {
+              const name = prompt('Namn?');
+              if (!name) return;
+              const number = prompt(`Telefonnummer till ${name}?`) ?? '';
+              push('contacts', { id: uid(), name, number: number.trim(), note: '' });
+              renderContacts();
+            },
+          }, icon('plus'), 'Ny'),
+        ),
+        contactList,
+      ),
+      el('div', { style: 'height:12px' }),
+      toggleDial,
+      el('div', { style: 'height:12px' }),
+      dialView,
+      el('p', { class: 'hint', style: 'margin-top:14px', text: 'Samtalet kopplas till telefonens vanliga appellare, så bilens handsfree och rattknappar fungerar som de brukar.' }),
+    );
+
+    function renderContacts() {
+      setKids(contactList, 
+        ...state.contacts.map((contact) => el('div', { class: 'list-item' },
+          el('span', { class: 'avatar', text: contact.name.slice(0, 1).toUpperCase() }),
+          el('button', {
+            class: 'li-main', style: 'background:none;border:0;text-align:left',
+            onClick: () => (contact.number ? callNumber(contact.number) : editContact(contact)),
+          },
+            el('b', { text: contact.name }),
+            el('small', { text: contact.number || 'Tryck för att lägga till nummer' }),
+          ),
+          el('button', { class: 'btn small ghost', 'aria-label': `Ändra ${contact.name}`, onClick: () => editContact(contact) }, icon('gear')),
+        )),
+        state.contacts.length ? null : el('div', { class: 'empty' }, el('b', { text: 'Inga kontakter' })),
+      );
+    }
+
+    function editContact(contact) {
+      const number = prompt(`Telefonnummer till ${contact.name}?`, contact.number);
+      if (number === null) return;
+      if (number.trim() === '' && confirm(`Ta bort ${contact.name}?`)) { remove('contacts', contact.id); renderContacts(); return; }
+      contact.number = number.trim();
+      save();
+      renderContacts();
+    }
+
+    renderContacts();
+    const unbind = on('contacts:changed', renderContacts);
+    return () => unbind();
+  },
+};
+
+/* ===== js/apps/messages.js ===== */
+/** Meddelanden. Webbappar får inte läsa inkorgen — det ReeOS kan göra är att
+ *  ta emot diktering, läsa upp klistrad text och skicka via telefonens SMS-app. */
+
+
+
+
+function sendSMS(number, body) {
+  const clean = String(number ?? '').replace(/[^\d+]/g, '');
+  const separator = /iPhone|iPad|Macintosh/.test(navigator.userAgent) ? '&' : '?';
+  location.href = `sms:${clean}${body ? `${separator}body=${encodeURIComponent(body)}` : ''}`;
+}
+
+const messagesApp = {
+  id: 'messages',
+  name: 'Meddelanden',
+  icon: 'message',
+  dock: true,
+
+  mount(root) {
+    const body = el('textarea', { class: 'input', placeholder: 'Diktera eller skriv…', rows: '3' });
+    const recipient = el('select', { class: 'input' });
+    const readBox = el('textarea', { class: 'input', placeholder: 'Klistra in ett meddelande för uppläsning', rows: '3' });
+    const quick = el('div', { class: 'chips' });
+
+    function renderRecipients() {
+      setKids(recipient, 
+        el('option', { value: '', text: 'Välj mottagare' }),
+        ...state.contacts.filter((c) => c.number).map((c) => el('option', { value: c.number, text: `${c.name} · ${c.number}` })),
+      );
+    }
+
+    function renderQuick() {
+      setKids(quick, 
+        ...state.quickReplies.map((text, i) => el('button', {
+          class: 'chip-btn',
+          onClick: () => { body.value = text; say(text); },
+          onContextmenu: (ev) => {
+            ev.preventDefault();
+            const edited = prompt('Ändra snabbsvar:', text);
+            if (edited === null) return;
+            const list = [...state.quickReplies];
+            if (edited.trim()) list[i] = edited.trim(); else list.splice(i, 1);
+            replace('quickReplies', list);
+            renderQuick();
+          },
+          text,
+        })),
+        el('button', {
+          class: 'chip-btn',
+          onClick: () => {
+            const text = prompt('Nytt snabbsvar:');
+            if (text?.trim()) { push('quickReplies', text.trim()); renderQuick(); }
+          },
+        }, '+ Nytt'),
+      );
+    }
+
+    const dictateBtn = el('button', {
+      class: 'btn primary',
+      onClick: async () => {
+        if (!canListen) { toast('Diktering stöds inte i den här webbläsaren.', 'err'); return; }
+        dictateBtn.classList.add('on');
+        dictateBtn.lastChild.textContent = 'Lyssnar…';
+        try {
+          const text = await listen();
+          body.value = body.value ? `${body.value} ${text}` : text;
+        } catch (err) { toast(err.message, 'warn'); }
+        finally {
+          dictateBtn.classList.remove('on');
+          dictateBtn.lastChild.textContent = 'Diktera';
+        }
+      },
+    }, icon('mic'), el('span', { text: 'Diktera' }));
+
+    root.append(
+      el('div', { class: 'card' },
+        el('h3', { text: 'Snabbsvar' }),
+        quick,
+        el('p', { class: 'hint', style: 'margin-top:8px', text: 'Håll ett svar intryckt för att ändra det.' }),
+      ),
+      el('div', { style: 'height:12px' }),
+      el('div', { class: 'card stack' },
+        el('h3', { style: 'margin:0', text: 'Skicka' }),
+        el('div', { class: 'field' }, el('label', { text: 'Till' }), recipient),
+        body,
+        el('div', { class: 'row' },
+          dictateBtn,
+          el('button', { class: 'btn', onClick: () => { body.value = ''; } }, icon('x'), 'Rensa'),
+          el('button', {
+            class: 'btn primary grow',
+            onClick: () => {
+              if (!body.value.trim()) { toast('Meddelandet är tomt.', 'warn'); return; }
+              if (!recipient.value) { toast('Välj mottagare först.', 'warn'); return; }
+              sendSMS(recipient.value, body.value.trim());
+            },
+          }, icon('share'), 'Öppna i SMS'),
+        ),
+        el('p', { class: 'hint', text: 'Sista steget sker i telefonens SMS-app — ReeOS skickar aldrig något i ditt namn utan att du ser det.' }),
+      ),
+      el('div', { style: 'height:12px' }),
+      el('div', { class: 'card stack' },
+        el('h3', { style: 'margin:0', text: 'Läs upp' }),
+        readBox,
+        el('div', { class: 'row' },
+          el('button', { class: 'btn primary grow', onClick: () => {
+            if (!readBox.value.trim()) { toast('Klistra in text först.', 'warn'); return; }
+            say(readBox.value.trim(), { force: true });
+          } }, icon('volume'), 'Läs upp'),
+          el('button', { class: 'btn', onClick: hush }, icon('x'), 'Tyst'),
+        ),
+      ),
+    );
+
+    renderRecipients();
+    renderQuick();
+
+    // Textinmatning i rörelse är farligt; låt dikteringen ta över.
+    const guard = () => {
+      const lock = state.settings.lockWhileDriving && sensors.driving;
+      body.readOnly = lock;
+      readBox.readOnly = lock;
+      body.placeholder = lock ? 'Bilen rullar — använd Diktera' : 'Diktera eller skriv…';
+    };
+    guard();
+    const timer = setInterval(guard, 1500);
+    return () => clearInterval(timer);
+  },
+};
+
+/* ===== js/apps/parking.js ===== */
+/** Parkering: var bilen står, hur lång tid som är betald, och vägen tillbaka.
+ *  Allt sparas lokalt — ingen behöver veta var du parkerar. */
+
+
+
+
+
+let meterTimer = null;
+
+async function saveSpot({ note = '', level = '', photo = null, minutes = 0 } = {}) {
+  const pos = await fixOnce();
+  const spot = {
+    lat: pos.lat, lon: pos.lon, accuracy: pos.accuracy,
+    at: Date.now(), note, level, photo,
+    meterEndsAt: minutes > 0 ? Date.now() + minutes * 60000 : null,
+  };
+  setValue('parking', spot);
+  emit('parking:changed', spot);
+  armMeter();
+  return spot;
+}
+
+function clearSpot() {
+  setValue('parking', null);
+  emit('parking:changed', null);
+  clearTimeout(meterTimer);
+}
+
+/** Larmar fem minuter innan p-tiden går ut, och när den gör det. */
+function armMeter() {
+  clearTimeout(meterTimer);
+  const spot = state.parking;
+  if (!spot?.meterEndsAt) return;
+
+  const schedule = (at, fn) => {
+    const delay = at - Date.now();
+    if (delay <= 0 || delay > 2 ** 31 - 1) return null;
+    return setTimeout(fn, delay);
+  };
+
+  meterTimer = schedule(spot.meterEndsAt - 5 * 60000, () => {
+    buzz([60, 100, 60]);
+    say('Fem minuter kvar på parkeringen.', { force: true });
+    toast('Fem minuter kvar på p-tiden.', 'warn', 8000);
+    meterTimer = schedule(spot.meterEndsAt, expired);
+  }) ?? schedule(spot.meterEndsAt, expired);
+}
+
+function expired() {
+  buzz([120, 80, 120, 80, 120]);
+  say('Parkeringstiden har gått ut.', { force: true });
+  toast('P-tiden har gått ut.', 'err', 10000);
+}
+
+const parkingApp = {
+  id: 'parking',
+  name: 'Parkering',
+  icon: 'parking',
+
+  mount(root) {
+    const body = el('div', { class: 'stack' });
+    root.append(body);
+
+    const photoInput = el('input', { type: 'file', accept: 'image/*', capture: 'environment', class: 'sr-only' });
+    photoInput.addEventListener('change', async () => {
+      const file = photoInput.files?.[0];
+      photoInput.value = '';
+      if (!file || !state.parking) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        // Bilden skalas ned innan den sparas — localStorage rymmer inte en råbild.
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, 640 / Math.max(img.width, img.height));
+          const canvas = el('canvas');
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          state.parking.photo = canvas.toDataURL('image/jpeg', 0.62);
+          setValue('parking', state.parking);
+          render();
+          toast('Foto sparat till p-platsen.', 'ok');
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    async function doSave() {
+      try {
+        toast('Läser av position…');
+        const minutes = Number(minutesInput.value) || 0;
+        await saveSpot({ note: noteInput.value.trim(), level: levelInput.value.trim(), minutes });
+        say('Parkeringen är sparad.');
+        render();
+      } catch (err) { toast(err.message, 'err'); }
+    }
+
+    const noteInput = el('input', { class: 'input', placeholder: 'T.ex. Blå zon vid ingång C' });
+    const levelInput = el('input', { class: 'input', placeholder: 'Plan / plats' });
+    const minutesInput = el('input', { class: 'input', type: 'number', min: '0', max: '1440', placeholder: 'Minuter (valfritt)' });
+
+    function renderEmpty() {
+      setKids(body, 
+        el('div', { class: 'card stack' },
+          el('h3', { style: 'margin:0', text: 'Spara var bilen står' }),
+          el('div', { class: 'field' }, el('label', { text: 'Anteckning' }), noteInput),
+          el('div', { class: 'field' }, el('label', { text: 'Våning eller platsnummer' }), levelInput),
+          el('div', { class: 'field' }, el('label', { text: 'Betald tid' }), minutesInput),
+          el('button', { class: 'btn block primary', onClick: doSave }, icon('parking'), 'Spara platsen'),
+        ),
+        el('p', { class: 'hint', text: 'Positionen sparas bara i den här telefonen och kan raderas när som helst.' }),
+      );
+    }
+
+    function renderSpot() {
+      const spot = state.parking;
+      const pos = here();
+      const dist = distanceBetween(pos, spot);
+      const bearing = bearingBetween(pos, spot);
+      const left = spot.meterEndsAt ? spot.meterEndsAt - Date.now() : null;
+
+      const needle = el('div', { class: 'needle' });
+      if (Number.isFinite(bearing)) {
+        const relative = Number.isFinite(sensors.heading) ? bearing - sensors.heading : bearing;
+        needle.style.transform = `rotate(${relative}deg)`;
+      }
+
+      setKids(body, 
+        el('div', { class: 'card' },
+          el('div', { class: 'spread' },
+            el('div', {},
+              el('div', { class: 'big-num', text: Number.isFinite(dist) ? fmtDistance(dist) : '–' }),
+              el('div', { class: 'hint', text: Number.isFinite(bearing) ? `Bilen står mot ${compassName(bearing)}` : 'Väntar på position' }),
+            ),
+            left === null ? null : el('span', { class: `pill ${left < 0 ? 'red' : left < 600000 ? 'amber' : 'green'}`,
+              text: left < 0 ? 'TIDEN UTE' : `${fmtDuration(left)} kvar` }),
+          ),
+          el('div', { style: 'height:16px' }),
+          el('div', { class: 'compass' }, needle),
+          el('div', { class: 'hint', style: 'text-align:center;margin-top:10px', text: 'Pilen pekar mot bilen när du håller telefonen framför dig.' }),
+        ),
+        el('div', { class: 'card stack' },
+          el('div', { class: 'spread' }, el('b', { text: 'Parkerad' }), el('span', { class: 'hint', text: fmtDateTime(spot.at) })),
+          spot.note ? el('div', { class: 'spread' }, el('b', { text: 'Anteckning' }), el('span', { class: 'hint', text: spot.note })) : null,
+          spot.level ? el('div', { class: 'spread' }, el('b', { text: 'Plats' }), el('span', { class: 'hint', text: spot.level })) : null,
+          el('div', { class: 'spread' }, el('b', { text: 'Koordinat' }), el('span', { class: 'hint', style: 'user-select:text', text: `${spot.lat.toFixed(5)}, ${spot.lon.toFixed(5)}` })),
+          spot.photo ? el('img', { src: spot.photo, alt: 'Foto på parkeringsplatsen', style: 'width:100%;border-radius:14px;margin-top:6px' }) : null,
+        ),
+        el('div', { class: 'row' },
+          el('button', { class: 'btn grow', onClick: () => photoInput.click() }, icon('cam'), spot.photo ? 'Nytt foto' : 'Ta foto'),
+          el('button', {
+            class: 'btn grow',
+            onClick: () => {
+              const minutes = Number(prompt('Hur många minuter till?', '60'));
+              if (!minutes || minutes < 0) return;
+              spot.meterEndsAt = Math.max(Date.now(), spot.meterEndsAt ?? Date.now()) + minutes * 60000;
+              setValue('parking', spot);
+              armMeter();
+              render();
+            },
+          }, icon('clock'), 'Förläng tid'),
+        ),
+        el('div', { class: 'row' },
+          el('button', {
+            class: 'btn grow',
+            onClick: () => {
+              const url = `https://www.openstreetmap.org/?mlat=${spot.lat}&mlon=${spot.lon}#map=19/${spot.lat}/${spot.lon}`;
+              navigator.share?.({ title: 'Här står bilen', url }) ?? window.open(url, '_blank', 'noopener');
+            },
+          }, icon('share'), 'Dela plats'),
+          el('button', {
+            class: 'btn grow danger',
+            onClick: async () => {
+              if (await confirmBig('Rensa p-platsen?', 'Position, foto och tidräkning tas bort.', 'Rensa')) { clearSpot(); render(); }
+            },
+          }, icon('trash'), 'Kör härifrån'),
+        ),
+        photoInput,
+      );
+    }
+
+    const render = () => (state.parking ? renderSpot() : renderEmpty());
+
+    requestOrientationPermission().then((ok) => { if (ok) watchOrientation(); });
+    render();
+    const timer = setInterval(() => { if (state.parking) render(); }, 2000);
+    const unbind = on('parking:changed', render);
+    return () => { clearInterval(timer); unbind(); };
+  },
+};
+
+/* ===== js/apps/dashcam.js ===== */
+/** Dashcam med rullande minne.
+ *  Kameran spelar in hela tiden men behåller bara den senaste minuten — tills
+ *  något händer. Då sparas klippet, antingen automatiskt vid en kraftig
+ *  inbromsning eller när du trycker på knappen. */
+
+
+
+
+
+const BUFFER_SECONDS = 60;
+const CHUNK_MS = 1000;
+const IMPACT_G = 2.6;             // ca 25 m/s² utöver tyngdkraften
+
+const cam = {
+  stream: null,
+  recorder: null,
+  header: null,                   // första biten bär webm-huvudet
+  chunks: [],                     // { blob, at }
+  running: false,
+  startedAt: 0,
+  mime: '',
+  lastAutoSave: 0,
+};
+
+/* ---------- Klipplagring (IndexedDB — blobbar får inte plats i localStorage) ---------- */
+const DB_NAME = 'reeos-clips';
+let dbPromise = null;
+
+function db() {
+  dbPromise ??= new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = () => request.result.createObjectStore('clips');
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  return dbPromise;
+}
+
+async function putClip(id, blob) {
+  const store = (await db()).transaction('clips', 'readwrite').objectStore('clips');
+  return new Promise((resolve, reject) => {
+    const request = store.put(blob, id);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function getClip(id) {
+  const store = (await db()).transaction('clips', 'readonly').objectStore('clips');
+  return new Promise((resolve, reject) => {
+    const request = store.get(id);
+    request.onsuccess = () => resolve(request.result ?? null);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function deleteClip(id) {
+  const store = (await db()).transaction('clips', 'readwrite').objectStore('clips');
+  store.delete(id);
+}
+
+/* ---------- Inspelning ---------- */
+function pickMime() {
+  const candidates = [
+    'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus',
+    'video/webm', 'video/mp4',
+  ];
+  return candidates.find((type) => MediaRecorder.isTypeSupported?.(type)) ?? '';
+}
+
+async function startCam({ audio = false } = {}) {
+  if (cam.running) return cam.stream;
+  if (!navigator.mediaDevices?.getUserMedia) throw new Error('Kameran är inte tillgänglig här.');
+  if (!window.MediaRecorder) throw new Error('Den här webbläsaren kan inte spela in video.');
+
+  cam.stream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
+    audio,
+  });
+
+  cam.mime = pickMime();
+  cam.recorder = new MediaRecorder(cam.stream, cam.mime ? { mimeType: cam.mime, videoBitsPerSecond: 2_500_000 } : undefined);
+  cam.header = null;
+  cam.chunks = [];
+
+  cam.recorder.ondataavailable = (event) => {
+    if (!event.data?.size) return;
+    // Första biten innehåller strömhuvudet och måste följa med varje sparat klipp.
+    if (!cam.header) { cam.header = event.data; return; }
+    cam.chunks.push({ blob: event.data, at: Date.now() });
+    while (cam.chunks.length > BUFFER_SECONDS) cam.chunks.shift();
+  };
+
+  cam.recorder.start(CHUNK_MS);
+  cam.running = true;
+  cam.startedAt = Date.now();
+  emit('dashcam:state', true);
+  return cam.stream;
+}
+
+function stopCam() {
+  try { cam.recorder?.stop(); } catch { /* redan stoppad */ }
+  cam.stream?.getTracks().forEach((track) => track.stop());
+  cam.stream = null;
+  cam.recorder = null;
+  cam.header = null;
+  cam.chunks = [];
+  cam.running = false;
+  emit('dashcam:state', false);
+}
+
+const camRunning = () => cam.running;
+
+/** Fryser bufferten till ett klipp. */
+async function saveEvent(reason = 'manuell') {
+  if (!cam.running || !cam.header || !cam.chunks.length) {
+    toast('Inget i bufferten att spara ännu.', 'warn');
+    return null;
+  }
+  const parts = [cam.header, ...cam.chunks.map((c) => c.blob)];
+  const blob = new Blob(parts, { type: cam.mime || 'video/webm' });
+  const id = uid();
+  const pos = here();
+
+  try { await putClip(id, blob); }
+  catch { toast('Kunde inte spara klippet — minnet är fullt.', 'err'); return null; }
+
+  const meta = {
+    id, at: Date.now(), reason,
+    seconds: cam.chunks.length,
+    size: blob.size,
+    speedKmh: Math.round(sensors.speedKmh),
+    lat: pos?.lat ?? null, lon: pos?.lon ?? null,
+    ext: (cam.mime || 'video/webm').includes('mp4') ? 'mp4' : 'webm',
+  };
+  push('clips', meta);
+  buzz([40, 60, 40]);
+  toast(`Klipp sparat (${meta.seconds} s).`, 'ok');
+  return meta;
+}
+
+/* ---------- Händelsedetektering ---------- */
+function initIncidentWatch() {
+  let lastSpeed = 0;
+  let lastAt = Date.now();
+
+  // Kraftig retardation enligt GPS — fungerar även utan rörelsesensor.
+  on('sensors:fix', () => {
+    const now = Date.now();
+    const dt = (now - lastAt) / 1000;
+    lastAt = now;
+    if (dt > 0.3 && dt < 6) {
+      const decel = (lastSpeed - sensors.speed) / dt;   // m/s²
+      if (decel > 6 && lastSpeed > 8) autoSave('kraftig inbromsning');
+    }
+    lastSpeed = sensors.speed;
+  });
+
+  if (window.DeviceMotionEvent) {
+    window.addEventListener('devicemotion', (event) => {
+      const acc = event.accelerationIncludingGravity;
+      if (!acc || acc.x === null) return;
+      const g = Math.hypot(acc.x ?? 0, acc.y ?? 0, acc.z ?? 0) / 9.81;
+      if (g > IMPACT_G) autoSave('kraftig rörelse');
+    });
+  }
+}
+
+function autoSave(reason) {
+  if (!cam.running) return;
+  if (Date.now() - cam.lastAutoSave < 20000) return;   // en händelse, inte tio
+  cam.lastAutoSave = Date.now();
+  say('Händelse sparad.', { force: true });
+  saveEvent(reason);
+}
+
+const dashcamApp = {
+  id: 'dashcam',
+  name: 'Dashcam',
+  icon: 'cam',
+  flush: true,
+
+  mount(root) {
+    const video = el('video', { autoplay: true, muted: true, playsinline: true });
+    const status = el('div', { class: 'cam-bar' });
+    const actions = el('div', { class: 'cam-actions' });
+    const stage = el('div', { class: 'cam-stage' }, video);
+    const library = el('div', { class: 'screen', style: 'background:var(--r-bg);z-index:5', hidden: true });
+
+    root.append(stage, el('div', { class: 'cam-hud' }, status, el('div'), actions), library);
+
+    function renderStatus() {
+      setKids(status, 
+        cam.running ? el('span', { class: 'rec-dot' }) : null,
+        el('span', { text: cam.running ? `Buffert ${cam.chunks.length}/${BUFFER_SECONDS} s` : 'Kameran är av' }),
+        cam.running ? el('span', { style: 'opacity:.7', text: `· ${Math.round(sensors.speedKmh)} km/h` }) : null,
+      );
+    }
+
+    function renderActions() {
+      setKids(actions, 
+        cam.running
+          ? el('button', { class: 'btn danger', onClick: () => { stopCam(); renderAll(); } }, icon('x'), 'Stäng av')
+          : el('button', {
+              class: 'btn primary',
+              onClick: async () => {
+                try { await startCam(); video.srcObject = cam.stream; renderAll(); }
+                catch (err) { toast(err.message, 'err', 5000); }
+              },
+            }, icon('cam'), 'Starta kameran'),
+        el('button', { class: 'btn', onClick: () => saveEvent('manuell').then(renderAll) }, icon('check'), 'Spara händelse'),
+        el('button', { class: 'btn', onClick: () => { renderLibrary(); library.hidden = false; } },
+          icon('book'), `Klipp (${state.clips.length})`),
+      );
+    }
+
+    function renderLibrary() {
+      const list = el('div', { class: 'list' },
+        ...[...state.clips].sort((a, b) => b.at - a.at).map((clip) => el('div', { class: 'list-item' },
+          el('span', { class: 'avatar' }, icon('cam')),
+          el('div', { class: 'li-main' },
+            el('b', { text: `${clip.seconds} s · ${clip.reason}` }),
+            el('small', { text: `${fmtDateTime(clip.at)} · ${clip.speedKmh} km/h · ${(clip.size / 1048576).toFixed(1)} MB` }),
+          ),
+          el('button', {
+            class: 'btn small',
+            onClick: async () => {
+              const blob = await getClip(clip.id);
+              if (!blob) { toast('Klippet saknas i minnet.', 'err'); return; }
+              downloadFile(`reeos-${new Date(clip.at).toISOString().replace(/[:.]/g, '-')}.${clip.ext}`, blob);
+            },
+          }, icon('download')),
+          el('button', {
+            class: 'btn small ghost',
+            onClick: async () => { await deleteClip(clip.id); remove('clips', clip.id); renderLibrary(); renderActions(); },
+          }, icon('trash')),
+        )),
+        state.clips.length ? null : el('div', { class: 'empty' },
+          el('b', { text: 'Inga sparade klipp' }),
+          el('span', { class: 'hint', text: 'Bufferten skrivs över hela tiden. Bara det du sparar blir kvar.' })),
+      );
+
+      setKids(library, 
+        el('div', { class: 'spread' },
+          el('h3', { style: 'font-size:20px;font-weight:800', text: 'Sparade klipp' }),
+          el('button', { class: 'btn small', onClick: () => { library.hidden = true; } }, icon('x'), 'Stäng'),
+        ),
+        el('div', { style: 'height:12px' }),
+        list,
+        el('div', { style: 'height:12px' }),
+        state.clips.length ? el('button', {
+          class: 'btn block ghost',
+          onClick: async () => {
+            if (!await confirmBig('Radera alla klipp?', 'Videofilerna tas bort från telefonen.', 'Radera')) return;
+            for (const clip of state.clips) await deleteClip(clip.id);
+            state.clips.length = 0;
+            renderLibrary();
+            renderActions();
+          },
+        }, icon('trash'), 'Radera alla') : null,
+        el('p', { class: 'hint', style: 'margin-top:12px', text: 'Klippen ligger i telefonens webbläsarlagring. Ladda ner det du vill spara på riktigt — lagringen kan rensas av systemet.' }),
+      );
+    }
+
+    const renderAll = () => { renderStatus(); renderActions(); };
+    renderAll();
+    if (cam.running) video.srcObject = cam.stream;
+
+    const timer = setInterval(renderStatus, 1000);
+    const unbind = on('dashcam:state', renderAll);
+    // Kameran fortsätter medvetet i bakgrunden — poängen är att den rullar.
+    return () => { clearInterval(timer); unbind(); };
+  },
+};
+
+/* ===== js/apps/hud.js ===== */
+/** HUD. Lägg telefonen platt på instrumentbrädan — bilden är spegelvänd så att
+ *  vindrutan vänder den rätt. Bara det du behöver se i ögonvrån. */
+
+
+
+
+
+
+
+const hudApp = {
+  id: 'hud',
+  name: 'HUD',
+  icon: 'hud',
+  flush: true,
+
+  mount(root) {
+    const speed = el('div', { class: 'hud-speed', text: '0' });
+    const row = el('div', { class: 'hud-row' });
+    const hud = el('div', { class: `hud${state.settings.hudMirror ? '' : ' no-mirror'}` },
+      speed,
+      el('div', { class: 'hud-unit', text: 'KM/H' }),
+      row,
+    );
+
+    // Kontrollerna sitter uppochned i spegelläget; egen rad utanför spegeln.
+    const controls = el('div', {
+      style: 'position:absolute;left:0;right:0;bottom:0;display:flex;gap:10px;justify-content:center;padding:14px;z-index:2',
+    },
+      el('button', { class: 'btn small', onClick: () => open('home') }, icon('home'), 'Stäng'),
+      el('button', {
+        class: 'btn small',
+        onClick: (ev) => {
+          const mirror = !state.settings.hudMirror;
+          setSetting('hudMirror', mirror);
+          hud.classList.toggle('no-mirror', !mirror);
+          ev.currentTarget.lastChild.textContent = mirror ? 'Spegling på' : 'Spegling av';
+        },
+      }, icon('hud'), el('span', { text: state.settings.hudMirror ? 'Spegling på' : 'Spegling av' })),
+    );
+
+    root.append(hud, controls);
+    keepScreenAwake(true);
+
+    function render() {
+      const kmh = Math.round(sensors.speedKmh);
+      speed.textContent = Number.isFinite(kmh) ? String(kmh) : '0';
+
+      const limit = state.settings.speedWarnAt;
+      hud.classList.toggle('warn', limit > 0 && kmh > limit);
+
+      const dest = currentDestination();
+      const remaining = dest ? distanceBetween(here(), dest) : NaN;
+      setKids(row, 
+        el('span', { text: new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }) }),
+        Number.isFinite(sensors.heading) ? el('span', { text: compassName(sensors.heading) }) : null,
+        Number.isFinite(remaining) ? el('span', { text: fmtDistance(remaining) }) : null,
+      );
+    }
+
+    render();
+    const timer = setInterval(render, 500);
+    const unbind = on('sensors:fix', render);
+    return () => { clearInterval(timer); unbind(); };
+  },
+};
+
+/* ===== js/apps/settings.js ===== */
+/** Inställningar. Få reglage, stora ytor, inget som behöver läsas i fart. */
+
+
+
+
+
+function toggleRow(key, title, subtitle, onChange) {
+  const knob = el('span', { class: `switch${state.settings[key] ? ' on' : ''}` });
+  return el('button', {
+    class: 'toggle',
+    onClick: () => {
+      const value = !state.settings[key];
+      setSetting(key, value);
+      knob.classList.toggle('on', value);
+      onChange?.(value);
+    },
+  },
+    el('div', { class: 't-main' }, el('b', { text: title }), el('small', { text: subtitle })),
+    knob,
+  );
+}
+
+const settingsApp = {
+  id: 'settings',
+  name: 'Inställningar',
+  icon: 'gear',
+
+  mount(root) {
+    const themeChips = el('div', { class: 'chips' },
+      ...[['auto', 'Automatiskt'], ['night', 'Mörkt'], ['day', 'Ljust']].map(([value, label]) =>
+        el('button', {
+          class: `chip-btn${state.settings.theme === value ? ' on' : ''}`,
+          onClick: (ev) => {
+            setSetting('theme', value);
+            [...themeChips.children].forEach((c) => c.classList.remove('on'));
+            ev.currentTarget.classList.add('on');
+            emit('theme:apply');
+          },
+          text: label,
+        })),
+    );
+
+    const speedChips = el('div', { class: 'chips' },
+      ...[0, 50, 70, 90, 110, 120].map((limit) =>
+        el('button', {
+          class: `chip-btn${state.settings.speedWarnAt === limit ? ' on' : ''}`,
+          onClick: (ev) => {
+            setSetting('speedWarnAt', limit);
+            [...speedChips.children].forEach((c) => c.classList.remove('on'));
+            ev.currentTarget.classList.add('on');
+          },
+          text: limit === 0 ? 'Av' : `${limit} km/h`,
+        })),
+    );
+
+    const rate = el('input', { type: 'range', min: '70', max: '150', value: String((state.settings.voiceRate ?? 1) * 100), class: 'grow' });
+    rate.addEventListener('change', () => {
+      setSetting('voiceRate', Number(rate.value) / 100);
+      say('Så här låter det.');
+    });
+
+    const importInput = el('input', { type: 'file', accept: 'application/json,.json', class: 'sr-only' });
+    importInput.addEventListener('change', async () => {
+      const file = importInput.files?.[0];
+      importInput.value = '';
+      if (!file) return;
+      try {
+        importJSON(await file.text());
+        toast('Inställningar och data inlästa.', 'ok');
+        setTimeout(() => location.reload(), 900);
+      } catch (err) { toast(err.message, 'err'); }
+    });
+
+    root.append(
+      el('div', { class: 'card stack' },
+        el('h3', { style: 'margin:0', text: 'Skärm' }),
+        themeChips,
+        el('p', { class: 'hint', text: 'Automatiskt växlar till mörkt läge mellan solnedgång och gryning.' }),
+        el('div', { class: 'divider' }),
+        toggleRow('wakeLock', 'Håll skärmen tänd', 'Skärmen slocknar inte medan ReeOS är öppet', (on) => keepScreenAwake(on)),
+      ),
+      el('div', { style: 'height:12px' }),
+      el('div', { class: 'card stack' },
+        el('h3', { style: 'margin:0', text: 'Röst' }),
+        toggleRow('voice', 'Röstsvar', 'ReeOS läser upp svängar och varningar'),
+        el('div', { class: 'row', style: 'align-items:center;gap:12px' }, icon('volume'), rate),
+        el('p', { class: 'hint', text: canListen ? 'Rösttolkning fungerar i den här webbläsaren.' : 'Rösttolkning saknas här — dikteringen kräver Chrome eller Safari.' }),
+      ),
+      el('div', { style: 'height:12px' }),
+      el('div', { class: 'card stack' },
+        el('h3', { style: 'margin:0', text: 'Körning' }),
+        toggleRow('speedVolume', 'Fartanpassad volym', 'Musiken lyfts något när vägbruset ökar'),
+        toggleRow('lockWhileDriving', 'Lås textinmatning i rörelse', 'Tangentbordet ersätts av diktering över 8 km/h'),
+        toggleRow('autoTripLog', 'Automatisk färddagbok', 'Resan börjar loggas när bilen rullar'),
+        el('div', { class: 'divider' }),
+        el('div', {}, el('b', { text: 'Fartvarning' }), el('div', { class: 'hint', style: 'margin-bottom:8px', text: 'Pip och röd HUD över vald hastighet.' }), speedChips),
+      ),
+      el('div', { style: 'height:12px' }),
+      el('div', { class: 'card stack' },
+        el('h3', { style: 'margin:0', text: 'Data' }),
+        el('p', { class: 'hint', text: 'Allt ReeOS sparar ligger i den här telefonen: resor, platser, kontakter, markeringar och klipp. Ingenting skickas till någon server.' }),
+        el('div', { class: 'row' },
+          el('button', {
+            class: 'btn grow',
+            onClick: () => downloadFile(`reeos-backup-${new Date().toISOString().slice(0, 10)}.json`, exportJSON(), 'application/json'),
+          }, icon('download'), 'Exportera allt'),
+          el('button', { class: 'btn grow', onClick: () => importInput.click() }, icon('upload'), 'Importera'),
+        ),
+        el('button', {
+          class: 'btn block danger',
+          onClick: async () => {
+            if (await confirmBig('Nollställ ReeOS?', 'Alla resor, platser, kontakter och markeringar raderas.', 'Nollställ')) {
+              resetAll();
+              toast('ReeOS är nollställt.', 'ok');
+              setTimeout(() => location.reload(), 800);
+            }
+          },
+        }, icon('trash'), 'Nollställ allt'),
+        importInput,
+      ),
+      el('div', { style: 'height:12px' }),
+      el('div', { class: 'card stack' },
+        el('h3', { style: 'margin:0', text: 'Status' }),
+        el('div', { class: 'spread' }, el('span', { text: 'GPS' }),
+          el('span', { class: `pill ${sensors.status === 'live' ? 'green' : sensors.status === 'denied' ? 'red' : 'amber'}`, text: sensors.status })),
+        sensors.status !== 'live'
+          ? el('button', { class: 'btn block', onClick: () => { startGPS(); toast('Begär plats…'); } }, icon('target'), 'Aktivera plats')
+          : el('div', { class: 'hint', text: `Noggrannhet ±${Math.round(sensors.accuracy ?? 0)} m` }),
+        el('div', { class: 'hint', text: `Totalt loggat: ${state.stats.totalKm.toFixed(1)} km · ${state.trips.length} resor` }),
+      ),
+      el('div', { style: 'height:12px' }),
+      el('p', { class: 'hint', style: 'text-align:center', text: 'ReeOS · körs helt i webbläsaren · version 1.0' }),
+    );
+  },
+};
+
+/* ===== js/apps/assistant.js ===== */
+/** Röstassistenten. Tolkar svenska kommandon lokalt — inga fraser skickas
+ *  vidare någonstans, och den svarar även utan nät. */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const has = (text, ...words) => words.some((word) => text.includes(word));
+
+/** Tolka en mening och utför den. Returnerar svaret som ska läsas upp. */
+async function handleCommand(raw) {
+  const text = raw.toLowerCase().trim();
+  if (!text) return 'Jag hörde inget.';
+
+  /* --- navigation --- */
+  if (has(text, 'kör mig till', 'navigera till', 'ta mig till', 'åk till')) {
+    const target = text.replace(/.*?(kör mig till|navigera till|ta mig till|åk till)\s*/, '').trim();
+    if (!target) return 'Vart vill du åka?';
+
+    const saved = state.places.find((p) => p.lat != null && p.label.toLowerCase().includes(target));
+    if (saved) { await navigateTo(saved); return `Kör mot ${saved.label}.`; }
+
+    try {
+      const [hit] = await geocode(target);
+      if (!hit) return `Jag hittar ingen plats som heter ${target}.`;
+      await navigateTo(hit);
+      return `Kör mot ${hit.label}.`;
+    } catch {
+      return 'Jag når inte kartsökningen just nu. Välj en sparad plats i stället.';
+    }
+  }
+
+  if (has(text, 'avbryt rutt', 'avsluta rutt', 'sluta navigera')) {
+    clearRoute();
+    return 'Rutten är avslutad.';
+  }
+
+  // "hur långt har jag kört" handlar om färddagboken, inte om färdmålet.
+  if (has(text, 'hur långt', 'hur lång tid', 'när är jag framme') && !has(text, 'har jag kört')) {
+    const dest = currentDestination();
+    if (!dest) return 'Du har inget färdmål inlagt.';
+    const remaining = distanceBetween(here(), dest);
+    const speed = sensors.speedKmh > 5 ? sensors.speedKmh : 60;
+    return `${fmtDistance(remaining)} kvar till ${dest.label}, ungefär ${Math.round(remaining / 1000 / speed * 60)} minuter.`;
+  }
+
+  /* --- musik --- */
+  if (has(text, 'spela musik', 'spela upp', 'starta musiken')) {
+    if (!isPlaying()) togglePlay();
+    open('music');
+    const track = currentTrack();
+    return track ? `Spelar ${track.title}.` : 'Lägg till musik först.';
+  }
+  if (has(text, 'pausa', 'stoppa musiken', 'tyst')) {
+    if (isPlaying()) togglePlay();
+    return 'Pausad.';
+  }
+  if (has(text, 'nästa låt', 'nästa spår')) { next(); return 'Nästa låt.'; }
+  if (has(text, 'föregående låt', 'förra låten')) { prev(); return 'Föregående låt.'; }
+  if (has(text, 'vad spelas', 'vilken låt')) {
+    const track = currentTrack();
+    return track ? `${track.title} med ${track.artist}.` : 'Ingen låt spelas.';
+  }
+
+  /* --- telefon --- */
+  if (has(text, 'ring ')) {
+    const name = text.split('ring ')[1]?.replace(/\s+(upp|till)\s+/, ' ').trim();
+    if (!name) return 'Vem vill du ringa?';
+    const result = callContactByName(name);
+    return result.ok ? `Ringer ${result.contact.name}.` : result.reason;
+  }
+
+  /* --- parkering --- */
+  if (has(text, 'spara parkering', 'kom ihåg var jag parkerat', 'spara p-plats', 'här står bilen')) {
+    try { await saveSpot({ note: 'Sparad med rösten' }); open('parking'); return 'Parkeringen är sparad.'; }
+    catch (err) { return err.message; }
+  }
+  if (has(text, 'var står bilen', 'var är bilen', 'hitta bilen')) {
+    if (!state.parking) return 'Du har ingen sparad parkering.';
+    open('parking');
+    const distance = distanceBetween(here(), state.parking);
+    return Number.isFinite(distance) ? `Bilen står ${fmtDistance(distance)} härifrån.` : 'Jag visar parkeringen på skärmen.';
+  }
+  if (has(text, 'glöm parkeringen', 'rensa parkering')) { clearSpot(); return 'Parkeringen är rensad.'; }
+
+  /* --- väglag --- */
+  if (has(text, 'markera', 'rapportera', 'varna för')) {
+    const kind = Object.entries(HAZARD_KINDS).find(([key, value]) =>
+      text.includes(value.label.toLowerCase()) || text.includes(key)
+      || (key === 'pothole' && has(text, 'hål', 'grop'))
+      || (key === 'ice' && has(text, 'halt', 'halka', 'is'))
+      || (key === 'wildlife' && has(text, 'älg', 'rådjur', 'djur', 'vilt'))
+      || (key === 'queue' && has(text, 'kö', 'stopp'))
+      || (key === 'roadwork' && has(text, 'vägarbete', 'arbete'))
+      || (key === 'camera' && has(text, 'kamera', 'fartkamera')));
+    if (!kind) { emit('alerts:quickreport'); return 'Vad ska jag markera?'; }
+    reportHazard(kind[0]);
+    return `${kind[1].label} markerat här.`;
+  }
+
+  /* --- färddagbok --- */
+  if (has(text, 'starta resa', 'börja logga')) { startTrip(true); return 'Resan loggas.'; }
+  if (has(text, 'avsluta resa', 'sluta logga')) {
+    const purpose = has(text, 'tjänst', 'jobb') ? 'tjänst' : 'privat';
+    const trip = endTrip({ purpose });
+    if (!trip) return 'Ingen resa pågick.';
+    return trip.recorded
+      ? `Resa sparad: ${trip.km.toFixed(1)} kilometer som ${purpose}.`
+      : 'Resan var för kort för att sparas.';
+  }
+  if (has(text, 'hur långt har jag kört')) {
+    const status = tripStatus();
+    return status.active ? `${status.km.toFixed(1)} kilometer den här resan.` : `Totalt ${state.stats.totalKm.toFixed(0)} kilometer loggat.`;
+  }
+
+  /* --- trötthet --- */
+  if (has(text, 'jag tar paus', 'nu rastar jag', 'nollställ körtid')) { takeBreak(); return 'Körtiden är nollställd. Sträck på benen.'; }
+  if (has(text, 'hur länge har jag kört', 'är jag trött')) {
+    const status = fatigueStatus();
+    return `Du har kört ${fmtDuration(status.drivingMs)} sedan senaste pausen.` + (status.dueForBreak ? ' Det är dags att stanna.' : '');
+  }
+
+  /* --- dashcam --- */
+  if (has(text, 'spara klipp', 'spara händelse', 'filma det där')) {
+    if (!camRunning()) { try { await startCam(); } catch (err) { return err.message; } }
+    const meta = await saveEvent('röstkommando');
+    return meta ? 'Klippet är sparat.' : 'Bufferten är inte fylld ännu.';
+  }
+
+  /* --- fart och status --- */
+  if (has(text, 'hur fort', 'vilken hastighet')) return `Du kör ${Math.round(sensors.speedKmh)} kilometer i timmen.`;
+  if (has(text, 'vad är klockan')) return `Klockan är ${new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}.`;
+
+  /* --- öppna appar --- */
+  const screens = {
+    karta: 'nav', navigation: 'nav', musik: 'music', telefon: 'phone',
+    meddelanden: 'messages', dashcam: 'dashcam', parkering: 'parking',
+    färddagbok: 'triplog', väglag: 'alerts', hud: 'hud', inställningar: 'settings', hem: 'home',
+  };
+  if (has(text, 'öppna', 'visa', 'gå till')) {
+    const match = Object.entries(screens).find(([word]) => text.includes(word));
+    if (match) { open(match[1]); return `Öppnar ${match[0]}.`; }
+  }
+
+  if (has(text, 'hjälp', 'vad kan du')) {
+    return 'Säg till exempel: kör mig till Lund, ring hemma, spela musik, spara parkering, markera hål i vägen, eller jag tar paus.';
+  }
+
+  return 'Det där förstod jag inte. Säg hjälp för exempel.';
+}
+
+/** Öppnar lyssningsvyn och kör kommandot som hörs. */
+async function askAssistant() {
+  const overlay = document.getElementById('assistant-overlay');
+  const heard = el('div', { class: 'heard', text: '' });
+  const said = el('div', { class: 'said', text: 'Lyssnar…' });
+
+  if (!canListen) {
+    // Utan rösttolkning får man skriva — men bara när bilen står stilla.
+    if (sensors.driving) { toast('Rösttolkning saknas i den här webbläsaren.', 'err'); return; }
+    const typed = prompt('Vad vill du göra?');
+    if (typed) {
+      const reply = await handleCommand(typed);
+      say(reply);
+      toast(reply, '', 5000);
+    }
+    return;
+  }
+
+  overlay.hidden = false;
+  setKids(overlay, 
+    el('div', { class: 'orb' }),
+    heard,
+    said,
+    el('button', { class: 'btn', onClick: close, text: 'Avbryt' }),
+  );
+
+  function close() {
+    stopListening();
+    overlay.hidden = true;
+    unbind();
+  }
+  const unbind = on('speech:partial', (text) => { heard.textContent = text; });
+
+  try {
+    const text = await listen();
+    heard.textContent = text;
+    said.textContent = 'Tänker…';
+    const reply = await handleCommand(text);
+    said.textContent = reply;
+    say(reply);
+    setTimeout(close, 2200);
+  } catch (err) {
+    said.textContent = err.message;
+    setTimeout(close, 1800);
+  }
+}
+
+/* ===== js/main.js ===== */
+/** ReeOS — start och sammankoppling.
+ *  Appar registreras här; bakgrundsvakterna startar en gång och lever vidare
+ *  oavsett vilken skärm som visas. */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ---------- Register ---------- */
+for (const app of [home, navApp, musicApp, phoneApp, messagesApp,
+  fatigueApp, parkingApp, dashcamApp, tripApp, alertsApp, hudApp, settingsApp]) {
+  register(app);
+}
+
+const DOCK = ['home', 'nav', 'music', 'phone', 'fatigue', 'parking', 'dashcam', 'triplog', 'alerts', 'hud', 'settings'];
+
+function buildDock() {
+  const dock = $('#dock');
+  setKids(dock, ...DOCK.map((id) => {
+    const app = allApps().find((a) => a.id === id);
+    if (!app) return null;
+    return el('button', { class: 'dock-item', dataset: { app: id }, onClick: () => { open(id); buzz(10); } },
+      icon(app.icon), el('span', { text: app.name }));
+  }).filter(Boolean));
+}
+
+function syncDock(activeId) {
+  for (const item of $('#dock').children) {
+    item.classList.toggle('active', item.dataset.app === activeId);
+  }
+}
+
+/* ---------- Statusrad ---------- */
+function initStatusbar() {
+  const clock = $('#sb-clock');
+  const speed = $('#sb-speed').querySelector('b');
+  const gps = $('#sb-gps');
+  const drive = $('#sb-drive');
+  const batt = $('#sb-batt');
+  const title = $('#sb-title');
+  const backBtn = $('#btn-back');
+
+  const tickClock = () => { clock.textContent = fmtClock(); };
+  tickClock();
+  setInterval(tickClock, 15000);
+
+  $('#btn-home').addEventListener('click', () => open('home'));
+  backBtn.addEventListener('click', back);
+  $('#btn-mic').addEventListener('click', () => { buzz(); askAssistant(); });
+
+  on('router:changed', ({ id, app }) => {
+    title.textContent = app.name;
+    backBtn.hidden = id === 'home' || !canGoBack();
+    syncDock(id);
+  });
+
+  const renderSensors = () => {
+    speed.textContent = sensors.status === 'live' ? String(Math.round(sensors.speedKmh)) : '–';
+    const live = sensors.status === 'live';
+    gps.className = `sb-chip ${live ? 'ok' : sensors.status === 'denied' ? 'warn' : ''}`.trim();
+    gps.textContent = live ? 'GPS' : sensors.status === 'denied' ? 'EJ GPS' : 'SÖKER';
+    drive.hidden = !sensors.driving;
+  };
+  on('sensors:fix', renderSensors);
+  on('sensors:status', renderSensors);
+  renderSensors();
+
+  on('sensors:battery', () => {
+    if (sensors.batteryLevel === null) return;
+    batt.hidden = false;
+    batt.textContent = `${sensors.batteryCharging ? '⚡' : ''}${sensors.batteryLevel}%`;
+  });
+
+  $('#btn-mic').classList.toggle('sb-mic', true);
+  on('speech:start', () => $('#btn-mic').classList.add('listening'));
+  on('speech:end', () => $('#btn-mic').classList.remove('listening'));
+}
+
+/* ---------- Tema ---------- */
+function applyTheme() {
+  const setting = state.settings.theme;
+  if (setting === 'auto') {
+    // Grov men förutsägbar regel: mörkt läge mellan 19 och 07.
+    const hour = new Date().getHours();
+    document.body.dataset.theme = (hour >= 19 || hour < 7) ? 'night' : 'day';
+  } else {
+    document.body.dataset.theme = setting;
+  }
+}
+
+/* ---------- Fartvarning ---------- */
+function initSpeedWarning() {
+  let lastWarn = 0;
+  on('sensors:overspeed', (kmh) => {
+    if (Date.now() - lastWarn < 25000) return;
+    lastWarn = Date.now();
+    buzz([50, 80, 50]);
+    say(`Du kör ${Math.round(kmh)}.`, { force: true });
+    toast(`Över inställd gräns: ${Math.round(kmh)} km/h`, 'warn', 4000);
+  });
+}
+
+/* ---------- Start ---------- */
+async function boot() {
+  applyTheme();
+  setInterval(applyTheme, 5 * 60000);
+  on('theme:apply', applyTheme);
+  on('settings:changed', ({ key }) => { if (key === 'theme') applyTheme(); });
+
+  buildDock();
+  initStatusbar();
+  initSpeedWarning();
+
+  // Bakgrundsvakter — dessa ska gå även när deras egen skärm är stängd.
+  initTripLogger();
+  initFatigueWatch();
+  initHazardWatch();
+  initIncidentWatch();
+  armMeter();
+
+  startGPS();
+  watchBattery();
+  watchOrientation();
+  if (state.settings.wakeLock) keepScreenAwake(true);
+
+  window.addEventListener('online', () => emit('online:changed', true));
+  window.addEventListener('offline', () => {
+    emit('online:changed', false);
+    toast('Offline — kartan visar kompassläge.', 'warn');
+  });
+
+  startRouter('home');
+
+  // Bilhållarens vanligaste läge är liggande; påminn en gång.
+  if (window.matchMedia('(orientation: portrait)').matches && screen.width < 500) {
+    toast('Vrid telefonen till liggande för bästa vy.', '', 4000);
+  }
+
+  const boot = $('#boot');
+  $('#shell').hidden = false;
+  boot.classList.add('gone');
+  setTimeout(() => boot.remove(), 500);
+
+  // På file:// finns ingen service worker att registrera; hoppa över tyst.
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    navigator.serviceWorker.register('sw.js').catch(() => { /* offline-läget är en bonus */ });
+  }
+}
+
+// Låt boot-skärmen synas ett ögonblick — den signalerar att systemet är igång.
+setTimeout(boot, 650);
+
+// Zoom med dubbeltryck är ett olycksfall i bil; stäng av det.
+document.addEventListener('dblclick', (ev) => ev.preventDefault(), { passive: false });
+
+</script>
+</body>
+</html>
