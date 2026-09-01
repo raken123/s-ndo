@@ -5,6 +5,7 @@ rounded caps.  The house style is one colour per shape plus a 5px outline.
 """
 
 import math
+import zlib
 
 W, H = 1280, 720
 GROUND = 548.0
@@ -54,12 +55,15 @@ def wobble(t, freq=6.0, decay=3.0):
 
 
 def rand01(*seed):
-    """Deterministic pseudo-random in [0,1) from any hashable seed."""
-    h = 0
-    for s in seed:
-        h = (h * 1000003 + hash(s)) & 0xFFFFFFFF
-    h ^= h >> 13
-    h = (h * 1274126177) & 0xFFFFFFFF
+    """Reproducible pseudo-random in [0,1) from any seed.
+
+    Deliberately not `hash()`: string hashing is salted per process, which
+    would make every render of the same episode look subtly different.
+    """
+    key = "|".join(repr(s) for s in seed).encode()
+    h = zlib.crc32(key)
+    h = (h * 2654435761 + 0x9E3779B9) & 0xFFFFFFFF
+    h ^= h >> 15
     return ((h >> 8) & 0xFFFFFF) / float(0x1000000)
 
 

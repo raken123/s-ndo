@@ -250,6 +250,11 @@ CUES = {
     "results": (62, 138, ["IV", "V", "I", "vi"], "bright"),
     "elimination": (53, 96, ["i", "bVI", "iv", "i"], "dark"),
     "outro": (60, 150, ["I", "V", "vi", "IV"], "theme"),
+    # episode 2
+    "recap": (60, 142, ["I", "V", "vi", "IV"], "theme"),
+    "vote": (53, 100, ["i", "bVI", "iv", "v"], "dark"),
+    "inside": (54, 118, ["i", "bVII", "bVI", "bVII"], "sneaky"),
+    "judging": (62, 132, ["IV", "V", "I", "vi"], "bright"),
 }
 
 MELODY = {
@@ -259,11 +264,12 @@ MELODY = {
     "bright": [4, 7, 9, 12, 11, 9, 7, 4, 5, 9, 12, 16, 14, 12, 9, 7],
     "dark": [0, 3, 7, 3, 0, -2, 0, 3],
     "sparse": [0, 7, 3, 7],
+    "sneaky": [0, 3, 5, 3, 7, 3, 5, 3, 0, -2, 0, 3, 5, 7, 5, 3],
 }
 
 
 def score_scene(track, sc, gain=1.0):
-    root, bpm, prog, style = CUES[sc["key"]]
+    root, bpm, prog, style = CUES.get(sc["key"], CUES["rollcall"])
     beat = 60.0 / bpm
     bar = beat * 4
     t, i = sc["t0"], 0

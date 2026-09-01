@@ -65,9 +65,34 @@ def build_cues(scenes):
                     add(t0 + 0.3 + i * 0.45, "ding")
             elif act == "endcard":
                 add(t0 + 0.1, "sting")
+            # --- episode 2 ---
+            elif act.startswith("flash") and b["kind"] == "act":
+                add(t0 + 0.05, "whoosh")
+            elif act.startswith("tally_") and b["kind"] == "act":
+                add(t0 + 0.15, "beep")
+                add(t0 + 0.75, "ding")
+            elif act == "drawer_open" and b["kind"] == "act":
+                add(t0 + 0.25, "tape")
+            elif act == "fling" and b["kind"] == "act":
+                add(t0 + 0.10, "whoosh")
+                add(t0 + 0.95, "thud")
+            elif act == "slam_shut" and b["kind"] == "act" and b["dur"] > 1.8:
+                add(t0 + 0.05, "slam")
+            elif act == "go" and b["kind"] == "act":
+                add(t0 + 0.05, "horn")
+                for i in range(5):
+                    add(t0 + 0.7 + i * 0.42, "step")
+            elif act == "voltreveal" and b["kind"] == "act":
+                add(t0 + 0.10, "stinger")
+                add(t0 + 0.10, "zap")
+            elif act.startswith("find_") and b["kind"] == "act":
+                add(t0 + 0.30, "ding")
+                add(t0 + 0.40, "sparkle")
+            elif act == "timeup" and b["kind"] == "act" and b["dur"] > 2.0:
+                add(t0 + 0.05, "buzzer")
 
     for sc in scenes:
-        if sc["key"] == "results":
+        if sc["key"] in ("results", "judging"):
             for b in sc["beats"]:
                 if b.get("act") == "win" and b["kind"] == "say":
                     cues.append(dict(t=b["t0"] + 0.05, kind="fanfare"))

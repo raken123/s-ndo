@@ -7,9 +7,10 @@ one elimination.
 |---|---|
 | File | `odds_and_ends_ep01_stack_overflow.mp4` |
 | Duration | `00:05:00.00` exactly |
-| Video | H.264 High, 1280x720, 24 fps, ~517 kb/s |
+| Video | H.264 High, 1280x720, 24 fps, ~522 kb/s |
 | Audio | AAC-LC, 44.1 kHz stereo, 160 kb/s |
-| Size | 25,635,475 bytes (24.4 MiB) |
+| Size | 25,792,011 bytes (24.6 MiB) |
+| Source | [`../../objectshow/ep01.py`](../../objectshow/ep01.py) |
 
 Every frame and every sample is generated from the source in
 [`../../objectshow`](../../objectshow) — there are no image, video or audio
@@ -46,31 +47,15 @@ context; the soundtrack is numpy oscillators.
 ```sh
 pip install pycairo numpy imageio-ffmpeg
 cd objectshow
-python3 render.py ../video/odds-and-ends-ep1/odds_and_ends_ep01_stack_overflow.mp4
+python3 render.py ep01 ../video/odds-and-ends-ep1/odds_and_ends_ep01_stack_overflow.mp4
 ```
 
-Roughly 90 seconds on a modern core (~85 fps of 1280x720). The render is
-deterministic: same source, same bytes-worth of episode.
+Roughly 90 seconds on a modern core (~85 fps of 1280x720), and reproducible:
+the same source always produces the same frames.
 
-Useful while working on it:
+See [`../../objectshow/README.md`](../../objectshow/README.md) for the file map,
+the slice/still/contact-sheet commands, and how to write another episode.
 
-```sh
-python3 script.py                     # the running order and total runtime
-python3 render.py out.mp4 --from 115 --to 133   # render one slice
-python3 render.py --frame 162.0 still.png       # one still
-```
+## Next
 
-## How it fits together
-
-| File | |
-|---|---|
-| `script.py` | the screenplay. Line durations derive from the text, so the timeline, voice track and subtitles cannot drift apart |
-| `cues.py` | the cue sheet, read by both the soundtrack and the animation, so a crash on screen lands on the same frame as the crash in the speakers |
-| `cast.py` | the seven characters: body shapes, faces, walk cycles, voices |
-| `draw.py` | drawing and easing primitives |
-| `stage.py` | backgrounds, props and on-screen graphics |
-| `audio.py` | chiptune score, cartoon SFX, synthesised voices, ducking |
-| `render.py` | the eight scenes, and the frame pipe into ffmpeg |
-
-Dialogue is subtitled, and the voices are pitched blip-speech (one blip per
-syllable, per-character timbre) rather than recorded speech.
+[Episode 2: "The Junk Drawer"](../odds-and-ends-ep2) — Volt lost the vote.

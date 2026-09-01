@@ -307,3 +307,169 @@ def podium(cr, x, y, w=150, h=110, color=(0.30, 0.28, 0.44)):
     fill_stroke(cr, color, 4.5)
     rrect(cr, x - w / 2 - 10, y - 14, w + 20, 20, 8)
     fill_stroke(cr, (0.42, 0.38, 0.58), 4.5)
+
+
+# ------------------------------------------------- episode 2: the drawer ---
+
+WOOD = (0.60, 0.44, 0.29)
+WOOD_D = (0.42, 0.30, 0.22)
+DRAWER_DARK = (0.17, 0.12, 0.09)
+
+
+def drawer(cr, x, y, w=440, h=230, open_k=0.0, t=0.0, glow=0.0):
+    """The Junk Drawer, seen from outside.  open_k slides the front panel."""
+    rrect(cr, x - w / 2, y - h, w, h, 16)
+    fill_stroke(cr, WOOD_D, 5.0)
+    inset = 18
+    rrect(cr, x - w / 2 + inset, y - h + inset, w - inset * 2, h - inset * 1.4, 12)
+    fill_stroke(cr, DRAWER_DARK, 4.5)
+    if open_k > 0.05:
+        # junk, dimly, inside
+        for i, (dx, dy, rw, rh) in enumerate(((-110, -26, 46, 22),
+                                              (-20, -14, 60, 26),
+                                              (86, -30, 40, 30),
+                                              (30, -50, 54, 18))):
+            rrect(cr, x + dx, y + dy - 40, rw, rh, 7)
+            set_rgb(cr, (0.30, 0.22, 0.17), 0.9 * min(1.0, open_k * 2))
+            cr.fill()
+    if glow > 0:
+        set_rgb(cr, (1, 0.9, 0.5), 0.10 * glow)
+        rrect(cr, x - w / 2 - 12, y - h - 12, w + 24, h + 24, 20)
+        cr.fill()
+    # the front face: covers the whole box when shut, a lip when open
+    ph = h - (h - 66) * open_k
+    fy = (y - h) + (h - 66 - 4) * open_k
+    rrect(cr, x - w / 2 - 12, fy, w + 24, ph, 12)
+    fill_stroke(cr, WOOD, 5.0)
+    rrect(cr, x - 46, fy + ph - 42, 92, 18, 9)
+    fill_stroke(cr, (0.76, 0.74, 0.70), 4.0)
+
+
+def drawer_room(cr, t, light=1.0):
+    """Inside the drawer: wood walls and one shaft of kitchen light."""
+    set_rgb(cr, (0.22, 0.15, 0.11))
+    cr.rectangle(0, 0, W, H)
+    cr.fill()
+    set_rgb(cr, (0.27, 0.19, 0.13))
+    cr.set_line_width(3)
+    for i in range(9):
+        y = 40 + i * 62
+        cr.move_to(0, y + math.sin(i) * 6)
+        cr.line_to(W, y + math.cos(i * 1.7) * 6)
+        cr.stroke()
+    if light > 0:
+        import cairo
+        g = cairo.LinearGradient(0, -40, 0, GROUND + 40)
+        g.add_color_stop_rgba(0, 1, 0.95, 0.75, 0.30 * light)
+        g.add_color_stop_rgba(1, 1, 0.93, 0.70, 0.05 * light)
+        cr.set_source(g)
+        cr.new_path()
+        cr.move_to(420, -10)
+        cr.line_to(880, -10)
+        cr.line_to(1010, GROUND + 40)
+        cr.line_to(300, GROUND + 40)
+        cr.close_path()
+        cr.fill()
+        for i in range(26):
+            x = 300 + rand01("mote", i) * 700
+            y = (rand01("motey", i) * 620 + t * (10 + rand01("motev", i) * 22)) % 620
+            circle(cr, x, y, 2 + rand01("moter", i) * 2)
+            set_rgb(cr, (1, 0.97, 0.85), 0.45)
+            cr.fill()
+    cr.rectangle(0, GROUND + 6, W, H)
+    set_rgb(cr, (0.31, 0.22, 0.15))
+    cr.fill()
+    cr.move_to(0, GROUND + 6)
+    cr.line_to(W, GROUND + 6)
+    stroke_out(cr, 4.0, (0.20, 0.14, 0.10))
+    junk_pile(cr, 0)
+
+
+def junk_pile(cr, t):
+    """Background clutter: the stuff nobody throws away."""
+    for i, (x, y, w, h, r, rot) in enumerate((
+            (70, GROUND, 120, 26, 12, -0.1), (210, GROUND, 70, 46, 10, 0.2),
+            (1150, GROUND, 130, 30, 14, 0.08), (1040, GROUND, 60, 52, 9, -0.15),
+            (620, GROUND + 30, 150, 22, 10, 0.03))):
+        cr.save()
+        cr.translate(x, y - h / 2)
+        cr.rotate(rot)
+        rrect(cr, -w / 2, -h / 2, w, h, r)
+        fill_stroke(cr, (0.34, 0.25, 0.18), 4.0, outline=(0.20, 0.14, 0.10))
+        cr.restore()
+
+
+def prop(cr, kind, x, y, s=1.0, rot=0.0):
+    """The salvage: one small object, drawn at (x, y)."""
+    if s <= 0.002:
+        return
+    cr.save()
+    cr.translate(x, y)
+    cr.rotate(rot)
+    cr.scale(s, s)
+    if kind == "menu":
+        rrect(cr, -34, -44, 68, 88, 6)
+        fill_stroke(cr, (0.98, 0.96, 0.90), 4.0)
+        set_rgb(cr, (0.85, 0.25, 0.25))
+        cr.set_line_width(4)
+        for i in range(4):
+            cr.move_to(-22, -24 + i * 18)
+            cr.line_to(22 - (i % 2) * 14, -24 + i * 18)
+            cr.stroke()
+    elif kind == "teabag":
+        cr.move_to(0, -46)
+        cr.line_to(0, -18)
+        stroke_out(cr, 3.0, (0.85, 0.82, 0.75))
+        rrect(cr, -10, -56, 20, 14, 3)
+        fill_stroke(cr, (0.95, 0.90, 0.72), 3.0)
+        rrect(cr, -24, -18, 48, 54, 8)
+        fill_stroke(cr, (0.80, 0.66, 0.46), 4.0)
+    elif kind == "band":
+        ellipse(cr, 0, 0, 40, 26)
+        set_rgb(cr, (0.13, 0.12, 0.16))
+        cr.set_line_width(20)
+        cr.stroke_preserve()
+        set_rgb(cr, (0.92, 0.42, 0.45))
+        cr.set_line_width(13)
+        cr.stroke()
+    elif kind == "tray":
+        rrect(cr, -52, -26, 104, 52, 10)
+        fill_stroke(cr, (0.72, 0.83, 0.90), 4.0)
+        for i in range(4):
+            rrect(cr, -44 + i * 23, -18, 18, 36, 5)
+            fill_stroke(cr, (0.55, 0.70, 0.80), 3.0)
+    elif kind == "sock":
+        cr.new_path()
+        cr.move_to(-16, -46)
+        cr.line_to(16, -46)
+        cr.line_to(16, 6)
+        cr.curve_to(16, 30, 4, 38, -26, 38)
+        cr.curve_to(-44, 38, -44, 10, -26, 8)
+        cr.line_to(-16, 6)
+        cr.close_path()
+        fill_stroke(cr, (0.86, 0.88, 0.93), 4.0)
+        cr.rectangle(-16, -46, 32, 14)
+        set_rgb(cr, (0.55, 0.70, 0.85))
+        cr.fill()
+    cr.restore()
+
+
+def crown(cr, x, y, s=1.0, a=1.0):
+    if s <= 0.002:
+        return
+    cr.save()
+    cr.translate(x, y)
+    cr.scale(s, s)
+    cr.new_path()
+    cr.move_to(-30, 14)
+    cr.line_to(-34, -22)
+    cr.line_to(-14, -4)
+    cr.line_to(0, -28)
+    cr.line_to(14, -4)
+    cr.line_to(34, -22)
+    cr.line_to(30, 14)
+    cr.close_path()
+    set_rgb(cr, (1, 0.84, 0.28), a)
+    cr.fill_preserve()
+    stroke_out(cr, 4.0, OUTLINE, a)
+    cr.restore()
