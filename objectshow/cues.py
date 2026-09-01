@@ -90,9 +90,21 @@ def build_cues(scenes):
                 add(t0 + 0.40, "sparkle")
             elif act == "timeup" and b["kind"] == "act" and b["dur"] > 2.0:
                 add(t0 + 0.05, "buzzer")
+            # --- episode 3 ---
+            elif act == "curtain" and b["kind"] == "act":
+                add(t0 + 0.05, "tape")
+                add(t0 + 0.55, "ding")
+            elif act.startswith("act_") and b["kind"] == "act":
+                add(t0 + 0.10, "pop")
+                add(t0 + 0.35, "ding")
+            elif act.startswith("score_") and b["kind"] == "act":
+                add(t0 + 0.15, "beep")
+                add(t0 + 0.55, "beep")
+            elif act == "board" and b["kind"] == "act" and b["dur"] > 2.5:
+                add(t0 + 0.10, "ding")
 
     for sc in scenes:
-        if sc["key"] in ("results", "judging"):
+        if sc["key"] in ("results", "judging", "scores"):
             for b in sc["beats"]:
                 if b.get("act") == "win" and b["kind"] == "say":
                     cues.append(dict(t=b["t0"] + 0.05, kind="fanfare"))

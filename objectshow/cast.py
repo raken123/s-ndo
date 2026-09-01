@@ -388,5 +388,22 @@ class Mega(Char):
         fill_stroke(cr, (1, 0.85, 0.3), 3.5)
 
 
+def hand_pos(ch, p, right=True):
+    """World position of a character's hand -- for props they hold up.
+
+    Mirrors the arm maths in Char.draw, so a prop placed here lands in the
+    hand instead of floating next to it.
+    """
+    sgn = 1 if right else -1
+    ax, ay = ch.arm_anchor()
+    a = (p["arm_r"] if right else p["arm_l"]) + (0.12 if p["step"] is None
+                                                 else 0.0)
+    ex = sgn * ax + sgn * math.cos(a - 0.6) * 40
+    ey = ay + 44 - math.sin(a) * 44
+    s, sq = p["s"], p["sq"]
+    fx = (1 / sq) ** 0.5 * (-1 if p["flip"] else 1)
+    return p["x"] + s * fx * ex, p["y"] - ch.hh * s + s * sq * ey
+
+
 CAST = {c.name: c() for c in (Mugsy, Clip, Cone, Sticky, Volt, Cube, Mega)}
 CONTESTANTS = ["Mugsy", "Clip", "Cone", "Sticky", "Volt", "Cube"]

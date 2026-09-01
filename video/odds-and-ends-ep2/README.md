@@ -47,3 +47,7 @@ python3 render.py ep02 ../video/odds-and-ends-ep2/odds_and_ends_ep02_the_junk_dr
 
 See [`../../objectshow/README.md`](../../objectshow/README.md) for how the
 generator fits together.
+
+## Next
+
+[Episode 3: "Sock Puppet"](../odds-and-ends-ep3) — Cube lost the vote.

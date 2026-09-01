@@ -255,6 +255,9 @@ CUES = {
     "vote": (53, 100, ["i", "bVI", "iv", "v"], "dark"),
     "inside": (54, 118, ["i", "bVII", "bVI", "bVII"], "sneaky"),
     "judging": (62, 132, ["IV", "V", "I", "vi"], "bright"),
+    # episode 3
+    "show": (58, 126, ["I", "vi", "ii", "V"], "bouncy"),
+    "scores": (62, 138, ["IV", "V", "I", "vi"], "bright"),
 }
 
 MELODY = {

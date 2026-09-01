@@ -11,6 +11,7 @@ Episodes live in [`../video`](../video):
 |---|---|---|
 | `ep01` | [Stack Overflow](../video/odds-and-ends-ep1) | stack yourselves as high as you can |
 | `ep02` | [The Junk Drawer](../video/odds-and-ends-ep2) | go into the drawer, bring back one useful thing |
+| `ep03` | [Sock Puppet](../video/odds-and-ends-ep3) | wear the sock, do an impression, be judged by the eliminated |
 
 ## Building
 
@@ -59,7 +60,7 @@ BEATS = [dict(key="scene_name", beats=[
 
 def sc_scene_name(cr, show, sc, beat, T): ...           # draw one frame
 
-EPISODE = Show("ep03", 'Episode 3: "..."', BEATS, 300.0,
+EPISODE = Show("ep04", 'Episode 4: "..."', BEATS, 300.0,
                {"scene_name": sc_scene_name})
 ```
 

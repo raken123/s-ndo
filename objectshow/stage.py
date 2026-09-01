@@ -221,7 +221,7 @@ def timer(cr, secs, warn=False, k=1.0):
             "center", alpha=k)
 
 
-def scorecard(cr, x, y, team, score, color, k=1.0, w=300):
+def scorecard(cr, x, y, team, score, color, k=1.0, w=300, size=40):
     if k <= 0:
         return
     rrect(cr, x - w / 2, y, w, 96, 16)
@@ -229,7 +229,7 @@ def scorecard(cr, x, y, team, score, color, k=1.0, w=300):
     cr.fill_preserve()
     stroke_out(cr, 4.0, color, k)
     text_at(cr, x, y + 34, team.upper(), 26, color, "center", alpha=k)
-    text_at(cr, x, y + 80, score, 40, (1, 1, 1), "center", alpha=k)
+    text_at(cr, x, y + 80, score, size, (1, 1, 1), "center", alpha=k)
 
 
 def confetti(cr, t, n=70, seed="c"):
@@ -472,4 +472,132 @@ def crown(cr, x, y, s=1.0, a=1.0):
     set_rgb(cr, (1, 0.84, 0.28), a)
     cr.fill_preserve()
     stroke_out(cr, 4.0, OUTLINE, a)
+    cr.restore()
+
+
+# --------------------------------------------- episode 3: the sock puppet ---
+
+CURTAIN = (0.62, 0.13, 0.22)
+CURTAIN_D = (0.44, 0.09, 0.17)
+STAGE_TOP = 430.0
+
+
+def theater(cr, t, open_k=0.0, lights=1.0):
+    """A small stage: backdrop, curtains, footlights, a wooden platform."""
+    set_rgb(cr, (0.14, 0.11, 0.20))
+    cr.rectangle(0, 0, W, H)
+    cr.fill()
+    # backdrop
+    rrect(cr, 300, 40, 680, STAGE_TOP - 40, 10)
+    fill_stroke(cr, (0.23, 0.17, 0.32), 5.0)
+    for i in range(7):
+        x = 330 + i * 94
+        cr.move_to(x, 60)
+        cr.line_to(x, STAGE_TOP - 20)
+        set_rgb(cr, (0.29, 0.22, 0.39))
+        cr.set_line_width(6)
+        cr.stroke()
+    if lights > 0:
+        import cairo
+        for sx in (470, 640, 810):
+            g = cairo.LinearGradient(0, 30, 0, STAGE_TOP + 30)
+            g.add_color_stop_rgba(0, 1, 0.96, 0.78, 0.16 * lights)
+            g.add_color_stop_rgba(1, 1, 0.94, 0.72, 0.02 * lights)
+            cr.set_source(g)
+            cr.new_path()
+            cr.move_to(sx - 40, 30)
+            cr.line_to(sx + 40, 30)
+            cr.line_to(sx + 150, STAGE_TOP + 30)
+            cr.line_to(sx - 150, STAGE_TOP + 30)
+            cr.close_path()
+            cr.fill()
+    # platform
+    rrect(cr, 330, STAGE_TOP, 620, 30, 8)
+    fill_stroke(cr, (0.58, 0.42, 0.28), 5.0)
+    rrect(cr, 350, STAGE_TOP + 28, 580, 26, 6)
+    fill_stroke(cr, (0.40, 0.29, 0.20), 5.0)
+    # curtains, drawn over everything on the stage
+    wdt = lerp(400, 150, ease_out(open_k))
+    for sgn, x0 in ((-1, 300), (1, 980)):
+        cr.save()
+        if sgn < 0:
+            rrect(cr, x0 - 60, 20, wdt, STAGE_TOP - 10, 14)
+        else:
+            rrect(cr, x0 - wdt + 60, 20, wdt, STAGE_TOP - 10, 14)
+        fill_stroke(cr, CURTAIN, 5.0)
+        cr.clip()
+        for i in range(7):
+            x = (x0 - 60 if sgn < 0 else x0 - wdt + 60) + 22 + i * (wdt / 7)
+            cr.move_to(x, 20)
+            cr.line_to(x, STAGE_TOP + 10)
+            set_rgb(cr, CURTAIN_D)
+            cr.set_line_width(10)
+            cr.stroke()
+        cr.restore()
+    rrect(cr, 280, 8, 720, 46, 12)
+    fill_stroke(cr, CURTAIN_D, 5.0)
+    # footlights
+    cr.rectangle(0, GROUND + 6, W, H)
+    set_rgb(cr, (0.19, 0.15, 0.27))
+    cr.fill()
+    for i in range(9):
+        x = 350 + i * 70
+        circle(cr, x, STAGE_TOP + 62, 9)
+        fill_stroke(cr, (1, 0.88, 0.45), 3.5)
+
+
+def sock_puppet(cr, x, y, s=1.0, rot=0.0, mouth=0.0, color=(0.86, 0.88, 0.93)):
+    """An eleven-year-old sock, worn as a puppet.  The jaw opens on speech."""
+    cr.save()
+    cr.translate(x, y)
+    cr.rotate(rot)
+    cr.scale(s, s)
+    # cuff
+    rrect(cr, -20, 18, 40, 30, 8)
+    fill_stroke(cr, (0.55, 0.70, 0.85), 4.0)
+    # lower jaw
+    cr.save()
+    cr.rotate(mouth * 0.30)
+    cr.new_path()
+    cr.move_to(-20, 22)
+    cr.line_to(-20, 0)
+    cr.curve_to(-20, -14, 6, -18, 34, -10)
+    cr.curve_to(48, -6, 48, 14, 32, 18)
+    cr.line_to(-20, 22)
+    cr.close_path()
+    fill_stroke(cr, color, 4.5)
+    cr.restore()
+    # upper jaw, hinged at the mouth corner
+    cr.save()
+    cr.rotate(-mouth * 0.55)
+    cr.new_path()
+    cr.move_to(-20, 0)
+    cr.line_to(-20, -30)
+    cr.curve_to(-20, -52, 20, -58, 40, -40)
+    cr.curve_to(54, -28, 50, -8, 32, -4)
+    cr.curve_to(6, 0, -8, 2, -20, 0)
+    cr.close_path()
+    fill_stroke(cr, color, 4.5)
+    for dx in (2, 22):
+        circle(cr, dx, -38, 8)
+        fill_stroke(cr, (1, 1, 1), 3.0)
+        circle(cr, dx + 2, -38, 3.6)
+        set_rgb(cr, OUTLINE)
+        cr.fill()
+    cr.restore()
+    cr.restore()
+
+
+def score_paddle(cr, x, y, n, color, k=1.0):
+    """A judge's paddle, raised."""
+    if k <= 0:
+        return
+    cr.save()
+    cr.translate(x, y + (1 - ease_out(k)) * 60)
+    cr.rotate(math.sin(k * 6) * 0.05)
+    rrect(cr, -8, 0, 16, 66, 6)
+    fill_stroke(cr, (0.55, 0.45, 0.32), 4.0)
+    circle(cr, 0, -6, 40)
+    fill_stroke(cr, (0.99, 0.97, 0.92), 5.0)
+    text_at(cr, 0, 12, str(n), 44, color, "center")
     cr.restore()
