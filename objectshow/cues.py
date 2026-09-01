@@ -1,0 +1,78 @@
+"""Cue sheet shared by the soundtrack and the animation.
+
+Both the audio renderer and the frame renderer read the same cue list, so a
+crash on screen and a crash in the speakers land on the same frame.
+"""
+
+BEEP_OFFSETS = (0.05, 0.62, 1.20)
+
+
+def build_cues(scenes):
+    cues = []
+
+    def add(t, kind, **kw):
+        cues.append(dict(t=t, kind=kind, **kw))
+
+    for sc in scenes:
+        for b in sc["beats"]:
+            act, t0 = b.get("act"), b["t0"]
+            if act is None:
+                continue
+            if act == "reveal" and b["kind"] == "act" and t0 < 1.0:
+                add(t0 + 0.35, "shine")
+            elif act == "chair_shine":
+                add(t0 + 0.25, "sparkle")
+            elif act in ("cone_in", "mugsy_in"):
+                add(t0 + 0.10, "step")
+            elif act == "logo":
+                add(t0 + 0.85, "whoosh")
+                add(t0 + 1.55, "slam")
+                add(t0 + 2.35, "sparkle")
+                add(t0 + 3.10, "sparkle")
+            elif act.startswith("spot_") and b["kind"] == "act":
+                add(t0 + 0.12, "pop")
+            elif act == "banner" and b["kind"] == "say":
+                add(t0 + 0.05, "ding")
+            elif act == "horn" and b["kind"] == "act":
+                add(t0 + 0.02, "horn")
+            elif act == "scramble" and b["kind"] == "act":
+                for i in range(4):
+                    add(t0 + 0.25 + i * 0.55, "boing")
+            elif act == "zap" and b["kind"] == "act":
+                add(t0 + 0.15, "zap")
+            elif act == "melt" and b["kind"] == "act":
+                for i in range(5):
+                    add(t0 + 0.4 + i * 0.62, "drip")
+            elif act == "cloud_up" and b["kind"] == "act":
+                add(t0 + 0.1, "whoosh")
+                add(t0 + 0.9, "sparkle")
+            elif act == "countdown":
+                if b["kind"] == "say" and b["text"].startswith(("Ten", "Three")):
+                    for off in BEEP_OFFSETS:
+                        add(t0 + off, "beep")
+            elif act == "collapse" and b["kind"] == "act" and b["dur"] < 3.0:
+                add(t0 + 0.05, "buzzer")
+                for i in range(4):
+                    add(t0 + 0.55 + i * 0.2, "thud")
+            elif act == "measure_a" and b["kind"] == "act":
+                add(t0 + 0.2, "tape")
+            elif act == "measure" and b["kind"] == "act":
+                add(t0 + 0.2, "tape")
+            elif act == "win" and b["kind"] == "act" and b["dur"] > 2.0:
+                pass
+            elif act == "votes" and b["kind"] == "act" and b["dur"] > 3.0:
+                for i in range(3):
+                    add(t0 + 0.3 + i * 0.45, "ding")
+            elif act == "endcard":
+                add(t0 + 0.1, "sting")
+
+    for sc in scenes:
+        if sc["key"] == "results":
+            for b in sc["beats"]:
+                if b.get("act") == "win" and b["kind"] == "say":
+                    cues.append(dict(t=b["t0"] + 0.05, kind="fanfare"))
+                    break
+        if sc["key"] == "elimination":
+            cues.append(dict(t=sc["t0"] + 0.05, kind="stinger"))
+    cues.sort(key=lambda c: c["t"])
+    return cues
