@@ -202,7 +202,8 @@ def new_surface():
     return surf, cr
 
 
-def render(show, out, t_from=0.0, t_to=None, with_audio=True, tmp="/tmp"):
+def render(show, out, t_from=0.0, t_to=None, with_audio=True, tmp="/tmp",
+           crf=20):
     import os
     import time
 
@@ -218,7 +219,7 @@ def render(show, out, t_from=0.0, t_to=None, with_audio=True, tmp="/tmp"):
            "%dx%d" % (W, H), "-r", str(FPS), "-i", "-"]
     if with_audio:
         cmd += ["-i", wav, "-c:a", "aac", "-b:a", "160k", "-shortest"]
-    cmd += ["-c:v", "libx264", "-preset", "medium", "-crf", "20",
+    cmd += ["-c:v", "libx264", "-preset", "medium", "-crf", str(crf),
             "-pix_fmt", "yuv420p", "-movflags", "+faststart", out]
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE,
                             stdout=subprocess.DEVNULL,

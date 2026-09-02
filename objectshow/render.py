@@ -4,6 +4,7 @@
     python3 render.py ep02 out.mp4 --from 90 --to 110   # a slice, for checking
     python3 render.py ep02 --frame 42.0 shot.png    # one still
     python3 render.py ep02 --list                   # running order and runtime
+    python3 render.py ep05 out.mp4 --crf 23         # smaller file, x264 quality
 """
 
 import importlib
@@ -48,7 +49,8 @@ def main(argv):
     t_from = float(args[args.index("--from") + 1]) if "--from" in args else 0.0
     t_to = float(args[args.index("--to") + 1]) if "--to" in args else show.total
     tmp = args[args.index("--tmp") + 1] if "--tmp" in args else "/tmp"
-    engine.render(show, out, t_from, t_to, tmp=tmp)
+    crf = int(args[args.index("--crf") + 1]) if "--crf" in args else 20
+    engine.render(show, out, t_from, t_to, tmp=tmp, crf=crf)
 
 
 if __name__ == "__main__":

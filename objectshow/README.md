@@ -32,6 +32,7 @@ Useful while working:
 ```sh
 python3 render.py ep02 --list                  # running order and total runtime
 python3 render.py ep02 out.mp4 --from 115 --to 133   # one slice
+python3 render.py ep05 out.mp4 --crf 23              # smaller file
 python3 render.py ep02 --frame 162.0 still.png       # one still
 python3 sheet.py ep02 sheet.png 4 22 40 84 130       # contact sheet
 ```

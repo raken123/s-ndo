@@ -8,9 +8,9 @@ it for a full cycle.
 |---|---|
 | File | `odds_and_ends_ep05_the_dishwasher.mp4` |
 | Duration | `00:05:00.00` exactly |
-| Video | H.264 High, 1280x720, 24 fps, ~763 kb/s |
+| Video | H.264 High, 1280x720, 24 fps, ~573 kb/s (CRF 23 — the spray and bubbles cost bitrate) |
 | Audio | AAC-LC, 44.1 kHz stereo, 160 kb/s |
-| Size | 34,818,348 bytes (33.2 MiB) |
+| Size | 27,688,597 bytes (26.4 MiB) |
 | Source | [`../../objectshow/ep05.py`](../../objectshow/ep05.py) |
 
 ## New contestants
@@ -59,7 +59,7 @@ cone.
 ```sh
 pip install pycairo numpy imageio-ffmpeg
 cd objectshow
-python3 render.py ep05 ../video/odds-and-ends-ep5/odds_and_ends_ep05_the_dishwasher.mp4
+python3 render.py ep05 ../video/odds-and-ends-ep5/odds_and_ends_ep05_the_dishwasher.mp4 --crf 23
 ```
 
 See [`../../objectshow/README.md`](../../objectshow/README.md) for how the
