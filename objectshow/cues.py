@@ -131,6 +131,29 @@ def build_cues(scenes):
             elif act == "sunrise" and b["kind"] == "act":
                 add(t0 + 0.10, "shine")
                 add(t0 + 0.90, "sparkle")
+            # --- episode 5 ---
+            elif act == "door" and b["kind"] == "act":
+                add(t0 + 0.15, "tape")
+                add(t0 + 1.00, "ding")
+            elif act.startswith("meet_") and b["kind"] == "act":
+                add(t0 + 0.10, "pop")
+                add(t0 + 0.30, "sparkle")
+            elif act == "start" and b["kind"] == "act":
+                add(t0 + 0.05, "horn")
+                add(t0 + 0.60, "rumble")
+            elif act == "wash" and b["kind"] == "act":
+                for i in range(3):
+                    add(t0 + 0.4 + i * 0.8, "drip")
+            elif act == "sink" and b["kind"] == "act":
+                add(t0 + 0.40, "thud")
+            elif act == "warp" and b["kind"] == "act":
+                add(t0 + 0.20, "creak")
+            elif act == "endcycle" and b["kind"] == "act":
+                add(t0 + 0.05, "beep")
+                add(t0 + 0.55, "ding")
+                add(t0 + 1.10, "shine")
+            elif act.startswith("inspect_") and b["kind"] == "act":
+                add(t0 + 0.15, "beep")
 
     for sc in scenes:
         if sc["key"] in ("results", "judging", "scores", "bin"):

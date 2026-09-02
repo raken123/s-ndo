@@ -388,6 +388,87 @@ class Mega(Char):
         fill_stroke(cr, (1, 0.85, 0.3), 3.5)
 
 
+class Spork(Char):
+    """New for episode 5.  Two things at once, badly."""
+
+    name = "Spork"
+    color = (0.82, 0.84, 0.88)
+    tag = (0.52, 0.56, 0.64)
+    hw, hh = 32.0, 60.0
+    face_y = -30.0
+    face_s = 0.88
+    voice = dict(base=395.0, wave="saw", rate=0.060, spread=1.35)
+    blurb = "a fork and a spoon, at the same time"
+
+    def arm_anchor(self):
+        return 26.0, 10.0
+
+    def body(self, cr, t):
+        for dx in (-17, 0, 17):
+            rrect(cr, dx - 5, -86, 10, 40, 5)
+            fill_stroke(cr, self.color, 4.5)
+        rrect(cr, -13, -34, 26, self.hh + 34, 11)
+        fill_stroke(cr, self.color, 5.0)
+        ellipse(cr, 0, -34, 30, 32)
+        fill_stroke(cr, self.color, 5.0)
+
+
+class Mitt(Char):
+    """New for episode 5.  Warm, soft, alarmingly calm."""
+
+    name = "Mitt"
+    color = (0.90, 0.45, 0.40)
+    tag = (0.78, 0.33, 0.30)
+    hw, hh = 48.0, 56.0
+    face_y = -10.0
+    voice = dict(base=232.0, wave="sine", rate=0.096, spread=0.9)
+    blurb = "has held worse than you"
+
+    def body(self, cr, t):
+        cr.new_path()
+        cr.move_to(-self.hw + 6, self.hh - 12)
+        cr.curve_to(-self.hw - 4, 6, -self.hw + 2, -self.hh,
+                    -6, -self.hh + 2)
+        cr.curve_to(28, -self.hh - 4, self.hw + 2, -22, self.hw - 4, 10)
+        cr.curve_to(self.hw - 6, self.hh - 20, self.hw - 14, self.hh - 12,
+                    self.hw - 18, self.hh - 12)
+        cr.close_path()
+        fill_stroke(cr, self.color, 5.0)
+        # thumb
+        cr.new_path()
+        cr.move_to(-self.hw + 2, 4)
+        cr.curve_to(-self.hw - 24, -2, -self.hw - 26, 34, -self.hw + 4, 30)
+        cr.close_path()
+        fill_stroke(cr, self.color, 5.0)
+        rrect(cr, -self.hw + 2, self.hh - 22, self.hw * 2 - 20, 24, 8)
+        fill_stroke(cr, (0.97, 0.94, 0.86), 4.5)
+
+
+class Plate(Char):
+    """New for episode 5.  Dishwasher safe, and never lets you forget it."""
+
+    name = "Plate"
+    color = (0.98, 0.98, 1.00)
+    tag = (0.30, 0.52, 0.82)
+    hw, hh = 56.0, 56.0
+    face_y = 2.0
+    face_s = 0.92
+    voice = dict(base=322.0, wave="tri", rate=0.082, spread=1.0)
+    blurb = "immaculate, and aware of it"
+
+    def body(self, cr, t):
+        circle(cr, 0, 0, self.hw)
+        fill_stroke(cr, self.color, 5.0)
+        circle(cr, 0, 0, self.hw - 9)
+        set_rgb(cr, self.tag)
+        cr.set_line_width(7)
+        cr.stroke()
+        circle(cr, 0, 0, self.hw - 22)
+        set_rgb(cr, (0.90, 0.93, 0.98))
+        cr.set_line_width(3)
+        cr.stroke()
+
+
 class Bin(Char):
     """Episode 4's late-night visitor.  Enormous, unhurried, blue."""
 
@@ -457,5 +538,5 @@ def hand_pos(ch, p, right=True):
 
 
 CAST = {c.name: c() for c in (Mugsy, Clip, Cone, Sticky, Volt, Cube, Mega,
-                              Bin)}
+                              Bin, Spork, Mitt, Plate)}
 CONTESTANTS = ["Mugsy", "Clip", "Cone", "Sticky", "Volt", "Cube"]

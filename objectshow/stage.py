@@ -711,3 +711,149 @@ def whisk(cr, x, y, s=1.0, rot=0.0):
         cr.curve_to(math.cos(a) * 40, -18, math.cos(a) * 44, -52, 0, -76)
         stroke_out(cr, 5.0, (0.72, 0.72, 0.78))
     cr.restore()
+
+
+# ------------------------------------------------ episode 5: the machine ---
+
+STEEL = (0.26, 0.31, 0.36)
+STEEL_L = (0.34, 0.40, 0.46)
+RACK = (0.68, 0.72, 0.78)
+
+
+def steam(cr, x, y, t, k=1.0, seed="s", n=7, spread=90.0):
+    """Puffs that rise and fade."""
+    if k <= 0:
+        return
+    for i in range(n):
+        ph = (t * 0.5 + rand01(seed, i)) % 1.0
+        r = 16 + ph * 40
+        cx = x + (rand01(seed, i, "x") - 0.5) * spread + math.sin(t + i) * 12
+        cy = y - ph * 190
+        circle(cr, cx, cy, r)
+        set_rgb(cr, (1, 1, 1), (1 - ph) * 0.30 * k)
+        cr.fill()
+
+
+def bubbles(cr, t, n=26, seed="b", k=1.0):
+    if k <= 0:
+        return
+    for i in range(n):
+        ph = (t * (0.20 + rand01(seed, i) * 0.25) + rand01(seed, i, "o")) % 1.0
+        x = rand01(seed, i, "x") * W + math.sin(t * 2 + i) * 18
+        y = H - ph * (H + 80)
+        r = 5 + rand01(seed, i, "r") * 13
+        circle(cr, x, y, r)
+        set_rgb(cr, (1, 1, 1), 0.16 * k * (1 - ph * 0.5))
+        cr.fill_preserve()
+        set_rgb(cr, (1, 1, 1), 0.35 * k * (1 - ph * 0.5))
+        cr.set_line_width(2)
+        cr.stroke()
+
+
+def dishwasher_front(cr, x, y, s=1.0, door_k=0.0, t=0.0, glow=0.0):
+    """The machine, from the kitchen side.  The door drops open."""
+    if s <= 0.002:
+        return
+    cr.save()
+    cr.translate(x, y)
+    cr.scale(s, s)
+    rrect(cr, -150, -230, 300, 230, 14)
+    fill_stroke(cr, (0.62, 0.65, 0.71), 5.5)
+    rrect(cr, -126, -212, 252, 40, 9)
+    fill_stroke(cr, (0.34, 0.38, 0.45), 4.5)
+    for i in range(3):
+        circle(cr, -70 + i * 70, -192, 9)
+        fill_stroke(cr, (0.55, 0.80, 0.95) if i == 1 and glow > 0.5
+                    else (0.75, 0.78, 0.82), 3.0)
+    # cavity
+    rrect(cr, -128, -164, 256, 150, 10)
+    fill_stroke(cr, STEEL, 4.5)
+    if door_k > 0.05:
+        for i in range(2):
+            yy = -140 + i * 62
+            cr.move_to(-116, yy)
+            cr.line_to(116, yy)
+            stroke_out(cr, 4.0, RACK)
+    # the door, hinged at the bottom
+    cr.save()
+    cr.translate(0, -8)
+    cr.rotate(door_k * 1.45)
+    rrect(cr, -140, -156, 280, 156, 10)
+    fill_stroke(cr, (0.72, 0.75, 0.80), 5.0)
+    rrect(cr, -104, -132, 208, 74, 8)
+    fill_stroke(cr, (0.24, 0.34, 0.44), 4.5)
+    circle(cr, 0, -95, 26)
+    fill_stroke(cr, (0.50, 0.76, 0.90), 4.0)
+    set_rgb(cr, (1, 1, 1), 0.45 + 0.25 * math.sin(t * 3))
+    cr.arc(0, -95, 17, 0, math.tau)
+    cr.fill()
+    rrect(cr, -86, -34, 172, 15, 7)
+    fill_stroke(cr, (0.42, 0.45, 0.52), 4.0)
+    cr.restore()
+    cr.restore()
+
+
+def dishwasher_inside(cr, t, water=0.0, spray=0.0, steam_k=0.0, light=1.0):
+    """Inside the machine, mid-cycle."""
+    set_rgb(cr, tuple(c * (0.45 + 0.55 * light) for c in STEEL))
+    cr.rectangle(0, 0, W, H)
+    cr.fill()
+    for i in range(11):
+        x = 40 + i * 120
+        cr.move_to(x, 0)
+        cr.line_to(x, H)
+        set_rgb(cr, STEEL_L, 0.5 * light)
+        cr.set_line_width(10)
+        cr.stroke()
+    # upper rack
+    cr.move_to(0, 268)
+    cr.line_to(W, 268)
+    stroke_out(cr, 7.0, RACK)
+    for i in range(22):
+        x = 20 + i * 60
+        cr.move_to(x, 268)
+        cr.line_to(x, 236)
+        stroke_out(cr, 5.0, RACK)
+    # lower rack, the floor of the scene
+    cr.move_to(0, GROUND + 6)
+    cr.line_to(W, GROUND + 6)
+    stroke_out(cr, 8.0, RACK)
+    for i in range(26):
+        x = 10 + i * 50
+        cr.move_to(x, GROUND + 6)
+        cr.line_to(x, GROUND - 26)
+        stroke_out(cr, 5.0, (0.58, 0.62, 0.68))
+    # spray arm, below the rack
+    cr.save()
+    cr.translate(640, GROUND + 96)
+    cr.rotate(t * 3.4)
+    rrect(cr, -190, -11, 380, 22, 10)
+    fill_stroke(cr, (0.52, 0.56, 0.62), 4.5)
+    cr.restore()
+    if spray > 0:
+        for i in range(16):
+            a = i / 16 * math.tau + t * 3.4
+            x0 = 640 + math.cos(a) * 60
+            y0 = GROUND + 96 + math.sin(a) * 22
+            cr.move_to(x0, y0)
+            cr.line_to(640 + math.cos(a) * 520, GROUND + 96 - 420 -
+                       math.sin(a) * 60)
+            set_rgb(cr, (0.80, 0.92, 1.0), 0.20 * spray)
+            cr.set_line_width(5)
+            cr.stroke()
+    if water > 0:
+        wy = GROUND + 60 - water * 420
+        cr.new_path()
+        cr.move_to(0, H)
+        cr.line_to(0, wy)
+        for i in range(0, W + 40, 40):
+            cr.curve_to(i + 10, wy - 8 + math.sin(t * 3 + i) * 6,
+                        i + 30, wy + 8 + math.cos(t * 3 + i) * 6,
+                        i + 40, wy + math.sin(t * 2 + i) * 4)
+        cr.line_to(W, H)
+        cr.close_path()
+        set_rgb(cr, (0.42, 0.70, 0.88), 0.45)
+        cr.fill()
+    bubbles(cr, t, 26, k=max(spray, water))
+    if steam_k > 0:
+        steam(cr, 640, GROUND - 40, t, steam_k, "in", 10, 900)

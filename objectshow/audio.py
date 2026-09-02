@@ -302,6 +302,9 @@ CUES = {
     "nightfall": (51, 88, ["i", "bVI", "iv", "v"], "dark"),
     "watch": (49, 76, ["i", "i", "bII", "i"], "creep"),
     "bin": (51, 92, ["i", "bVI", "bVII", "i"], "creep"),
+    # episode 5
+    "arrivals": (60, 134, ["I", "vi", "IV", "V"], "bouncy"),
+    "cycle": (57, 148, ["i", "bVII", "bVI", "bVII"], "drive"),
 }
 
 MELODY = {

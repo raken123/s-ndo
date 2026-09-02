@@ -70,4 +70,5 @@ generator fits together.
 
 ## Next
 
-Episode 5: "The Dishwasher".
+[Episode 5: "The Dishwasher"](../odds-and-ends-ep5) — Clip lost the vote, and
+three new objects arrive.

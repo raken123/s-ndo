@@ -13,6 +13,7 @@ Episodes live in [`../video`](../video):
 | `ep02` | [The Junk Drawer](../video/odds-and-ends-ep2) | go into the drawer, bring back one useful thing |
 | `ep03` | [Sock Puppet](../video/odds-and-ends-ep3) | wear the sock, do an impression, be judged by the eliminated |
 | `ep04` | [The Rulebook](../video/odds-and-ends-ep4) | the light goes out, and something wants the paper |
+| `ep05` | [The Dishwasher](../video/odds-and-ends-ep5) | three new objects arrive, and everyone takes a wash cycle |
 
 ## Building
 
@@ -34,6 +35,30 @@ python3 render.py ep02 out.mp4 --from 115 --to 133   # one slice
 python3 render.py ep02 --frame 162.0 still.png       # one still
 python3 sheet.py ep02 sheet.png 4 22 40 84 130       # contact sheet
 ```
+
+## Cast
+
+Everyone lives in `cast.py`; a character is a body-drawing function plus a
+voice. Eliminated contestants stay in the show — they move into the drawer and
+keep talking.
+
+| | | | |
+|---|---|---|---|
+| 📣 | **Mega** | host | — |
+| ☕ | **Mugsy** | a mug, 60% anxiety | ep1– |
+| 📎 | **Clip** | holds things together, loudly | ep1–5 |
+| 🚧 | **Cone** | reads the rules. all of them. | ep1– |
+| 🗒️ | **Sticky** | remembers nothing, sticks to everything | ep1–4 |
+| 🔋 | **Volt** | 9 volts of unearned confidence | ep1 |
+| 🧊 | **Cube** | cool under pressure. melting otherwise. | ep1–3 |
+| 🗑️ | **Bin** | it is recycling night | ep4 guest |
+| 🥄 | **Spork** | a fork and a spoon, at the same time | ep5– |
+| 🧤 | **Mitt** | has held worse than you | ep5– |
+| 🍽️ | **Plate** | immaculate, and aware of it | ep5– |
+
+Adding one is a `Char` subclass with a `body()` method, a colour, a subtitle
+tag and a `voice` dict; the walk cycle, blinking, expressions and mouth-sync
+come from the base class.
 
 ## Layout
 
@@ -61,7 +86,7 @@ BEATS = [dict(key="scene_name", beats=[
 
 def sc_scene_name(cr, show, sc, beat, T): ...           # draw one frame
 
-EPISODE = Show("ep05", 'Episode 5: "..."', BEATS, 300.0,
+EPISODE = Show("ep06", 'Episode 6: "..."', BEATS, 300.0,
                {"scene_name": sc_scene_name})
 ```
 
