@@ -136,6 +136,26 @@ def speaks(show, beat, name, T):
     return show.mouth(beat, T) if talker(beat, name) else 0.0
 
 
+def silhouette(cr, ch, p, T, color=(0.05, 0.04, 0.10), alpha=1.0):
+    """Draw a character as a flat shadow -- the shape without the details."""
+    cr.push_group()
+    ch.draw(cr, p, T)
+    pat = cr.pop_group()
+    cr.set_source_rgba(color[0], color[1], color[2], alpha)
+    cr.mask(pat)
+
+
+def glow_eyes(cr, x, y, s=1.0, w=17.0, color=(0.99, 0.92, 0.35), a=0.95):
+    """Two eyes, and nothing else."""
+    for sgn in (-1, 1):
+        for r, col, aa in ((13 * s, (0.15, 0.14, 0.10), a),
+                           (7 * s, color, a)):
+            cr.new_path()
+            cr.arc(x + sgn * w * s, y, r, 0, math.tau)
+            cr.set_source_rgba(col[0], col[1], col[2], aa)
+            cr.fill()
+
+
 def camera(cr, zoom=1.0, cx=W / 2, cy=H / 2, shake=0.0, T=0.0):
     # keep the viewport inside the drawn world, or the edges show through
     # black -- at zoom 1.0 this pins the camera to the centre, which is the

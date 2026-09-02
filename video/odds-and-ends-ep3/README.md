@@ -62,4 +62,5 @@ generator fits together.
 
 ## Next
 
-Episode 4: "The Rulebook" — Cone reads the menu aloud. All of it.
+[Episode 4: "The Rulebook"](../odds-and-ends-ep4) — Sticky lost the vote,
+and the kitchen light goes out.

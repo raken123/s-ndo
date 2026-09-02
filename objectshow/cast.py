@@ -388,6 +388,57 @@ class Mega(Char):
         fill_stroke(cr, (1, 0.85, 0.3), 3.5)
 
 
+class Bin(Char):
+    """Episode 4's late-night visitor.  Enormous, unhurried, blue."""
+
+    name = "Bin"
+    color = (0.30, 0.55, 0.78)
+    tag = (0.22, 0.42, 0.62)
+    hw, hh = 86.0, 100.0
+    face_y = -2.0
+    face_s = 1.45
+    voice = dict(base=92.0, wave="square", rate=0.135, spread=0.5)
+    blurb = "it is recycling night"
+
+    def arm_anchor(self):
+        return self.hw * 0.94, -self.hh * 0.10
+
+    def leg_anchor(self):
+        return self.hw * 0.44, self.hh
+
+    def body(self, cr, t):
+        cr.new_path()
+        cr.move_to(-self.hw, -self.hh + 14)
+        cr.line_to(self.hw, -self.hh + 14)
+        cr.line_to(self.hw * 0.84, self.hh)
+        cr.line_to(-self.hw * 0.84, self.hh)
+        cr.close_path()
+        fill_stroke(cr, self.color, 5.5)
+        rrect(cr, -self.hw - 10, -self.hh - 6, self.hw * 2 + 20, 28, 9)
+        fill_stroke(cr, (0.24, 0.44, 0.64), 5.0)
+        rrect(cr, -24, -self.hh - 20, 48, 16, 7)
+        fill_stroke(cr, (0.24, 0.44, 0.64), 4.5)
+        # recycling arrows, low on the body
+        cr.save()
+        cr.translate(0, 62)
+        for i in range(3):
+            cr.save()
+            cr.rotate(i * math.tau / 3)
+            cr.new_path()
+            cr.move_to(-14, -20)
+            cr.line_to(10, -20)
+            cr.line_to(10, -28)
+            cr.line_to(24, -14)
+            cr.line_to(10, 0)
+            cr.line_to(10, -8)
+            cr.line_to(-14, -8)
+            cr.close_path()
+            set_rgb(cr, (0.92, 0.96, 0.99), 0.9)
+            cr.fill()
+            cr.restore()
+        cr.restore()
+
+
 def hand_pos(ch, p, right=True):
     """World position of a character's hand -- for props they hold up.
 
@@ -405,5 +456,6 @@ def hand_pos(ch, p, right=True):
     return p["x"] + s * fx * ex, p["y"] - ch.hh * s + s * sq * ey
 
 
-CAST = {c.name: c() for c in (Mugsy, Clip, Cone, Sticky, Volt, Cube, Mega)}
+CAST = {c.name: c() for c in (Mugsy, Clip, Cone, Sticky, Volt, Cube, Mega,
+                              Bin)}
 CONTESTANTS = ["Mugsy", "Clip", "Cone", "Sticky", "Volt", "Cube"]

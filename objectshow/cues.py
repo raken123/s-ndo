@@ -102,9 +102,38 @@ def build_cues(scenes):
                 add(t0 + 0.55, "beep")
             elif act == "board" and b["kind"] == "act" and b["dur"] > 2.5:
                 add(t0 + 0.10, "ding")
+            # --- episode 4 ---
+            elif act == "lightsout" and b["kind"] == "act":
+                add(t0 + 0.35, "click")
+                add(t0 + 0.55, "rumble")
+                add(t0 + 1.60, "wind")
+            elif act == "rules" and b["kind"] == "act" and b["dur"] > 2.0:
+                add(t0 + 0.10, "rumble")
+                add(t0 + 0.90, "creak")
+            elif act == "creak" and b["kind"] == "act":
+                add(t0 + 0.20, "creak")
+                for i in range(2):
+                    add(t0 + 0.9 + i * 0.95, "heartbeat")
+            elif act == "claws" and b["kind"] == "act":
+                add(t0 + 0.10, "thunder")
+            elif act == "hide" and b["kind"] == "act":
+                add(t0 + 0.15, "creak")
+                add(t0 + 0.95, "thud")
+            elif act == "eyes" and b["kind"] == "act":
+                add(t0 + 0.05, "rumble")
+                for i in range(3):
+                    add(t0 + 0.5 + i * 0.95, "heartbeat")
+            elif act == "loom" and b["kind"] == "act":
+                add(t0 + 0.10, "boo")
+                add(t0 + 0.20, "thunder")
+            elif act == "polite" and b["kind"] == "act":
+                add(t0 + 0.20, "ding")
+            elif act == "sunrise" and b["kind"] == "act":
+                add(t0 + 0.10, "shine")
+                add(t0 + 0.90, "sparkle")
 
     for sc in scenes:
-        if sc["key"] in ("results", "judging", "scores"):
+        if sc["key"] in ("results", "judging", "scores", "bin"):
             for b in sc["beats"]:
                 if b.get("act") == "win" and b["kind"] == "say":
                     cues.append(dict(t=b["t0"] + 0.05, kind="fanfare"))

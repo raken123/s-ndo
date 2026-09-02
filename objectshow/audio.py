@@ -173,6 +173,45 @@ def sfx(kind, seed=0):
         t = T(1.1)
         return (osc(t, n2f(45), "saw") + osc(t, n2f(51), "saw")) * \
             np.exp(-t * 2.4) * 0.12
+    if kind == "creak":
+        t = T(1.1)
+        f = np.linspace(220, 130, len(t)) * (1 + 0.06 * np.sin(2 * np.pi * 7 * t))
+        w = np.sin(2 * np.pi * np.cumsum(f) / SR)
+        return w * (np.sin(np.pi * t / 1.1) ** 2) * 0.22
+    if kind == "thunder":
+        t = T(1.9)
+        n = lowpass(noise(len(t), seed), 700)
+        env_ = np.exp(-t * 1.5) * (1 - np.exp(-t * 30))
+        rumble = np.sin(2 * np.pi * 42 * t) * np.exp(-t * 2.2) * 0.35
+        return (n * 0.8 + rumble) * env_ * 0.55
+    if kind == "rumble":
+        t = T(2.2)
+        w = np.sin(2 * np.pi * (36 + 4 * np.sin(2 * np.pi * 0.7 * t)) * t)
+        return w * np.sin(np.pi * t / 2.2) ** 2 * 0.30
+    if kind == "heartbeat":
+        out = np.zeros(int(0.95 * SR))
+        for i, off in enumerate((0.0, 0.30)):
+            t = T(0.34)
+            f = 90 * np.exp(-t * 9) + 42
+            s = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * 11) * \
+                (0.40 if i == 0 else 0.28)
+            o = int(off * SR)
+            out[o:o + len(s)] += s[:len(out) - o]
+        return out
+    if kind == "wind":
+        t = T(3.2)
+        w = lowpass(noise(len(t), seed), 900)
+        return w * (0.5 + 0.5 * np.sin(2 * np.pi * 0.3 * t)) * \
+            np.sin(np.pi * t / 3.2) ** 2 * 0.20
+    if kind == "boo":
+        t = T(1.4)
+        f = np.linspace(700, 90, len(t))
+        w = osc(t, 1, "sine") * 0 + np.sin(2 * np.pi * np.cumsum(f) / SR)
+        return (w + 0.5 * lowpass(noise(len(t), seed), 1800)) * \
+            np.exp(-t * 2.0) * 0.42
+    if kind == "click":
+        t = T(0.08)
+        return (noise(len(t), seed) * np.exp(-t * 90)) * 0.35
     if kind == "fanfare":
         out = np.zeros(int(2.0 * SR))
         for i, m in enumerate((67, 72, 76, 79)):
@@ -238,6 +277,7 @@ CHORDS = {
     "I": (0, 4, 7), "vi": (9, 12, 16), "IV": (5, 9, 12), "V": (7, 11, 14),
     "ii": (2, 5, 9), "iii": (4, 7, 11), "bVII": (10, 14, 17),
     "i": (0, 3, 7), "iv": (5, 8, 12), "bVI": (8, 12, 15), "v": (7, 10, 14),
+    "bII": (1, 5, 8),          # Neapolitan -- for when something is behind you
 }
 
 CUES = {
@@ -258,6 +298,10 @@ CUES = {
     # episode 3
     "show": (58, 126, ["I", "vi", "ii", "V"], "bouncy"),
     "scores": (62, 138, ["IV", "V", "I", "vi"], "bright"),
+    # episode 4
+    "nightfall": (51, 88, ["i", "bVI", "iv", "v"], "dark"),
+    "watch": (49, 76, ["i", "i", "bII", "i"], "creep"),
+    "bin": (51, 92, ["i", "bVI", "bVII", "i"], "creep"),
 }
 
 MELODY = {
@@ -268,6 +312,7 @@ MELODY = {
     "dark": [0, 3, 7, 3, 0, -2, 0, 3],
     "sparse": [0, 7, 3, 7],
     "sneaky": [0, 3, 5, 3, 7, 3, 5, 3, 0, -2, 0, 3, 5, 7, 5, 3],
+    "creep": [0, -1, 0, 3, 0, -2, 0, 1],
 }
 
 
@@ -277,7 +322,7 @@ def score_scene(track, sc, gain=1.0):
     bar = beat * 4
     t, i = sc["t0"], 0
     mel = MELODY[style]
-    dark = style in ("dark", "sparse")
+    dark = style in ("dark", "sparse", "creep")
     while t < sc["t1"] - 0.05:
         ch = CHORDS[prog[i % len(prog)]]
         # bass

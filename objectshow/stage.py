@@ -601,3 +601,113 @@ def score_paddle(cr, x, y, n, color, k=1.0):
     fill_stroke(cr, (0.99, 0.97, 0.92), 5.0)
     text_at(cr, 0, 12, str(n), 44, color, "center")
     cr.restore()
+
+
+# ------------------------------------------------ episode 4: after hours ---
+
+NIGHT_WALL = (0.08, 0.09, 0.17)
+DAY_WALL = (0.83, 0.86, 0.92)
+NIGHT_FLOOR = (0.12, 0.11, 0.20)
+DAY_FLOOR = (0.72, 0.70, 0.74)
+
+
+def kitchen_night(cr, t, light=0.0, moon=1.0):
+    """The kitchen after the humans have gone to bed."""
+    wall = tuple(lerp(NIGHT_WALL[i], DAY_WALL[i], light) for i in range(3))
+    floor = tuple(lerp(NIGHT_FLOOR[i], DAY_FLOOR[i], light) for i in range(3))
+    set_rgb(cr, wall)
+    cr.rectangle(0, 0, W, H)
+    cr.fill()
+
+    # window, with whatever is outside tonight
+    rrect(cr, 86, 56, 350, 280, 10)
+    fill_stroke(cr, tuple(lerp(0.06 + i * 0.02, 0.55 + i * 0.12, light)
+                          for i in range(3)), 6.0,
+                outline=(0.30, 0.26, 0.22))
+    if moon > 0 and light < 0.6:
+        circle(cr, 340, 130, 42)
+        set_rgb(cr, (0.96, 0.95, 0.86), moon * (1 - light))
+        cr.fill()
+        for cx, cy, r in ((330, 120, 9), (352, 146, 6), (318, 148, 5)):
+            circle(cr, cx, cy, r)
+            set_rgb(cr, (0.85, 0.85, 0.78), moon * (1 - light))
+            cr.fill()
+        for i in range(16):
+            x = 100 + rand01("star", i) * 320
+            y = 70 + rand01("stary", i) * 240
+            tw = 0.5 + 0.5 * math.sin(t * 2 + i)
+            circle(cr, x, y, 2 + rand01("starr", i) * 2)
+            set_rgb(cr, (1, 1, 1), moon * tw * 0.9 * (1 - light))
+            cr.fill()
+    for x in (261,):
+        cr.move_to(x, 60)
+        cr.line_to(x, 332)
+        stroke_out(cr, 8.0, (0.34, 0.29, 0.24))
+    cr.move_to(90, 196)
+    cr.line_to(432, 196)
+    stroke_out(cr, 8.0, (0.34, 0.29, 0.24))
+
+    # wall cabinets
+    for i in range(3):
+        x = 600 + i * 224
+        rrect(cr, x, 60, 208, 190, 10)
+        fill_stroke(cr, tuple(lerp(0.20 + i * 0.0, 0.66, light)
+                              for i in range(3)), 5.0,
+                    outline=(0.08, 0.07, 0.13))
+        rrect(cr, x + 92, 210, 26, 12, 5)
+        fill_stroke(cr, (0.55, 0.55, 0.60), 3.5)
+    # counter
+    rrect(cr, 560, 332, W - 520, 34, 8)
+    fill_stroke(cr, tuple(lerp(0.26 + i * 0.01, 0.78, light) for i in range(3)),
+                5.0, outline=(0.08, 0.07, 0.13))
+
+    # floor
+    cr.rectangle(0, GROUND, W, H - GROUND)
+    set_rgb(cr, floor)
+    cr.fill()
+    cr.move_to(0, GROUND)
+    cr.line_to(W, GROUND)
+    stroke_out(cr, 4.0, (0.07, 0.06, 0.12))
+    for row in range(3):
+        for col in range(9):
+            if (row + col) % 2:
+                continue
+            y = GROUND + 4 + row * 58
+            cr.rectangle(col * 150 - 40 + row * 18, y, 150, 58)
+            set_rgb(cr, tuple(c * 0.82 for c in floor))
+            cr.fill()
+
+
+def cupboard(cr, x, y, open_k=0.0, light=0.0):
+    """A floor cupboard, big enough to hide a mug."""
+    rrect(cr, x - 130, y - 210, 260, 210, 10)
+    fill_stroke(cr, tuple(lerp(0.22 + i * 0.01, 0.62, light) for i in range(3)),
+                5.0, outline=(0.08, 0.07, 0.13))
+    rrect(cr, x - 116, y - 196, 232, 182, 8)
+    fill_stroke(cr, (0.10, 0.09, 0.15), 4.0)
+    cr.save()
+    cr.translate(x - 116, y - 196)
+    cr.scale(max(0.02, 1 - open_k * 0.86), 1.0)
+    rrect(cr, 0, 0, 232, 182, 8)
+    fill_stroke(cr, tuple(lerp(0.26 + i * 0.01, 0.70, light) for i in range(3)),
+                5.0, outline=(0.08, 0.07, 0.13))
+    cr.restore()
+    circle(cr, x + 96 - open_k * 180, y - 104, 8)
+    fill_stroke(cr, (0.60, 0.60, 0.66), 3.5)
+
+
+def whisk(cr, x, y, s=1.0, rot=0.0):
+    """A whisk.  In the dark, arguably claws."""
+    cr.save()
+    cr.translate(x, y)
+    cr.rotate(rot)
+    cr.scale(s, s)
+    rrect(cr, -9, 10, 18, 70, 8)
+    fill_stroke(cr, (0.42, 0.40, 0.46), 4.0)
+    for i in range(5):
+        a = -1.5 + i * 0.42
+        cr.new_path()
+        cr.move_to(0, 12)
+        cr.curve_to(math.cos(a) * 40, -18, math.cos(a) * 44, -52, 0, -76)
+        stroke_out(cr, 5.0, (0.72, 0.72, 0.78))
+    cr.restore()
