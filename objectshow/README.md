@@ -63,19 +63,43 @@ Adding one is a `Char` subclass with a `body()` method, a colour, a subtitle
 tag and a `voice` dict; the walk cycle, blinking, expressions and mouth-sync
 come from the base class.
 
+## Expressions
+
+Faces are built from an expression sheet in `cast.py`: an eye shape, an
+optional brow or lash, and a resting mouth, with open mouths drawn red with a
+white tooth strip and a tongue. `EXPRESSIONS` maps a name to that triple, so a
+scene only ever says `expr="furious"`.
+
+| | |
+|---|---|
+| eyes | `oval` `wide` `half` `slant` `arc_up` `arc_down` `x` `squint` `swirl` `star` |
+| brows | `angry` `sad` `raised` `flat` `lash` |
+| mouths | `grin` `flat` `frown` `wavy` `smirk` `angry` `gasp` |
+
+Named expressions: `happy` `flat` `worried` `sad` `angry` `furious` `smug`
+`shock` `gasp` `beam` `sly` `dizzy` `dead` `starry` `squint` `lashes`.
+
+Talking is not a separate expression — `mouth` (0..1, driven by the voice
+track) opens whichever mouth the expression implies, so an angry character
+shouts with an angry mouth and a shocked one gasps.
+
+```sh
+python3 faces.py chart.png Cone     # the whole sheet, resting and talking
+```
+
 ## Layout
 
 | File | |
 |---|---|
 | `timeline.py` | beats and timing. Line durations derive from the text, so the timeline, voice track, mouth animation and subtitles cannot drift apart |
 | `cues.py` | the cue sheet, read by both the soundtrack and the animation, so a crash on screen lands on the same frame as the crash in the speakers |
-| `cast.py` | the seven characters: body shapes, faces, walk cycles, voices |
+| `cast.py` | the characters: body shapes, faces, walk cycles, voices |
 | `draw.py` | drawing and easing primitives |
 | `stage.py` | backgrounds, props and on-screen graphics |
 | `audio.py` | chiptune score, cartoon SFX, synthesised voices, ducking |
 | `engine.py` | timing lookups, camera, the frame pipe into ffmpeg |
 | `ep01.py`, `ep02.py` | one episode each: its script, and a draw function per scene |
-| `render.py`, `sheet.py` | command line |
+| `render.py`, `sheet.py`, `faces.py` | command line |
 
 ## Writing another episode
 

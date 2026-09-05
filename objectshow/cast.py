@@ -29,84 +29,268 @@ def pose(x, y, **kw):
 
 
 # ------------------------------------------------------------------ face ---
+# Expressions follow the classic cartoon expression-sheet vocabulary: solid
+# eye shapes with brows and lashes, and open mouths drawn red with a white
+# tooth strip.  Every shape here is a vector path -- the reference sheets are
+# not shipped or traced, only the idiom is shared.
 
-def draw_eye(cr, cx, cy, r, look, lid):
-    """lid: 0 open, 1 fully closed."""
-    if lid > 0.85:
-        cr.move_to(cx - r, cy)
-        cr.line_to(cx + r, cy)
-        stroke_out(cr, r * 0.5)
+EYE = (0.11, 0.10, 0.15)
+MOUTH_RED = (0.78, 0.11, 0.17)
+MOUTH_DEEP = (0.58, 0.07, 0.13)
+TONGUE = (0.93, 0.45, 0.50)
+TEETH = (1.0, 1.0, 1.0)
+
+
+def _arc(cr, cx, cy, rx, ry, up=True, w=4.0):
+    """A single stroked arc -- a closed eye, or a brow."""
+    cr.new_path()
+    cr.move_to(cx - rx, cy + (ry if up else -ry) * 0.5)
+    cr.curve_to(cx - rx * 0.4, cy - (ry if up else -ry),
+                cx + rx * 0.4, cy - (ry if up else -ry),
+                cx + rx, cy + (ry if up else -ry) * 0.5)
+    stroke_out(cr, w)
+
+
+def draw_eye(cr, cx, cy, s, kind="oval", look=(0.0, 0.0), lid=0.0, sgn=1):
+    """One eye.  `kind` picks a shape off the expression sheet."""
+    rx, ry = 8.6 * s, 11.6 * s
+    dx, dy = look[0] * 2.6 * s, look[1] * 2.2 * s
+
+    if lid > 0.85 and kind not in ("arc_up", "arc_down", "x", "squint"):
+        _arc(cr, cx, cy, rx * 1.25, ry * 0.42, True, 4.2 * s)
         return
-    ry = r * (1 - lid)
-    ellipse(cr, cx, cy, r, ry)
-    fill_stroke(cr, (1, 1, 1), r * 0.34)
-    px = cx + look[0] * r * 0.36
-    py = cy + look[1] * ry * 0.36
-    ellipse(cr, px, py, r * 0.46, min(ry * 0.62, r * 0.46))
-    set_rgb(cr, OUTLINE)
-    cr.fill()
+    ry *= (1 - lid * 0.9)
+
+    if kind == "arc_up":                      # ⌒ ⌒  content, eyes closed
+        _arc(cr, cx, cy + 2 * s, rx * 1.3, ry * 0.55, True, 4.4 * s)
+    elif kind == "arc_down":                  # ∪ ∪  sad, eyes closed
+        _arc(cr, cx, cy - 1 * s, rx * 1.3, ry * 0.55, False, 4.4 * s)
+    elif kind == "x":                         # × ×  out cold
+        for a in (0.7, -0.7):
+            cr.new_path()
+            cr.move_to(cx - math.cos(a) * rx * 1.2, cy - math.sin(a) * ry)
+            cr.line_to(cx + math.cos(a) * rx * 1.2, cy + math.sin(a) * ry)
+            stroke_out(cr, 4.2 * s)
+    elif kind == "squint":                    # > <  scrunched
+        cr.new_path()
+        cr.move_to(cx + sgn * rx, cy - ry * 0.8)
+        cr.line_to(cx - sgn * rx * 0.9, cy)
+        cr.line_to(cx + sgn * rx, cy + ry * 0.8)
+        stroke_out(cr, 4.2 * s)
+    elif kind == "swirl":                     # @ @  dizzy
+        cr.new_path()
+        for i in range(34):
+            f = i / 33.0
+            a = f * math.tau * 1.9
+            r = rx * 1.25 * f
+            px, py = cx + math.cos(a) * r, cy + math.sin(a) * r * 1.05
+            cr.line_to(px, py) if i else cr.move_to(px, py)
+        stroke_out(cr, 3.4 * s)
+    elif kind == "star":                      # sparkling
+        ellipse(cr, cx + dx, cy + dy, rx * 1.12, ry * 1.12)
+        set_rgb(cr, EYE)
+        cr.fill()
+        for ox, oy, r in ((-0.14, -0.22, 0.62), (0.34, 0.30, 0.30)):
+            cr.save()
+            cr.translate(cx + dx + rx * ox, cy + dy + ry * oy)
+            cr.new_path()
+            for i in range(4):
+                a = i * math.pi / 2
+                cr.line_to(math.cos(a) * rx * r, math.sin(a) * ry * r)
+                cr.line_to(math.cos(a + math.pi / 4) * rx * r * 0.22,
+                           math.sin(a + math.pi / 4) * ry * r * 0.22)
+            cr.close_path()
+            set_rgb(cr, (1, 1, 1))
+            cr.fill()
+            cr.restore()
+    else:
+        wide = kind == "wide"
+        half = kind == "half"
+        slant = kind == "slant"
+        exx = rx * (1.28 if wide else 1.0)
+        eyy = ry * (1.28 if wide else 1.0)
+        if slant:                             # furious: an angled almond
+            cr.save()
+            cr.translate(cx + dx, cy + dy)
+            cr.rotate(sgn * 0.42)
+            ellipse(cr, 0, 0, exx * 1.06, eyy * 0.82)
+            set_rgb(cr, EYE)
+            cr.fill()
+            cr.restore()
+        else:
+            ellipse(cr, cx + dx, cy + dy, exx, eyy)
+            set_rgb(cr, EYE)
+            cr.fill()
+        if not wide and not slant:
+            circle(cr, cx + dx - exx * 0.30, cy + dy - eyy * 0.34,
+                   exx * 0.28)
+            set_rgb(cr, (1, 1, 1), 0.9)
+            cr.fill()
+        if wide:                              # shock: small pupil, big white
+            circle(cr, cx + dx, cy + dy, exx * 0.42)
+            set_rgb(cr, (1, 1, 1))
+            cr.fill()
+            circle(cr, cx + dx, cy + dy, exx * 0.24)
+            set_rgb(cr, EYE)
+            cr.fill()
+        if half:                              # heavy lid across the top
+            cr.save()
+            ellipse(cr, cx + dx, cy + dy, exx + 1, eyy + 1)
+            cr.clip()
+            cr.rectangle(cx - exx - 2, cy - eyy - 2, exx * 2 + 4, eyy * 1.05)
+            set_rgb(cr, (0, 0, 0), 0)
+            cr.fill()
+            cr.restore()
+            cr.new_path()
+            cr.move_to(cx - exx * 1.15, cy - eyy * 0.30)
+            cr.line_to(cx + exx * 1.15, cy - eyy * 0.55)
+            stroke_out(cr, 4.0 * s)
+
+
+
+def draw_brow(cr, cx, cy, s, kind, sgn):
+    """Brows and lashes -- the half of an expression that does the work."""
+    if kind is None:
+        return
+    y = cy - 21 * s
+    if kind == "angry":
+        cr.new_path()
+        cr.move_to(cx + sgn * 11 * s, y - 4 * s)
+        cr.line_to(cx - sgn * 10 * s, y + 8 * s)
+        stroke_out(cr, 4.6 * s)
+    elif kind == "sad":
+        cr.new_path()
+        cr.move_to(cx + sgn * 11 * s, y + 7 * s)
+        cr.line_to(cx - sgn * 10 * s, y - 3 * s)
+        stroke_out(cr, 4.2 * s)
+    elif kind == "raised":
+        _arc(cr, cx, y + 2 * s, 11 * s, 5 * s, True, 4.0 * s)
+    elif kind == "flat":
+        cr.new_path()
+        cr.move_to(cx - 10 * s, y + 2 * s)
+        cr.line_to(cx + 10 * s, y + 2 * s)
+        stroke_out(cr, 4.0 * s)
+    elif kind == "lash":
+        cr.new_path()
+        cr.move_to(cx - sgn * 13 * s, y + 6 * s)
+        cr.line_to(cx - sgn * 6 * s, y - 1 * s)
+        stroke_out(cr, 3.6 * s)
+
+
+def open_mouth(cr, cx, cy, s, w, h, teeth=True, tongue=True, pale=False):
+    """The open mouth from the sheet: red, tooth strip along the top."""
+    cr.new_path()
+    cr.move_to(cx - w, cy)
+    cr.curve_to(cx - w, cy + h * 2.1, cx + w, cy + h * 2.1, cx + w, cy)
+    cr.close_path()
+    fill = (0.99, 0.98, 0.98) if pale else MOUTH_RED
+    fill_stroke(cr, fill, 4.0 * s)
+    if not pale:
+        cr.save()
+        cr.new_path()
+        cr.move_to(cx - w, cy)
+        cr.curve_to(cx - w, cy + h * 2.1, cx + w, cy + h * 2.1, cx + w, cy)
+        cr.close_path()
+        cr.clip()
+        if teeth:
+            cr.rectangle(cx - w, cy - 2 * s, w * 2, h * 0.42)
+            set_rgb(cr, TEETH)
+            cr.fill()
+            cr.move_to(cx - w, cy + h * 0.42)
+            cr.line_to(cx + w, cy + h * 0.42)
+            stroke_out(cr, 3.0 * s)
+        if tongue and h > 7 * s:
+            ellipse(cr, cx, cy + h * 1.75, w * 0.62, h * 0.62)
+            fill_stroke(cr, TONGUE, 3.0 * s)
+        cr.restore()
+
+
+def draw_mouth(cr, cx, cy, s, kind, k):
+    """`kind` is the resting shape; `k` is how far it is open (0..1)."""
+    if k > 0.10 and kind not in ("gasp",):
+        w = (13 + 7 * k) * s
+        h = (5 + 12 * k) * s
+        if kind == "angry":
+            open_mouth(cr, cx, cy - 2 * s, s, w * 1.15, h, True, True)
+        elif kind in ("frown", "wavy"):
+            open_mouth(cr, cx, cy, s, w * 0.8, h * 0.9, False, True)
+        elif kind in ("flat", "smirk"):
+            open_mouth(cr, cx, cy, s, w * 0.85, h * 0.85, True, False)
+        else:
+            open_mouth(cr, cx, cy - 2 * s, s, w, h, True, True)
+        return
+
+    if kind == "gasp":
+        ellipse(cr, cx, cy + 4 * s, (8 + 3 * k) * s, (11 + 6 * k) * s)
+        fill_stroke(cr, MOUTH_DEEP, 3.4 * s)
+    elif kind == "grin":
+        cr.new_path()
+        cr.move_to(cx - 16 * s, cy - 4 * s)
+        cr.curve_to(cx - 7 * s, cy + 10 * s, cx + 7 * s, cy + 10 * s,
+                    cx + 16 * s, cy - 4 * s)
+        stroke_out(cr, 4.4 * s)
+    elif kind == "frown":
+        cr.new_path()
+        cr.move_to(cx - 13 * s, cy + 6 * s)
+        cr.curve_to(cx - 5 * s, cy - 4 * s, cx + 5 * s, cy - 4 * s,
+                    cx + 13 * s, cy + 6 * s)
+        stroke_out(cr, 4.2 * s)
+    elif kind == "wavy":
+        cr.new_path()
+        cr.move_to(cx - 15 * s, cy + 2 * s)
+        cr.curve_to(cx - 8 * s, cy - 7 * s, cx - 4 * s, cy + 7 * s,
+                    cx, cy + 1 * s)
+        cr.curve_to(cx + 5 * s, cy - 6 * s, cx + 9 * s, cy + 7 * s,
+                    cx + 15 * s, cy - 1 * s)
+        stroke_out(cr, 4.0 * s)
+    elif kind == "smirk":
+        cr.new_path()
+        cr.move_to(cx - 5 * s, cy - 2 * s)
+        cr.curve_to(cx + 4 * s, cy + 8 * s, cx + 10 * s, cy + 7 * s,
+                    cx + 15 * s, cy - 2 * s)
+        stroke_out(cr, 4.2 * s)
+    elif kind == "angry":
+        cr.new_path()
+        cr.move_to(cx - 14 * s, cy + 7 * s)
+        cr.curve_to(cx - 5 * s, cy - 5 * s, cx + 5 * s, cy - 5 * s,
+                    cx + 14 * s, cy + 7 * s)
+        stroke_out(cr, 4.6 * s)
+    else:  # flat
+        cr.new_path()
+        cr.move_to(cx - 11 * s, cy)
+        cr.line_to(cx + 11 * s, cy)
+        stroke_out(cr, 4.0 * s)
+
+
+# expression -> (eye kind, brow kind, resting mouth)
+EXPRESSIONS = {
+    "happy":   ("oval", None, "grin"),
+    "flat":    ("oval", None, "flat"),
+    "worried": ("wide", "sad", "wavy"),
+    "sad":     ("arc_down", "sad", "frown"),
+    "angry":   ("oval", "angry", "angry"),
+    "furious": ("slant", "angry", "angry"),
+    "smug":    ("half", "flat", "smirk"),
+    "shock":   ("wide", "raised", "gasp"),
+    "gasp":    ("wide", "raised", "gasp"),
+    "beam":    ("arc_up", None, "grin"),
+    "sly":     ("half", None, "smirk"),
+    "dizzy":   ("swirl", None, "wavy"),
+    "dead":    ("x", None, "flat"),
+    "starry":  ("star", "raised", "grin"),
+    "squint":  ("squint", None, "grin"),
+    "lashes":  ("oval", "lash", "grin"),
+}
 
 
 def draw_face(cr, cx, cy, s, expr, mouth, look, lid):
-    """Faces are BFDI-simple: two eyes and one expressive mouth."""
+    eye_kind, brow, mouth_kind = EXPRESSIONS.get(expr, EXPRESSIONS["happy"])
     eye_dx = 16 * s
-    eye_r = 11 * s
-    ey = cy
-    brow = None
-
-    if expr in ("angry", "furious"):
-        brow = "angry"
-    elif expr in ("worried", "sad"):
-        brow = "sad"
-    elif expr == "smug":
-        brow = "smug"
-
-    draw_eye(cr, cx - eye_dx, ey, eye_r, look, lid)
-    draw_eye(cr, cx + eye_dx, ey, eye_r, look, lid)
-
-    if brow == "angry":
-        for sgn in (-1, 1):
-            cr.move_to(cx + sgn * (eye_dx + eye_r * 0.9), ey - eye_r * 1.5)
-            cr.line_to(cx + sgn * (eye_dx - eye_r * 0.7), ey - eye_r * 0.75)
-            stroke_out(cr, 4.4 * s)
-    elif brow == "sad":
-        for sgn in (-1, 1):
-            cr.move_to(cx + sgn * (eye_dx + eye_r * 0.9), ey - eye_r * 0.9)
-            cr.line_to(cx + sgn * (eye_dx - eye_r * 0.7), ey - eye_r * 1.6)
-            stroke_out(cr, 4.0 * s)
-    elif brow == "smug":
-        cr.move_to(cx - eye_dx - eye_r, ey - eye_r * 1.4)
-        cr.line_to(cx - eye_dx + eye_r, ey - eye_r * 1.4)
-        stroke_out(cr, 4.0 * s)
-
-    my = cy + 24 * s
-    open_h = 4 * s + mouth * 15 * s
-
-    if expr in ("shock", "gasp"):
-        ellipse(cr, cx, my + 2 * s, 9 * s, 11 * s + mouth * 5 * s)
-        fill_stroke(cr, (0.22, 0.11, 0.14), 3.2 * s)
-    elif mouth > 0.12:
-        ellipse(cr, cx, my, 12 * s + mouth * 4 * s, open_h)
-        fill_stroke(cr, (0.22, 0.11, 0.14), 3.2 * s)
-    elif expr in ("sad", "worried", "angry", "furious"):
-        cr.move_to(cx - 13 * s, my + 5 * s)
-        cr.curve_to(cx - 5 * s, my - 4 * s, cx + 5 * s, my - 4 * s,
-                    cx + 13 * s, my + 5 * s)
-        stroke_out(cr, 4.0 * s)
-    elif expr == "flat":
-        cr.move_to(cx - 11 * s, my)
-        cr.line_to(cx + 11 * s, my)
-        stroke_out(cr, 4.0 * s)
-    elif expr == "smug":
-        cr.move_to(cx - 4 * s, my - 2 * s)
-        cr.curve_to(cx + 4 * s, my + 7 * s, cx + 10 * s, my + 6 * s,
-                    cx + 15 * s, my - 1 * s)
-        stroke_out(cr, 4.0 * s)
-    else:  # happy
-        cr.move_to(cx - 15 * s, my - 4 * s)
-        cr.curve_to(cx - 6 * s, my + 9 * s, cx + 6 * s, my + 9 * s,
-                    cx + 15 * s, my - 4 * s)
-        stroke_out(cr, 4.2 * s)
+    for sgn in (-1, 1):
+        draw_eye(cr, cx + sgn * eye_dx, cy, s, eye_kind, look, lid, sgn)
+    for sgn in (-1, 1):
+        draw_brow(cr, cx + sgn * eye_dx, cy, s, brow, sgn)
+    draw_mouth(cr, cx, cy + 24 * s, s, mouth_kind, mouth)
 
 
 # ------------------------------------------------------------- character ---
