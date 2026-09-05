@@ -347,6 +347,11 @@ CUES = {
     # episode 7
     "hardshoulder": (58, 132, ["I", "bVII", "IV", "I"], "drive"),
     "cross": (55, 156, ["i", "bVII", "bVI", "v"], "drive"),
+    # episode 8
+    "binday": (60, 128, ["I", "vi", "IV", "V"], "bouncy"),
+    "collect": (56, 158, ["i", "bVII", "bVI", "bVII"], "drive"),
+    "winner": (60, 144, ["I", "V", "vi", "IV"], "theme"),
+    "finale": (60, 138, ["IV", "V", "I", "vi"], "bright"),
 }
 
 MELODY = {

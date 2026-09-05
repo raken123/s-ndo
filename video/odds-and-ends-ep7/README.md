@@ -68,5 +68,5 @@ generator fits together.
 
 ## Next
 
-Episode 8: "Bin Day" — the recycling bin from episode 4 is back, and it is on
-wheels.
+[Episode 8: "Bin Day"](../odds-and-ends-ep8) — the series finale. Spork lost
+the vote, and the bin is on wheels.

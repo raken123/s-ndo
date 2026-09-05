@@ -203,6 +203,30 @@ def build_cues(scenes):
             elif act == "binback" and b["kind"] == "act":
                 add(t0 + 0.15, "stinger")
                 add(t0 + 1.00, "boo")
+            # --- episode 8 ---
+            elif act == "roll" and b["kind"] == "act":
+                add(t0 + 0.20, "rumble")
+                add(t0 + 1.10, "ding")
+            elif act == "sort" and b["kind"] == "act":
+                add(t0 + 0.15, "beep")
+            elif act == "chase" and b["kind"] == "act":
+                add(t0 + 0.10, "whoosh")
+                add(t0 + 1.20, "boing")
+            elif act == "collected" and b["kind"] == "act":
+                add(t0 + 0.25, "thud")
+                add(t0 + 0.90, "sting")
+            elif act == "chair" and b["kind"] == "act":
+                add(t0 + 0.15, "shine")
+                add(t0 + 1.10, "sparkle")
+            elif act == "curtain_call" and b["kind"] == "act":
+                add(t0 + 0.10, "fanfare")
+                for i in range(3):
+                    add(t0 + 0.6 + i * 0.5, "pop")
+            elif act == "sit" and b["kind"] == "act":
+                add(t0 + 0.45, "creak")
+            elif act == "wobbly" and b["kind"] == "act":
+                add(t0 + 0.20, "creak")
+                add(t0 + 1.30, "creak")
 
     for sc in scenes:
         if sc["key"] in ("results", "judging", "scores", "bin"):

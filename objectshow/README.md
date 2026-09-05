@@ -16,6 +16,7 @@ Episodes live in [`../video`](../video):
 | `ep05` | [The Dishwasher](../video/odds-and-ends-ep5) | three new objects arrive, and everyone takes a wash cycle |
 | `ep06` | [The Fridge](../video/odds-and-ends-ep6) | cold storage, a guest adjudicator, and a shelf nobody should have touched |
 | `ep07` | [The Motorway](../video/odds-and-ends-ep7) | four lanes, no pavement, and a cone in his element |
+| `ep08` | [Bin Day](../video/odds-and-ends-ep8) | series finale: recycling only, and the chair from episode 1 |
 
 ## Building
 
@@ -48,14 +49,14 @@ keep talking.
 | | | | |
 |---|---|---|---|
 | 📣 | **Mega** | host | — |
-| ☕ | **Mugsy** | a mug, 60% anxiety | ep1– |
+| ☕ | **Mugsy** | a mug, 60% anxiety | ep1–8, winner |
 | 📎 | **Clip** | holds things together, loudly | ep1–5 |
-| 🚧 | **Cone** | reads the rules. all of them. | ep1– |
+| 🚧 | **Cone** | reads the rules. all of them. | ep1–8, runner-up |
 | 🗒️ | **Sticky** | remembers nothing, sticks to everything | ep1–4 |
 | 🔋 | **Volt** | 9 volts of unearned confidence | ep1 |
 | 🧊 | **Cube** | cool under pressure. melting otherwise. | ep1–3 |
-| 🗑️ | **Bin** | it is recycling night | ep4 guest |
-| 🥄 | **Spork** | a fork and a spoon, at the same time | ep5– |
+| 🗑️ | **Bin** | it is recycling night | ep4, ep8 |
+| 🥄 | **Spork** | a fork and a spoon, at the same time | ep5–8 |
 | 🧤 | **Mitt** | has held worse than you | ep5–6 |
 | 🍽️ | **Plate** | immaculate, and aware of it | ep5–7 |
 
@@ -113,7 +114,7 @@ BEATS = [dict(key="scene_name", beats=[
 
 def sc_scene_name(cr, show, sc, beat, T): ...           # draw one frame
 
-EPISODE = Show("ep08", 'Episode 8: "..."', BEATS, 300.0,
+EPISODE = Show("ep09", 'Episode 9: "..."', BEATS, 300.0,
                {"scene_name": sc_scene_name})
 ```
 

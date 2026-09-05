@@ -23,7 +23,7 @@ from draw import (OUTLINE, circle, ellipse, fill_stroke, limb, rand01, rrect,
 def pose(x, y, **kw):
     p = dict(x=x, y=y, s=1.0, rot=0.0, sq=1.0, arm_l=0.0, arm_r=0.0,
              step=None, expr="happy", mouth=0.0, look=(0.0, 0.0), flip=False,
-             alpha=1.0, blink=None)
+             alpha=1.0, blink=None, legs=True)
     p.update(kw)
     return p
 
@@ -339,7 +339,7 @@ class Char:
             ey = ay + 44 - math.sin(a) * 44
             limb(cr, [(hx, ay), (hx + sgn * 22, ay + 26), (ex, ey)], 6.5)
 
-        for sgn in (-1, 1):
+        for sgn in (-1, 1) if p.get("legs", True) else ():
             sw = swing * sgn
             fx = sgn * lx + sw * 22
             fy = ly + 34 - abs(sw) * 9
