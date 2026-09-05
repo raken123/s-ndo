@@ -1,0 +1,42 @@
+{
+  "name": "gmfy-hub-desktop",
+  "productName": "gmfy Hub",
+  "version": "1.0.0",
+  "description": "gmfy Hub for Windows, macOS and Linux",
+  "main": "main.js",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "prestart": "node ../scripts/sync-client.js",
+    "start": "electron .",
+    "predist": "node ../scripts/sync-client.js",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.gmfy.hub",
+    "productName": "gmfy Hub",
+    "copyright": "gmfy",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "preload.js", "app/**/*", "server/**/*", "!server/data/**", "!server/test/**"],
+    "asar": true,
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }, { "target": "portable", "arch": ["x64"] }],
+      "artifactName": "gmfy-hub-${version}-win-${arch}.${ext}"
+    },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "shortcutName": "gmfy Hub" },
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }, { "target": "zip", "arch": ["arm64", "x64"] }],
+      "category": "public.app-category.games",
+      "identity": null,
+      "artifactName": "gmfy-hub-${version}-mac-${arch}.${ext}"
+    },
+    "linux": { "target": ["AppImage"], "category": "Game", "artifactName": "gmfy-hub-${version}-linux-${arch}.${ext}" }
+  }
+}

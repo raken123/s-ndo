@@ -1,0 +1,30 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.gmfy.hub'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.gmfy.hub'
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName '1.0.0'
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            // Unsigned by default; supply a signing config to publish. The debug build is installable as-is.
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    // The web client is copied into src/main/assets/www by `node scripts/sync-client.js`.
+}
+
+dependencies {
+}

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0b0f1a">
+<title>gmfy Hub</title>
+<link rel="stylesheet" href="css/hub.css">
+</head>
+<body>
+<div id="app">
+  <!-- Auth -->
+  <section id="auth" class="screen">
+    <div class="auth-card">
+      <div class="brand"><span class="brand-mark">g</span><div><h1>gmfy Hub</h1><small>Play. Create. Earn.</small></div></div>
+      <div class="tabs" id="auth-tabs"><button data-tab="login" class="active">Sign in</button><button data-tab="register">Create account</button></div>
+      <form id="auth-form" autocomplete="on">
+        <label>Username<input name="name" required minlength="3" maxlength="16" autocapitalize="off" spellcheck="false"></label>
+        <label id="auth-display" hidden>Display name<input name="displayName" maxlength="24"></label>
+        <label>Password<input name="password" type="password" required minlength="6"></label>
+        <details id="auth-server"><summary>Server</summary>
+          <label>Hub server URL<input name="server" placeholder="ws://192.168.1.10:8787/ws"></label>
+          <p class="muted">Anyone can host a hub: <code>node server/index.js</code>. The desktop app can host one from Settings.</p>
+        </details>
+        <button class="btn primary big" type="submit" id="auth-submit">Sign in</button>
+        <p id="auth-msg" class="msg"></p>
+      </form>
+    </div>
+  </section>
+
+  <!-- Shell -->
+  <section id="shell" class="screen" hidden>
+    <aside id="sidebar">
+      <div class="brand small"><span class="brand-mark">g</span><h1>gmfy Hub</h1></div>
+      <nav id="nav">
+        <button data-view="home"><i>🏠</i>Home</button>
+        <button data-view="discover"><i>🎮</i>Discover</button>
+        <button data-view="create"><i>🛠️</i>Create</button>
+        <button data-view="shop"><i>🛍️</i>Shop</button>
+        <button data-view="friends"><i>👥</i>Friends</button>
+        <button data-view="profile"><i>🏆</i>Profile</button>
+        <button data-view="settings"><i>⚙️</i>Settings</button>
+      </nav>
+      <div class="online-pill"><span class="dot"></span><span id="online-count">0</span> online</div>
+    </aside>
+    <div id="main">
+      <header id="topbar">
+        <button id="back-btn" class="icon-btn" hidden>←</button>
+        <h2 id="view-title">Home</h2>
+        <div class="spacer"></div>
+        <button id="gems-pill" class="gems" title="Get Gems">◆ <b id="gems-count">0</b></button>
+        <button id="chat-btn" class="icon-btn" title="Chat">💬</button>
+        <button id="me-pill" class="me"><canvas id="me-avatar" width="36" height="36"></canvas><span id="me-name"></span></button>
+      </header>
+      <div id="views">
+        <div class="view" data-view="home"></div>
+        <div class="view" data-view="discover"></div>
+        <div class="view" data-view="game"></div>
+        <div class="view" data-view="create"></div>
+        <div class="view" data-view="editor"></div>
+        <div class="view" data-view="shop"></div>
+        <div class="view" data-view="friends"></div>
+        <div class="view" data-view="profile"></div>
+        <div class="view" data-view="settings"></div>
+      </div>
+      <nav id="tabbar">
+        <button data-view="home"><i>🏠</i>Home</button>
+        <button data-view="discover"><i>🎮</i>Games</button>
+        <button data-view="create"><i>🛠️</i>Create</button>
+        <button data-view="shop"><i>🛍️</i>Shop</button>
+        <button data-view="friends"><i>👥</i>Friends</button>
+        <button data-view="profile"><i>🏆</i>Me</button>
+      </nav>
+    </div>
+    <aside id="chat" hidden>
+      <header><b>Global chat</b><button class="icon-btn" id="chat-close">✕</button></header>
+      <div id="chat-log"></div>
+      <form id="chat-form"><input maxlength="200" placeholder="Say something…" autocomplete="off"><button class="btn">Send</button></form>
+    </aside>
+  </section>
+
+  <!-- Play -->
+  <section id="play-screen" class="screen" hidden>
+    <canvas id="game-canvas"></canvas>
+    <div id="hud">
+      <div class="hud-top">
+        <div class="hud-box" id="hud-game"></div>
+        <div class="hud-box timer" id="hud-timer">--</div>
+        <div class="hud-actions"><button class="icon-btn" id="hud-chat">💬</button><button class="btn danger small" id="hud-leave">Leave</button></div>
+      </div>
+      <div class="hud-box scoreboard" id="hud-scores"></div>
+      <div id="hud-feed"></div>
+      <div id="hud-chat-panel" hidden>
+        <div id="room-chat-log"></div>
+        <form id="room-chat-form"><input maxlength="200" placeholder="Room chat…" autocomplete="off"><button class="btn small">Send</button></form>
+      </div>
+      <div id="overlay" hidden></div>
+      <div id="joystick" hidden><div class="stick"></div></div>
+    </div>
+  </section>
+
+  <div id="toasts"></div>
+  <div id="modal" hidden><div class="modal-card" id="modal-card"></div></div>
+</div>
+<script src="js/platform.js"></script>
+<script src="js/net.js"></script>
+<script src="js/avatar.js"></script>
+<script src="js/play.js"></script>
+<script src="js/editor.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

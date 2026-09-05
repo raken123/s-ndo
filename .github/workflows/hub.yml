@@ -1,0 +1,103 @@
+name: hub builds
+
+on:
+  push:
+    paths: ["hub/**", ".github/workflows/hub.yml"]
+    tags: ["hub-v*"]
+  pull_request:
+    paths: ["hub/**", ".github/workflows/hub.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: server + client tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Unit tests (WebSocket protocol, economy, rooms)
+        run: npm run test:unit
+        working-directory: hub
+      - name: Browser end-to-end (headless Chrome, two players)
+        run: npm run test:e2e
+        working-directory: hub
+        env: { HUB_CHROME: /usr/bin/google-chrome }
+
+  desktop:
+    name: desktop (${{ matrix.os }})
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Install Electron + electron-builder
+        run: npm install --no-audit --no-fund
+        working-directory: hub/desktop
+      - name: Build
+        run: npm run dist -- --publish never
+        working-directory: hub/desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"   # unsigned builds; add certificates as secrets to sign
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gmfy-hub-${{ matrix.os }}
+          path: |
+            hub/desktop/dist/*.exe
+            hub/desktop/dist/*.dmg
+            hub/desktop/dist/*.zip
+            hub/desktop/dist/*.AppImage
+          if-no-files-found: error
+
+  android:
+    name: android
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: android-actions/setup-android@v3
+        with: { packages: "platforms;android-34 build-tools;34.0.0" }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: "8.9" }
+      - name: Bundle the web client into the APK assets
+        run: node scripts/sync-client.js
+        working-directory: hub
+      - name: Build APKs
+        run: gradle --no-daemon assembleDebug assembleRelease
+        working-directory: hub/android
+      - name: Rename artifacts
+        run: |
+          mkdir -p out
+          cp android/app/build/outputs/apk/debug/app-debug.apk out/gmfy-hub-android-debug.apk
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk out/gmfy-hub-android-release-unsigned.apk
+        working-directory: hub
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gmfy-hub-android
+          path: hub/out/*.apk
+          if-no-files-found: error
+
+  release:
+    name: publish release
+    if: startsWith(github.ref, 'refs/tags/hub-v')
+    needs: [desktop, android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: artifacts, merge-multiple: true }
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          generate_release_notes: true
