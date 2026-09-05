@@ -9,7 +9,7 @@ WebAudio. Inga bilder, modeller eller ljudfiler laddas in.
 
 | Fil | Vad |
 |---|---|
-| `rymdresa.mp4` | Den färdiga filmen, 1920x1080, 24 fps, H.264 + AAC |
+| `rymdresa.mp4` | Den färdiga filmen: 2:56, 1920x1080, 24 fps, H.264 (CRF 19) + AAC 192 kb/s, 39,7 MB. SHA-256 `d9ca834022e69874836c05d3904f4e95431a24811d4e3336665f9ce13454b730` |
 | `rymdresa.html` | Samma film som körs live i webbläsaren, med ljud. Öppna filen och klicka *Starta filmen*. Mellanslag pausar. |
 | `three.min.js` | Three.js r152, så att HTML-filen fungerar utan nätverk. Saknas den hämtas samma version från jsDelivr. |
 | `src/render.mjs` | Renderaren som gjorde MP4-filen |
