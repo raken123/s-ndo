@@ -1,0 +1,1 @@
+-keepclassmembers class ai.raken.app.MainActivity$Bridge { public *; }

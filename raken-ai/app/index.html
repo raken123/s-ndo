@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d14">
+<meta name="description" content="Raken AI — chat, make images and videos, and put a Work Agent and a Code Agent to work. Windows, macOS, Linux, Android and Web.">
+<title>Raken AI</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="app" class="app">
+
+  <!-- ============ Sidebar ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 64 64" width="34" height="34"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#bg)"/><path d="M20 46V18h13c7 0 11 4 11 9.5 0 4-2.3 7-6 8.3L46 46h-7.5l-6.6-9H26.5v9H20zm6.5-14.5h6c3 0 5-1.6 5-4.1s-2-4-5-4h-6v8.1z" fill="#fff"/></svg></div>
+      <div class="brand-text">
+        <h1>Raken AI</h1>
+        <small id="platform-badge">Web</small>
+      </div>
+    </div>
+
+    <nav class="nav" id="nav">
+      <button data-view="chat" class="active"><span class="ico">💬</span>Chat</button>
+      <button data-view="images"><span class="ico">🎨</span>Images</button>
+      <button data-view="videos"><span class="ico">🎬</span>Videos</button>
+      <div class="nav-section">Agents</div>
+      <button data-view="work"><span class="ico">🧑‍💼</span>Work Agent</button>
+      <button data-view="code"><span class="ico">👩‍💻</span>Code Agent</button>
+      <div class="nav-section">Library</div>
+      <button data-view="gallery"><span class="ico">🖼️</span>Gallery</button>
+      <button data-view="docs"><span class="ico">📄</span>Documents</button>
+      <div class="nav-section">Account</div>
+      <button data-view="pro"><span class="ico">⭐</span>Pro</button>
+      <button data-view="settings"><span class="ico">⚙️</span>Settings</button>
+    </nav>
+
+    <div class="plan-chip" id="plan-chip">
+      <div class="plan-chip-title">Free plan</div>
+      <div class="plan-chip-sub" id="plan-chip-sub">First 10 people get <b>98% off Pro</b></div>
+      <button class="btn small full" data-goto="pro">Claim founder spot</button>
+    </div>
+  </aside>
+
+  <!-- ============ Main ============ -->
+  <main class="main" id="main">
+
+    <!-- Chat -->
+    <section class="view active" id="view-chat">
+      <div class="chat-layout">
+        <div class="chat-list" id="chat-list">
+          <div class="chat-list-head">
+            <button class="btn small" id="chat-new">+ New chat</button>
+          </div>
+          <div class="chat-list-items" id="chat-list-items"></div>
+        </div>
+        <div class="chat-main">
+          <div class="chat-top">
+            <button class="icon-btn only-mobile" id="chat-toggle-list" title="Chats">☰</button>
+            <div class="chat-title" id="chat-title">New chat</div>
+            <div class="chat-tools">
+              <select id="chat-model" class="select small" title="Model"></select>
+              <button class="icon-btn" id="chat-delete" title="Delete chat">🗑</button>
+            </div>
+          </div>
+          <div class="messages" id="messages">
+            <div class="empty-state" id="chat-empty">
+              <div class="hero-mark">✦</div>
+              <h2>What can I do for you?</h2>
+              <p>Ask anything, attach images or PDFs, or try one of these.</p>
+              <div class="chips">
+                <button class="chip" data-prompt="Explain quantum computing like I'm 12, in 5 short paragraphs.">Explain quantum computing simply</button>
+                <button class="chip" data-prompt="Write a friendly but firm email to a client whose invoice is 30 days overdue.">Write an overdue-invoice email</button>
+                <button class="chip" data-prompt="Give me a 7-day beginner workout plan I can do at home with no equipment.">7-day home workout plan</button>
+                <button class="chip" data-prompt="Brainstorm 10 names for a coffee shop that also sells vinyl records.">Brainstorm coffee shop names</button>
+              </div>
+            </div>
+          </div>
+          <div class="composer">
+            <div class="attachments" id="attachments"></div>
+            <div class="composer-row">
+              <button class="icon-btn" id="attach-btn" title="Attach image, PDF or text file">📎</button>
+              <input type="file" id="attach-input" multiple accept="image/*,.pdf,.txt,.md,.csv,.json,.js,.py,.html,.css" hidden>
+              <textarea id="composer-input" rows="1" placeholder="Message Raken AI…"></textarea>
+              <button class="icon-btn" id="mic-btn" title="Dictate">🎤</button>
+              <button class="btn send" id="send-btn" title="Send">➤</button>
+            </div>
+            <div class="composer-hint">Enter to send · Shift+Enter for a new line · <span id="usage-hint"></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Images -->
+    <section class="view" id="view-images">
+      <div class="view-head"><h2>Make images</h2><p>Describe what you want to see. Results are saved to your Gallery.</p></div>
+      <div class="gen-layout">
+        <div class="card gen-form">
+          <label>Prompt</label>
+          <textarea id="img-prompt" rows="4" placeholder="A cozy cabin in a snowy forest at dusk, warm light in the windows, cinematic, ultra detailed"></textarea>
+          <div class="chips small-chips" id="img-styles">
+            <button class="chip" data-style="photorealistic, 35mm, natural light">Photo</button>
+            <button class="chip" data-style="digital painting, vibrant, concept art">Painting</button>
+            <button class="chip" data-style="flat vector illustration, clean shapes">Vector</button>
+            <button class="chip" data-style="anime style, cel shaded">Anime</button>
+            <button class="chip" data-style="3D render, octane, soft studio lighting">3D</button>
+            <button class="chip" data-style="pixel art, 16-bit">Pixel</button>
+          </div>
+          <div class="form-grid">
+            <div><label>Aspect</label>
+              <select id="img-aspect" class="select">
+                <option value="1024x1024">Square 1:1</option>
+                <option value="1280x720">Landscape 16:9</option>
+                <option value="720x1280">Portrait 9:16</option>
+                <option value="1152x896">Landscape 4:3</option>
+                <option value="896x1152">Portrait 3:4</option>
+              </select></div>
+            <div><label>Count</label>
+              <select id="img-count" class="select"><option>1</option><option>2</option><option>4</option></select></div>
+            <div><label>Provider</label>
+              <select id="img-provider" class="select">
+                <option value="pollinations">Pollinations (free, no key)</option>
+                <option value="fal">fal.ai FLUX (key)</option>
+                <option value="openai">OpenAI-compatible (key)</option>
+              </select></div>
+          </div>
+          <button class="btn full" id="img-generate">Generate</button>
+          <div class="muted small" id="img-status"></div>
+        </div>
+        <div class="gen-results" id="img-results">
+          <div class="empty-mini">Your images will appear here.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Videos -->
+    <section class="view" id="view-videos">
+      <div class="view-head"><h2>Make videos</h2><p>Short clips from text, or animate an image from your Gallery.</p></div>
+      <div class="gen-layout">
+        <div class="card gen-form">
+          <label>Prompt</label>
+          <textarea id="vid-prompt" rows="4" placeholder="A golden retriever running along a beach at sunrise, slow motion, drone shot"></textarea>
+          <div class="form-grid">
+            <div><label>Model</label>
+              <select id="vid-model" class="select">
+                <option value="fal-ai/ltx-video">LTX Video (fast)</option>
+                <option value="fal-ai/minimax/video-01">MiniMax Video-01</option>
+                <option value="fal-ai/kling-video/v2.1/standard/text-to-video">Kling 2.1</option>
+                <option value="fal-ai/veo3">Veo 3</option>
+              </select></div>
+            <div><label>Aspect</label>
+              <select id="vid-aspect" class="select"><option value="16:9">16:9</option><option value="9:16">9:16</option><option value="1:1">1:1</option></select></div>
+          </div>
+          <label>Start image (optional)</label>
+          <div class="row">
+            <select id="vid-image" class="select"><option value="">None</option></select>
+          </div>
+          <button class="btn full" id="vid-generate">Generate video</button>
+          <div class="muted small" id="vid-status"></div>
+          <div class="note" id="vid-note">Video generation uses fal.ai. Add a fal key in Settings.</div>
+        </div>
+        <div class="gen-results" id="vid-results">
+          <div class="empty-mini">Your videos will appear here.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Work Agent -->
+    <section class="view" id="view-work">
+      <div class="view-head"><h2>Work Agent</h2><p>Give it a job. It researches the web, drafts documents, builds tables and plans, and keeps its work in Documents.</p></div>
+      <div class="agent-layout">
+        <div class="card agent-form">
+          <div class="chips small-chips" id="work-presets">
+            <button class="chip" data-task="Research the current state of the electric bike market in Europe and write a one-page briefing with sources.">Market briefing</button>
+            <button class="chip" data-task="Draft a professional onboarding checklist for a new marketing hire, as a document with sections and a table for week 1.">Onboarding checklist</button>
+            <button class="chip" data-task="Build a 12-month personal budget as a CSV table with categories, then summarize the assumptions in a short document.">Budget spreadsheet</button>
+            <button class="chip" data-task="Write three versions of a cold outreach email for a SaaS product that automates invoicing, each with a different tone.">Outreach emails</button>
+          </div>
+          <label>Task</label>
+          <textarea id="work-task" rows="5" placeholder="What should the Work Agent do?"></textarea>
+          <div class="row">
+            <label class="check"><input type="checkbox" id="work-web" checked> Allow web search</label>
+          </div>
+          <button class="btn full" id="work-run">Run agent</button>
+          <button class="btn ghost full" id="work-stop" hidden>Stop</button>
+        </div>
+        <div class="card agent-log" id="work-log">
+          <div class="empty-mini">Agent activity will show here.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Code Agent -->
+    <section class="view" id="view-code">
+      <div class="view-head"><h2>Code Agent</h2><p>Describe an app or a change. The agent writes files, runs JavaScript to check its work, and previews the result.</p></div>
+      <div class="code-layout">
+        <div class="code-left">
+          <div class="card">
+            <div class="row">
+              <select id="code-project" class="select"></select>
+              <button class="btn small ghost" id="code-new">New</button>
+              <button class="btn small ghost" id="code-zip" title="Download as .zip">⬇ zip</button>
+              <button class="btn small ghost danger" id="code-del" title="Delete project">🗑</button>
+            </div>
+            <textarea id="code-task" rows="4" placeholder="e.g. Build a Pomodoro timer web app with a dark theme and sound"></textarea>
+            <button class="btn full" id="code-run">Run agent</button>
+            <button class="btn ghost full" id="code-stop" hidden>Stop</button>
+          </div>
+          <div class="card agent-log" id="code-log"><div class="empty-mini">Agent activity will show here.</div></div>
+        </div>
+        <div class="code-right">
+          <div class="card code-files">
+            <div class="files-head">Files <button class="btn small ghost" id="file-add">+</button></div>
+            <div class="file-list" id="file-list"></div>
+          </div>
+          <div class="card code-editor">
+            <div class="editor-head"><span id="editor-name">No file open</span><button class="btn small" id="editor-save" hidden>Save</button></div>
+            <textarea id="editor" spellcheck="false" placeholder="Open a file to edit it"></textarea>
+          </div>
+          <div class="card code-preview">
+            <div class="editor-head"><span>Preview</span><button class="btn small ghost" id="preview-refresh">↻</button></div>
+            <iframe id="preview" sandbox="allow-scripts allow-forms allow-modals allow-popups" title="Preview"></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gallery -->
+    <section class="view" id="view-gallery">
+      <div class="view-head"><h2>Gallery</h2><p>Everything you have generated, stored on this device.</p></div>
+      <div class="gallery" id="gallery"></div>
+    </section>
+
+    <!-- Documents -->
+    <section class="view" id="view-docs">
+      <div class="view-head"><h2>Documents</h2><p>Documents, tables and plans made by the Work Agent. Stored on this device.</p></div>
+      <div class="docs-layout">
+        <div class="card doc-list" id="doc-list"></div>
+        <div class="card doc-view" id="doc-view"><div class="empty-mini">Select a document.</div></div>
+      </div>
+    </section>
+
+    <!-- Pro -->
+    <section class="view" id="view-pro">
+      <div class="view-head"><h2>Raken AI Pro</h2><p>More usage, the most capable models, video generation and early access to new features.</p></div>
+      <div class="founder-banner" id="founder-banner">
+        <div>
+          <div class="founder-kicker">Founder offer</div>
+          <div class="founder-title">First 10 people get <span>98% off Pro</span></div>
+          <div class="founder-sub" id="founder-sub"></div>
+        </div>
+        <div class="founder-price">
+          <div class="was" id="founder-was"></div>
+          <div class="now" id="founder-now"></div>
+          <button class="btn big" id="founder-claim">Claim my spot</button>
+        </div>
+      </div>
+      <div class="grid plans">
+        <div class="card plan">
+          <h3>Free</h3>
+          <div class="price">$0<span>/month</span></div>
+          <ul id="plan-free-list"></ul>
+          <button class="btn ghost full" disabled>Current plan</button>
+        </div>
+        <div class="card plan pro-plan">
+          <div class="ribbon">Best value</div>
+          <h3>Pro</h3>
+          <div class="price" id="pro-price"></div>
+          <ul id="plan-pro-list"></ul>
+          <button class="btn full" id="pro-buy">Get Pro</button>
+        </div>
+      </div>
+      <div class="card license-card">
+        <h3>Have a license key?</h3>
+        <p class="muted">Paste it here to unlock Pro on this device.</p>
+        <div class="row">
+          <input type="text" id="license-input" placeholder="RAKEN.xxxxx.xxxxx">
+          <button class="btn" id="license-apply">Activate</button>
+        </div>
+        <div class="muted small" id="license-status"></div>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section class="view" id="view-settings">
+      <div class="view-head"><h2>Settings</h2><p>Keys stay on this device. Raken AI talks to providers directly.</p></div>
+      <div class="grid settings-grid">
+        <div class="card">
+          <h3>Assistant</h3>
+          <label>Your name</label>
+          <input type="text" id="set-name" placeholder="How should Raken address you?">
+          <label>Anthropic API key</label>
+          <input type="password" id="set-anthropic-key" placeholder="sk-ant-…" autocomplete="off">
+          <div class="muted small">Get one at console.anthropic.com. Without a key the assistant runs in demo mode.</div>
+          <label>Raken Cloud gateway (optional)</label>
+          <input type="text" id="set-gateway" placeholder="https://your-gateway.example.com">
+          <div class="muted small">If set, requests go to your gateway with your license instead of using an API key.</div>
+          <label>Default model</label>
+          <select id="set-model" class="select"></select>
+          <label>Effort</label>
+          <select id="set-effort" class="select">
+            <option value="low">Low – fastest</option>
+            <option value="medium">Medium</option>
+            <option value="high" selected>High – default</option>
+            <option value="xhigh">Extra high (Pro)</option>
+            <option value="max">Max (Pro)</option>
+          </select>
+          <label class="check"><input type="checkbox" id="set-thinking"> Show thinking summaries</label>
+          <label class="check"><input type="checkbox" id="set-tts"> Read replies aloud</label>
+          <div class="row"><button class="btn" id="set-test">Test connection</button><span class="muted small" id="set-test-status"></span></div>
+        </div>
+        <div class="card">
+          <h3>Images & video</h3>
+          <label>fal.ai key</label>
+          <input type="password" id="set-fal-key" placeholder="fal key" autocomplete="off">
+          <div class="muted small">Used for FLUX images and all video models. fal.ai → Keys.</div>
+          <label>OpenAI-compatible base URL</label>
+          <input type="text" id="set-openai-base" placeholder="https://api.openai.com">
+          <label>OpenAI-compatible key</label>
+          <input type="password" id="set-openai-key" autocomplete="off">
+          <label>OpenAI-compatible image model</label>
+          <input type="text" id="set-openai-model" placeholder="gpt-image-1">
+          <h3 class="mt">Appearance</h3>
+          <label>Theme</label>
+          <select id="set-theme" class="select"><option value="dark">Dark</option><option value="light">Light</option><option value="system">System</option></select>
+          <h3 class="mt">Data</h3>
+          <div class="row wrap">
+            <button class="btn ghost" id="data-export">Export data</button>
+            <button class="btn ghost" id="data-import">Import data</button>
+            <input type="file" id="data-import-input" accept=".json" hidden>
+            <button class="btn danger" id="data-clear">Clear all data</button>
+          </div>
+          <div class="muted small mt" id="about"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- mobile tab bar -->
+  <nav class="tabbar only-mobile" id="tabbar">
+    <button data-view="chat" class="active">💬<span>Chat</span></button>
+    <button data-view="images">🎨<span>Images</span></button>
+    <button data-view="videos">🎬<span>Video</span></button>
+    <button data-view="work">🧑‍💼<span>Work</span></button>
+    <button data-view="code">👩‍💻<span>Code</span></button>
+    <button data-view="more">⋯<span>More</span></button>
+  </nav>
+</div>
+
+<!-- Onboarding -->
+<div class="modal" id="onboarding" hidden>
+  <div class="modal-card">
+    <div class="brand-mark big"><svg viewBox="0 0 64 64" width="56" height="56"><rect width="64" height="64" rx="16" fill="url(#bg)"/><path d="M20 46V18h13c7 0 11 4 11 9.5 0 4-2.3 7-6 8.3L46 46h-7.5l-6.6-9H26.5v9H20zm6.5-14.5h6c3 0 5-1.6 5-4.1s-2-4-5-4h-6v8.1z" fill="#fff"/></svg></div>
+    <h2>Welcome to Raken AI</h2>
+    <p>Chat, make images and videos, and hand real work to the Work Agent and Code Agent. Everything you make stays on this device.</p>
+    <div class="founder-mini">🎉 <b>Launch offer:</b> the first 10 people get 98% off Pro — more usage, top models, video and more.</div>
+    <label>What should Raken call you?</label>
+    <input type="text" id="onb-name" placeholder="Your name">
+    <label>Anthropic API key (optional — you can add it later in Settings)</label>
+    <input type="password" id="onb-key" placeholder="sk-ant-…" autocomplete="off">
+    <div class="row mt">
+      <button class="btn" id="onb-start">Start</button>
+      <button class="btn ghost" id="onb-pro">See the founder offer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="more-sheet" hidden>
+  <div class="modal-card sheet">
+    <button data-view="gallery">🖼️ Gallery</button>
+    <button data-view="docs">📄 Documents</button>
+    <button data-view="pro">⭐ Pro</button>
+    <button data-view="settings">⚙️ Settings</button>
+    <button class="ghost" id="more-close">Close</button>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" hidden><div class="lightbox-inner" id="lightbox-inner"></div></div>
+<div id="toasts"></div>
+
+<script src="config.js"></script>
+<script src="js/core.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/media.js"></script>
+<script src="js/agents.js"></script>
+<script src="js/pro.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

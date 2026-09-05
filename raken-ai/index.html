@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Raken AI — chat, images, videos, agents</title>
+<meta name="description" content="Raken AI: chat, make images and videos, and put a Work Agent and a Code Agent to work. Windows, macOS, Linux, Android and Web.">
+<link rel="icon" href="app/icons/icon.svg" type="image/svg+xml">
+<style>
+  :root { --bg:#0b0d14; --panel:#161a26; --border:#262c3d; --ink:#eef0f6; --muted:#8b93a8; --grad:linear-gradient(135deg,#8b5cf6,#22d3ee); }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif; background:var(--bg); color:var(--ink); line-height:1.5; }
+  .wrap { max-width:960px; margin:0 auto; padding:48px 20px 80px; }
+  header { display:flex; align-items:center; gap:14px; margin-bottom:40px; }
+  header img { width:56px; height:56px; border-radius:16px; }
+  header h1 { font-size:28px; letter-spacing:-.4px; }
+  header small { color:var(--muted); display:block; }
+  .hero h2 { font-size:40px; line-height:1.15; letter-spacing:-1px; margin-bottom:12px; }
+  .hero h2 span { background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .hero p { color:var(--muted); font-size:18px; max-width:640px; }
+  .cta { display:flex; gap:12px; flex-wrap:wrap; margin:26px 0 40px; }
+  .btn { display:inline-block; padding:14px 22px; border-radius:12px; background:var(--grad); color:#fff; text-decoration:none; font-weight:700; }
+  .btn.ghost { background:var(--panel); border:1px solid var(--border); color:var(--ink); }
+  .offer { background:var(--grad); border-radius:18px; padding:22px 26px; margin-bottom:36px; }
+  .offer b { background:#fff; color:#7c3aed; padding:0 8px; border-radius:8px; }
+  .offer small { display:block; opacity:.9; margin-top:4px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; margin-bottom:40px; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:18px; }
+  .card h3 { margin-bottom:6px; font-size:16px; }
+  .card p { color:var(--muted); font-size:14px; }
+  table { width:100%; border-collapse:collapse; font-size:14.5px; }
+  th, td { text-align:left; padding:10px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.06em; }
+  code { background:#0d1017; border:1px solid var(--border); border-radius:6px; padding:1px 6px; font-size:13px; }
+  a { color:#22d3ee; }
+  footer { color:var(--muted); font-size:13px; margin-top:40px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="app/icons/icon-192.png" alt="">
+    <div><h1>Raken AI</h1><small>Windows · macOS · Linux · Android · Web</small></div>
+  </header>
+
+  <section class="hero">
+    <h2>Chat. Create. <span>Delegate.</span></h2>
+    <p>Just chat, or make images and videos. Or hand the job to the <b>Work Agent</b> and the <b>Code Agent</b> and get documents, spreadsheets and working apps back. Everything stays on your device.</p>
+    <div class="cta">
+      <a class="btn" href="app/">Open the web app</a>
+      <a class="btn ghost" href="https://github.com/raken123/s-ndo/actions/workflows/raken-ai.yml">Download for desktop &amp; Android</a>
+    </div>
+  </section>
+
+  <div class="offer">
+    🎉 Founder offer — the first 10 people get <b>98% off Pro</b>
+    <small>More usage, the most capable models, unlimited video and early access to new features. Claim your spot inside the app.</small>
+  </div>
+
+  <div class="grid">
+    <div class="card"><h3>💬 Chat</h3><p>Streaming answers, web search, attach images, PDFs and files, dictation and read-aloud.</p></div>
+    <div class="card"><h3>🎨 Images</h3><p>Text to image with style presets. Free provider built in, or bring a fal.ai / OpenAI-compatible key.</p></div>
+    <div class="card"><h3>🎬 Videos</h3><p>Text to video and image to video with LTX, MiniMax, Kling and Veo 3 via fal.ai.</p></div>
+    <div class="card"><h3>🧑‍💼 Work Agent</h3><p>Researches, drafts documents, builds tables and plans, and files it all under Documents.</p></div>
+    <div class="card"><h3>👩‍💻 Code Agent</h3><p>Writes real files, tests logic in a sandbox, live preview, download as zip.</p></div>
+    <div class="card"><h3>⭐ Pro</h3><p>Unlimited usage, Raken Fable model, extra effort modes, priority features.</p></div>
+  </div>
+
+  <h3 style="margin-bottom:10px">Get it</h3>
+  <table>
+    <tr><th>Platform</th><th>Install</th></tr>
+    <tr><td>Web</td><td><a href="app/">Open the app</a> — add it to your home screen or install it from the browser menu; it works offline.</td></tr>
+    <tr><td>Windows</td><td>Download <code>raken-ai-…-win32-x64.tar.xz</code>, extract, run <code>RakenAI.exe</code>.</td></tr>
+    <tr><td>macOS</td><td>Download the <code>macos-arm64</code> (Apple Silicon) or <code>macos-x64</code> (Intel) archive, extract, run <code>xattr -dr com.apple.quarantine "Raken AI.app"</code>, open.</td></tr>
+    <tr><td>Linux</td><td><code>sudo apt install ./raken-ai_…_amd64.deb</code> then <code>raken-ai</code>, or use the tarball.</td></tr>
+    <tr><td>Android</td><td>Download <code>raken-ai-…-android.apk</code> and install it (allow installs from this source).</td></tr>
+  </table>
+  <p style="color:var(--muted);font-size:14px;margin-top:10px">Builds are attached to every <a href="https://github.com/raken123/s-ndo/releases">GitHub release</a> and to the <a href="https://github.com/raken123/s-ndo/actions/workflows/raken-ai.yml">Raken AI builds</a> workflow runs.</p>
+
+  <footer>Raken AI · <a href="https://github.com/raken123/s-ndo/tree/main/raken-ai">source</a></footer>
+</div>
+</body>
+</html>

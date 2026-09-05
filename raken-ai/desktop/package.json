@@ -1,0 +1,17 @@
+{
+  "name": "raken-ai",
+  "productName": "Raken AI",
+  "version": "1.0.0",
+  "description": "Chat, make images and videos, and put a Work Agent and a Code Agent to work.",
+  "main": "main.js",
+  "author": "Raken",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build": "python3 build.py"
+  },
+  "devDependencies": {
+    "electron": "43.2.0"
+  }
+}
