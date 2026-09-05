@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Clock in the Hollow</title>
+<meta name="description" content="A low-poly 3D short film about a girl who travels through time with a magic clock hidden in the forest. Rendered in real time with WebGL, no libraries.">
+<style>
+  :root { --gold:#f3c96b; --ink:#0b0d14; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { height:100%; background:#000; color:#fff; overflow:hidden;
+    font-family: Georgia, "Times New Roman", serif; }
+  #c { position:fixed; inset:0; width:100%; height:100%; display:block; }
+  .bar { position:fixed; left:0; right:0; height:9vh; background:#000; z-index:5; transition:height .8s ease; }
+  #bar-t { top:0; } #bar-b { bottom:0; }
+  #vignette { position:fixed; inset:0; z-index:4; pointer-events:none;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%); }
+  #flash { position:fixed; inset:0; z-index:6; pointer-events:none; background:#fff; opacity:0; }
+  #fade { position:fixed; inset:0; z-index:6; pointer-events:none; background:#000; opacity:1; }
+  #caption { position:fixed; left:50%; bottom:13vh; transform:translateX(-50%); z-index:7;
+    max-width:80vw; text-align:center; font-size:clamp(16px, 2.3vw, 30px); line-height:1.35;
+    color:#f6f1e6; text-shadow:0 2px 8px rgba(0,0,0,.9), 0 0 2px #000; opacity:0; transition:opacity .5s;
+    font-style:italic; letter-spacing:.01em; pointer-events:none; }
+  #card { position:fixed; inset:0; z-index:8; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; pointer-events:none; opacity:0; transition:opacity 1.2s; text-align:center; }
+  #card h1 { font-size:clamp(30px, 6vw, 84px); font-weight:400; letter-spacing:.18em; color:var(--gold);
+    text-transform:uppercase; text-shadow:0 0 30px rgba(243,201,107,.35), 0 3px 12px rgba(0,0,0,.9); }
+  #card p { margin-top:1.2em; font-size:clamp(13px, 1.6vw, 20px); letter-spacing:.3em; color:#e7dcc3; text-transform:uppercase; }
+  #card .credits { margin-top:2.2em; font-size:clamp(12px,1.3vw,16px); letter-spacing:.08em; color:#a8a08f; line-height:1.9; text-transform:none; }
+  /* start overlay */
+  #start { position:fixed; inset:0; z-index:20; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background: radial-gradient(ellipse at 50% 40%, #16233d 0%, #070a12 70%); cursor:pointer; text-align:center; padding:20px; }
+  #start h1 { font-size:clamp(28px, 6vw, 80px); font-weight:400; letter-spacing:.2em; color:var(--gold); text-transform:uppercase; }
+  #start h2 { font-size:clamp(12px,1.5vw,18px); letter-spacing:.35em; color:#c9bfa6; margin-top:1em; text-transform:uppercase; font-weight:400; }
+  #start .play { margin-top:3em; width:96px; height:96px; border-radius:50%; border:2px solid var(--gold);
+    display:grid; place-items:center; color:var(--gold); font-size:38px; transition:transform .2s, background .2s; }
+  #start:hover .play { transform:scale(1.08); background:rgba(243,201,107,.12); }
+  #start .hint { margin-top:2.5em; color:#8b8474; font-size:14px; letter-spacing:.1em; font-family: system-ui, sans-serif; }
+  #start .loading { color:#8b8474; margin-top:1em; font-family: system-ui, sans-serif; font-size:13px; }
+  /* HUD */
+  #hud { position:fixed; left:0; right:0; bottom:0; z-index:15; padding:0 18px 12px; opacity:0; transition:opacity .3s;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size:13px; }
+  body.hud-on #hud { opacity:1; }
+  #prog { position:relative; height:22px; cursor:pointer; }
+  #prog .track { position:absolute; left:0; right:0; top:9px; height:4px; background:rgba(255,255,255,.22); border-radius:2px; }
+  #prog .fill { position:absolute; left:0; top:9px; height:4px; background:var(--gold); border-radius:2px; width:0; }
+  #prog .ch { position:absolute; top:7px; width:2px; height:8px; background:rgba(0,0,0,.6); }
+  #ctrls { display:flex; align-items:center; gap:8px; margin-top:6px; }
+  #ctrls button { background:rgba(255,255,255,.1); color:#fff; border:1px solid rgba(255,255,255,.2); border-radius:6px;
+    padding:6px 11px; cursor:pointer; font-size:13px; font-family:inherit; }
+  #ctrls button:hover { background:rgba(255,255,255,.2); }
+  #ctrls .time { color:#cfc8b8; margin-left:4px; font-variant-numeric:tabular-nums; }
+  #ctrls .chap { color:#cfc8b8; margin-left:auto; letter-spacing:.05em; }
+  #chapters { display:flex; gap:4px; flex-wrap:wrap; margin-top:8px; }
+  #chapters button { padding:4px 9px; font-size:12px; opacity:.85; }
+  #chapters button.on { border-color:var(--gold); color:var(--gold); }
+  #err { position:fixed; inset:0; z-index:30; display:none; place-items:center; background:#0b0d14; color:#eee; padding:30px; text-align:center; font-family:system-ui,sans-serif; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="bar" id="bar-t"></div><div class="bar" id="bar-b"></div>
+<div id="vignette"></div>
+<div id="fade"></div>
+<div id="flash"></div>
+<div id="caption"></div>
+<div id="card"><h1 id="card-h"></h1><p id="card-p"></p><div class="credits" id="card-c"></div></div>
+<div id="hud">
+  <div id="prog"><div class="track"></div><div class="fill" id="fill"></div></div>
+  <div id="ctrls">
+    <button id="b-play" title="Play / pause (space)">❚❚</button>
+    <button id="b-restart" title="Restart">↺</button>
+    <button id="b-mute" title="Mute (m)">🔊</button>
+    <button id="b-full" title="Fullscreen (f)">⛶</button>
+    <span class="time" id="time">0:00 / 0:00</span>
+    <span class="chap" id="chapname"></span>
+  </div>
+  <div id="chapters"></div>
+</div>
+<div id="start">
+  <h1>The Clock in the Hollow</h1>
+  <h2>A low-poly short film</h2>
+  <div class="play">▶</div>
+  <div class="hint">3½ minutes · real-time 3D · sound on · space to pause, ← → to skip</div>
+  <div class="loading" id="loading">Building the forest…</div>
+</div>
+<div id="err"><div>Sorry, this film needs WebGL2, which your browser or device doesn't provide.</div></div>
+<script>
+'use strict';
+/* ===================== tiny math ===================== */
+const M4 = {
+  ident(){ return new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]); },
+  mul(a,b){ const o=new Float32Array(16);
+    for(let i=0;i<4;i++)for(let j=0;j<4;j++){ let s=0; for(let k=0;k<4;k++) s+=a[k*4+j]*b[i*4+k]; o[i*4+j]=s; } return o; },
+  persp(fov,asp,n,f){ const t=1/Math.tan(fov/2), o=new Float32Array(16);
+    o[0]=t/asp; o[5]=t; o[10]=(f+n)/(n-f); o[11]=-1; o[14]=2*f*n/(n-f); return o; },
+  ortho(l,r,b,t,n,f){ const o=new Float32Array(16);
+    o[0]=2/(r-l); o[5]=2/(t-b); o[10]=-2/(f-n); o[12]=-(r+l)/(r-l); o[13]=-(t+b)/(t-b); o[14]=-(f+n)/(f-n); o[15]=1; return o; },
+  lookAt(e,c,up){ let z=V.norm(V.sub(e,c)); if(V.len(z)<1e-6) z=[0,0,1];
+    let x=V.norm(V.cross(up,z)); if(V.len(x)<1e-6) x=V.norm(V.cross([0,0,1],z)); const y=V.cross(z,x);
+    return new Float32Array([x[0],y[0],z[0],0, x[1],y[1],z[1],0, x[2],y[2],z[2],0,
+      -V.dot(x,e),-V.dot(y,e),-V.dot(z,e),1]); },
+  compose(p,r,s){ // position, euler rotation (YXZ order: yaw then pitch then roll), scale
+    const cx=Math.cos(r[0]),sx=Math.sin(r[0]),cy=Math.cos(r[1]),sy=Math.sin(r[1]),cz=Math.cos(r[2]),sz=Math.sin(r[2]);
+    // R = Ry * Rx * Rz
+    const r00=cy*cz+sy*sx*sz, r01=cx*sz, r02=-sy*cz+cy*sx*sz;
+    const r10=-cy*sz+sy*sx*cz, r11=cx*cz, r12=sy*sz+cy*sx*cz;
+    const r20=sy*cx, r21=-sx, r22=cy*cx;
+    return new Float32Array([r00*s[0],r01*s[0],r02*s[0],0, r10*s[1],r11*s[1],r12*s[1],0, r20*s[2],r21*s[2],r22*s[2],0, p[0],p[1],p[2],1]); },
+  invert(m){ const o=new Float32Array(16),
+    a00=m[0],a01=m[1],a02=m[2],a03=m[3],a10=m[4],a11=m[5],a12=m[6],a13=m[7],a20=m[8],a21=m[9],a22=m[10],a23=m[11],a30=m[12],a31=m[13],a32=m[14],a33=m[15],
+    b00=a00*a11-a01*a10,b01=a00*a12-a02*a10,b02=a00*a13-a03*a10,b03=a01*a12-a02*a11,b04=a01*a13-a03*a11,b05=a02*a13-a03*a12,
+    b06=a20*a31-a21*a30,b07=a20*a32-a22*a30,b08=a20*a33-a23*a30,b09=a21*a32-a22*a31,b10=a21*a33-a23*a31,b11=a22*a33-a23*a32;
+    let d=b00*b11-b01*b10+b02*b09+b03*b08-b04*b07+b05*b06; if(!d) return M4.ident(); d=1/d;
+    o[0]=(a11*b11-a12*b10+a13*b09)*d; o[1]=(a02*b10-a01*b11-a03*b09)*d; o[2]=(a31*b05-a32*b04+a33*b03)*d; o[3]=(a22*b04-a21*b05-a23*b03)*d;
+    o[4]=(a12*b08-a10*b11-a13*b07)*d; o[5]=(a00*b11-a02*b08+a03*b07)*d; o[6]=(a32*b02-a30*b05-a33*b01)*d; o[7]=(a20*b05-a22*b02+a23*b01)*d;
+    o[8]=(a10*b10-a11*b08+a13*b06)*d; o[9]=(a01*b08-a00*b10-a03*b06)*d; o[10]=(a30*b04-a31*b02+a33*b00)*d; o[11]=(a21*b02-a20*b04-a23*b00)*d;
+    o[12]=(a11*b07-a10*b09-a12*b06)*d; o[13]=(a00*b09-a01*b07+a02*b06)*d; o[14]=(a31*b01-a30*b03-a32*b00)*d; o[15]=(a20*b03-a21*b01+a22*b00)*d; return o; },
+  normalMat(m){ const i=M4.invert(m); return new Float32Array([i[0],i[4],i[8], i[1],i[5],i[9], i[2],i[6],i[10]]); },
+  xform(m,v){ return [m[0]*v[0]+m[4]*v[1]+m[8]*v[2]+m[12], m[1]*v[0]+m[5]*v[1]+m[9]*v[2]+m[13], m[2]*v[0]+m[6]*v[1]+m[10]*v[2]+m[14]]; }
+};
+const V = {
+  add:(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]], sub:(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],
+  scale:(a,s)=>[a[0]*s,a[1]*s,a[2]*s], dot:(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],
+  cross:(a,b)=>[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]],
+  len:a=>Math.hypot(a[0],a[1],a[2]), norm(a){ const l=Math.hypot(a[0],a[1],a[2])||1; return [a[0]/l,a[1]/l,a[2]/l]; },
+  lerp:(a,b,t)=>[a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t],
+};
+const clamp=(x,a,b)=>x<a?a:x>b?b:x, lerp=(a,b,t)=>a+(b-a)*t, smooth=t=>t*t*(3-2*t);
+const sstep=(a,b,x)=>smooth(clamp((x-a)/(b-a),0,1));
+const easeIO=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2, easeOut=t=>1-Math.pow(1-t,3), easeIn=t=>t*t*t;
+const TAU=Math.PI*2;
+// deterministic random
+let seed=1337; const rnd=()=>{ seed=(seed*1664525+1013904223)>>>0; return seed/4294967296; };
+const rr=(a,b)=>a+rnd()*(b-a);
+function hex(h){ return [((h>>16)&255)/255, ((h>>8)&255)/255, (h&255)/255]; }
+function cmix(a,b,t){ return [lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)]; }
+function vary(c,amt){ return [clamp(c[0]+rr(-amt,amt),0,1),clamp(c[1]+rr(-amt,amt),0,1),clamp(c[2]+rr(-amt,amt),0,1)]; }
+// value noise
+function hash2(x,y){ let h=Math.sin(x*127.1+y*311.7)*43758.5453; return h-Math.floor(h); }
+function noise2(x,y){ const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=smooth(xf),v=smooth(yf);
+  return lerp(lerp(hash2(xi,yi),hash2(xi+1,yi),u), lerp(hash2(xi,yi+1),hash2(xi+1,yi+1),u), v); }
+
+/* ===================== GL setup ===================== */
+const canvas=document.getElementById('c');
+const gl=canvas.getContext('webgl2',{antialias:true, alpha:false, powerPreference:'high-performance'});
+if(!gl){ document.getElementById('err').style.display='grid'; document.getElementById('start').style.display='none'; throw new Error('no webgl2'); }
+function makeProg(vs,fs){ const p=gl.createProgram();
+  for(const [t,s] of [[gl.VERTEX_SHADER,vs],[gl.FRAGMENT_SHADER,fs]]){ const sh=gl.createShader(t); gl.shaderSource(sh,'#version 300 es\nprecision highp float;\n'+s); gl.compileShader(sh);
+    if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh)+'\n'+s); gl.attachShader(p,sh); }
+  gl.linkProgram(p); if(!gl.getProgramParameter(p,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  const u={}; const n=gl.getProgramParameter(p,gl.ACTIVE_UNIFORMS);
+  for(let i=0;i<n;i++){ const nm=gl.getActiveUniform(p,i).name.replace('[0]',''); u[nm]=gl.getUniformLocation(p,nm); }
+  return {p,u}; }
+
+const MESH_VS=`
+layout(location=0) in vec3 aPos; layout(location=1) in vec3 aNor; layout(location=2) in vec3 aCol;
+uniform mat4 uProj, uView, uModel, uShadowVP; uniform mat3 uNM;
+out vec3 vNor; out vec3 vCol; out vec3 vWorld; out vec4 vShadow;
+void main(){ vec4 w=uModel*vec4(aPos,1.0); vWorld=w.xyz; vNor=normalize(uNM*aNor); vCol=aCol;
+  vShadow=uShadowVP*w; gl_Position=uProj*uView*w; }`;
+const MESH_FS=`
+in vec3 vNor; in vec3 vCol; in vec3 vWorld; in vec4 vShadow;
+uniform vec3 uSunDir, uSunCol, uHemiSky, uHemiGnd, uAmb, uFogCol, uCamPos, uColor, uEmis, uPt1Pos, uPt1Col, uPt2Pos, uPt2Col;
+uniform float uFogNear, uFogFar, uOpacity, uShadowOn; uniform sampler2D uShadowMap;
+out vec4 frag;
+float shadow(){ if(uShadowOn<0.5) return 1.0; vec3 p=vShadow.xyz/vShadow.w*0.5+0.5;
+  if(p.x<0.0||p.x>1.0||p.y<0.0||p.y>1.0||p.z>1.0) return 1.0;
+  float s=0.0; float tx=1.0/2048.0; float bias=0.0015;
+  for(int i=-1;i<=1;i++) for(int j=-1;j<=1;j++){ float d=texture(uShadowMap, p.xy+vec2(float(i),float(j))*tx).r; s+= (p.z-bias>d)?0.0:1.0; }
+  return s/9.0; }
+void main(){ vec3 n=normalize(vNor); vec3 base=vCol*uColor;
+  float ndl=max(dot(n,uSunDir),0.0); float sh=shadow();
+  vec3 hemi=mix(uHemiGnd,uHemiSky, n.y*0.5+0.5);
+  vec3 col=base*(uAmb + hemi*0.55 + uSunCol*ndl*sh);
+  // point lights
+  vec3 d1=uPt1Pos-vWorld; float l1=length(d1); col+=base*uPt1Col*max(dot(n,d1/l1),0.0)/(1.0+0.09*l1*l1);
+  vec3 d2=uPt2Pos-vWorld; float l2=length(d2); col+=base*uPt2Col*max(dot(n,d2/l2),0.0)/(1.0+0.09*l2*l2);
+  col+=uEmis;
+  float fd=length(vWorld-uCamPos); float f=smoothstep(uFogNear,uFogFar,fd);
+  col=mix(col,uFogCol,f);
+  // filmic-ish tone
+  col=col*1.35/(col+0.6); col=pow(col, vec3(1.0/1.75));
+  frag=vec4(col,uOpacity); }`;
+const SHADOW_VS=`layout(location=0) in vec3 aPos; uniform mat4 uShadowVP, uModel; void main(){ gl_Position=uShadowVP*uModel*vec4(aPos,1.0); }`;
+const SHADOW_FS=`out vec4 frag; void main(){ frag=vec4(1.0); }`;
+const SKY_VS=`layout(location=0) in vec2 aP; out vec2 vP; void main(){ vP=aP; gl_Position=vec4(aP,0.9999,1.0); }`;
+const SKY_FS=`in vec2 vP; uniform mat4 uInvVP; uniform vec3 uTop, uBot, uHor, uSunDir, uSunCol, uCamPos; uniform float uStars, uSunSize, uAurora, uTime; out vec4 frag;
+float h3(vec3 p){ return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453); }
+void main(){ vec4 a=uInvVP*vec4(vP,1.0,1.0); vec3 d=normalize(a.xyz/a.w-uCamPos);
+  float y=d.y; vec3 col=mix(uHor, uTop, smoothstep(0.02,0.55,y)); col=mix(uBot, col, smoothstep(-0.25,0.03,y));
+  float sd=max(dot(d,uSunDir),0.0); col+=uSunCol*(pow(sd,600.0/uSunSize)*1.6 + pow(sd,8.0)*0.25);
+  // stars
+  vec3 c=floor(d*420.0); float s=h3(c); float st=step(0.9965,s)*smoothstep(0.0,0.2,y);
+  float tw=0.6+0.4*sin(uTime*2.0+s*50.0); col+=vec3(st*tw*uStars);
+  // aurora bands
+  if(uAurora>0.0){ float ab=sin(d.x*6.0+uTime*0.3+sin(d.z*4.0+uTime*0.2)*2.0)*0.5+0.5;
+    float band=smoothstep(0.15,0.5,y)*smoothstep(0.9,0.55,y)*ab; col+=vec3(0.15,0.9,0.7)*band*uAurora*0.55 + vec3(0.6,0.2,0.9)*band*band*uAurora*0.4; }
+  col=col*1.35/(col+0.6); col=pow(col, vec3(1.0/1.75));
+  frag=vec4(col,1.0); }`;
+const PT_VS=`layout(location=0) in vec3 aPos; layout(location=1) in vec4 aCol; layout(location=2) in float aSize;
+uniform mat4 uProj, uView; uniform float uScale; out vec4 vCol;
+void main(){ vec4 mv=uView*vec4(aPos,1.0); gl_Position=uProj*mv; gl_PointSize=aSize*uScale/max(-mv.z,0.5); vCol=aCol; }`;
+const PT_FS=`in vec4 vCol; uniform vec3 uFogCol; uniform float uSoft; out vec4 frag;
+void main(){ vec2 q=gl_PointCoord*2.0-1.0; float r=dot(q,q); if(r>1.0) discard; float a=pow(1.0-r, uSoft);
+  frag=vec4(vCol.rgb*a*vCol.a, vCol.a*a); }`;
+
+const progMesh=makeProg(MESH_VS,MESH_FS), progShadow=makeProg(SHADOW_VS,SHADOW_FS), progSky=makeProg(SKY_VS,SKY_FS), progPt=makeProg(PT_VS,PT_FS);
+
+// shadow map
+const SHADOW_SIZE=2048;
+const shadowTex=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,shadowTex);
+gl.texImage2D(gl.TEXTURE_2D,0,gl.DEPTH_COMPONENT24,SHADOW_SIZE,SHADOW_SIZE,0,gl.DEPTH_COMPONENT,gl.UNSIGNED_INT,null);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+const shadowFB=gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER,shadowFB);
+gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.TEXTURE_2D,shadowTex,0);
+gl.drawBuffers([gl.NONE]); gl.readBuffer(gl.NONE); gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+// sky quad
+const skyVAO=gl.createVertexArray(); gl.bindVertexArray(skyVAO); const skyBuf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,skyBuf);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1, 3,-1, -1,3]),gl.STATIC_DRAW); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
+gl.bindVertexArray(null);
+/* ===================== geometry (raw triangle lists) ===================== */
+// each builder returns a flat array of triangle vertex positions (unit-sized, centered)
+const G = {
+  box(){ const p=[], f=(a,b,c,d)=>p.push(...a,...b,...c, ...a,...c,...d);
+    const v=[[-.5,-.5,-.5],[.5,-.5,-.5],[.5,.5,-.5],[-.5,.5,-.5],[-.5,-.5,.5],[.5,-.5,.5],[.5,.5,.5],[-.5,.5,.5]];
+    f(v[4],v[5],v[6],v[7]); f(v[1],v[0],v[3],v[2]); f(v[0],v[4],v[7],v[3]); f(v[5],v[1],v[2],v[6]); f(v[7],v[6],v[2],v[3]); f(v[0],v[1],v[5],v[4]); return p; },
+  cone(n, rTop=0, rBot=1){ // y from -0.5 to 0.5
+    const p=[]; for(let i=0;i<n;i++){ const a0=i/n*TAU, a1=(i+1)/n*TAU;
+      const b0=[Math.cos(a0)*rBot,-.5,Math.sin(a0)*rBot], b1=[Math.cos(a1)*rBot,-.5,Math.sin(a1)*rBot];
+      const t0=[Math.cos(a0)*rTop,.5,Math.sin(a0)*rTop], t1=[Math.cos(a1)*rTop,.5,Math.sin(a1)*rTop];
+      if(rTop>0){ p.push(...b0,...t1,...t0, ...b0,...b1,...t1); p.push(...t0,...t1,0,.5,0); } else p.push(...b0,...b1,...t0);
+      p.push(...b1,...b0,0,-.5,0); } return p; },
+  cyl(n){ return G.cone(n,1,1); },
+  sphere(ns=7, nr=5){ const p=[]; for(let j=0;j<nr;j++){ const t0=j/nr*Math.PI, t1=(j+1)/nr*Math.PI;
+    for(let i=0;i<ns;i++){ const a0=i/ns*TAU,a1=(i+1)/ns*TAU; const P=(t,a)=>[Math.sin(t)*Math.cos(a),Math.cos(t),Math.sin(t)*Math.sin(a)];
+      const a=P(t0,a0),b=P(t0,a1),c=P(t1,a1),d=P(t1,a0); if(j>0) p.push(...a,...c,...b); if(j<nr-1) p.push(...a,...d,...c); } } return p; },
+  dome(ns,nr,frac){ const full=G.sphere(ns,nr); const rows=Math.round(nr*frac); const per=full.length/nr; return full.slice(0,per*rows); },
+  ico(){ const t=(1+Math.sqrt(5))/2, v=[[-1,t,0],[1,t,0],[-1,-t,0],[1,-t,0],[0,-1,t],[0,1,t],[0,-1,-t],[0,1,-t],[t,0,-1],[t,0,1],[-t,0,-1],[-t,0,1]].map(V.norm);
+    const f=[[0,11,5],[0,5,1],[0,1,7],[0,7,10],[0,10,11],[1,5,9],[5,11,4],[11,10,2],[10,7,6],[7,1,8],[3,9,4],[3,4,2],[3,2,6],[3,6,8],[3,8,9],[4,9,5],[2,4,11],[6,2,10],[8,6,7],[9,8,1]];
+    const p=[]; for(const [a,b,c] of f) p.push(...v[a],...v[b],...v[c]); return p; },
+  octa(){ const v=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]], f=[[0,2,4],[0,5,2],[0,3,5],[0,4,3],[1,4,2],[1,2,5],[1,5,3],[1,3,4]];
+    const p=[]; for(const [a,b,c] of f) p.push(...v[a],...v[b],...v[c]); return p; },
+  torus(R,r,ns=12,nt=6){ const p=[]; for(let i=0;i<ns;i++){ const a0=i/ns*TAU,a1=(i+1)/ns*TAU; for(let j=0;j<nt;j++){ const b0=j/nt*TAU,b1=(j+1)/nt*TAU;
+    const P=(a,b)=>[(R+r*Math.cos(b))*Math.cos(a), r*Math.sin(b), (R+r*Math.cos(b))*Math.sin(a)];
+    const A=P(a0,b0),B=P(a1,b0),C=P(a1,b1),D=P(a0,b1); p.push(...A,...C,...B, ...A,...D,...C); } } return p; },
+  plane(){ return [-.5,0,-.5, .5,0,.5, .5,0,-.5, -.5,0,-.5, -.5,0,.5, .5,0,.5]; },
+  tri(a,b,c){ return [...a,...b,...c]; },
+};
+function mat(p=[0,0,0], r=[0,0,0], s=[1,1,1]){ return M4.compose(p,r,typeof s==='number'?[s,s,s]:s); }
+
+class Merger { constructor(){ this.pos=[]; this.col=[]; }
+  add(tris, m, color){ for(let i=0;i<tris.length;i+=3){ const v=M4.xform(m,[tris[i],tris[i+1],tris[i+2]]); this.pos.push(v[0],v[1],v[2]); this.col.push(color[0],color[1],color[2]); } return this; }
+  build(){ return new Geometry(this.pos,this.col); } }
+
+class Geometry { constructor(pos,col){ const n=pos.length/3; const nor=new Float32Array(pos.length);
+    for(let i=0;i<pos.length;i+=9){ const a=[pos[i],pos[i+1],pos[i+2]],b=[pos[i+3],pos[i+4],pos[i+5]],c=[pos[i+6],pos[i+7],pos[i+8]];
+      const nn=V.norm(V.cross(V.sub(b,a),V.sub(c,a))); for(let k=0;k<3;k++){ nor[i+k*3]=nn[0]; nor[i+k*3+1]=nn[1]; nor[i+k*3+2]=nn[2]; } }
+    if(!col){ col=new Float32Array(pos.length).fill(1); }
+    this.count=n; this.vao=gl.createVertexArray(); gl.bindVertexArray(this.vao);
+    const mk=(data,loc,sz)=>{ const b=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b); gl.bufferData(gl.ARRAY_BUFFER,data instanceof Float32Array?data:new Float32Array(data),gl.STATIC_DRAW); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,sz,gl.FLOAT,false,0,0); };
+    mk(pos,0,3); mk(nor,1,3); mk(col,2,3); gl.bindVertexArray(null); } }
+function geo(tris, color){ const m=new Merger(); m.add(tris, M4.ident(), color||[1,1,1]); return m.build(); }
+
+/* ===================== scene graph ===================== */
+class Node { constructor(){ this.pos=[0,0,0]; this.rot=[0,0,0]; this.scl=[1,1,1]; this.children=[]; this.visible=true; this.world=M4.ident(); this.geometry=null;
+    this.color=[1,1,1]; this.emis=[0,0,0]; this.opacity=1; this.castShadow=true; this.noFog=false; }
+  add(...c){ for(const n of c) this.children.push(n); return this; }
+  updateWorld(parent){ const l=M4.compose(this.pos,this.rot,this.scl); this.world=parent?M4.mul(parent,l):l; for(const c of this.children) c.updateWorld(this.world); }
+  traverse(fn){ if(!this.visible) return; fn(this); for(const c of this.children) c.traverse(fn); }
+  worldPos(){ return [this.world[12],this.world[13],this.world[14]]; } }
+function mesh(g, color, opts={}){ const n=new Node(); n.geometry=g; if(color) n.color=color; Object.assign(n,opts); return n; }
+function part(tris, color, p, r, s, opts){ const n=mesh(geo(tris,[1,1,1]), color, opts); if(p) n.pos=p; if(r) n.rot=r; if(s) n.scl=typeof s==='number'?[s,s,s]:s; return n; }
+
+/* ===================== particles ===================== */
+class Points { constructor(n, opts={}){ this.n=n; this.pos=new Float32Array(n*3); this.col=new Float32Array(n*4); this.size=new Float32Array(n); this.additive=opts.additive!==false; this.soft=opts.soft||1.5; this.visible=true;
+    this.vao=gl.createVertexArray(); gl.bindVertexArray(this.vao);
+    const mk=(data,loc,sz)=>{ const b=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b); gl.bufferData(gl.ARRAY_BUFFER,data,gl.DYNAMIC_DRAW); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,sz,gl.FLOAT,false,0,0); return b; };
+    this.bp=mk(this.pos,0,3); this.bc=mk(this.col,1,4); this.bs=mk(this.size,2,1); gl.bindVertexArray(null); }
+  set(i,x,y,z,r,g,b,a,s){ this.pos[i*3]=x; this.pos[i*3+1]=y; this.pos[i*3+2]=z; this.col[i*4]=r; this.col[i*4+1]=g; this.col[i*4+2]=b; this.col[i*4+3]=a; this.size[i]=s; }
+  upload(){ gl.bindBuffer(gl.ARRAY_BUFFER,this.bp); gl.bufferSubData(gl.ARRAY_BUFFER,0,this.pos); gl.bindBuffer(gl.ARRAY_BUFFER,this.bc); gl.bufferSubData(gl.ARRAY_BUFFER,0,this.col); gl.bindBuffer(gl.ARRAY_BUFFER,this.bs); gl.bufferSubData(gl.ARRAY_BUFFER,0,this.size); } }
+
+/* ===================== renderer ===================== */
+const R = {
+  cam:{pos:[0,5,20], look:[0,1,0], fov:50*Math.PI/180, near:0.1, far:600, roll:0},
+  sun:{dir:[0.3,0.8,0.4], col:[1,1,1]}, hemiSky:[.4,.5,.7], hemiGnd:[.2,.2,.15], amb:[.1,.1,.12],
+  fog:{col:[.5,.6,.7], near:20, far:120}, sky:{top:[.1,.2,.5], hor:[.5,.6,.8], bot:[.2,.25,.3], stars:0, sunSize:1, aurora:0},
+  pt1:{pos:[0,-100,0], col:[0,0,0]}, pt2:{pos:[0,-100,0], col:[0,0,0]}, shadowCenter:[0,0,0], shadowRadius:45,
+  roots:[], points:[], time:0,
+  resize(){ const dpr=Math.min(devicePixelRatio||1,2); const w=Math.floor(innerWidth*dpr), h=Math.floor(innerHeight*dpr);
+    if(canvas.width!==w||canvas.height!==h){ canvas.width=w; canvas.height=h; } },
+  render(){ this.resize(); const w=canvas.width,h=canvas.height;
+    for(const r of this.roots) r.updateWorld(null);
+    const list=[]; for(const r of this.roots) r.traverse(n=>{ if(n.geometry) list.push(n); });
+    // shadow pass
+    const sc=this.shadowCenter, sr=this.shadowRadius, sd=V.norm(this.sun.dir);
+    const lv=M4.lookAt(V.add(sc,V.scale(sd,120)), sc, [0,1,0]); const lp=M4.ortho(-sr,sr,-sr,sr,40,220); const shadowVP=M4.mul(lp,lv);
+    gl.bindFramebuffer(gl.FRAMEBUFFER,shadowFB); gl.viewport(0,0,SHADOW_SIZE,SHADOW_SIZE); gl.clear(gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST); gl.enable(gl.CULL_FACE); gl.cullFace(gl.FRONT); gl.disable(gl.BLEND);
+    gl.useProgram(progShadow.p); gl.uniformMatrix4fv(progShadow.u.uShadowVP,false,shadowVP);
+    for(const n of list){ if(!n.castShadow||n.opacity<0.5) continue; gl.uniformMatrix4fv(progShadow.u.uModel,false,n.world); gl.bindVertexArray(n.geometry.vao); gl.drawArrays(gl.TRIANGLES,0,n.geometry.count); }
+    gl.cullFace(gl.BACK);
+    // main pass
+    gl.bindFramebuffer(gl.FRAMEBUFFER,null); gl.viewport(0,0,w,h); gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    const c=this.cam; const up=[Math.sin(c.roll),Math.cos(c.roll),0];
+    const view=M4.lookAt(c.pos,c.look,up), proj=M4.persp(c.fov,w/h,c.near,c.far);
+    // sky
+    gl.depthMask(false); gl.useProgram(progSky.p); const rotView=new Float32Array(view); rotView[12]=rotView[13]=rotView[14]=0;
+    gl.uniformMatrix4fv(progSky.u.uInvVP,false,M4.invert(M4.mul(proj,rotView))); gl.uniform3fv(progSky.u.uCamPos,[0,0,0]);
+    gl.uniform3fv(progSky.u.uTop,this.sky.top); gl.uniform3fv(progSky.u.uHor,this.sky.hor); gl.uniform3fv(progSky.u.uBot,this.sky.bot);
+    gl.uniform3fv(progSky.u.uSunDir,sd); gl.uniform3fv(progSky.u.uSunCol,this.sun.col); gl.uniform1f(progSky.u.uStars,this.sky.stars);
+    gl.uniform1f(progSky.u.uSunSize,this.sky.sunSize); gl.uniform1f(progSky.u.uAurora,this.sky.aurora); gl.uniform1f(progSky.u.uTime,this.time);
+    gl.bindVertexArray(skyVAO); gl.drawArrays(gl.TRIANGLES,0,3); gl.depthMask(true);
+    // meshes
+    const P=progMesh; gl.useProgram(P.p);
+    gl.uniformMatrix4fv(P.u.uProj,false,proj); gl.uniformMatrix4fv(P.u.uView,false,view); gl.uniformMatrix4fv(P.u.uShadowVP,false,shadowVP);
+    gl.uniform3fv(P.u.uSunDir,sd); gl.uniform3fv(P.u.uSunCol,this.sun.col); gl.uniform3fv(P.u.uHemiSky,this.hemiSky); gl.uniform3fv(P.u.uHemiGnd,this.hemiGnd);
+    gl.uniform3fv(P.u.uAmb,this.amb); gl.uniform3fv(P.u.uFogCol,this.fog.col); gl.uniform3fv(P.u.uCamPos,c.pos);
+    gl.uniform3fv(P.u.uPt1Pos,this.pt1.pos); gl.uniform3fv(P.u.uPt1Col,this.pt1.col); gl.uniform3fv(P.u.uPt2Pos,this.pt2.pos); gl.uniform3fv(P.u.uPt2Col,this.pt2.col);
+    gl.uniform1f(P.u.uShadowOn,1); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,shadowTex); gl.uniform1i(P.u.uShadowMap,0);
+    const opaque=list.filter(n=>n.opacity>=1), trans=list.filter(n=>n.opacity<1);
+    const draw=n=>{ gl.uniformMatrix4fv(P.u.uModel,false,n.world); gl.uniformMatrix3fv(P.u.uNM,false,M4.normalMat(n.world));
+      gl.uniform3fv(P.u.uColor,n.color); gl.uniform3fv(P.u.uEmis,n.emis); gl.uniform1f(P.u.uOpacity,n.opacity);
+      gl.uniform1f(P.u.uFogNear,n.noFog?1e5:this.fog.near); gl.uniform1f(P.u.uFogFar,n.noFog?2e5:this.fog.far);
+      gl.bindVertexArray(n.geometry.vao); gl.drawArrays(gl.TRIANGLES,0,n.geometry.count); };
+    for(const n of opaque) draw(n);
+    if(trans.length){ gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); for(const n of trans) draw(n); gl.depthMask(true); }
+    // points
+    gl.enable(gl.BLEND); gl.depthMask(false); gl.useProgram(progPt.p);
+    gl.uniformMatrix4fv(progPt.u.uProj,false,proj); gl.uniformMatrix4fv(progPt.u.uView,false,view); gl.uniform1f(progPt.u.uScale,h*0.9);
+    for(const p of this.points){ if(!p.visible) continue; gl.blendFunc(gl.ONE, p.additive?gl.ONE:gl.ONE_MINUS_SRC_ALPHA); gl.uniform1f(progPt.u.uSoft,p.soft);
+      p.upload(); gl.bindVertexArray(p.vao); gl.drawArrays(gl.POINTS,0,p.n); }
+    gl.depthMask(true); gl.disable(gl.BLEND); gl.bindVertexArray(null); }
+};
+/* ===================== world ===================== */
+const pathX=z=>2.2*Math.sin(z*0.12)+0.6*Math.sin(z*0.31);
+function groundY(x,z){ const d=Math.hypot(x,z); const h=(noise2(x*0.045+7,z*0.045+3)-0.5)*7 + (noise2(x*0.16,z*0.16)-0.5)*1.4 + d*d*0.0009;
+  const clearing=sstep(11,20,d); const pathM= z>0? sstep(2.5,5.5,Math.abs(x-pathX(z))) : 1; return h*clearing*pathM; }
+const root=new Node(); R.roots.push(root);
+const terrain=(()=>{ const m=new Merger(), S=260, N=72, h=S/N; const c1=[1,1,1];
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){ const x0=-S/2+i*h, z0=-S/2+j*h, x1=x0+h, z1=z0+h;
+    const a=[x0,groundY(x0,z0),z0], b=[x1,groundY(x1,z0),z0], c=[x1,groundY(x1,z1),z1], d=[x0,groundY(x0,z1),z1];
+    const v=1-0.06*rnd(); const col=[v,v,v]; const v2=1-0.06*rnd(); const col2=[v2,v2,v2];
+    if((i+j)%2){ m.add(G.tri(a,c,b),M4.ident(),col); m.add(G.tri(a,d,c),M4.ident(),col2); } else { m.add(G.tri(a,d,b),M4.ident(),col); m.add(G.tri(b,d,c),M4.ident(),col2); } }
+  const t=mesh(m.build(), hex(0x3d7a3c)); t.castShadow=false; return t; })();
+root.add(terrain);
+
+// --- shared builders
+const C={ trunk:hex(0x6b4a2e), pine:hex(0x2f7a45), pine2:hex(0x3f9a55), leaf:hex(0x5aa84a), rock:hex(0x8a8f96), snow:hex(0xf1f5fa) };
+function pine(m,x,z,s,col1,col2,snow){ const y=groundY(x,z); m.add(G.cyl(5),mat([x,y+0.6*s,z],[0,rnd()*6,0],[0.22*s,1.4*s,0.22*s]),C.trunk);
+  const tiers=[[1.5,2.3,1.0],[1.25,2.1,2.3],[0.95,1.9,3.5]]; for(const [r,hh,yy] of tiers){ m.add(G.cone(6),mat([x,y+(yy+hh/2)*s,z],[0,rnd()*6,0],[r*s,hh*s,r*s]),vary(rnd()<.5?col1:col2,0.03));
+    if(snow) m.add(G.cone(6,0,1),mat([x,y+(yy+hh*0.72)*s,z],[0,0,0],[r*0.75*s,hh*0.55*s,r*0.75*s]),C.snow); } }
+function roundTree(m,x,z,s){ const y=groundY(x,z); m.add(G.cyl(5),mat([x,y+1.2*s,z],[0,rnd()*6,0],[0.28*s,2.4*s,0.28*s]),C.trunk);
+  m.add(G.ico(),mat([x,y+3.2*s,z],[rnd(),rnd(),0],[1.8*s,1.9*s,1.8*s]),vary(C.leaf,0.05));
+  m.add(G.ico(),mat([x+0.9*s,y+2.6*s,z+0.4*s],[rnd(),rnd(),0],[1.1*s,1.1*s,1.1*s]),vary(C.leaf,0.05));
+  m.add(G.ico(),mat([x-0.7*s,y+2.9*s,z-0.6*s],[rnd(),rnd(),0],[1.0*s,1.0*s,1.0*s]),vary(C.leaf,0.05)); }
+function rock(m,x,z,s,col){ const y=groundY(x,z); m.add(G.ico(),mat([x,y+0.25*s,z],[rnd()*3,rnd()*3,rnd()*3],[s,0.7*s,s]),vary(col||C.rock,0.04)); }
+function mushroom(m,x,z,s){ const y=groundY(x,z); m.add(G.cyl(5),mat([x,y+0.2*s,z],[0,0,0],[0.1*s,0.4*s,0.1*s]),hex(0xe8dcc0)); m.add(G.cone(6,0.15,1),mat([x,y+0.48*s,z],[0,0,0],[0.32*s,0.22*s,0.32*s]),hex(0xc84b3a)); }
+function onPath(x,z){ return z>-2 && z<60 && Math.abs(x-pathX(z))<5; }
+function scatter(n,rMin,rMax,fn){ for(let i=0;i<n;i++){ const a=rnd()*TAU, r=rMin+Math.sqrt(rnd())*(rMax-rMin), x=Math.cos(a)*r, z=Math.sin(a)*r; if(onPath(x,z)) continue; fn(x,z); } }
+
+// --- forest (night & dawn)
+const worldForest=(()=>{ const m=new Merger(); seed=42;
+  scatter(520,14,125,(x,z)=>{ const d=Math.hypot(x,z); if(rnd()<0.28) roundTree(m,x,z,rr(0.9,1.5)); else pine(m,x,z,rr(0.8,1.6)*(d>60?1.3:1),C.pine,C.pine2,false); });
+  scatter(90,12,90,(x,z)=>rock(m,x,z,rr(0.4,1.6)));
+  scatter(60,8,40,(x,z)=>mushroom(m,x,z,rr(0.4,0.9)));
+  // stones and bushes along the path
+  for(let z=8;z<58;z+=2.2){ const x=pathX(z)+(rnd()<.5?-1:1)*rr(2.6,3.6); if(rnd()<.6) rock(m,x,z,rr(0.25,0.55)); else m.add(G.ico(),mat([x,groundY(x,z)+0.35,z],[rnd(),rnd(),0],[0.7,0.6,0.7]),vary(hex(0x3f8a3a),0.05)); }
+  // clearing ring of bushes
+  for(let i=0;i<14;i++){ const a=i/14*TAU+0.2, x=Math.cos(a)*11.5, z=Math.sin(a)*11.5; if(onPath(x,z)) continue; m.add(G.ico(),mat([x,groundY(x,z)+0.5,z],[rnd(),rnd(),0],[1.2,0.9,1.2]),vary(hex(0x3a8a45),0.05)); }
+  return mesh(m.build()); })();
+root.add(worldForest);
+
+// --- prehistoric
+const worldPrehist=(()=>{ const m=new Merger(); seed=77;
+  const fern=(x,z,s)=>{ const y=groundY(x,z); for(let i=0;i<7;i++){ const a=i/7*TAU+rnd(); m.add(G.cone(4),mat([x+Math.cos(a)*0.9*s,y+0.9*s,z+Math.sin(a)*0.9*s],[0,-a,0.95],[0.32*s,2.6*s,0.12*s]),vary(hex(0x4fa03c),0.05)); } };
+  const palm=(x,z,s)=>{ const y=groundY(x,z); const tilt=rr(-0.15,0.15); m.add(G.cyl(5),mat([x,y+3.5*s,z],[tilt,0,tilt],[0.3*s,7*s,0.3*s]),hex(0x7a5a3a));
+    for(let i=0;i<8;i++){ const a=i/8*TAU; m.add(G.cone(4),mat([x+Math.cos(a)*1.4*s,y+6.8*s,z+Math.sin(a)*1.4*s],[0,-a,1.15],[0.5*s,3.2*s,0.15*s]),vary(hex(0x3f9a45),0.05)); } };
+  const bigShroom=(x,z,s)=>{ const y=groundY(x,z); m.add(G.cyl(6),mat([x,y+1.5*s,z],[0,0,0],[0.45*s,3*s,0.45*s]),hex(0xe6d8b8)); m.add(G.cone(7,0.2,1),mat([x,y+3.3*s,z],[0,0,0],[2.2*s,1.2*s,2.2*s]),vary(hex(0xd96b3a),0.05)); };
+  scatter(160,13,120,(x,z)=>{ const r=rnd(); if(r<0.45) fern(x,z,rr(0.8,1.8)); else if(r<0.85) palm(x,z,rr(0.8,1.5)); else bigShroom(x,z,rr(0.6,1.2)); });
+  scatter(40,10,60,(x,z)=>rock(m,x,z,rr(0.6,2.2),hex(0x9a7a5a)));
+  for(let i=0;i<10;i++){ const a=i/10*TAU+0.3; fern(Math.cos(a)*11.5,Math.sin(a)*11.5,rr(0.7,1.0)); }
+  // volcano
+  const vx=-95,vz=-120; m.add(G.cone(9,0.22,1),mat([vx,22,vz],[0,0.3,0],[70,50,70]),hex(0x5a4a44)); m.add(G.cone(9,0.2,0.28),mat([vx,46,vz],[0,0.3,0],[70,4,70]),hex(0xff6a1a));
+  // distant hills
+  for(let i=0;i<9;i++){ const a=rr(0,TAU), r=rr(140,200); m.add(G.cone(7),mat([Math.cos(a)*r,10,Math.sin(a)*r],[0,rnd(),0],[rr(40,70),rr(25,45),rr(40,70)]),hex(0x6a5a5a)); }
+  return mesh(m.build()); })();
+root.add(worldPrehist);
+
+// --- medieval winter village
+const worldMedieval=(()=>{ const m=new Merger(); seed=99;
+  scatter(420,14,125,(x,z)=>{ const d=Math.hypot(x,z); if(d<45&&z<-12&&Math.abs(x)<32) return; pine(m,x,z,rr(0.8,1.6)*(d>60?1.3:1),hex(0x2a5a3a),hex(0x35704a),true); });
+  scatter(60,12,80,(x,z)=>rock(m,x,z,rr(0.4,1.6),hex(0xb7bec8)));
+  const house=(x,z,ry,s)=>{ const y=groundY(x,z); m.add(G.box(),mat([x,y+1.4*s,z],[0,ry,0],[4*s,2.8*s,3.4*s]),vary(hex(0x9a7a56),0.04));
+    m.add(G.cone(4),mat([x,y+3.9*s,z],[0,ry+Math.PI/4,0],[3.4*s,2.2*s,3.4*s]),hex(0x6a4a3a)); m.add(G.cone(4,0,1),mat([x,y+4.3*s,z],[0,ry+Math.PI/4,0],[3.0*s,1.3*s,3.0*s]),C.snow);
+    m.add(G.box(),mat([x+Math.sin(ry)*1.7*s,y+1.0*s,z+Math.cos(ry)*1.7*s],[0,ry,0],[0.9*s,1.7*s,0.25*s]),hex(0x4a3020)); // door
+    m.add(G.box(),mat([x+Math.cos(ry)*1.2*s,y+4.6*s,z-Math.sin(ry)*1.2*s],[0,ry,0],[0.6*s,1.6*s,0.6*s]),hex(0x6f6f72)); }; // chimney
+  house(-9,-24,0.2,1); house(8,-27,-0.3,1.1); house(18,-19,-1.1,0.9); house(-19,-18,1.0,0.9); house(0,-38,0.1,1.2); house(-4,-30,0.5,0.8);
+  // tower
+  const tx=-24,tz=-32,ty=groundY(tx,tz); m.add(G.cyl(8),mat([tx,ty+7,tz],[0,0,0],[3.2,14,3.2]),hex(0x8a8a90)); m.add(G.cone(8),mat([tx,ty+16.5,tz],[0,0,0],[3.9,5,3.9]),hex(0x5a3a4a));
+  for(let i=0;i<8;i++){ const a=i/8*TAU; m.add(G.box(),mat([tx+Math.cos(a)*3.2,ty+14.4,tz+Math.sin(a)*3.2],[0,-a,0],[0.8,0.8,0.8]),hex(0x8a8a90)); }
+  m.add(G.cone(8,0,1),mat([tx,ty+17.6,tz],[0,0,0],[3.0,2.2,3.0]),C.snow);
+  // fences & well
+  for(let i=-14;i<=14;i+=2){ const x=i, z=-13.5, y=groundY(x,z); m.add(G.box(),mat([x,y+0.6,z],[0,0,0],[0.2,1.2,0.2]),hex(0x6a4a2e)); m.add(G.box(),mat([x+1,y+0.8,z],[0,0,0],[2.1,0.14,0.14]),hex(0x6a4a2e)); }
+  m.add(G.cyl(7),mat([6,groundY(6,-16)+0.5,-16],[0,0,0],[1.1,1,1.1]),hex(0x7a7a80)); m.add(G.cone(4),mat([6,groundY(6,-16)+2.6,-16],[0,Math.PI/4,0],[1.8,1,1.8]),hex(0x5a3a2a));
+  // snow mounds
+  scatter(60,8,40,(x,z)=>m.add(G.ico(),mat([x,groundY(x,z)+0.1,z],[0,rnd(),0],[rr(0.6,1.4),0.35,rr(0.6,1.4)]),C.snow));
+  return mesh(m.build()); })();
+root.add(worldMedieval);
+
+// --- future
+const worldFuture=(()=>{ const m=new Merger(); seed=123; const crystalCols=[hex(0x5fd8ff),hex(0xb07cff),hex(0x7dffc8),hex(0xff8ad9)];
+  const crystal=(x,z,s)=>{ const y=groundY(x,z); const n=2+Math.floor(rnd()*3); for(let i=0;i<n;i++){ const ox=rr(-0.8,0.8)*s, oz=rr(-0.8,0.8)*s, h=rr(2,5)*s*(i===0?1.4:0.8);
+    m.add(G.octa(),mat([x+ox,y+h*0.45,z+oz],[rr(-0.2,0.2),rnd()*6,rr(-0.2,0.2)],[0.45*s,h,0.45*s]),crystalCols[Math.floor(rnd()*4)]); } };
+  scatter(260,13,120,(x,z)=>crystal(x,z,rr(0.7,1.6)));
+  scatter(50,10,70,(x,z)=>rock(m,x,z,rr(0.5,1.8),hex(0x3a4a6a)));
+  for(let i=0;i<12;i++){ const a=i/12*TAU+0.1; crystal(Math.cos(a)*11.5,Math.sin(a)*11.5,0.6); }
+  // spires far away
+  for(let i=0;i<14;i++){ const a=rr(0,TAU), r=rr(120,190); m.add(G.cone(5,0.1,1),mat([Math.cos(a)*r,25,Math.sin(a)*r],[0,0,0],[rr(6,12),rr(40,90),rr(6,12)]),hex(0x2a2a55)); }
+  const node=mesh(m.build()); node.emis=[0.05,0.05,0.12]; return node; })();
+root.add(worldFuture);
+// floating islands (animated)
+const islands=[]; seed=555;
+for(let i=0;i<8;i++){ const a=i/8*TAU+rr(-0.2,0.2), r=rr(26,55); const x=Math.cos(a)*r, z=Math.sin(a)*r-10, s=rr(3,7); const m=new Merger();
+  m.add(G.cone(6,0,1),mat([0,-s*0.5,0],[0,0,0],[s,s*1.1,s]),hex(0x4a3a6a)); m.add(G.cyl(6),mat([0,0.2,0],[0,0,0],[s,0.5,s]),hex(0x3a6a5a));
+  for(let k=0;k<4;k++){ m.add(G.octa(),mat([rr(-0.5,0.5)*s,0.4+s*0.35,rr(-0.5,0.5)*s],[0,rnd()*6,0],[0.25*s,s*0.9,0.25*s]),hex(0x9fe8ff)); }
+  const n=mesh(m.build()); n.pos=[x,rr(14,26),z]; n.baseY=n.pos[1]; n.phase=rr(0,6); n.emis=[0.03,0.03,0.08]; islands.push(n); worldFuture.add(n); }
+const skyRing=part(G.torus(1,0.05,32,6), hex(0x9fd8ff), [0,60,-90], [0.5,0,0.2], 55); skyRing.emis=[0.3,0.5,0.8]; skyRing.castShadow=false; worldFuture.add(skyRing);
+
+/* ===================== eras ===================== */
+const ERAS={
+  forest:{ skyTop:hex(0x0a1430), skyHor:hex(0x24417a), skyBot:hex(0x0c1524), fog:hex(0x14223d), fogNear:18, fogFar:95, sunDir:V.norm([-0.35,0.7,0.5]), sunCol:[0.35,0.45,0.7], hemiSky:[0.22,0.3,0.5], hemiGnd:[0.08,0.12,0.08], amb:[0.05,0.06,0.1], ground:hex(0x2f6b3d), stars:1.0, sunSize:0.6, aurora:0 },
+  prehist:{ skyTop:hex(0x6a2a1a), skyHor:hex(0xf0a050), skyBot:hex(0x5a3a2a), fog:hex(0xe0a068), fogNear:45, fogFar:210, sunDir:V.norm([0.6,0.35,-0.6]), sunCol:[1.2,0.85,0.55], hemiSky:[0.7,0.5,0.4], hemiGnd:[0.3,0.25,0.15], amb:[0.12,0.09,0.08], ground:hex(0x7a9a3a), stars:0, sunSize:3, aurora:0 },
+  medieval:{ skyTop:hex(0x2a3a5c), skyHor:hex(0xb8c8d8), skyBot:hex(0x8a98a8), fog:hex(0xbfcad6), fogNear:26, fogFar:135, sunDir:V.norm([-0.4,0.5,0.6]), sunCol:[0.75,0.8,0.95], hemiSky:[0.55,0.6,0.75], hemiGnd:[0.3,0.3,0.35], amb:[0.12,0.13,0.16], ground:hex(0xeef2f7), stars:0.15, sunSize:1.5, aurora:0 },
+  future:{ skyTop:hex(0x0a0620), skyHor:hex(0x3a1f6e), skyBot:hex(0x120a2a), fog:hex(0x2a1a55), fogNear:22, fogFar:130, sunDir:V.norm([0.4,0.6,-0.6]), sunCol:[0.6,0.5,0.95], hemiSky:[0.4,0.3,0.7], hemiGnd:[0.08,0.12,0.25], amb:[0.08,0.06,0.16], ground:hex(0x1e2a4a), stars:1.0, sunSize:1, aurora:1 },
+  dawn:{ skyTop:hex(0x4a86d8), skyHor:hex(0xffd4a0), skyBot:hex(0x9a8a7a), fog:hex(0xffe0b8), fogNear:32, fogFar:175, sunDir:V.norm([0.7,0.22,0.55]), sunCol:[1.3,1.0,0.75], hemiSky:[0.55,0.65,0.85], hemiGnd:[0.25,0.3,0.15], amb:[0.14,0.13,0.12], ground:hex(0x4d8b3f), stars:0, sunSize:2.5, aurora:0 },
+};
+const worldsByEra={ forest:worldForest, dawn:worldForest, prehist:worldPrehist, medieval:worldMedieval, future:worldFuture };
+const Era={ cur:null, target:null, blend:1, from:null,
+  set(name, snap){ if(this.cur===name&&!snap) return; this.from=this.snapshot(); this.target=ERAS[name]; this.cur=name; this.blend=snap?1:0;
+    for(const k in worldsByEra) worldsByEra[k].visible=false; worldsByEra[name].visible=true; },
+  snapshot(){ return { skyTop:R.sky.top, skyHor:R.sky.hor, skyBot:R.sky.bot, fog:R.fog.col, fogNear:R.fog.near, fogFar:R.fog.far, sunDir:R.sun.dir, sunCol:R.sun.col, hemiSky:R.hemiSky, hemiGnd:R.hemiGnd, amb:R.amb, ground:terrain.color, stars:R.sky.stars, sunSize:R.sky.sunSize, aurora:R.sky.aurora }; },
+  update(dt){ if(!this.target) return; this.blend=Math.min(1,this.blend+dt*0.7); const t=easeIO(this.blend), a=this.from||this.target, b=this.target;
+    const L=(k)=>cmix(a[k],b[k],t), F=(k)=>lerp(a[k],b[k],t);
+    R.sky.top=L('skyTop'); R.sky.hor=L('skyHor'); R.sky.bot=L('skyBot'); R.fog.col=L('fog'); R.fog.near=F('fogNear'); R.fog.far=F('fogFar');
+    R.sun.dir=V.norm(V.lerp(a.sunDir,b.sunDir,t)); R.sun.col=L('sunCol'); R.hemiSky=L('hemiSky'); R.hemiGnd=L('hemiGnd'); R.amb=L('amb'); terrain.color=L('ground');
+    R.sky.stars=F('stars'); R.sky.sunSize=F('sunSize'); R.sky.aurora=F('aurora'); } };
+/* ===================== characters ===================== */
+const GEO={ box:G.box(), sph:G.sphere(7,5), sphLo:G.sphere(6,4), cone6:G.cone(6), cone5:G.cone(5), cyl6:G.cyl(6), cyl5:G.cyl(5), ico:G.ico(), octa:G.octa() };
+function makeHumanoid(cfg){ const h={ root:new Node() }; const {skin,hair,top,skirt,shoes,scarf,hood,lantern}=cfg;
+  h.hips=new Node(); h.hips.pos=[0,0,0]; h.root.add(h.hips);
+  const leg=(sx)=>{ const p=new Node(); p.pos=[sx*0.1,0.82,0]; p.add(part(GEO.box,cfg.legs||skin,[0,-0.4,0],null,[0.15,0.8,0.15])); p.add(part(GEO.box,shoes,[0,-0.78,0.04],null,[0.17,0.1,0.26])); return p; };
+  h.legL=leg(1); h.legR=leg(-1); h.hips.add(h.legL,h.legR);
+  if(skirt) h.hips.add(part(GEO.cone6,skirt,[0,0.86,0],null,[0.4,0.5,0.4]));
+  h.hips.add(part(GEO.box,top,[0,1.15,0],null,[0.38,0.52,0.24]));
+  const arm=(sx)=>{ const p=new Node(); p.pos=[sx*0.25,1.36,0]; p.add(part(GEO.box,top,[0,-0.26,0],null,[0.11,0.5,0.11])); p.add(part(GEO.sphLo,skin,[0,-0.55,0],null,0.07)); return p; };
+  h.armL=arm(1); h.armR=arm(-1); h.hips.add(h.armL,h.armR);
+  if(scarf) h.hips.add(part(G.torus(0.17,0.07,8,5),scarf,[0,1.4,0]));
+  h.head=new Node(); h.head.pos=[0,1.42,0]; h.hips.add(h.head);
+  h.head.add(part(GEO.sph,skin,[0,0.19,0],null,0.19));
+  h.head.add(part(GEO.sphLo,[0.08,0.06,0.06],[0.07,0.2,0.165],null,0.03), part(GEO.sphLo,[0.08,0.06,0.06],[-0.07,0.2,0.165],null,0.03));
+  if(hood){ h.head.add(part(GEO.cone6,hood,[0,0.32,-0.02],null,[0.3,0.5,0.3])); }
+  else { h.head.add(part(G.dome(7,6,0.6),hair,[0,0.2,-0.035],null,[0.215,0.215,0.215])); h.head.add(part(GEO.cone5,hair,[0,0.05,-0.2],[0.6,0,0],[0.1,0.45,0.1])); // ponytail
+    h.head.add(part(GEO.box,hair,[0,0.31,0.13],[0.25,0,0],[0.3,0.07,0.14])); }
+  if(lantern){ h.lantern=part(GEO.box,[1,0.8,0.4],[0,-0.62,0.1],null,[0.16,0.22,0.16]); h.lantern.emis=[1.2,0.7,0.2]; h.armR.add(h.lantern); }
+  h.pose={walk:0,t:0,reach:0,wave:0,lookUp:0,sit:0,turnHead:0};
+  h.update=function(){ const p=this.pose, ph=p.t*7.5, s=Math.sin(ph), w=p.walk;
+    this.legL.rot=[w*s*0.7 - p.sit*1.5,0,0]; this.legR.rot=[-w*s*0.7 - p.sit*1.5,0,0];
+    this.armL.rot=[-w*s*0.5 - p.reach*0.2,0, 0.08]; let ar=w*s*0.5, az=-0.08;
+    ar=lerp(ar,-1.35,p.reach); ar=lerp(ar,-2.7,p.wave); az=lerp(az,-0.35+Math.sin(p.t*9)*0.25,p.wave); this.armR.rot=[ar,0,az];
+    this.head.rot=[-p.lookUp*0.55, p.turnHead, 0]; this.hips.pos=[0, w*Math.abs(Math.cos(ph))*0.05 - p.sit*0.45, 0];
+    this.hips.rot=[p.sit*0.1,0,0]; };
+  return h; }
+const elin=makeHumanoid({ skin:hex(0xf3cba5), hair:hex(0x8a4326), top:hex(0x2f8f8f), skirt:hex(0x2e4a8a), shoes:hex(0x4a3221), scarf:hex(0xd9453a), legs:hex(0xf3cba5) });
+elin.root.pos=[pathX(46),0,46]; root.add(elin.root);
+const villager=makeHumanoid({ skin:hex(0xe8c39e), top:hex(0x6a4a2e), shoes:hex(0x3a2a1a), hood:hex(0x556070), legs:hex(0x4a4a4a), lantern:true });
+villager.root.visible=false; root.add(villager.root);
+
+// --- the magic clock
+const clock={ root:new Node(), extra:0, glow:0, snapIdx:0 };
+clock.root.pos=[0,0,-3]; root.add(clock.root);
+(()=>{ const c=clock.root; const stumpCol=hex(0x5a3b24), bronze=hex(0xb8823f), cream=hex(0xf4e8cc), dark=hex(0x2a1f18);
+  const stump=new Merger(); stump.add(G.cyl(8),mat([0,0.6,0],[0,0.2,0],[1.9,1.2,1.9]),stumpCol); stump.add(G.cyl(8),mat([0,1.21,0],[0,0.2,0],[1.7,0.04,1.7]),hex(0x9a7a4a));
+  for(let i=0;i<6;i++){ const a=i/6*TAU+0.4; stump.add(G.cyl(5),mat([Math.cos(a)*2.1,0.25,Math.sin(a)*2.1],[Math.sin(a)*0.9,0,-Math.cos(a)*0.9],[0.32,1.6,0.32]),stumpCol); }
+  c.add(mesh(stump.build()));
+  c.face=part(G.cyl(12),cream,[0,1.95,0.05],[Math.PI/2,0,0],[1.5,0.3,1.5]); c.add(c.face);
+  c.add(part(G.torus(1.55,0.14,12,6),bronze,[0,1.95,0.05],[Math.PI/2,0,0]));
+  for(let i=0;i<12;i++){ const a=i/12*TAU; const big=i%3===0; c.add(part(GEO.box,dark,[Math.sin(a)*1.22,1.95+Math.cos(a)*1.22,0.22],[0,0,-a],[big?0.1:0.07,big?0.26:0.16,0.05])); }
+  c.hour=new Node(); c.hour.pos=[0,1.95,0.24]; c.hour.add(part(GEO.box,dark,[0,0.38,0],null,[0.11,0.85,0.05]), part(GEO.octa,dark,[0,0.78,0],null,[0.12,0.16,0.04])); c.add(c.hour);
+  c.minute=new Node(); c.minute.pos=[0,1.95,0.27]; c.minute.add(part(GEO.box,dark,[0,0.55,0],null,[0.07,1.2,0.05]), part(GEO.octa,dark,[0,1.12,0],null,[0.09,0.14,0.04])); c.add(c.minute);
+  c.add(part(GEO.sph,bronze,[0,1.95,0.3],null,0.1));
+  const gear=(p,s)=>{ const n=new Node(); n.pos=p; const m=new Merger(); m.add(G.torus(0.42,0.13,10,5),M4.ident(),bronze); for(let i=0;i<8;i++){ const a=i/8*TAU; m.add(G.box(),mat([Math.cos(a)*0.55,Math.sin(a)*0.55,0],[0,0,a],[0.22,0.16,0.14]),bronze); }
+    m.add(G.cyl(6),mat([0,0,0],[Math.PI/2,0,0],[0.12,0.3,0.12]),dark); n.add(mesh(m.build())); n.scl=[s,s,s]; return n; };
+  c.gearA=gear([-1.55,3.15,-0.35],1); c.gearB=gear([1.45,3.35,-0.4],0.75); c.add(c.gearA,c.gearB);
+  c.add(part(GEO.box,hex(0x7a5a3a),[0,2.6,-0.5],null,[3.4,0.5,0.6]));
+  // era dressings
+  c.snowCap=new Node(); c.snowCap.add(part(GEO.ico,C.snow,[0,3.55,0.1],null,[1.1,0.35,0.7]), part(GEO.ico,C.snow,[-1.55,3.75,-0.35],null,[0.6,0.25,0.5]), part(GEO.ico,C.snow,[-1.4,1.25,-0.9],null,[0.9,0.3,0.9]), part(GEO.ico,C.snow,[1.5,1.25,-0.6],null,[0.7,0.28,0.7])); c.add(c.snowCap);
+  c.moss=new Node(); const mossC=hex(0x6fae3f); c.moss.add(part(GEO.ico,mossC,[0.3,3.5,0.05],null,[0.9,0.35,0.7]), part(GEO.ico,mossC,[-1.2,1.35,1.1],null,[0.8,0.35,0.8]), part(GEO.ico,mossC,[1.3,1.28,0.6],null,[0.6,0.3,0.6]), part(GEO.ico,mossC,[-1.05,2.7,0.35],null,[0.45,0.25,0.3]));
+  c.moss.add(part(GEO.cyl5,C.trunk,[1.6,1.6,1.3],null,[0.05,0.7,0.05]), part(GEO.ico,hex(0x7fd04a),[1.6,2.05,1.3],null,[0.32,0.28,0.32])); c.add(c.moss);
+  c.crack=part(GEO.box,[0.05,0.03,0.02],[0.45,2.3,0.22],[0,0,0.6],[0.05,1.0,0.02]); c.crack.visible=false; c.add(c.crack);
+})();
+clock.update=function(T,era){ const c=this.root; const ticking=this.glow>0.05;
+  const base=ticking? Math.floor(T)*(TAU/60):0; c.minute.rot=[0,0,-(base+this.extra)]; c.hour.rot=[0,0,-(base/12+this.extra/12+1.1)];
+  c.gearA.rot=[0,0,(base+this.extra)*1.5]; c.gearB.rot=[0,0,-(base+this.extra)*2];
+  const g=this.glow; c.face.emis=[0.9*g,0.6*g,0.2*g]; c.face.color=cmix(hex(0xf4e8cc),hex(0xfff0b0),g);
+  R.pt2.pos=[0,2.4,-1.4]; R.pt2.col=[3.0*g,2.0*g,0.7*g];
+  c.snowCap.visible=era==='medieval'; c.moss.visible=era==='dawn'; };
+// --- sauropod (faces +z)
+const dino=(()=>{ const d={root:new Node()}; const col=hex(0x5f8a5a), col2=hex(0x7aa06a);
+  d.body=new Node(); d.body.pos=[0,4.3,0]; d.root.add(d.body);
+  d.body.add(part(GEO.ico,col,[0,0,0],null,[2.2,1.7,3.3]), part(GEO.ico,col2,[0,-0.5,0.2],null,[1.9,1.3,2.9]));
+  const leg=(x,z)=>{ const p=new Node(); p.pos=[x,-0.8,z]; p.add(part(GEO.cyl6,col,[0,-1.6,0],null,[0.55,3.4,0.55]), part(GEO.cyl6,col2,[0,-3.2,0],null,[0.65,0.4,0.65])); d.body.add(p); return p; };
+  d.legs=[leg(1.3,1.6),leg(-1.3,1.6),leg(1.3,-1.6),leg(-1.3,-1.6)];
+  d.neck=[]; let parent=d.body, pos=[0,0.9,2.8]; for(let i=0;i<7;i++){ const n=new Node(); n.pos=pos; const r=0.55-i*0.04; n.add(part(GEO.cyl6,i%2?col:col2,[0,0.75,0],null,[r,1.6,r])); parent.add(n); d.neck.push(n); parent=n; pos=[0,1.5,0]; }
+  d.head=new Node(); d.head.pos=[0,1.5,0]; d.head.add(part(GEO.box,col,[0,0.1,0.5],null,[0.8,0.7,1.5]), part(GEO.sphLo,[0.05,0.05,0.05],[0.32,0.35,0.6],null,0.1), part(GEO.sphLo,[0.05,0.05,0.05],[-0.32,0.35,0.6],null,0.1)); parent.add(d.head);
+  d.tail=[]; parent=d.body; pos=[0,0.2,-2.8]; for(let i=0;i<8;i++){ const n=new Node(); n.pos=pos; const r=0.6-i*0.065; n.add(part(GEO.cyl6,i%2?col:col2,[0,-0.8,0],null,[r,1.7,r])); parent.add(n); d.tail.push(n); parent=n; pos=[0,-1.6,0]; }
+  d.update=function(t,walk){ const ph=t*2.2; for(let i=0;i<4;i++){ const s=(i===0||i===3)?1:-1; this.legs[i].rot=[Math.sin(ph)*0.35*s*walk,0,0]; }
+    this.body.pos=[0,4.3+Math.abs(Math.sin(ph))*0.12*walk,0]; this.body.rot=[0,0,Math.sin(ph)*0.03*walk];
+    for(let i=0;i<7;i++){ this.neck[i].rot=[(i===0?1.05:-0.13)+Math.sin(t*0.9+i*0.4)*0.04, Math.sin(t*0.6+i*0.3)*0.05, 0]; }
+    this.head.rot=[0.75+Math.sin(t*0.9)*0.1,0,0];
+    for(let i=0;i<8;i++){ this.tail[i].rot=[(i===0?1.3:-0.07)+Math.sin(t*1.5-i*0.5)*0.03, Math.sin(t*1.3-i*0.6)*0.08, 0]; } };
+  d.root.visible=false; root.add(d.root); return d; })();
+
+// --- deer (faces +z)
+const deer=(()=>{ const d={root:new Node()}; const col=hex(0xb8864f), col2=hex(0xe8d9c0);
+  d.body=new Node(); d.body.pos=[0,1.05,0]; d.root.add(d.body); d.body.add(part(GEO.box,col,[0,0,0],null,[0.55,0.65,1.25]), part(GEO.box,col2,[0,-0.2,-0.3],null,[0.4,0.3,0.6]));
+  const leg=(x,z)=>{ const p=new Node(); p.pos=[x,-0.25,z]; p.add(part(GEO.box,col,[0,-0.4,0],null,[0.13,0.8,0.13])); d.body.add(p); return p; }; d.legs=[leg(0.18,0.45),leg(-0.18,0.45),leg(0.18,-0.45),leg(-0.18,-0.45)];
+  d.neck=new Node(); d.neck.pos=[0,0.25,0.55]; d.body.add(d.neck); d.neck.add(part(GEO.box,col,[0,0.35,0.1],[-0.5,0,0],[0.25,0.8,0.25]));
+  d.head=new Node(); d.head.pos=[0,0.75,0.35]; d.neck.add(d.head); d.head.add(part(GEO.box,col,[0,0,0.15],null,[0.26,0.28,0.5]), part(GEO.box,col,[0.15,0.2,-0.05],[0,0,0.5],[0.08,0.25,0.12]), part(GEO.box,col,[-0.15,0.2,-0.05],[0,0,-0.5],[0.08,0.25,0.12]));
+  for(const s of [1,-1]){ d.head.add(part(GEO.cyl5,hex(0x6a5030),[s*0.1,0.45,-0.05],[0.2,0,s*0.3],[0.04,0.6,0.04]), part(GEO.cyl5,hex(0x6a5030),[s*0.22,0.55,-0.05],[0,0,s*1.0],[0.035,0.35,0.035])); }
+  d.head.add(part(GEO.sphLo,[0.05,0.04,0.04],[0.12,0.05,0.35],null,0.035), part(GEO.sphLo,[0.05,0.04,0.04],[-0.12,0.05,0.35],null,0.035));
+  d.update=function(t,walk,graze){ const ph=t*6; for(let i=0;i<4;i++){ const s=(i===0||i===3)?1:-1; this.legs[i].rot=[Math.sin(ph)*0.5*s*walk,0,0]; }
+    this.neck.rot=[graze*1.2 + Math.sin(t*1.3)*0.05,0,0]; this.head.rot=[-graze*0.4+Math.sin(t*2.1)*0.04, Math.sin(t*0.7)*0.15*(1-graze), 0]; };
+  d.root.visible=false; root.add(d.root); return d; })();
+
+// --- winged things (pterosaurs & birds), fly in circles
+function makeFlyer(scale,col,wingLen){ const f={root:new Node()}; f.root.add(part(GEO.cone5,col,[0,0,0],[Math.PI/2,0,0],[0.35*scale,1.6*scale,0.25*scale]));
+  f.wL=new Node(); f.wR=new Node(); f.wL.add(part(G.tri([0,0,0.4*scale],[wingLen*scale,0,-0.1*scale],[0,0,-0.4*scale]),col)); f.wR.add(part(G.tri([0,0,0.4*scale],[0,0,-0.4*scale],[-wingLen*scale,0,-0.1*scale]),col));
+  f.root.add(f.wL,f.wR); f.root.visible=false; root.add(f.root);
+  f.fly=function(t,cx,cy,cz,rad,speed,dir){ const a=t*speed; this.root.pos=[cx+Math.cos(a)*rad, cy+Math.sin(t*0.7)*2, cz+Math.sin(a)*rad*dir]; this.root.rot=[0, Math.atan2(-Math.sin(a)*rad, Math.cos(a)*rad*dir)+ (dir>0?0:Math.PI) ,0];
+    const fl=Math.sin(t*(speed>1?9:3.5))*0.6; this.wL.rot=[0,0,fl]; this.wR.rot=[0,0,-fl]; }; return f; }
+const ptero=[makeFlyer(2.2,hex(0x6a4a5a),2.6),makeFlyer(1.8,hex(0x5a4a4a),2.6),makeFlyer(2.5,hex(0x705060),2.6)];
+const birds=[]; for(let i=0;i<6;i++) birds.push(makeFlyer(0.25,hex(0x3a3a44),2.2));
+
+// --- drone
+const drone=(()=>{ const d={root:new Node()}; d.ring=part(G.torus(0.55,0.08,12,6),hex(0xdde8ff)); d.core=part(GEO.ico,hex(0x60f0ff),[0,0,0],null,0.28); d.core.emis=[0.3,1.0,1.2]; d.eye=part(GEO.sphLo,[1,1,1],[0,0,0.25],null,0.09); d.eye.emis=[1,1,1];
+  d.root.add(d.ring,d.core,d.eye); d.root.visible=false; root.add(d.root); return d; })();
+
+/* ===================== particle systems ===================== */
+const fireflies=new Points(160,{soft:2.5}); R.points.push(fireflies); seed=2024;
+fireflies.base=[]; for(let i=0;i<160;i++){ let x,z; if(i<90){ z=rr(6,50); x=pathX(z)+rr(-6,6); } else { const a=rr(0,TAU), r=rr(2,12); x=Math.cos(a)*r; z=Math.sin(a)*r; } fireflies.base.push([x,groundY(x,z)+rr(0.4,3.2),z,rr(0,TAU),rr(0.5,1.5)]); }
+fireflies.alpha=1; fireflies.guide=null; fireflies.colour=[0.85,1,0.45];
+fireflies.update=function(T){ const c=this.colour; for(let i=0;i<this.n;i++){ const b=this.base[i]; let x=b[0]+Math.sin(T*b[4]+b[3])*1.2, y=b[1]+Math.sin(T*b[4]*1.3+b[3]*2)*0.5, z=b[2]+Math.cos(T*b[4]*0.8+b[3])*1.2;
+    if(this.guide&&i<26){ const g=this.guide, k=i/26*TAU; x=g[0]+Math.cos(T*1.4+k*3)*(1.5+Math.sin(k*5)); y=g[1]+0.8+Math.sin(T*2.1+k*4)*0.7; z=g[2]+Math.sin(T*1.1+k*2)*1.5; }
+    const bl=0.5+0.5*Math.sin(T*3*b[4]+b[3]*7); this.set(i,x,y,z,c[0],c[1],c[2],bl*this.alpha,0.11+0.06*bl); } };
+const snow=new Points(2600,{soft:1.2,additive:false}); R.points.push(snow); snow.visible=false; seed=7;
+snow.seeds=[]; for(let i=0;i<2600;i++) snow.seeds.push([rr(-50,50),rr(0,36),rr(-60,40),rr(0,TAU),rr(0.7,1.3)]);
+snow.update=function(T){ for(let i=0;i<this.n;i++){ const s=this.seeds[i]; const y=(s[1]-T*1.5*s[4]+3600)%36; this.set(i,s[0]+Math.sin(T*0.8+s[3])*0.8,y,s[2]+Math.cos(T*0.6+s[3])*0.5,0.95,0.97,1,0.85,0.09*s[4]); } };
+const smoke=new Points(220,{soft:1.0,additive:false}); R.points.push(smoke); smoke.visible=false; seed=11;
+smoke.seeds=[]; for(let i=0;i<220;i++) smoke.seeds.push([rnd(),rr(-1,1),rr(-1,1),rr(0.6,1.4)]);
+smoke.update=function(T){ for(let i=0;i<this.n;i++){ const s=this.seeds[i]; let life; if(i<170){ life=(s[0]+T*0.045)%1; const x=-95+s[1]*(4+life*22)+life*18, y=47+life*55, z=-120+s[2]*(4+life*22); const g=0.35+life*0.25; this.set(i,x,y,z,g,g*0.95,g*0.95,(1-life)*0.75*life*4,(3+life*16)*s[3]); }
+    else { life=(s[0]+T*0.4)%1; this.set(i,-95+s[1]*9,47+life*10,-120+s[2]*9,1,0.55+life*0.3,0.1,1-life,0.35*s[3]); } } };
+const vortex=new Points(2200,{soft:1.8}); R.points.push(vortex); vortex.visible=false; vortex.p=0; vortex.warm=1; seed=99;
+vortex.seeds=[]; for(let i=0;i<2200;i++) vortex.seeds.push([rnd(),rnd(),rr(0.5,1.5)]);
+vortex.update=function(T){ const p=this.p; if(p<=0||p>=1){ this.visible=false; return; } this.visible=true; const w=this.warm; const cx=0,cy=1.95,cz=-3;
+  for(let i=0;i<this.n;i++){ const s=this.seeds[i]; const ph=s[0]; const spin=T*(3+p*6)*s[2]+ph*TAU*9; const rad=(0.6+s[1]*9)*(1-p*0.9)+0.3;
+    const y=cy-3+((ph*9+p*7+T*0.5*s[2])%9); const bright=Math.min(1,p*4)*(1-Math.pow(p,4)); const k=(ph*3+T*0.5)%1; const col=w>0?cmix([1,0.75,0.25],[0.4,0.9,1],k):cmix([1,0.55,0.2],[1,0.9,0.6],k);
+    this.set(i,cx+Math.cos(spin)*rad,y,cz+Math.sin(spin)*rad*0.7,col[0],col[1],col[2],bright*(0.5+0.5*s[2]),0.18+0.12*p); } };
+const motes=new Points(300,{soft:2}); R.points.push(motes); motes.visible=false; seed=31; motes.seeds=[]; for(let i=0;i<300;i++) motes.seeds.push([rr(-30,30),rr(0.3,14),rr(-40,25),rr(0,TAU),rr(0.3,1)]);
+motes.update=function(T){ for(let i=0;i<this.n;i++){ const s=this.seeds[i]; const y=s[1]+((T*0.25*s[4]+s[3])%6); this.set(i,s[0]+Math.sin(T*0.5+s[3])*2,y,s[2]+Math.cos(T*0.4+s[3])*2,0.6,0.9,1,0.4+0.4*Math.sin(T*2+s[3]),0.07+0.05*s[4]); } };
+const sparks=new Points(90,{soft:2}); R.points.push(sparks); sparks.visible=false; sparks.p=0; seed=5; sparks.seeds=[]; for(let i=0;i<90;i++) sparks.seeds.push([rnd(),rnd(),rnd()]);
+sparks.update=function(T){ if(this.p<=0){ this.visible=false; return; } this.visible=true; for(let i=0;i<this.n;i++){ const s=this.seeds[i]; const a=s[0]*TAU, r=0.3+s[1]*1.4*this.p; this.set(i,Math.cos(a)*r*0.9,1.95+Math.sin(a)*r,-2.6+s[2]*0.4,1,0.85,0.4,(1-this.p)*0.9,0.06+0.05*s[2]); } };
+/* ===================== timeline ===================== */
+const $=id=>document.getElementById(id);
+const UI={ caption:$('caption'), card:$('card'), cardH:$('card-h'), cardP:$('card-p'), cardC:$('card-c'), flash:$('flash'), fade:$('fade') };
+const st={ capText:'', capOn:false };
+function showCaption(txt){ if(txt!==st.capText){ st.capText=txt; if(txt) UI.caption.textContent=txt; } const on=!!txt; if(on!==st.capOn){ st.capOn=on; UI.caption.style.opacity=on?1:0; } }
+function card(h,p,c,op){ if(UI.cardH.textContent!==h) UI.cardH.textContent=h; if(UI.cardP.textContent!==p) UI.cardP.textContent=p; if(UI.cardC.innerHTML!==c) UI.cardC.innerHTML=c; UI.card.style.opacity=op; }
+function camAB(p0,p1,l0,l1,k){ R.cam.pos=V.lerp(p0,p1,k); R.cam.look=V.lerp(l0,l1,k); }
+function shake(amt,T){ R.cam.pos=V.add(R.cam.pos,[Math.sin(T*37)*amt,Math.sin(T*29+1)*amt,Math.sin(T*41+2)*amt]); }
+function headOf(h){ return V.add(h.root.pos,[0,1.55,0]); }
+function walkPath(z0,z1,k){ const z=lerp(z0,z1,k); const dz=z1>z0?0.5:-0.5; const x=pathX(z); elin.root.pos=[x,0,z]; elin.root.rot=[0,Math.atan2(pathX(z+dz)-x,dz),0]; elin.pose.walk=1; }
+function moveTo(a,b,k,who){ who=who||elin; who.root.pos=V.lerp(a,b,k); const d=V.sub(b,a); who.root.rot=[0,Math.atan2(d[0],d[2]),0]; if(who.pose) who.pose.walk=(k>0&&k<1)?1:0; }
+const capsOf=(list,lt)=>{ for(const c of list) if(lt>=c[0]&&lt<c[0]+c[2]) return c[1]; return ''; };
+const evDone=new Set(); function once(name,fn){ if(evDone.has(name)) return; evDone.add(name); fn(); }
+const CLK=[0,1.7,-3];
+const SHOTS=[
+ { name:'Title', dur:9, era:'forest', chapter:'The Hollow',
+   update(lt,k){ camAB([34,24,74],[16,15,50],[0,3,0],[0,3,0],easeOut(k)); elin.root.pos=[pathX(46),0,46]; fireflies.alpha=1; clock.glow=0;
+     UI.fade.style.opacity=1-sstep(0,2.5,lt); card('The Clock in the Hollow','a low-poly short film','',sstep(1,2.5,lt)*(1-sstep(6.5,8,lt))); } },
+ { name:'Path', dur:12, era:'forest', caps:[[0.8,'Every evening, Elin took the same path home through the Hollow.',7]],
+   update(lt,k){ walkPath(46,31,k); elin.pose.t=lt; const e=elin.root.pos; R.cam.pos=V.add(e,[4.6,1.6,lerp(1.8,-1.5,k)]); R.cam.look=V.add(e,[0,1.15,0]); fireflies.alpha=1; clock.glow=0; } },
+ { name:'Fireflies', dur:12, era:'forest', caps:[[1,'But tonight the fireflies were leading her somewhere new.',6.5]],
+   update(lt,k){ walkPath(31,19,k); elin.pose.t=lt+12; elin.pose.lookUp=0.25; const e=elin.root.pos; R.cam.pos=V.add(e,[-1.9,0.85,-4.6]); R.cam.look=V.add(e,[0,1.25,0]);
+     fireflies.alpha=1; clock.glow=0; const gz=e[2]-5.5; fireflies.guide=[pathX(gz),1.0,gz]; } },
+ { name:'Reveal', dur:14, era:'forest', caps:[[0.5,'In a clearing she had never seen, an old clock stood waiting.',5.5],[7,'It had no tick. Not until she came close.',6]],
+   update(lt,k){ const w=sstep(0,8,lt); walkPath(19,9.5,w); elin.pose.walk=lt<8?1:0; elin.pose.t=lt+24; elin.pose.lookUp=0.15;
+     camAB([pathX(19)+3.2,3.4,27],[3.4,2.1,15],[1,2.2,4],[0,1.8,-3],easeIO(k)); clock.glow=sstep(4,10,lt); fireflies.alpha=1; fireflies.guide=[0,1.2,-0.8];
+     once('glow',()=>{ if(lt>5) SFX.chime(); }); } },
+ { name:'Touch', dur:12, era:'forest', caps:[[5.5,'She turned the hands. Just once — to see what would happen.',6]],
+   update(lt,k){ const w=sstep(0,6.5,lt); moveTo([pathX(9.5),0,9.5],[0,0,-1.4],w); elin.pose.t=lt+38; elin.pose.reach=sstep(6,8,lt); clock.glow=1;
+     const s=Math.max(0,lt-8); clock.extra=Math.pow(s,2.6)*3; sparks.p=sstep(8,10,lt); vortex.p=sstep(8.5,12,lt); vortex.warm=1;
+     camAB([3.8,1.9,0.8],[3.1,1.75,-0.2],[0.3,1.65,-2.2],[0.2,1.7,-2.4],easeIO(k)); shake(0.06*sstep(8.5,12,lt),lt); fireflies.alpha=1-sstep(8,11,lt);
+     if(lt>8) once('whoosh',()=>SFX.whoosh(4.5)); UI.flash.style.opacity=sstep(11.2,12,lt); } },
+ { name:'Long ago', dur:24, era:'prehist', chapter:'A Hundred Million Years Before', caps:[[1.4,'The Hollow, a hundred million years before.',5],[9.5,'She had never felt so small.',4],[14.5,'Or so awake.',3.5]],
+   update(lt,k){ UI.flash.style.opacity=1-sstep(0,1.3,lt); elin.root.pos=[0,0,-1.4]; elin.root.rot=[0,Math.PI,0]; elin.pose.lookUp=sstep(2,4.5,lt)*0.9; elin.pose.t=lt;
+     dino.root.visible=true; const dk=sstep(1,24,lt); dino.root.pos=[lerp(-42,36,dk),0,-18]; dino.root.rot=[0,Math.PI/2,0]; dino.update(lt,1);
+     smoke.visible=true; for(let i=0;i<3;i++){ ptero[i].root.visible=true; ptero[i].fly(lt+i*7,0,36+i*5,-30,52+i*8,0.18,i%2?1:-1); }
+     const dh=V.add(dino.root.pos,[2,8.5,0]);
+     if(lt<7){ const q=easeIO(sstep(0,7,lt)); camAB([1.5,1.6,-2.3],[9,3.6,13],[0,1.5,-1.4],[0,3.5,-8],q); }
+     else if(lt<16){ const q=sstep(7,16,lt); camAB([15,2.6,-3],[13,2.3,-7],dh,dh,q); }
+     else { const q=sstep(16,24,lt); R.cam.pos=V.add(elin.root.pos,[lerp(-2.6,-1.8,q),0.9,3.6]); R.cam.look=[dino.root.pos[0],6,-18]; }
+     if(lt>9) once('roar',()=>SFX.roar()); } },
+ { name:'Again', dur:9, era:'prehist', caps:[[0.5,'Once more, she thought. Just to see.',5]],
+   update(lt,k){ elin.root.pos=[0,0,-1.4]; elin.root.rot=[0,Math.PI,0]; elin.pose.t=lt; elin.pose.reach=sstep(1,3,lt); const s=Math.max(0,lt-3); clock.extra=Math.pow(s,2.6)*3; clock.glow=1;
+     sparks.p=sstep(3,5,lt); vortex.p=sstep(4,9,lt); vortex.warm=1; smoke.visible=true; for(let i=0;i<3;i++){ ptero[i].root.visible=true; ptero[i].fly(lt+24+i*7,0,36+i*5,-30,52+i*8,0.18,i%2?1:-1); }
+     camAB([-3.1,2.4,1.6],[-2.1,2.2,0.4],[0,1.7,-3],[0,1.8,-3],easeIO(k)); shake(0.06*sstep(4,9,lt),lt); if(lt>3.5) once('whoosh',()=>SFX.whoosh(5)); UI.flash.style.opacity=sstep(8.3,9,lt); } },
+ { name:'Winter', dur:26, era:'medieval', chapter:'Six Hundred Winters Ago', caps:[[1.4,'Six hundred winters ago, the Hollow had a village.',5.5],[12.5,'Nobody knew her. But everybody waved.',5],[20,'The clock waited, as it always had.',5]],
+   update(lt,k){ UI.flash.style.opacity=1-sstep(0,1.3,lt); snow.visible=true; elin.pose.t=lt;
+     if(lt<2){ elin.root.pos=[0,0,-1.4]; elin.root.rot=[0,Math.PI,0]; } else if(lt<6) moveTo([0,0,-1.4],[3.4,0,-4.6],sstep(2,6,lt));
+     else if(lt<20){ elin.root.pos=[3.4,0,-4.6]; elin.root.rot=[0,Math.PI,0]; elin.pose.walk=0; elin.pose.wave=sstep(13,14,lt)*(1-sstep(16.5,17.5,lt)); }
+     else moveTo([3.4,0,-4.6],[0.2,0,-1.4],sstep(20,25,lt));
+     villager.root.visible=true; const vk=lt<12?sstep(4,12,lt)*0.5: lt<15?0.5:0.5+sstep(15,24,lt)*0.5; moveTo([-15,0,-10.5],[15,0,-10.5],vk,villager); villager.pose.t=lt;
+     if(lt>=12&&lt<15){ villager.root.rot=[0,Math.PI,0]; } villager.pose.wave=sstep(12,13,lt)*(1-sstep(15,16,lt)); villager.update();
+     const lp=villager.lantern.worldPos ? V.add(villager.root.pos,[-0.3,0.9,0.3]) : villager.root.pos; R.pt1.pos=lp; R.pt1.col=[2.2,1.3,0.5];
+     if(lt<8){ const q=easeIO(sstep(0,8,lt)); camAB([2.6,1.6,-0.1],[7,9,16],headOf(elin),[0,3,-24],q); }
+     else if(lt<18){ const q=sstep(8,18,lt); const mid=V.scale(V.add(elin.root.pos,villager.root.pos),0.5); camAB([9.5,1.9,-1.5],[8.5,1.8,-5],V.add(mid,[0,1.1,0]),V.add(mid,[0,1.1,0]),q); }
+     else { const q=sstep(18,26,lt); camAB([-2.6,2.3,3.6],[-1.6,2.0,2.0],[0,1.8,-3],[0,1.8,-3],q); }
+     if(lt>2) once('bell1',()=>SFX.bell()); if(lt>10) once('bell2',()=>SFX.bell()); if(lt>10.6) once('bell3',()=>SFX.bell()); } },
+ { name:'Spin', dur:5, era:'medieval',
+   update(lt,k){ snow.visible=true; elin.root.pos=[0.2,0,-1.4]; elin.root.rot=[0,Math.PI,0]; elin.pose.reach=1; clock.extra=Math.pow(lt,2.6)*3; clock.glow=1; sparks.p=sstep(0,2,lt); vortex.p=sstep(0.5,5,lt); vortex.warm=1;
+     camAB([0.7,1.9,0.7],[0.5,1.9,0.1],[0,1.9,-3],[0,1.9,-3],k); shake(0.05*sstep(1,5,lt),lt); once('whoosh',()=>SFX.whoosh(5)); UI.flash.style.opacity=sstep(4.3,5,lt); } },
+ { name:'Tomorrow', dur:26, era:'future', chapter:'A Thousand Years From Now', caps:[[1.4,'A thousand years from now.',4],[8,'The trees were made of light. The sky sang.',5.5],[17,'It was beautiful.',3],[21,'But nothing here knew her name.',5]],
+   update(lt,k){ UI.flash.style.opacity=1-sstep(0,1.3,lt); motes.visible=true; elin.pose.t=lt; elin.root.pos=[0,0,-1.4]; elin.root.rot=[0,lerp(Math.PI+Math.sin(lt*0.6)*0.5*sstep(3,6,lt), 0.15, sstep(19,21.5,lt)),0];
+     for(const isl of islands){ isl.pos[1]=isl.baseY+Math.sin(R.time*0.5+isl.phase)*0.8; isl.rot=[0,R.time*0.03+isl.phase,0]; }
+     if(lt>3){ drone.root.visible=true; const a=lt*1.2, rr_=lerp(2.3,6,sstep(18.5,21,lt)), hh=lerp(1.7,4.5,sstep(18.5,21,lt)); drone.root.pos=V.add(elin.root.pos,[Math.cos(a)*rr_,hh+Math.sin(lt*2.3)*0.25,Math.sin(a)*rr_]); drone.root.rot=[0,-a+Math.PI/2,0]; drone.ring.rot=[0.3,lt*3,0];
+       R.pt1.pos=drone.root.pos; R.pt1.col=[0.3,1.4,1.6]; }
+     elin.pose.lookUp=-0.7*sstep(20,23,lt) + 0.4*sstep(3,5,lt)*(1-sstep(18,20,lt));
+     if(lt<10){ const q=easeIO(sstep(0,10,lt)); camAB([2.4,1.5,1.6],[20,16,28],headOf(elin),[0,12,-20],q); }
+     else if(lt<20){ const a=lerp(0.6,3.0,sstep(10,20,lt)); R.cam.pos=V.add(elin.root.pos,[Math.cos(a)*5,1.8,Math.sin(a)*5]); R.cam.look=V.add(elin.root.pos,[0,1.3,0]); }
+     else { const q=sstep(20,26,lt); camAB([1.3,1.8,1.3],[0.9,1.72,0.5],[0,1.55,-1.4],[0,1.5,-1.4],q); }
+     if(lt>3.2) once('chime',()=>SFX.chime()); } },
+ { name:'Home', dur:14, era:'future', caps:[[1,'The clock was tired now. Its light came and went.',5.5],[7,'So she turned the hands back — slowly, all the way home.',6]],
+   update(lt,k){ motes.visible=true; elin.root.pos=[0,0,-1.4]; elin.root.rot=[0,Math.PI,0]; elin.pose.t=lt; elin.pose.reach=sstep(4,7,lt);
+     const fl=noise2(lt*6,3.3); clock.glow=lt<9? (0.3+0.7*(fl>0.5?1:0)) : 1; clock.root.crack.visible=true;
+     const s=Math.max(0,lt-7); clock.extra=-Math.pow(s,2.4)*2.5; sparks.p=sstep(7,9,lt); vortex.p=sstep(9,14,lt); vortex.warm=0;
+     camAB([1.6,1.0,1.6],[1.0,1.35,-0.2],[0,1.8,-3],[0,1.8,-3],easeIO(k)); shake(0.05*sstep(9,14,lt),lt); if(lt>9) once('whoosh',()=>SFX.whoosh(5)); UI.flash.style.opacity=sstep(13.2,14,lt); } },
+ { name:'Dawn', dur:24, era:'dawn', chapter:'Home', caps:[[1.4,'Home. Just as she had left it. Almost.',5],[9,'The clock had stopped. Moss had taken the numbers.',5.5],[16,'It had done what it was for. Now it could rest.',6]],
+   update(lt,k){ UI.flash.style.opacity=1-sstep(0,1.6,lt); clock.glow=0; elin.pose.t=lt; fireflies.alpha=1-sstep(0,8,lt);
+     if(lt<2){ elin.root.pos=[0,0,-1.4]; elin.root.rot=[0,Math.PI,0]; } else if(lt<5) moveTo([0,0,-1.4],[1.3,0,1.0],sstep(2,5,lt)); else { elin.root.pos=[1.3,0,1.0]; elin.root.rot=[0,Math.PI+0.35,0]; }
+     elin.pose.sit=sstep(6,8,lt); elin.pose.lookUp=0.2*sstep(6,8,lt);
+     deer.root.visible=true; const dw=sstep(13,22,lt); moveTo([-9,0,-4],[-24,0,-9],dw,deer); if(dw<=0) deer.root.rot=[0,Math.PI/2,0]; deer.update(lt,dw>0&&dw<1?1:0,1-sstep(8,10,lt));
+     for(let i=0;i<6;i++){ birds[i].root.visible=true; birds[i].fly(lt+i*3,5,24+i*2,-12,34+i*3,0.35,i%2?1:-1); }
+     R.sun.dir=V.norm([0.7,lerp(0.16,0.3,k),0.55]);
+     if(lt<8){ const q=easeIO(sstep(0,8,lt)); camAB([0.9,2.4,-0.4],[3.8,2.0,3.0],[0,2.1,-3],[0,1.6,-2],q); }
+     else { const a=lerp(0.6,-0.5,sstep(8,24,lt)); R.cam.pos=[Math.sin(a)*7.5+0.5,2.3,Math.cos(a)*7.5-0.5]; R.cam.look=[0.4,1.4,-1.4]; }
+     const ci=Math.floor(lt/1.7); if(lt>1) once('chirp'+ci,()=>SFX.chirp()); } },
+ { name:'End', dur:18, era:'dawn',  caps:[[1,'Some paths you only walk once.',4],[6,'Elin walked hers, and came home.',5]],
+   update(lt,k){ elin.pose.sit=1-sstep(0,1.5,lt); elin.pose.t=lt; const w=sstep(2,14,lt); if(lt<2){ elin.root.pos=[1.3,0,1.0]; elin.root.rot=[0,Math.PI+0.35,0]; } else walkPath(3,21,w);
+     elin.pose.turnHead=-0.9*sstep(6,7.5,lt)*(1-sstep(9,10.5,lt));
+     deer.root.visible=false; for(let i=0;i<6;i++){ birds[i].root.visible=true; birds[i].fly(lt+24+i*3,5,24+i*2,-12,34+i*3,0.35,i%2?1:-1); }
+     R.sun.dir=V.norm([0.7,0.3,0.55]); fireflies.alpha=0; clock.glow=0;
+     camAB([4,2,8],[30,28,60],[0,1.5,2],[0,3,10],easeIO(k)); UI.fade.style.opacity=sstep(11,14,lt);
+     card('The End','', 'Elin, the clock, the forest, the sauropod, the village and the future<br>were all modelled, lit and animated in code.<br>Rendered live in WebGL with no libraries.', sstep(13,14.5,lt));
+     const ci=Math.floor(lt/2.1); if(lt<11) once('chirp'+ci,()=>SFX.chirp()); } },
+];
+let t0=0; for(const s of SHOTS){ s.start=t0; t0+=s.dur; } const TOTAL=t0;
+/* ===================== audio (procedural) ===================== */
+const SFX=(()=>{ let ac=null, master=null, pad=[], padGain=null, noiseBuf=null, wind=null, hum=null, muted=false; const S={};
+  const CHORDS={ forest:[110,164.8,261.6,329.6], prehist:[73.4,110,174.6,220], medieval:[82.4,123.5,196,293.7], future:[130.8,196,246.9,329.6], dawn:[130.8,196,329.6,392], end:[87.3,130.8,220,261.6] };
+  S.init=function(){ if(ac) return; ac=new (window.AudioContext||window.webkitAudioContext)(); master=ac.createGain(); master.gain.value=muted?0:0.7; master.connect(ac.destination);
+    padGain=ac.createGain(); padGain.gain.value=0.0; const lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=900; padGain.connect(lp); lp.connect(master);
+    for(let i=0;i<4;i++){ const g=ac.createGain(); g.gain.value=0.09; g.connect(padGain); const v=[]; for(const det of [-6,5]){ const o=ac.createOscillator(); o.type=i<2?'triangle':'sine'; o.detune.value=det; o.frequency.value=110; o.connect(g); o.start(); v.push(o); } pad.push({g,v}); }
+    // slow tremolo on pad
+    const lfo=ac.createOscillator(); lfo.frequency.value=0.13; const lg=ac.createGain(); lg.gain.value=0.35; lfo.connect(lg); lg.connect(padGain.gain); lfo.start();
+    noiseBuf=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate); const d=noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    wind=this._loop(320,0); hum=this._loopTone(55,0); padGain.gain.setTargetAtTime(0.8,ac.currentTime,2); };
+  S._loop=function(freq,gain){ const src=ac.createBufferSource(); src.buffer=noiseBuf; src.loop=true; const f=ac.createBiquadFilter(); f.type='lowpass'; f.frequency.value=freq; const g=ac.createGain(); g.gain.value=gain; src.connect(f); f.connect(g); g.connect(master); src.start(); return g; };
+  S._loopTone=function(freq,gain){ const o=ac.createOscillator(); o.frequency.value=freq; o.type='sawtooth'; const f=ac.createBiquadFilter(); f.type='lowpass'; f.frequency.value=200; const g=ac.createGain(); g.gain.value=gain; o.connect(f); f.connect(g); g.connect(master); o.start(); return g; };
+  S.chord=function(name){ if(!ac) return; const c=CHORDS[name]||CHORDS.forest; pad.forEach((p,i)=>{ for(const o of p.v) o.frequency.setTargetAtTime(c[i],ac.currentTime,1.5); }); };
+  S.wind=function(on){ if(ac) wind.gain.setTargetAtTime(on?0.05:0,ac.currentTime,1.5); };
+  S.hum=function(on){ if(ac) hum.gain.setTargetAtTime(on?0.05:0,ac.currentTime,1.5); };
+  S.tick=function(){ if(!ac) return; const t=ac.currentTime; const o=ac.createOscillator(); o.type='square'; o.frequency.value=1800; const g=ac.createGain(); g.gain.setValueAtTime(0.06,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.04); o.connect(g); g.connect(master); o.start(t); o.stop(t+0.05);
+    const o2=ac.createOscillator(); o2.frequency.value=420; const g2=ac.createGain(); g2.gain.setValueAtTime(0.05,t); g2.gain.exponentialRampToValueAtTime(0.001,t+0.08); o2.connect(g2); g2.connect(master); o2.start(t); o2.stop(t+0.09); };
+  S.whoosh=function(dur){ if(!ac) return; const t=ac.currentTime; const src=ac.createBufferSource(); src.buffer=noiseBuf; src.loop=true; const f=ac.createBiquadFilter(); f.type='bandpass'; f.Q.value=1.2; f.frequency.setValueAtTime(150,t); f.frequency.exponentialRampToValueAtTime(3500,t+dur);
+    const g=ac.createGain(); g.gain.setValueAtTime(0.001,t); g.gain.exponentialRampToValueAtTime(0.5,t+dur*0.85); g.gain.exponentialRampToValueAtTime(0.001,t+dur+0.6); src.connect(f); f.connect(g); g.connect(master); src.start(t); src.stop(t+dur+0.7);
+    const o=ac.createOscillator(); o.frequency.setValueAtTime(60,t); o.frequency.exponentialRampToValueAtTime(900,t+dur); const og=ac.createGain(); og.gain.setValueAtTime(0.001,t); og.gain.exponentialRampToValueAtTime(0.18,t+dur*0.8); og.gain.exponentialRampToValueAtTime(0.001,t+dur+0.4); o.connect(og); og.connect(master); o.start(t); o.stop(t+dur+0.5); };
+  S.bell=function(){ if(!ac) return; const t=ac.currentTime; for(const [f,a,d] of [[392,0.25,3.5],[588,0.12,2.5],[1046,0.06,1.5]]){ const o=ac.createOscillator(); o.frequency.value=f; const g=ac.createGain(); g.gain.setValueAtTime(a,t); g.gain.exponentialRampToValueAtTime(0.001,t+d); o.connect(g); g.connect(master); o.start(t); o.stop(t+d); } };
+  S.chime=function(){ if(!ac) return; const t=ac.currentTime; [880,1108,1318,1760].forEach((f,i)=>{ const o=ac.createOscillator(); o.frequency.value=f; const g=ac.createGain(); g.gain.setValueAtTime(0.0001,t+i*0.12); g.gain.exponentialRampToValueAtTime(0.12,t+i*0.12+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+i*0.12+1.8); o.connect(g); g.connect(master); o.start(t+i*0.12); o.stop(t+i*0.12+2); }); };
+  S.roar=function(){ if(!ac) return; const t=ac.currentTime; const o=ac.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(70,t); o.frequency.linearRampToValueAtTime(48,t+1.4); const f=ac.createBiquadFilter(); f.type='lowpass'; f.frequency.value=260; const g=ac.createGain(); g.gain.setValueAtTime(0.001,t); g.gain.exponentialRampToValueAtTime(0.35,t+0.3); g.gain.exponentialRampToValueAtTime(0.001,t+1.6); o.connect(f); f.connect(g); g.connect(master); o.start(t); o.stop(t+1.7); };
+  S.chirp=function(){ if(!ac) return; const t=ac.currentTime; const n=2+Math.floor(Math.random()*3); for(let i=0;i<n;i++){ const o=ac.createOscillator(); const b=2600+Math.random()*1200; o.frequency.setValueAtTime(b,t+i*0.14); o.frequency.exponentialRampToValueAtTime(b*1.5,t+i*0.14+0.06); o.frequency.exponentialRampToValueAtTime(b*0.9,t+i*0.14+0.11);
+    const g=ac.createGain(); g.gain.setValueAtTime(0.0001,t+i*0.14); g.gain.exponentialRampToValueAtTime(0.05,t+i*0.14+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+i*0.14+0.12); o.connect(g); g.connect(master); o.start(t+i*0.14); o.stop(t+i*0.14+0.13); } };
+  S.mute=function(m){ muted=m; if(master) master.gain.setTargetAtTime(m?0:0.7,ac.currentTime,0.1); };
+  S.suspend=function(){ if(ac&&ac.state==='running') ac.suspend(); }; S.resume=function(){ if(ac&&ac.state==='suspended') ac.resume(); };
+  return S; })();
+
+/* ===================== main loop ===================== */
+const FILM={ T:0, playing:false, started:false, shotIdx:-1, lastTick:-1, ended:false };
+function resetFrame(){ vortex.p=0; sparks.p=0; fireflies.guide=null; fireflies.alpha=0; snow.visible=false; smoke.visible=false; motes.visible=false;
+  dino.root.visible=false; deer.root.visible=false; drone.root.visible=false; villager.root.visible=false; for(const p of ptero) p.root.visible=false; for(const b of birds) b.root.visible=false;
+  clock.extra=0; clock.glow=1; clock.root.crack.visible=false; R.pt1.col=[0,0,0]; R.pt1.pos=[0,-100,0]; elin.pose.walk=0; elin.pose.reach=0; elin.pose.wave=0; elin.pose.lookUp=0; elin.pose.sit=0; elin.pose.turnHead=0; villager.pose.wave=0; villager.pose.walk=0;
+  UI.flash.style.opacity=0; UI.fade.style.opacity=0; card('','','',0); }
+function shotAt(T){ for(let i=SHOTS.length-1;i>=0;i--) if(T>=SHOTS[i].start) return i; return 0; }
+function enterShot(i,snap){ const s=SHOTS[i]; FILM.shotIdx=i; evDone.clear(); const prevEra=Era.cur; Era.set(s.era, snap||prevEra!==s.era&&s.name!=='Title'); // era jumps are hidden behind the flash
+  SFX.chord(s.name==='End'?'end':s.era); SFX.wind(s.era==='medieval'); SFX.hum(s.era==='future');
+  const chapEl=$('chapname'); chapEl.textContent=s.chapter||chapEl.textContent; updateChapterButtons(); }
+function frame(T){ R.time=T; const i=shotAt(T); if(i!==FILM.shotIdx) enterShot(i,false); const s=SHOTS[i]; const lt=T-s.start, k=clamp(lt/s.dur,0,1);
+  resetFrame(); s.update(lt,k); showCaption(s.caps?capsOf(s.caps,lt):'');
+  elin.update(); clock.update(T,s.era); fireflies.update(T); if(snow.visible) snow.update(T); if(smoke.visible) smoke.update(T); if(motes.visible) motes.update(T); vortex.update(T); sparks.update(T);
+  if(fireflies.alpha<=0) fireflies.visible=false; else fireflies.visible=true;
+  R.shadowCenter=[clamp(R.cam.look[0],-30,30),0,clamp(R.cam.look[2],-40,40)];
+  const tk=Math.floor(T); if(clock.glow>0.05&&tk!==FILM.lastTick&&s.era!=='dawn'){ FILM.lastTick=tk; if(FILM.playing) SFX.tick(); }
+  R.render(); }
+let lastNow=0;
+function loop(now){ requestAnimationFrame(loop); if(!FILM.started) return; const dt=Math.min(0.05,(now-lastNow)/1000||0); lastNow=now;
+  if(FILM.playing){ FILM.T+=dt; if(FILM.T>=TOTAL){ FILM.T=TOTAL-0.001; setPlaying(false); FILM.ended=true; } }
+  Era.update(dt); frame(FILM.T); updateHud(); }
+requestAnimationFrame(loop);
+function seek(T,snap){ FILM.T=clamp(T,0,TOTAL-0.001); FILM.ended=false; const i=shotAt(FILM.T); enterShot(i,true); Era.update(0); FILM.lastTick=Math.floor(FILM.T); if(!FILM.playing) { frame(FILM.T); updateHud(); } }
+function setPlaying(p){ FILM.playing=p; $('b-play').textContent=p?'❚❚':'▶'; if(p) SFX.resume(); else SFX.suspend(); }
+
+/* ===================== UI ===================== */
+const chapters=SHOTS.map((s,i)=>({i,s})).filter(o=>o.s.chapter);
+for(const {i,s} of chapters){ const b=document.createElement('button'); b.textContent=s.chapter; b.dataset.i=i; b.onclick=()=>{ seek(s.start); if(!FILM.playing) setPlaying(true); }; $('chapters').appendChild(b);
+  const m=document.createElement('div'); m.className='ch'; m.style.left=(s.start/TOTAL*100)+'%'; $('prog').appendChild(m); }
+function updateChapterButtons(){ for(const b of $('chapters').children) b.classList.toggle('on', +b.dataset.i===chapters.filter(c=>c.i<=FILM.shotIdx).slice(-1)[0]?.i); }
+const fmt=t=>Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0');
+function updateHud(){ $('fill').style.width=(FILM.T/TOTAL*100)+'%'; $('time').textContent=fmt(FILM.T)+' / '+fmt(TOTAL); if(FILM.ended){ $('b-play').textContent='↺'; } }
+$('prog').onclick=e=>{ const r=$('prog').getBoundingClientRect(); seek((e.clientX-r.left)/r.width*TOTAL); };
+$('b-play').onclick=()=>{ if(FILM.ended){ seek(0); setPlaying(true); } else setPlaying(!FILM.playing); };
+$('b-restart').onclick=()=>{ seek(0); setPlaying(true); };
+let muted=false; $('b-mute').onclick=()=>{ muted=!muted; SFX.mute(muted); $('b-mute').textContent=muted?'🔇':'🔊'; };
+$('b-full').onclick=()=>{ if(document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.(); };
+let hudTimer=0; function pokeHud(){ document.body.classList.add('hud-on'); clearTimeout(hudTimer); hudTimer=setTimeout(()=>{ if(FILM.playing) document.body.classList.remove('hud-on'); },2600); }
+addEventListener('mousemove',pokeHud); addEventListener('touchstart',pokeHud,{passive:true});
+addEventListener('keydown',e=>{ if(!FILM.started) return; if(e.code==='Space'){ e.preventDefault(); $('b-play').onclick(); } else if(e.code==='ArrowRight') seek(SHOTS[Math.min(SHOTS.length-1,FILM.shotIdx+1)].start); else if(e.code==='ArrowLeft') seek(SHOTS[Math.max(0,FILM.shotIdx-1)].start); else if(e.key==='m') $('b-mute').onclick(); else if(e.key==='f') $('b-full').onclick(); pokeHud(); });
+canvas.addEventListener('click',()=>{ if(FILM.started&&!FILM.ended) setPlaying(!FILM.playing); pokeHud(); });
+function start(){ if(FILM.started) return; try{ SFX.init(); }catch(e){} FILM.started=true; $('start').style.display='none'; seek(0); setPlaying(true); pokeHud(); }
+$('start').onclick=start; $('loading').textContent='Ready'; 
+// warm-up render so the first frame doesn't stutter
+Era.set('forest',true); Era.update(1); frame(0);
+window.FILM=FILM; window.seek=seek; window.frame=frame;
+</script>
+</body>
+</html>
