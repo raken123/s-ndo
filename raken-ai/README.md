@@ -13,6 +13,23 @@ base. Everything you make stays on your device.
 | **Linux** | `sudo apt install ./raken-ai_<v>_amd64.deb` then `raken-ai`, or the generic `-linux-x64.tar.xz` |
 | **Android** | `raken-ai-<v>-android.apk` from the *Raken AI builds* workflow artifacts / a release, sideload it |
 
+## Downloads in this repository (v1.0.0)
+
+| File | Platform | Size |
+|---|---|---|
+| [`raken-ai.html`](raken-ai.html) | any browser, single file | 150 KB |
+| [`desktop/dist/raken-ai_1.0.0_amd64.deb`](desktop/dist/raken-ai_1.0.0_amd64.deb) | Debian / Ubuntu x86-64 | 82.9 MB |
+| [`desktop/dist/raken-ai-1.0.0-win32-x64.tar.xz`](desktop/dist/raken-ai-1.0.0-win32-x64.tar.xz) | Windows x86-64 | 92.7 MB |
+| [`desktop/dist/raken-ai-1.0.0-macos-arm64.tar.xz`](desktop/dist/raken-ai-1.0.0-macos-arm64.tar.xz) | macOS Apple Silicon | 79.7 MB |
+| Android APK | built by the *Raken AI builds* workflow (needs the Android SDK, which the packaging machine did not have) | — |
+
+SHA-256 checksums are in [`desktop/dist/SHA256SUMS`](desktop/dist/SHA256SUMS).
+The Windows and macOS bundles are not code-signed: on Windows accept the
+SmartScreen prompt, on macOS clear the quarantine attribute as shown above
+(or right-click → Open). The Windows executable keeps Electron's icon
+(`RakenAI.ico` ships beside it for shortcuts) because re-branding the .exe
+needs Windows tooling.
+
 Desktop packages are produced by `desktop/build.py`; the APK by the Gradle
 project in `android/`; the GitHub Actions workflow `.github/workflows/raken-ai.yml`
 builds all of them and attaches everything to a release when you push a tag
@@ -135,7 +152,7 @@ so IndexedDB and WebCrypto behave exactly as on the web.
   project/preview, license activation (dev mode, signed keys, tampered keys),
   image error handling, gallery, light theme, Work Agent run, and the mobile
   layout — with no page exceptions.
-- The Linux desktop build is launched headlessly by `build.py --smoke`.
+- The Linux desktop build was launched headlessly by `build.py --smoke` (under xvfb) and reported the app booted inside Electron with the desktop bridge active.
 - Windows and macOS packages are assembled from the official runtimes with the
   same payload; they are not executed here because there is no Windows/macOS
   machine in the build environment.
