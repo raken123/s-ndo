@@ -179,6 +179,30 @@ def build_cues(scenes):
             elif act == "road" and b["kind"] == "act":
                 add(t0 + 0.10, "rumble")
                 add(t0 + 1.20, "horn")
+            # --- episode 7 ---
+            elif act == "outside" and b["kind"] == "act":
+                add(t0 + 0.20, "wind")
+                add(t0 + 1.10, "pass")
+            elif act == "signal" and b["kind"] == "act":
+                add(t0 + 0.05, "horn")
+            elif act in ("lorry", "gust") and b["kind"] == "act":
+                add(t0 + 0.15, "pass")
+                if act == "gust":
+                    add(t0 + 0.60, "whoosh")
+            elif act == "swerve" and b["kind"] == "act":
+                add(t0 + 0.30, "pass")
+                add(t0 + 0.95, "beepbeep")
+            elif act == "hedge" and b["kind"] == "act":
+                add(t0 + 0.20, "whoosh")
+                add(t0 + 0.95, "thud")
+            elif act == "together" and b["kind"] == "act":
+                add(t0 + 0.40, "pass")
+            elif act == "endcross" and b["kind"] == "act":
+                add(t0 + 0.05, "buzzer")
+                add(t0 + 0.70, "sparkle")
+            elif act == "binback" and b["kind"] == "act":
+                add(t0 + 0.15, "stinger")
+                add(t0 + 1.00, "boo")
 
     for sc in scenes:
         if sc["key"] in ("results", "judging", "scores", "bin"):

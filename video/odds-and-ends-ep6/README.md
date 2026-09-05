@@ -61,5 +61,5 @@ generator fits together.
 
 ## Next
 
-Episode 7: "The Motorway" — four lanes, no pavement. Cone has been waiting his
-whole life for this.
+[Episode 7: "The Motorway"](../odds-and-ends-ep7) — Plate lost the vote, and
+Cone finally gets four lanes of his own.

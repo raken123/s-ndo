@@ -233,6 +233,21 @@ def sfx(kind, seed=0):
             o = int((0.25 + i * 0.14) * SR)
             out[o:o + len(s)] += s[:len(out) - o]
         return out
+    if kind == "pass":
+        t = T(1.5)
+        f = 420 * np.exp(-t * 1.2) + 90
+        w = (np.sin(2 * np.pi * np.cumsum(f) / SR) * 0.5 +
+             lowpass(noise(len(t), seed), 2200) * 0.9)
+        return w * np.sin(np.pi * np.clip(t / 1.5, 0, 1)) ** 1.5 * 0.42
+    if kind == "beepbeep":
+        out = np.zeros(int(0.7 * SR))
+        for i, off in enumerate((0.0, 0.26)):
+            t = T(0.2)
+            s = (osc(t, 440, "square") + osc(t, 554, "square")) * \
+                env(len(t), 0.006, 0.03, 0.85, 0.06) * 0.16
+            o = int(off * SR)
+            out[o:o + len(s)] += s[:len(out) - o]
+        return out
     if kind == "fanfare":
         out = np.zeros(int(2.0 * SR))
         for i, m in enumerate((67, 72, 76, 79)):
@@ -329,6 +344,9 @@ CUES = {
     # episode 6
     "fridge": (62, 126, ["I", "V", "vi", "IV"], "bouncy"),
     "cold": (57, 112, ["i", "bVII", "bVI", "v"], "sneaky"),
+    # episode 7
+    "hardshoulder": (58, 132, ["I", "bVII", "IV", "I"], "drive"),
+    "cross": (55, 156, ["i", "bVII", "bVI", "v"], "drive"),
 }
 
 MELODY = {

@@ -15,6 +15,7 @@ Episodes live in [`../video`](../video):
 | `ep04` | [The Rulebook](../video/odds-and-ends-ep4) | the light goes out, and something wants the paper |
 | `ep05` | [The Dishwasher](../video/odds-and-ends-ep5) | three new objects arrive, and everyone takes a wash cycle |
 | `ep06` | [The Fridge](../video/odds-and-ends-ep6) | cold storage, a guest adjudicator, and a shelf nobody should have touched |
+| `ep07` | [The Motorway](../video/odds-and-ends-ep7) | four lanes, no pavement, and a cone in his element |
 
 ## Building
 
@@ -56,7 +57,7 @@ keep talking.
 | 🗑️ | **Bin** | it is recycling night | ep4 guest |
 | 🥄 | **Spork** | a fork and a spoon, at the same time | ep5– |
 | 🧤 | **Mitt** | has held worse than you | ep5–6 |
-| 🍽️ | **Plate** | immaculate, and aware of it | ep5– |
+| 🍽️ | **Plate** | immaculate, and aware of it | ep5–7 |
 
 Adding one is a `Char` subclass with a `body()` method, a colour, a subtitle
 tag and a `voice` dict; the walk cycle, blinking, expressions and mouth-sync
@@ -88,7 +89,7 @@ BEATS = [dict(key="scene_name", beats=[
 
 def sc_scene_name(cr, show, sc, beat, T): ...           # draw one frame
 
-EPISODE = Show("ep07", 'Episode 7: "..."', BEATS, 300.0,
+EPISODE = Show("ep08", 'Episode 8: "..."', BEATS, 300.0,
                {"scene_name": sc_scene_name})
 ```
 

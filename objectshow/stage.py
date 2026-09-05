@@ -1033,3 +1033,148 @@ def motorway(cr, t, k=1.0, headlights=0.0):
                 circle(cr, 640 + dx, 300, r * (0.6 + 0.6 * headlights))
                 set_rgb(cr, (1, 0.97, 0.80), a * headlights)
                 cr.fill()
+
+
+# ----------------------------------------------- episode 7: the motorway ---
+
+ROAD = (0.29, 0.29, 0.34)
+ROAD_D = (0.24, 0.24, 0.29)
+VERGE = (0.44, 0.62, 0.36)
+LANES = (352.0, 444.0, 636.0)          # far, middle, near (in front of cast)
+
+
+def motorway_day(cr, t, dusk=0.5):
+    """Four lanes, no pavement."""
+    import cairo
+    g = cairo.LinearGradient(0, 0, 0, 250)
+    g.add_color_stop_rgb(0, lerp(0.45, 0.24, dusk), lerp(0.72, 0.42, dusk),
+                         lerp(0.95, 0.62, dusk))
+    g.add_color_stop_rgb(1, lerp(0.85, 0.98, dusk), lerp(0.92, 0.74, dusk),
+                         lerp(1.0, 0.58, dusk))
+    cr.set_source(g)
+    cr.rectangle(0, 0, W, 252)
+    cr.fill()
+    if dusk > 0.3:
+        circle(cr, 1080, 190, 44)
+        set_rgb(cr, (1, 0.82, 0.42), 0.9)
+        cr.fill()
+    # treeline
+    set_rgb(cr, (0.24, 0.36, 0.26))
+    for i in range(24):
+        x = i * 58 - (t * 4) % 58
+        r = 26 + rand01("tree", i) * 24
+        circle(cr, x, 250 - r * 0.4, r)
+        cr.fill()
+    cr.rectangle(0, 236, W, 26)
+    set_rgb(cr, VERGE)
+    cr.fill()
+    # crash barrier
+    for i in range(18):
+        x = i * 74 - (t * 60) % 74
+        rrect(cr, x, 252, 12, 34, 4)
+        fill_stroke(cr, (0.58, 0.60, 0.64), 3.0)
+    rrect(cr, -20, 250, W + 40, 16, 6)
+    fill_stroke(cr, (0.76, 0.78, 0.82), 4.0)
+    # road
+    cr.rectangle(0, 266, W, H - 266)
+    set_rgb(cr, ROAD)
+    cr.fill()
+    for i, y in enumerate((300, 396, 500, 700)):
+        cr.move_to(0, y)
+        cr.line_to(W, y)
+        set_rgb(cr, ROAD_D)
+        cr.set_line_width(3 + i)
+        cr.stroke()
+    # lane markings, faster and larger toward the camera
+    for i, (y, w, gap, sp, h) in enumerate(((348, 44, 120, 90, 7),
+                                            (446, 62, 165, 150, 9),
+                                            (600, 96, 250, 240, 13))):
+        off = (t * sp) % (w + gap)
+        x = -w - off
+        while x < W + w:
+            rrect(cr, x, y, w, h, 4)
+            set_rgb(cr, (0.93, 0.93, 0.88), 0.9)
+            cr.fill()
+            x += w + gap
+
+
+def gantry(cr, text="OBJECTS ON ROAD", k=1.0):
+    if k <= 0:
+        return
+    rrect(cr, 300, 40, 680, 92, 10)
+    fill_stroke(cr, (0.10, 0.24, 0.14), 5.0)
+    text_at(cr, 640, 102, text, 46, (1, 0.86, 0.30), "center")
+    for x in (330, 950):
+        rrect(cr, x, 132, 18, 118, 6)
+        fill_stroke(cr, (0.52, 0.54, 0.58), 4.0)
+
+
+VEHICLE_COLORS = ((0.86, 0.32, 0.30), (0.30, 0.48, 0.78), (0.95, 0.78, 0.28),
+                  (0.42, 0.66, 0.46), (0.88, 0.88, 0.90), (0.55, 0.42, 0.70))
+
+
+def vehicle(cr, kind, x, y, s=1.0, flip=False, seed=0, speed=1.0):
+    """A vehicle, seen from the side, going past faster than it looks."""
+    if s <= 0.002:
+        return
+    col = VEHICLE_COLORS[seed % len(VEHICLE_COLORS)]
+    cr.save()
+    cr.translate(x, y)
+    cr.scale(-s if flip else s, s)
+    if speed > 0:
+        for i in range(5):
+            yy = -70 + i * 26
+            cr.rectangle(-260 - i * 30, yy, 150 + i * 40, 5)
+            set_rgb(cr, (1, 1, 1), 0.16 * speed)
+            cr.fill()
+    if kind == "lorry":
+        rrect(cr, -190, -132, 236, 118, 8)
+        fill_stroke(cr, (0.92, 0.92, 0.94), 5.0)
+        rrect(cr, 40, -104, 104, 90, 10)
+        fill_stroke(cr, col, 5.0)
+        rrect(cr, 74, -92, 62, 38, 7)
+        fill_stroke(cr, (0.55, 0.75, 0.88), 4.0)
+        for wx in (-140, -60, 108):
+            circle(cr, wx, -8, 26)
+            fill_stroke(cr, (0.16, 0.16, 0.20), 4.5)
+            circle(cr, wx, -8, 10)
+            fill_stroke(cr, (0.60, 0.62, 0.66), 3.0)
+    elif kind == "van":
+        rrect(cr, -120, -110, 230, 96, 10)
+        fill_stroke(cr, col, 5.0)
+        rrect(cr, 40, -98, 58, 40, 7)
+        fill_stroke(cr, (0.58, 0.76, 0.88), 4.0)
+        for wx in (-70, 66):
+            circle(cr, wx, -10, 24)
+            fill_stroke(cr, (0.16, 0.16, 0.20), 4.5)
+    else:  # car
+        rrect(cr, -120, -74, 240, 62, 14)
+        fill_stroke(cr, col, 5.0)
+        cr.new_path()
+        cr.move_to(-64, -74)
+        cr.curve_to(-40, -122, 44, -122, 72, -74)
+        cr.close_path()
+        fill_stroke(cr, tuple(c * 0.9 for c in col), 5.0)
+        rrect(cr, -46, -108, 88, 34, 8)
+        fill_stroke(cr, (0.58, 0.76, 0.88), 4.0)
+        for wx in (-66, 66):
+            circle(cr, wx, -12, 22)
+            fill_stroke(cr, (0.16, 0.16, 0.20), 4.5)
+    cr.restore()
+
+
+def hedge(cr, x, y, s=1.0):
+    cr.save()
+    cr.translate(x, y)
+    cr.scale(s, s)
+    for cx, cy, r in ((-70, 0, 52), (-20, -22, 60), (36, -6, 54),
+                      (84, 6, 44)):
+        circle(cr, cx, cy, r)
+        fill_stroke(cr, (0.32, 0.52, 0.30), 5.0)
+    for i in range(9):
+        a = rand01("hedge", i) * math.tau
+        r = 30 + rand01("hedger", i) * 60
+        circle(cr, math.cos(a) * r, math.sin(a) * r * 0.5 - 8, 7)
+        set_rgb(cr, (0.42, 0.64, 0.36))
+        cr.fill()
+    cr.restore()
