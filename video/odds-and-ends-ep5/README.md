@@ -67,5 +67,5 @@ generator fits together.
 
 ## Next
 
-Episode 6: "The Fridge" — and Cube has been asking for somewhere cold since
-episode 2.
+[Episode 6: "The Fridge"](../odds-and-ends-ep6) — Mitt lost the vote, and Cube
+finally gets somewhere cold.

@@ -12,7 +12,7 @@ import sys
 
 import engine
 
-EPISODES = ("ep01", "ep02", "ep03", "ep04", "ep05")
+EPISODES = ("ep01", "ep02", "ep03", "ep04", "ep05", "ep06")
 
 
 def load(name):

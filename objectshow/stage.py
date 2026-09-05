@@ -857,3 +857,179 @@ def dishwasher_inside(cr, t, water=0.0, spray=0.0, steam_k=0.0, light=1.0):
     bubbles(cr, t, 26, k=max(spray, water))
     if steam_k > 0:
         steam(cr, 640, GROUND - 40, t, steam_k, "in", 10, 900)
+
+
+# --------------------------------------------------- episode 6: the cold ---
+
+FRIDGE_WALL = (0.86, 0.91, 0.94)
+FRIDGE_SHADE = (0.74, 0.82, 0.87)
+COLD = (0.62, 0.84, 0.95)
+
+
+def fridge_front(cr, x, y, s=1.0, door_k=0.0, t=0.0, glow=0.0):
+    """The fridge, from the kitchen.  The door swings open to the left."""
+    if s <= 0.002:
+        return
+    cr.save()
+    cr.translate(x, y)
+    cr.scale(s, s)
+    rrect(cr, -120, -330, 240, 330, 16)
+    fill_stroke(cr, (0.78, 0.81, 0.86), 5.5)
+    rrect(cr, -104, -312, 208, 128, 10)
+    fill_stroke(cr, FRIDGE_SHADE, 4.5)
+    rrect(cr, -104, -170, 208, 152, 10)
+    fill_stroke(cr, FRIDGE_SHADE, 4.5)
+    if door_k > 0.05:
+        set_rgb(cr, (1, 0.98, 0.86), 0.55 * door_k)
+        rrect(cr, -104, -170, 208, 152, 10)
+        cr.fill()
+        for i in range(2):
+            yy = -132 + i * 56
+            cr.move_to(-96, yy)
+            cr.line_to(96, yy)
+            stroke_out(cr, 5.0, (0.70, 0.78, 0.84))
+    # the door narrows toward its hinge as it opens
+    cr.save()
+    cr.translate(-120, -186)
+    cr.scale(max(0.02, 1 - door_k * 0.88), 1.0)
+    rrect(cr, 0, 0, 240, 186, 12)
+    fill_stroke(cr, (0.84, 0.87, 0.91), 5.0)
+    rrect(cr, 196, 52, 16, 92, 7)
+    fill_stroke(cr, (0.55, 0.58, 0.64), 4.0)
+    cr.restore()
+    if door_k > 0.15:
+        rrect(cr, -136, -190, 22, 190, 8)
+        fill_stroke(cr, (0.72, 0.76, 0.82), 4.5)
+    cr.restore()
+
+
+def fridge_inside(cr, t, frost=0.0, light=1.0, door=1.0):
+    """Inside the fridge: shelves, a cold light, and things at the back."""
+    wall = tuple(lerp(c * 0.55, c, light) for c in FRIDGE_WALL)
+    set_rgb(cr, wall)
+    cr.rectangle(0, 0, W, H)
+    cr.fill()
+    import cairo
+    g = cairo.LinearGradient(0, 0, 0, H)
+    g.add_color_stop_rgba(0, 1, 1, 0.92, 0.35 * door)
+    g.add_color_stop_rgba(1, 0.55, 0.72, 0.85, 0.25)
+    cr.set_source(g)
+    cr.rectangle(0, 0, W, H)
+    cr.fill()
+    # back wall panelling
+    for i in range(7):
+        y = 90 + i * 62
+        cr.move_to(70, y)
+        cr.line_to(W - 70, y)
+        set_rgb(cr, FRIDGE_SHADE, 0.55)
+        cr.set_line_width(5)
+        cr.stroke()
+    # things at the back
+    for x, w, h, col in ((150, 54, 120, (0.72, 0.84, 0.72)),
+                         (250, 44, 92, (0.86, 0.78, 0.62)),
+                         (1080, 60, 104, (0.80, 0.72, 0.84)),
+                         (990, 40, 78, (0.72, 0.80, 0.88))):
+        rrect(cr, x - w / 2, 330 - h, w, h, 9)
+        fill_stroke(cr, col, 4.0, alpha=0.9)
+        rrect(cr, x - w / 4, 330 - h - 16, w / 2, 18, 6)
+        fill_stroke(cr, tuple(c * 0.85 for c in col), 4.0, alpha=0.9)
+    # glass shelf behind the cast
+    rrect(cr, 40, 330, W - 80, 14, 6)
+    fill_stroke(cr, (0.90, 0.96, 1.0), 4.0, alpha=0.75)
+    # the shelf they stand on
+    rrect(cr, 0, GROUND + 4, W, 18, 6)
+    fill_stroke(cr, (0.90, 0.96, 1.0), 5.0, alpha=0.85)
+    if frost > 0:
+        frost_overlay(cr, frost)
+
+
+def frost_overlay(cr, k):
+    """Ice creeping in from the edges."""
+    if k <= 0:
+        return
+    set_rgb(cr, COLD, 0.22 * k)
+    cr.rectangle(0, 0, W, H)
+    cr.fill()
+    for i in range(70):
+        edge = i % 4
+        f = rand01("frost", i)
+        if edge == 0:
+            x, y = f * W, 0
+        elif edge == 1:
+            x, y = f * W, H
+        elif edge == 2:
+            x, y = 0, f * H
+        else:
+            x, y = W, f * H
+        r = (18 + rand01("frostr", i) * 46) * k
+        circle(cr, x, y, r)
+        set_rgb(cr, (1, 1, 1), 0.34 * k)
+        cr.fill()
+    for i in range(26):
+        x = rand01("cry", i) * W
+        y = rand01("cryy", i) * H
+        a = rand01("crya", i) * math.tau
+        L = 10 + rand01("cryl", i) * 22
+        set_rgb(cr, (1, 1, 1), 0.25 * k)
+        cr.set_line_width(3)
+        for j in range(3):
+            aa = a + j * math.tau / 3
+            cr.move_to(x, y)
+            cr.line_to(x + math.cos(aa) * L * k, y + math.sin(aa) * L * k)
+        cr.stroke()
+
+
+def jar(cr, x, y, s=1.0, lid=(0.55, 0.50, 0.42)):
+    """Something at the back that nobody wants to date."""
+    cr.save()
+    cr.translate(x, y)
+    cr.scale(s, s)
+    rrect(cr, -46, -96, 92, 96, 12)
+    fill_stroke(cr, (0.52, 0.60, 0.44), 5.0)
+    rrect(cr, -40, -46, 80, 46, 8)
+    fill_stroke(cr, (0.40, 0.48, 0.32), 4.0)
+    rrect(cr, -50, -116, 100, 24, 8)
+    fill_stroke(cr, lid, 5.0)
+    cr.restore()
+
+
+def breath(cr, x, y, t, k=1.0, seed="br"):
+    """Cold breath.  Objects should not have breath.  These do."""
+    if k <= 0:
+        return
+    for i in range(4):
+        ph = ((t * 0.9 + rand01(seed, i)) % 1.0)
+        cx = x + 26 + ph * 60
+        cy = y - ph * 26
+        circle(cr, cx, cy, 7 + ph * 18)
+        set_rgb(cr, (1, 1, 1), (1 - ph) * 0.42 * k)
+        cr.fill()
+
+
+def motorway(cr, t, k=1.0, headlights=0.0):
+    """A road at night, for teasing what happens next."""
+    set_rgb(cr, (0.09, 0.10, 0.16))
+    cr.rectangle(0, 0, W, H)
+    cr.fill()
+    set_rgb(cr, (0.17, 0.17, 0.22))
+    cr.rectangle(0, 320, W, H - 320)
+    cr.fill()
+    cr.move_to(0, 320)
+    cr.line_to(W, 320)
+    stroke_out(cr, 5.0, (0.30, 0.30, 0.36))
+    for row, (y, w, gap, sp) in enumerate(((392, 40, 120, 60),
+                                           (470, 62, 170, 110),
+                                           (566, 92, 240, 180))):
+        off = (t * sp) % (w + gap)
+        x = -w - off
+        while x < W + w:
+            rrect(cr, x, y, w, 8 + row * 4, 4)
+            set_rgb(cr, (0.92, 0.92, 0.88), 0.85)
+            cr.fill()
+            x += w + gap
+    if headlights > 0:
+        for dx in (-90, 90):
+            for r, a in ((150, 0.16), (80, 0.30), (34, 0.85)):
+                circle(cr, 640 + dx, 300, r * (0.6 + 0.6 * headlights))
+                set_rgb(cr, (1, 0.97, 0.80), a * headlights)
+                cr.fill()

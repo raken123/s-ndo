@@ -14,6 +14,7 @@ Episodes live in [`../video`](../video):
 | `ep03` | [Sock Puppet](../video/odds-and-ends-ep3) | wear the sock, do an impression, be judged by the eliminated |
 | `ep04` | [The Rulebook](../video/odds-and-ends-ep4) | the light goes out, and something wants the paper |
 | `ep05` | [The Dishwasher](../video/odds-and-ends-ep5) | three new objects arrive, and everyone takes a wash cycle |
+| `ep06` | [The Fridge](../video/odds-and-ends-ep6) | cold storage, a guest adjudicator, and a shelf nobody should have touched |
 
 ## Building
 
@@ -54,7 +55,7 @@ keep talking.
 | 🧊 | **Cube** | cool under pressure. melting otherwise. | ep1–3 |
 | 🗑️ | **Bin** | it is recycling night | ep4 guest |
 | 🥄 | **Spork** | a fork and a spoon, at the same time | ep5– |
-| 🧤 | **Mitt** | has held worse than you | ep5– |
+| 🧤 | **Mitt** | has held worse than you | ep5–6 |
 | 🍽️ | **Plate** | immaculate, and aware of it | ep5– |
 
 Adding one is a `Char` subclass with a `body()` method, a colour, a subtitle
@@ -87,11 +88,14 @@ BEATS = [dict(key="scene_name", beats=[
 
 def sc_scene_name(cr, show, sc, beat, T): ...           # draw one frame
 
-EPISODE = Show("ep06", 'Episode 6: "..."', BEATS, 300.0,
+EPISODE = Show("ep07", 'Episode 7: "..."', BEATS, 300.0,
                {"scene_name": sc_scene_name})
 ```
 
-Then add its name to `EPISODES` in `render.py`. Scenes ask the show what is
+Then add its name to `EPISODES` in `render.py`. Act names are global to the
+cue sheet in `cues.py`, so give new ones distinct names — reusing another
+episode's act name will fire that episode's sounds in yours (and yours in
+theirs). Scenes ask the show what is
 happening now — `show.act_start(sc, "fling")`, `show.since("buzzer", T, 1.0)`,
 `show.mouth(beat, T)` — rather than tracking state themselves, so any moment
 can be drawn directly without rendering the frames before it. Passing a total

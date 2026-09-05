@@ -212,6 +212,27 @@ def sfx(kind, seed=0):
     if kind == "click":
         t = T(0.08)
         return (noise(len(t), seed) * np.exp(-t * 90)) * 0.35
+    if kind == "hum":
+        t = T(3.0)
+        w = (np.sin(2 * np.pi * 58 * t) * 0.8 +
+             np.sin(2 * np.pi * 116.6 * t) * 0.25 +
+             lowpass(noise(len(t), seed), 400) * 0.5)
+        return w * np.sin(np.pi * t / 3.0) ** 0.6 * 0.16
+    if kind == "crack":
+        t = T(0.35)
+        return (noise(len(t), seed) * np.exp(-t * 26) +
+                np.sin(2 * np.pi * 1800 * t) * np.exp(-t * 40) * 0.6) * 0.34
+    if kind == "freeze":
+        t = T(1.3)
+        f = np.linspace(300, 2600, len(t))
+        w = np.sin(2 * np.pi * np.cumsum(f) / SR)
+        out = w * np.exp(-t * 1.6) * 0.20
+        for i, m in enumerate((88, 93, 96)):
+            tt = T(0.7)
+            s = np.sin(2 * np.pi * n2f(m) * tt) * np.exp(-tt * 7) * 0.10
+            o = int((0.25 + i * 0.14) * SR)
+            out[o:o + len(s)] += s[:len(out) - o]
+        return out
     if kind == "fanfare":
         out = np.zeros(int(2.0 * SR))
         for i, m in enumerate((67, 72, 76, 79)):
@@ -305,6 +326,9 @@ CUES = {
     # episode 5
     "arrivals": (60, 134, ["I", "vi", "IV", "V"], "bouncy"),
     "cycle": (57, 148, ["i", "bVII", "bVI", "bVII"], "drive"),
+    # episode 6
+    "fridge": (62, 126, ["I", "V", "vi", "IV"], "bouncy"),
+    "cold": (57, 112, ["i", "bVII", "bVI", "v"], "sneaky"),
 }
 
 MELODY = {
