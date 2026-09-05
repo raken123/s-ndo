@@ -7,6 +7,7 @@ base. Everything you make stays on your device.
 | Platform | How to get it |
 |---|---|
 | **Web** | Open `raken-ai/app/index.html` from GitHub Pages (`https://<user>.github.io/s-ndo/raken-ai/app/`) — installable as a PWA, works offline after the first visit |
+| **Single file** | `raken-ai.html` — the whole app embedded in one 150 KB file (styles, scripts, icons). Open it from disk, a USB stick or an e-mail attachment; nothing else needed |
 | **Windows** | `raken-ai-<v>-win32-x64.tar.xz` → extract → run `RakenAI.exe` |
 | **macOS** | `raken-ai-<v>-macos-arm64.tar.xz` (Apple Silicon) or `-macos-x64` (Intel) → extract → `xattr -dr com.apple.quarantine "Raken AI.app"` → open |
 | **Linux** | `sudo apt install ./raken-ai_<v>_amd64.deb` then `raken-ai`, or the generic `-linux-x64.tar.xz` |
@@ -92,6 +93,8 @@ Set `RAKEN_KEYSTORE`, `RAKEN_KEYSTORE_PASSWORD`, `RAKEN_KEY_ALIAS`,
 `RAKEN_KEY_PASSWORD` to sign with your own keystore; otherwise the debug key is
 used so the APK is still installable.
 
+Single-file edition: `python3 tools/mkhtml.py` embeds everything in `app/` into `raken-ai.html`.
+
 Web: `raken-ai/app` is plain static files. Serve it from anywhere (the repo's
 Pages workflow already does), or open `index.html` directly.
 
@@ -114,6 +117,8 @@ raken-ai/
   desktop/          Electron shell: main.js (app:// origin + HTTP bridge), preload.js, build.py
   android/          Gradle project: WebView + WebViewAssetLoader + save-file bridge
   tools/genkey.mjs  license key tool
+  tools/mkhtml.py   builds the single-file raken-ai.html
+  raken-ai.html     single-file edition (generated)
 ```
 
 On the web and Android the page talks to providers directly (the Anthropic API

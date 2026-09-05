@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d14">
+<meta name="description" content="Raken AI — chat, make images and videos, and put a Work Agent and a Code Agent to work. Windows, macOS, Linux, Android and Web.">
+<title>Raken AI</title>
+<!-- Single-file edition: everything embedded. Built by tools/mkhtml.py -->
+<link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIlJha2VuIEFJIiwKICAic2hvcnRfbmFtZSI6ICJSYWtlbiBBSSIsCiAgImRlc2NyaXB0aW9uIjogIkNoYXQsIG1ha2UgaW1hZ2VzIGFuZCB2aWRlb3MsIGFuZCBwdXQgYSBXb3JrIEFnZW50IGFuZCBhIENvZGUgQWdlbnQgdG8gd29yay4iLAogICJzdGFydF91cmwiOiAiLi9pbmRleC5odG1sIiwKICAic2NvcGUiOiAiLi8iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwYjBkMTQiLAogICJ0aGVtZV9jb2xvciI6ICIjMGIwZDE0IiwKICAiaWNvbnMiOiBbCiAgICB7ICJzcmMiOiAiaWNvbnMvaWNvbi0xOTIucG5nIiwgInNpemVzIjogIjE5MngxOTIiLCAidHlwZSI6ICJpbWFnZS9wbmciLCAicHVycG9zZSI6ICJhbnkiIH0sCiAgICB7ICJzcmMiOiAiaWNvbnMvaWNvbi01MTIucG5nIiwgInNpemVzIjogIjUxMng1MTIiLCAidHlwZSI6ICJpbWFnZS9wbmciLCAicHVycG9zZSI6ICJhbnkiIH0sCiAgICB7ICJzcmMiOiAiaWNvbnMvaWNvbi01MTIucG5nIiwgInNpemVzIjogIjUxMng1MTIiLCAidHlwZSI6ICJpbWFnZS9wbmciLCAicHVycG9zZSI6ICJtYXNrYWJsZSIgfSwKICAgIHsgInNyYyI6ICJpY29ucy9pY29uLnN2ZyIsICJzaXplcyI6ICJhbnkiLCAidHlwZSI6ICJpbWFnZS9zdmcreG1sIiB9CiAgXQp9Cg==">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjOGI1Y2Y2Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzIyZDNlZSIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxMTIiIGZpbGw9InVybCgjZykiLz4KICA8cGF0aCBkPSJNMTYwIDM2OFYxNDRoMTA0YzU2IDAgODggMzIgODggNzYgMCAzMi0xOC40IDU2LTQ4IDY2LjRMMzY4IDM2OGgtNjBsLTUyLjgtNzJIMjEydjcyaC01MnptNTItMTE2aDQ4YzI0IDAgNDAtMTIuOCA0MC0zMi44UzI4NCAxODYgMjYwIDE4NmgtNDh2NjZ6IiBmaWxsPSIjZmZmIi8+CiAgPGNpcmNsZSBjeD0iMzkyIiBjeT0iMTI4IiByPSIyMiIgZmlsbD0iI2ZmZiIgb3BhY2l0eT0iLjkiLz4KPC9zdmc+Cg==" type="image/svg+xml">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<style>
+/* Raken AI — styles */
+:root {
+  --bg: #0b0d14; --bg2: #11141d; --panel: #161a26; --panel2: #1c2130; --border: #262c3d;
+  --ink: #eef0f6; --muted: #8b93a8; --brand: #8b5cf6; --brand2: #22d3ee; --brand-soft: rgba(139,92,246,.16);
+  --ok: #22c55e; --danger: #ef4444; --warn: #f59e0b;
+  --radius: 14px; --shadow: 0 10px 30px rgba(0,0,0,.35);
+  --grad: linear-gradient(135deg, var(--brand), var(--brand2));
+  --sidebar-w: 240px;
+  color-scheme: dark;
+}
+[data-theme="light"] {
+  --bg: #f4f5fa; --bg2: #eceef5; --panel: #ffffff; --panel2: #f3f4f9; --border: #e2e5ef;
+  --ink: #171a26; --muted: #6b7280; --brand-soft: rgba(139,92,246,.12); --shadow: 0 8px 24px rgba(20,24,40,.08);
+  color-scheme: light;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif;
+  background: var(--bg); color: var(--ink); overflow: hidden; -webkit-font-smoothing: antialiased;
+}
+button, input, textarea, select { font-family: inherit; font-size: 14px; color: inherit; }
+a { color: var(--brand2); }
+[hidden] { display: none !important; }
+
+.app { display: flex; height: 100vh; height: 100dvh; }
+
+/* ---------- Sidebar ---------- */
+.sidebar { width: var(--sidebar-w); background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 18px 12px; flex-shrink: 0; overflow-y: auto; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; }
+.brand-mark { flex-shrink: 0; display: grid; place-items: center; }
+.brand-mark svg { display: block; border-radius: 10px; }
+.brand-mark.big { margin: 0 auto 14px; }
+.brand h1 { font-size: 19px; letter-spacing: -.3px; }
+.brand small { display: block; color: var(--muted); font-size: 11px; }
+.nav button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: none; background: none; border-radius: 10px; cursor: pointer; font-size: 14px; color: var(--ink); text-align: left; margin-bottom: 2px; }
+.nav button:hover { background: var(--panel); }
+.nav button.active { background: var(--brand-soft); color: #c4b5fd; font-weight: 600; }
+[data-theme="light"] .nav button.active { color: var(--brand); }
+.nav .ico { width: 20px; text-align: center; }
+.nav-section { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 14px 12px 6px; }
+.plan-chip { margin-top: auto; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; font-size: 13px; }
+.plan-chip-title { font-weight: 700; }
+.plan-chip-sub { color: var(--muted); margin: 4px 0 8px; font-size: 12.5px; }
+.plan-chip.pro { background: var(--grad); color: #fff; border: none; }
+.plan-chip.pro .plan-chip-sub { color: rgba(255,255,255,.85); }
+
+/* ---------- Main ---------- */
+.main { flex: 1; min-width: 0; overflow-y: auto; }
+.view { display: none; padding: 26px 32px 40px; max-width: 1200px; margin: 0 auto; }
+.view.active { display: block; }
+#view-chat { padding: 0; max-width: none; height: 100%; }
+.view-head { margin-bottom: 20px; }
+.view-head h2 { font-size: 24px; letter-spacing: -.4px; }
+.view-head p { color: var(--muted); margin-top: 4px; font-size: 14px; }
+
+.card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+.grid { display: grid; gap: 16px; }
+.row { display: flex; gap: 8px; align-items: center; }
+.row.wrap { flex-wrap: wrap; }
+.mt { margin-top: 16px; }
+.muted { color: var(--muted); }
+.small { font-size: 12.5px; }
+.note { background: var(--brand-soft); border-radius: 10px; padding: 10px 12px; font-size: 12.5px; margin-top: 10px; }
+label { display: block; font-size: 12.5px; color: var(--muted); margin: 12px 0 5px; font-weight: 600; }
+label.check { display: flex; align-items: center; gap: 8px; font-weight: 500; color: var(--ink); }
+input[type=text], input[type=password], input[type=email], textarea, .select {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg2); color: var(--ink); outline: none;
+}
+textarea { resize: vertical; line-height: 1.45; }
+input:focus, textarea:focus, .select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.select.small { width: auto; padding: 6px 10px; font-size: 12.5px; }
+
+.btn { padding: 10px 16px; border: none; border-radius: 10px; background: var(--grad); color: #fff; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.btn:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: .5; cursor: not-allowed; filter: none; }
+.btn.ghost { background: var(--panel2); color: var(--ink); border: 1px solid var(--border); }
+.btn.danger { background: rgba(239,68,68,.15); color: #fca5a5; border: 1px solid rgba(239,68,68,.3); }
+.btn.small { padding: 6px 11px; font-size: 12.5px; }
+.btn.big { padding: 14px 26px; font-size: 16px; }
+.btn.full { width: 100%; margin-top: 12px; }
+.icon-btn { background: none; border: 1px solid transparent; border-radius: 9px; padding: 6px 8px; cursor: pointer; font-size: 16px; color: var(--ink); }
+.icon-btn:hover { background: var(--panel2); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.chips.small-chips { justify-content: flex-start; margin-top: 10px; }
+.chip { background: var(--panel2); border: 1px solid var(--border); color: var(--ink); border-radius: 999px; padding: 8px 13px; cursor: pointer; font-size: 13px; }
+.chip:hover, .chip.on { border-color: var(--brand); background: var(--brand-soft); }
+
+/* ---------- Chat ---------- */
+.chat-layout { display: flex; height: 100%; }
+.chat-list { width: 250px; border-right: 1px solid var(--border); background: var(--bg2); display: flex; flex-direction: column; flex-shrink: 0; }
+.chat-list-head { padding: 12px; border-bottom: 1px solid var(--border); }
+.chat-list-items { overflow-y: auto; flex: 1; padding: 8px; }
+.chat-item { padding: 9px 10px; border-radius: 9px; cursor: pointer; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
+.chat-item:hover { background: var(--panel); }
+.chat-item.active { background: var(--brand-soft); }
+.chat-item small { display: block; color: var(--muted); font-size: 11px; }
+.chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.chat-top { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+.chat-title { font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-tools { display: flex; gap: 6px; align-items: center; }
+.messages { flex: 1; overflow-y: auto; padding: 24px 16px; }
+.messages-inner { max-width: 820px; margin: 0 auto; }
+.empty-state { text-align: center; max-width: 620px; margin: 8vh auto 0; }
+.hero-mark { font-size: 42px; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.empty-state h2 { font-size: 26px; margin: 8px 0 6px; }
+.empty-state p { color: var(--muted); margin-bottom: 18px; }
+.msg { display: flex; gap: 12px; margin: 0 auto 18px; max-width: 820px; }
+.msg .avatar { width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0; display: grid; place-items: center; font-size: 14px; background: var(--panel2); }
+.msg.assistant .avatar { background: var(--grad); color: #fff; font-weight: 800; }
+.msg .body { flex: 1; min-width: 0; }
+.msg .who { font-size: 12px; color: var(--muted); margin-bottom: 4px; display: flex; gap: 8px; align-items: center; }
+.msg .content { line-height: 1.55; font-size: 15px; word-wrap: break-word; }
+.msg.user .content { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; white-space: pre-wrap; }
+.msg .actions { display: flex; gap: 4px; margin-top: 6px; opacity: 0; transition: opacity .15s; }
+.msg:hover .actions { opacity: 1; }
+.msg .actions button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 3px 6px; border-radius: 6px; }
+.msg .actions button:hover { background: var(--panel2); color: var(--ink); }
+.msg .thinking { font-size: 12.5px; color: var(--muted); border-left: 2px solid var(--border); padding: 4px 10px; margin-bottom: 8px; white-space: pre-wrap; }
+.msg .thinking summary { cursor: pointer; }
+.msg .attach-imgs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+.msg .attach-imgs img { max-height: 160px; border-radius: 8px; }
+.msg .attach-file { display: inline-block; background: var(--panel2); border-radius: 8px; padding: 4px 10px; font-size: 12.5px; margin: 0 6px 6px 0; }
+.typing { display: inline-block; width: 8px; height: 16px; background: var(--brand2); animation: blink 1s infinite; vertical-align: text-bottom; border-radius: 2px; }
+@keyframes blink { 50% { opacity: 0; } }
+.tool-line { font-size: 12.5px; color: var(--muted); background: var(--panel2); border-radius: 8px; padding: 6px 10px; margin: 6px 0; }
+.composer { padding: 10px 16px 14px; border-top: 1px solid var(--border); background: var(--bg); }
+.composer-row { display: flex; align-items: flex-end; gap: 8px; max-width: 820px; margin: 0 auto; background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 8px; }
+.composer-row:focus-within { border-color: var(--brand); }
+.composer textarea { flex: 1; border: none; background: none; padding: 8px 6px; max-height: 200px; resize: none; }
+.composer textarea:focus { box-shadow: none; }
+.btn.send { padding: 8px 14px; border-radius: 12px; }
+.composer-hint { text-align: center; color: var(--muted); font-size: 11.5px; margin-top: 8px; }
+.attachments { max-width: 820px; margin: 0 auto 6px; display: flex; gap: 6px; flex-wrap: wrap; }
+.att { display: flex; align-items: center; gap: 6px; background: var(--panel2); border-radius: 8px; padding: 4px 8px; font-size: 12px; }
+.att img { height: 28px; width: 28px; object-fit: cover; border-radius: 5px; }
+.att button { background: none; border: none; color: var(--muted); cursor: pointer; }
+.mic-on { color: var(--danger); animation: blink 1s infinite; }
+
+/* ---------- Markdown ---------- */
+.md p { margin: 0 0 10px; }
+.md p:last-child { margin-bottom: 0; }
+.md h1, .md h2, .md h3, .md h4 { margin: 14px 0 6px; line-height: 1.3; }
+.md h1 { font-size: 20px; } .md h2 { font-size: 18px; } .md h3 { font-size: 16px; } .md h4 { font-size: 15px; }
+.md ul, .md ol { margin: 0 0 10px 22px; }
+.md li { margin: 3px 0; }
+.md code { background: var(--panel2); border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
+.md pre { background: #0d1017; color: #e6edf3; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; overflow-x: auto; margin: 8px 0 12px; position: relative; }
+.md pre code { background: none; border: none; padding: 0; font-size: 13px; color: inherit; }
+.md pre .copy { position: absolute; top: 6px; right: 6px; font-size: 11px; background: rgba(255,255,255,.08); border: none; color: #cbd5e1; border-radius: 6px; padding: 3px 8px; cursor: pointer; }
+.md blockquote { border-left: 3px solid var(--brand); padding: 2px 12px; color: var(--muted); margin: 8px 0; }
+.md table { border-collapse: collapse; margin: 8px 0 12px; font-size: 13.5px; display: block; overflow-x: auto; max-width: 100%; }
+.md th, .md td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
+.md th { background: var(--panel2); }
+.md hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+.md img { max-width: 100%; border-radius: 8px; }
+
+/* ---------- Generators ---------- */
+.gen-layout { display: grid; grid-template-columns: 380px 1fr; gap: 18px; align-items: start; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+.gen-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.empty-mini { color: var(--muted); font-size: 13.5px; padding: 30px; text-align: center; border: 1px dashed var(--border); border-radius: var(--radius); grid-column: 1 / -1; }
+.media-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.media-card .thumb { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--bg2); cursor: zoom-in; }
+.media-card video.thumb { aspect-ratio: 16/9; cursor: default; }
+.media-card .meta { padding: 8px 10px; font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+.media-card .meta span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.media-card .meta button { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 14px; padding: 2px 4px; }
+.media-card .meta button:hover { color: var(--ink); }
+.media-card.loading .thumb { display: grid; place-items: center; }
+.spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--brand); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+
+/* ---------- Agents ---------- */
+.agent-layout { display: grid; grid-template-columns: 380px 1fr; gap: 18px; align-items: start; }
+.agent-log { min-height: 300px; max-height: 70vh; overflow-y: auto; font-size: 14px; }
+.step { padding: 8px 10px; border-left: 3px solid var(--border); margin: 0 0 8px; border-radius: 0 8px 8px 0; background: var(--panel2); }
+.step.think { border-color: var(--muted); color: var(--muted); font-size: 12.5px; white-space: pre-wrap; }
+.step.tool { border-color: var(--brand2); }
+.step.tool .name { font-weight: 600; font-family: ui-monospace, monospace; font-size: 12.5px; }
+.step.tool pre { margin: 6px 0 0; font-size: 12px; white-space: pre-wrap; word-break: break-word; color: var(--muted); max-height: 140px; overflow: auto; }
+.step.result { border-color: var(--ok); background: transparent; padding-left: 12px; }
+.step.error { border-color: var(--danger); color: #fca5a5; }
+.step.status { border-color: var(--brand); }
+
+/* ---------- Code ---------- */
+.code-layout { display: grid; grid-template-columns: 360px 1fr; gap: 18px; align-items: start; }
+.code-left .card + .card { margin-top: 14px; }
+.code-right { display: grid; grid-template-columns: 200px 1fr; grid-template-rows: 300px 320px; gap: 12px; }
+.code-files { grid-row: 1 / 3; overflow: auto; padding: 12px; }
+.files-head { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 13px; margin-bottom: 8px; }
+.file-list button { display: block; width: 100%; text-align: left; border: none; background: none; color: var(--ink); padding: 6px 8px; border-radius: 7px; cursor: pointer; font-family: ui-monospace, monospace; font-size: 12.5px; }
+.file-list button:hover { background: var(--panel2); }
+.file-list button.active { background: var(--brand-soft); }
+.code-editor, .code-preview { display: flex; flex-direction: column; padding: 10px; min-height: 0; }
+.editor-head { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; font-family: ui-monospace, monospace; }
+#editor { flex: 1; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; background: #0d1017; color: #e6edf3; border-radius: 8px; resize: none; white-space: pre; overflow: auto; tab-size: 2; }
+#preview { flex: 1; width: 100%; border: none; background: #fff; border-radius: 8px; }
+
+/* ---------- Docs ---------- */
+.docs-layout { display: grid; grid-template-columns: 280px 1fr; gap: 16px; align-items: start; }
+.doc-list { padding: 8px; max-height: 70vh; overflow: auto; }
+.doc-item { padding: 10px; border-radius: 9px; cursor: pointer; }
+.doc-item:hover { background: var(--panel2); }
+.doc-item.active { background: var(--brand-soft); }
+.doc-item .t { font-weight: 600; font-size: 14px; }
+.doc-item small { color: var(--muted); }
+.doc-view { min-height: 300px; }
+.doc-head { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+.doc-head h3 { flex: 1; }
+
+/* ---------- Pro ---------- */
+.founder-banner { display: flex; justify-content: space-between; align-items: center; gap: 20px; background: var(--grad); color: #fff; border-radius: 18px; padding: 24px 28px; margin-bottom: 20px; box-shadow: var(--shadow); }
+.founder-kicker { text-transform: uppercase; letter-spacing: .12em; font-size: 11px; opacity: .9; }
+.founder-title { font-size: 26px; font-weight: 800; margin: 4px 0; letter-spacing: -.4px; }
+.founder-title span { background: #fff; color: var(--brand); padding: 0 8px; border-radius: 8px; }
+.founder-sub { opacity: .92; font-size: 14px; }
+.founder-price { text-align: right; }
+.founder-price .was { text-decoration: line-through; opacity: .75; }
+.founder-price .now { font-size: 30px; font-weight: 800; }
+.founder-price .now span { font-size: 14px; font-weight: 500; }
+.founder-price .btn { background: #fff; color: var(--brand); margin-top: 8px; }
+.plans { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.plan { position: relative; }
+.plan h3 { font-size: 18px; }
+.plan .price { font-size: 32px; font-weight: 800; margin: 6px 0 12px; }
+.plan .price span { font-size: 14px; color: var(--muted); font-weight: 500; }
+.plan .price small { display: block; font-size: 12px; color: var(--muted); font-weight: 500; }
+.plan ul { list-style: none; margin: 0 0 6px; }
+.plan li { padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.plan li::before { content: "✓ "; color: var(--ok); }
+.pro-plan { border-color: var(--brand); }
+.ribbon { position: absolute; top: 12px; right: 12px; background: var(--grad); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+.license-card { margin-top: 16px; }
+.founder-mini { background: var(--brand-soft); border-radius: 10px; padding: 10px 12px; font-size: 13.5px; margin: 12px 0 4px; }
+
+/* ---------- Settings ---------- */
+.settings-grid { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+
+/* ---------- Modals & misc ---------- */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 50; padding: 16px; backdrop-filter: blur(4px); }
+.modal-card { background: var(--panel); border: 1px solid var(--border); border-radius: 18px; padding: 26px; max-width: 460px; width: 100%; box-shadow: var(--shadow); }
+.modal-card h2 { margin-bottom: 8px; }
+.modal-card p { color: var(--muted); font-size: 14px; }
+.modal-card.sheet { display: flex; flex-direction: column; gap: 6px; }
+.modal-card.sheet button { padding: 12px; border: 1px solid var(--border); background: var(--panel2); border-radius: 10px; cursor: pointer; text-align: left; font-size: 15px; }
+.modal-card.sheet button.ghost { background: none; text-align: center; color: var(--muted); }
+.lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 60; display: grid; place-items: center; padding: 20px; cursor: zoom-out; }
+.lightbox img, .lightbox video { max-width: 100%; max-height: 90vh; border-radius: 10px; }
+#toasts { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 100; pointer-events: none; }
+.toast { background: var(--panel); border: 1px solid var(--border); color: var(--ink); padding: 10px 16px; border-radius: 10px; font-size: 13.5px; box-shadow: var(--shadow); animation: fadein .2s; }
+.toast.err { border-color: var(--danger); }
+.toast.ok { border-color: var(--ok); }
+@keyframes fadein { from { opacity: 0; transform: translateY(6px); } }
+.tabbar { display: none; }
+.only-mobile { display: none; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 980px) {
+  .gen-layout, .agent-layout, .code-layout, .docs-layout { grid-template-columns: 1fr; }
+  .code-right { grid-template-columns: 1fr; grid-template-rows: auto 320px 320px; }
+  .code-files { grid-row: auto; }
+  .founder-banner { flex-direction: column; align-items: flex-start; }
+  .founder-price { text-align: left; }
+}
+@media (max-width: 760px) {
+  .sidebar { display: none; }
+  .only-mobile { display: inline-flex; }
+  .view { padding: 18px 14px 90px; }
+  #view-chat { padding: 0; }
+  .app { flex-direction: column; }
+  .main { padding-bottom: 64px; }
+  .chat-list { position: absolute; z-index: 20; top: 0; bottom: 0; left: 0; width: 80%; max-width: 300px; transform: translateX(-100%); transition: transform .2s; box-shadow: var(--shadow); }
+  .chat-list.open { transform: none; }
+  .chat-layout { position: relative; }
+  .tabbar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: var(--bg2); border-top: 1px solid var(--border); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); z-index: 30; }
+  .tabbar button { flex: 1; border: none; background: none; color: var(--muted); font-size: 18px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; border-radius: 8px; }
+  .tabbar button span { font-size: 10px; }
+  .tabbar button.active { color: var(--ink); background: var(--brand-soft); }
+  .messages { padding: 16px 10px; }
+  .msg .content { font-size: 14.5px; }
+}
+
+</style>
+</head>
+<body>
+
+<div id="app" class="app">
+
+  <!-- ============ Sidebar ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 64 64" width="34" height="34"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#bg)"/><path d="M20 46V18h13c7 0 11 4 11 9.5 0 4-2.3 7-6 8.3L46 46h-7.5l-6.6-9H26.5v9H20zm6.5-14.5h6c3 0 5-1.6 5-4.1s-2-4-5-4h-6v8.1z" fill="#fff"/></svg></div>
+      <div class="brand-text">
+        <h1>Raken AI</h1>
+        <small id="platform-badge">Web</small>
+      </div>
+    </div>
+
+    <nav class="nav" id="nav">
+      <button data-view="chat" class="active"><span class="ico">💬</span>Chat</button>
+      <button data-view="images"><span class="ico">🎨</span>Images</button>
+      <button data-view="videos"><span class="ico">🎬</span>Videos</button>
+      <div class="nav-section">Agents</div>
+      <button data-view="work"><span class="ico">🧑‍💼</span>Work Agent</button>
+      <button data-view="code"><span class="ico">👩‍💻</span>Code Agent</button>
+      <div class="nav-section">Library</div>
+      <button data-view="gallery"><span class="ico">🖼️</span>Gallery</button>
+      <button data-view="docs"><span class="ico">📄</span>Documents</button>
+      <div class="nav-section">Account</div>
+      <button data-view="pro"><span class="ico">⭐</span>Pro</button>
+      <button data-view="settings"><span class="ico">⚙️</span>Settings</button>
+    </nav>
+
+    <div class="plan-chip" id="plan-chip">
+      <div class="plan-chip-title">Free plan</div>
+      <div class="plan-chip-sub" id="plan-chip-sub">First 10 people get <b>98% off Pro</b></div>
+      <button class="btn small full" data-goto="pro">Claim founder spot</button>
+    </div>
+  </aside>
+
+  <!-- ============ Main ============ -->
+  <main class="main" id="main">
+
+    <!-- Chat -->
+    <section class="view active" id="view-chat">
+      <div class="chat-layout">
+        <div class="chat-list" id="chat-list">
+          <div class="chat-list-head">
+            <button class="btn small" id="chat-new">+ New chat</button>
+          </div>
+          <div class="chat-list-items" id="chat-list-items"></div>
+        </div>
+        <div class="chat-main">
+          <div class="chat-top">
+            <button class="icon-btn only-mobile" id="chat-toggle-list" title="Chats">☰</button>
+            <div class="chat-title" id="chat-title">New chat</div>
+            <div class="chat-tools">
+              <select id="chat-model" class="select small" title="Model"></select>
+              <button class="icon-btn" id="chat-delete" title="Delete chat">🗑</button>
+            </div>
+          </div>
+          <div class="messages" id="messages">
+            <div class="empty-state" id="chat-empty">
+              <div class="hero-mark">✦</div>
+              <h2>What can I do for you?</h2>
+              <p>Ask anything, attach images or PDFs, or try one of these.</p>
+              <div class="chips">
+                <button class="chip" data-prompt="Explain quantum computing like I'm 12, in 5 short paragraphs.">Explain quantum computing simply</button>
+                <button class="chip" data-prompt="Write a friendly but firm email to a client whose invoice is 30 days overdue.">Write an overdue-invoice email</button>
+                <button class="chip" data-prompt="Give me a 7-day beginner workout plan I can do at home with no equipment.">7-day home workout plan</button>
+                <button class="chip" data-prompt="Brainstorm 10 names for a coffee shop that also sells vinyl records.">Brainstorm coffee shop names</button>
+              </div>
+            </div>
+          </div>
+          <div class="composer">
+            <div class="attachments" id="attachments"></div>
+            <div class="composer-row">
+              <button class="icon-btn" id="attach-btn" title="Attach image, PDF or text file">📎</button>
+              <input type="file" id="attach-input" multiple accept="image/*,.pdf,.txt,.md,.csv,.json,.js,.py,.html,.css" hidden>
+              <textarea id="composer-input" rows="1" placeholder="Message Raken AI…"></textarea>
+              <button class="icon-btn" id="mic-btn" title="Dictate">🎤</button>
+              <button class="btn send" id="send-btn" title="Send">➤</button>
+            </div>
+            <div class="composer-hint">Enter to send · Shift+Enter for a new line · <span id="usage-hint"></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Images -->
+    <section class="view" id="view-images">
+      <div class="view-head"><h2>Make images</h2><p>Describe what you want to see. Results are saved to your Gallery.</p></div>
+      <div class="gen-layout">
+        <div class="card gen-form">
+          <label>Prompt</label>
+          <textarea id="img-prompt" rows="4" placeholder="A cozy cabin in a snowy forest at dusk, warm light in the windows, cinematic, ultra detailed"></textarea>
+          <div class="chips small-chips" id="img-styles">
+            <button class="chip" data-style="photorealistic, 35mm, natural light">Photo</button>
+            <button class="chip" data-style="digital painting, vibrant, concept art">Painting</button>
+            <button class="chip" data-style="flat vector illustration, clean shapes">Vector</button>
+            <button class="chip" data-style="anime style, cel shaded">Anime</button>
+            <button class="chip" data-style="3D render, octane, soft studio lighting">3D</button>
+            <button class="chip" data-style="pixel art, 16-bit">Pixel</button>
+          </div>
+          <div class="form-grid">
+            <div><label>Aspect</label>
+              <select id="img-aspect" class="select">
+                <option value="1024x1024">Square 1:1</option>
+                <option value="1280x720">Landscape 16:9</option>
+                <option value="720x1280">Portrait 9:16</option>
+                <option value="1152x896">Landscape 4:3</option>
+                <option value="896x1152">Portrait 3:4</option>
+              </select></div>
+            <div><label>Count</label>
+              <select id="img-count" class="select"><option>1</option><option>2</option><option>4</option></select></div>
+            <div><label>Provider</label>
+              <select id="img-provider" class="select">
+                <option value="pollinations">Pollinations (free, no key)</option>
+                <option value="fal">fal.ai FLUX (key)</option>
+                <option value="openai">OpenAI-compatible (key)</option>
+              </select></div>
+          </div>
+          <button class="btn full" id="img-generate">Generate</button>
+          <div class="muted small" id="img-status"></div>
+        </div>
+        <div class="gen-results" id="img-results">
+          <div class="empty-mini">Your images will appear here.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Videos -->
+    <section class="view" id="view-videos">
+      <div class="view-head"><h2>Make videos</h2><p>Short clips from text, or animate an image from your Gallery.</p></div>
+      <div class="gen-layout">
+        <div class="card gen-form">
+          <label>Prompt</label>
+          <textarea id="vid-prompt" rows="4" placeholder="A golden retriever running along a beach at sunrise, slow motion, drone shot"></textarea>
+          <div class="form-grid">
+            <div><label>Model</label>
+              <select id="vid-model" class="select">
+                <option value="fal-ai/ltx-video">LTX Video (fast)</option>
+                <option value="fal-ai/minimax/video-01">MiniMax Video-01</option>
+                <option value="fal-ai/kling-video/v2.1/standard/text-to-video">Kling 2.1</option>
+                <option value="fal-ai/veo3">Veo 3</option>
+              </select></div>
+            <div><label>Aspect</label>
+              <select id="vid-aspect" class="select"><option value="16:9">16:9</option><option value="9:16">9:16</option><option value="1:1">1:1</option></select></div>
+          </div>
+          <label>Start image (optional)</label>
+          <div class="row">
+            <select id="vid-image" class="select"><option value="">None</option></select>
+          </div>
+          <button class="btn full" id="vid-generate">Generate video</button>
+          <div class="muted small" id="vid-status"></div>
+          <div class="note" id="vid-note">Video generation uses fal.ai. Add a fal key in Settings.</div>
+        </div>
+        <div class="gen-results" id="vid-results">
+          <div class="empty-mini">Your videos will appear here.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Work Agent -->
+    <section class="view" id="view-work">
+      <div class="view-head"><h2>Work Agent</h2><p>Give it a job. It researches the web, drafts documents, builds tables and plans, and keeps its work in Documents.</p></div>
+      <div class="agent-layout">
+        <div class="card agent-form">
+          <div class="chips small-chips" id="work-presets">
+            <button class="chip" data-task="Research the current state of the electric bike market in Europe and write a one-page briefing with sources.">Market briefing</button>
+            <button class="chip" data-task="Draft a professional onboarding checklist for a new marketing hire, as a document with sections and a table for week 1.">Onboarding checklist</button>
+            <button class="chip" data-task="Build a 12-month personal budget as a CSV table with categories, then summarize the assumptions in a short document.">Budget spreadsheet</button>
+            <button class="chip" data-task="Write three versions of a cold outreach email for a SaaS product that automates invoicing, each with a different tone.">Outreach emails</button>
+          </div>
+          <label>Task</label>
+          <textarea id="work-task" rows="5" placeholder="What should the Work Agent do?"></textarea>
+          <div class="row">
+            <label class="check"><input type="checkbox" id="work-web" checked> Allow web search</label>
+          </div>
+          <button class="btn full" id="work-run">Run agent</button>
+          <button class="btn ghost full" id="work-stop" hidden>Stop</button>
+        </div>
+        <div class="card agent-log" id="work-log">
+          <div class="empty-mini">Agent activity will show here.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Code Agent -->
+    <section class="view" id="view-code">
+      <div class="view-head"><h2>Code Agent</h2><p>Describe an app or a change. The agent writes files, runs JavaScript to check its work, and previews the result.</p></div>
+      <div class="code-layout">
+        <div class="code-left">
+          <div class="card">
+            <div class="row">
+              <select id="code-project" class="select"></select>
+              <button class="btn small ghost" id="code-new">New</button>
+              <button class="btn small ghost" id="code-zip" title="Download as .zip">⬇ zip</button>
+              <button class="btn small ghost danger" id="code-del" title="Delete project">🗑</button>
+            </div>
+            <textarea id="code-task" rows="4" placeholder="e.g. Build a Pomodoro timer web app with a dark theme and sound"></textarea>
+            <button class="btn full" id="code-run">Run agent</button>
+            <button class="btn ghost full" id="code-stop" hidden>Stop</button>
+          </div>
+          <div class="card agent-log" id="code-log"><div class="empty-mini">Agent activity will show here.</div></div>
+        </div>
+        <div class="code-right">
+          <div class="card code-files">
+            <div class="files-head">Files <button class="btn small ghost" id="file-add">+</button></div>
+            <div class="file-list" id="file-list"></div>
+          </div>
+          <div class="card code-editor">
+            <div class="editor-head"><span id="editor-name">No file open</span><button class="btn small" id="editor-save" hidden>Save</button></div>
+            <textarea id="editor" spellcheck="false" placeholder="Open a file to edit it"></textarea>
+          </div>
+          <div class="card code-preview">
+            <div class="editor-head"><span>Preview</span><button class="btn small ghost" id="preview-refresh">↻</button></div>
+            <iframe id="preview" sandbox="allow-scripts allow-forms allow-modals allow-popups" title="Preview"></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gallery -->
+    <section class="view" id="view-gallery">
+      <div class="view-head"><h2>Gallery</h2><p>Everything you have generated, stored on this device.</p></div>
+      <div class="gallery" id="gallery"></div>
+    </section>
+
+    <!-- Documents -->
+    <section class="view" id="view-docs">
+      <div class="view-head"><h2>Documents</h2><p>Documents, tables and plans made by the Work Agent. Stored on this device.</p></div>
+      <div class="docs-layout">
+        <div class="card doc-list" id="doc-list"></div>
+        <div class="card doc-view" id="doc-view"><div class="empty-mini">Select a document.</div></div>
+      </div>
+    </section>
+
+    <!-- Pro -->
+    <section class="view" id="view-pro">
+      <div class="view-head"><h2>Raken AI Pro</h2><p>More usage, the most capable models, video generation and early access to new features.</p></div>
+      <div class="founder-banner" id="founder-banner">
+        <div>
+          <div class="founder-kicker">Founder offer</div>
+          <div class="founder-title">First 10 people get <span>98% off Pro</span></div>
+          <div class="founder-sub" id="founder-sub"></div>
+        </div>
+        <div class="founder-price">
+          <div class="was" id="founder-was"></div>
+          <div class="now" id="founder-now"></div>
+          <button class="btn big" id="founder-claim">Claim my spot</button>
+        </div>
+      </div>
+      <div class="grid plans">
+        <div class="card plan">
+          <h3>Free</h3>
+          <div class="price">$0<span>/month</span></div>
+          <ul id="plan-free-list"></ul>
+          <button class="btn ghost full" disabled>Current plan</button>
+        </div>
+        <div class="card plan pro-plan">
+          <div class="ribbon">Best value</div>
+          <h3>Pro</h3>
+          <div class="price" id="pro-price"></div>
+          <ul id="plan-pro-list"></ul>
+          <button class="btn full" id="pro-buy">Get Pro</button>
+        </div>
+      </div>
+      <div class="card license-card">
+        <h3>Have a license key?</h3>
+        <p class="muted">Paste it here to unlock Pro on this device.</p>
+        <div class="row">
+          <input type="text" id="license-input" placeholder="RAKEN.xxxxx.xxxxx">
+          <button class="btn" id="license-apply">Activate</button>
+        </div>
+        <div class="muted small" id="license-status"></div>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section class="view" id="view-settings">
+      <div class="view-head"><h2>Settings</h2><p>Keys stay on this device. Raken AI talks to providers directly.</p></div>
+      <div class="grid settings-grid">
+        <div class="card">
+          <h3>Assistant</h3>
+          <label>Your name</label>
+          <input type="text" id="set-name" placeholder="How should Raken address you?">
+          <label>Anthropic API key</label>
+          <input type="password" id="set-anthropic-key" placeholder="sk-ant-…" autocomplete="off">
+          <div class="muted small">Get one at console.anthropic.com. Without a key the assistant runs in demo mode.</div>
+          <label>Raken Cloud gateway (optional)</label>
+          <input type="text" id="set-gateway" placeholder="https://your-gateway.example.com">
+          <div class="muted small">If set, requests go to your gateway with your license instead of using an API key.</div>
+          <label>Default model</label>
+          <select id="set-model" class="select"></select>
+          <label>Effort</label>
+          <select id="set-effort" class="select">
+            <option value="low">Low – fastest</option>
+            <option value="medium">Medium</option>
+            <option value="high" selected>High – default</option>
+            <option value="xhigh">Extra high (Pro)</option>
+            <option value="max">Max (Pro)</option>
+          </select>
+          <label class="check"><input type="checkbox" id="set-thinking"> Show thinking summaries</label>
+          <label class="check"><input type="checkbox" id="set-tts"> Read replies aloud</label>
+          <div class="row"><button class="btn" id="set-test">Test connection</button><span class="muted small" id="set-test-status"></span></div>
+        </div>
+        <div class="card">
+          <h3>Images & video</h3>
+          <label>fal.ai key</label>
+          <input type="password" id="set-fal-key" placeholder="fal key" autocomplete="off">
+          <div class="muted small">Used for FLUX images and all video models. fal.ai → Keys.</div>
+          <label>OpenAI-compatible base URL</label>
+          <input type="text" id="set-openai-base" placeholder="https://api.openai.com">
+          <label>OpenAI-compatible key</label>
+          <input type="password" id="set-openai-key" autocomplete="off">
+          <label>OpenAI-compatible image model</label>
+          <input type="text" id="set-openai-model" placeholder="gpt-image-1">
+          <h3 class="mt">Appearance</h3>
+          <label>Theme</label>
+          <select id="set-theme" class="select"><option value="dark">Dark</option><option value="light">Light</option><option value="system">System</option></select>
+          <h3 class="mt">Data</h3>
+          <div class="row wrap">
+            <button class="btn ghost" id="data-export">Export data</button>
+            <button class="btn ghost" id="data-import">Import data</button>
+            <input type="file" id="data-import-input" accept=".json" hidden>
+            <button class="btn danger" id="data-clear">Clear all data</button>
+          </div>
+          <div class="muted small mt" id="about"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- mobile tab bar -->
+  <nav class="tabbar only-mobile" id="tabbar">
+    <button data-view="chat" class="active">💬<span>Chat</span></button>
+    <button data-view="images">🎨<span>Images</span></button>
+    <button data-view="videos">🎬<span>Video</span></button>
+    <button data-view="work">🧑‍💼<span>Work</span></button>
+    <button data-view="code">👩‍💻<span>Code</span></button>
+    <button data-view="more">⋯<span>More</span></button>
+  </nav>
+</div>
+
+<!-- Onboarding -->
+<div class="modal" id="onboarding" hidden>
+  <div class="modal-card">
+    <div class="brand-mark big"><svg viewBox="0 0 64 64" width="56" height="56"><rect width="64" height="64" rx="16" fill="url(#bg)"/><path d="M20 46V18h13c7 0 11 4 11 9.5 0 4-2.3 7-6 8.3L46 46h-7.5l-6.6-9H26.5v9H20zm6.5-14.5h6c3 0 5-1.6 5-4.1s-2-4-5-4h-6v8.1z" fill="#fff"/></svg></div>
+    <h2>Welcome to Raken AI</h2>
+    <p>Chat, make images and videos, and hand real work to the Work Agent and Code Agent. Everything you make stays on this device.</p>
+    <div class="founder-mini">🎉 <b>Launch offer:</b> the first 10 people get 98% off Pro — more usage, top models, video and more.</div>
+    <label>What should Raken call you?</label>
+    <input type="text" id="onb-name" placeholder="Your name">
+    <label>Anthropic API key (optional — you can add it later in Settings)</label>
+    <input type="password" id="onb-key" placeholder="sk-ant-…" autocomplete="off">
+    <div class="row mt">
+      <button class="btn" id="onb-start">Start</button>
+      <button class="btn ghost" id="onb-pro">See the founder offer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="more-sheet" hidden>
+  <div class="modal-card sheet">
+    <button data-view="gallery">🖼️ Gallery</button>
+    <button data-view="docs">📄 Documents</button>
+    <button data-view="pro">⭐ Pro</button>
+    <button data-view="settings">⚙️ Settings</button>
+    <button class="ghost" id="more-close">Close</button>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" hidden><div class="lightbox-inner" id="lightbox-inner"></div></div>
+<div id="toasts"></div>
+
+<script>
+/* config.js */
+// Raken AI — deployment configuration. Edit this file before shipping.
+window.RAKEN_CONFIG = {
+  version: "1.0.0",
+  appName: "Raken AI",
+
+  // Pro pricing shown in the app (USD).
+  proMonthly: 24,
+  founderDiscount: 0.98,      // 98% off
+  founderSpots: 10,           // "First 10 people"
+  founderMonths: 12,          // how long the founder price lasts
+
+  // Where "Get Pro" / "Claim my spot" sends people. A Stripe Payment Link,
+  // Lemon Squeezy checkout, Gumroad page… anything. Leave empty to show the
+  // built-in claim form instead.
+  checkoutUrl: "",
+  founderCheckoutUrl: "",
+
+  // Optional JSON endpoint returning {"claimed": <number>} so the founder
+  // counter is live across devices. Leave empty for a static counter.
+  founderStatusUrl: "",
+
+  // Optional: support contact shown on the Pro page.
+  supportUrl: "",
+
+  // Public key (JWK, ECDSA P-256) used to verify license keys made with
+  // tools/genkey.mjs. null = development mode: keys are only format-checked.
+  licensePublicKey: null,
+
+  // Free plan daily limits (per device). Pro is unlimited.
+  freeLimits: { chat: 30, image: 15, video: 1, agent: 5 },
+
+  // Model catalogue. "pro" models are only selectable on Pro.
+  models: [
+    { id: "claude-opus-5",    name: "Raken Ultra (Claude Opus 5)",     pro: false },
+    { id: "claude-sonnet-5",  name: "Raken Fast (Claude Sonnet 5)",    pro: false },
+    { id: "claude-fable-5-1", name: "Raken Fable (Claude Fable 5.1)",  pro: true  }
+  ],
+  defaultModel: "claude-opus-5"
+};
+
+</script>
+<script>
+/* js/core.js */
+/* Raken AI — core: platform, settings, storage, network bridge, markdown, zip, helpers */
+(function () {
+  const C = window.RAKEN_CONFIG;
+  const R = window.Raken = { config: C, version: C.version };
+
+  // ---------- platform ----------
+  R.platform = (function () {
+    if (window.raken && window.raken.platform === "desktop") return "desktop";
+    if (window.RakenAndroid) return "android";
+    return "web";
+  })();
+  R.platformLabel = { desktop: "Desktop", android: "Android", web: "Web" }[R.platform];
+  if (R.platform === "desktop" && window.raken.os) {
+    R.platformLabel = { win32: "Windows", darwin: "macOS", linux: "Linux" }[window.raken.os] || "Desktop";
+  }
+
+  // ---------- helpers ----------
+  R.$ = (sel, root) => (root || document).querySelector(sel);
+  R.$$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+  R.uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  R.esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  R.sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  R.fmtDate = (t) => new Date(t).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  R.today = () => new Date().toISOString().slice(0, 10);
+  R.toast = function (msg, kind) {
+    const el = document.createElement("div");
+    el.className = "toast" + (kind ? " " + kind : "");
+    el.textContent = msg;
+    R.$("#toasts").appendChild(el);
+    setTimeout(() => el.remove(), kind === "err" ? 6000 : 3200);
+  };
+  R.fileToDataURL = (file) => new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(file); });
+  R.fileToText = (file) => new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsText(file); });
+  R.blobToBase64 = async (blob) => (await R.fileToDataURL(blob)).split(",")[1];
+  R.b64ToBlob = function (b64, mime) {
+    const bin = atob(b64); const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime || "application/octet-stream" });
+  };
+  R.copy = async function (text) {
+    try { await navigator.clipboard.writeText(text); R.toast("Copied"); }
+    catch (e) { const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); R.toast("Copied"); }
+  };
+
+  // Save a Blob to the user's device on every platform.
+  R.download = async function (name, blob) {
+    if (typeof blob === "string") blob = new Blob([blob], { type: "text/plain" });
+    if (R.platform === "android" && window.RakenAndroid.saveFile) {
+      const ok = window.RakenAndroid.saveFile(name, await R.blobToBase64(blob), blob.type || "application/octet-stream");
+      R.toast(ok ? "Saved to Downloads / Raken AI: " + name : "Could not save " + name, ok ? "ok" : "err");
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+  };
+
+  // ---------- settings ----------
+  const DEFAULTS = {
+    name: "", anthropicKey: "", gateway: "", model: C.defaultModel, effort: "high", showThinking: false, tts: false,
+    falKey: "", openaiBase: "https://api.openai.com", openaiKey: "", openaiImageModel: "gpt-image-1",
+    imageProvider: "pollinations", videoModel: "fal-ai/ltx-video", theme: "dark", onboarded: false,
+    pro: false, license: "", licenseEmail: "", founderClaim: null
+  };
+  let settings;
+  try { settings = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem("raken.settings") || "{}")); } catch (e) { settings = Object.assign({}, DEFAULTS); }
+  R.settings = settings;
+  R.saveSettings = function (patch) {
+    if (patch) Object.assign(settings, patch);
+    try { localStorage.setItem("raken.settings", JSON.stringify(settings)); } catch (e) { }
+    document.dispatchEvent(new CustomEvent("raken:settings"));
+  };
+  R.isPro = () => !!settings.pro;
+  R.applyTheme = function () {
+    const t = settings.theme === "system" ? (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark") : settings.theme;
+    document.documentElement.setAttribute("data-theme", t);
+  };
+  R.applyTheme();
+
+  // ---------- usage limits ----------
+  R.usage = {
+    _load() { try { const u = JSON.parse(localStorage.getItem("raken.usage") || "{}"); if (u.day !== R.today()) return { day: R.today() }; return u; } catch (e) { return { day: R.today() }; } },
+    count(kind) { return this._load()[kind] || 0; },
+    limit(kind) { return R.isPro() ? Infinity : (C.freeLimits[kind] || 0); },
+    remaining(kind) { return Math.max(0, this.limit(kind) - this.count(kind)); },
+    check(kind) {
+      if (R.isPro()) return true;
+      if (this.count(kind) >= this.limit(kind)) {
+        R.toast("Daily free limit reached for " + kind + ". Upgrade to Pro for more.", "err");
+        R.go("pro");
+        return false;
+      }
+      return true;
+    },
+    bump(kind, n) { const u = this._load(); u[kind] = (u[kind] || 0) + (n || 1); try { localStorage.setItem("raken.usage", JSON.stringify(u)); } catch (e) { } document.dispatchEvent(new CustomEvent("raken:usage")); }
+  };
+
+  // ---------- IndexedDB ----------
+  const STORES = ["chats", "media", "docs", "projects"];
+  let dbp = null;
+  function openDB() {
+    if (dbp) return dbp;
+    dbp = new Promise((res, rej) => {
+      const req = indexedDB.open("raken-ai", 1);
+      req.onupgradeneeded = () => { const d = req.result; STORES.forEach((s) => { if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath: "id" }); }); };
+      req.onsuccess = () => res(req.result);
+      req.onerror = () => rej(req.error);
+    });
+    return dbp;
+  }
+  function tx(store, mode, fn) {
+    return openDB().then((d) => new Promise((res, rej) => {
+      const t = d.transaction(store, mode); const s = t.objectStore(store); const r = fn(s);
+      t.oncomplete = () => res(r && r.result !== undefined ? r.result : r);
+      t.onerror = () => rej(t.error);
+    }));
+  }
+  R.db = {
+    put: (store, obj) => tx(store, "readwrite", (s) => s.put(obj)).then(() => obj),
+    get: (store, id) => tx(store, "readonly", (s) => s.get(id)),
+    del: (store, id) => tx(store, "readwrite", (s) => s.delete(id)),
+    clear: (store) => tx(store, "readwrite", (s) => s.clear()),
+    all: (store) => tx(store, "readonly", (s) => s.getAll()).then((r) => (r || []).sort((a, b) => (b.updated || b.created || 0) - (a.updated || a.created || 0)))
+  };
+
+  // ---------- network bridge ----------
+  // R.net.request(url, {method, headers, body, responseType:'text'|'json'|'blob', onChunk(text), signal})
+  // Desktop routes through the Electron main process (no CORS); web/android use fetch.
+  R.net = {};
+  R.net.request = async function (url, opt) {
+    opt = opt || {};
+    if (R.platform === "desktop" && window.raken.request) {
+      const r = await window.raken.request({ url, method: opt.method || "GET", headers: opt.headers || {}, body: opt.body || null, binary: opt.responseType === "blob" }, opt.onChunk, opt.signal);
+      if (opt.responseType === "blob") return { status: r.status, ok: r.status < 400, headers: r.headers, blob: R.b64ToBlob(r.body, r.headers["content-type"]) };
+      let json = null; if (opt.responseType === "json") { try { json = JSON.parse(r.body); } catch (e) { } }
+      return { status: r.status, ok: r.status < 400, headers: r.headers, text: r.body, json };
+    }
+    const res = await fetch(url, { method: opt.method || "GET", headers: opt.headers || {}, body: opt.body || undefined, signal: opt.signal });
+    const headers = {}; res.headers.forEach((v, k) => headers[k] = v);
+    if (opt.responseType === "blob") return { status: res.status, ok: res.ok, headers, blob: await res.blob() };
+    if (opt.onChunk && res.ok && res.body) {
+      const reader = res.body.getReader(); const dec = new TextDecoder(); let all = "";
+      while (true) { const { done, value } = await reader.read(); if (done) break; const t = dec.decode(value, { stream: true }); all += t; opt.onChunk(t); }
+      return { status: res.status, ok: res.ok, headers, text: all };
+    }
+    const text = await res.text(); let json = null;
+    if (opt.responseType === "json") { try { json = JSON.parse(text); } catch (e) { } }
+    return { status: res.status, ok: res.ok, headers, text, json };
+  };
+
+  // ---------- markdown ----------
+  R.md = function (src) {
+    if (!src) return "";
+    src = String(src).replace(/\r\n?/g, "\n");
+    const blocks = [];
+    // fenced code
+    src = src.replace(/```([\w-]*)\n([\s\S]*?)```/g, (m, lang, code) => {
+      blocks.push('<pre><button class="copy" data-copy>Copy</button><code class="lang-' + R.esc(lang) + '">' + R.esc(code.replace(/\n$/, "")) + "</code></pre>");
+      return " " + (blocks.length - 1) + " ";
+    });
+    // unterminated fence while streaming
+    src = src.replace(/```([\w-]*)\n([\s\S]*)$/g, (m, lang, code) => { blocks.push("<pre><code>" + R.esc(code) + "</code></pre>"); return " " + (blocks.length - 1) + " "; });
+    const inline = (t) => {
+      t = R.esc(t);
+      t = t.replace(/`([^`]+)`/g, "<code>$1</code>");
+      t = t.replace(/!\[([^\]]*)\]\((https?:[^)\s]+|data:image[^)\s]+)\)/g, '<img src="$2" alt="$1">');
+      t = t.replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      t = t.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/__([^_]+)__/g, "<b>$1</b>");
+      t = t.replace(/(^|[^*\w])\*([^*\n]+)\*/g, "$1<i>$2</i>").replace(/(^|[^_\w])_([^_\n]+)_/g, "$1<i>$2</i>");
+      t = t.replace(/~~([^~]+)~~/g, "<s>$1</s>");
+      t = t.replace(/(^|\s)(https?:\/\/[^\s<]+[^\s<.,;:!?)])/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
+      return t;
+    };
+    const lines = src.split("\n"); const out = []; let i = 0;
+    const isTableRow = (l) => /^\s*\|.*\|\s*$/.test(l);
+    const isList = (l) => /^\s*([-*+]|\d+[.)])\s+/.test(l);
+    const isBlock = (l) => /^ \d+ $/.test(l);
+    while (i < lines.length) {
+      let l = lines[i];
+      if (/^\s*$/.test(l)) { i++; continue; }
+      let m;
+      if ((m = l.match(/^ (\d+) $/))) { out.push(blocks[+m[1]]); i++; continue; }
+      if ((m = l.match(/^(#{1,4})\s+(.*)$/))) { out.push("<h" + m[1].length + ">" + inline(m[2]) + "</h" + m[1].length + ">"); i++; continue; }
+      if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(l)) { out.push("<hr>"); i++; continue; }
+      if (isTableRow(l) && i + 1 < lines.length && /^\s*\|?\s*:?-+/.test(lines[i + 1])) {
+        const cells = (r) => r.trim().replace(/^\||\|$/g, "").split("|").map((c) => inline(c.trim()));
+        let h = "<table><thead><tr>" + cells(l).map((c) => "<th>" + c + "</th>").join("") + "</tr></thead><tbody>"; i += 2;
+        while (i < lines.length && isTableRow(lines[i])) { h += "<tr>" + cells(lines[i]).map((c) => "<td>" + c + "</td>").join("") + "</tr>"; i++; }
+        out.push(h + "</tbody></table>"); continue;
+      }
+      if (/^\s*>/.test(l)) { const q = []; while (i < lines.length && /^\s*>/.test(lines[i])) { q.push(lines[i].replace(/^\s*>\s?/, "")); i++; } out.push("<blockquote>" + R.md(q.join("\n")) + "</blockquote>"); continue; }
+      if (isList(l)) {
+        const ordered = /^\s*\d/.test(l); const tag = ordered ? "ol" : "ul"; let h = "<" + tag + ">";
+        while (i < lines.length && isList(lines[i])) {
+          let item = lines[i].replace(/^\s*([-*+]|\d+[.)])\s+/, ""); i++;
+          const sub = [];
+          while (i < lines.length && /^\s{2,}\S/.test(lines[i])) { sub.push(lines[i].replace(/^\s{2}/, "")); i++; }
+          item = item.replace(/^\[([ xX])\]\s+/, (mm, c) => '<input type="checkbox" disabled' + (c !== " " ? " checked" : "") + "> ");
+          h += "<li>" + inline(item) + (sub.length ? R.md(sub.join("\n")) : "") + "</li>";
+        }
+        out.push(h + "</" + tag + ">"); continue;
+      }
+      const p = []; while (i < lines.length && !/^\s*$/.test(lines[i]) && !isBlock(lines[i]) && !/^(#{1,4})\s/.test(lines[i]) && !isList(lines[i]) && !/^\s*>/.test(lines[i])) { p.push(lines[i]); i++; }
+      out.push("<p>" + inline(p.join("\n")).replace(/\n/g, "<br>") + "</p>");
+    }
+    return out.join("\n");
+  };
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-copy]"); if (!b) return;
+    R.copy(b.parentElement.querySelector("code").textContent);
+  });
+
+  // ---------- zip (store-only) ----------
+  const crcTable = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  function crc32(buf) { let c = 0xffffffff; for (let i = 0; i < buf.length; i++) c = crcTable[(c ^ buf[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+  R.zip = function (files) { // files: [{name, data: string|Uint8Array}]
+    const enc = new TextEncoder(); const parts = []; const central = []; let offset = 0;
+    const le16 = (n) => [n & 255, (n >> 8) & 255]; const le32 = (n) => [n & 255, (n >> 8) & 255, (n >> 16) & 255, (n >>> 24) & 255];
+    for (const f of files) {
+      const name = enc.encode(f.name); const data = typeof f.data === "string" ? enc.encode(f.data) : f.data; const crc = crc32(data);
+      const head = new Uint8Array([0x50, 0x4b, 3, 4, ...le16(20), ...le16(0x800), ...le16(0), ...le16(0), ...le16(0), ...le32(crc), ...le32(data.length), ...le32(data.length), ...le16(name.length), ...le16(0)]);
+      parts.push(head, name, data);
+      central.push(new Uint8Array([0x50, 0x4b, 1, 2, ...le16(20), ...le16(20), ...le16(0x800), ...le16(0), ...le16(0), ...le16(0), ...le32(crc), ...le32(data.length), ...le32(data.length), ...le16(name.length), ...le16(0), ...le16(0), ...le16(0), ...le16(0), ...le32(0), ...le32(offset)]), name);
+      offset += head.length + name.length + data.length;
+    }
+    const cdSize = central.reduce((a, b) => a + b.length, 0);
+    const end = new Uint8Array([0x50, 0x4b, 5, 6, ...le16(0), ...le16(0), ...le16(files.length), ...le16(files.length), ...le32(cdSize), ...le32(offset), ...le16(0)]);
+    return new Blob([...parts, ...central, end], { type: "application/zip" });
+  };
+
+  // ---------- navigation (handled by app.js) ----------
+  R.go = (view) => document.dispatchEvent(new CustomEvent("raken:go", { detail: view }));
+
+  // ---------- speech ----------
+  R.speak = function (text) {
+    if (!("speechSynthesis" in window)) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text.replace(/[*_`#>]/g, "").slice(0, 4000));
+    speechSynthesis.speak(u);
+  };
+})();
+
+</script>
+<script>
+/* js/ai.js */
+/* Raken AI — Claude Messages API client (raw HTTP, streaming) and the agent loop */
+(function () {
+  const R = window.Raken; const S = R.settings;
+  const API = "https://api.anthropic.com/v1/messages";
+  const ai = R.ai = {};
+
+  ai.hasKey = () => !!(S.anthropicKey || S.gateway);
+  ai.endpoint = () => S.gateway ? S.gateway.replace(/\/+$/, "") + "/v1/messages" : API;
+  ai.model = () => {
+    const m = R.config.models.find((x) => x.id === S.model);
+    return (m && (!m.pro || R.isPro())) ? m.id : R.config.defaultModel;
+  };
+  ai.effort = () => (!R.isPro() && (S.effort === "xhigh" || S.effort === "max")) ? "high" : (S.effort || "high");
+  ai.headers = function () {
+    const h = {
+      "content-type": "application/json",
+      "anthropic-version": "2023-06-01",
+      "anthropic-beta": "server-side-fallback-2026-07-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    };
+    if (S.gateway) { h["x-raken-license"] = S.license || ""; if (S.anthropicKey) h["x-api-key"] = S.anthropicKey; }
+    else h["x-api-key"] = S.anthropicKey;
+    return h;
+  };
+  ai.webSearchTool = (maxUses) => ({ type: "web_search_20260209", name: "web_search", max_uses: maxUses || 5 });
+  ai.webFetchTool = (maxUses) => ({ type: "web_fetch_20260209", name: "web_fetch", max_uses: maxUses || 5 });
+  ai.supportsWeb = (model) => !/fable|mythos/.test(model || ai.model());
+
+  ai.persona = function (extra) {
+    const who = S.name ? " The user's name is " + S.name + "." : "";
+    return "You are Raken AI, a friendly, sharp assistant inside the Raken AI app (" + R.platformLabel + ")." + who +
+      " Today is " + new Date().toDateString() + ". Use Markdown. Be concise unless the task needs depth. " + (extra || "");
+  };
+
+  // Clean assistant content before echoing it back into the conversation.
+  ai.cleanContent = (content) => (content || []).filter((b) => !(b.type === "text" && !(b.text || "").trim()));
+
+  // Parse one SSE chunk stream into content blocks. Returns a parser with .feed(text) and .message.
+  function sseParser(onEvent) {
+    let buf = ""; const msg = { content: [], stop_reason: null, stop_details: null, model: null, usage: null, id: null };
+    const partial = {};
+    function handle(ev) {
+      const t = ev.type;
+      if (t === "message_start") { Object.assign(msg, { id: ev.message.id, model: ev.message.model, usage: ev.message.usage }); }
+      else if (t === "content_block_start") {
+        const b = Object.assign({}, ev.content_block); msg.content[ev.index] = b;
+        if (b.type === "tool_use" || b.type === "server_tool_use") { partial[ev.index] = ""; b.input = b.input || {}; }
+        if (b.type === "text" && b.text == null) b.text = "";
+        if (b.type === "thinking" && b.thinking == null) b.thinking = "";
+        onEvent && onEvent({ kind: "block_start", index: ev.index, block: b });
+      } else if (t === "content_block_delta") {
+        const b = msg.content[ev.index]; const d = ev.delta; if (!b) return;
+        if (d.type === "text_delta") { b.text += d.text; onEvent && onEvent({ kind: "text", index: ev.index, text: d.text }); }
+        else if (d.type === "thinking_delta") { b.thinking += d.thinking; onEvent && onEvent({ kind: "thinking", index: ev.index, text: d.thinking }); }
+        else if (d.type === "input_json_delta") { partial[ev.index] += d.partial_json; }
+        else if (d.type === "signature_delta") { b.signature = d.signature; }
+        else if (d.type === "citations_delta") { (b.citations = b.citations || []).push(d.citation); }
+      } else if (t === "content_block_stop") {
+        const b = msg.content[ev.index];
+        if (b && partial[ev.index] != null) { try { b.input = partial[ev.index] ? JSON.parse(partial[ev.index]) : {}; } catch (e) { b.input = {}; } delete partial[ev.index]; }
+        onEvent && onEvent({ kind: "block_stop", index: ev.index, block: b });
+      } else if (t === "message_delta") {
+        if (ev.delta) { if (ev.delta.stop_reason) msg.stop_reason = ev.delta.stop_reason; if (ev.delta.stop_details) msg.stop_details = ev.delta.stop_details; }
+        if (ev.usage) msg.usage = Object.assign(msg.usage || {}, ev.usage);
+      } else if (t === "error") { throw new Error(ev.error && ev.error.message || "Stream error"); }
+    }
+    return {
+      message: msg,
+      feed(text) {
+        buf += text; let idx;
+        while ((idx = buf.indexOf("\n\n")) >= 0) {
+          const raw = buf.slice(0, idx); buf = buf.slice(idx + 2);
+          const data = raw.split("\n").filter((l) => l.startsWith("data:")).map((l) => l.slice(5).trim()).join("\n");
+          if (!data) continue;
+          let ev; try { ev = JSON.parse(data); } catch (e) { continue; }
+          handle(ev);
+        }
+      }
+    };
+  }
+
+  // ai.messages({system, messages, tools, model, effort, maxTokens, onEvent, signal}) -> message
+  ai.messages = async function (o) {
+    if (!ai.hasKey()) return ai.demo(o);
+    const model = o.model || ai.model();
+    const body = {
+      model, max_tokens: o.maxTokens || 32000, stream: true, messages: o.messages,
+      thinking: S.showThinking ? { type: "adaptive", display: "summarized" } : { type: "adaptive" },
+      output_config: { effort: o.effort || ai.effort() }
+    };
+    if (!S.gateway) body.fallbacks = "default";
+    if (o.system) body.system = o.system;
+    if (o.tools && o.tools.length) body.tools = o.tools;
+    const parser = sseParser(o.onEvent);
+    const res = await R.net.request(ai.endpoint(), { method: "POST", headers: ai.headers(), body: JSON.stringify(body), signal: o.signal, onChunk: (t) => parser.feed(t) });
+    if (!res.ok) {
+      let msg = "Request failed (" + res.status + ")";
+      try { const j = JSON.parse(res.text); msg = (j.error && j.error.message) || msg; } catch (e) { if (res.text) msg += ": " + res.text.slice(0, 200); }
+      if (res.status === 401) msg = "Invalid API key. Check Settings.";
+      throw new Error(msg);
+    }
+    const m = parser.message; m.content = m.content.filter(Boolean);
+    return m;
+  };
+
+  ai.text = (message) => (message.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
+
+  // Offline demo answer when no key is configured.
+  ai.demo = async function (o) {
+    const last = o.messages[o.messages.length - 1]; const q = typeof last.content === "string" ? last.content : (last.content.find((b) => b.type === "text") || {}).text || "";
+    const text = "**Demo mode** — Raken AI isn't connected to a model yet.\n\n" +
+      "Add your Anthropic API key in **Settings → Assistant** (or a Raken Cloud gateway) and I'll answer for real. " +
+      "Images already work without a key via the free Pollinations provider.\n\n" +
+      (q ? "You asked: _" + q.slice(0, 200).replace(/\n/g, " ") + "_" : "");
+    const m = { content: [{ type: "text", text: "" }], stop_reason: "end_turn", model: "demo" };
+    for (const ch of text.match(/.{1,12}/gs)) { m.content[0].text += ch; o.onEvent && o.onEvent({ kind: "text", index: 0, text: ch }); await R.sleep(12); }
+    return m;
+  };
+
+  // Agent loop: runs client tools until the model stops.
+  // ai.runAgent({system, messages, tools:[{name, description, input_schema, run(input)}], serverTools:[], onEvent, signal, maxTurns, model, effort})
+  ai.runAgent = async function (o) {
+    const clientTools = o.tools || []; const byName = {}; clientTools.forEach((t) => byName[t.name] = t);
+    const toolDefs = clientTools.map((t) => ({ name: t.name, description: t.description, input_schema: t.input_schema })).concat(o.serverTools || []);
+    const messages = o.messages.slice(); const maxTurns = o.maxTurns || 30; let finalText = "";
+    for (let turn = 0; turn < maxTurns; turn++) {
+      if (o.signal && o.signal.aborted) throw new Error("Stopped");
+      const msg = await ai.messages({ system: o.system, messages, tools: toolDefs, model: o.model, effort: o.effort, onEvent: o.onEvent, signal: o.signal });
+      const content = ai.cleanContent(msg.content);
+      messages.push({ role: "assistant", content });
+      finalText = ai.text(msg);
+      o.onEvent && o.onEvent({ kind: "turn", message: msg, turn });
+      if (msg.stop_reason === "refusal") { o.onEvent && o.onEvent({ kind: "refusal", details: msg.stop_details }); break; }
+      if (msg.stop_reason === "max_tokens") { o.onEvent && o.onEvent({ kind: "max_tokens" }); break; }
+      if (msg.stop_reason === "pause_turn") continue;
+      if (msg.stop_reason !== "tool_use") break;
+      const calls = content.filter((b) => b.type === "tool_use");
+      if (!calls.length) break;
+      const results = [];
+      for (const call of calls) {
+        const tool = byName[call.name]; let out, isError = false;
+        o.onEvent && o.onEvent({ kind: "tool_call", call });
+        try { out = tool ? await tool.run(call.input || {}, call) : "Unknown tool: " + call.name; if (!tool) isError = true; }
+        catch (e) { out = "Error: " + (e.message || e); isError = true; }
+        if (out == null) out = "(no output)";
+        if (typeof out !== "string") out = JSON.stringify(out);
+        if (out.length > 60000) out = out.slice(0, 60000) + "\n…(truncated)";
+        o.onEvent && o.onEvent({ kind: "tool_result", call, result: out, isError });
+        results.push({ type: "tool_result", tool_use_id: call.id, content: out, is_error: isError || undefined });
+      }
+      messages.push({ role: "user", content: results });
+    }
+    return { text: finalText, messages };
+  };
+
+  // Quick connectivity check used by Settings.
+  ai.test = async function () {
+    const m = await ai.messages({ messages: [{ role: "user", content: "Reply with the single word OK." }], maxTokens: 64, effort: "low" });
+    return ai.text(m).trim();
+  };
+})();
+
+</script>
+<script>
+/* js/chat.js */
+/* Raken AI — Chat view */
+(function () {
+  const R = window.Raken; const S = R.settings; const $ = R.$;
+  const chat = R.chat = { current: null, list: [], busy: false, attachments: [], web: true, abort: null };
+
+  const els = {};
+  document.addEventListener("DOMContentLoaded", init);
+
+  function init() {
+    ["chat-list-items", "chat-new", "chat-title", "chat-model", "chat-delete", "messages", "chat-empty", "attachments", "attach-btn", "attach-input", "composer-input", "mic-btn", "send-btn", "usage-hint", "chat-toggle-list", "chat-list"].forEach((id) => els[id] = $("#" + id));
+    fillModels();
+    els["chat-new"].onclick = () => newChat();
+    els["chat-delete"].onclick = deleteChat;
+    els["send-btn"].onclick = send;
+    els["composer-input"].addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
+    els["composer-input"].addEventListener("input", autosize);
+    els["attach-btn"].onclick = () => els["attach-input"].click();
+    els["attach-input"].onchange = (e) => addFiles(e.target.files);
+    els["mic-btn"].onclick = mic;
+    els["chat-toggle-list"].onclick = () => els["chat-list"].classList.toggle("open");
+    els["chat-list-items"].onclick = () => els["chat-list"].classList.remove("open");
+    els["chat-model"].onchange = () => { if (chat.current) { chat.current.model = els["chat-model"].value; save(); } };
+    R.$$("#chat-empty .chip").forEach((c) => c.onclick = () => { els["composer-input"].value = c.dataset.prompt; send(); });
+    els["messages"].addEventListener("dragover", (e) => { e.preventDefault(); });
+    els["messages"].addEventListener("drop", (e) => { e.preventDefault(); addFiles(e.dataTransfer.files); });
+    document.addEventListener("paste", (e) => { if (document.activeElement === els["composer-input"] && e.clipboardData.files.length) addFiles(e.clipboardData.files); });
+    // web toggle
+    const web = document.createElement("button"); web.className = "icon-btn"; web.id = "chat-web"; web.title = "Web search"; web.textContent = "🌐";
+    els["chat-model"].before(web); web.onclick = () => { chat.web = !chat.web; web.style.opacity = chat.web ? 1 : .4; R.toast("Web search " + (chat.web ? "on" : "off")); };
+    document.addEventListener("raken:settings", fillModels);
+    document.addEventListener("raken:usage", usageHint);
+    document.addEventListener("raken:go", (e) => { if (e.detail === "chat") usageHint(); });
+    usageHint();
+    load();
+  }
+
+  function fillModels() {
+    const sel = els["chat-model"]; const cur = sel.value || S.model;
+    sel.innerHTML = R.config.models.map((m) => '<option value="' + m.id + '"' + (m.pro && !R.isPro() ? " disabled" : "") + ">" + R.esc(m.name) + (m.pro && !R.isPro() ? " · Pro" : "") + "</option>").join("");
+    sel.value = R.config.models.some((m) => m.id === cur && (!m.pro || R.isPro())) ? cur : R.config.defaultModel;
+  }
+  function usageHint() {
+    const rem = R.usage.remaining("chat");
+    els["usage-hint"].textContent = R.isPro() ? "Pro · unlimited" : rem + " free messages left today";
+  }
+  function autosize() { const t = els["composer-input"]; t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 200) + "px"; }
+
+  async function load() {
+    chat.list = await R.db.all("chats");
+    renderList();
+    if (chat.list.length) open(chat.list[0].id); else newChat();
+  }
+  function renderList() {
+    els["chat-list-items"].innerHTML = chat.list.map((c) => '<div class="chat-item' + (chat.current && c.id === chat.current.id ? " active" : "") + '" data-id="' + c.id + '">' + R.esc(c.title || "New chat") + "<small>" + R.fmtDate(c.updated || c.created) + "</small></div>").join("");
+    R.$$(".chat-item", els["chat-list-items"]).forEach((el) => el.onclick = () => open(el.dataset.id));
+  }
+  function newChat() {
+    if (chat.current && !chat.current.messages.length) { els["composer-input"].focus(); return; }
+    chat.current = { id: R.uid(), title: "New chat", created: Date.now(), updated: Date.now(), model: els["chat-model"].value || S.model, messages: [] };
+    chat.list.unshift(chat.current); renderList(); renderAll(); els["composer-input"].focus();
+  }
+  async function open(id) {
+    const c = chat.list.find((x) => x.id === id); if (!c) return;
+    chat.current = c; if (c.model) { els["chat-model"].value = c.model; if (!els["chat-model"].value) els["chat-model"].value = R.config.defaultModel; }
+    renderList(); renderAll();
+  }
+  async function save() {
+    const c = chat.current; if (!c) return; c.updated = Date.now();
+    if (c.messages.length) await R.db.put("chats", c);
+    renderList();
+  }
+  async function deleteChat() {
+    const c = chat.current; if (!c) return;
+    if (c.messages.length && !confirm("Delete this chat?")) return;
+    await R.db.del("chats", c.id); chat.list = chat.list.filter((x) => x.id !== c.id); chat.current = null;
+    if (chat.list.length) open(chat.list[0].id); else newChat();
+  }
+
+  // ---------- attachments ----------
+  async function addFiles(files) {
+    for (const f of Array.from(files || [])) {
+      if (f.size > 20 * 1024 * 1024) { R.toast(f.name + " is over 20 MB", "err"); continue; }
+      if (f.type.startsWith("image/")) chat.attachments.push({ kind: "image", name: f.name, mime: f.type, data: (await R.fileToDataURL(f)).split(",")[1] });
+      else if (f.type === "application/pdf" || /\.pdf$/i.test(f.name)) chat.attachments.push({ kind: "pdf", name: f.name, data: await R.blobToBase64(f) });
+      else chat.attachments.push({ kind: "text", name: f.name, text: await R.fileToText(f) });
+    }
+    renderAttachments(); els["attach-input"].value = "";
+  }
+  function renderAttachments() {
+    els["attachments"].innerHTML = chat.attachments.map((a, i) => '<div class="att">' + (a.kind === "image" ? '<img src="data:' + a.mime + ";base64," + a.data + '">' : (a.kind === "pdf" ? "📄 " : "📝 ")) + R.esc(a.name) + '<button data-i="' + i + '">✕</button></div>').join("");
+    R.$$(".att button", els["attachments"]).forEach((b) => b.onclick = () => { chat.attachments.splice(+b.dataset.i, 1); renderAttachments(); });
+  }
+
+  // ---------- rendering ----------
+  function renderAll() {
+    const c = chat.current; els["chat-title"].textContent = c.title || "New chat";
+    els["messages"].innerHTML = ""; if (!c.messages.length) { els["messages"].appendChild(els["chat-empty"]); return; }
+    c.messages.forEach((m, i) => els["messages"].appendChild(bubble(m, i)));
+    scroll();
+  }
+  function scroll() { els["messages"].scrollTop = els["messages"].scrollHeight; }
+  function bubble(m, i) {
+    const el = document.createElement("div"); el.className = "msg " + m.role;
+    const who = m.role === "user" ? (S.name || "You") : "Raken AI";
+    let body = "";
+    if (m.role === "user") {
+      const imgs = m.content.filter((b) => b.type === "image"); const docs = m.content.filter((b) => b.type === "document");
+      if (imgs.length) body += '<div class="attach-imgs">' + imgs.map((b) => '<img src="data:' + b.source.media_type + ";base64," + b.source.data + '">').join("") + "</div>";
+      docs.forEach((d) => body += '<span class="attach-file">📄 ' + R.esc(d.title || "document.pdf") + "</span>");
+      (m.files || []).forEach((f) => body += '<span class="attach-file">📝 ' + R.esc(f) + "</span>");
+      body += '<div class="content">' + R.esc(m.text || textOf(m.content)) + "</div>";
+    } else {
+      body += renderAssistant(m.content);
+    }
+    const actions = m.role === "assistant" ? '<div class="actions"><button data-act="copy">Copy</button><button data-act="speak">🔊</button>' + (i === chat.current.messages.length - 1 ? '<button data-act="regen">Regenerate</button>' : "") + "</div>" : '<div class="actions"><button data-act="copy">Copy</button></div>';
+    el.innerHTML = '<div class="avatar">' + (m.role === "user" ? "🙂" : "R") + '</div><div class="body"><div class="who">' + who + (m.model && m.role === "assistant" ? " · " + R.esc(shortModel(m.model)) : "") + "</div>" + body + actions + "</div>";
+    el.querySelectorAll("[data-act]").forEach((b) => b.onclick = () => {
+      const t = m.role === "user" ? (m.text || textOf(m.content)) : textOf(m.content);
+      if (b.dataset.act === "copy") R.copy(t); else if (b.dataset.act === "speak") R.speak(t); else if (b.dataset.act === "regen") regenerate();
+    });
+    return el;
+  }
+  function shortModel(id) { const m = R.config.models.find((x) => x.id === id); return m ? m.name.replace(/\s*\(.*\)/, "") : id; }
+  function textOf(content) { return (content || []).filter((b) => b.type === "text").map((b) => b.text).join(""); }
+  function renderAssistant(content) {
+    let h = "";
+    for (const b of content || []) {
+      if (b.type === "thinking" && b.thinking && S.showThinking) h += '<details class="thinking"><summary>Thinking</summary>' + R.esc(b.thinking) + "</details>";
+      else if (b.type === "server_tool_use") h += '<div class="tool-line">' + (b.name === "web_search" ? "🔎 Searched the web: " : "🌐 Fetched: ") + R.esc(b.input && (b.input.query || b.input.url) || "") + "</div>";
+      else if (b.type === "text") h += '<div class="content md">' + R.md(b.text) + "</div>";
+      else if (b.type === "fallback") h += '<div class="tool-line">↪ Answered by a fallback model</div>';
+    }
+    return h || '<div class="content md"></div>';
+  }
+
+  // ---------- sending ----------
+  function apiMessages(msgs) {
+    return msgs.map((m) => ({ role: m.role, content: m.role === "assistant" ? R.ai.cleanContent(m.content) : m.content }));
+  }
+  async function send() {
+    const text = els["composer-input"].value.trim();
+    if ((!text && !chat.attachments.length) || chat.busy) return;
+    if (!R.usage.check("chat")) return;
+    const c = chat.current;
+    const content = []; const files = [];
+    for (const a of chat.attachments) {
+      if (a.kind === "image") content.push({ type: "image", source: { type: "base64", media_type: a.mime, data: a.data } });
+      else if (a.kind === "pdf") content.push({ type: "document", source: { type: "base64", media_type: "application/pdf", data: a.data }, title: a.name });
+      else { content.push({ type: "text", text: "File `" + a.name + "`:\n\n" + a.text }); files.push(a.name); }
+    }
+    content.push({ type: "text", text: text || "Please look at the attached file(s)." });
+    c.messages.push({ role: "user", content, text, files, ts: Date.now() });
+    if (c.title === "New chat") c.title = (text || files[0] || "Attachment").slice(0, 48);
+    chat.attachments = []; renderAttachments();
+    els["composer-input"].value = ""; autosize();
+    renderAll(); await save();
+    await respond();
+  }
+  async function regenerate() {
+    const c = chat.current; if (chat.busy || !c.messages.length) return;
+    if (c.messages[c.messages.length - 1].role === "assistant") c.messages.pop();
+    renderAll(); await respond();
+  }
+  async function respond() {
+    const c = chat.current; chat.busy = true; els["send-btn"].textContent = "■"; els["send-btn"].onclick = () => chat.abort && chat.abort.abort();
+    const model = els["chat-model"].value || R.ai.model();
+    const m = { role: "assistant", content: [], model, ts: Date.now() };
+    const el = document.createElement("div"); el.className = "msg assistant"; el.innerHTML = '<div class="avatar">R</div><div class="body"><div class="who">Raken AI</div><div class="live"><span class="typing"></span></div></div>';
+    els["messages"].appendChild(el); scroll();
+    const live = el.querySelector(".live"); let lastRender = 0; let text = "";
+    const render = (force) => { const now = Date.now(); if (!force && now - lastRender < 90) return; lastRender = now; live.innerHTML = renderAssistant(m.content) + '<span class="typing"></span>'; scroll(); };
+    chat.abort = new AbortController();
+    try {
+      const tools = chat.web && R.ai.supportsWeb(model) ? [R.ai.webSearchTool(5)] : [];
+      const msg = await R.ai.messages({
+        model, system: R.ai.persona(), messages: apiMessages(c.messages), tools, signal: chat.abort.signal,
+        onEvent: (ev) => {
+          if (ev.kind === "block_start") { m.content[ev.index] = ev.block; render(true); }
+          else if (ev.kind === "text") { text += ev.text; render(); }
+          else if (ev.kind === "thinking") render();
+          else if (ev.kind === "block_stop") render(true);
+        }
+      });
+      m.content = R.ai.cleanContent(msg.content); m.model = msg.model || model; m.usage = msg.usage;
+      if (msg.stop_reason === "refusal") m.content.push({ type: "text", text: "_Raken AI declined to answer this one" + (msg.stop_details && msg.stop_details.category ? " (" + msg.stop_details.category + ")" : "") + "._" });
+      if (msg.stop_reason === "max_tokens") m.content.push({ type: "text", text: "\n\n_(Reply was cut off at the length limit.)_" });
+      if (!m.content.length) m.content.push({ type: "text", text: "_(empty reply)_" });
+      c.messages.push(m); R.usage.bump("chat");
+      if (S.tts) R.speak(textOf(m.content));
+    } catch (e) {
+      if (e.name === "AbortError" || /Stopped|aborted/i.test(e.message)) { if (text.trim()) { m.content = [{ type: "text", text }]; c.messages.push(m); } }
+      else { m.content = [{ type: "text", text: "⚠️ " + R.esc(e.message || String(e)) }]; c.messages.push(m); R.toast(e.message || "Request failed", "err"); }
+    } finally {
+      chat.busy = false; chat.abort = null; els["send-btn"].textContent = "➤"; els["send-btn"].onclick = send;
+      await save(); renderAll();
+    }
+  }
+
+  // ---------- microphone ----------
+  let rec = null;
+  function mic() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { R.toast("Dictation isn't available in this browser", "err"); return; }
+    if (rec) { rec.stop(); return; }
+    rec = new SR(); rec.interimResults = true; rec.continuous = false; els["mic-btn"].classList.add("mic-on");
+    const base = els["composer-input"].value;
+    rec.onresult = (e) => { let t = ""; for (const r of e.results) t += r[0].transcript; els["composer-input"].value = (base ? base + " " : "") + t; autosize(); };
+    rec.onend = () => { rec = null; els["mic-btn"].classList.remove("mic-on"); };
+    rec.onerror = rec.onend;
+    rec.start();
+  }
+
+  chat.sendPrompt = (text) => { R.go("chat"); els["composer-input"].value = text; send(); };
+  chat.attachImage = (blob, name) => R.fileToDataURL(blob).then((d) => { chat.attachments.push({ kind: "image", name: name || "image.png", mime: blob.type || "image/png", data: d.split(",")[1] }); renderAttachments(); R.go("chat"); });
+})();
+
+</script>
+<script>
+/* js/media.js */
+/* Raken AI — Images, Videos and Gallery */
+(function () {
+  const R = window.Raken; const S = R.settings; const $ = R.$;
+  const media = R.media = {};
+  const urls = new Map(); // id -> object URL
+  media.url = (item) => { if (!urls.has(item.id)) urls.set(item.id, URL.createObjectURL(item.blob)); return urls.get(item.id); };
+
+  document.addEventListener("DOMContentLoaded", () => {
+    // Images
+    $("#img-provider").value = S.imageProvider || "pollinations";
+    $("#img-provider").onchange = () => R.saveSettings({ imageProvider: $("#img-provider").value });
+    R.$$("#img-styles .chip").forEach((c) => c.onclick = () => c.classList.toggle("on"));
+    $("#img-generate").onclick = generateImages;
+    $("#img-prompt").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) generateImages(); });
+    // Videos
+    $("#vid-model").value = S.videoModel || "fal-ai/ltx-video";
+    $("#vid-model").onchange = () => R.saveSettings({ videoModel: $("#vid-model").value });
+    $("#vid-generate").onclick = generateVideo;
+    document.addEventListener("raken:go", (e) => { if (e.detail === "gallery") renderGallery(); if (e.detail === "videos") fillStartImages(); });
+    document.addEventListener("raken:settings", () => { $("#vid-note").hidden = !!S.falKey; });
+    $("#vid-note").hidden = !!S.falKey;
+  });
+
+  // ---------- providers ----------
+  async function fetchBlob(url, headers) {
+    const r = await R.net.request(url, { responseType: "blob", headers: headers || {} });
+    if (!r.ok) throw new Error("Download failed (" + r.status + ")");
+    return r.blob;
+  }
+  const providers = {
+    async pollinations(prompt, w, h, seed) {
+      const url = "https://image.pollinations.ai/prompt/" + encodeURIComponent(prompt) + "?width=" + w + "&height=" + h + "&seed=" + seed + "&nologo=true&model=flux";
+      const blob = await fetchBlob(url);
+      if (!/^image\//.test(blob.type)) throw new Error("Pollinations did not return an image");
+      return blob;
+    },
+    async fal(prompt, w, h, seed) {
+      if (!S.falKey) throw new Error("Add a fal.ai key in Settings");
+      const r = await R.net.request("https://fal.run/fal-ai/flux/schnell", { method: "POST", responseType: "json", headers: { "content-type": "application/json", authorization: "Key " + S.falKey }, body: JSON.stringify({ prompt, image_size: { width: w, height: h }, num_images: 1, seed, enable_safety_checker: true }) });
+      if (!r.ok) throw new Error(falError(r));
+      const img = r.json && r.json.images && r.json.images[0]; if (!img) throw new Error("fal returned no image");
+      return fetchBlob(img.url);
+    },
+    async openai(prompt, w, h) {
+      if (!S.openaiKey) throw new Error("Add an OpenAI-compatible key in Settings");
+      const model = S.openaiImageModel || "gpt-image-1";
+      const size = /gpt-image/.test(model) ? (w > h ? "1536x1024" : w < h ? "1024x1536" : "1024x1024") : (w > h ? "1792x1024" : w < h ? "1024x1792" : "1024x1024");
+      const body = { model, prompt, n: 1, size }; if (/dall-e/.test(model)) body.response_format = "b64_json";
+      const r = await R.net.request((S.openaiBase || "https://api.openai.com").replace(/\/+$/, "") + "/v1/images/generations", { method: "POST", responseType: "json", headers: { "content-type": "application/json", authorization: "Bearer " + S.openaiKey }, body: JSON.stringify(body) });
+      if (!r.ok) throw new Error((r.json && r.json.error && r.json.error.message) || "Image request failed (" + r.status + ")");
+      const d = r.json.data && r.json.data[0]; if (!d) throw new Error("No image returned");
+      if (d.b64_json) return R.b64ToBlob(d.b64_json, "image/png");
+      return fetchBlob(d.url);
+    }
+  };
+  function falError(r) { try { const j = r.json || JSON.parse(r.text); if (j.detail) return typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail); } catch (e) { } return "fal.ai request failed (" + r.status + ")"; }
+
+  // ---------- images ----------
+  async function generateImages() {
+    let prompt = $("#img-prompt").value.trim(); if (!prompt) { $("#img-prompt").focus(); return; }
+    const styles = R.$$("#img-styles .chip.on").map((c) => c.dataset.style); if (styles.length) prompt += ", " + styles.join(", ");
+    const [w, h] = $("#img-aspect").value.split("x").map(Number); const count = +$("#img-count").value; const provider = $("#img-provider").value;
+    if (!R.isPro() && R.usage.remaining("image") < count) { R.toast("Not enough free image credits left today (" + R.usage.remaining("image") + "). Upgrade to Pro.", "err"); R.go("pro"); return; }
+    const results = $("#img-results"); if (results.querySelector(".empty-mini")) results.innerHTML = "";
+    const btn = $("#img-generate"); btn.disabled = true; $("#img-status").textContent = "Generating…";
+    const jobs = [];
+    for (let i = 0; i < count; i++) {
+      const card = document.createElement("div"); card.className = "media-card loading"; card.innerHTML = '<div class="thumb"><div class="spinner"></div></div><div class="meta"><span>' + R.esc(prompt) + "</span></div>";
+      results.prepend(card);
+      const seed = Math.floor(Math.random() * 1e9);
+      jobs.push((async () => {
+        try {
+          const blob = await providers[provider](prompt, w, h, seed);
+          const item = { id: R.uid(), kind: "image", blob, prompt, provider, w, h, created: Date.now() };
+          await R.db.put("media", item); R.usage.bump("image");
+          card.replaceWith(mediaCard(item));
+        } catch (e) { card.className = "media-card"; card.innerHTML = '<div class="thumb" style="aspect-ratio:2"></div><div class="meta"><span style="color:#fca5a5">' + R.esc(e.message || e) + "</span></div>"; R.toast(e.message || "Image failed", "err"); }
+      })());
+    }
+    await Promise.all(jobs); btn.disabled = false; $("#img-status").textContent = "";
+  }
+
+  function mediaCard(item, inGallery) {
+    const card = document.createElement("div"); card.className = "media-card"; const url = media.url(item);
+    card.innerHTML = (item.kind === "video" ? '<video class="thumb" src="' + url + '" controls loop playsinline></video>' : '<img class="thumb" src="' + url + '" alt="">') +
+      '<div class="meta"><span title="' + R.esc(item.prompt) + '">' + R.esc(item.prompt) + "</span>" +
+      '<button data-a="dl" title="Download">⬇</button>' + (item.kind === "image" ? '<button data-a="chat" title="Ask about this image">💬</button><button data-a="anim" title="Animate">🎬</button>' : "") + '<button data-a="del" title="Delete">🗑</button></div>';
+    if (item.kind === "image") card.querySelector(".thumb").onclick = () => lightbox('<img src="' + url + '">');
+    card.querySelectorAll("[data-a]").forEach((b) => b.onclick = async () => {
+      const a = b.dataset.a;
+      if (a === "dl") R.download("raken-" + item.id + (item.kind === "video" ? ".mp4" : ".png"), item.blob);
+      else if (a === "chat") R.chat.attachImage(item.blob, "raken-" + item.id + ".png");
+      else if (a === "anim") { R.go("videos"); await fillStartImages(); $("#vid-image").value = item.id; $("#vid-prompt").value = item.prompt; }
+      else if (a === "del") { await R.db.del("media", item.id); card.remove(); }
+    });
+    return card;
+  }
+  function lightbox(html) { const lb = $("#lightbox"); $("#lightbox-inner").innerHTML = html; lb.hidden = false; lb.onclick = () => { lb.hidden = true; $("#lightbox-inner").innerHTML = ""; }; }
+
+  // ---------- gallery ----------
+  async function renderGallery() {
+    const items = await R.db.all("media"); const g = $("#gallery"); g.innerHTML = "";
+    if (!items.length) { g.innerHTML = '<div class="empty-mini">Nothing here yet. Make an image or a video.</div>'; return; }
+    items.forEach((it) => g.appendChild(mediaCard(it, true)));
+  }
+  media.renderGallery = renderGallery;
+
+  // ---------- videos ----------
+  async function fillStartImages() {
+    const items = (await R.db.all("media")).filter((x) => x.kind === "image"); const sel = $("#vid-image"); const cur = sel.value;
+    sel.innerHTML = '<option value="">None (text to video)</option>' + items.map((x) => '<option value="' + x.id + '">' + R.esc(x.prompt.slice(0, 60)) + "</option>").join("");
+    sel.value = cur; if (!sel.value) sel.value = "";
+  }
+  const I2V = { "fal-ai/ltx-video": "fal-ai/ltx-video/image-to-video", "fal-ai/minimax/video-01": "fal-ai/minimax/video-01/image-to-video", "fal-ai/kling-video/v2.1/standard/text-to-video": "fal-ai/kling-video/v2.1/standard/image-to-video", "fal-ai/veo3": "fal-ai/veo3/image-to-video" };
+  async function generateVideo() {
+    const prompt = $("#vid-prompt").value.trim(); if (!prompt) { $("#vid-prompt").focus(); return; }
+    if (!S.falKey) { R.toast("Video needs a fal.ai key — add one in Settings", "err"); R.go("settings"); return; }
+    if (!R.usage.check("video")) return;
+    let model = $("#vid-model").value; const aspect = $("#vid-aspect").value; const startId = $("#vid-image").value;
+    const body = { prompt };
+    if (/kling|veo/.test(model)) body.aspect_ratio = aspect;
+    if (startId) { const img = await R.db.get("media", startId); if (img) { model = I2V[model] || model; body.image_url = await R.fileToDataURL(img.blob); } }
+    const results = $("#vid-results"); if (results.querySelector(".empty-mini")) results.innerHTML = "";
+    const card = document.createElement("div"); card.className = "media-card loading"; card.innerHTML = '<div class="thumb" style="aspect-ratio:16/9"><div class="spinner"></div></div><div class="meta"><span>' + R.esc(prompt) + "</span></div>";
+    results.prepend(card); const btn = $("#vid-generate"); btn.disabled = true; const status = $("#vid-status");
+    const H = { "content-type": "application/json", authorization: "Key " + S.falKey };
+    try {
+      status.textContent = "Submitting…";
+      const sub = await R.net.request("https://queue.fal.run/" + model, { method: "POST", responseType: "json", headers: H, body: JSON.stringify(body) });
+      if (!sub.ok) throw new Error(falError(sub));
+      const statusUrl = sub.json.status_url; const responseUrl = sub.json.response_url; const t0 = Date.now();
+      while (true) {
+        await R.sleep(4000);
+        const st = await R.net.request(statusUrl, { responseType: "json", headers: H });
+        const s = st.json && st.json.status;
+        status.textContent = (s === "IN_QUEUE" ? "Queued" : "Rendering") + " · " + Math.round((Date.now() - t0) / 1000) + "s";
+        if (s === "COMPLETED") break;
+        if (st.status >= 400) throw new Error(falError(st));
+        if (Date.now() - t0 > 15 * 60 * 1000) throw new Error("Timed out waiting for the video");
+      }
+      const out = await R.net.request(responseUrl, { responseType: "json", headers: H });
+      if (!out.ok) throw new Error(falError(out));
+      const v = out.json.video || (out.json.videos && out.json.videos[0]); if (!v || !v.url) throw new Error("No video in response");
+      status.textContent = "Downloading…";
+      const blob = await fetchBlob(v.url);
+      const item = { id: R.uid(), kind: "video", blob: blob.type ? blob : new Blob([blob], { type: "video/mp4" }), prompt, provider: model, created: Date.now() };
+      await R.db.put("media", item); R.usage.bump("video");
+      card.replaceWith(mediaCard(item)); status.textContent = "";
+    } catch (e) {
+      card.className = "media-card"; card.innerHTML = '<div class="meta"><span style="color:#fca5a5">' + R.esc(e.message || e) + "</span></div>"; status.textContent = ""; R.toast(e.message || "Video failed", "err");
+    } finally { btn.disabled = false; }
+  }
+})();
+
+</script>
+<script>
+/* js/agents.js */
+/* Raken AI — Work Agent, Code Agent, Documents */
+(function () {
+  const R = window.Raken; const S = R.settings; const $ = R.$;
+  const agents = R.agents = {};
+
+  // ---------- shared log ----------
+  function logger(container) {
+    container.innerHTML = ""; let liveText = null; let liveThink = null;
+    const add = (cls, html) => { const d = document.createElement("div"); d.className = "step " + cls; d.innerHTML = html; container.appendChild(d); container.scrollTop = container.scrollHeight; return d; };
+    return {
+      status: (t) => { liveText = null; add("status", R.esc(t)); },
+      error: (t) => add("error", R.esc(t)),
+      onEvent(ev) {
+        if (ev.kind === "text") { if (!liveText) liveText = add("result md", ""); liveText._t = (liveText._t || "") + ev.text; liveText.innerHTML = R.md(liveText._t); container.scrollTop = container.scrollHeight; }
+        else if (ev.kind === "thinking" && S.showThinking) { if (!liveThink) liveThink = add("think", ""); liveThink.textContent += ev.text; }
+        else if (ev.kind === "block_start") { if (ev.block.type !== "text") liveText = null; if (ev.block.type !== "thinking") liveThink = null; if (ev.block.type === "server_tool_use") add("tool", '<span class="name">🔎 ' + R.esc(ev.block.name) + "</span>"); }
+        else if (ev.kind === "block_stop" && ev.block && ev.block.type === "server_tool_use") { const last = container.querySelector(".step.tool:last-of-type"); if (last) last.innerHTML += " <span class='muted'>" + R.esc(ev.block.input && (ev.block.input.query || ev.block.input.url) || "") + "</span>"; }
+        else if (ev.kind === "tool_call") { liveText = null; add("tool", '<span class="name">🛠 ' + R.esc(ev.call.name) + "</span><pre>" + R.esc(summarize(ev.call.input)) + "</pre>"); }
+        else if (ev.kind === "tool_result") { add("tool" + (ev.isError ? " error" : ""), "<pre>" + R.esc(String(ev.result).slice(0, 600)) + "</pre>"); }
+        else if (ev.kind === "refusal") add("error", "The model declined this task" + (ev.details && ev.details.category ? " (" + ev.details.category + ")" : "") + ".");
+        else if (ev.kind === "max_tokens") add("error", "Output limit reached.");
+      }
+    };
+  }
+  function summarize(input) { const o = {}; for (const k in input || {}) { const v = input[k]; o[k] = typeof v === "string" && v.length > 300 ? v.slice(0, 300) + "…(" + v.length + " chars)" : v; } return JSON.stringify(o, null, 1).slice(0, 800); }
+  function calc(expr) {
+    const e = String(expr || "");
+    if (!/^[\d\s+\-*/().,%^eE]*(Math\.[a-zA-Z]+[\d\s+\-*/().,%^eE]*)*$/.test(e.replace(/Math\.[a-zA-Z]+/g, ""))) throw new Error("Only arithmetic and Math.* are allowed");
+    if (/[a-df-zA-DF-Z_$]/.test(e.replace(/Math\.[a-zA-Z]+/g, ""))) throw new Error("Only arithmetic and Math.* are allowed");
+    return String(Function("Math", '"use strict"; return (' + e.replace(/\^/g, "**") + ")")(Math));
+  }
+
+  // ---------- Work Agent ----------
+  let workAbort = null;
+  document.addEventListener("DOMContentLoaded", () => {
+    R.$$("#work-presets .chip").forEach((c) => c.onclick = () => { $("#work-task").value = c.dataset.task; });
+    $("#work-run").onclick = runWork;
+    $("#work-stop").onclick = () => workAbort && workAbort.abort();
+  });
+  async function runWork() {
+    const task = $("#work-task").value.trim(); if (!task) { $("#work-task").focus(); return; }
+    if (!R.usage.check("agent")) return;
+    const log = logger($("#work-log")); const btn = $("#work-run"); btn.disabled = true; $("#work-stop").hidden = false;
+    workAbort = new AbortController(); const made = [];
+    const tools = [
+      { name: "create_document", description: "Create a new document in the user's Documents library. Use markdown for reports, memos, plans and emails; csv for tables/spreadsheets. Returns the document id.", input_schema: { type: "object", properties: { title: { type: "string" }, format: { type: "string", enum: ["markdown", "csv", "text"] }, content: { type: "string" } }, required: ["title", "format", "content"] }, run: async (i) => { const d = { id: R.uid(), title: i.title, format: i.format || "markdown", content: i.content, created: Date.now(), updated: Date.now() }; await R.db.put("docs", d); made.push(d); return "Created document " + d.id + " (" + d.title + ")"; } },
+      { name: "update_document", description: "Replace the content of an existing document.", input_schema: { type: "object", properties: { id: { type: "string" }, content: { type: "string" }, title: { type: "string" } }, required: ["id", "content"] }, run: async (i) => { const d = await R.db.get("docs", i.id); if (!d) return "No document " + i.id; d.content = i.content; if (i.title) d.title = i.title; d.updated = Date.now(); await R.db.put("docs", d); return "Updated " + d.id; } },
+      { name: "list_documents", description: "List the user's existing documents (id, title, format).", input_schema: { type: "object", properties: {} }, run: async () => (await R.db.all("docs")).map((d) => d.id + " | " + d.title + " | " + d.format).join("\n") || "(no documents)" },
+      { name: "read_document", description: "Read a document's content by id.", input_schema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] }, run: async (i) => { const d = await R.db.get("docs", i.id); return d ? d.content : "No document " + i.id; } },
+      { name: "calculate", description: "Evaluate an arithmetic expression precisely (supports + - * / % ^ and Math.* functions).", input_schema: { type: "object", properties: { expression: { type: "string" } }, required: ["expression"] }, run: (i) => calc(i.expression) },
+      { name: "get_datetime", description: "Current local date and time.", input_schema: { type: "object", properties: {} }, run: () => new Date().toString() }
+    ];
+    const serverTools = ($("#work-web").checked && R.ai.supportsWeb()) ? [R.ai.webSearchTool(8), R.ai.webFetchTool(6)] : [];
+    const system = R.ai.persona("You are the Raken AI Work Agent: a capable, autonomous professional. Plan briefly, then do the work using tools. " +
+      "Put every deliverable (report, memo, email drafts, table, checklist, plan) into a document with create_document — markdown for prose, csv for spreadsheets — rather than only replying in chat. " +
+      "Use web search when the task depends on facts you may not know and cite sources inside the document. When done, reply with a short summary of what you produced and any assumptions.");
+    log.status("Working on: " + task);
+    try {
+      const out = await R.ai.runAgent({ system, messages: [{ role: "user", content: task }], tools, serverTools, onEvent: log.onEvent, signal: workAbort.signal, maxTurns: 40 });
+      R.usage.bump("agent");
+      if (made.length) { const d = document.createElement("div"); d.className = "step status"; d.innerHTML = "📄 Created " + made.length + " document" + (made.length > 1 ? "s" : "") + ": " + made.map((x) => '<a href="#" data-doc="' + x.id + '">' + R.esc(x.title) + "</a>").join(", "); $("#work-log").appendChild(d); d.querySelectorAll("[data-doc]").forEach((a) => a.onclick = (e) => { e.preventDefault(); R.go("docs"); agents.openDoc(a.dataset.doc); }); }
+      if (!out.text && !made.length) log.status("Done.");
+    } catch (e) { log.error(e.message || String(e)); }
+    finally { btn.disabled = false; $("#work-stop").hidden = true; workAbort = null; }
+  }
+
+  // ---------- Documents ----------
+  let docSel = null;
+  document.addEventListener("raken:go", (e) => { if (e.detail === "docs") renderDocs(); });
+  async function renderDocs() {
+    const docs = await R.db.all("docs"); const list = $("#doc-list");
+    list.innerHTML = docs.length ? docs.map((d) => '<div class="doc-item' + (docSel === d.id ? " active" : "") + '" data-id="' + d.id + '"><div class="t">' + R.esc(d.title) + "</div><small>" + d.format + " · " + R.fmtDate(d.updated) + "</small></div>").join("") : '<div class="empty-mini">No documents yet. Run the Work Agent.</div>';
+    R.$$(".doc-item", list).forEach((el) => el.onclick = () => agents.openDoc(el.dataset.id));
+    if (docSel) agents.openDoc(docSel);
+  }
+  agents.openDoc = async function (id) {
+    const d = await R.db.get("docs", id); if (!d) { docSel = null; return; } docSel = id;
+    R.$$(".doc-item").forEach((el) => el.classList.toggle("active", el.dataset.id === id));
+    const v = $("#doc-view"); let body;
+    if (d.format === "csv") body = csvTable(d.content); else if (d.format === "markdown") body = '<div class="md">' + R.md(d.content) + "</div>"; else body = "<pre style='white-space:pre-wrap'>" + R.esc(d.content) + "</pre>";
+    v.innerHTML = '<div class="doc-head"><h3>' + R.esc(d.title) + '</h3><button class="btn small ghost" data-a="copy">Copy</button><button class="btn small ghost" data-a="dl">Download</button><button class="btn small ghost" data-a="chat">Discuss</button><button class="btn small danger" data-a="del">Delete</button></div>' + body;
+    v.querySelectorAll("[data-a]").forEach((b) => b.onclick = async () => {
+      const a = b.dataset.a;
+      if (a === "copy") R.copy(d.content);
+      else if (a === "dl") R.download(d.title.replace(/[^\w\- ]+/g, "").trim() + { csv: ".csv", markdown: ".md", text: ".txt" }[d.format], new Blob([d.content], { type: d.format === "csv" ? "text/csv" : "text/plain" }));
+      else if (a === "chat") R.chat.sendPrompt("Here is a document titled \"" + d.title + "\":\n\n" + d.content + "\n\nLet's discuss it. Start by summarizing it in two sentences.");
+      else if (a === "del") { if (confirm("Delete this document?")) { await R.db.del("docs", d.id); docSel = null; v.innerHTML = '<div class="empty-mini">Select a document.</div>'; renderDocs(); } }
+    });
+  };
+  function csvTable(csv) {
+    const rows = []; let row = [], cell = "", q = false;
+    for (let i = 0; i < csv.length; i++) { const c = csv[i]; if (q) { if (c === '"' && csv[i + 1] === '"') { cell += '"'; i++; } else if (c === '"') q = false; else cell += c; } else if (c === '"') q = true; else if (c === ",") { row.push(cell); cell = ""; } else if (c === "\n") { row.push(cell); rows.push(row); row = []; cell = ""; } else if (c !== "\r") cell += c; }
+    if (cell || row.length) { row.push(cell); rows.push(row); }
+    if (!rows.length) return "<p class='muted'>Empty table</p>";
+    return '<div class="md"><table><thead><tr>' + rows[0].map((c) => "<th>" + R.esc(c) + "</th>").join("") + "</tr></thead><tbody>" + rows.slice(1).map((r) => "<tr>" + r.map((c) => "<td>" + R.esc(c) + "</td>").join("") + "</tr>").join("") + "</tbody></table></div>";
+  }
+
+  // ---------- Code Agent ----------
+  const code = { project: null, list: [], file: null, abort: null };
+  document.addEventListener("DOMContentLoaded", () => {
+    $("#code-new").onclick = () => newProject();
+    $("#code-del").onclick = delProject;
+    $("#code-zip").onclick = zipProject;
+    $("#code-run").onclick = runCode;
+    $("#code-stop").onclick = () => code.abort && code.abort.abort();
+    $("#code-project").onchange = () => openProject($("#code-project").value);
+    $("#file-add").onclick = () => { const n = prompt("File name", "notes.md"); if (n && code.project) { code.project.files[n] = ""; saveProject(); renderFiles(); openFile(n); } };
+    $("#editor-save").onclick = () => { if (code.project && code.file) { code.project.files[code.file] = $("#editor").value; saveProject(); preview(); R.toast("Saved"); } };
+    $("#editor").addEventListener("keydown", (e) => { if ((e.metaKey || e.ctrlKey) && e.key === "s") { e.preventDefault(); $("#editor-save").click(); } if (e.key === "Tab") { e.preventDefault(); const t = e.target; const s = t.selectionStart; t.value = t.value.slice(0, s) + "  " + t.value.slice(t.selectionEnd); t.selectionStart = t.selectionEnd = s + 2; } });
+    $("#preview-refresh").onclick = preview;
+    loadProjects();
+  });
+  async function loadProjects() { code.list = await R.db.all("projects"); renderProjectSelect(); if (code.list.length) openProject(code.list[0].id); else newProject("My first app"); }
+  function renderProjectSelect() { const sel = $("#code-project"); sel.innerHTML = code.list.map((p) => '<option value="' + p.id + '">' + R.esc(p.name) + "</option>").join(""); if (code.project) sel.value = code.project.id; }
+  function newProject(name) {
+    name = name || prompt("Project name", "New project"); if (!name) return;
+    code.project = { id: R.uid(), name, files: { "index.html": "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>" + R.esc(name) + "</title>\n<link rel=\"stylesheet\" href=\"styles.css\">\n</head>\n<body>\n<h1>" + R.esc(name) + "</h1>\n<script src=\"app.js\"><\/script>\n</body>\n</html>\n", "styles.css": "body { font-family: system-ui, sans-serif; margin: 2rem; }\n", "app.js": "console.log('ready');\n" }, created: Date.now(), updated: Date.now() };
+    code.list.unshift(code.project); saveProject(); renderProjectSelect(); renderFiles(); openFile("index.html"); preview();
+  }
+  function openProject(id) { const p = code.list.find((x) => x.id === id); if (!p) return; code.project = p; renderProjectSelect(); renderFiles(); openFile(Object.keys(p.files)[0]); preview(); }
+  async function saveProject() { if (!code.project) return; code.project.updated = Date.now(); await R.db.put("projects", code.project); }
+  async function delProject() { if (!code.project || !confirm("Delete project \"" + code.project.name + "\"?")) return; await R.db.del("projects", code.project.id); code.list = code.list.filter((p) => p.id !== code.project.id); code.project = null; if (code.list.length) openProject(code.list[0].id); else newProject("My first app"); }
+  function zipProject() { if (!code.project) return; const files = Object.keys(code.project.files).map((n) => ({ name: n, data: code.project.files[n] })); R.download(code.project.name.replace(/[^\w\-]+/g, "-") + ".zip", R.zip(files)); }
+  function renderFiles() {
+    const list = $("#file-list"); if (!code.project) { list.innerHTML = ""; return; }
+    list.innerHTML = Object.keys(code.project.files).sort().map((n) => '<button class="' + (n === code.file ? "active" : "") + '" data-f="' + R.esc(n) + '">' + R.esc(n) + "</button>").join("");
+    list.querySelectorAll("button").forEach((b) => b.onclick = () => openFile(b.dataset.f));
+  }
+  function openFile(name) { if (!code.project || !(name in code.project.files)) { code.file = null; $("#editor-name").textContent = "No file open"; $("#editor").value = ""; $("#editor-save").hidden = true; return; } code.file = name; $("#editor-name").textContent = name; $("#editor").value = code.project.files[name]; $("#editor-save").hidden = false; renderFiles(); }
+  function preview() {
+    const f = code.project && code.project.files; const frame = $("#preview"); if (!f) { frame.srcdoc = ""; return; }
+    let html = f["index.html"]; if (html == null) { const n = Object.keys(f).find((x) => /\.html?$/.test(x)); html = n ? f[n] : "<p style='font-family:sans-serif;color:#888'>No index.html in this project</p>"; }
+    html = html.replace(/<link[^>]+href=["']([^"']+\.css)["'][^>]*>/gi, (m, href) => f[href.replace(/^\.\//, "")] != null ? "<style>" + f[href.replace(/^\.\//, "")] + "</style>" : m);
+    html = html.replace(/<script[^>]+src=["']([^"']+\.js)["'][^>]*>\s*<\/script>/gi, (m, src) => f[src.replace(/^\.\//, "")] != null ? "<script>" + f[src.replace(/^\.\//, "")].replace(/<\/script>/gi, "<\\/script>") + "<\/script>" : m);
+    frame.srcdoc = html;
+  }
+  // Run JavaScript in a sandboxed iframe and capture console output.
+  function runJS(src, timeoutMs) {
+    return new Promise((resolve) => {
+      const id = R.uid(); const frame = document.createElement("iframe"); frame.sandbox = "allow-scripts"; frame.style.display = "none";
+      const done = (r) => { window.removeEventListener("message", onMsg); frame.remove(); resolve(r); };
+      const onMsg = (e) => { if (e.data && e.data.rakenRun === id) done(e.data.out); };
+      window.addEventListener("message", onMsg);
+      const timer = setTimeout(() => done("Timed out after " + (timeoutMs || 8000) + " ms (possible infinite loop)"), timeoutMs || 8000);
+      frame.srcdoc = "<script>(function(){var out=[];var f=function(k){return function(){out.push('['+k+'] '+Array.from(arguments).map(function(a){try{return typeof a==='string'?a:JSON.stringify(a)}catch(e){return String(a)}}).join(' '))}};console.log=f('log');console.error=f('error');console.warn=f('warn');console.info=f('info');window.onerror=function(m,s,l){out.push('[uncaught] '+m+' (line '+l+')')};" +
+        "Promise.resolve().then(function(){try{var r=(0,eval)(" + JSON.stringify(src) + ");if(r!==undefined)out.push('[return] '+(typeof r==='string'?r:JSON.stringify(r)));}catch(e){out.push('[exception] '+(e&&e.stack||e))}}).then(function(){return new Promise(function(r){setTimeout(r,50)})}).then(function(){parent.postMessage({rakenRun:" + JSON.stringify(id) + ",out:out.join('\\n')||'(no output)'},'*')});})();<\/script>";
+      document.body.appendChild(frame); frame._t = timer;
+    });
+  }
+  agents.runJS = runJS;
+  async function runCode() {
+    const task = $("#code-task").value.trim(); if (!task || !code.project) { $("#code-task").focus(); return; }
+    if (!R.usage.check("agent")) return;
+    const log = logger($("#code-log")); const btn = $("#code-run"); btn.disabled = true; $("#code-stop").hidden = false; code.abort = new AbortController();
+    const p = code.project;
+    const tools = [
+      { name: "list_files", description: "List all files in the project with their sizes.", input_schema: { type: "object", properties: {} }, run: () => Object.keys(p.files).map((n) => n + " (" + p.files[n].length + " chars)").join("\n") || "(empty project)" },
+      { name: "read_file", description: "Read a file from the project.", input_schema: { type: "object", properties: { path: { type: "string" } }, required: ["path"] }, run: (i) => p.files[i.path] != null ? p.files[i.path] : "Error: no file " + i.path },
+      { name: "write_file", description: "Create or overwrite a file in the project with the full content.", input_schema: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] }, run: async (i) => { p.files[i.path] = i.content; await saveProject(); renderFiles(); if (code.file === i.path) $("#editor").value = i.content; preview(); return "Wrote " + i.path + " (" + i.content.length + " chars)"; } },
+      { name: "edit_file", description: "Replace an exact substring in a file with new text (the old text must occur exactly once).", input_schema: { type: "object", properties: { path: { type: "string" }, old_text: { type: "string" }, new_text: { type: "string" } }, required: ["path", "old_text", "new_text"] }, run: async (i) => { const s = p.files[i.path]; if (s == null) return "Error: no file " + i.path; const n = s.split(i.old_text).length - 1; if (n !== 1) return "Error: old_text occurs " + n + " times"; p.files[i.path] = s.replace(i.old_text, () => i.new_text); await saveProject(); if (code.file === i.path) $("#editor").value = p.files[i.path]; preview(); return "Edited " + i.path; } },
+      { name: "delete_file", description: "Delete a file from the project.", input_schema: { type: "object", properties: { path: { type: "string" } }, required: ["path"] }, run: async (i) => { delete p.files[i.path]; await saveProject(); renderFiles(); if (code.file === i.path) openFile(Object.keys(p.files)[0]); preview(); return "Deleted " + i.path; } },
+      { name: "run_js", description: "Run JavaScript in a sandboxed browser context (no DOM of the app, no network) and return console output, return value and errors. Use it to test logic from your files by pasting the relevant code plus assertions.", input_schema: { type: "object", properties: { code: { type: "string" } }, required: ["code"] }, run: (i) => runJS(i.code) }
+    ];
+    const system = R.ai.persona("You are the Raken AI Code Agent working inside a small in-browser project (\"" + p.name + "\"). " +
+      "The project is a static web app: index.html plus any .css/.js files it references with relative paths; the app previews index.html live and inlines those files. " +
+      "Workflow: read the existing files first, then write complete files with write_file (or precise edits with edit_file). Prefer vanilla HTML/CSS/JS with no external CDNs so the project works offline. " +
+      "Test pure logic with run_js where it makes sense. Finish with a short summary of what you built and how to use it.");
+    log.status("Task: " + task);
+    try {
+      await R.ai.runAgent({ system, messages: [{ role: "user", content: task }], tools, onEvent: log.onEvent, signal: code.abort.signal, maxTurns: 50 });
+      R.usage.bump("agent"); preview(); openFile(code.file || "index.html");
+    } catch (e) { log.error(e.message || String(e)); }
+    finally { btn.disabled = false; $("#code-stop").hidden = true; code.abort = null; }
+  }
+})();
+
+</script>
+<script>
+/* js/pro.js */
+/* Raken AI — Pro plan, founder offer, license keys */
+(function () {
+  const R = window.Raken; const S = R.settings; const C = R.config; const $ = R.$;
+  const pro = R.pro = {};
+  const money = (n) => "$" + (Math.round(n * 100) / 100).toFixed(2).replace(/\.00$/, "");
+  pro.founderPrice = () => C.proMonthly * (1 - C.founderDiscount);
+
+  document.addEventListener("DOMContentLoaded", () => {
+    render();
+    $("#founder-claim").onclick = claim;
+    $("#pro-buy").onclick = () => buy(false);
+    $("#license-apply").onclick = () => activate($("#license-input").value.trim());
+    document.addEventListener("raken:settings", render);
+    document.addEventListener("raken:go", (e) => { if (e.detail === "pro") { render(); refreshCounter(); } });
+  });
+
+  function render() {
+    const free = C.freeLimits;
+    $("#plan-free-list").innerHTML = [free.chat + " chat messages per day", free.image + " images per day", free.video + " video per day", free.agent + " agent runs per day", "Raken Ultra & Fast models", "Attach images, PDFs and files", "All data stays on your device"].map((x) => "<li>" + x + "</li>").join("");
+    $("#plan-pro-list").innerHTML = ["Unlimited chat, images and agents", "Unlimited video generation", "Raken Fable (Claude Fable 5.1) — the most capable model", "Extra-high and Max effort modes", "Priority access to new features", "Early access to Raken Cloud (no API keys needed)", "Support the project ❤"].map((x) => "<li>" + x + "</li>").join("");
+    $("#pro-price").innerHTML = money(C.proMonthly) + "<span>/month</span><small>or " + money(pro.founderPrice()) + "/month with the founder offer</small>";
+    $("#founder-was").textContent = money(C.proMonthly) + "/month";
+    $("#founder-now").innerHTML = money(pro.founderPrice()) + "<span>/month for " + C.founderMonths + " months</span>";
+    const chip = $("#plan-chip");
+    if (R.isPro()) {
+      chip.classList.add("pro"); chip.querySelector(".plan-chip-title").textContent = "Pro plan ⭐"; $("#plan-chip-sub").textContent = S.licenseEmail ? "Licensed to " + S.licenseEmail : "Unlimited usage unlocked";
+      chip.querySelector("button").textContent = "Manage"; $("#pro-buy").textContent = "You're on Pro"; $("#pro-buy").disabled = true; $("#founder-claim").textContent = "You're in 🎉"; $("#founder-claim").disabled = true;
+      $("#license-status").innerHTML = "✅ Pro active" + (S.licenseEmail ? " for " + R.esc(S.licenseEmail) : "") + ' · <a href="#" id="license-remove">deactivate</a>';
+      $("#license-remove").onclick = (e) => { e.preventDefault(); R.saveSettings({ pro: false, license: "", licenseEmail: "" }); R.toast("Pro deactivated on this device"); };
+    } else {
+      chip.classList.remove("pro"); chip.querySelector(".plan-chip-title").textContent = "Free plan"; $("#plan-chip-sub").innerHTML = "First 10 people get <b>98% off Pro</b>"; chip.querySelector("button").textContent = "Claim founder spot";
+      $("#pro-buy").textContent = "Get Pro"; $("#pro-buy").disabled = false; $("#founder-claim").disabled = false;
+      $("#founder-claim").textContent = S.founderClaim ? "Spot reserved · " + S.founderClaim.code : "Claim my spot";
+      if (!$("#license-status").textContent.startsWith("❌")) $("#license-status").textContent = "";
+    }
+    $("#founder-sub").textContent = "That's " + money(pro.founderPrice()) + " instead of " + money(C.proMonthly) + " a month, locked for " + C.founderMonths + " months. " + spotsText(pro.claimed);
+  }
+  pro.claimed = null;
+  function spotsText(claimed) {
+    if (claimed == null) return C.founderSpots + " spots in total.";
+    const left = Math.max(0, C.founderSpots - claimed); return left ? left + " of " + C.founderSpots + " spots left." : "All " + C.founderSpots + " spots are taken.";
+  }
+  async function refreshCounter() {
+    if (!C.founderStatusUrl) return;
+    try { const r = await R.net.request(C.founderStatusUrl, { responseType: "json" }); if (r.ok && r.json && typeof r.json.claimed === "number") { pro.claimed = r.json.claimed; render(); } } catch (e) { }
+  }
+
+  function buy(founder) {
+    const url = founder ? (C.founderCheckoutUrl || C.checkoutUrl) : C.checkoutUrl;
+    if (url) { const u = new URL(url); if (S.founderClaim) u.searchParams.set("code", S.founderClaim.code); window.open(u.toString(), "_blank", "noopener"); return true; }
+    return false;
+  }
+  function claim() {
+    if (S.founderClaim) { if (!buy(true)) R.toast("Your spot is reserved with code " + S.founderClaim.code + ". Checkout opens soon — keep this code.", "ok"); return; }
+    const email = prompt("Your email, so we can attach the founder discount to you:", S.licenseEmail || "");
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { if (email !== null) R.toast("That doesn't look like an email", "err"); return; }
+    const code = "RKF-" + R.uid().toUpperCase().slice(-6);
+    R.saveSettings({ founderClaim: { email, code, ts: Date.now() } });
+    if (!buy(true)) R.toast("Spot reserved 🎉 Your founder code is " + code + ". It's saved in this app; you'll use it at checkout.", "ok");
+    render();
+  }
+
+  // ---------- license keys ----------
+  // Format: RAKEN.<base64url(JSON payload)>.<base64url(ECDSA P-256 signature)>
+  const b64u = (s) => atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4));
+  const b64uBytes = (s) => Uint8Array.from(b64u(s), (c) => c.charCodeAt(0));
+  async function verify(key) {
+    const m = /^RAKEN\.([A-Za-z0-9_-]+)\.([A-Za-z0-9_-]+)$/.exec(key); if (!m) throw new Error("That isn't a Raken license key");
+    let payload; try { payload = JSON.parse(b64u(m[1])); } catch (e) { throw new Error("Malformed license key"); }
+    if (payload.p !== "pro") throw new Error("This key isn't for Pro");
+    if (payload.x && Date.now() > new Date(payload.x).getTime()) throw new Error("This key expired on " + new Date(payload.x).toLocaleDateString());
+    if (C.licensePublicKey) {
+      if (!window.crypto || !crypto.subtle) throw new Error("This platform can't verify keys (no secure context)");
+      const pub = await crypto.subtle.importKey("jwk", C.licensePublicKey, { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"]);
+      const ok = await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, pub, b64uBytes(m[2]), new TextEncoder().encode(m[1]));
+      if (!ok) throw new Error("Invalid signature");
+    } else if (m[2].length < 8) throw new Error("Invalid signature");
+    return payload;
+  }
+  async function activate(key) {
+    const st = $("#license-status");
+    try {
+      const p = await verify(key);
+      R.saveSettings({ pro: true, license: key, licenseEmail: p.e || "" }); $("#license-input").value = "";
+      R.toast("Welcome to Raken AI Pro 🎉", "ok"); render();
+    } catch (e) { st.textContent = "❌ " + e.message; }
+  }
+  pro.activate = activate;
+})();
+
+</script>
+<script>
+/* js/settings.js */
+/* Raken AI — Settings view */
+(function () {
+  const R = window.Raken; const S = R.settings; const $ = R.$;
+  const FIELDS = { "set-name": "name", "set-anthropic-key": "anthropicKey", "set-gateway": "gateway", "set-model": "model", "set-effort": "effort", "set-thinking": "showThinking", "set-tts": "tts", "set-fal-key": "falKey", "set-openai-base": "openaiBase", "set-openai-key": "openaiKey", "set-openai-model": "openaiImageModel", "set-theme": "theme" };
+
+  document.addEventListener("DOMContentLoaded", () => {
+    fillModels(); load();
+    for (const id in FIELDS) {
+      const el = $("#" + id);
+      el.addEventListener("change", () => { const v = el.type === "checkbox" ? el.checked : el.value.trim(); R.saveSettings({ [FIELDS[id]]: v }); if (id === "set-theme") R.applyTheme(); });
+    }
+    $("#set-test").onclick = async () => {
+      const st = $("#set-test-status"); st.textContent = "Testing…";
+      try { const t = await R.ai.test(); st.textContent = "✅ Connected — model replied: " + t.slice(0, 40); } catch (e) { st.textContent = "❌ " + e.message; }
+    };
+    $("#data-export").onclick = exportData;
+    $("#data-import").onclick = () => $("#data-import-input").click();
+    $("#data-import-input").onchange = (e) => importData(e.target.files[0]);
+    $("#data-clear").onclick = async () => {
+      if (!confirm("Delete all chats, media, documents, projects and settings on this device?")) return;
+      for (const s of ["chats", "media", "docs", "projects"]) await R.db.clear(s);
+      localStorage.removeItem("raken.settings"); localStorage.removeItem("raken.usage"); location.reload();
+    };
+    $("#about").innerHTML = "Raken AI " + R.version + " · " + R.platformLabel + " · " + '<a href="https://github.com/raken123/s-ndo/tree/main/raken-ai" target="_blank" rel="noopener">Source & downloads</a>';
+    document.addEventListener("raken:settings", () => { fillModels(); load(); });
+  });
+  function fillModels() {
+    const sel = $("#set-model");
+    sel.innerHTML = R.config.models.map((m) => '<option value="' + m.id + '"' + (m.pro && !R.isPro() ? " disabled" : "") + ">" + R.esc(m.name) + (m.pro && !R.isPro() ? " · Pro" : "") + "</option>").join("");
+    sel.value = S.model; if (!sel.value) sel.value = R.config.defaultModel;
+    R.$$("#set-effort option").forEach((o) => { if (o.value === "xhigh" || o.value === "max") o.disabled = !R.isPro(); });
+  }
+  function load() { for (const id in FIELDS) { const el = $("#" + id); if (el.type === "checkbox") el.checked = !!S[FIELDS[id]]; else el.value = S[FIELDS[id]] == null ? "" : S[FIELDS[id]]; } }
+
+  async function exportData() {
+    const out = { version: R.version, exported: new Date().toISOString(), settings: Object.assign({}, S, { anthropicKey: "", falKey: "", openaiKey: "" }), chats: await R.db.all("chats"), docs: await R.db.all("docs"), projects: await R.db.all("projects") };
+    const media = await R.db.all("media"); out.media = [];
+    for (const m of media) out.media.push(Object.assign({}, m, { blob: undefined, data: await R.fileToDataURL(m.blob) }));
+    R.download("raken-ai-export.json", new Blob([JSON.stringify(out)], { type: "application/json" }));
+  }
+  async function importData(file) {
+    if (!file) return;
+    try {
+      const j = JSON.parse(await R.fileToText(file));
+      for (const c of j.chats || []) await R.db.put("chats", c);
+      for (const d of j.docs || []) await R.db.put("docs", d);
+      for (const p of j.projects || []) await R.db.put("projects", p);
+      for (const m of j.media || []) { const [meta, b64] = m.data.split(","); const mime = /data:([^;]+)/.exec(meta)[1]; await R.db.put("media", Object.assign({}, m, { data: undefined, blob: R.b64ToBlob(b64, mime) })); }
+      R.toast("Imported. Reloading…", "ok"); setTimeout(() => location.reload(), 800);
+    } catch (e) { R.toast("Import failed: " + e.message, "err"); }
+  }
+})();
+
+</script>
+<script>
+/* js/app.js */
+/* Raken AI — app shell: navigation, onboarding, PWA */
+(function () {
+  const R = window.Raken; const S = R.settings; const $ = R.$;
+  const VIEWS = ["chat", "images", "videos", "work", "code", "gallery", "docs", "pro", "settings"];
+
+  function show(view) {
+    if (!VIEWS.includes(view)) view = "chat";
+    R.$$(".view").forEach((v) => v.classList.toggle("active", v.id === "view-" + view));
+    R.$$("[data-view]").forEach((b) => b.classList.toggle("active", b.dataset.view === view));
+    $("#main").scrollTop = 0;
+    if (location.hash !== "#" + view) history.replaceState(null, "", "#" + view);
+    $("#more-sheet").hidden = true;
+    document.dispatchEvent(new CustomEvent("raken:go", { detail: view }));
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    $("#platform-badge").textContent = R.platformLabel + " · v" + R.version;
+    document.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-view],[data-goto]"); if (!b) return;
+      const v = b.dataset.view || b.dataset.goto;
+      if (v === "more") { $("#more-sheet").hidden = false; return; }
+      show(v);
+    });
+    $("#more-close").onclick = () => { $("#more-sheet").hidden = true; };
+    $("#more-sheet").onclick = (e) => { if (e.target === $("#more-sheet")) $("#more-sheet").hidden = true; };
+    document.addEventListener("raken:go", (e) => { if (e.detail !== currentView()) show(e.detail); });
+    window.addEventListener("hashchange", () => show(location.hash.slice(1)));
+    show(location.hash.slice(1) || "chat");
+
+    // onboarding
+    if (!S.onboarded) {
+      const ob = $("#onboarding"); ob.hidden = false;
+      const finish = (goPro) => { R.saveSettings({ onboarded: true, name: $("#onb-name").value.trim() || S.name, anthropicKey: $("#onb-key").value.trim() || S.anthropicKey }); ob.hidden = true; if (goPro) show("pro"); };
+      $("#onb-start").onclick = () => finish(false);
+      $("#onb-pro").onclick = () => finish(true);
+    }
+
+    // theme follows system if requested
+    matchMedia("(prefers-color-scheme: light)").addEventListener("change", R.applyTheme);
+
+    // open external links outside the app on Android / desktop
+    document.addEventListener("click", (e) => {
+      const a = e.target.closest("a[href^='http']"); if (!a) return;
+      if (R.platform === "android" && window.RakenAndroid.openExternal) { e.preventDefault(); window.RakenAndroid.openExternal(a.href); }
+    });
+
+    // keyboard shortcuts
+    document.addEventListener("keydown", (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); show("chat"); $("#composer-input").focus(); }
+      if (e.key === "Escape") { $("#lightbox").hidden = true; $("#more-sheet").hidden = true; }
+    });
+
+    // service worker (web only, secure contexts)
+    if ("serviceWorker" in navigator && R.platform === "web" && /^https?:/.test(location.protocol)) {
+      navigator.serviceWorker.register("sw.js").catch(() => { });
+    }
+  });
+  function currentView() { const v = R.$(".view.active"); return v ? v.id.replace("view-", "") : ""; }
+})();
+
+</script>
+</body>
+</html>
