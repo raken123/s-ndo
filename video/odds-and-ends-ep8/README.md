@@ -76,3 +76,8 @@ python3 render.py ep08 ../video/odds-and-ends-ep8/odds_and_ends_ep08_bin_day.mp4
 
 See [`../../objectshow/README.md`](../../objectshow/README.md) for how the
 generator fits together.
+
+## Next
+
+[Series 2, Episode 1: "The Garage"](../odds-and-ends-s2e1) — the kitchen is
+being renovated, and the drawer has become a box.

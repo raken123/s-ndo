@@ -704,6 +704,152 @@ class Bin(Char):
         cr.restore()
 
 
+# ---------------------------------------------------------- series 2 ---
+
+class Spanner(Char):
+    """Series 2.  Competent, gruff, and not a wrench."""
+
+    name = "Spanner"
+    color = (0.70, 0.73, 0.78)
+    tag = (0.42, 0.46, 0.54)
+    hw, hh = 26.0, 66.0
+    face_y = 8.0
+    face_s = 0.82
+    voice = dict(base=152.0, wave="square", rate=0.108, spread=0.6)
+    blurb = "fixes things. not a wrench."
+
+    def arm_anchor(self):
+        return 22.0, 22.0
+
+    def body(self, cr, t):
+        rrect(cr, -16, -30, 32, self.hh + 30, 12)
+        fill_stroke(cr, self.color, 5.0)
+        cr.new_path()
+        cr.arc(0, -50, 32, -1.05, math.pi + 1.05)
+        cr.line_to(-13, -66)
+        cr.line_to(13, -66)
+        cr.close_path()
+        fill_stroke(cr, self.color, 5.0)
+
+
+class Bulb(Char):
+    """Series 2.  Has ideas.  Flickers while having them."""
+
+    name = "Bulb"
+    color = (0.99, 0.93, 0.62)
+    tag = (0.84, 0.66, 0.16)
+    hw, hh = 42.0, 62.0
+    face_y = -18.0
+    voice = dict(base=346.0, wave="sine", rate=0.080, spread=1.5)
+    blurb = "ideas, all of them bad"
+
+    def arm_anchor(self):
+        return 30.0, 20.0
+
+    def body(self, cr, t):
+        glow = 0.5 + 0.5 * math.sin(t * 7.3) * (1 if (t * 1.7) % 4 < 1 else 0)
+        circle(cr, 0, -14, 52 + glow * 6)
+        set_rgb(cr, (1, 0.95, 0.55), 0.18 + glow * 0.16)
+        cr.fill()
+        rrect(cr, -22, 26, 44, 36, 7)
+        fill_stroke(cr, (0.74, 0.74, 0.78), 5.0)
+        for i in range(3):
+            cr.move_to(-22, 34 + i * 9)
+            cr.line_to(22, 30 + i * 9)
+            stroke_out(cr, 3.0, (0.45, 0.45, 0.50))
+        cr.new_path()
+        cr.arc(0, -16, 44, 0.75, math.pi - 0.75)
+        cr.line_to(-20, 28)
+        cr.line_to(20, 28)
+        cr.close_path()
+        fill_stroke(cr, self.color, 5.0)
+        circle(cr, 0, -16, 44)
+        fill_stroke(cr, self.color, 5.0)
+        cr.move_to(-8, 20)
+        cr.line_to(-4, 2)
+        cr.line_to(4, 2)
+        cr.line_to(8, 20)
+        stroke_out(cr, 3.0, (0.60, 0.50, 0.30))
+
+
+class Fuzz(Char):
+    """Series 2.  A tennis ball.  Has been thrown before, will be again."""
+
+    name = "Fuzz"
+    color = (0.80, 0.92, 0.32)
+    tag = (0.55, 0.68, 0.14)
+    hw, hh = 48.0, 48.0
+    face_y = 2.0
+    voice = dict(base=430.0, wave="tri", rate=0.050, spread=1.2)
+    blurb = "bounces. cannot stop. does not want to."
+
+    def body(self, cr, t):
+        circle(cr, 0, 0, 48)
+        fill_stroke(cr, self.color, 5.0)
+        for sgn in (-1, 1):
+            cr.new_path()
+            cr.arc(sgn * 62, 0, 44, math.pi - 0.95 if sgn > 0 else -0.95,
+                   math.pi + 0.95 if sgn > 0 else 0.95)
+            stroke_out(cr, 5.0, (0.97, 0.97, 0.92))
+
+
+class Gloss(Char):
+    """Series 2.  A tin of magnolia.  Feels everything."""
+
+    name = "Gloss"
+    color = (0.93, 0.90, 0.80)
+    tag = (0.75, 0.42, 0.62)
+    hw, hh = 44.0, 58.0
+    face_y = 6.0
+    voice = dict(base=262.0, wave="saw", rate=0.090, spread=1.7)
+    blurb = "magnolia. dramatic about it."
+
+    def body(self, cr, t):
+        rrect(cr, -self.hw, -self.hh + 10, self.hw * 2, self.hh * 2 - 10, 9)
+        fill_stroke(cr, (0.78, 0.78, 0.80), 5.0)
+        rrect(cr, -self.hw, -24, self.hw * 2, 62, 4)
+        fill_stroke(cr, (0.75, 0.42, 0.62), 4.0)
+        rrect(cr, -self.hw - 4, -self.hh, self.hw * 2 + 8, 22, 7)
+        fill_stroke(cr, (0.66, 0.66, 0.70), 5.0)
+        cr.new_path()
+        cr.move_to(self.hw - 14, -self.hh + 20)
+        cr.curve_to(self.hw - 6, 10, self.hw + 2, 20, self.hw - 6, 34)
+        cr.curve_to(self.hw - 14, 42, self.hw - 22, 26, self.hw - 14,
+                    -self.hh + 20)
+        cr.close_path()
+        fill_stroke(cr, self.color, 4.0)
+        cr.move_to(-30, -self.hh - 10)
+        cr.curve_to(-30, -self.hh - 30, 30, -self.hh - 30, 30, -self.hh - 10)
+        stroke_out(cr, 5.0, (0.40, 0.40, 0.46))
+
+
+class Reel(Char):
+    """Series 2.  An extension lead.  Worried about being unwound."""
+
+    name = "Reel"
+    color = (0.95, 0.52, 0.18)
+    tag = (0.82, 0.40, 0.10)
+    hw, hh = 50.0, 50.0
+    face_y = 0.0
+    voice = dict(base=302.0, wave="square", rate=0.076, spread=1.1)
+    blurb = "twelve metres, if you must know"
+
+    def body(self, cr, t):
+        circle(cr, 0, 0, 50)
+        fill_stroke(cr, self.color, 5.0)
+        for r in (44, 38, 32):
+            circle(cr, 0, 0, r)
+            set_rgb(cr, (0.16, 0.16, 0.20))
+            cr.set_line_width(3.5)
+            cr.stroke()
+        cr.new_path()
+        cr.move_to(46, 20)
+        cr.curve_to(72, 26, 74, 52, 60, 60)
+        stroke_out(cr, 5.0, (0.16, 0.16, 0.20))
+        rrect(cr, 50, 56, 22, 16, 4)
+        fill_stroke(cr, (0.94, 0.94, 0.96), 4.0)
+
+
 def hand_pos(ch, p, right=True):
     """World position of a character's hand -- for props they hold up.
 
@@ -722,5 +868,6 @@ def hand_pos(ch, p, right=True):
 
 
 CAST = {c.name: c() for c in (Mugsy, Clip, Cone, Sticky, Volt, Cube, Mega,
-                              Bin, Spork, Mitt, Plate)}
+                              Bin, Spork, Mitt, Plate,
+                              Spanner, Bulb, Fuzz, Gloss, Reel)}
 CONTESTANTS = ["Mugsy", "Clip", "Cone", "Sticky", "Volt", "Cube"]

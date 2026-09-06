@@ -227,6 +227,45 @@ def build_cues(scenes):
             elif act == "wobbly" and b["kind"] == "act":
                 add(t0 + 0.20, "creak")
                 add(t0 + 1.30, "creak")
+            # --- series 2, episode 1 ---
+            elif act.startswith("g_prev") and b["kind"] == "act":
+                add(t0 + 0.05, "whoosh")
+            elif act == "g_light" and b["kind"] == "act":
+                add(t0 + 0.30, "click")
+                add(t0 + 0.55, "ding")
+            elif act.startswith("g_meet_") and b["kind"] == "act":
+                add(t0 + 0.10, "pop")
+                add(t0 + 0.30, "sparkle")
+            elif act.startswith("g_back_") and b["kind"] == "act":
+                add(t0 + 0.10, "pop")
+            elif act == "g_pick" and b["kind"] == "act":
+                add(t0 + 0.10, "beep")
+            elif act == "g_go" and b["kind"] == "act":
+                add(t0 + 0.05, "horn")
+            elif act == "g_ladder" and b["kind"] == "act":
+                add(t0 + 0.30, "creak")
+            elif act == "g_bounce" and b["kind"] == "act":
+                for i in range(4):
+                    add(t0 + 0.2 + i * 0.5, "boing")
+            elif act == "g_spill" and b["kind"] == "act":
+                add(t0 + 0.20, "whoosh")
+                add(t0 + 0.80, "thud")
+            elif act == "g_dark" and b["kind"] == "act":
+                add(t0 + 0.10, "click")
+            elif act == "g_lightback" and b["kind"] == "act":
+                add(t0 + 0.10, "click")
+                add(t0 + 0.30, "ding")
+            elif act == "g_rope" and b["kind"] == "act":
+                add(t0 + 0.20, "tape")
+            elif act == "g_crash" and b["kind"] == "act":
+                add(t0 + 0.10, "creak")
+                add(t0 + 0.90, "crash")
+                for i in range(3):
+                    add(t0 + 1.0 + i * 0.18, "thud")
+            elif act == "g_top" and b["kind"] == "act":
+                add(t0 + 0.20, "boing")
+                add(t0 + 0.90, "sparkle")
+                add(t0 + 1.20, "ding")
 
     for sc in scenes:
         if sc["key"] in ("results", "judging", "scores", "bin"):

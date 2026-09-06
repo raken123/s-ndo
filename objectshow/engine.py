@@ -218,8 +218,9 @@ def render(show, out, t_from=0.0, t_to=None, with_audio=True, tmp="/tmp",
     cmd = [ff, "-y", "-f", "rawvideo", "-pix_fmt", "bgra", "-s",
            "%dx%d" % (W, H), "-r", str(FPS), "-i", "-"]
     if with_audio:
-        cmd += ["-i", wav, "-c:a", "aac", "-b:a", "160k", "-shortest"]
-    cmd += ["-c:v", "libx264", "-preset", "medium", "-crf", str(crf),
+        cmd += ["-i", wav, "-c:a", "aac", "-b:a", "80k", "-shortest"]
+    cmd += ["-c:v", "libx264", "-preset", "medium", "-tune", "animation",
+            "-crf", str(crf),
             "-pix_fmt", "yuv420p", "-movflags", "+faststart", out]
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE,
                             stdout=subprocess.DEVNULL,

@@ -352,6 +352,13 @@ CUES = {
     "collect": (56, 158, ["i", "bVII", "bVI", "bVII"], "drive"),
     "winner": (60, 144, ["I", "V", "vi", "IV"], "theme"),
     "finale": (60, 138, ["IV", "V", "I", "vi"], "bright"),
+    # series 2
+    "previously": (60, 146, ["I", "V", "vi", "IV"], "theme"),
+    "box": (55, 108, ["i", "bVII", "bVI", "bVII"], "sneaky"),
+    "meet": (60, 134, ["I", "vi", "IV", "V"], "bouncy"),
+    "returnees": (62, 130, ["I", "IV", "V", "I"], "bouncy"),
+    "teams": (58, 140, ["I", "bVII", "IV", "I"], "drive"),
+    "climb": (55, 152, ["i", "bVII", "bVI", "v"], "drive"),
 }
 
 MELODY = {
@@ -480,12 +487,16 @@ def build_audio(scenes, cues, total):
 
 
 def write_wav(path, buf):
+    """Mono, because the mix is mono -- every voice, cue and note is centred.
+
+    Duplicating it to stereo doubled the audio in every episode for nothing;
+    at twelve minutes that was 14 MiB of identical second channel.
+    """
     import wave
     data = np.clip(buf, -1, 1)
     pcm = (data * 32767).astype("<i2")
-    stereo = np.repeat(pcm[:, None], 2, axis=1).tobytes()
     with wave.open(path, "wb") as w:
-        w.setnchannels(2)
+        w.setnchannels(1)
         w.setsampwidth(2)
         w.setframerate(SR)
-        w.writeframes(stereo)
+        w.writeframes(pcm.tobytes())

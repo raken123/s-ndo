@@ -17,6 +17,7 @@ Episodes live in [`../video`](../video):
 | `ep06` | [The Fridge](../video/odds-and-ends-ep6) | cold storage, a guest adjudicator, and a shelf nobody should have touched |
 | `ep07` | [The Motorway](../video/odds-and-ends-ep7) | four lanes, no pavement, and a cone in his element |
 | `ep08` | [Bin Day](../video/odds-and-ends-ep8) | series finale: recycling only, and the chair from episode 1 |
+| `s2e01` | [The Garage](../video/odds-and-ends-s2e1) | series 2 opens: a box, five garage objects, a shelf. Twelve minutes. |
 
 ## Building
 
@@ -26,8 +27,9 @@ cd objectshow
 python3 render.py ep02 ../video/odds-and-ends-ep2/odds_and_ends_ep02_the_junk_drawer.mp4
 ```
 
-About 90-130 seconds per five-minute episode on a modern core. Renders are
-reproducible: the same source always produces the same frames and the same
+About 90-130 seconds per five-minute episode on a modern core, and about four
+and a half minutes for a twelve-minute one. Series 2 episodes run 12 minutes
+and up; pass `--crf 28` to keep them under 30 MiB. Renders are reproducible: the same source always produces the same frames and the same
 audio, on any machine and in any process.
 
 Useful while working:
@@ -59,6 +61,11 @@ keep talking.
 | 🥄 | **Spork** | a fork and a spoon, at the same time | ep5–8 |
 | 🧤 | **Mitt** | has held worse than you | ep5–6 |
 | 🍽️ | **Plate** | immaculate, and aware of it | ep5–7 |
+| 🔧 | **Spanner** | fixes things. not a wrench. | s2 |
+| 💡 | **Bulb** | ideas, all of them bad | s2 |
+| 🎾 | **Fuzz** | bounces. cannot stop. does not want to. | s2 |
+| 🎨 | **Gloss** | magnolia. dramatic about it. | s2 |
+| 🔌 | **Reel** | twelve metres, if you must know | s2 |
 
 Adding one is a `Char` subclass with a `body()` method, a colour, a subtitle
 tag and a `voice` dict; the walk cycle, blinking, expressions and mouth-sync
@@ -114,7 +121,7 @@ BEATS = [dict(key="scene_name", beats=[
 
 def sc_scene_name(cr, show, sc, beat, T): ...           # draw one frame
 
-EPISODE = Show("ep09", 'Episode 9: "..."', BEATS, 300.0,
+EPISODE = Show("s2e02", 'Series 2, Episode 2: "..."', BEATS, 720.0,
                {"scene_name": sc_scene_name})
 ```
 

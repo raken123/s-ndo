@@ -1178,3 +1178,180 @@ def hedge(cr, x, y, s=1.0):
         set_rgb(cr, (0.42, 0.64, 0.36))
         cr.fill()
     cr.restore()
+
+
+# --------------------------------------------------- series 2: the garage ---
+
+CONCRETE = (0.58, 0.58, 0.60)
+BLOCK = (0.72, 0.71, 0.70)
+BLOCK_D = (0.62, 0.61, 0.60)
+SHELF_Y = 172.0
+
+
+def garage(cr, t, light=1.0, spill=0.0):
+    """A garage: block wall, the high shelf, a bench, a car that never moves."""
+    wall = tuple(lerp(c * 0.3, c, light) for c in BLOCK)
+    set_rgb(cr, wall)
+    cr.rectangle(0, 0, W, H)
+    cr.fill()
+    set_rgb(cr, tuple(lerp(c * 0.3, c, light) for c in BLOCK_D))
+    cr.set_line_width(3)
+    for row in range(9):
+        y = 40 + row * 58
+        cr.move_to(0, y)
+        cr.line_to(W, y)
+        cr.stroke()
+        off = 0 if row % 2 else 60
+        for x in range(off, W, 120):
+            cr.move_to(x, y)
+            cr.line_to(x, y + 58)
+            cr.stroke()
+    # the high shelf, with the good screws on it
+    rrect(cr, 600, SHELF_Y, 620, 18, 5)
+    fill_stroke(cr, tuple(lerp(c * 0.3, c, light) for c in (0.62, 0.46, 0.30)),
+                5.0)
+    for x in (640, 1160):
+        cr.new_path()
+        cr.move_to(x, SHELF_Y + 18)
+        cr.line_to(x + (30 if x < 900 else -30), SHELF_Y + 70)
+        stroke_out(cr, 6.0, (0.34, 0.34, 0.38))
+    for i, (x, w, h, col) in enumerate(((660, 70, 54, (0.86, 0.62, 0.28)),
+                                        (760, 56, 66, (0.55, 0.62, 0.72)),
+                                        (900, 96, 44, (0.74, 0.34, 0.30)),
+                                        (1060, 60, 60, (0.42, 0.60, 0.44)))):
+        rrect(cr, x, SHELF_Y - h, w, h, 6)
+        fill_stroke(cr, tuple(lerp(c * 0.3, c, light) for c in col), 4.0)
+    text_at(cr, 950, SHELF_Y - 60, "GOOD SCREWS", 18,
+            tuple(lerp(c * 0.3, c, light) for c in (0.95, 0.92, 0.80)), "center")
+    # pegboard
+    rrect(cr, 60, 90, 300, 220, 8)
+    fill_stroke(cr, tuple(lerp(c * 0.3, c, light) for c in (0.80, 0.70, 0.52)),
+                4.5)
+    for yy in range(112, 300, 24):
+        for xx in range(82, 350, 24):
+            circle(cr, xx, yy, 2.2)
+            set_rgb(cr, (0.45, 0.38, 0.28), 0.6 * light)
+            cr.fill()
+    for x, h in ((110, 120), (170, 90), (240, 140), (300, 100)):
+        rrect(cr, x - 8, 120, 16, h, 6)
+        fill_stroke(cr, tuple(lerp(c * 0.3, c, light) for c in (0.46, 0.48, 0.54)),
+                    4.0)
+    # hanging light
+    cr.move_to(640, 0)
+    cr.line_to(640, 60)
+    stroke_out(cr, 4.0, (0.20, 0.20, 0.24))
+    circle(cr, 640, 84, 26)
+    fill_stroke(cr, (1.0, 0.95, 0.62) if light > 0.4 else (0.55, 0.52, 0.42),
+                4.5)
+    if light > 0.4:
+        circle(cr, 640, 84, 60)
+        set_rgb(cr, (1, 0.95, 0.6), 0.14)
+        cr.fill()
+    # workbench
+    rrect(cr, 980, 380, 300, 26, 6)
+    fill_stroke(cr, tuple(lerp(c * 0.3, c, light) for c in (0.60, 0.44, 0.28)),
+                5.0)
+    for x in (1000, 1250):
+        rrect(cr, x, 404, 16, GROUND - 404, 4)
+        fill_stroke(cr, tuple(lerp(c * 0.3, c, light) for c in (0.42, 0.32, 0.22)),
+                    4.0)
+    # floor
+    cr.rectangle(0, GROUND, W, H - GROUND)
+    set_rgb(cr, tuple(lerp(c * 0.3, c, light) for c in CONCRETE))
+    cr.fill()
+    cr.move_to(0, GROUND)
+    cr.line_to(W, GROUND)
+    stroke_out(cr, 4.0, (0.34, 0.34, 0.36))
+    for i in range(4):
+        cr.move_to(0, GROUND + 40 + i * 44)
+        cr.line_to(W, GROUND + 40 + i * 44)
+        set_rgb(cr, (0.48, 0.48, 0.50), 0.7 * light)
+        cr.set_line_width(2)
+        cr.stroke()
+    ellipse(cr, 440, GROUND + 70, 120, 22)
+    set_rgb(cr, (0.22, 0.20, 0.24), 0.55 * light)
+    cr.fill()
+    if spill > 0:
+        paint_spill(cr, 560, GROUND + 30, spill)
+
+
+def paint_spill(cr, x, y, k=1.0, color=(0.93, 0.90, 0.80)):
+    """Magnolia, everywhere.  A bit beige."""
+    if k <= 0:
+        return
+    cr.save()
+    cr.translate(x, y)
+    cr.scale(k, k)
+    cr.new_path()
+    cr.move_to(-160, 0)
+    cr.curve_to(-140, -40, -60, -46, -20, -30)
+    cr.curve_to(30, -50, 120, -40, 170, -10)
+    cr.curve_to(210, 20, 140, 50, 60, 40)
+    cr.curve_to(0, 60, -120, 50, -160, 0)
+    cr.close_path()
+    fill_stroke(cr, color, 4.5)
+    cr.restore()
+
+
+def cardboard_box(cr, x, y, w=330, h=170, label="KITCHEN MISC"):
+    """The box.  The drawer's successor.  Says FRAGILE on one side only."""
+    rrect(cr, x - w / 2, y - h, w, h, 8)
+    fill_stroke(cr, (0.76, 0.58, 0.38), 5.0)
+    cr.new_path()
+    cr.move_to(x - w / 2, y - h)
+    cr.line_to(x - w / 2 - 26, y - h - 46)
+    cr.line_to(x - 20, y - h - 46)
+    cr.line_to(x, y - h)
+    cr.close_path()
+    fill_stroke(cr, (0.70, 0.52, 0.34), 5.0)
+    cr.new_path()
+    cr.move_to(x + w / 2, y - h)
+    cr.line_to(x + w / 2 + 26, y - h - 46)
+    cr.line_to(x + 20, y - h - 46)
+    cr.line_to(x, y - h)
+    cr.close_path()
+    fill_stroke(cr, (0.70, 0.52, 0.34), 5.0)
+    rrect(cr, x - w / 2 + 24, y - h + 56, w - 48, 14, 5)
+    fill_stroke(cr, (0.62, 0.46, 0.30), 3.0)
+    text_at(cr, x, y - h + 44, label, 22, (0.30, 0.22, 0.14), "center")
+    text_at(cr, x - w / 2 + 30, y - 22, "FRAGILE", 15, (0.72, 0.24, 0.20),
+            "left")
+
+
+def ladder(cr, x, y, h=380, lean=0.0, rot=0.0):
+    cr.save()
+    cr.translate(x, y)
+    cr.rotate(rot)
+    cr.new_path()
+    for sgn in (-1, 1):
+        cr.move_to(sgn * 34, 0)
+        cr.line_to(sgn * 34 + lean, -h)
+        stroke_out(cr, 9.0, (0.72, 0.58, 0.34))
+    n = int(h / 50)
+    for i in range(1, n + 1):
+        yy = -i * 50
+        f = i * 50 / h
+        cr.move_to(-34 + lean * f, yy)
+        cr.line_to(34 + lean * f, yy)
+        stroke_out(cr, 7.0, (0.62, 0.48, 0.28))
+    cr.restore()
+
+
+def cable(cr, pts, color=(0.16, 0.16, 0.20), w=6.0):
+    """A run of extension lead, drawn through the given points."""
+    if len(pts) < 2:
+        return
+    cr.new_path()
+    cr.move_to(*pts[0])
+    for i in range(1, len(pts)):
+        x0, y0 = pts[i - 1]
+        x1, y1 = pts[i]
+        cr.curve_to(x0 + (x1 - x0) * 0.4, y0, x1 - (x1 - x0) * 0.4, y1, x1, y1)
+    stroke_out(cr, w + 4, OUTLINE)
+    cr.new_path()
+    cr.move_to(*pts[0])
+    for i in range(1, len(pts)):
+        x0, y0 = pts[i - 1]
+        x1, y1 = pts[i]
+        cr.curve_to(x0 + (x1 - x0) * 0.4, y0, x1 - (x1 - x0) * 0.4, y1, x1, y1)
+    stroke_out(cr, w, (0.95, 0.52, 0.18))
