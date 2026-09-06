@@ -262,6 +262,34 @@ def build_cues(scenes):
                 add(t0 + 0.90, "crash")
                 for i in range(3):
                     add(t0 + 1.0 + i * 0.18, "thud")
+            # --- series 2, episode 2 ---
+            elif act == "h_badge" and b["kind"] == "act":
+                add(t0 + 0.20, "ding")
+                add(t0 + 0.45, "sparkle")
+            elif act.startswith("h_a_") and b["kind"] == "act":
+                add(t0 + 0.10, "pop")
+                add(t0 + 0.35, "applause")
+            elif act == "h_buzz" and b["kind"] == "act":
+                add(t0 + 0.10, "buzzer")
+            elif act == "h_flicker" and b["kind"] == "act":
+                for i in range(4):
+                    add(t0 + 0.15 + i * 0.28, "click")
+            elif act == "h_measure" and b["kind"] == "act":
+                add(t0 + 0.20, "tape")
+            elif act == "h_sad" and b["kind"] == "act":
+                add(t0 + 0.15, "sadtrom")
+            elif act == "h_clap" and b["kind"] == "act":
+                add(t0 + 0.10, "applause")
+                add(t0 + 1.30, "applause")
+            elif act == "h_score" and b["kind"] == "act":
+                add(t0 + 0.15, "beep")
+            elif act == "h_rig" and b["kind"] == "act":
+                add(t0 + 0.20, "boo")
+            elif act == "h_win" and b["kind"] == "act":
+                add(t0 + 0.10, "fanfare")
+                add(t0 + 0.60, "applause")
+            elif act == "h_mower" and b["kind"] == "act":
+                add(t0 + 0.20, "rumble")
             elif act == "g_top" and b["kind"] == "act":
                 add(t0 + 0.20, "boing")
                 add(t0 + 0.90, "sparkle")

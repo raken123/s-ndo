@@ -88,4 +88,5 @@ generator fits together.
 
 ## Next
 
-Series 2, Episode 2: "The Lawnmower". Spork knew it.
+[Series 2, Episode 2: "The Host"](../odds-and-ends-s2e2) — it is not going to
+be the lawnmower. The network has notes.

@@ -1355,3 +1355,67 @@ def cable(cr, pts, color=(0.16, 0.16, 0.20), w=6.0):
         x1, y1 = pts[i]
         cr.curve_to(x0 + (x1 - x0) * 0.4, y0, x1 - (x1 - x0) * 0.4, y1, x1, y1)
     stroke_out(cr, w, (0.95, 0.52, 0.18))
+
+
+# --------------------------------------- series 2, episode 2: the badge ---
+
+def host_badge(cr, x, y, s=1.0, rot=0.0):
+    """A laminated card on a lanyard.  Whoever wears it is in charge."""
+    if s <= 0.002:
+        return
+    cr.save()
+    cr.translate(x, y)
+    cr.rotate(rot)
+    cr.scale(s, s)
+    for sgn in (-1, 1):
+        cr.new_path()
+        cr.move_to(sgn * 28, -46)
+        cr.curve_to(sgn * 22, -20, sgn * 8, -8, 0, -2)
+        stroke_out(cr, 5.0, (0.24, 0.30, 0.52))
+    rrect(cr, -30, -4, 60, 44, 6)
+    fill_stroke(cr, (0.98, 0.98, 0.94), 4.0)
+    rrect(cr, -30, -4, 60, 15, 4)
+    fill_stroke(cr, (0.85, 0.22, 0.28), 3.0)
+    text_at(cr, 0, 8, "HOST", 11, (1, 1, 1), "center")
+    for i in range(3):
+        cr.move_to(-22, 20 + i * 7)
+        cr.line_to(22 - i * 6, 20 + i * 7)
+        set_rgb(cr, (0.55, 0.55, 0.60))
+        cr.set_line_width(2)
+        cr.stroke()
+    cr.restore()
+
+
+def crate(cr, x, y, w=170, h=104, label="HOST"):
+    """A wooden crate.  In a garage this is a lectern."""
+    rrect(cr, x - w / 2, y - h, w, h, 7)
+    fill_stroke(cr, (0.72, 0.55, 0.34), 5.0)
+    for i in range(3):
+        yy = y - h + 16 + i * (h - 30) / 2.5
+        cr.move_to(x - w / 2 + 8, yy)
+        cr.line_to(x + w / 2 - 8, yy)
+        stroke_out(cr, 4.0, (0.58, 0.43, 0.26))
+    rrect(cr, x - w / 2 - 8, y - h - 12, w + 16, 16, 5)
+    fill_stroke(cr, (0.62, 0.47, 0.29), 4.5)
+    text_at(cr, x, y - h / 2 + 8, label, 24, (0.36, 0.26, 0.16), "center")
+
+
+def sign(cr, x, y, text, k=1.0, color=(0.85, 0.22, 0.28), w=230):
+    """Cardboard, taped to the wall, doing the job of a studio light."""
+    if k <= 0:
+        return
+    cr.save()
+    cr.translate(x, y)
+    cr.rotate(-0.04)
+    rrect(cr, -w / 2, -34, w, 68, 8)
+    fill_stroke(cr, (0.80, 0.64, 0.42), 5.0, alpha=k)
+    text_at(cr, 0, 12, text, 34, color, "center", alpha=k)
+    for sgn in (-1, 1):
+        cr.save()
+        cr.translate(sgn * (w / 2 - 6), -30)
+        cr.rotate(sgn * 0.5)
+        rrect(cr, -18, -8, 36, 16, 3)
+        set_rgb(cr, (0.95, 0.93, 0.80), 0.75 * k)
+        cr.fill()
+        cr.restore()
+    cr.restore()

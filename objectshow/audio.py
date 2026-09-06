@@ -248,6 +248,27 @@ def sfx(kind, seed=0):
             o = int(off * SR)
             out[o:o + len(s)] += s[:len(out) - o]
         return out
+    if kind == "applause":
+        t = T(2.6)
+        rng = np.random.RandomState(seed + 7)
+        n = lowpass(rng.uniform(-1, 1, len(t)), 5200)
+        claps = np.zeros(len(t))
+        for i in range(70):
+            o = int(rng.uniform(0.02, 2.2) * SR)
+            d = int(0.03 * SR)
+            if o + d < len(t):
+                claps[o:o + d] += rng.uniform(0.4, 1.0) * np.exp(
+                    -np.arange(d) / (SR * 0.008))
+        env_ = np.minimum(1.0, t / 0.25) * np.exp(-np.maximum(0, t - 1.2) * 1.8)
+        return (n * 0.5 + claps * 0.5) * env_ * 0.30
+    if kind == "sadtrom":
+        out = np.zeros(int(1.6 * SR))
+        for i, m in enumerate((55, 53, 51, 46)):
+            t = T(0.45)
+            s = osc(t, n2f(m), "tri") * env(len(t), 0.01, 0.06, 0.6, 0.16) * 0.20
+            o = int(i * 0.28 * SR)
+            out[o:o + len(s)] += s[:len(out) - o]
+        return out
     if kind == "fanfare":
         out = np.zeros(int(2.0 * SR))
         for i, m in enumerate((67, 72, 76, 79)):
@@ -359,6 +380,11 @@ CUES = {
     "returnees": (62, 130, ["I", "IV", "V", "I"], "bouncy"),
     "teams": (58, 140, ["I", "bVII", "IV", "I"], "drive"),
     "climb": (55, 152, ["i", "bVII", "bVI", "v"], "drive"),
+    # series 2, episode 2
+    "brief": (58, 136, ["I", "bVII", "IV", "I"], "drive"),
+    "auditions": (60, 132, ["I", "vi", "ii", "V"], "bouncy"),
+    "judging2": (62, 138, ["IV", "V", "I", "vi"], "bright"),
+    "winner2": (60, 148, ["I", "V", "vi", "IV"], "theme"),
 }
 
 MELODY = {

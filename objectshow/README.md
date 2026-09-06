@@ -18,6 +18,7 @@ Episodes live in [`../video`](../video):
 | `ep07` | [The Motorway](../video/odds-and-ends-ep7) | four lanes, no pavement, and a cone in his element |
 | `ep08` | [Bin Day](../video/odds-and-ends-ep8) | series finale: recycling only, and the chair from episode 1 |
 | `s2e01` | [The Garage](../video/odds-and-ends-s2e1) | series 2 opens: a box, five garage objects, a shelf. Twelve minutes. |
+| `s2e02` | [The Host](../video/odds-and-ends-s2e2) | nine objects audition to replace the host. Fourteen minutes. |
 
 ## Building
 
@@ -28,8 +29,10 @@ python3 render.py ep02 ../video/odds-and-ends-ep2/odds_and_ends_ep02_the_junk_dr
 ```
 
 About 90-130 seconds per five-minute episode on a modern core, and about four
-and a half minutes for a twelve-minute one. Series 2 episodes run 12 minutes
-and up; pass `--crf 28` to keep them under 30 MiB. Renders are reproducible: the same source always produces the same frames and the same
+and a half minutes for a twelve-minute one. Series 2 episodes run 12 minutes and up. Encode them at `--crf 28` for twelve
+minutes and `--crf 30` for fourteen, which keeps a long episode under 30 MiB;
+past roughly twenty minutes a single file will exceed GitHub's 100 MB limit and
+should be split into stream-copied parts, as `video/gmfy-3.3.0-cinema` does. Renders are reproducible: the same source always produces the same frames and the same
 audio, on any machine and in any process.
 
 Useful while working:
@@ -121,7 +124,7 @@ BEATS = [dict(key="scene_name", beats=[
 
 def sc_scene_name(cr, show, sc, beat, T): ...           # draw one frame
 
-EPISODE = Show("s2e02", 'Series 2, Episode 2: "..."', BEATS, 720.0,
+EPISODE = Show("s2e03", 'Series 2, Episode 3: "..."', BEATS, 840.0,
                {"scene_name": sc_scene_name})
 ```
 
