@@ -1,0 +1,3111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InfoDoc 1.0.0</title>
+<script>window.INFODOC_VERSION='1.0.0';</script>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; connect-src 'self' ws: wss: data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<style>
+/* InfoDoc — patient intake and Modulino checks */
+
+:root {
+  --bg: #0f1419;
+  --bg2: #161d25;
+  --panel: #1b232d;
+  --panel2: #212b37;
+  --line: #2c3743;
+  --ink: #e8edf2;
+  --ink2: #9fb0c0;
+  --ink3: #6f8090;
+  --accent: #35a0d8;
+  --accent-ink: #061018;
+  --good: #3fbf7f;
+  --warn: #e8b13a;
+  --bad: #e06055;
+  --target: #2ee06a;
+  --radius: 10px;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+body { display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── top bar ───────────────────────────────────────────── */
+#topbar {
+  display: flex; align-items: center; gap: 18px;
+  padding: 10px 16px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
+  -webkit-app-region: drag;
+}
+#topbar button, #topbar input { -webkit-app-region: no-drag; }
+
+.brand { display: flex; align-items: center; gap: 9px; font-weight: 650; letter-spacing: .2px; }
+.logo { width: 24px; height: 24px; fill: none; stroke: var(--accent); stroke-width: 1.6; }
+.logo .clip { fill: var(--accent); stroke: none; }
+.logo .cross { stroke: var(--accent); stroke-width: 2; stroke-linecap: round; }
+
+#tabs { display: flex; gap: 4px; margin-left: 8px; }
+.tab {
+  background: none; border: 0; color: var(--ink2);
+  padding: 7px 14px; border-radius: 8px; font: inherit; cursor: pointer;
+}
+.tab:hover { background: var(--panel); color: var(--ink); }
+.tab[aria-current="true"] { background: var(--panel2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+
+.topright { margin-left: auto; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--panel); border: 1px solid var(--line); color: var(--ink2);
+  padding: 6px 12px; border-radius: 999px; font: inherit; font-size: 13px; cursor: pointer;
+}
+.chip:hover { color: var(--ink); }
+
+.dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--ink3); flex: 0 0 auto;
+}
+.dot.on { background: var(--good); box-shadow: 0 0 8px rgba(63,191,127,.7); }
+.dot.busy { background: var(--warn); }
+.dot.off { background: var(--bad); }
+
+/* ── layout ────────────────────────────────────────────── */
+main { flex: 1 1 auto; overflow: hidden; display: flex; }
+.view { flex: 1 1 auto; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.view[hidden] { display: none; }
+
+.split { display: grid; grid-template-columns: 320px 1fr; gap: 16px; flex: 1 1 auto; min-height: 0; }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.panel h2 { margin: 0 0 4px; font-size: 17px; font-weight: 640; }
+.panel h3 { margin: 0 0 10px; font-size: 15px; font-weight: 640; }
+.sub { margin: 0 0 12px; color: var(--ink2); font-size: 13px; }
+
+.list-panel, .form-panel { display: flex; flex-direction: column; min-height: 0; padding: 0; }
+.form-panel { overflow: auto; padding: 16px; }
+.panel-head { display: flex; gap: 8px; padding: 12px; border-bottom: 1px solid var(--line); }
+.panel-head input { flex: 1 1 auto; min-width: 0; }
+.panel-foot { padding: 9px 12px; border-top: 1px solid var(--line); color: var(--ink3); font-size: 12px; }
+
+/* ── forms ─────────────────────────────────────────────── */
+input, select, textarea, output {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  width: 100%;
+  min-width: 0;
+}
+textarea { resize: vertical; }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
+output.ro { display: block; color: var(--ink2); background: var(--bg2); }
+input[type="search"]::-webkit-search-cancel-button { filter: invert(.6); }
+
+label { display: block; font-size: 12px; color: var(--ink2); }
+label > input, label > select, label > textarea, label > output { margin-top: 4px; }
+label.inline { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
+label.inline > input { margin-top: 0; width: auto; }
+label.check { color: var(--ink2); }
+label.check input { width: auto; }
+
+fieldset { border: 0; border-top: 1px solid var(--line); margin: 18px 0 0; padding: 14px 0 0; }
+legend { padding: 0 8px 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink3); }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.grid .wide { grid-column: 1 / -1; }
+
+.btn {
+  background: var(--panel2); border: 1px solid var(--line); color: var(--ink);
+  padding: 8px 14px; border-radius: 8px; font: inherit; cursor: pointer; white-space: nowrap;
+}
+.btn:hover:not(:disabled) { background: #29343f; }
+.btn:disabled { opacity: .42; cursor: not-allowed; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn.primary:hover:not(:disabled) { filter: brightness(1.1); }
+.btn.danger { border-color: #5c3330; color: #f0a49c; }
+.btn.danger:hover:not(:disabled) { background: #3a2422; }
+
+.form-head { display: flex; align-items: center; gap: 12px; }
+.form-head h2 { flex: 1 1 auto; margin: 0; }
+.form-head-actions { display: flex; gap: 8px; }
+
+.empty { padding: 48px 24px; text-align: center; color: var(--ink3); }
+.empty h2 { color: var(--ink2); }
+
+.saved { color: var(--ink3); font-size: 12px; min-height: 1.4em; margin: 14px 0 0; }
+
+/* ── people list ───────────────────────────────────────── */
+.people { list-style: none; margin: 0; padding: 6px; overflow: auto; flex: 1 1 auto; }
+.people li {
+  padding: 9px 11px; border-radius: 8px; cursor: pointer;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.people li:hover { background: var(--panel2); }
+.people li[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+.people li[aria-selected="true"] small { color: rgba(6,16,24,.72); }
+.people .nm { font-weight: 570; }
+.people small { color: var(--ink3); font-size: 12px; }
+
+/* ── visits ────────────────────────────────────────────── */
+.visit-add { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.visit-add button { grid-column: auto; }
+
+.visits { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.visits li {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+}
+.visits .when { font-variant-numeric: tabular-nums; font-weight: 560; min-width: 150px; }
+.visits .why { color: var(--ink2); flex: 1 1 auto; font-size: 13px; }
+.visits .flags { display: flex; gap: 5px; }
+
+.pill {
+  font-size: 11px; padding: 2px 8px; border-radius: 999px;
+  background: var(--panel2); color: var(--ink2); border: 1px solid var(--line);
+  white-space: nowrap;
+}
+.pill.good { background: rgba(63,191,127,.14); color: #7de0ab; border-color: rgba(63,191,127,.35); }
+.pill.warn { background: rgba(232,177,58,.14); color: #f2cd7c; border-color: rgba(232,177,58,.35); }
+.pill.bad  { background: rgba(224,96,85,.14);  color: #f1a29a; border-color: rgba(224,96,85,.35); }
+
+/* ── visit view ────────────────────────────────────────── */
+.visit-head { display: flex; align-items: flex-start; gap: 16px; }
+.visit-head h2 { margin: 0; }
+.visit-head > div:first-child { flex: 1 1 auto; }
+.visit-head-actions { display: flex; gap: 8px; }
+
+.tests { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 16px; align-items: start; }
+.test-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+.test-head h3 { margin: 0; flex: 1 1 auto; }
+.mod { font-size: 11px; color: var(--ink3); font-family: var(--mono); }
+
+.readout { display: flex; align-items: center; gap: 18px; margin: 10px 0; }
+.readout .big { font: 600 40px/1 var(--mono); font-variant-numeric: tabular-nums; }
+.readout.small .big { font-size: 28px; }
+.readout .unit { font-size: .45em; color: var(--ink3); margin-left: 4px; }
+.readout .meta { font-size: 12px; color: var(--ink2); display: flex; flex-direction: column; gap: 3px; }
+.readout .meta b { color: var(--ink); font-weight: 550; font-family: var(--mono); }
+
+.bar { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; margin: 10px 0; }
+.bar-fill { height: 100%; width: 0; background: var(--accent); transition: width .12s linear; }
+
+.test-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+.result {
+  margin-top: 12px; padding: 12px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--line); font-size: 13px;
+}
+.result h4 { margin: 0 0 8px; font-size: 13px; }
+.result dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; }
+.result dt { color: var(--ink2); }
+.result dd { margin: 0; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.result .verdict { margin: 0 0 10px; font-weight: 600; }
+
+#reflexCanvas, #tremorCanvas { width: 100%; height: auto; display: block; border-radius: 8px; background: var(--bg); }
+.reflex-status { text-align: center; font-size: 13px; color: var(--ink2); min-height: 1.5em; margin-top: 8px; }
+
+/* ── device view ───────────────────────────────────────── */
+.transport { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.transport-card { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
+.transport-card h3 { margin: 0 0 6px; }
+.transport-card p { margin: 0 0 12px; font-size: 13px; color: var(--ink2); }
+.transport-card .inline { margin-bottom: 10px; display: flex; }
+.transport-card .inline input { flex: 1 1 auto; }
+.warn { color: var(--warn); }
+
+.modules { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.modules li { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.modules em { margin-left: auto; color: var(--ink3); font-family: var(--mono); font-size: 12px; font-style: normal; }
+
+.logbar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+.logbar input#sendLine { flex: 1 1 200px; font-family: var(--mono); }
+.log {
+  margin: 0; padding: 10px; height: 240px; overflow: auto;
+  background: #0a0e12; border: 1px solid var(--line); border-radius: 8px;
+  font: 12px/1.5 var(--mono); color: #9fb0c0; white-space: pre-wrap; word-break: break-all;
+}
+.log .tx { color: var(--accent); }
+.log .er { color: var(--bad); }
+
+.notice { border-color: #4a3a22; background: #21201a; }
+.notice ul { margin: 6px 0 0; padding-left: 20px; color: var(--ink2); font-size: 13px; }
+.notice li { margin-bottom: 8px; }
+.notice b { color: var(--ink); }
+
+/* ── trend table ───────────────────────────────────────── */
+table.trend { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.trend th, table.trend td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+table.trend th { color: var(--ink3); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+table.trend td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+table.trend td.t { font-family: var(--sans); }
+
+/* ── toast ─────────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+  background: var(--panel2); border: 1px solid var(--line); color: var(--ink);
+  padding: 10px 18px; border-radius: 999px; font-size: 13px; z-index: 50;
+  box-shadow: 0 8px 28px rgba(0,0,0,.5);
+}
+
+/* ── print ─────────────────────────────────────────────── */
+#print-area { display: none; }
+
+@media print {
+  #topbar, main, #toast { display: none !important; }
+  body { overflow: visible; background: #fff; color: #000; display: block; }
+  #print-area { display: block; padding: 0; font: 11pt/1.45 var(--sans); color: #000; }
+  #print-area h1 { font-size: 17pt; margin: 0 0 2pt; }
+  #print-area h2 { font-size: 12pt; margin: 16pt 0 4pt; border-bottom: 1px solid #999; padding-bottom: 2pt; }
+  #print-area .hdr { color: #444; font-size: 9pt; margin-bottom: 8pt; }
+  #print-area table { width: 100%; border-collapse: collapse; margin: 4pt 0; }
+  #print-area th, #print-area td { text-align: left; padding: 3pt 6pt; border-bottom: .5pt solid #bbb; vertical-align: top; }
+  #print-area th { width: 32%; color: #333; font-weight: 600; }
+  #print-area .foot { margin-top: 18pt; font-size: 8.5pt; color: #555; border-top: .5pt solid #999; padding-top: 5pt; }
+  @page { margin: 16mm; }
+}
+
+@media (max-width: 860px) {
+  .split { grid-template-columns: 1fr; }
+  .list-panel { max-height: 40vh; }
+}
+
+</style>
+</head>
+<body>
+
+<header id="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 24 24" aria-hidden="true" class="logo">
+      <rect x="4" y="2.5" width="16" height="19" rx="2.5"></rect>
+      <path d="M9 2.5h6v2.6H9z" class="clip"></path>
+      <path d="M12 9.2v6.4M8.8 12.4h6.4" class="cross"></path>
+    </svg>
+    <span>InfoDoc</span>
+  </div>
+
+  <nav id="tabs">
+    <button class="tab" data-view="people" aria-current="true">People</button>
+    <button class="tab" data-view="visit">Visit</button>
+    <button class="tab" data-view="device">Device</button>
+    <button class="tab" data-view="settings">Settings</button>
+  </nav>
+
+  <div class="topright">
+    <button id="linkChip" class="chip" title="Arduino link status">
+      <span class="dot" id="linkDot"></span><span id="linkText">No device</span>
+    </button>
+  </div>
+</header>
+
+<main>
+
+<!-- ───────────────────────── People ───────────────────────── -->
+<section class="view" id="view-people">
+  <div class="split">
+    <aside class="panel list-panel">
+      <div class="panel-head">
+        <input id="search" type="search" placeholder="Search name, ID, phone…" autocomplete="off">
+        <button id="newPerson" class="btn primary">New</button>
+      </div>
+      <ul id="peopleList" class="people"></ul>
+      <div class="panel-foot" id="peopleCount"></div>
+    </aside>
+
+    <div class="panel form-panel" id="personPanel">
+      <div class="empty" id="personEmpty">
+        <h2>No one selected</h2>
+        <p>Pick a person on the left, or add a new one.</p>
+      </div>
+
+      <form id="personForm" hidden autocomplete="off">
+        <div class="form-head">
+          <h2 id="personTitle">Person</h2>
+          <div class="form-head-actions">
+            <button type="button" id="printPerson" class="btn">Print</button>
+            <button type="button" id="deletePerson" class="btn danger">Delete</button>
+          </div>
+        </div>
+
+        <fieldset>
+          <legend>Identity</legend>
+          <div class="grid">
+            <label>Full name<input name="name" required></label>
+            <label>Clinic ID<input name="chartId" placeholder="e.g. PT-00142"></label>
+            <label>Date of birth<input name="dob" type="date"></label>
+            <label>Age<output name="age" class="ro">—</output></label>
+            <label>Sex<select name="sex">
+              <option value="">—</option><option>Female</option><option>Male</option>
+              <option>Intersex</option><option>Prefer not to say</option>
+            </select></label>
+            <label>Pronouns<input name="pronouns" placeholder="they/them"></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Contact</legend>
+          <div class="grid">
+            <label>Phone<input name="phone" inputmode="tel"></label>
+            <label>Email<input name="email" type="email"></label>
+            <label class="wide">Address<input name="address"></label>
+            <label>Next of kin<input name="kin"></label>
+            <label>Kin phone<input name="kinPhone" inputmode="tel"></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Clinical background</legend>
+          <div class="grid">
+            <label class="wide">Allergies<input name="allergies" placeholder="none known"></label>
+            <label class="wide">Current medication<textarea name="medication" rows="2"></textarea></label>
+            <label class="wide">Ongoing conditions<textarea name="conditions" rows="2"></textarea></label>
+            <label class="wide">Notes<textarea name="notes" rows="3"></textarea></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Appointments</legend>
+          <div class="visit-add">
+            <input type="datetime-local" id="newVisitWhen">
+            <input id="newVisitReason" placeholder="Reason for visit">
+            <input id="newVisitClinician" placeholder="Clinician">
+            <button type="button" id="addVisit" class="btn primary">Add appointment</button>
+          </div>
+          <ul id="visitList" class="visits"></ul>
+        </fieldset>
+
+        <p class="saved" id="savedNote"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── Visit ───────────────────────── -->
+<section class="view" id="view-visit" hidden>
+  <div class="panel" id="visitNone">
+    <div class="empty">
+      <h2>No appointment open</h2>
+      <p>Open an appointment from a person's record to run the checks.</p>
+    </div>
+  </div>
+
+  <div id="visitBody" hidden>
+    <div class="panel visit-head">
+      <div>
+        <h2 id="visitWho">—</h2>
+        <p class="sub" id="visitMeta">—</p>
+      </div>
+      <div class="visit-head-actions">
+        <button id="printVisit" class="btn">Print summary</button>
+        <button id="closeVisit" class="btn">Back to record</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="grid">
+        <label>Appointment<input id="visitWhen" type="datetime-local"></label>
+        <label>Clinician<input id="visitClinician"></label>
+        <label>Department<input id="visitDept"></label>
+        <label>Status<select id="visitStatus">
+          <option>Booked</option><option>Arrived</option><option>In progress</option>
+          <option>Seen</option><option>Did not attend</option>
+        </select></label>
+        <label class="wide">Reason for visit<input id="visitReason"></label>
+        <label class="wide">Clinical notes<textarea id="visitNotes" rows="4"></textarea></label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Manual observations</h3>
+      <div class="grid">
+        <label>Weight (kg)<input id="obsWeight" inputmode="decimal"></label>
+        <label>Height (cm)<input id="obsHeight" inputmode="decimal"></label>
+        <label>Blood pressure<input id="obsBp" placeholder="120/80"></label>
+        <label>Pulse (bpm)<input id="obsPulse" inputmode="numeric"></label>
+        <label>SpO₂ (%)<input id="obsSpo2" inputmode="numeric"></label>
+        <label>Resp. rate<input id="obsResp" inputmode="numeric"></label>
+      </div>
+    </div>
+
+    <div class="tests">
+      <!-- Thermo -->
+      <section class="panel test" id="testThermo">
+        <header class="test-head">
+          <h3>Forehead temperature</h3>
+          <span class="mod">Modulino Thermo</span>
+        </header>
+        <p class="sub">Hold the Thermo node flat against the middle of the forehead and keep it
+        still. The reading is taken when it stops drifting.</p>
+        <div class="readout">
+          <div class="big" id="thermoLive">—<span class="unit">°C</span></div>
+          <div class="meta">
+            <div>Contact: <b id="thermoContact">no</b></div>
+            <div>Drift: <b id="thermoSlope">—</b></div>
+            <div>Humidity: <b id="thermoRh">—</b></div>
+          </div>
+        </div>
+        <div class="bar"><div class="bar-fill" id="thermoProgress"></div></div>
+        <div class="test-actions">
+          <button class="btn primary" id="thermoStart" disabled>Start reading</button>
+          <button class="btn" id="thermoStop" hidden>Cancel</button>
+        </div>
+        <div class="result" id="thermoResult" hidden></div>
+      </section>
+
+      <!-- Reflex -->
+      <section class="panel test" id="testReflex">
+        <header class="test-head">
+          <h3>Reflex &amp; aiming</h3>
+          <span class="mod">Modulino Joystick</span>
+        </header>
+        <p class="sub">A green box lights up. Push the joystick straight at it as fast as you can,
+        then let it spring back to the middle.</p>
+        <canvas id="reflexCanvas" width="520" height="520"></canvas>
+        <div class="reflex-status" id="reflexStatus">Connect the joystick to begin.</div>
+        <div class="test-actions">
+          <button class="btn primary" id="reflexStart" disabled>Start test</button>
+          <button class="btn" id="reflexStop" hidden>Stop</button>
+        </div>
+        <div class="result" id="reflexResult" hidden></div>
+      </section>
+
+      <!-- Tremor -->
+      <section class="panel test" id="testTremor">
+        <header class="test-head">
+          <h3>Hand steadiness</h3>
+          <span class="mod">Modulino Movement</span>
+        </header>
+        <p class="sub">Rest the Movement node on the back of the hand, hold the arm out straight,
+        and stay as still as possible until the bar fills.</p>
+        <canvas id="tremorCanvas" width="520" height="150"></canvas>
+        <div class="readout small">
+          <div class="big" id="tremorLive">—<span class="unit">mg</span></div>
+          <div class="meta">
+            <div>Sample rate: <b id="tremorRate">—</b></div>
+            <div>Samples: <b id="tremorCount">0</b></div>
+          </div>
+        </div>
+        <div class="bar"><div class="bar-fill" id="tremorProgress"></div></div>
+        <div class="test-actions">
+          <button class="btn primary" id="tremorStart" disabled>Start capture</button>
+          <button class="btn" id="tremorStop" hidden>Cancel</button>
+        </div>
+        <div class="result" id="tremorResult" hidden></div>
+      </section>
+    </div>
+
+    <div class="panel">
+      <h3>History for this person</h3>
+      <div id="trend"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── Device ───────────────────────── -->
+<section class="view" id="view-device" hidden>
+  <div class="panel">
+    <h2>Arduino link</h2>
+    <p class="sub">InfoDoc talks to an Arduino over a plain line protocol. Either transport works —
+    they carry exactly the same messages.</p>
+
+    <div class="transport">
+      <div class="transport-card">
+        <h3>USB serial</h3>
+        <p>For a board whose sketch <code>Serial</code> is the USB port (UNO R4, Nano ESP32,
+        MKR…), or an UNO Q exposing a USB CDC gadget.</p>
+        <button class="btn primary" id="connectSerial">Choose serial port…</button>
+        <p class="warn" id="serialUnsupported" hidden>This build has no Web Serial API. Use the
+        desktop app, or the network transport below.</p>
+      </div>
+      <div class="transport-card">
+        <h3>Network (UNO Q bridge)</h3>
+        <p>For an UNO Q running the <code>uno_q_bridge</code> app: the sketch reads the Modulinos
+        on the MCU, Python relays them over a WebSocket.</p>
+        <label class="inline">Address<input id="wsUrl" value="ws://arduino.local:8787" spellcheck="false"></label>
+        <button class="btn primary" id="connectWs">Connect</button>
+      </div>
+    </div>
+
+    <div class="test-actions">
+      <button class="btn danger" id="disconnect" disabled>Disconnect</button>
+      <button class="btn" id="rescan" disabled>Re-scan modules</button>
+      <button class="btn" id="resync" disabled>Re-sync clock</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Modules</h3>
+    <ul class="modules">
+      <li><span class="dot" id="modT"></span> Modulino Thermo <em id="modTv">—</em></li>
+      <li><span class="dot" id="modJ"></span> Modulino Joystick <em id="modJv">—</em></li>
+      <li><span class="dot" id="modM"></span> Modulino Movement <em id="modMv">—</em></li>
+    </ul>
+    <p class="sub" id="clockInfo">Clock offset not measured.</p>
+  </div>
+
+  <div class="panel">
+    <h3>Traffic</h3>
+    <div class="logbar">
+      <input id="sendLine" placeholder="Send a raw line (e.g. ID?)" spellcheck="false">
+      <button class="btn" id="sendBtn" disabled>Send</button>
+      <label class="inline check"><input type="checkbox" id="logStreams"> show sensor samples</label>
+      <button class="btn" id="clearLog">Clear</button>
+    </div>
+    <pre id="log" class="log"></pre>
+  </div>
+</section>
+
+<!-- ───────────────────────── Settings ───────────────────────── -->
+<section class="view" id="view-settings" hidden>
+  <div class="panel">
+    <h2>Clinic</h2>
+    <div class="grid">
+      <label>Clinic name<input id="setClinic"></label>
+      <label>Operator<input id="setOperator"></label>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Thermo</h2>
+    <div class="grid">
+      <label>Contact threshold (°C)<input id="setContactMin" inputmode="decimal"></label>
+      <label>Skin → core offset (°C)<input id="setCoreOffset" inputmode="decimal"></label>
+      <label>Stable slope (°C/s)<input id="setSlopeMax" inputmode="decimal"></label>
+      <label>Timeout (s)<input id="setThermoTimeout" inputmode="numeric"></label>
+    </div>
+    <p class="sub">The offset turns the skin reading into an estimate of core temperature. It is a
+    property of your node and of where you hold it — measure it against a clinical thermometer on
+    a few well people and set it here. The raw skin value is always stored too.</p>
+  </div>
+
+  <div class="panel">
+    <h2>Reflex</h2>
+    <div class="grid">
+      <label>Rounds<input id="setRounds" inputmode="numeric"></label>
+      <label>Dead zone (0–127)<input id="setDeadzone" inputmode="numeric"></label>
+      <label>Commit threshold (0–127)<input id="setCommit" inputmode="numeric"></label>
+      <label>Hold to confirm (ms)<input id="setHold" inputmode="numeric"></label>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Steadiness</h2>
+    <div class="grid">
+      <label>Capture length (s)<input id="setTremorSecs" inputmode="numeric"></label>
+      <label>Band low (Hz)<input id="setBandLow" inputmode="decimal"></label>
+      <label>Band high (Hz)<input id="setBandHigh" inputmode="decimal"></label>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Records</h2>
+    <p class="sub" id="storageWhere">—</p>
+    <div class="test-actions">
+      <button class="btn" id="exportJson">Export all records…</button>
+      <button class="btn" id="importJson">Import records…</button>
+      <button class="btn danger" id="wipe">Erase everything</button>
+    </div>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+  </div>
+
+  <div class="panel notice">
+    <h2>Read this before using it on a patient</h2>
+    <ul>
+      <li>InfoDoc is <b>not a medical device</b> and none of it is certified. The three checks are
+      rough screening aids for a clinician who is already in the room — they do not diagnose
+      anything and must not be used instead of proper equipment.</li>
+      <li>The Modulino Thermo is a contact temperature and humidity sensor, not an infrared
+      thermometer. It reads <b>skin</b> temperature after a slow contact settle, which sits well
+      below core temperature and is affected by sweat, draughts and how hard the node is pressed.</li>
+      <li>Records are held in plain text on this computer. Anyone with the machine can read them.
+      Use full-disk encryption and a locked account, keep backups, and follow whatever your
+      jurisdiction requires for patient data.</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h2>About</h2>
+    <p class="sub" id="aboutText">InfoDoc</p>
+  </div>
+</section>
+
+</main>
+
+<div id="print-area" aria-hidden="true"></div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+/* store.js — records, settings and where they live.
+ *
+ * The desktop builds expose window.infodocNative from a preload script, which
+ * reads and writes a JSON file in the OS application-data directory. Without it
+ * (a browser opening the single-file build) the same document goes to
+ * localStorage. Everything above this file only sees Store.
+ */
+(function (global) {
+  'use strict';
+
+  var DOC_VERSION = 1;
+  var LS_KEY = 'infodoc.doc.v1';
+
+  var DEFAULT_SETTINGS = {
+    clinic: '',
+    operator: '',
+    // thermo
+    contactMin: 30.0,      // °C below which we assume the node is not on skin
+    coreOffset: 1.6,       // °C added to skin temp to estimate core temp
+    slopeMax: 0.02,        // °C/s: below this the reading counts as settled
+    thermoTimeout: 40,     // s
+    // reflex
+    rounds: 8,
+    deadzone: 30,          // of 127
+    commit: 70,            // of 127
+    holdMs: 150,
+    // steadiness
+    tremorSecs: 10,
+    bandLow: 3.0,
+    bandHigh: 12.0,
+    // device
+    wsUrl: 'ws://arduino.local:8787'
+  };
+
+  function uid() {
+    var s = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx';
+    if (global.crypto && global.crypto.getRandomValues) {
+      var b = new Uint8Array(16);
+      global.crypto.getRandomValues(b);
+      var i = 0;
+      return s.replace(/[xy]/g, function (c) {
+        var r = b[i++] & 15;
+        return (c === 'x' ? r : (r & 3) | 8).toString(16);
+      });
+    }
+    return s.replace(/[xy]/g, function (c) {
+      var r = (Math.random() * 16) | 0;
+      return (c === 'x' ? r : (r & 3) | 8).toString(16);
+    });
+  }
+
+  function emptyDoc() {
+    return { version: DOC_VERSION, people: [], settings: clone(DEFAULT_SETTINGS) };
+  }
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+  function newPerson(name) {
+    var now = new Date().toISOString();
+    return {
+      id: uid(), created: now, updated: now,
+      name: name || 'New person', chartId: '', dob: '', sex: '', pronouns: '',
+      phone: '', email: '', address: '', kin: '', kinPhone: '',
+      allergies: '', medication: '', conditions: '', notes: '',
+      visits: []
+    };
+  }
+
+  function newVisit(when, reason, clinician) {
+    return {
+      id: uid(),
+      when: when || localIsoNow(),
+      reason: reason || '', clinician: clinician || '', dept: '',
+      status: 'Booked', notes: '',
+      obs: { weight: '', height: '', bp: '', pulse: '', spo2: '', resp: '' },
+      thermo: null, reflex: null, tremor: null
+    };
+  }
+
+  /* datetime-local wants a local, not UTC, string */
+  function localIsoNow(d) {
+    d = d || new Date();
+    var p = function (n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
+           'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  /* ── migration ────────────────────────────────────────── */
+  function migrate(doc) {
+    if (!doc || typeof doc !== 'object') return emptyDoc();
+    if (!Array.isArray(doc.people)) doc.people = [];
+    var s = doc.settings && typeof doc.settings === 'object' ? doc.settings : {};
+    doc.settings = {};
+    Object.keys(DEFAULT_SETTINGS).forEach(function (k) {
+      doc.settings[k] = (s[k] === undefined || s[k] === null || s[k] === '')
+        ? DEFAULT_SETTINGS[k] : s[k];
+    });
+    doc.people.forEach(function (p) {
+      var blank = newPerson();
+      Object.keys(blank).forEach(function (k) {
+        if (p[k] === undefined) p[k] = blank[k];
+      });
+      if (!Array.isArray(p.visits)) p.visits = [];
+      p.visits.forEach(function (v) {
+        var bv = newVisit();
+        Object.keys(bv).forEach(function (k) { if (v[k] === undefined) v[k] = bv[k]; });
+        if (!v.obs || typeof v.obs !== 'object') v.obs = bv.obs;
+      });
+    });
+    doc.version = DOC_VERSION;
+    return doc;
+  }
+
+  /* ── backends ─────────────────────────────────────────── */
+  var native = global.infodocNative || null;
+
+  var backend = native ? {
+    name: 'native',
+    read: function () { return native.read(); },
+    write: function (text) { return native.write(text); },
+    where: function () { return native.path ? native.path() : Promise.resolve('application data'); }
+  } : {
+    name: 'localStorage',
+    read: function () {
+      try { return Promise.resolve(global.localStorage.getItem(LS_KEY)); }
+      catch (e) { return Promise.resolve(null); }
+    },
+    write: function (text) {
+      try { global.localStorage.setItem(LS_KEY, text); return Promise.resolve(true); }
+      catch (e) { return Promise.reject(e); }
+    },
+    where: function () {
+      return Promise.resolve('this browser’s local storage (key ' + LS_KEY + ')');
+    }
+  };
+
+  /* ── the store ────────────────────────────────────────── */
+  var doc = emptyDoc();
+  var listeners = [];
+  var saveTimer = null;
+  var savePending = false;
+  var lastError = null;
+
+  function emit(what) {
+    listeners.forEach(function (fn) { try { fn(what); } catch (e) { console.error(e); } });
+  }
+
+  var Store = {
+    backend: backend.name,
+
+    load: function () {
+      return backend.read().then(function (text) {
+        if (text) {
+          try { doc = migrate(JSON.parse(text)); }
+          catch (e) { lastError = 'Saved records could not be parsed: ' + e.message; doc = emptyDoc(); }
+        } else {
+          doc = emptyDoc();
+        }
+        emit('load');
+        return doc;
+      });
+    },
+
+    where: function () { return backend.where(); },
+    lastError: function () { return lastError; },
+    doc: function () { return doc; },
+    settings: function () { return doc.settings; },
+    people: function () { return doc.people; },
+
+    setSetting: function (k, v) {
+      if (!(k in DEFAULT_SETTINGS)) return;
+      doc.settings[k] = v;
+      Store.save();
+      emit('settings');
+    },
+
+    num: function (k) {
+      var v = parseFloat(doc.settings[k]);
+      return isFinite(v) ? v : DEFAULT_SETTINGS[k];
+    },
+
+    /* people */
+    person: function (id) {
+      for (var i = 0; i < doc.people.length; i++) if (doc.people[i].id === id) return doc.people[i];
+      return null;
+    },
+
+    addPerson: function (name) {
+      var p = newPerson(name);
+      doc.people.push(p);
+      Store.save();
+      emit('people');
+      return p;
+    },
+
+    removePerson: function (id) {
+      doc.people = doc.people.filter(function (p) { return p.id !== id; });
+      Store.save();
+      emit('people');
+    },
+
+    touch: function (p) {
+      p.updated = new Date().toISOString();
+      Store.save();
+      emit('person');
+    },
+
+    /* visits */
+    addVisit: function (personId, when, reason, clinician) {
+      var p = Store.person(personId);
+      if (!p) return null;
+      var v = newVisit(when, reason, clinician);
+      p.visits.push(v);
+      Store.sortVisits(p);
+      Store.touch(p);
+      return v;
+    },
+
+    removeVisit: function (personId, visitId) {
+      var p = Store.person(personId);
+      if (!p) return;
+      p.visits = p.visits.filter(function (v) { return v.id !== visitId; });
+      Store.touch(p);
+    },
+
+    visit: function (personId, visitId) {
+      var p = Store.person(personId);
+      if (!p) return null;
+      for (var i = 0; i < p.visits.length; i++) if (p.visits[i].id === visitId) return p.visits[i];
+      return null;
+    },
+
+    sortVisits: function (p) {
+      p.visits.sort(function (a, b) { return String(b.when).localeCompare(String(a.when)); });
+    },
+
+    search: function (q) {
+      q = (q || '').trim().toLowerCase();
+      var out = doc.people.slice();
+      if (q) {
+        out = out.filter(function (p) {
+          return [p.name, p.chartId, p.phone, p.email, p.dob]
+            .join(' ').toLowerCase().indexOf(q) >= 0;
+        });
+      }
+      out.sort(function (a, b) { return a.name.localeCompare(b.name); });
+      return out;
+    },
+
+    /* persistence — coalesced, so typing does not hammer the disk */
+    save: function () {
+      savePending = true;
+      if (saveTimer) return;
+      saveTimer = setTimeout(function () {
+        saveTimer = null;
+        if (!savePending) return;
+        savePending = false;
+        var text;
+        try { text = JSON.stringify(doc); }
+        catch (e) { lastError = 'Could not serialise records: ' + e.message; emit('error'); return; }
+        backend.write(text).then(function () {
+          lastError = null;
+          emit('saved');
+        }, function (e) {
+          lastError = 'Could not save records: ' + (e && e.message ? e.message : e);
+          emit('error');
+        });
+      }, 400);
+    },
+
+    flush: function () {
+      if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+      if (!savePending) return Promise.resolve();
+      savePending = false;
+      return backend.write(JSON.stringify(doc));
+    },
+
+    exportText: function () { return JSON.stringify(doc, null, 2); },
+
+    importText: function (text, mode) {
+      var incoming = migrate(JSON.parse(text));
+      if (mode === 'replace') {
+        doc = incoming;
+      } else {
+        var byId = {};
+        doc.people.forEach(function (p) { byId[p.id] = p; });
+        incoming.people.forEach(function (p) {
+          if (byId[p.id]) {
+            var mine = byId[p.id];
+            if (String(p.updated) > String(mine.updated)) {
+              doc.people[doc.people.indexOf(mine)] = p;
+            }
+          } else {
+            doc.people.push(p);
+          }
+        });
+      }
+      Store.save();
+      emit('load');
+      return incoming.people.length;
+    },
+
+    wipe: function () {
+      doc = emptyDoc();
+      Store.save();
+      emit('load');
+    },
+
+    on: function (fn) { listeners.push(fn); },
+
+    /* helpers shared with the UI */
+    uid: uid,
+    localIso: localIsoNow,
+    defaults: DEFAULT_SETTINGS,
+
+    age: function (dob, at) {
+      if (!dob) return null;
+      var d = new Date(dob + 'T00:00:00');
+      if (isNaN(d)) return null;
+      var ref = at ? new Date(at) : new Date();
+      if (isNaN(ref)) ref = new Date();
+      var y = ref.getFullYear() - d.getFullYear();
+      var m = ref.getMonth() - d.getMonth();
+      if (m < 0 || (m === 0 && ref.getDate() < d.getDate())) y--;
+      return y >= 0 && y < 150 ? y : null;
+    }
+  };
+
+  global.Store = Store;
+})(window);
+
+</script>
+<script>
+/* link.js — the Arduino link.
+ *
+ * One newline-delimited ASCII protocol, two transports:
+ *
+ *   USB serial   navigator.serial, 115200 8N1. The board's sketch Serial is the
+ *                USB CDC endpoint (UNO R4, Nano ESP32, MKR), or an UNO Q with a
+ *                CDC gadget configured on the Linux side.
+ *   WebSocket    the uno_q_bridge app on an UNO Q: the sketch runs on the STM32
+ *                and Python on the Qualcomm side relays the same lines.
+ *
+ * Device -> host
+ *   HELLO infodoc <proto> <fw> <caps>     caps: letters from TJM
+ *   STAT T=0|1 J=0|1 M=0|1
+ *   T <ms> <tempC> <rh>
+ *   J <ms> <x> <y> <btn>                  x,y in -127..127, btn 0|1
+ *   M <ms> <ax> <ay> <az> <gx> <gy> <gz>  accel g, gyro dps
+ *   PONG <ms>
+ *   ERR <text>
+ *   # <text>                              log line, ignored
+ *
+ * Host -> device
+ *   ID?  SCAN  PING  T1 T0  J1 J0  M1 M0  RATE <T|J|M> <hz>
+ *
+ * Sample timing uses the device clock. PING/PONG estimates the offset between
+ * the device's millis() and the host's performance.now(), taking the sample with
+ * the lowest round trip, so USB scheduling jitter stays out of reaction times.
+ */
+(function (global) {
+  'use strict';
+
+  var PROTO = 1;
+
+  var handlers = {};           // event -> [fn]
+  var refs = { T: 0, J: 0, M: 0 };   // how many tests want each stream
+  var transport = null;        // { send, close, kind, label }
+  var buf = '';
+  var state = 'idle';          // idle | opening | open | closing
+  var modules = { T: false, J: false, M: false };
+  var info = { fw: '', proto: 0, caps: '' };
+  var clock = { offset: 0, rtt: Infinity, samples: 0 };
+  var pingTimer = null;
+
+  function on(ev, fn) { (handlers[ev] || (handlers[ev] = [])).push(fn); }
+  function off(ev, fn) {
+    var l = handlers[ev];
+    if (!l) return;
+    var i = l.indexOf(fn);
+    if (i >= 0) l.splice(i, 1);
+  }
+  function emit(ev) {
+    var l = handlers[ev];
+    if (!l) return;
+    var args = Array.prototype.slice.call(arguments, 1);
+    // copy first: a handler may unsubscribe itself while we are iterating
+    l = l.slice();
+    for (var i = 0; i < l.length; i++) {
+      try { l[i].apply(null, args); } catch (e) { console.error(e); }
+    }
+  }
+
+  function now() { return global.performance ? performance.now() : Date.now(); }
+
+  /* ── line handling ────────────────────────────────────── */
+  function feed(text) {
+    buf += text;
+    var i;
+    while ((i = buf.indexOf('\n')) >= 0) {
+      var line = buf.slice(0, i).replace(/\r$/, '');
+      buf = buf.slice(i + 1);
+      if (line) handleLine(line);
+    }
+    if (buf.length > 4096) buf = '';   // a device spewing binary must not grow this forever
+  }
+
+  function num(s) { var v = parseFloat(s); return isFinite(v) ? v : 0; }
+
+  function handleLine(line) {
+    var p = line.split(/\s+/);
+    var tag = p[0];
+
+    switch (tag) {
+      case 'T':
+        if (p.length >= 4) {
+          emit('raw', line, true);
+          emit('thermo', { t: num(p[1]), tempC: num(p[2]), rh: num(p[3]) });
+        }
+        return;
+
+      case 'J':
+        if (p.length >= 5) {
+          emit('raw', line, true);
+          emit('joy', { t: num(p[1]), x: num(p[2]), y: num(p[3]), btn: p[4] === '1' });
+        }
+        return;
+
+      case 'M':
+        if (p.length >= 8) {
+          emit('raw', line, true);
+          emit('move', {
+            t: num(p[1]),
+            ax: num(p[2]), ay: num(p[3]), az: num(p[4]),
+            gx: num(p[5]), gy: num(p[6]), gz: num(p[7])
+          });
+        }
+        return;
+
+      case 'HELLO':
+        emit('raw', line);
+        info.proto = num(p[2]);
+        info.fw = p[3] || '';
+        info.caps = p[4] || '';
+        if (info.proto !== PROTO) {
+          emit('warn', 'Device speaks protocol ' + info.proto + ', this app speaks ' + PROTO + '.');
+        }
+        emit('hello', info);
+        return;
+
+      case 'STAT':
+        emit('raw', line);
+        modules.T = /T=1/.test(line);
+        modules.J = /J=1/.test(line);
+        modules.M = /M=1/.test(line);
+        emit('modules', modules);
+        return;
+
+      case 'PONG':
+        onPong(num(p[1]));
+        return;
+
+      case 'ERR':
+        emit('raw', line, false, true);
+        emit('deverror', line.slice(4).trim());
+        return;
+
+      case '#':
+        emit('raw', line);
+        return;
+
+      default:
+        emit('raw', line);
+    }
+  }
+
+  /* ── clock sync ───────────────────────────────────────── */
+  var pending = null;
+
+  function ping() {
+    if (state !== 'open') return;
+    pending = now();
+    send('PING');
+  }
+
+  function onPong(deviceMs) {
+    if (pending === null) return;
+    var t1 = now();
+    var rtt = t1 - pending;
+    pending = null;
+    // device time ≈ host time + offset, measured at the midpoint of the round trip
+    var offset = deviceMs - (t1 - rtt / 2);
+    clock.samples++;
+    if (rtt < clock.rtt) { clock.rtt = rtt; clock.offset = offset; }
+    emit('clock', clock);
+  }
+
+  function syncClock(n) {
+    clock.rtt = Infinity; clock.offset = 0; clock.samples = 0;
+    var left = n || 12;
+    (function step() {
+      if (state !== 'open' || left-- <= 0) return;
+      ping();
+      setTimeout(step, 60);
+    })();
+  }
+
+  /* ── send ─────────────────────────────────────────────── */
+  function send(line) {
+    if (!transport || state !== 'open') return false;
+    try {
+      transport.send(line + '\n');
+      if (line !== 'PING') emit('raw', line, false, false, true);
+      return true;
+    } catch (e) {
+      emit('warn', 'Send failed: ' + e.message);
+      return false;
+    }
+  }
+
+  function setState(s, label) {
+    state = s;
+    emit('state', { state: s, label: label || (transport && transport.label) || '', kind: transport && transport.kind });
+  }
+
+  function afterOpen() {
+    setState('open');
+    buf = '';
+    send('ID?');
+    send('SCAN');
+    syncClock();
+    if (pingTimer) clearInterval(pingTimer);
+    pingTimer = setInterval(ping, 5000);   // keeps the offset fresh over long clinics
+  }
+
+  function teardown(why) {
+    if (pingTimer) { clearInterval(pingTimer); pingTimer = null; }
+    transport = null;
+    // the streams died with the link; a reconnect must be able to ask again
+    refs = { T: 0, J: 0, M: 0 };
+    modules = { T: false, J: false, M: false };
+    emit('modules', modules);
+    setState('idle', '');
+    if (why) emit('warn', why);
+  }
+
+  /* ── serial transport ─────────────────────────────────── */
+  function serialSupported() {
+    return !!(global.navigator && navigator.serial);
+  }
+
+  function connectSerial() {
+    if (!serialSupported()) return Promise.reject(new Error('This build has no Web Serial API.'));
+    if (state !== 'idle') return Promise.reject(new Error('Already connected.'));
+    setState('opening', 'serial');
+
+    var port, reader, writer, encoder = new TextEncoder();
+
+    return navigator.serial.requestPort()
+      .then(function (p) {
+        port = p;
+        return port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', bufferSize: 4096 });
+      })
+      .then(function () {
+        var i = port.getInfo ? port.getInfo() : {};
+        var label = 'serial';
+        if (i && i.usbVendorId !== undefined && i.usbVendorId !== null) {
+          label = 'USB ' + hex4(i.usbVendorId) + ':' + hex4(i.usbProductId);
+        }
+        writer = port.writable.getWriter();
+        transport = {
+          kind: 'serial',
+          label: label,
+          send: function (s) { writer.write(encoder.encode(s)); },
+          close: function () {
+            var chain = Promise.resolve();
+            if (reader) { try { reader.cancel(); } catch (e) {} }
+            if (writer) { try { writer.releaseLock(); } catch (e) {} }
+            return chain.then(function () { return port.close(); }).catch(function () {});
+          }
+        };
+        afterOpen();
+        pump();
+      })
+      .catch(function (e) {
+        setState('idle', '');
+        transport = null;
+        throw e;
+      });
+
+    function pump() {
+      var decoder = new TextDecoder();
+      reader = port.readable.getReader();
+      (function read() {
+        reader.read().then(function (r) {
+          if (r.value) feed(decoder.decode(r.value, { stream: true }));
+          if (r.done) {
+            try { reader.releaseLock(); } catch (e) {}
+            if (state === 'open') teardown('The serial port closed.');
+            return;
+          }
+          read();
+        }, function (e) {
+          try { reader.releaseLock(); } catch (x) {}
+          if (state === 'open') teardown('Serial read failed: ' + e.message);
+        });
+      })();
+    }
+  }
+
+  function hex4(n) { return (n | 0).toString(16).padStart(4, '0'); }
+
+  /* ── websocket transport ──────────────────────────────── */
+  function connectWs(url) {
+    if (state !== 'idle') return Promise.reject(new Error('Already connected.'));
+    if (!/^wss?:\/\//.test(url)) url = 'ws://' + url;
+    setState('opening', url);
+
+    return new Promise(function (resolve, reject) {
+      var ws;
+      try { ws = new WebSocket(url); }
+      catch (e) { setState('idle', ''); reject(e); return; }
+
+      var settled = false;
+      var giveUp = setTimeout(function () {
+        if (settled) return;
+        settled = true;
+        try { ws.close(); } catch (e) {}
+        setState('idle', '');
+        reject(new Error('No answer from ' + url + ' after 8 s.'));
+      }, 8000);
+
+      ws.onopen = function () {
+        if (settled) return;
+        settled = true;
+        clearTimeout(giveUp);
+        transport = {
+          kind: 'ws',
+          label: url,
+          send: function (s) { ws.send(s); },
+          close: function () { try { ws.close(); } catch (e) {} return Promise.resolve(); }
+        };
+        afterOpen();
+        resolve();
+      };
+
+      ws.onmessage = function (ev) {
+        if (typeof ev.data === 'string') feed(ev.data);
+        else if (ev.data instanceof Blob) ev.data.text().then(feed);
+        else feed(new TextDecoder().decode(ev.data));
+      };
+
+      ws.onclose = function () {
+        clearTimeout(giveUp);
+        if (!settled) {
+          settled = true;
+          setState('idle', '');
+          reject(new Error('Could not reach ' + url + '.'));
+          return;
+        }
+        if (state === 'open' || state === 'closing') teardown(state === 'open' ? 'The bridge closed the connection.' : null);
+      };
+
+      ws.onerror = function () { /* onclose carries the outcome */ };
+    });
+  }
+
+  function disconnect() {
+    if (!transport) { teardown(); return Promise.resolve(); }
+    setState('closing');
+    var t = transport;
+    return Promise.resolve(t.close()).then(function () { teardown(); }, function () { teardown(); });
+  }
+
+  /* ── stream control, reference counted ────────────────── */
+  function claim(which) {
+    if (refs[which] === 0) send(which + '1');
+    refs[which]++;
+    var released = false;
+    return function release() {
+      if (released) return;
+      released = true;
+      refs[which] = Math.max(0, refs[which] - 1);
+      if (refs[which] === 0) send(which + '0');
+    };
+  }
+
+  global.Link = {
+    PROTO: PROTO,
+    on: on,
+    off: off,
+    send: send,
+    connectSerial: connectSerial,
+    connectWs: connectWs,
+    disconnect: disconnect,
+    serialSupported: serialSupported,
+    syncClock: syncClock,
+    rescan: function () { send('SCAN'); },
+    claim: claim,
+    isOpen: function () { return state === 'open'; },
+    state: function () { return state; },
+    modules: function () { return modules; },
+    info: function () { return info; },
+    clock: function () { return clock; },
+    /* host performance.now() -> device millis() */
+    toDevice: function (hostMs) { return hostMs + clock.offset; },
+    toHost: function (deviceMs) { return deviceMs - clock.offset; },
+    now: now
+  };
+})(window);
+
+</script>
+<script>
+/* tests.js — the three measurements.
+ *
+ * Every test is a small object with start(), cancel() and callbacks. None of
+ * them touch the DOM; the UI subscribes and draws. All timing is in device
+ * milliseconds so that USB scheduling jitter does not land in a reaction time.
+ */
+(function (global) {
+  'use strict';
+
+  var Link = global.Link;
+
+  function median(a) {
+    if (!a.length) return NaN;
+    var s = a.slice().sort(function (x, y) { return x - y; });
+    var m = s.length >> 1;
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  }
+  function mean(a) {
+    if (!a.length) return NaN;
+    var t = 0;
+    for (var i = 0; i < a.length; i++) t += a[i];
+    return t / a.length;
+  }
+
+  /* ══════════════════ 1. forehead temperature ══════════════════
+   * The Modulino Thermo is a contact sensor (HS3003), not an infrared
+   * thermometer, so a reading is a settle: the node warms towards skin
+   * temperature and we take the value once the drift flattens off.
+   */
+  function ThermoTest(opts) {
+    var s = opts.settings;
+    var self = this;
+    var release = null;
+    var win = [];              // { t, v } over the slope window
+    var all = [];
+    var t0 = 0;
+    var contactSince = 0;
+    var done = false;
+    var WINDOW_MS = 3000;
+
+    this.onTick = opts.onTick || function () {};
+    this.onDone = opts.onDone || function () {};
+    this.onFail = opts.onFail || function () {};
+
+    function slope() {
+      // least squares gradient in °C per second
+      if (win.length < 6) return NaN;
+      var n = win.length, sx = 0, sy = 0, sxx = 0, sxy = 0;
+      for (var i = 0; i < n; i++) {
+        var x = (win[i].t - win[0].t) / 1000, y = win[i].v;
+        sx += x; sy += y; sxx += x * x; sxy += x * y;
+      }
+      var d = n * sxx - sx * sx;
+      if (Math.abs(d) < 1e-9) return NaN;
+      return (n * sxy - sx * sy) / d;
+    }
+
+    function spread() {
+      var lo = Infinity, hi = -Infinity;
+      for (var i = 0; i < win.length; i++) {
+        if (win[i].v < lo) lo = win[i].v;
+        if (win[i].v > hi) hi = win[i].v;
+      }
+      return hi - lo;
+    }
+
+    function sample(m) {
+      if (done) return;
+      if (!t0) t0 = m.t;
+      all.push(m);
+      win.push({ t: m.t, v: m.tempC });
+      while (win.length > 2 && m.t - win[0].t > WINDOW_MS) win.shift();
+
+      var contact = m.tempC >= s.contactMin;
+      if (!contact) { contactSince = 0; }
+      else if (!contactSince) { contactSince = m.t; }
+
+      var g = slope();
+      var held = contactSince ? m.t - contactSince : 0;
+      var settled = contact && held >= WINDOW_MS && isFinite(g) &&
+                    Math.abs(g) <= s.slopeMax && spread() <= 0.2;
+
+      // progress: how much of the settle window is banked
+      var prog = contact ? Math.min(1, held / WINDOW_MS) : 0;
+
+      self.onTick({
+        tempC: m.tempC, rh: m.rh, contact: contact,
+        slope: g, elapsed: (m.t - t0) / 1000, progress: prog, settled: settled
+      });
+
+      if (settled) return finish(m, true);
+
+      if ((m.t - t0) / 1000 >= s.thermoTimeout) {
+        if (contact && held >= 1500) return finish(m, false);
+        stop();
+        self.onFail(contact
+          ? 'The reading never settled. Press the node flat and still against the skin.'
+          : 'No skin contact detected — the reading stayed below ' + s.contactMin + ' °C.');
+      }
+    }
+
+    function finish(m, settled) {
+      // average the tail of the settle window rather than trusting one sample
+      var tail = win.slice(-8).map(function (w) { return w.v; });
+      var skin = mean(tail);
+      stop();
+      self.onDone({
+        at: new Date().toISOString(),
+        skinC: round(skin, 2),
+        coreEstC: round(skin + Number(s.coreOffset), 2),
+        coreOffset: Number(s.coreOffset),
+        rh: round(m.rh, 1),
+        settled: settled,
+        settleSecs: round((m.t - t0) / 1000, 1),
+        driftCPerS: isFinite(slope()) ? round(slope(), 4) : null,
+        samples: all.length,
+        band: thermoBand(skin + Number(s.coreOffset))
+      });
+    }
+
+    function stop() {
+      done = true;
+      Link.off('thermo', sample);
+      if (release) { release(); release = null; }
+    }
+
+    this.start = function () {
+      if (!Link.isOpen()) return self.onFail('No device connected.');
+      if (!Link.modules().T) return self.onFail('The Modulino Thermo was not found on the bus.');
+      done = false; win = []; all = []; t0 = 0; contactSince = 0;
+      Link.on('thermo', sample);
+      release = Link.claim('T');
+      Link.send('RATE T 5');
+    };
+
+    this.cancel = function () { stop(); };
+  }
+
+  function thermoBand(coreEst) {
+    if (coreEst >= 38.0) return { key: 'high', label: 'Fever range', tone: 'bad' };
+    if (coreEst >= 37.5) return { key: 'raised', label: 'Slightly raised', tone: 'warn' };
+    if (coreEst < 35.5) return { key: 'low', label: 'Below normal', tone: 'warn' };
+    return { key: 'normal', label: 'Within normal range', tone: 'good' };
+  }
+
+  /* ══════════════════ 2. reflex and aiming ══════════════════
+   * A green box lights in one of eight cells around the middle; the patient
+   * pushes the joystick at it. Reaction time is the first sample past the dead
+   * zone, direction is taken where the push passes the commit threshold, and
+   * the round only counts as acquired once the aim is held.
+   */
+  function ReflexTest(opts) {
+    var s = opts.settings;
+    var self = this;
+    var release = null;
+    var rounds = [];
+    var phase = 'idle';      // centering | delay | go | between | idle
+    var live = { x: 0, y: 0, btn: false, t: 0 };
+    var centeredSince = 0;
+    var goDeviceMs = 0;
+    var goHostMs = 0;
+    var target = 4;
+    var cur = null;
+    var timer = null;
+    var total = Math.max(1, Math.min(30, Math.round(s.rounds)));
+    var seq = 0;              // guards a timer left over from an abandoned round
+
+    var CELLS = [0, 1, 2, 3, 5, 6, 7, 8];   // the middle cell is home
+    var TOL = 22.5;                          // half of 45°, so eight clean directions
+    var ROUND_TIMEOUT = 3000;
+
+    this.onFrame = opts.onFrame || function () {};
+    this.onStatus = opts.onStatus || function () {};
+    this.onDone = opts.onDone || function () {};
+    this.onFail = opts.onFail || function () {};
+
+    function cellAngle(cell) {
+      var dx = (cell % 3) - 1, dy = Math.floor(cell / 3) - 1;
+      return Math.atan2(-dy, dx) * 180 / Math.PI;   // screen y grows downwards
+    }
+    function angDiff(a, b) {
+      var d = ((a - b) % 360 + 540) % 360 - 180;
+      return Math.abs(d);
+    }
+    function mag(p) { return Math.sqrt(p.x * p.x + p.y * p.y); }
+
+    function state() {
+      return {
+        phase: phase, x: live.x, y: live.y, btn: live.btn,
+        target: phase === 'go' ? target : -1,
+        round: rounds.length + 1, total: total,
+        deadzone: s.deadzone, commit: s.commit,
+        lit: phase === 'go', last: rounds.length ? rounds[rounds.length - 1] : null
+      };
+    }
+
+    function sample(m) {
+      if (phase === 'idle') return;
+      live = m;
+
+      var mg = mag(m);
+
+      if (phase === 'centering') {
+        if (mg < s.deadzone) {
+          if (!centeredSince) centeredSince = m.t;
+          if (m.t - centeredSince >= 300) beginRound();
+        } else {
+          centeredSince = 0;
+          self.onStatus('Let the joystick spring back to the middle.');
+        }
+      } else if (phase === 'delay') {
+        if (mg > s.deadzone) {
+          // moved before the box lit
+          clearTimeout(timer);
+          falseStart('moved before the box lit');
+        }
+      } else if (phase === 'go') {
+        if (m.t < goDeviceMs) return;     // sampled before the box lit; in flight
+        var dt = m.t - goDeviceMs;
+
+        if (cur.rt === null && mg > s.deadzone) {
+          if (dt < 100) { falseStart('moved within 100 ms — a guess, not a reaction'); return; }
+          cur.rt = dt;
+        }
+        if (cur.rt !== null && cur.err === null && mg >= s.commit) {
+          cur.err = angDiff(Math.atan2(m.y, m.x) * 180 / Math.PI, cellAngle(target));
+          cur.commitMs = dt;
+          cur.hit = cur.err <= TOL;
+        }
+        if (cur.err !== null) {
+          var onTarget = mg >= s.commit &&
+            angDiff(Math.atan2(m.y, m.x) * 180 / Math.PI, cellAngle(target)) <= TOL;
+          if (onTarget) {
+            if (!cur._holdFrom) cur._holdFrom = m.t;
+            if (m.t - cur._holdFrom >= s.holdMs) { cur.acquireMs = dt; return endRound(); }
+          } else {
+            cur._holdFrom = 0;
+          }
+        }
+        if (dt > ROUND_TIMEOUT) { cur.timedOut = true; endRound(); }
+      }
+
+      self.onFrame(state());
+    }
+
+    function beginRound() {
+      phase = 'delay';
+      seq++;
+      centeredSince = 0;
+      target = CELLS[Math.floor(Math.random() * CELLS.length)];
+      cur = {
+        n: rounds.length + 1, target: target, rt: null, err: null,
+        commitMs: null, acquireMs: null, hit: false, timedOut: false,
+        falseStart: false, _holdFrom: 0
+      };
+      self.onStatus('Wait for the green box…');
+      self.onFrame(state());
+      var mine = seq;
+      timer = setTimeout(function () {
+        if (mine !== seq || phase !== 'delay') return;
+        phase = 'go';
+        goHostMs = Link.now();
+        goDeviceMs = Link.toDevice(goHostMs);
+        self.onStatus('Now! Push at the green box.');
+        self.onFrame(state());
+        // a safety net in case the joystick stream dies mid-round
+        timer = setTimeout(function () {
+          if (mine !== seq || phase !== 'go') return;
+          cur.timedOut = true;
+          endRound();
+        }, ROUND_TIMEOUT + 800);
+      }, 700 + Math.random() * 1500);
+    }
+
+    function falseStart(why) {
+      clearTimeout(timer);
+      seq++;
+      cur.falseStart = true;
+      cur.why = why;
+      rounds.push(cur);
+      // the round is replaced rather than scored; nextOrFinish caps the retries
+      self.onStatus('False start — ' + why + '. Going again.');
+      nextOrFinish(true);
+    }
+
+    function endRound() {
+      clearTimeout(timer);
+      seq++;
+      delete cur._holdFrom;
+      rounds.push(cur);
+      self.onStatus(cur.timedOut ? 'Missed that one.'
+        : (cur.hit ? 'Hit — ' + Math.round(cur.rt) + ' ms.' : 'Wrong way — ' + Math.round(cur.err) + '° off.'));
+      nextOrFinish(false);
+    }
+
+    function nextOrFinish(wasFalse) {
+      var real = rounds.filter(function (r) { return !r.falseStart; }).length;
+      phase = 'between';
+      self.onFrame(state());
+      if (real >= total || rounds.length >= total * 2) return finish();
+      timer = setTimeout(function () {
+        if (phase === 'idle') return;
+        phase = 'centering';
+        centeredSince = 0;
+        self.onStatus('Back to the middle…');
+        self.onFrame(state());
+      }, wasFalse ? 900 : 650);
+    }
+
+    function finish() {
+      phase = 'idle';
+      stop();
+      var real = rounds.filter(function (r) { return !r.falseStart; });
+      var hits = real.filter(function (r) { return r.hit; });
+      var rts = hits.map(function (r) { return r.rt; });
+      var errs = real.filter(function (r) { return r.err !== null; }).map(function (r) { return r.err; });
+      var acq = hits.filter(function (r) { return r.acquireMs !== null; }).map(function (r) { return r.acquireMs; });
+
+      var res = {
+        at: new Date().toISOString(),
+        rounds: real.length,
+        hits: hits.length,
+        misses: real.filter(function (r) { return r.timedOut; }).length,
+        wrongWay: real.filter(function (r) { return r.err !== null && !r.hit; }).length,
+        falseStarts: rounds.length - real.length,
+        medianRtMs: rts.length ? Math.round(median(rts)) : null,
+        bestRtMs: rts.length ? Math.round(Math.min.apply(null, rts)) : null,
+        spreadMs: rts.length > 1 ? Math.round(Math.max.apply(null, rts) - Math.min.apply(null, rts)) : null,
+        meanAimErrDeg: errs.length ? round(mean(errs), 1) : null,
+        medianAcquireMs: acq.length ? Math.round(median(acq)) : null,
+        clockRttMs: isFinite(Link.clock().rtt) ? round(Link.clock().rtt, 1) : null,
+        detail: real.map(function (r) {
+          return { n: r.n, target: r.target, rt: r.rt === null ? null : Math.round(r.rt),
+                   err: r.err === null ? null : round(r.err, 1), hit: r.hit, timedOut: r.timedOut };
+        })
+      };
+      res.band = reflexBand(res);
+      self.onDone(res);
+    }
+
+    function stop() {
+      phase = 'idle';
+      seq++;
+      clearTimeout(timer);
+      Link.off('joy', sample);
+      if (release) { release(); release = null; }
+    }
+
+    this.start = function () {
+      if (!Link.isOpen()) return self.onFail('No device connected.');
+      if (!Link.modules().J) return self.onFail('The Modulino Joystick was not found on the bus.');
+      rounds = []; phase = 'centering'; centeredSince = 0;
+      Link.on('joy', sample);
+      release = Link.claim('J');
+      Link.send('RATE J 100');
+      self.onStatus('Hold the joystick in the middle to begin.');
+      self.onFrame(state());
+    };
+
+    this.cancel = function () { stop(); self.onFrame(state()); };
+    this.state = state;
+  }
+
+  function reflexBand(r) {
+    if (r.medianRtMs === null) return { key: 'none', label: 'No valid rounds', tone: 'bad' };
+    var slow = r.medianRtMs;
+    var accuracy = r.rounds ? r.hits / r.rounds : 0;
+    if (accuracy < 0.6) return { key: 'inaccurate', label: 'Aim unreliable', tone: 'warn' };
+    if (slow <= 320) return { key: 'brisk', label: 'Brisk', tone: 'good' };
+    if (slow <= 450) return { key: 'normal', label: 'Unremarkable', tone: 'good' };
+    if (slow <= 650) return { key: 'slow', label: 'Slower than typical', tone: 'warn' };
+    return { key: 'verySlow', label: 'Markedly slow', tone: 'bad' };
+  }
+
+  /* ══════════════════ 3. hand steadiness ══════════════════
+   * The accelerometer rides on the back of the hand. Gravity and posture are
+   * removed by taking the deviation of the acceleration magnitude from its own
+   * mean, and the tremor band is extracted with a DFT, using Parseval so the
+   * answer comes back as an honest RMS in milli-g.
+   */
+  function TremorTest(opts) {
+    var s = opts.settings;
+    var self = this;
+    var release = null;
+    var samples = [];
+    var t0 = 0;
+    var running = false;
+    var secs = Math.max(3, Math.min(60, Math.round(s.tremorSecs)));
+
+    this.onTick = opts.onTick || function () {};
+    this.onDone = opts.onDone || function () {};
+    this.onFail = opts.onFail || function () {};
+
+    function sample(m) {
+      if (!running) return;
+      if (!t0) t0 = m.t;
+      samples.push(m);
+      var el = (m.t - t0) / 1000;
+
+      // live figure: deviation of |a| from the running mean of the last second
+      var win = [], i;
+      for (i = samples.length - 1; i >= 0 && m.t - samples[i].t <= 1000; i--) {
+        win.push(Math.sqrt(samples[i].ax * samples[i].ax + samples[i].ay * samples[i].ay +
+                           samples[i].az * samples[i].az));
+      }
+      var mu = mean(win), acc = 0;
+      for (i = 0; i < win.length; i++) acc += (win[i] - mu) * (win[i] - mu);
+      var rms = win.length > 1 ? Math.sqrt(acc / win.length) * 1000 : 0;
+
+      self.onTick({
+        elapsed: el, progress: Math.min(1, el / secs), rmsMg: rms,
+        count: samples.length,
+        rateHz: samples.length > 10 ? round(1000 / medianDt(samples), 1) : null
+      });
+
+      if (el >= secs) finish();
+    }
+
+    function medianDt(a) {
+      var d = [];
+      for (var i = 1; i < a.length; i++) {
+        var dt = a[i].t - a[i - 1].t;
+        if (dt > 0 && dt < 500) d.push(dt);
+      }
+      return d.length ? median(d) : 10;
+    }
+
+    function finish() {
+      running = false;
+      stop();
+      if (samples.length < 64) {
+        return self.onFail('Only ' + samples.length + ' samples arrived — not enough to measure.');
+      }
+      self.onDone(analyse(samples, s, secs));
+    }
+
+    function stop() {
+      running = false;
+      Link.off('move', sample);
+      if (release) { release(); release = null; }
+    }
+
+    this.start = function () {
+      if (!Link.isOpen()) return self.onFail('No device connected.');
+      if (!Link.modules().M) return self.onFail('The Modulino Movement was not found on the bus.');
+      samples = []; t0 = 0; running = true;
+      Link.on('move', sample);
+      release = Link.claim('M');
+      Link.send('RATE M 100');
+    };
+
+    this.cancel = function () { stop(); };
+    this.seconds = function () { return secs; };
+  }
+
+  /* resample onto an even grid, then band-limit with a DFT */
+  function analyse(samples, s, secs) {
+    var dtMs = [];
+    for (var i = 1; i < samples.length; i++) {
+      var d = samples[i].t - samples[i - 1].t;
+      if (d > 0 && d < 500) dtMs.push(d);
+    }
+    var dt = dtMs.length ? median(dtMs) : 10;
+    var fs = 1000 / dt;
+
+    var span = samples[samples.length - 1].t - samples[0].t;
+    var n = Math.max(64, Math.floor(span / dt));
+    var t0 = samples[0].t;
+
+    // linear interpolation onto the grid
+    var accMag = new Float64Array(n);
+    var gyroMag = new Float64Array(n);
+    var k = 0;
+    for (i = 0; i < n; i++) {
+      var want = t0 + i * dt;
+      while (k < samples.length - 2 && samples[k + 1].t < want) k++;
+      var a = samples[k], b = samples[Math.min(k + 1, samples.length - 1)];
+      var f = b.t > a.t ? (want - a.t) / (b.t - a.t) : 0;
+      f = f < 0 ? 0 : (f > 1 ? 1 : f);
+      var ax = a.ax + (b.ax - a.ax) * f, ay = a.ay + (b.ay - a.ay) * f, az = a.az + (b.az - a.az) * f;
+      var gx = a.gx + (b.gx - a.gx) * f, gy = a.gy + (b.gy - a.gy) * f, gz = a.gz + (b.gz - a.gz) * f;
+      accMag[i] = Math.sqrt(ax * ax + ay * ay + az * az) * 1000;   // mg
+      gyroMag[i] = Math.sqrt(gx * gx + gy * gy + gz * gz);         // dps
+    }
+
+    // detrend: remove mean and linear drift (posture sag over the capture)
+    var sx = 0, sy = 0, sxx = 0, sxy = 0;
+    for (i = 0; i < n; i++) { sx += i; sy += accMag[i]; sxx += i * i; sxy += i * accMag[i]; }
+    var den = n * sxx - sx * sx;
+    var slope = Math.abs(den) > 1e-9 ? (n * sxy - sx * sy) / den : 0;
+    var icpt = (sy - slope * sx) / n;
+    var x = new Float64Array(n);
+    for (i = 0; i < n; i++) x[i] = accMag[i] - (icpt + slope * i);
+
+    var totalRms = Math.sqrt(dot(x, x) / n);
+
+    // Hann window, and its power factor so Parseval still gives an RMS
+    var w = new Float64Array(n), wpow = 0;
+    for (i = 0; i < n; i++) { w[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (n - 1)); wpow += w[i] * w[i]; }
+    wpow /= n;
+    var xw = new Float64Array(n);
+    for (i = 0; i < n; i++) xw[i] = x[i] * w[i];
+
+    var df = fs / n;
+    var loBin = Math.max(1, Math.ceil(s.bandLow / df));
+    var hiBin = Math.min(Math.floor(n / 2) - 1, Math.floor(s.bandHigh / df));
+    var scanLo = Math.max(1, Math.ceil(1.0 / df));
+    var scanHi = Math.min(Math.floor(n / 2) - 1, Math.floor(Math.min(16, fs / 2 - 1) / df));
+
+    var bandPower = 0, peak = -1, peakBin = -1, spectrum = [];
+    for (var bin = scanLo; bin <= scanHi; bin++) {
+      var re = 0, im = 0, wq = 2 * Math.PI * bin / n;
+      for (i = 0; i < n; i++) {
+        re += xw[i] * Math.cos(wq * i);
+        im -= xw[i] * Math.sin(wq * i);
+      }
+      var p2 = re * re + im * im;
+      if (bin >= loBin && bin <= hiBin) bandPower += 2 * p2 / (n * n);
+      // amplitude of a sinusoid at this bin, for the plot
+      spectrum.push({ f: round(bin * df, 2), a: round(2 * Math.sqrt(p2) / (n * 0.5), 3) });
+      if (p2 > peak) { peak = p2; peakBin = bin; }
+    }
+    var bandRms = Math.sqrt(Math.max(0, bandPower) / wpow);
+
+    var gm = mean(Array.prototype.slice.call(gyroMag));
+    var gAcc = 0;
+    for (i = 0; i < n; i++) gAcc += (gyroMag[i] - gm) * (gyroMag[i] - gm);
+    var gyroRms = Math.sqrt(gAcc / n);
+
+    return {
+      at: new Date().toISOString(),
+      seconds: round(span / 1000, 1),
+      requestedSeconds: secs,
+      rateHz: round(fs, 1),
+      samples: samples.length,
+      gridPoints: n,
+      bandLowHz: Number(s.bandLow),
+      bandHighHz: Number(s.bandHigh),
+      tremorRmsMg: round(bandRms, 2),
+      totalRmsMg: round(totalRms, 2),
+      peakHz: peakBin > 0 ? round(peakBin * df, 2) : null,
+      gyroRmsDps: round(gyroRms, 2),
+      spectrum: spectrum,
+      band: tremorBand(bandRms)
+    };
+  }
+
+  function dot(a, b) { var t = 0; for (var i = 0; i < a.length; i++) t += a[i] * b[i]; return t; }
+
+  function tremorBand(mg) {
+    if (mg < 8) return { key: 'verySteady', label: 'Very steady', tone: 'good' };
+    if (mg < 20) return { key: 'steady', label: 'Steady', tone: 'good' };
+    if (mg < 45) return { key: 'someTremor', label: 'Some tremor', tone: 'warn' };
+    if (mg < 90) return { key: 'marked', label: 'Marked tremor', tone: 'bad' };
+    return { key: 'veryMarked', label: 'Very marked tremor', tone: 'bad' };
+  }
+
+  function round(v, d) {
+    if (!isFinite(v)) return null;
+    var m = Math.pow(10, d);
+    return Math.round(v * m) / m;
+  }
+
+  global.Tests = {
+    ThermoTest: ThermoTest,
+    ReflexTest: ReflexTest,
+    TremorTest: TremorTest,
+    median: median,
+    mean: mean,
+    round: round,
+    analyseMovement: analyse
+  };
+})(window);
+
+</script>
+<script>
+/* ui.js — views, forms, canvases, printing. */
+(function (global) {
+  'use strict';
+
+  var Store = global.Store, Link = global.Link, Tests = global.Tests;
+
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function esc(s) {
+    return String(s === null || s === undefined ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function fmtDateTime(s) {
+    if (!s) return '—';
+    var d = new Date(s.length === 16 ? s : s);
+    if (isNaN(d)) return s;
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit'
+    });
+  }
+  function nn(v, suffix, dp) {
+    if (v === null || v === undefined || v === '' || (typeof v === 'number' && !isFinite(v))) return '—';
+    if (typeof v === 'number' && dp !== undefined) v = v.toFixed(dp);
+    return v + (suffix || '');
+  }
+
+  var UI = {};
+  var sel = { personId: null, visitId: null };
+  var running = { thermo: null, reflex: null, tremor: null };
+
+  /* ── toast ────────────────────────────────────────────── */
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $('#toast');
+    t.textContent = msg;
+    t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.hidden = true; }, 3200);
+  }
+  UI.toast = toast;
+
+  /* ── views ────────────────────────────────────────────── */
+  function show(name) {
+    $$('.view').forEach(function (v) { v.hidden = v.id !== 'view-' + name; });
+    $$('.tab').forEach(function (b) {
+      if (b.dataset.view === name) b.setAttribute('aria-current', 'true');
+      else b.removeAttribute('aria-current');
+    });
+    if (name === 'visit') renderVisit();
+    if (name === 'device') renderDevice();
+    if (name === 'settings') renderSettings();
+  }
+  UI.show = show;
+
+  /* ══════════════════ people ══════════════════ */
+  function renderPeople() {
+    var list = $('#peopleList');
+    var q = $('#search').value;
+    var people = Store.search(q);
+    list.textContent = '';
+
+    people.forEach(function (p) {
+      var li = el('li');
+      li.setAttribute('role', 'option');
+      if (p.id === sel.personId) li.setAttribute('aria-selected', 'true');
+      li.appendChild(el('span', 'nm', p.name || '(no name)'));
+      var age = Store.age(p.dob);
+      var bits = [];
+      if (p.chartId) bits.push(p.chartId);
+      if (age !== null) bits.push(age + ' yr');
+      var next = p.visits.length ? p.visits[0].when : '';
+      if (next) bits.push(fmtDateTime(next));
+      li.appendChild(el('small', null, bits.join(' · ') || 'no appointments'));
+      li.onclick = function () { selectPerson(p.id); };
+      list.appendChild(li);
+    });
+
+    $('#peopleCount').textContent = people.length + ' of ' + Store.people().length + ' shown';
+    if (!people.length) {
+      var e = el('li');
+      e.style.color = 'var(--ink3)';
+      e.style.cursor = 'default';
+      e.textContent = Store.people().length ? 'Nothing matches that search.' : 'No records yet.';
+      list.appendChild(e);
+    }
+  }
+
+  function selectPerson(id) {
+    sel.personId = id;
+    sel.visitId = null;
+    renderPeople();
+    renderPerson();
+  }
+
+  function renderPerson() {
+    var p = Store.person(sel.personId);
+    var form = $('#personForm');
+    $('#personEmpty').hidden = !!p;
+    form.hidden = !p;
+    if (!p) return;
+
+    $('#personTitle').textContent = p.name || '(no name)';
+    ['name', 'chartId', 'dob', 'sex', 'pronouns', 'phone', 'email', 'address',
+     'kin', 'kinPhone', 'allergies', 'medication', 'conditions', 'notes'].forEach(function (k) {
+      var f = form.elements[k];
+      if (f) f.value = p[k] || '';
+    });
+    var age = Store.age(p.dob);
+    form.elements.age.value = age === null ? '—' : age + ' years';
+
+    renderVisitList(p);
+    $('#savedNote').textContent = 'Last change ' + fmtDateTime(p.updated);
+  }
+
+  function renderVisitList(p) {
+    var ul = $('#visitList');
+    ul.textContent = '';
+    if (!p.visits.length) {
+      var e = el('li');
+      e.style.color = 'var(--ink3)';
+      e.textContent = 'No appointments booked.';
+      ul.appendChild(e);
+      return;
+    }
+    p.visits.forEach(function (v) {
+      var li = el('li');
+      li.appendChild(el('span', 'when', fmtDateTime(v.when)));
+      li.appendChild(el('span', 'why', [v.reason, v.clinician].filter(Boolean).join(' — ') || 'no reason given'));
+      var flags = el('span', 'flags');
+      flags.appendChild(el('span', 'pill', v.status));
+      if (v.thermo) flags.appendChild(pill('T ' + v.thermo.coreEstC.toFixed(1) + '°', v.thermo.band.tone));
+      if (v.reflex) flags.appendChild(pill('R ' + nn(v.reflex.medianRtMs, ' ms'), v.reflex.band.tone));
+      if (v.tremor) flags.appendChild(pill('S ' + v.tremor.tremorRmsMg.toFixed(1) + ' mg', v.tremor.band.tone));
+      li.appendChild(flags);
+
+      var open = el('button', 'btn', 'Open');
+      open.type = 'button';
+      open.onclick = function () { openVisit(p.id, v.id); };
+      li.appendChild(open);
+
+      var del = el('button', 'btn danger', '✕');
+      del.type = 'button';
+      del.title = 'Delete this appointment';
+      del.onclick = function () {
+        if (!confirm('Delete the appointment on ' + fmtDateTime(v.when) + ', including its measurements?')) return;
+        Store.removeVisit(p.id, v.id);
+        if (sel.visitId === v.id) sel.visitId = null;
+        renderPerson();
+        renderPeople();
+      };
+      li.appendChild(del);
+      ul.appendChild(li);
+    });
+  }
+
+  function pill(text, tone) {
+    var s = el('span', 'pill' + (tone ? ' ' + tone : ''), text);
+    return s;
+  }
+
+  function bindPersonForm() {
+    var form = $('#personForm');
+    form.addEventListener('input', function (ev) {
+      var p = Store.person(sel.personId);
+      if (!p || !ev.target.name || ev.target.name === 'age') return;
+      p[ev.target.name] = ev.target.value;
+      if (ev.target.name === 'name') {
+        $('#personTitle').textContent = p.name || '(no name)';
+      }
+      if (ev.target.name === 'dob') {
+        var a = Store.age(p.dob);
+        form.elements.age.value = a === null ? '—' : a + ' years';
+      }
+      Store.touch(p);
+      $('#savedNote').textContent = 'Saving…';
+      clearTimeout(bindPersonForm._t);
+      bindPersonForm._t = setTimeout(renderPeople, 600);
+    });
+    form.addEventListener('submit', function (e) { e.preventDefault(); });
+
+    $('#newPerson').onclick = function () {
+      var p = Store.addPerson('');
+      p.name = '';
+      selectPerson(p.id);
+      var f = $('#personForm').elements.name;
+      f.focus();
+    };
+
+    $('#deletePerson').onclick = function () {
+      var p = Store.person(sel.personId);
+      if (!p) return;
+      if (!confirm('Delete ' + (p.name || 'this person') + ' and all ' + p.visits.length +
+                   ' appointment(s)? This cannot be undone.')) return;
+      Store.removePerson(p.id);
+      sel.personId = null;
+      renderPeople();
+      renderPerson();
+      toast('Record deleted.');
+    };
+
+    $('#printPerson').onclick = function () { printPerson(Store.person(sel.personId)); };
+
+    $('#search').addEventListener('input', renderPeople);
+
+    $('#addVisit').onclick = function () {
+      var p = Store.person(sel.personId);
+      if (!p) return;
+      var when = $('#newVisitWhen').value || Store.localIso();
+      var v = Store.addVisit(p.id, when, $('#newVisitReason').value, $('#newVisitClinician').value);
+      $('#newVisitReason').value = '';
+      $('#newVisitClinician').value = '';
+      renderPerson();
+      renderPeople();
+      openVisit(p.id, v.id);
+    };
+  }
+
+  /* ══════════════════ visit ══════════════════ */
+  function openVisit(personId, visitId) {
+    sel.personId = personId;
+    sel.visitId = visitId;
+    cancelAllTests();
+    show('visit');
+  }
+  UI.openVisit = openVisit;
+
+  function renderVisit() {
+    var p = Store.person(sel.personId);
+    var v = p ? Store.visit(p.id, sel.visitId) : null;
+    $('#visitNone').hidden = !!v;
+    $('#visitBody').hidden = !v;
+    if (!v) return;
+
+    var age = Store.age(p.dob, v.when);
+    $('#visitWho').textContent = p.name || '(no name)';
+    $('#visitMeta').textContent = [
+      p.chartId || 'no clinic ID',
+      age !== null ? age + ' years' : 'age unknown',
+      p.sex || '',
+      'allergies: ' + (p.allergies || 'none recorded')
+    ].filter(Boolean).join(' · ');
+
+    $('#visitWhen').value = v.when || '';
+    $('#visitClinician').value = v.clinician || '';
+    $('#visitDept').value = v.dept || '';
+    $('#visitStatus').value = v.status || 'Booked';
+    $('#visitReason').value = v.reason || '';
+    $('#visitNotes').value = v.notes || '';
+    ['weight', 'height', 'bp', 'pulse', 'spo2', 'resp'].forEach(function (k) {
+      $('#obs' + k.charAt(0).toUpperCase() + k.slice(1)).value = v.obs[k] || '';
+    });
+
+    renderThermoResult(v.thermo);
+    renderReflexResult(v.reflex);
+    renderTremorResult(v.tremor);
+    drawReflex(null);
+    drawTremorIdle(v.tremor);
+    renderTrend(p);
+    refreshTestButtons();
+  }
+
+  function bindVisitForm() {
+    function cur() {
+      var p = Store.person(sel.personId);
+      return p ? Store.visit(p.id, sel.visitId) : null;
+    }
+    function wire(id, apply) {
+      $(id).addEventListener('input', function () {
+        var v = cur();
+        if (!v) return;
+        apply(v, $(id).value);
+        Store.touch(Store.person(sel.personId));
+      });
+    }
+    wire('#visitWhen', function (v, x) { v.when = x; });
+    wire('#visitClinician', function (v, x) { v.clinician = x; });
+    wire('#visitDept', function (v, x) { v.dept = x; });
+    wire('#visitStatus', function (v, x) { v.status = x; });
+    wire('#visitReason', function (v, x) { v.reason = x; });
+    wire('#visitNotes', function (v, x) { v.notes = x; });
+    ['weight', 'height', 'bp', 'pulse', 'spo2', 'resp'].forEach(function (k) {
+      wire('#obs' + k.charAt(0).toUpperCase() + k.slice(1), function (v, x) { v.obs[k] = x; });
+    });
+
+    $('#closeVisit').onclick = function () { cancelAllTests(); show('people'); renderPerson(); renderPeople(); };
+    $('#printVisit').onclick = function () {
+      var p = Store.person(sel.personId);
+      printVisit(p, cur());
+    };
+  }
+
+  /* ── thermo ───────────────────────────────────────────── */
+  function bindThermo() {
+    $('#thermoStart').onclick = function () {
+      var v = currentVisit();
+      if (!v) return;
+      var t = new Tests.ThermoTest({
+        settings: liveSettings(),
+        onTick: function (s) {
+          $('#thermoLive').innerHTML = s.tempC.toFixed(2) + '<span class="unit">°C</span>';
+          $('#thermoContact').textContent = s.contact ? 'yes' : 'no';
+          $('#thermoSlope').textContent = isFinite(s.slope) ? s.slope.toFixed(3) + ' °C/s' : '—';
+          $('#thermoRh').textContent = s.rh ? s.rh.toFixed(0) + ' %' : '—';
+          $('#thermoProgress').style.width = (s.progress * 100).toFixed(0) + '%';
+        },
+        onDone: function (r) {
+          running.thermo = null;
+          v.thermo = r;
+          Store.touch(Store.person(sel.personId));
+          renderThermoResult(r);
+          renderTrend(Store.person(sel.personId));
+          thermoIdle();
+          toast('Temperature recorded.');
+        },
+        onFail: function (msg) {
+          running.thermo = null;
+          thermoIdle();
+          toast(msg);
+        }
+      });
+      running.thermo = t;
+      $('#thermoStart').hidden = true;
+      $('#thermoStop').hidden = false;
+      $('#thermoResult').hidden = true;
+      $('#thermoProgress').style.width = '0%';
+      t.start();
+    };
+
+    $('#thermoStop').onclick = function () {
+      if (running.thermo) running.thermo.cancel();
+      running.thermo = null;
+      thermoIdle();
+    };
+  }
+
+  function thermoIdle() {
+    $('#thermoStart').hidden = false;
+    $('#thermoStop').hidden = true;
+    $('#thermoProgress').style.width = '0%';
+    refreshTestButtons();
+  }
+
+  function renderThermoResult(r) {
+    var box = $('#thermoResult');
+    box.hidden = !r;
+    if (!r) return;
+    box.innerHTML =
+      '<p class="verdict"><span class="pill ' + r.band.tone + '">' + esc(r.band.label) + '</span></p>' +
+      '<dl>' +
+      row('Skin (measured)', r.skinC.toFixed(2) + ' °C') +
+      row('Core (estimated)', r.coreEstC.toFixed(2) + ' °C') +
+      row('Offset applied', '+' + Number(r.coreOffset).toFixed(2) + ' °C') +
+      row('Room humidity', nn(r.rh, ' %')) +
+      row('Settled', r.settled ? 'yes, in ' + r.settleSecs + ' s' : 'no — timed out at ' + r.settleSecs + ' s') +
+      row('Final drift', nn(r.driftCPerS, ' °C/s')) +
+      row('Taken', fmtDateTime(r.at)) +
+      '</dl>';
+  }
+
+  function row(k, v) { return '<dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd>'; }
+
+  /* ── reflex ───────────────────────────────────────────── */
+  var reflexView = null;
+
+  function bindReflex() {
+    $('#reflexStart').onclick = function () {
+      var v = currentVisit();
+      if (!v) return;
+      var t = new Tests.ReflexTest({
+        settings: liveSettings(),
+        onFrame: function (s) { reflexView = s; drawReflex(s); },
+        onStatus: function (m) { $('#reflexStatus').textContent = m; },
+        onDone: function (r) {
+          running.reflex = null;
+          v.reflex = r;
+          Store.touch(Store.person(sel.personId));
+          renderReflexResult(r);
+          renderTrend(Store.person(sel.personId));
+          reflexIdle();
+          $('#reflexStatus').textContent = 'Done — ' + r.hits + ' of ' + r.rounds + ' hit.';
+          toast('Reflex test recorded.');
+        },
+        onFail: function (msg) { running.reflex = null; reflexIdle(); toast(msg); }
+      });
+      running.reflex = t;
+      $('#reflexStart').hidden = true;
+      $('#reflexStop').hidden = false;
+      $('#reflexResult').hidden = true;
+      t.start();
+    };
+
+    $('#reflexStop').onclick = function () {
+      if (running.reflex) running.reflex.cancel();
+      running.reflex = null;
+      reflexIdle();
+      $('#reflexStatus').textContent = 'Stopped.';
+    };
+  }
+
+  function reflexIdle() {
+    $('#reflexStart').hidden = false;
+    $('#reflexStop').hidden = true;
+    // the stream has stopped, so park the cursor rather than leaving it stuck
+    // wherever the last sample put it
+    reflexView = null;
+    drawReflex(null);
+    refreshTestButtons();
+  }
+
+  function drawReflex(s) {
+    var c = $('#reflexCanvas');
+    var g = c.getContext('2d');
+    var W = c.width, H = c.height;
+    g.clearRect(0, 0, W, H);
+    g.fillStyle = '#0f1419';
+    g.fillRect(0, 0, W, H);
+
+    var pad = 24, gap = 10;
+    var cell = (Math.min(W, H) - pad * 2 - gap * 2) / 3;
+    var ox = (W - (cell * 3 + gap * 2)) / 2, oy = (H - (cell * 3 + gap * 2)) / 2;
+
+    for (var i = 0; i < 9; i++) {
+      var cx = ox + (i % 3) * (cell + gap), cy = oy + Math.floor(i / 3) * (cell + gap);
+      var lit = s && s.lit && s.target === i;
+      g.fillStyle = lit ? '#2ee06a' : (i === 4 ? '#1b232d' : '#161d25');
+      roundRect(g, cx, cy, cell, cell, 10);
+      g.fill();
+      g.strokeStyle = lit ? '#7cf2a8' : '#2c3743';
+      g.lineWidth = lit ? 3 : 1;
+      roundRect(g, cx, cy, cell, cell, 10);
+      g.stroke();
+      if (i === 4) {
+        g.strokeStyle = '#3a4653';
+        g.lineWidth = 1;
+        g.beginPath();
+        g.moveTo(cx + cell / 2 - 8, cy + cell / 2); g.lineTo(cx + cell / 2 + 8, cy + cell / 2);
+        g.moveTo(cx + cell / 2, cy + cell / 2 - 8); g.lineTo(cx + cell / 2, cy + cell / 2 + 8);
+        g.stroke();
+      }
+    }
+
+    // joystick cursor: centre cell is the joystick's full travel
+    var mx = W / 2, my = H / 2;
+    var span = (cell * 1.5 + gap);
+    var jx = s ? s.x / 127 : 0, jy = s ? s.y / 127 : 0;
+    var px = mx + jx * span, py = my - jy * span;
+
+    if (s) {
+      g.strokeStyle = 'rgba(159,176,192,.28)';
+      g.setLineDash([4, 4]);
+      g.beginPath(); g.arc(mx, my, (s.deadzone / 127) * span, 0, Math.PI * 2); g.stroke();
+      g.strokeStyle = 'rgba(53,160,216,.35)';
+      g.beginPath(); g.arc(mx, my, (s.commit / 127) * span, 0, Math.PI * 2); g.stroke();
+      g.setLineDash([]);
+    }
+
+    g.fillStyle = s && s.btn ? '#e8b13a' : '#35a0d8';
+    g.beginPath(); g.arc(px, py, 11, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#0f1419'; g.lineWidth = 2; g.stroke();
+
+    if (s) {
+      g.fillStyle = '#6f8090';
+      g.font = '13px ui-monospace, monospace';
+      g.textAlign = 'left';
+      g.fillText('round ' + Math.min(s.round, s.total) + '/' + s.total, 12, 20);
+      g.textAlign = 'right';
+      g.fillText('x ' + Math.round(s.x) + '  y ' + Math.round(s.y), W - 12, 20);
+    }
+  }
+
+  function roundRect(g, x, y, w, h, r) {
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r);
+    g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r);
+    g.arcTo(x, y, x + w, y, r);
+    g.closePath();
+  }
+
+  function renderReflexResult(r) {
+    var box = $('#reflexResult');
+    box.hidden = !r;
+    if (!r) return;
+    box.innerHTML =
+      '<p class="verdict"><span class="pill ' + r.band.tone + '">' + esc(r.band.label) + '</span></p>' +
+      '<dl>' +
+      row('Median reaction', nn(r.medianRtMs, ' ms')) +
+      row('Fastest', nn(r.bestRtMs, ' ms')) +
+      row('Spread', nn(r.spreadMs, ' ms')) +
+      row('On target', r.hits + ' of ' + r.rounds) +
+      row('Wrong direction', String(r.wrongWay)) +
+      row('Missed', String(r.misses)) +
+      row('False starts', String(r.falseStarts)) +
+      row('Mean aim error', nn(r.meanAimErrDeg, '°')) +
+      row('Median settle', nn(r.medianAcquireMs, ' ms')) +
+      row('Link round trip', nn(r.clockRttMs, ' ms')) +
+      row('Taken', fmtDateTime(r.at)) +
+      '</dl>';
+  }
+
+  /* ── tremor ───────────────────────────────────────────── */
+  var tremorTrace = [];
+
+  function bindTremor() {
+    $('#tremorStart').onclick = function () {
+      var v = currentVisit();
+      if (!v) return;
+      tremorTrace = [];
+      var t = new Tests.TremorTest({
+        settings: liveSettings(),
+        onTick: function (s) {
+          $('#tremorLive').innerHTML = s.rmsMg.toFixed(1) + '<span class="unit">mg</span>';
+          $('#tremorRate').textContent = s.rateHz ? s.rateHz + ' Hz' : '—';
+          $('#tremorCount').textContent = s.count;
+          $('#tremorProgress').style.width = (s.progress * 100).toFixed(0) + '%';
+          tremorTrace.push(s.rmsMg);
+          if (tremorTrace.length > 600) tremorTrace.shift();
+          drawTremorLive();
+        },
+        onDone: function (r) {
+          running.tremor = null;
+          v.tremor = r;
+          Store.touch(Store.person(sel.personId));
+          renderTremorResult(r);
+          drawTremorSpectrum(r);
+          renderTrend(Store.person(sel.personId));
+          tremorIdle();
+          toast('Steadiness recorded.');
+        },
+        onFail: function (msg) { running.tremor = null; tremorIdle(); toast(msg); }
+      });
+      running.tremor = t;
+      $('#tremorStart').hidden = true;
+      $('#tremorStop').hidden = false;
+      $('#tremorResult').hidden = true;
+      t.start();
+    };
+
+    $('#tremorStop').onclick = function () {
+      if (running.tremor) running.tremor.cancel();
+      running.tremor = null;
+      tremorIdle();
+    };
+  }
+
+  function tremorIdle() {
+    $('#tremorStart').hidden = false;
+    $('#tremorStop').hidden = true;
+    $('#tremorProgress').style.width = '0%';
+    refreshTestButtons();
+  }
+
+  function tctx() {
+    var c = $('#tremorCanvas');
+    var g = c.getContext('2d');
+    g.clearRect(0, 0, c.width, c.height);
+    g.fillStyle = '#0f1419';
+    g.fillRect(0, 0, c.width, c.height);
+    return { c: c, g: g };
+  }
+
+  function drawTremorLive() {
+    var o = tctx(), g = o.g, W = o.c.width, H = o.c.height;
+    var maxv = 20;
+    for (var i = 0; i < tremorTrace.length; i++) if (tremorTrace[i] > maxv) maxv = tremorTrace[i];
+    g.strokeStyle = '#2c3743';
+    g.beginPath(); g.moveTo(0, H - 1); g.lineTo(W, H - 1); g.stroke();
+    g.strokeStyle = '#35a0d8';
+    g.lineWidth = 1.5;
+    g.beginPath();
+    for (i = 0; i < tremorTrace.length; i++) {
+      var x = (i / Math.max(1, tremorTrace.length - 1)) * W;
+      var y = H - 4 - (tremorTrace[i] / maxv) * (H - 14);
+      if (i === 0) g.moveTo(x, y); else g.lineTo(x, y);
+    }
+    g.stroke();
+    g.fillStyle = '#6f8090';
+    g.font = '11px ui-monospace, monospace';
+    g.fillText(maxv.toFixed(0) + ' mg', 6, 13);
+  }
+
+  function drawTremorIdle(r) {
+    if (r) return drawTremorSpectrum(r);
+    var o = tctx(), g = o.g;
+    g.fillStyle = '#3a4653';
+    g.font = '12px system-ui, sans-serif';
+    g.textAlign = 'center';
+    g.fillText('waveform appears here during capture', o.c.width / 2, o.c.height / 2);
+    g.textAlign = 'left';
+  }
+
+  function drawTremorSpectrum(r) {
+    var o = tctx(), g = o.g, W = o.c.width, H = o.c.height;
+    var sp = r.spectrum || [];
+    if (!sp.length) return;
+    var maxA = 0.1, i;
+    for (i = 0; i < sp.length; i++) if (sp[i].a > maxA) maxA = sp[i].a;
+    var fmin = sp[0].f, fmax = sp[sp.length - 1].f;
+    var X = function (f) { return 34 + ((f - fmin) / Math.max(0.001, fmax - fmin)) * (W - 44); };
+
+    // the measured band
+    g.fillStyle = 'rgba(53,160,216,.12)';
+    g.fillRect(X(r.bandLowHz), 4, Math.max(1, X(r.bandHighHz) - X(r.bandLowHz)), H - 22);
+
+    g.strokeStyle = '#2c3743';
+    g.beginPath(); g.moveTo(34, H - 17); g.lineTo(W - 6, H - 17); g.stroke();
+
+    g.fillStyle = '#35a0d8';
+    for (i = 0; i < sp.length; i++) {
+      var x = X(sp[i].f);
+      var h = (sp[i].a / maxA) * (H - 26);
+      g.fillRect(x, H - 17 - h, Math.max(1, (W - 44) / sp.length - 0.5), h);
+    }
+
+    g.fillStyle = '#6f8090';
+    g.font = '10px ui-monospace, monospace';
+    for (var f = Math.ceil(fmin); f <= fmax; f += 2) {
+      g.fillText(f + '', X(f) - 3, H - 5);
+    }
+    g.fillText(maxA.toFixed(1), 2, 12);
+    g.fillText('mg', 2, 24);
+    g.textAlign = 'right';
+    g.fillText('Hz', W - 6, H - 5);
+    g.textAlign = 'left';
+
+    if (r.peakHz) {
+      g.strokeStyle = '#e8b13a';
+      g.setLineDash([3, 3]);
+      g.beginPath(); g.moveTo(X(r.peakHz), 4); g.lineTo(X(r.peakHz), H - 17); g.stroke();
+      g.setLineDash([]);
+      g.fillStyle = '#e8b13a';
+      g.fillText(r.peakHz.toFixed(1) + ' Hz', Math.min(W - 60, X(r.peakHz) + 4), 12);
+    }
+  }
+
+  function renderTremorResult(r) {
+    var box = $('#tremorResult');
+    box.hidden = !r;
+    if (!r) return;
+    box.innerHTML =
+      '<p class="verdict"><span class="pill ' + r.band.tone + '">' + esc(r.band.label) + '</span></p>' +
+      '<dl>' +
+      row('Tremor (' + r.bandLowHz + '–' + r.bandHighHz + ' Hz)', r.tremorRmsMg.toFixed(2) + ' mg RMS') +
+      row('All movement', r.totalRmsMg.toFixed(2) + ' mg RMS') +
+      row('Dominant frequency', nn(r.peakHz, ' Hz')) +
+      row('Rotation', r.gyroRmsDps.toFixed(2) + ' °/s RMS') +
+      row('Capture', r.seconds + ' s at ' + r.rateHz + ' Hz') +
+      row('Samples', r.samples + ' (' + r.gridPoints + ' resampled)') +
+      row('Taken', fmtDateTime(r.at)) +
+      '</dl>';
+  }
+
+  /* ── shared test plumbing ─────────────────────────────── */
+  function currentVisit() {
+    var p = Store.person(sel.personId);
+    return p ? Store.visit(p.id, sel.visitId) : null;
+  }
+
+  function liveSettings() {
+    return {
+      contactMin: Store.num('contactMin'), coreOffset: Store.num('coreOffset'),
+      slopeMax: Store.num('slopeMax'), thermoTimeout: Store.num('thermoTimeout'),
+      rounds: Store.num('rounds'), deadzone: Store.num('deadzone'),
+      commit: Store.num('commit'), holdMs: Store.num('holdMs'),
+      tremorSecs: Store.num('tremorSecs'), bandLow: Store.num('bandLow'),
+      bandHigh: Store.num('bandHigh')
+    };
+  }
+
+  function cancelAllTests() {
+    ['thermo', 'reflex', 'tremor'].forEach(function (k) {
+      if (running[k]) { running[k].cancel(); running[k] = null; }
+    });
+    thermoIdle(); reflexIdle(); tremorIdle();
+  }
+  UI.cancelAllTests = cancelAllTests;
+
+  function refreshTestButtons() {
+    var m = Link.modules(), open = Link.isOpen(), have = !!currentVisit();
+    $('#thermoStart').disabled = !(open && m.T && have) || !!running.thermo;
+    $('#reflexStart').disabled = !(open && m.J && have) || !!running.reflex;
+    $('#tremorStart').disabled = !(open && m.M && have) || !!running.tremor;
+    if (!open) $('#reflexStatus').textContent = 'Connect the joystick to begin.';
+  }
+  UI.refreshTestButtons = refreshTestButtons;
+
+  /* ── trend ────────────────────────────────────────────── */
+  function renderTrend(p) {
+    var box = $('#trend');
+    box.textContent = '';
+    if (!p) return;
+    var withData = p.visits.filter(function (v) { return v.thermo || v.reflex || v.tremor; });
+    if (!withData.length) {
+      box.appendChild(el('p', 'sub', 'No measurements recorded for this person yet.'));
+      return;
+    }
+    var t = el('table', 'trend');
+    t.innerHTML = '<thead><tr><th>Appointment</th><th>Core est.</th><th>Reaction</th>' +
+      '<th>On target</th><th>Tremor</th><th>Peak</th></tr></thead>';
+    var tb = el('tbody');
+    withData.forEach(function (v) {
+      var tr = el('tr');
+      tr.innerHTML =
+        '<td class="t">' + esc(fmtDateTime(v.when)) + (v.id === sel.visitId ? ' ←' : '') + '</td>' +
+        '<td>' + (v.thermo ? v.thermo.coreEstC.toFixed(2) + ' °C' : '—') + '</td>' +
+        '<td>' + (v.reflex ? nn(v.reflex.medianRtMs, ' ms') : '—') + '</td>' +
+        '<td>' + (v.reflex ? v.reflex.hits + '/' + v.reflex.rounds : '—') + '</td>' +
+        '<td>' + (v.tremor ? v.tremor.tremorRmsMg.toFixed(1) + ' mg' : '—') + '</td>' +
+        '<td>' + (v.tremor ? nn(v.tremor.peakHz, ' Hz') : '—') + '</td>';
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+    box.appendChild(t);
+  }
+
+  /* ══════════════════ device ══════════════════ */
+  var logLines = [];
+
+  function renderDevice() {
+    var open = Link.isOpen();
+    $('#disconnect').disabled = !open;
+    $('#rescan').disabled = !open;
+    $('#resync').disabled = !open;
+    $('#sendBtn').disabled = !open;
+    $('#connectSerial').disabled = open || !Link.serialSupported();
+    $('#connectWs').disabled = open;
+    $('#serialUnsupported').hidden = Link.serialSupported();
+    $('#wsUrl').value = Store.settings().wsUrl || Store.defaults.wsUrl;
+
+    var m = Link.modules();
+    [['T', m.T], ['J', m.J], ['M', m.M]].forEach(function (pair) {
+      var d = $('#mod' + pair[0]);
+      d.className = 'dot ' + (pair[1] ? 'on' : (open ? 'off' : ''));
+      $('#mod' + pair[0] + 'v').textContent = open ? (pair[1] ? 'present' : 'not found') : '—';
+    });
+
+    var c = Link.clock();
+    $('#clockInfo').textContent = isFinite(c.rtt)
+      ? 'Best round trip ' + c.rtt.toFixed(1) + ' ms over ' + c.samples +
+        ' probes \u2014 that is the uncertainty on a reaction time. The board\u2019s clock ' +
+        'reads ' + c.offset.toFixed(0) + ' ms away from this app\u2019s, which is expected ' +
+        'and is corrected for.'
+      : 'Clock offset not measured.';
+  }
+
+  function renderLinkChip() {
+    var st = Link.state(), dot = $('#linkDot'), txt = $('#linkText');
+    dot.className = 'dot' + (st === 'open' ? ' on' : st === 'opening' || st === 'closing' ? ' busy' : '');
+    if (st === 'open') {
+      var m = Link.modules();
+      var caps = (m.T ? 'T' : '') + (m.J ? 'J' : '') + (m.M ? 'M' : '');
+      txt.textContent = (Link.info().fw ? 'InfoDoc fw ' + Link.info().fw : 'Connected') +
+                        (caps ? ' · ' + caps : ' · no modules');
+    } else if (st === 'opening') txt.textContent = 'Connecting…';
+    else if (st === 'closing') txt.textContent = 'Disconnecting…';
+    else txt.textContent = 'No device';
+  }
+
+  function logPush(text, cls) {
+    logLines.push({ t: text, c: cls });
+    if (logLines.length > 400) logLines.shift();
+    var pre = $('#log');
+    var atBottom = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 30;
+    pre.innerHTML = logLines.map(function (l) {
+      return l.c ? '<span class="' + l.c + '">' + esc(l.t) + '</span>' : esc(l.t);
+    }).join('\n');
+    if (atBottom) pre.scrollTop = pre.scrollHeight;
+  }
+  UI.log = logPush;
+
+  function bindDevice() {
+    $('#connectSerial').onclick = function () {
+      Link.connectSerial().catch(function (e) {
+        if (e && (e.name === 'NotFoundError' || /No port selected/i.test(e.message || ''))) return;
+        toast(e.message || String(e));
+      });
+    };
+    $('#connectWs').onclick = function () {
+      var url = $('#wsUrl').value.trim();
+      Store.setSetting('wsUrl', url);
+      Link.connectWs(url).catch(function (e) { toast(e.message || String(e)); });
+    };
+    $('#disconnect').onclick = function () { cancelAllTests(); Link.disconnect(); };
+    $('#rescan').onclick = function () { Link.rescan(); };
+    $('#resync').onclick = function () { Link.syncClock(); toast('Re-measuring the clock offset…'); };
+    $('#sendBtn').onclick = sendRaw;
+    $('#sendLine').addEventListener('keydown', function (e) { if (e.key === 'Enter') sendRaw(); });
+    $('#clearLog').onclick = function () { logLines = []; $('#log').textContent = ''; };
+    $('#linkChip').onclick = function () { show('device'); };
+
+    function sendRaw() {
+      var v = $('#sendLine').value.trim();
+      if (!v) return;
+      Link.send(v);
+      $('#sendLine').value = '';
+    }
+  }
+
+  /* ══════════════════ settings ══════════════════ */
+  var SETTING_FIELDS = {
+    '#setClinic': 'clinic', '#setOperator': 'operator',
+    '#setContactMin': 'contactMin', '#setCoreOffset': 'coreOffset',
+    '#setSlopeMax': 'slopeMax', '#setThermoTimeout': 'thermoTimeout',
+    '#setRounds': 'rounds', '#setDeadzone': 'deadzone',
+    '#setCommit': 'commit', '#setHold': 'holdMs',
+    '#setTremorSecs': 'tremorSecs', '#setBandLow': 'bandLow', '#setBandHigh': 'bandHigh'
+  };
+
+  function renderSettings() {
+    var s = Store.settings();
+    Object.keys(SETTING_FIELDS).forEach(function (id) {
+      $(id).value = s[SETTING_FIELDS[id]];
+    });
+    Store.where().then(function (w) {
+      $('#storageWhere').textContent = 'Records are stored in ' + w + '.' +
+        (Store.backend === 'localStorage'
+          ? ' Clearing the browser’s site data would delete them — export a copy.'
+          : '');
+    });
+    $('#aboutText').textContent = 'InfoDoc ' + (global.INFODOC_VERSION || 'dev') +
+      ' · protocol v' + Link.PROTO + ' · storage: ' + Store.backend +
+      (global.infodocNative ? ' · desktop shell' : ' · browser');
+  }
+
+  function bindSettings() {
+    Object.keys(SETTING_FIELDS).forEach(function (id) {
+      $(id).addEventListener('change', function () {
+        var key = SETTING_FIELDS[id];
+        var raw = $(id).value;
+        if (typeof Store.defaults[key] === 'number') {
+          var v = parseFloat(raw);
+          if (!isFinite(v)) { $(id).value = Store.settings()[key]; toast('That needs to be a number.'); return; }
+          Store.setSetting(key, v);
+        } else {
+          Store.setSetting(key, raw);
+        }
+      });
+    });
+
+    $('#exportJson').onclick = function () {
+      var text = Store.exportText();
+      var name = 'infodoc-records-' + new Date().toISOString().slice(0, 10) + '.json';
+      if (global.infodocNative && global.infodocNative.saveAs) {
+        global.infodocNative.saveAs(name, text).then(function (where) {
+          if (where) toast('Exported to ' + where);
+        }, function (e) { toast('Export failed: ' + e.message); });
+      } else {
+        var blob = new Blob([text], { type: 'application/json' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+        toast('Exported ' + name);
+      }
+    };
+
+    $('#importJson').onclick = function () {
+      if (global.infodocNative && global.infodocNative.openFile) {
+        global.infodocNative.openFile().then(function (text) {
+          if (text) doImport(text);
+        }, function (e) { toast('Import failed: ' + e.message); });
+      } else {
+        $('#importFile').click();
+      }
+    };
+
+    $('#importFile').addEventListener('change', function () {
+      var f = this.files && this.files[0];
+      if (!f) return;
+      var fr = new FileReader();
+      fr.onload = function () { doImport(String(fr.result)); };
+      fr.readAsText(f);
+      this.value = '';
+    });
+
+    $('#wipe').onclick = function () {
+      if (!confirm('Erase every record and reset the settings? This cannot be undone.')) return;
+      if (!confirm('Really erase all ' + Store.people().length + ' record(s)?')) return;
+      Store.wipe();
+      sel.personId = null;
+      sel.visitId = null;
+      renderPeople(); renderPerson(); renderSettings();
+      toast('Everything erased.');
+    };
+  }
+
+  function doImport(text) {
+    var replace = confirm('Replace everything currently stored?\n\n' +
+      'OK = replace all records.\nCancel = merge, keeping whichever copy of a record is newer.');
+    try {
+      var n = Store.importText(text, replace ? 'replace' : 'merge');
+      sel.personId = null; sel.visitId = null;
+      renderPeople(); renderPerson(); renderSettings();
+      toast('Imported ' + n + ' record(s).');
+    } catch (e) {
+      toast('That file is not an InfoDoc export: ' + e.message);
+    }
+  }
+
+  /* ══════════════════ printing ══════════════════ */
+  function head(title, sub) {
+    var s = Store.settings();
+    return '<h1>' + esc(title) + '</h1><p class="hdr">' +
+      esc([s.clinic, s.operator].filter(Boolean).join(' · ') || 'InfoDoc') +
+      ' · printed ' + esc(new Date().toLocaleString()) +
+      (sub ? '<br>' + esc(sub) : '') + '</p>';
+  }
+
+  function table(rows) {
+    return '<table>' + rows.map(function (r) {
+      return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1] === '' || r[1] === null || r[1] === undefined ? '—' : r[1]) + '</td></tr>';
+    }).join('') + '</table>';
+  }
+
+  var FOOT = '<p class="foot">Produced by InfoDoc, which is not a medical device. The ' +
+    'temperature figure is a contact skin reading with a fixed offset applied, not a clinical ' +
+    'thermometer measurement. The reflex and steadiness figures are screening aids only and ' +
+    'carry no diagnostic meaning on their own.</p>';
+
+  function emit(html) {
+    $('#print-area').innerHTML = html;
+    global.print();
+  }
+
+  function printPerson(p) {
+    if (!p) return;
+    var age = Store.age(p.dob);
+    var html = head(p.name || '(no name)', 'Full record') +
+      '<h2>Identity</h2>' + table([
+        ['Clinic ID', p.chartId], ['Date of birth', p.dob],
+        ['Age', age === null ? '' : age + ' years'], ['Sex', p.sex], ['Pronouns', p.pronouns]
+      ]) +
+      '<h2>Contact</h2>' + table([
+        ['Phone', p.phone], ['Email', p.email], ['Address', p.address],
+        ['Next of kin', p.kin], ['Kin phone', p.kinPhone]
+      ]) +
+      '<h2>Clinical background</h2>' + table([
+        ['Allergies', p.allergies], ['Medication', p.medication],
+        ['Conditions', p.conditions], ['Notes', p.notes]
+      ]) +
+      '<h2>Appointments</h2>';
+
+    if (!p.visits.length) html += '<p>None booked.</p>';
+    p.visits.forEach(function (v) {
+      html += table([
+        ['Appointment', fmtDateTime(v.when)],
+        ['Status', v.status],
+        ['Reason', v.reason],
+        ['Clinician', [v.clinician, v.dept].filter(Boolean).join(', ')],
+        ['Core temp (est.)', v.thermo ? v.thermo.coreEstC.toFixed(2) + ' °C (skin ' + v.thermo.skinC.toFixed(2) + ' °C) — ' + v.thermo.band.label : ''],
+        ['Reaction', v.reflex ? nn(v.reflex.medianRtMs, ' ms median, ') + v.reflex.hits + '/' + v.reflex.rounds + ' on target — ' + v.reflex.band.label : ''],
+        ['Steadiness', v.tremor ? v.tremor.tremorRmsMg.toFixed(2) + ' mg RMS at ' + nn(v.tremor.peakHz, ' Hz') + ' — ' + v.tremor.band.label : ''],
+        ['Notes', v.notes]
+      ]);
+    });
+    emit(html + FOOT);
+  }
+
+  function printVisit(p, v) {
+    if (!p || !v) return;
+    var age = Store.age(p.dob, v.when);
+    var html = head(p.name || '(no name)', 'Appointment summary — ' + fmtDateTime(v.when)) +
+      '<h2>Patient</h2>' + table([
+        ['Clinic ID', p.chartId], ['Date of birth', p.dob],
+        ['Age at appointment', age === null ? '' : age + ' years'],
+        ['Sex', p.sex], ['Phone', p.phone],
+        ['Allergies', p.allergies || 'none recorded'], ['Medication', p.medication]
+      ]) +
+      '<h2>Appointment</h2>' + table([
+        ['When', fmtDateTime(v.when)], ['Status', v.status],
+        ['Clinician', v.clinician], ['Department', v.dept],
+        ['Reason', v.reason]
+      ]) +
+      '<h2>Observations</h2>' + table([
+        ['Weight', v.obs.weight ? v.obs.weight + ' kg' : ''],
+        ['Height', v.obs.height ? v.obs.height + ' cm' : ''],
+        ['Blood pressure', v.obs.bp], ['Pulse', v.obs.pulse ? v.obs.pulse + ' bpm' : ''],
+        ['SpO2', v.obs.spo2 ? v.obs.spo2 + ' %' : ''], ['Respiratory rate', v.obs.resp]
+      ]);
+
+    html += '<h2>Forehead temperature (Modulino Thermo)</h2>';
+    html += v.thermo ? table([
+      ['Skin, measured', v.thermo.skinC.toFixed(2) + ' °C'],
+      ['Core, estimated', v.thermo.coreEstC.toFixed(2) + ' °C'],
+      ['Offset applied', '+' + Number(v.thermo.coreOffset).toFixed(2) + ' °C'],
+      ['Reading settled', v.thermo.settled ? 'yes, after ' + v.thermo.settleSecs + ' s' : 'no — timed out'],
+      ['Room humidity', nn(v.thermo.rh, ' %')],
+      ['Interpretation', v.thermo.band.label]
+    ]) : '<p>Not measured.</p>';
+
+    html += '<h2>Reflex and aiming (Modulino Joystick)</h2>';
+    html += v.reflex ? table([
+      ['Median reaction time', nn(v.reflex.medianRtMs, ' ms')],
+      ['Fastest', nn(v.reflex.bestRtMs, ' ms')],
+      ['Spread', nn(v.reflex.spreadMs, ' ms')],
+      ['On target', v.reflex.hits + ' of ' + v.reflex.rounds],
+      ['Wrong direction / missed', v.reflex.wrongWay + ' / ' + v.reflex.misses],
+      ['False starts', v.reflex.falseStarts],
+      ['Mean aim error', nn(v.reflex.meanAimErrDeg, '°')],
+      ['Interpretation', v.reflex.band.label]
+    ]) : '<p>Not measured.</p>';
+
+    html += '<h2>Hand steadiness (Modulino Movement)</h2>';
+    html += v.tremor ? table([
+      ['Tremor band', v.tremor.bandLowHz + '–' + v.tremor.bandHighHz + ' Hz'],
+      ['Tremor amplitude', v.tremor.tremorRmsMg.toFixed(2) + ' mg RMS'],
+      ['All movement', v.tremor.totalRmsMg.toFixed(2) + ' mg RMS'],
+      ['Dominant frequency', nn(v.tremor.peakHz, ' Hz')],
+      ['Rotation', v.tremor.gyroRmsDps.toFixed(2) + ' °/s RMS'],
+      ['Capture', v.tremor.seconds + ' s at ' + v.tremor.rateHz + ' Hz'],
+      ['Interpretation', v.tremor.band.label]
+    ]) : '<p>Not measured.</p>';
+
+    if (v.notes) html += '<h2>Clinical notes</h2><p>' + esc(v.notes).replace(/\n/g, '<br>') + '</p>';
+
+    emit(html + FOOT);
+  }
+
+  /* ══════════════════ boot ══════════════════ */
+  UI.init = function () {
+    $$('.tab').forEach(function (b) { b.onclick = function () { show(b.dataset.view); }; });
+    bindPersonForm();
+    bindVisitForm();
+    bindThermo();
+    bindReflex();
+    bindTremor();
+    bindDevice();
+    bindSettings();
+
+    $('#newVisitWhen').value = Store.localIso();
+
+    Store.on(function (what) {
+      if (what === 'load') { renderPeople(); renderPerson(); }
+      // the list is cheap and has no focus in it, so keep it in step with the
+      // store however a person was added or removed. The person form is left
+      // alone: re-rendering it under the cursor would fight with typing.
+      if (what === 'people') renderPeople();
+      if (what === 'error') { var e = Store.lastError(); if (e) toast(e); }
+    });
+
+    Link.on('state', function (ev) {
+      // a pulled cable is not a measurement; abandon whatever was running
+      if (ev && ev.state === 'idle') cancelAllTests();
+      renderLinkChip(); renderDevice(); refreshTestButtons();
+    });
+    Link.on('modules', function () { renderLinkChip(); renderDevice(); refreshTestButtons(); });
+    Link.on('hello', function () { renderLinkChip(); renderDevice(); });
+    Link.on('clock', function () { renderDevice(); });
+    Link.on('warn', function (m) { toast(m); logPush('! ' + m, 'er'); });
+    Link.on('deverror', function (m) { toast('Device: ' + m); });
+    Link.on('raw', function (line, isStream, isErr, isTx) {
+      if (isStream && !$('#logStreams').checked) return;
+      logPush((isTx ? '> ' : '< ') + line, isErr ? 'er' : (isTx ? 'tx' : ''));
+    });
+
+    renderPeople();
+    renderPerson();
+    renderLinkChip();
+    renderDevice();
+    drawReflex(null);
+    drawTremorIdle(null);
+
+    global.addEventListener('beforeunload', function () { Store.flush(); });
+  };
+
+  /* A small read-only window onto what the app is currently seeing. Support
+   * uses it to answer “what does the joystick report right now?”, and
+   * src/verify.py drives the tests through it. Nothing here mutates state. */
+  global.InfoDocDebug = {
+    reflex: function () { return running.reflex ? running.reflex.state() : null; },
+    busy: function () {
+      return { thermo: !!running.thermo, reflex: !!running.reflex, tremor: !!running.tremor };
+    },
+    selection: function () { return { personId: sel.personId, visitId: sel.visitId }; },
+    visit: function () { return currentVisit(); },
+    link: function () {
+      return { state: Link.state(), modules: Link.modules(), clock: Link.clock(), info: Link.info() };
+    }
+  };
+
+  global.UI = UI;
+})(window);
+
+</script>
+<script>
+/* app.js — boot. */
+(function (global) {
+  'use strict';
+
+  window.INFODOC_VERSION = window.INFODOC_VERSION || '1.0.0';
+
+  function fail(e) {
+    var box = document.createElement('div');
+    box.style.cssText = 'position:fixed;inset:0;background:#0f1419;color:#e8edf2;' +
+      'font:14px/1.6 system-ui,sans-serif;padding:32px;z-index:99;overflow:auto';
+    box.innerHTML = '<h1 style="font-size:19px">InfoDoc could not start</h1>' +
+      '<pre style="color:#f1a29a;white-space:pre-wrap">' +
+      String(e && e.stack ? e.stack : e).replace(/[<&]/g, function (c) {
+        return c === '<' ? '&lt;' : '&amp;';
+      }) + '</pre>' +
+      '<p style="color:#9fb0c0">Your records have not been touched.</p>';
+    document.body.appendChild(box);
+  }
+
+  function boot() {
+    Store.load().then(function () {
+      UI.init();
+      var e = Store.lastError();
+      if (e) UI.toast(e);
+
+      // the desktop menu drives the same actions the buttons do
+      if (global.infodocNative && global.infodocNative.onMenu) {
+        var byMenu = {
+          'new-person': '#newPerson',
+          'print-person': '#printPerson',
+          'print-visit': '#printVisit',
+          'export': '#exportJson',
+          'import': '#importJson'
+        };
+        global.infodocNative.onMenu(function (what) {
+          if (what.indexOf('view-') === 0) return UI.show(what.slice(5));
+          var sel = byMenu[what];
+          var btn = sel && document.querySelector(sel);
+          if (!btn) return;
+          if (what === 'print-person') UI.show('people');
+          if (what === 'export' || what === 'import') UI.show('settings');
+          btn.click();
+        });
+      }
+
+      // Cmd/Ctrl+1..4 switch views; Escape stops whatever test is running
+      document.addEventListener('keydown', function (ev) {
+        if ((ev.metaKey || ev.ctrlKey) && ev.key >= '1' && ev.key <= '4') {
+          var views = ['people', 'visit', 'device', 'settings'];
+          UI.show(views[Number(ev.key) - 1]);
+          ev.preventDefault();
+        } else if (ev.key === 'Escape') {
+          UI.cancelAllTests();
+        }
+      });
+    }).catch(fail);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+
+  global.addEventListener('error', function (ev) {
+    if (global.UI && global.UI.log) global.UI.log('! ' + ev.message, 'er');
+  });
+})(window);
+
+</script>
+</body>
+</html>

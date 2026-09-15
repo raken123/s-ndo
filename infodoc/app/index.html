@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InfoDoc</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header id="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 24 24" aria-hidden="true" class="logo">
+      <rect x="4" y="2.5" width="16" height="19" rx="2.5"></rect>
+      <path d="M9 2.5h6v2.6H9z" class="clip"></path>
+      <path d="M12 9.2v6.4M8.8 12.4h6.4" class="cross"></path>
+    </svg>
+    <span>InfoDoc</span>
+  </div>
+
+  <nav id="tabs">
+    <button class="tab" data-view="people" aria-current="true">People</button>
+    <button class="tab" data-view="visit">Visit</button>
+    <button class="tab" data-view="device">Device</button>
+    <button class="tab" data-view="settings">Settings</button>
+  </nav>
+
+  <div class="topright">
+    <button id="linkChip" class="chip" title="Arduino link status">
+      <span class="dot" id="linkDot"></span><span id="linkText">No device</span>
+    </button>
+  </div>
+</header>
+
+<main>
+
+<!-- ───────────────────────── People ───────────────────────── -->
+<section class="view" id="view-people">
+  <div class="split">
+    <aside class="panel list-panel">
+      <div class="panel-head">
+        <input id="search" type="search" placeholder="Search name, ID, phone…" autocomplete="off">
+        <button id="newPerson" class="btn primary">New</button>
+      </div>
+      <ul id="peopleList" class="people"></ul>
+      <div class="panel-foot" id="peopleCount"></div>
+    </aside>
+
+    <div class="panel form-panel" id="personPanel">
+      <div class="empty" id="personEmpty">
+        <h2>No one selected</h2>
+        <p>Pick a person on the left, or add a new one.</p>
+      </div>
+
+      <form id="personForm" hidden autocomplete="off">
+        <div class="form-head">
+          <h2 id="personTitle">Person</h2>
+          <div class="form-head-actions">
+            <button type="button" id="printPerson" class="btn">Print</button>
+            <button type="button" id="deletePerson" class="btn danger">Delete</button>
+          </div>
+        </div>
+
+        <fieldset>
+          <legend>Identity</legend>
+          <div class="grid">
+            <label>Full name<input name="name" required></label>
+            <label>Clinic ID<input name="chartId" placeholder="e.g. PT-00142"></label>
+            <label>Date of birth<input name="dob" type="date"></label>
+            <label>Age<output name="age" class="ro">—</output></label>
+            <label>Sex<select name="sex">
+              <option value="">—</option><option>Female</option><option>Male</option>
+              <option>Intersex</option><option>Prefer not to say</option>
+            </select></label>
+            <label>Pronouns<input name="pronouns" placeholder="they/them"></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Contact</legend>
+          <div class="grid">
+            <label>Phone<input name="phone" inputmode="tel"></label>
+            <label>Email<input name="email" type="email"></label>
+            <label class="wide">Address<input name="address"></label>
+            <label>Next of kin<input name="kin"></label>
+            <label>Kin phone<input name="kinPhone" inputmode="tel"></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Clinical background</legend>
+          <div class="grid">
+            <label class="wide">Allergies<input name="allergies" placeholder="none known"></label>
+            <label class="wide">Current medication<textarea name="medication" rows="2"></textarea></label>
+            <label class="wide">Ongoing conditions<textarea name="conditions" rows="2"></textarea></label>
+            <label class="wide">Notes<textarea name="notes" rows="3"></textarea></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Appointments</legend>
+          <div class="visit-add">
+            <input type="datetime-local" id="newVisitWhen">
+            <input id="newVisitReason" placeholder="Reason for visit">
+            <input id="newVisitClinician" placeholder="Clinician">
+            <button type="button" id="addVisit" class="btn primary">Add appointment</button>
+          </div>
+          <ul id="visitList" class="visits"></ul>
+        </fieldset>
+
+        <p class="saved" id="savedNote"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── Visit ───────────────────────── -->
+<section class="view" id="view-visit" hidden>
+  <div class="panel" id="visitNone">
+    <div class="empty">
+      <h2>No appointment open</h2>
+      <p>Open an appointment from a person's record to run the checks.</p>
+    </div>
+  </div>
+
+  <div id="visitBody" hidden>
+    <div class="panel visit-head">
+      <div>
+        <h2 id="visitWho">—</h2>
+        <p class="sub" id="visitMeta">—</p>
+      </div>
+      <div class="visit-head-actions">
+        <button id="printVisit" class="btn">Print summary</button>
+        <button id="closeVisit" class="btn">Back to record</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="grid">
+        <label>Appointment<input id="visitWhen" type="datetime-local"></label>
+        <label>Clinician<input id="visitClinician"></label>
+        <label>Department<input id="visitDept"></label>
+        <label>Status<select id="visitStatus">
+          <option>Booked</option><option>Arrived</option><option>In progress</option>
+          <option>Seen</option><option>Did not attend</option>
+        </select></label>
+        <label class="wide">Reason for visit<input id="visitReason"></label>
+        <label class="wide">Clinical notes<textarea id="visitNotes" rows="4"></textarea></label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Manual observations</h3>
+      <div class="grid">
+        <label>Weight (kg)<input id="obsWeight" inputmode="decimal"></label>
+        <label>Height (cm)<input id="obsHeight" inputmode="decimal"></label>
+        <label>Blood pressure<input id="obsBp" placeholder="120/80"></label>
+        <label>Pulse (bpm)<input id="obsPulse" inputmode="numeric"></label>
+        <label>SpO₂ (%)<input id="obsSpo2" inputmode="numeric"></label>
+        <label>Resp. rate<input id="obsResp" inputmode="numeric"></label>
+      </div>
+    </div>
+
+    <div class="tests">
+      <!-- Thermo -->
+      <section class="panel test" id="testThermo">
+        <header class="test-head">
+          <h3>Forehead temperature</h3>
+          <span class="mod">Modulino Thermo</span>
+        </header>
+        <p class="sub">Hold the Thermo node flat against the middle of the forehead and keep it
+        still. The reading is taken when it stops drifting.</p>
+        <div class="readout">
+          <div class="big" id="thermoLive">—<span class="unit">°C</span></div>
+          <div class="meta">
+            <div>Contact: <b id="thermoContact">no</b></div>
+            <div>Drift: <b id="thermoSlope">—</b></div>
+            <div>Humidity: <b id="thermoRh">—</b></div>
+          </div>
+        </div>
+        <div class="bar"><div class="bar-fill" id="thermoProgress"></div></div>
+        <div class="test-actions">
+          <button class="btn primary" id="thermoStart" disabled>Start reading</button>
+          <button class="btn" id="thermoStop" hidden>Cancel</button>
+        </div>
+        <div class="result" id="thermoResult" hidden></div>
+      </section>
+
+      <!-- Reflex -->
+      <section class="panel test" id="testReflex">
+        <header class="test-head">
+          <h3>Reflex &amp; aiming</h3>
+          <span class="mod">Modulino Joystick</span>
+        </header>
+        <p class="sub">A green box lights up. Push the joystick straight at it as fast as you can,
+        then let it spring back to the middle.</p>
+        <canvas id="reflexCanvas" width="520" height="520"></canvas>
+        <div class="reflex-status" id="reflexStatus">Connect the joystick to begin.</div>
+        <div class="test-actions">
+          <button class="btn primary" id="reflexStart" disabled>Start test</button>
+          <button class="btn" id="reflexStop" hidden>Stop</button>
+        </div>
+        <div class="result" id="reflexResult" hidden></div>
+      </section>
+
+      <!-- Tremor -->
+      <section class="panel test" id="testTremor">
+        <header class="test-head">
+          <h3>Hand steadiness</h3>
+          <span class="mod">Modulino Movement</span>
+        </header>
+        <p class="sub">Rest the Movement node on the back of the hand, hold the arm out straight,
+        and stay as still as possible until the bar fills.</p>
+        <canvas id="tremorCanvas" width="520" height="150"></canvas>
+        <div class="readout small">
+          <div class="big" id="tremorLive">—<span class="unit">mg</span></div>
+          <div class="meta">
+            <div>Sample rate: <b id="tremorRate">—</b></div>
+            <div>Samples: <b id="tremorCount">0</b></div>
+          </div>
+        </div>
+        <div class="bar"><div class="bar-fill" id="tremorProgress"></div></div>
+        <div class="test-actions">
+          <button class="btn primary" id="tremorStart" disabled>Start capture</button>
+          <button class="btn" id="tremorStop" hidden>Cancel</button>
+        </div>
+        <div class="result" id="tremorResult" hidden></div>
+      </section>
+    </div>
+
+    <div class="panel">
+      <h3>History for this person</h3>
+      <div id="trend"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── Device ───────────────────────── -->
+<section class="view" id="view-device" hidden>
+  <div class="panel">
+    <h2>Arduino link</h2>
+    <p class="sub">InfoDoc talks to an Arduino over a plain line protocol. Either transport works —
+    they carry exactly the same messages.</p>
+
+    <div class="transport">
+      <div class="transport-card">
+        <h3>USB serial</h3>
+        <p>For a board whose sketch <code>Serial</code> is the USB port (UNO R4, Nano ESP32,
+        MKR…), or an UNO Q exposing a USB CDC gadget.</p>
+        <button class="btn primary" id="connectSerial">Choose serial port…</button>
+        <p class="warn" id="serialUnsupported" hidden>This build has no Web Serial API. Use the
+        desktop app, or the network transport below.</p>
+      </div>
+      <div class="transport-card">
+        <h3>Network (UNO Q bridge)</h3>
+        <p>For an UNO Q running the <code>uno_q_bridge</code> app: the sketch reads the Modulinos
+        on the MCU, Python relays them over a WebSocket.</p>
+        <label class="inline">Address<input id="wsUrl" value="ws://arduino.local:8787" spellcheck="false"></label>
+        <button class="btn primary" id="connectWs">Connect</button>
+      </div>
+    </div>
+
+    <div class="test-actions">
+      <button class="btn danger" id="disconnect" disabled>Disconnect</button>
+      <button class="btn" id="rescan" disabled>Re-scan modules</button>
+      <button class="btn" id="resync" disabled>Re-sync clock</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Modules</h3>
+    <ul class="modules">
+      <li><span class="dot" id="modT"></span> Modulino Thermo <em id="modTv">—</em></li>
+      <li><span class="dot" id="modJ"></span> Modulino Joystick <em id="modJv">—</em></li>
+      <li><span class="dot" id="modM"></span> Modulino Movement <em id="modMv">—</em></li>
+    </ul>
+    <p class="sub" id="clockInfo">Clock offset not measured.</p>
+  </div>
+
+  <div class="panel">
+    <h3>Traffic</h3>
+    <div class="logbar">
+      <input id="sendLine" placeholder="Send a raw line (e.g. ID?)" spellcheck="false">
+      <button class="btn" id="sendBtn" disabled>Send</button>
+      <label class="inline check"><input type="checkbox" id="logStreams"> show sensor samples</label>
+      <button class="btn" id="clearLog">Clear</button>
+    </div>
+    <pre id="log" class="log"></pre>
+  </div>
+</section>
+
+<!-- ───────────────────────── Settings ───────────────────────── -->
+<section class="view" id="view-settings" hidden>
+  <div class="panel">
+    <h2>Clinic</h2>
+    <div class="grid">
+      <label>Clinic name<input id="setClinic"></label>
+      <label>Operator<input id="setOperator"></label>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Thermo</h2>
+    <div class="grid">
+      <label>Contact threshold (°C)<input id="setContactMin" inputmode="decimal"></label>
+      <label>Skin → core offset (°C)<input id="setCoreOffset" inputmode="decimal"></label>
+      <label>Stable slope (°C/s)<input id="setSlopeMax" inputmode="decimal"></label>
+      <label>Timeout (s)<input id="setThermoTimeout" inputmode="numeric"></label>
+    </div>
+    <p class="sub">The offset turns the skin reading into an estimate of core temperature. It is a
+    property of your node and of where you hold it — measure it against a clinical thermometer on
+    a few well people and set it here. The raw skin value is always stored too.</p>
+  </div>
+
+  <div class="panel">
+    <h2>Reflex</h2>
+    <div class="grid">
+      <label>Rounds<input id="setRounds" inputmode="numeric"></label>
+      <label>Dead zone (0–127)<input id="setDeadzone" inputmode="numeric"></label>
+      <label>Commit threshold (0–127)<input id="setCommit" inputmode="numeric"></label>
+      <label>Hold to confirm (ms)<input id="setHold" inputmode="numeric"></label>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Steadiness</h2>
+    <div class="grid">
+      <label>Capture length (s)<input id="setTremorSecs" inputmode="numeric"></label>
+      <label>Band low (Hz)<input id="setBandLow" inputmode="decimal"></label>
+      <label>Band high (Hz)<input id="setBandHigh" inputmode="decimal"></label>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Records</h2>
+    <p class="sub" id="storageWhere">—</p>
+    <div class="test-actions">
+      <button class="btn" id="exportJson">Export all records…</button>
+      <button class="btn" id="importJson">Import records…</button>
+      <button class="btn danger" id="wipe">Erase everything</button>
+    </div>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+  </div>
+
+  <div class="panel notice">
+    <h2>Read this before using it on a patient</h2>
+    <ul>
+      <li>InfoDoc is <b>not a medical device</b> and none of it is certified. The three checks are
+      rough screening aids for a clinician who is already in the room — they do not diagnose
+      anything and must not be used instead of proper equipment.</li>
+      <li>The Modulino Thermo is a contact temperature and humidity sensor, not an infrared
+      thermometer. It reads <b>skin</b> temperature after a slow contact settle, which sits well
+      below core temperature and is affected by sweat, draughts and how hard the node is pressed.</li>
+      <li>Records are held in plain text on this computer. Anyone with the machine can read them.
+      Use full-disk encryption and a locked account, keep backups, and follow whatever your
+      jurisdiction requires for patient data.</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h2>About</h2>
+    <p class="sub" id="aboutText">InfoDoc</p>
+  </div>
+</section>
+
+</main>
+
+<div id="print-area" aria-hidden="true"></div>
+<div id="toast" class="toast" hidden></div>
+
+<script src="js/store.js"></script>
+<script src="js/link.js"></script>
+<script src="js/tests.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

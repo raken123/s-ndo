@@ -1,0 +1,7 @@
+# build scratch: downloaded Electron runtimes and staged trees
+src/cache/
+src/work/
+src/dist/
+src/icons/
+__pycache__/
+*.pyc
