@@ -45,6 +45,45 @@ It is sent to **jomni556@gmail.com** through [FormSubmit](https://formsubmit.co)
 submission sends an activation email to that address, and someone has to click the link in it once.
 If sending fails, the player's email app opens with the message already filled in.
 
+## 📱 Use the TV and a phone at the same time
+
+Choose **📱 Phone** in the menu (or in Settings, or on the Submit screen). The TV then shows a QR code and a 5-letter code.
+Scan the QR code with the phone camera, or tap **"Use this phone as a remote"** on the start screen and type the code.
+From the phone you can:
+- switch games, play, go back, and open Settings or the Store
+- **type with the phone's own keyboard** when you submit a game. While a phone is connected, the big hand keyboard on the TV is hidden.
+
+Several phones can connect at once. The link is a direct WebRTC connection, set up through the free [PeerJS](https://peerjs.com) server.
+Inside the Android app, the QR code points to the GitHub Pages copy of the game (`PUBLIC_URL` in `index.html`), so the page must be published there. Typing the code works either way.
+
+## 💳 Paid features (Android app, Google Play Billing)
+
+| Product ID | Type | What it unlocks |
+|---|---|---|
+| `party_pack` | One-time in-app product | 🍉 Fruit Chop, ☄️ Meteor Dodge, ⚽ Keepy Uppy, forever |
+| `plus_monthly` | Subscription (monthly base plan) | Everything in the Party Pack, Nonsense Cam Pro (60-second videos, no watermark, all 8 effects), 💀 Insane difficulty |
+
+Free version: Catch the Car, Intensive Dots, Circus Jumping, Balloon Pop and Nonsense Cam (15-second videos with a watermark and 4 effects).
+You set the prices in the Play Console, and the game shows them automatically. On the website, the Store explains that purchases are made in the Android app.
+
+## 🤖 Android app (APK + AAB)
+
+The `android/` folder is a small Kotlin app that runs this same `index.html` in a full-screen WebView. It works on phones, tablets and **Android TV**
+(TVs need a USB camera).
+
+Every push runs **Actions → "Android build (APK + AAB)"**, and the finished build appears under *Artifacts*:
+- `BodyParty-1.0.N.apk`: install it directly on a phone or TV to test.
+- `BodyParty-1.0.N.aab`: upload this one to Google Play.
+
+**Before publishing to Google Play:**
+1. Create an upload key once: `keytool -genkeypair -keystore upload.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000`
+2. Add these repository secrets: `ANDROID_KEYSTORE_BASE64` (`base64 -w0 upload.jks`), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
+   Without them, CI signs every build with a new throwaway test key. That is fine for testing, but it can't be used for Play Store updates.
+3. The package name is `com.bodyparty.app`. You can change `applicationId` in `android/app/build.gradle.kts` if you like, but do it before the first upload.
+4. In the Play Console, create the in-app product `party_pack` and the subscription `plus_monthly` (with a monthly base plan), then set the prices.
+   Purchases only work in builds installed from Google Play, for example through the internal testing track.
+5. Purchases are checked on the device. For stronger protection against cheating, add server-side verification later with the Google Play Developer API.
+
 ## Tech
 
 One HTML file with no build step. Body tracking uses [MediaPipe Tasks Vision](https://developers.google.com/mediapipe/solutions/vision/pose_landmarker)
