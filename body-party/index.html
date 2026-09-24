@@ -40,6 +40,26 @@
   #start details { text-align: left; margin-top: 14px; font-size: 16px; color: var(--muted); }
   #start summary { cursor: pointer; font-weight: 700; color: #fff; }
   #start li { margin: 4px 0; }
+  #remote { position: fixed; inset: 0; z-index: 8; overflow: auto; padding: 16px; background: linear-gradient(#2a0f5e, #140a2e); }
+  #remote[hidden] { display: none; }
+  #remote .wrap { max-width: 520px; margin: 0 auto; }
+  #remote h2 { margin: 0 0 4px; font-size: 28px; }
+  #remote h3 { margin: 22px 0 6px; font-size: 22px; color: var(--yellow); }
+  #remote .st { color: var(--muted); font-size: 16px; margin: 0 0 12px; }
+  #remote .now { background: rgba(255,255,255,.08); border-radius: 14px; padding: 10px 14px; font-size: 18px; }
+  #remote .grid { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 10px; margin-top: 12px; }
+  #remote .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+  #remote button { font: inherit; font-weight: 800; font-size: 20px; border: 0; border-radius: 16px; padding: 16px 8px; color: #fff;
+    background: rgba(255,255,255,.14); cursor: pointer; }
+  #remote button:active { transform: scale(.97); }
+  #remote button.go { background: #16a34a; }
+  #remote label { display: block; margin: 10px 0 0; font-size: 15px; color: var(--muted); }
+  #remote input, #remote textarea { width: 100%; font: inherit; font-size: 18px; padding: 10px 12px; margin-top: 4px; border-radius: 12px;
+    border: 2px solid rgba(255,255,255,.2); background: rgba(0,0,0,.3); color: #fff; }
+  #remote input:focus, #remote textarea:focus { outline: none; border-color: var(--yellow); }
+  #remote .join { display: flex; gap: 10px; }
+  #remote .join input { text-transform: uppercase; letter-spacing: 6px; font-size: 26px; text-align: center; }
+  #remote .msg { min-height: 1.4em; color: var(--yellow); }
   #fsBtn { position: fixed; right: 12px; bottom: 12px; z-index: 6; width: 44px; height: 44px; border-radius: 12px; border: 0;
     background: rgba(0,0,0,.35); color: #fff; font-size: 22px; cursor: pointer; }
 </style>
@@ -58,6 +78,7 @@
     </div>
     <button id="btnCam">📷 Start with camera</button>
     <button id="btnMouse" class="ghost">🖱️ No camera? Try it with the mouse</button>
+    <button id="btnRemote" class="ghost">📱 Use this phone as a remote for the TV</button>
     <p id="status"></p>
     <details>
       <summary>How do I control it?</summary>
@@ -74,6 +95,33 @@
 </div>
 <button id="fsBtn" title="Fullscreen (F)">⛶</button>
 
+<div id="remote" hidden>
+  <div class="wrap">
+    <h2>📱 Body Party Remote</h2>
+    <p class="st" id="rStatus">Type the code shown on the TV.</p>
+    <div class="join" id="rJoin">
+      <input id="rCode" maxlength="5" placeholder="CODE" autocomplete="off" autocapitalize="characters">
+      <button id="rConnect" class="go">Connect</button>
+    </div>
+    <div id="rCtl" hidden>
+      <div class="now">📺 On the TV: <b id="rScreen">–</b></div>
+      <div class="grid">
+        <button data-a="prev">◀</button><button data-a="play" class="go">▶ Play</button><button data-a="next">▶</button>
+      </div>
+      <div class="grid3">
+        <button data-a="back">← Back</button><button data-a="settings">⚙️ Settings</button><button data-a="store">⭐ Store</button>
+      </div>
+      <h3>✉️ Submit your own game</h3>
+      <p class="st">Type here with your phone's keyboard – it shows up on the TV live.</p>
+      <label>Game name <input id="rf0" maxlength="40" autocomplete="off"></label>
+      <label>Your name <input id="rf1" maxlength="40" autocomplete="off"></label>
+      <label>How do you play it? <textarea id="rf2" maxlength="500" rows="4"></textarea></label>
+      <div class="grid3" style="grid-template-columns:1fr"><button id="rSend" class="go">📨 Send game idea</button></div>
+      <p class="msg" id="rMsg"></p>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 // =====================================================================
 //  BODY PARTY — a camera party game. Single file, no build step.
@@ -85,6 +133,31 @@ const MP_CDN = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSIO
 const POSE_URL = m => `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_${m}/float16/latest/pose_landmarker_${m}.task`;
 const SEG_URL = 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite';
 const SUBMIT_EMAIL = 'jomni556@gmail.com';
+const PEERJS_URL = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';
+const QR_URL = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+// Where phones open the remote when the game runs inside the Android app (GitHub Pages copy of this file).
+const PUBLIC_URL = 'https://raken123.github.io/s-ndo/body-party/';
+const IS_APP = !!window.AndroidBilling;
+
+// ---------------------------------------------------------------- purchases (Google Play Billing via the Android app)
+// party_pack  = one-time payment  -> 3 bonus games, forever
+// plus_monthly = monthly subscription -> everything in the Party Pack + Nonsense Cam Pro + Insane difficulty
+const ENT = { ready: false, pack: false, plus: false, packPrice: '', plusPrice: '', error: '' };
+const hasPack = () => ENT.pack || ENT.plus;
+const hasPlus = () => ENT.plus;
+window.onBillingState = st => {
+  const hadPack = hasPack(), hadPlus = hasPlus();
+  Object.assign(ENT, st || {});
+  if (typeof toast === 'function') {
+    if (hasPlus() && !hadPlus) { toast('👑 Welcome to Body Party Plus!', '#facc15', 3.5); SFX?.fanfare?.(); }
+    else if (hasPack() && !hadPack) { toast('🎁 Party Pack unlocked – enjoy!', '#4ade80', 3.5); SFX?.fanfare?.(); }
+    if (st && st.message) toast(st.message, '#facc15', 3);
+  }
+};
+function buy(sku) {
+  if (!IS_APP) { toast('💳 Purchases are made in the Body Party Android app (Google Play)', '#facc15', 3.5); return; }
+  window.AndroidBilling.buy(sku);
+}
 
 // ---------------------------------------------------------------- settings
 const DEFAULTS = {
@@ -102,7 +175,7 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, v: Math.min(a.v ?? 1, b.v ?? 1) });
 const pick = a => a[Math.floor(Math.random() * a.length)];
-const D = () => [0.75, 1, 1.35][S.difficulty];
+const D = () => [0.75, 1, 1.35, 1.8][S.difficulty] || 1;
 
 // ---------------------------------------------------------------- canvas
 const cv = document.getElementById('stage');
@@ -792,11 +865,11 @@ const GAMES = [
     desc: 'Jump over the rolling circus balls and duck under the flaming hoops. Everyone has 3 lives!' },
   { id: 'balloon', name: 'Balloon Pop', icon: '🎈', color: '#4ade80', make: makeBalloons,
     desc: 'Pop the rising balloons with your hands. Gold ones are worth 5 – but stay away from the skull balloons!' },
-  { id: 'fruit', name: 'Fruit Chop', icon: '🍉', color: '#fb923c', make: makeFruit,
+  { id: 'fruit', name: 'Fruit Chop', icon: '🍉', color: '#fb923c', make: makeFruit, tier: 'pack',
     desc: 'Swing your arms FAST like a ninja to chop the flying fruit. Don’t chop the bombs!' },
-  { id: 'meteor', name: 'Meteor Dodge', icon: '☄️', color: '#a78bfa', make: makeMeteors, survival: true,
+  { id: 'meteor', name: 'Meteor Dodge', icon: '☄️', color: '#a78bfa', make: makeMeteors, survival: true, tier: 'pack',
     desc: 'Meteors rain from the sky. Dodge them with your whole body. Last one standing wins!' },
-  { id: 'keepy', name: 'Keepy Uppy', icon: '⚽', color: '#38bdf8', make: makeKeepy,
+  { id: 'keepy', name: 'Keepy Uppy', icon: '⚽', color: '#38bdf8', make: makeKeepy, tier: 'pack',
     desc: 'Keep the balls in the air with your head, hands, knees and feet. Every touch is a point!' },
   { id: 'cam', name: 'Nonsense Cam', icon: '🎬', color: '#f472b6',
     desc: 'Record yourselves doing total nonsense with silly effects – party hats, googly eyes, big heads – then save the video!' },
@@ -858,6 +931,9 @@ SCREENS.menu = {
     text('👋 Swipe your arm to switch   ·   🙌 Raise both hands to play   ·   🐸 Frog-jump ×5 for Settings', W / 2 + 6 * U, H - 3.5 * U, 2.3 * U, 'rgba(255,255,255,.85)', 'center', 700);
     if (!np) text(camReady ? 'Step back so the camera can see your whole body 👀' : '', W / 2, cy + 42 * U, 3 * U, '#facc15');
     btn('gear', 2 * U, 2 * U, 7 * U, 7 * U, '⚙️', { noDwell: true, size: 3.5 * U, onPress: () => go('settings') });
+    btn('store', 2 * U, 11 * U, 19 * U, 6.5 * U, hasPlus() ? '👑 Plus' : '⭐ Store', { size: 2.6 * U, color: 'rgba(250,204,21,.28)', onPress: () => go('store') });
+    btn('phone', 2 * U, 19 * U, 19 * U, 6.5 * U, REMOTE.conns.length ? `📱 ${REMOTE.conns.length} linked` : '📱 Phone', { size: 2.6 * U, onPress: startHost });
+    if (locked(GAMES[MENU.sel])) text('🔒 Unlock with the Party Pack or Plus', W / 2, H / 2 + 38 * U, 2.6 * U, '#facc15');
   },
 };
 function drawCard(g, x, y, scale, focus, t) {
@@ -869,13 +945,19 @@ function drawCard(g, x, y, scale, focus, t) {
   ctx.lineWidth = U * 0.6; ctx.strokeStyle = focus ? '#fff' : 'rgba(255,255,255,.4)'; ctx.stroke();
   text(g.icon, 0, -h * 0.22 + (focus ? Math.sin(t * 3) * U : 0), 14 * U, '#fff', 'center', 800, false);
   text(g.name, 0, h * 0.06, 4.8 * U);
+  if (locked(g)) {
+    rr(-w / 2 + 2 * U, -h / 2 + 2 * U, 17 * U, 5 * U, 2.5 * U); ctx.fillStyle = '#facc15'; ctx.fill();
+    text('🔒 Party Pack', -w / 2 + 10.5 * U, -h / 2 + 4.6 * U, 2.2 * U, '#1a0b3b', 'center', 800, false);
+  }
   if (focus) wrapLines(g.desc, w - 6 * U, 2.3 * U).slice(0, 5).forEach((l, i) => text(l, 0, h * 0.2 + i * 2.9 * U, 2.3 * U, '#fff', 'center', 600, false));
   ctx.restore();
 }
 
 // ---- game runner
 const GS = { def: null, g: null, phase: 'count', t: 0, left: 0, el: 0, fy: 0, endMsg: '' };
+const locked = g => g.tier === 'pack' && !hasPack();
 function startGame(def) {
+  if (locked(def)) { toast(`🔒 ${def.name} is part of the Party Pack`, '#facc15'); go('store'); return; }
   if (def.id === 'cam') { go('cam'); return; }
   GS.def = def; GS.g = def.make(); GS.phase = 'count'; GS.t = 3.5; GS.left = S.roundSec; GS.el = 0; GS.fy = H * 0.92;
   for (const p of players) { p.score = 0; p.lives = 3; p.inv = 0; p.acc = 0; p.played = false; }
@@ -972,7 +1054,7 @@ SCREENS.results = {
 // ---- settings
 const onoff = v => (v ? '✅ On' : '⛔ Off');
 const OPTS = [
-  { k: 'difficulty', label: 'Difficulty', vals: [0, 1, 2], fmt: v => ['😌 Easy', '🙂 Normal', '🔥 Hard'][v] },
+  { k: 'difficulty', label: 'Difficulty', vals: [0, 1, 2, 3], fmt: v => ['😌 Easy', '🙂 Normal', '🔥 Hard', '💀 Insane 👑'][v], plus: v => v === 3 },
   { k: 'roundSec', label: 'Round length', vals: [30, 60, 90, 120], fmt: v => `⏱️ ${v} s` },
   { k: 'maxPlayers', label: 'Max players', vals: [1, 2, 3, 4, 5, 6], fmt: v => `👥 ${v}` },
   { k: 'removeBg', label: 'Remove background', vals: [true, false], fmt: onoff },
@@ -987,7 +1069,9 @@ const OPTS = [
 ];
 function setOpt(o) {
   const i = o.vals.indexOf(S[o.k]);
-  S[o.k] = o.vals[(i + 1) % o.vals.length]; saveS();
+  let nv = o.vals[(i + 1) % o.vals.length];
+  if (o.plus && o.plus(nv) && !hasPlus()) { toast('👑 Insane difficulty is part of Body Party Plus', '#facc15'); nv = o.vals[(i + 2) % o.vals.length]; }
+  S[o.k] = nv; saveS();
   if (o.k === 'volume' && master) master.gain.value = S.volume;
   if (o.k === 'maxPlayers') pose?.setOptions?.({ numPoses: S.maxPlayers }).catch?.(() => {});
   if (o.k === 'model') reloadPose();
@@ -1008,8 +1092,51 @@ SCREENS.settings = {
     btn('cam', x1, y, 30 * U, 9 * U, '📷 Switch camera', { size: 2.8 * U, onPress: switchCamera });
     btn('submit', x1 + 32 * U, y, 64 * U, 9 * U, '✉️ Submit your own game!', { color: '#db2777', size: 3.2 * U, onPress: () => go('submit') });
     btn('back', x2 + 34 * U, y, 30 * U, 9 * U, '← Back', { size: 3.2 * U, onPress: () => go('menu') });
+    btn('phone', x1, y + 10.5 * U, 64 * U, 7 * U, '📱 Connect a phone (type on your phone)', { size: 2.8 * U, onPress: startHost });
+    btn('store', x2, y + 10.5 * U, 64 * U, 7 * U, hasPlus() ? '👑 Body Party Plus is active' : '⭐ Store: Party Pack & Plus', { size: 2.8 * U, color: 'rgba(250,204,21,.28)', onPress: () => go('store') });
     text('✋ Hover your hand over an option to change it   ·   🙅 Cross your arms to go back', W / 2, H - 4 * U, 2.3 * U, 'rgba(255,255,255,.8)', 'center', 700);
     const xp = holdProg('back', 1.5); if (xp > 0) ring(W / 2, H / 2, 10 * U, xp, '#ff5a5a', U * 1.4);
+  },
+};
+
+// ---- store (one-time Party Pack + monthly Plus subscription)
+function storeCard(x, y, w, h, o) {
+  rr(x, y, w, h, 3 * U);
+  const g = ctx.createLinearGradient(0, y, 0, y + h); g.addColorStop(0, o.color); g.addColorStop(1, '#1a0b3b');
+  ctx.fillStyle = g; ctx.fill(); ctx.lineWidth = U * 0.5; ctx.strokeStyle = o.owned ? '#4ade80' : '#fff'; ctx.stroke();
+  text(o.title, x + w / 2, y + 5 * U, 4.2 * U);
+  text(o.kind, x + w / 2, y + 10 * U, 2.4 * U, '#facc15', 'center', 800, false);
+  o.lines.forEach((l, i) => text(l, x + 3 * U, y + 16 * U + i * 4 * U, 2.5 * U, '#fff', 'left', 700, false));
+  text(o.price, x + w / 2, y + h - 17 * U, 4.6 * U, '#fff');
+  btn(o.id, x + 4 * U, y + h - 12 * U, w - 8 * U, 8.5 * U, o.owned ? '✅ Unlocked' : o.cta, {
+    color: o.owned ? 'rgba(74,222,128,.3)' : '#16a34a', size: 3.2 * U, onPress: o.owned ? o.ownedPress : () => buy(o.sku),
+  });
+}
+SCREENS.store = {
+  enter() { if (IS_APP) try { window.AndroidBilling.refresh(); } catch {} },
+  update(dt) { if (hold('back', active().some(armsCrossed), 1.5, dt)) go('menu'); },
+  back: bgDisco,
+  draw() {
+    text('⭐ Body Party Store', W / 2, 6 * U, 5.5 * U, '#facc15');
+    const w = 64 * U, h = 62 * U, y = 12 * U;
+    storeCard(W / 2 - w - 3 * U, y, w, h, {
+      id: 'buyPack', sku: 'party_pack', title: '🎁 Party Pack', kind: 'ONE-TIME PAYMENT · YOURS FOREVER', color: '#db2777',
+      owned: hasPack(), cta: '💳 Buy once', price: hasPack() ? '' : (ENT.packPrice || (IS_APP ? '…' : '')),
+      lines: ['🍉 Fruit Chop', '☄️ Meteor Dodge', '⚽ Keepy Uppy', '♾️ Pay once, keep forever', '👨‍👩‍👧 For everyone on this device'],
+    });
+    storeCard(W / 2 + 3 * U, y, w, h, {
+      id: 'buyPlus', sku: 'plus_monthly', title: '👑 Body Party Plus', kind: 'MONTHLY SUBSCRIPTION · CANCEL ANYTIME', color: '#7c3aed',
+      owned: hasPlus(), cta: '👑 Subscribe', price: hasPlus() ? '' : (ENT.plusPrice ? ENT.plusPrice + ' / month' : (IS_APP ? '…' : '')),
+      ownedPress: () => { location.href = 'https://play.google.com/store/account/subscriptions?sku=plus_monthly&package=com.bodyparty.app'; },
+      lines: ['🎁 Everything in the Party Pack', '🎬 Nonsense Cam Pro: 60 s videos', '🚫 No watermark on videos', '✨ All 8 video effects', '💀 Insane difficulty'],
+    });
+    const by = y + h + 2.5 * U;
+    btn('restore', W / 2 - 47 * U, by, 30 * U, 7 * U, '🔄 Restore purchases', { size: 2.6 * U, onPress: () => { if (IS_APP) { window.AndroidBilling.refresh(); toast('Checking your purchases…'); } else buy(''); } });
+    btn('back', W / 2 + 17 * U, by, 30 * U, 7 * U, '← Back', { size: 3 * U, onPress: () => go('menu') });
+    const note = !IS_APP ? '📱 Purchases are made in the Body Party Android app through Google Play.'
+      : ENT.error ? '⚠️ Google Play: ' + ENT.error
+      : 'Payments are handled securely by Google Play. Manage or cancel Plus any time in Google Play → Subscriptions.';
+    text(note, W / 2, H - 3.5 * U, 2.2 * U, 'rgba(255,255,255,.85)', 'center', 700);
   },
 };
 
@@ -1091,7 +1218,14 @@ SCREENS.submit = {
     // keyboard
     const kx = 6 * U, ky = 34 * U, kw = 148 * U, rowH = 10 * U, gap = 0.8 * U;
     const keyDwell = Math.max(400, S.dwell * 0.8);
-    KB.forEach((row, r) => {
+    if (!REMOTE.conns.length) btn('usephone', 124 * U, 29.2 * U, 30 * U, 4.4 * U, '📱 Type on your phone', { size: 2 * U, radius: 2.2 * U, onPress: startHost });
+    if (REMOTE.conns.length && !SUB.handKb) {
+      rr(kx, ky, kw, 5 * (rowH + gap), 3 * U); ctx.fillStyle = 'rgba(20,8,46,.75)'; ctx.fill();
+      text('📱', W / 2, ky + 14 * U, 12 * U, '#fff', 'center', 800, false);
+      text('Type on your phone!', W / 2, ky + 27 * U, 5 * U, '#facc15');
+      text('Everything you type on the phone appears here live.', W / 2, ky + 33 * U, 2.6 * U, '#fff', 'center', 700, false);
+      btn('handkb', W / 2 - 20 * U, ky + 38 * U, 40 * U, 7 * U, '⌨️ Use the hand keyboard', { size: 2.6 * U, onPress: () => { SUB.handKb = true; } });
+    } else KB.forEach((row, r) => {
       const units = row.reduce((s, k) => s + (Array.isArray(k) ? k[1] : 1), 0);
       const uw = (kw - gap * (row.length - 1)) / units;
       let x = kx;
@@ -1115,9 +1249,17 @@ SCREENS.submit = {
 // ---- Nonsense Cam (record yourself)
 const EFFECTS = [
   { id: 'hats', label: '🎉 Hats' }, { id: 'googly', label: '👀 Googly' }, { id: 'sparkle', label: '✨ Sparkle' },
-  { id: 'rainbow', label: '🌈 Rainbow' }, { id: 'clones', label: '👯 Clones' }, { id: 'bigheads', label: '🗿 Big heads' },
-  { id: 'flip', label: '🙃 Flip' }, { id: 'random', label: '🎲 Random' },
+  { id: 'rainbow', label: '🌈 Rainbow' }, { id: 'clones', label: '👯 Clones', plus: true }, { id: 'bigheads', label: '🗿 Big heads', plus: true },
+  { id: 'flip', label: '🙃 Flip', plus: true }, { id: 'random', label: '🎲 Random', plus: true },
 ];
+const effOk = e => !e.plus || hasPlus();
+const camMax = () => (hasPlus() ? 60 : 15);   // seconds per video
+function nextEffect(dir) {
+  for (let k = 1; k <= EFFECTS.length; k++) {
+    const i = (CAM.eff + dir * k + EFFECTS.length * 2) % EFFECTS.length;
+    if (effOk(EFFECTS[i])) { CAM.eff = i; return; }
+  }
+}
 const CAM = { phase: 'idle', eff: 0, t: 0, randEff: 0, randT: 0, rec: null, chunks: [], url: null, ext: 'webm', vid: null, mic: null, micNode: null };
 async function ensureMic() {
   if (!S.recAudio || CAM.mic || !ac || !recDest) return;
@@ -1131,11 +1273,11 @@ function startRecording() {
   const st = cv.captureStream(30);
   const at = recDest?.stream.getAudioTracks()[0]; if (at) st.addTrack(at);
   const mime = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'].find(m => MediaRecorder.isTypeSupported(m)) || '';
-  CAM.rec = new MediaRecorder(st, mime ? { mimeType: mime, videoBitsPerSecond: 5e6 } : {});
+  CAM.rec = new MediaRecorder(st, mime ? { mimeType: mime, videoBitsPerSecond: IS_APP ? 2.5e6 : 5e6 } : {});
   CAM.chunks = [];
   CAM.rec.ondataavailable = e => { if (e.data.size) CAM.chunks.push(e.data); };
   CAM.rec.onstop = () => {
-    const blob = new Blob(CAM.chunks, { type: CAM.rec.mimeType || 'video/webm' });
+    const blob = CAM.blob = new Blob(CAM.chunks, { type: CAM.rec.mimeType || 'video/webm' });
     if (CAM.url) URL.revokeObjectURL(CAM.url);
     CAM.url = URL.createObjectURL(blob); CAM.ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
     CAM.vid = document.createElement('video'); CAM.vid.src = CAM.url; CAM.vid.loop = true; CAM.vid.playsInline = true;
@@ -1145,10 +1287,22 @@ function startRecording() {
   CAM.rec.start(250); CAM.phase = 'rec'; CAM.t = 0; SFX.go();
 }
 function stopRecording() { if (CAM.rec && CAM.rec.state !== 'inactive') CAM.rec.stop(); CAM.phase = 'saving'; }
-function saveRecording() {
+const blobToB64 = b => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = rej; r.readAsDataURL(b); });
+async function saveRecording() {
   if (!CAM.url) return;
+  const name = `body-party-nonsense-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.${CAM.ext}`;
+  if (window.AndroidApp?.saveBegin && CAM.blob) {
+    // Inside the Android app: stream the video to the native side in base64 chunks (multiple of 3 bytes).
+    toast('💾 Saving…', '#fff', 1.5);
+    const id = window.AndroidApp.saveBegin(name, CAM.blob.type);
+    let ok = id >= 0;
+    for (let o = 0; ok && o < CAM.blob.size; o += 3 * 170000) ok = window.AndroidApp.saveChunk(id, await blobToB64(CAM.blob.slice(o, o + 3 * 170000)));
+    ok = ok && window.AndroidApp.saveEnd(id);
+    toast(ok ? '💾 Saved to Movies/BodyParty!' : '😢 Could not save the video', ok ? '#4ade80' : '#ff5a5a');
+    return;
+  }
   const a = document.createElement('a'); a.href = CAM.url;
-  a.download = `body-party-nonsense-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.${CAM.ext}`;
+  a.download = name;
   document.body.appendChild(a); a.click(); a.remove(); toast('💾 Video saved to your downloads!', '#4ade80');
 }
 function camReset() { CAM.vid?.pause(); CAM.vid = null; CAM.phase = 'idle'; musicPaused = false; }
@@ -1190,7 +1344,8 @@ SCREENS.cam = {
   enter() { CAM.phase = 'idle'; CAM.t = 0; ensureMic(); },
   leave() { if (CAM.rec && CAM.rec.state !== 'inactive') { CAM.rec.onstop = null; CAM.rec.stop(); } camReset(); bodyFx = {}; },
   update(dt, now) {
-    for (const ev of events) if (ev.type === 'swipe' && (CAM.phase === 'idle' || CAM.phase === 'rec')) { CAM.eff = (CAM.eff + ev.dir + EFFECTS.length) % EFFECTS.length; SFX.swipe(); }
+    for (const ev of events) if (ev.type === 'swipe' && (CAM.phase === 'idle' || CAM.phase === 'rec')) { nextEffect(ev.dir); SFX.swipe(); }
+    if (!effOk(EFFECTS[CAM.eff])) CAM.eff = 0;
     const any = active();
     if (CAM.phase === 'idle') {
       if (hold('rec', any.some(handsUp), 1.2, dt)) { CAM.phase = 'count'; CAM.t = 3.2; }
@@ -1200,7 +1355,7 @@ SCREENS.cam = {
       if (CAM.t <= 0) startRecording();
     } else if (CAM.phase === 'rec') {
       CAM.t += dt;
-      if (CAM.t >= 30 || hold('stop', any.some(armsCrossed), 1.2, dt)) stopRecording();
+      if (CAM.t >= camMax() || hold('stop', any.some(armsCrossed), 1.2, dt)) stopRecording();
     } else if (CAM.phase === 'review') {
       if (hold('exit', any.some(armsCrossed), 1.5, dt)) { go('menu'); return; }
     }
@@ -1233,7 +1388,9 @@ SCREENS.cam = {
     if (CAM.phase === 'idle') {
       text('🎬 Nonsense Cam', W / 2, 16 * U, 5 * U, '#facc15');
       const bw = 17.5 * U, gap = U, x0 = W / 2 - (EFFECTS.length * bw + (EFFECTS.length - 1) * gap) / 2;
-      EFFECTS.forEach((e, i) => btn('eff_' + e.id, x0 + i * (bw + gap), 2.5 * U, bw, 7 * U, e.label, { size: 2.4 * U, active: CAM.eff === i, onPress: () => { CAM.eff = i; } }));
+      EFFECTS.forEach((e, i) => btn('eff_' + e.id, x0 + i * (bw + gap), 2.5 * U, bw, 7 * U, effOk(e) ? e.label : '🔒 ' + e.label.split(' ').slice(1).join(' '), {
+        size: 2.4 * U, active: CAM.eff === i, onPress: () => { if (effOk(e)) CAM.eff = i; else { toast('👑 This effect is part of Body Party Plus', '#facc15'); go('store'); } } }));
+      if (!hasPlus()) text(`Free: ${camMax()}-second videos with watermark  ·  👑 Plus: 60 s, no watermark, all effects`, W / 2, 21.5 * U, 2.2 * U, 'rgba(255,255,255,.8)', 'center', 700);
       btn('rec', W / 2 - 16 * U, H - 14 * U, 32 * U, 9 * U, '🔴 Record', { color: '#dc2626', onPress: () => { CAM.phase = 'count'; CAM.t = 3.2; } });
       btn('back', 3 * U, H - 12 * U, 18 * U, 8 * U, '← Menu', { size: 3 * U, onPress: () => go('menu') });
       const hp = holdProg('rec', 1.2); if (hp > 0) ring(W / 2, H - 9.5 * U, 18 * U, hp, '#facc15', U);
@@ -1245,9 +1402,9 @@ SCREENS.cam = {
     } else if (CAM.phase === 'rec' || CAM.phase === 'saving') {
       ctx.lineWidth = U * 1.2; ctx.strokeStyle = Math.floor(t * 2) % 2 ? '#dc2626' : 'rgba(220,38,38,.4)'; ctx.strokeRect(U * 0.6, U * 0.6, W - U * 1.2, H - U * 1.2);
       const s = Math.floor(CAM.t);
-      text(`● REC 0:${String(s).padStart(2, '0')} / 0:30`, 4 * U, 5 * U, 3.4 * U, '#ff5a5a', 'left');
+      text(`● REC 0:${String(s).padStart(2, '0')} / ${Math.floor(camMax() / 60)}:${String(camMax() % 60).padStart(2, '0')}`, 4 * U, 5 * U, 3.4 * U, '#ff5a5a', 'left');
       text(EFFECTS.find(e => e.id === CAM.cur)?.label || '', W - 4 * U, 5 * U, 3 * U, '#fff', 'right');
-      text('BODY PARTY', W - 4 * U, H - 4 * U, 2.6 * U, 'rgba(255,255,255,.7)', 'right');
+      if (!hasPlus()) text('🎉 Made with BODY PARTY', W - 4 * U, H - 5 * U, 4 * U, 'rgba(255,255,255,.85)', 'right');
       btn('stop', 3 * U, H - 11 * U, 20 * U, 8 * U, '⏹ Stop', { color: '#dc2626', size: 3 * U, onPress: stopRecording });
       const sp = holdProg('stop', 1.2); if (sp > 0) ring(13 * U, H - 7 * U, 12 * U, sp, '#fff', U);
       drawCursors(true);
@@ -1611,11 +1768,165 @@ function makeKeepy() {
 }
 
 // =====================================================================
+//  PHONE REMOTE — TV and phone at the same time (WebRTC via PeerJS)
+// =====================================================================
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const el = document.createElement('script'); el.src = src; el.onload = res;
+    el.onerror = () => rej(new Error('Could not load ' + src.split('/')[4] + ' – check the internet connection'));
+    document.head.appendChild(el);
+  });
+}
+const REMOTE = { peer: null, code: '', conns: [], status: 'off', err: '', qr: null, url: '', show: false, lastState: '', sentAt: 0 };
+const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const randomCode = () => Array.from({ length: 5 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
+function joinUrl(code) {
+  const base = /^https?:$/.test(location.protocol) && !location.host.includes('appassets') ? location.origin + location.pathname : PUBLIC_URL;
+  return `${base}?remote=${code}`;
+}
+function makeQR(str) {
+  const q = window.qrcode(0, 'M'); q.addData(str); q.make();
+  const n = q.getModuleCount(), s = 8, c = document.createElement('canvas');
+  c.width = c.height = (n + 8) * s;
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.fillStyle = '#000';
+  for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (q.isDark(r, k)) x.fillRect((k + 4) * s, (r + 4) * s, s, s);
+  return c;
+}
+async function startHost() {
+  REMOTE.show = true;
+  if (REMOTE.peer && !REMOTE.peer.destroyed) return;
+  REMOTE.status = 'starting'; REMOTE.err = '';
+  try {
+    if (!window.Peer) await loadScript(PEERJS_URL);
+    if (!window.qrcode) await loadScript(QR_URL);
+  } catch (e) { REMOTE.status = 'error'; REMOTE.err = e.message; return; }
+  const code = randomCode();
+  const peer = new window.Peer('bodyparty-' + code.toLowerCase());
+  REMOTE.peer = peer;
+  peer.on('open', () => { REMOTE.code = code; REMOTE.url = joinUrl(code); REMOTE.qr = makeQR(REMOTE.url); REMOTE.status = 'ready'; });
+  peer.on('connection', conn => {
+    conn.on('open', () => { REMOTE.conns.push(conn); toast('📱 Phone connected!', '#4ade80'); SFX.join(); REMOTE.lastState = ''; if (screen === 'submit') SUB.handKb = false; });
+    conn.on('data', d => onRemote(d));
+    conn.on('close', () => { REMOTE.conns = REMOTE.conns.filter(c => c !== conn); toast('📱 Phone disconnected', '#facc15'); });
+  });
+  peer.on('disconnected', () => { try { peer.reconnect(); } catch {} });
+  peer.on('error', e => {
+    if (e.type === 'unavailable-id') { peer.destroy(); REMOTE.peer = null; startHost(); return; }
+    if (REMOTE.status !== 'ready') { REMOTE.status = 'error'; REMOTE.err = 'Could not start the phone link (' + (e.type || e.message) + ')'; }
+  });
+}
+function remoteNav(a) {
+  const n = GAMES.length;
+  if (a === 'prev' || a === 'next') {
+    const d = a === 'next' ? 1 : -1;
+    if (screen === 'menu') { MENU.sel = (MENU.sel + d + n) % n; SFX.swipe(); }
+    else if (screen === 'cam' && (CAM.phase === 'idle' || CAM.phase === 'rec')) { nextEffect(d); SFX.swipe(); }
+  } else if (a === 'play') {
+    if (screen === 'menu') startGame(GAMES[MENU.sel]);
+    else if (screen === 'results') startGame(GS.def);
+    else if (screen === 'cam') { if (CAM.phase === 'idle') { CAM.phase = 'count'; CAM.t = 3.2; } else if (CAM.phase === 'rec') stopRecording(); }
+  } else if (a === 'back') {
+    if (REMOTE.show) REMOTE.show = false;
+    else if (screen === 'submit') go('settings');
+    else if (screen !== 'menu') go('menu');
+  } else if (a === 'settings' || a === 'store' || a === 'submit') { REMOTE.show = false; go(a); }
+}
+function onRemote(d) {
+  if (!d || typeof d !== 'object') return;
+  if (d.t === 'nav') remoteNav(String(d.a));
+  else if (d.t === 'field') {
+    const f = SUB.fields[d.i | 0]; if (!f) return;
+    if (screen !== 'submit') { REMOTE.show = false; go('submit'); }
+    f.v = String(d.v ?? '').slice(0, f.max); SUB.active = d.i | 0; SUB.handKb = false;
+  } else if (d.t === 'send') {
+    if (screen !== 'submit') go('submit');
+    sendSubmission();
+  }
+}
+function syncRemote(now) {
+  if (!REMOTE.conns.length || now - REMOTE.sentAt < 250) return;
+  REMOTE.sentAt = now;
+  const names = { menu: 'Menu – ' + GAMES[MENU.sel].name, game: GS.def ? 'Playing ' + GS.def.name : 'Game', results: 'Results', settings: 'Settings', submit: 'Submit your game', cam: 'Nonsense Cam', store: 'Store' };
+  const st = JSON.stringify({ t: 'state', screen: names[screen] || screen, fields: SUB.fields.map(f => f.v), status: SUB.status });
+  if (st === REMOTE.lastState) return;
+  REMOTE.lastState = st;
+  for (const c of REMOTE.conns) try { c.send(st); } catch {}
+}
+function drawRemotePanel() {
+  if (!REMOTE.show) return;
+  btns = [];                                   // only the panel is interactive while it is open
+  const w = 76 * U, h = 70 * U, x = W / 2 - w / 2, y = H / 2 - h / 2;
+  ctx.fillStyle = 'rgba(10,4,30,.6)'; ctx.fillRect(0, 0, W, H);
+  rr(x, y, w, h, 4 * U); ctx.fillStyle = '#24104f'; ctx.fill(); ctx.lineWidth = U * 0.5; ctx.strokeStyle = '#facc15'; ctx.stroke();
+  text('📱 Connect your phone', W / 2, y + 6 * U, 4.4 * U, '#facc15');
+  if (REMOTE.status === 'ready' && REMOTE.qr) {
+    const q = 34 * U; ctx.imageSmoothingEnabled = false; ctx.drawImage(REMOTE.qr, W / 2 - q / 2, y + 11 * U, q, q); ctx.imageSmoothingEnabled = true;
+    text('Scan with your phone camera – or open the remote and type the code:', W / 2, y + 49 * U, 2.2 * U, '#fff', 'center', 700, false);
+    text(REMOTE.code.split('').join(' '), W / 2, y + 55 * U, 6 * U, '#fff');
+    text(REMOTE.conns.length ? `✅ ${REMOTE.conns.length} phone${REMOTE.conns.length > 1 ? 's' : ''} connected – use TV and phone together!` : 'Waiting for a phone…', W / 2, y + 60.5 * U, 2.4 * U, REMOTE.conns.length ? '#4ade80' : 'rgba(255,255,255,.75)', 'center', 700, false);
+  } else if (REMOTE.status === 'error') {
+    wrapLines('😢 ' + REMOTE.err, w - 8 * U, 2.8 * U).forEach((l, i) => text(l, W / 2, y + 25 * U + i * 3.6 * U, 2.8 * U, '#ff5a5a', 'center', 700, false));
+    btn('rretry', W / 2 - 14 * U, y + 42 * U, 28 * U, 7 * U, '🔄 Try again', { size: 2.8 * U, onPress: () => { REMOTE.peer = null; startHost(); } });
+  } else text('Starting… ⏳', W / 2, y + 30 * U, 4 * U);
+  btn('rclose', W / 2 - 12 * U, y + h - 8 * U, 24 * U, 6 * U, '✕ Close', { size: 2.8 * U, onPress: () => { REMOTE.show = false; } });
+}
+
+// ---- phone side: controller page
+let remoteClient = false;
+function startRemoteClient(code) {
+  remoteClient = true;
+  document.getElementById('start').style.display = 'none';
+  document.getElementById('fsBtn').style.display = 'none';
+  const $ = id => document.getElementById(id);
+  const ui = $('remote'); ui.hidden = false;
+  let conn = null;
+  const status = (m, ok) => { $('rStatus').textContent = m; $('rStatus').style.color = ok ? '#4ade80' : ''; };
+  const send = o => { if (conn && conn.open) conn.send(o); else status('Not connected – type the code again.'); };
+  ui.querySelectorAll('[data-a]').forEach(b => { b.onclick = () => { send({ t: 'nav', a: b.dataset.a }); navigator.vibrate?.(15); }; });
+  [0, 1, 2].forEach(i => { const el = $('rf' + i); el.oninput = el.onfocus = () => send({ t: 'field', i, v: el.value }); });
+  $('rSend').onclick = () => send({ t: 'send' });
+  const connect = async c => {
+    c = String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (c.length !== 5) { status('The code has 5 characters – look at the TV.'); return; }
+    status('Connecting… ⏳');
+    try { if (!window.Peer) await loadScript(PEERJS_URL); } catch (e) { status('😢 ' + e.message); return; }
+    const peer = new window.Peer();
+    const timer = setTimeout(() => { if (!conn || !conn.open) status('😢 Could not reach the TV. Is the code right and the TV online?'); }, 12000);
+    peer.on('error', e => status('😢 ' + (e.type === 'peer-unavailable' ? 'No TV with that code. Check the code on the TV.' : 'Connection problem: ' + (e.type || e.message))));
+    peer.on('open', () => {
+      conn = peer.connect('bodyparty-' + c.toLowerCase(), { reliable: true });
+      conn.on('open', () => { clearTimeout(timer); status('✅ Connected to the TV (' + c + ')', true); $('rJoin').hidden = true; $('rCtl').hidden = false; });
+      conn.on('data', d => {
+        let st; try { st = typeof d === 'string' ? JSON.parse(d) : d; } catch { return; }
+        if (st.t !== 'state') return;
+        $('rScreen').textContent = st.screen;
+        st.fields.forEach((v, i) => { const el = $('rf' + i); if (document.activeElement !== el) el.value = v; });
+        $('rMsg').textContent = st.status || '';
+      });
+      conn.on('close', () => { status('📴 Disconnected from the TV.'); $('rJoin').hidden = false; $('rCtl').hidden = true; });
+    });
+  };
+  $('rConnect').onclick = () => connect($('rCode').value);
+  $('rCode').onkeydown = e => { if (e.key === 'Enter') connect($('rCode').value); };
+  if (code) { $('rCode').value = code; connect(code); } else $('rCode').focus();
+}
+
+// Android back button / TV remote back
+window.onAndroidBack = () => {
+  if (remoteClient) return false;
+  if (REMOTE.show) { REMOTE.show = false; return true; }
+  if (screen === 'submit') { go('settings'); return true; }
+  if (screen !== 'menu') { go('menu'); return true; }
+  return false;
+};
+
+// =====================================================================
 //  main loop
 // =====================================================================
 let lastT = performance.now(), T = 0;
 function frame() {
   requestAnimationFrame(frame);
+  if (remoteClient) return;
   const now = performance.now(), dt = Math.min(0.05, (now - lastT) / 1000); lastT = now; T += dt;
   X = camXform();
   if (camReady) detect(now);
@@ -1631,8 +1942,10 @@ function frame() {
   if (cur.bodies ? cur.bodies() : true) drawBodies();
   cur.draw?.(T, dt);
   updFx(dt); drawFx();
+  drawRemotePanel();
   drawToasts(dt);
-  if (cur.cursors !== false) drawCursors();
+  if (cur.cursors !== false || REMOTE.show) drawCursors();
+  syncRemote(now);
   updateDwell(dt);
   musicTick();
 }
@@ -1662,6 +1975,7 @@ addEventListener('keydown', e => {
     }
     return;
   }
+  if (e.key === 'Escape' && REMOTE.show) { REMOTE.show = false; return; }
   if (e.key === 'f' || e.key === 'F') toggleFS();
   if (e.key === 'Escape') { if (screen === 'submit') go('settings'); else if (screen !== 'menu') go('menu'); }
   if (screen === 'menu') {
@@ -1712,6 +2026,10 @@ btnMouse.onclick = () => {
   hideStart();
   toast('Mouse = your hand · Space = jump · ↓ = duck/squat', '#facc15', 5);
 };
+if (IS_APP) { try { Object.assign(ENT, JSON.parse(window.AndroidBilling.getState())); } catch {} }
+document.getElementById('btnRemote').onclick = () => startRemoteClient('');
+const qsRemote = new URLSearchParams(location.search).get('remote');
+if (qsRemote !== null) startRemoteClient(qsRemote);
 document.fonts?.load?.(F(20)).catch(() => {});
 requestAnimationFrame(frame);
 </script>
