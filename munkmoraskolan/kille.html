@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=800, height=480, initial-scale=1.0">
+<title>Ansiktsnyckel – Kille</title>
+<style>
+  /* Skärmen är gjord för 800 × 480 (samma som Arduino GIGA Display). */
+  :root {
+    --bg: #07111f;
+    --panel: #0e1c30;
+    --panel-2: #132842;
+    --ink: #e8f1ff;
+    --muted: #8aa3c2;
+    --accent: #38bdf8;
+    --accent-2: #2563eb;
+    --ok: #22c55e;
+    --danger: #ef4444;
+    --border: #1f3a5c;
+  }
+  body[data-tema="tjej"] {
+    --bg: #1a0a1c;
+    --panel: #2a1030;
+    --panel-2: #3a1642;
+    --ink: #fdeefe;
+    --muted: #d3a6d8;
+    --accent: #f472b6;
+    --accent-2: #a855f7;
+    --border: #5a2466;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    user-select: none; -webkit-user-select: none;
+  }
+  #skarm {
+    width: 800px; height: 480px; flex: none;
+    background: var(--bg);
+    display: grid; grid-template-rows: 56px 1fr;
+    transform-origin: center;
+    position: relative; overflow: hidden;
+  }
+
+  /* ---------- Topp ---------- */
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 14px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+  .logga {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center; font-size: 18px;
+  }
+  .titel b { display: block; font-size: 16px; letter-spacing: .3px; }
+  .titel span { font-size: 12px; color: var(--muted); }
+  .platser { margin-left: auto; display: flex; gap: 6px; }
+  .platser button {
+    font: inherit; font-size: 13px; font-weight: 600;
+    color: var(--muted); background: transparent;
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 8px 12px; cursor: pointer;
+  }
+  .platser button.vald {
+    color: #fff; border-color: transparent;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  }
+
+  /* ---------- Huvuddel ---------- */
+  main { display: grid; grid-template-columns: 410px 1fr; min-height: 0; }
+
+  .skanner {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; padding: 12px;
+  }
+  .ram {
+    position: relative; width: 240px; height: 280px;
+    border-radius: 18px; overflow: hidden;
+    background: radial-gradient(ellipse at center, var(--panel-2), var(--bg) 75%);
+  }
+  .ram video {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; transform: scaleX(-1); display: none;
+  }
+  .ram.kamera video { display: block; }
+  .ram.kamera .siluett { display: none; }
+  .siluett { position: absolute; inset: 0; margin: auto; width: 150px; opacity: .55; }
+  .horn { position: absolute; width: 36px; height: 36px; border: 4px solid var(--accent); }
+  .horn.a { top: 8px; left: 8px; border-right: 0; border-bottom: 0; border-radius: 12px 0 0 0; }
+  .horn.b { top: 8px; right: 8px; border-left: 0; border-bottom: 0; border-radius: 0 12px 0 0; }
+  .horn.c { bottom: 8px; left: 8px; border-right: 0; border-top: 0; border-radius: 0 0 0 12px; }
+  .horn.d { bottom: 8px; right: 8px; border-left: 0; border-top: 0; border-radius: 0 0 12px 0; }
+  .oval {
+    position: absolute; inset: 0; margin: auto; width: 170px; height: 220px;
+    border: 2px dashed var(--accent); border-radius: 50%; opacity: .5;
+  }
+  .linje {
+    position: absolute; left: 0; right: 0; height: 3px; top: 0;
+    background: var(--accent); box-shadow: 0 0 18px 4px var(--accent);
+    display: none;
+  }
+  .skannar .linje { display: block; animation: svep 1.1s ease-in-out infinite alternate; }
+  .skannar .oval { animation: puls .6s ease-in-out infinite alternate; }
+  @keyframes svep { from { top: 6%; } to { top: 94%; } }
+  @keyframes puls { from { opacity: .3; } to { opacity: 1; } }
+
+  .ok .horn { border-color: var(--ok); }
+  .ok .oval { border-color: var(--ok); border-style: solid; opacity: 1; }
+  .nej .horn { border-color: var(--danger); }
+  .nej .oval { border-color: var(--danger); border-style: solid; opacity: 1; }
+
+  .stapel { width: 240px; height: 6px; border-radius: 3px; background: var(--panel-2); overflow: hidden; }
+  .stapel i { display: block; height: 100%; width: 0; background: var(--accent); }
+  .skannar .stapel i { animation: fyll var(--skanntid) linear forwards; }
+  @keyframes fyll { to { width: 100%; } }
+
+  .status { text-align: center; min-height: 58px; }
+  .status b { display: block; font-size: 22px; }
+  .status span { font-size: 14px; color: var(--muted); }
+  .ok .status b { color: var(--ok); }
+  .nej .status b { color: var(--danger); }
+
+  /* ---------- Demo-panel med namn ---------- */
+  .panel {
+    margin: 10px 10px 10px 0; padding: 10px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    display: flex; flex-direction: column; gap: 8px; min-height: 0;
+  }
+  .panel-topp { display: flex; align-items: center; gap: 8px; }
+  .panel-topp p { font-size: 13px; color: var(--muted); }
+  .panel-topp button {
+    margin-left: auto; font: inherit; font-size: 12px; font-weight: 600;
+    color: var(--ink); background: var(--panel-2);
+    border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; cursor: pointer;
+  }
+  .namn {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+    overflow-y: auto; min-height: 0;
+  }
+  .namn button {
+    font: inherit; font-size: 12px; font-weight: 600; color: var(--ink);
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 9px;
+    height: 44px; padding: 0 4px; cursor: pointer;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .namn button:active { transform: scale(.96); }
+  .namn button.okand { color: var(--danger); }
+  .namn button:disabled { opacity: .4; cursor: default; }
+
+  /* Stor färgblink när dörren öppnas / nekas */
+  .blink { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+  .ok .blink { background: var(--ok); animation: blink .7s ease-out; }
+  .nej .blink { background: var(--danger); animation: blink .7s ease-out; }
+  @keyframes blink { from { opacity: .35; } to { opacity: 0; } }
+</style>
+</head>
+<body data-tema="kille">
+<div id="skarm">
+  <header>
+    <div class="logga" id="logga">🙂</div>
+    <div class="titel">
+      <b>Munkmoraskolan · Ansiktsnyckel</b>
+      <span id="undertitel">Kille-skanner</span>
+    </div>
+    <nav class="platser" id="platser"></nav>
+  </header>
+
+  <main>
+    <section class="skanner" id="skanner">
+      <div class="ram" id="ram">
+        <video id="video" autoplay playsinline muted></video>
+        <svg class="siluett" viewBox="0 0 100 120" fill="currentColor" style="color:var(--muted)">
+          <circle cx="50" cy="38" r="24"/>
+          <path d="M8 120c0-26 19-42 42-42s42 16 42 42z"/>
+        </svg>
+        <div class="oval"></div>
+        <div class="horn a"></div><div class="horn b"></div>
+        <div class="horn c"></div><div class="horn d"></div>
+        <div class="linje"></div>
+      </div>
+      <div class="stapel"><i></i></div>
+      <div class="status" id="status"></div>
+    </section>
+
+    <aside class="panel">
+      <div class="panel-topp">
+        <p>Demo: vem står framför kameran?</p>
+        <button id="kameraknapp" type="button">📷 Kamera</button>
+      </div>
+      <div class="namn" id="namn"></div>
+    </aside>
+  </main>
+  <div class="blink"></div>
+</div>
+
+<script>
+  /* ================= INSTÄLLNINGAR – ändra här ================= */
+
+  // "kille" eller "tjej" – styr färger och rubrik.
+  const TEMA = "kille";
+
+  // Klassen, i samma ordning som på klassfotot
+  // (bakre raden vänster→höger, mitten, sen främre raden).
+  const KLASSEN = [
+    { namn: "Mattias", roll: "Lärare" },
+    { namn: "Ellis" }, { namn: "Sandra" }, { namn: "Felicia" }, { namn: "Loke" },
+    { namn: "Adrian" }, { namn: "Benjamin" }, { namn: "Osariemen" },
+    { namn: "Matheus" }, { namn: "Malak" }, { namn: "Zindra" }, { namn: "Wille" },
+    { namn: "Iason" }, { namn: "Eskil" }, { namn: "Junior" },
+    { namn: "Janet", roll: "Lärare" },
+    { namn: "Rut" }, { namn: "Raken" }, { namn: "Celine" }, { namn: "Emily" },
+    { namn: "Keyla" }, { namn: "Ossian" }, { namn: "Edith" },
+  ];
+
+  // Vilka som hör till den här skärmen. Skriv in namnen, t.ex. ["Raken", "Loke"].
+  // Tom lista = alla i KLASSEN räknas med.
+  const GRUPP = [];
+
+  // Platserna som skärmen kan låsa upp.
+  //   vem: "grupp"   → alla i GRUPP (plus lärarna)
+  //   vem: [namn...] → bara de namnen
+  const PLATSER = [
+    { id: "klassrum", namn: "Klassrum 4", ikon: "🏫", vem: "grupp" },
+    { id: "klubben",  namn: "Klubben",    ikon: "⭐", vem: "grupp" },
+    { id: "lada",     namn: "Rakens låda", ikon: "🔐", vem: ["Raken"] },
+  ];
+
+  const SKANNTID_MS = 1800;   // hur länge "skanningen" pågår
+  const VISA_SVAR_MS = 4000;  // hur länge svaret visas innan skärmen återställs
+
+  /* ============================================================== */
+
+  const TEXT = {
+    kille: { rubrik: "Kille-skanner", ikon: "🧢" },
+    tjej:  { rubrik: "Tjej-skanner",  ikon: "🎀" },
+  }[TEMA];
+
+  document.body.dataset.tema = TEMA;
+  document.title = "Ansiktsnyckel – " + TEXT.rubrik;
+  document.getElementById("undertitel").textContent = TEXT.rubrik;
+  document.getElementById("logga").textContent = TEXT.ikon;
+
+  const skanner = document.getElementById("skanner");
+  const statusEl = document.getElementById("status");
+  const namnEl = document.getElementById("namn");
+  const platserEl = document.getElementById("platser");
+  skanner.style.setProperty("--skanntid", SKANNTID_MS + "ms");
+
+  let plats = PLATSER[0];
+  let upptagen = false;
+  let aterstall = null;
+
+  function arLarare(namn) {
+    return KLASSEN.some(p => p.namn === namn && p.roll === "Lärare");
+  }
+
+  function harBehorighet(namn, p) {
+    if (!namn) return false;
+    if (Array.isArray(p.vem)) return p.vem.includes(namn);
+    if (arLarare(namn)) return true;
+    const grupp = GRUPP.length ? GRUPP : KLASSEN.map(x => x.namn);
+    return grupp.includes(namn);
+  }
+
+  function visaStatus(rubrik, text) {
+    statusEl.innerHTML = "";
+    const b = document.createElement("b");
+    const s = document.createElement("span");
+    b.textContent = rubrik;
+    s.textContent = text;
+    statusEl.append(b, s);
+  }
+
+  function vila() {
+    skanner.classList.remove("skannar", "ok", "nej");
+    document.getElementById("skarm").classList.remove("ok", "nej");
+    visaStatus("Titta in i kameran", plats.ikon + " " + plats.namn + " är låst");
+    upptagen = false;
+    namnEl.querySelectorAll("button").forEach(b => b.disabled = false);
+  }
+
+  function skanna(namn) {
+    if (upptagen) return;
+    upptagen = true;
+    clearTimeout(aterstall);
+    namnEl.querySelectorAll("button").forEach(b => b.disabled = true);
+
+    skanner.classList.remove("ok", "nej");
+    // Starta om animationerna
+    void skanner.offsetWidth;
+    skanner.classList.add("skannar");
+    visaStatus("Skannar ansikte…", "Stå still en sekund");
+
+    setTimeout(() => {
+      skanner.classList.remove("skannar");
+      const skarm = document.getElementById("skarm");
+      let resultat;
+      if (!namn) {
+        resultat = "nej";
+        visaStatus("Okänt ansikte", "🔒 Åtkomst nekad");
+      } else if (harBehorighet(namn, plats)) {
+        resultat = "ok";
+        visaStatus("Välkommen, " + namn + "!", "🔓 " + plats.namn + " är upplåst");
+      } else {
+        resultat = "nej";
+        visaStatus("Hej " + namn + "!", "🔒 Du har inte nyckel till " + plats.namn);
+      }
+      skanner.classList.add(resultat);
+      skarm.classList.remove("ok", "nej");
+      void skarm.offsetWidth;
+      skarm.classList.add(resultat);
+      aterstall = setTimeout(vila, VISA_SVAR_MS);
+    }, SKANNTID_MS);
+  }
+
+  // Platsknappar
+  PLATSER.forEach(p => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = p.ikon + " " + p.namn;
+    b.onclick = () => {
+      if (upptagen) return;
+      plats = p;
+      platserEl.querySelectorAll("button").forEach(x => x.classList.toggle("vald", x === b));
+      vila();
+    };
+    if (p === plats) b.classList.add("vald");
+    platserEl.append(b);
+  });
+
+  // Namnknappar (demo)
+  KLASSEN.forEach(p => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = p.namn;
+    b.title = p.roll || "Elev";
+    b.onclick = () => skanna(p.namn);
+    namnEl.append(b);
+  });
+  const okand = document.createElement("button");
+  okand.type = "button";
+  okand.className = "okand";
+  okand.textContent = "❓ Okänd";
+  okand.onclick = () => skanna(null);
+  namnEl.append(okand);
+
+  // Kamera (bara förhandsvisning – ingen igenkänning, ingenting sparas)
+  document.getElementById("kameraknapp").onclick = async () => {
+    const ram = document.getElementById("ram");
+    const video = document.getElementById("video");
+    if (video.srcObject) {
+      video.srcObject.getTracks().forEach(t => t.stop());
+      video.srcObject = null;
+      ram.classList.remove("kamera");
+      return;
+    }
+    try {
+      video.srcObject = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+      ram.classList.add("kamera");
+    } catch (e) {
+      visaStatus("Ingen kamera", "Kunde inte starta kameran");
+    }
+  };
+
+  // Skala skärmen så den fyller fönstret men behåller 800 × 480
+  function skala() {
+    const s = Math.min(innerWidth / 800, innerHeight / 480);
+    document.getElementById("skarm").style.transform = "scale(" + s + ")";
+  }
+  addEventListener("resize", skala);
+  skala();
+  vila();
+</script>
+</body>
+</html>
