@@ -1,63 +1,67 @@
-# Munkmoraskolan · Ansiktsnyckel
+# Munkmoraskolan · NFC-nyckel
 
-Två skärmar i storleken 800 × 480 (samma som Arduino GIGA Display):
+Lås som öppnas med NFC-kort. På kortet står det vem man är:
 
-| Fil | Tema |
-|-----|------|
-| `kille.html` | Blå – ”Kille-skanner” |
-| `tjej.html` | Rosa/lila – ”Tjej-skanner” |
+```
+isperson[Raken]
+```
 
-Öppna filen i en webbläsare på en enhet med kamera och internet (surfplatta, dator, Raspberry Pi).
-Sidan startar kameran och laddar ansiktsigenkänningen ([face-api.js](https://github.com/vladmandic/face-api))
-automatiskt.
+Om namnet finns i klassen och personen har nyckel till platsen låser det upp.
 
-### Lägga in ansikten
+| Fil | Vad |
+|-----|-----|
+| `kille.html` | Skärm 800 × 480, blå – ”Kille-skanner” |
+| `tjej.html` | Skärm 800 × 480, rosa/lila – ”Tjej-skanner” |
+| `nfc-lasare/nfc-lasare.ino` | Arduino-kod för GIGA R1 + GIGA Display + PN532-läsare |
 
-1. Tryck **➕ Lägg till ansikte**.
-2. Personen ställer sig i ramen, och du trycker på personens namn.
-3. Skärmen tar 5 bilder, så vrid huvudet lite mellan bilderna. Namnet får en grön ✓.
-4. Tryck **✔ Klar** när alla är inlagda.
+## Göra kort
 
-Varje person lägger in sitt eget ansikte framför kameran. Det ger mycket bättre igenkänning
-än små ansikten från ett klassfoto.
-Om ett ansikte redan liknar någon annan som är sparad, sparas det inte.
-**🗑 Ta bort** raderar en persons ansikte, till exempel om någon ångrar sig.
+1. Köp NFC-kort eller NFC-klistermärken (NTAG213/215 funkar bra).
+2. Ladda ner en app som **NFC Tools** på mobilen.
+3. Välj *Skriv* → *Lägg till post* → *Text* och skriv till exempel `isperson[Raken]`.
+4. Håll kortet mot mobilen så sparas texten.
 
-### Skanna
+Stora och små bokstäver spelar ingen roll: `isperson[raken]` funkar också.
 
-Välj plats uppe till höger (**Klassrum 4**, **Klubben**, **Rakens låda**) och titta in i kameran.
+## Skärmen (HTML)
+
+Välj plats uppe till höger: **Klassrum 4**, **Klubben** eller **Rakens låda**.
+Till höger ser du vilka som har nyckel till platsen (grön ✓).
 
 - Grönt = upplåst („Välkommen, Raken!”)
-- Rött = okänt ansikte, eller personen har inte nyckel till just den platsen
+- Rött = ogiltigt kort, namnet finns inte i klassen, eller personen har inte nyckel till platsen
 
-Utan kamera eller internet startar sidan i **demoläge**. Då trycker man på namnen i stället.
+Skärmen kan läsa kort på tre sätt:
 
-### Var sparas ansiktena?
+1. **📶 NFC i en Android-mobil eller surfplatta.** Det fungerar i Chrome. Tryck på *Starta NFC* om knappen syns.
+2. **USB-kortläsare som skriver som ett tangentbord.** Läsaren ”skriver” `isperson[Raken]` och trycker Enter.
+   Samma sak går att testa utan kort: skriv texten och tryck Enter.
+3. **🔌 Arduino via USB-kabel.** Det fungerar i Chrome eller Edge på datorn. Tryck på knappen och välj din GIGA.
 
-Inga bilder sparas. Varje ansikte blir 128 tal, och de sparas bara i webbläsaren på den
-enheten (`localStorage`). Inget laddas upp och inget hamnar i det här repot. Alla som ska vara
-med behöver också ett ja från en förälder, och skolan bör veta om det.
+### Ändra inställningar
 
-## Ändra inställningar
-
-Överst i `<script>` i varje fil:
+Överst i `<script>` i `kille.html` / `tjej.html`:
 
 - `GRUPP` – vilka som hör till skärmen, t.ex. `["Raken", "Loke"]`. Tom lista = hela klassen.
 - `PLATSER` – vem som får öppna vad. Lådan är satt till `["Raken"]`.
 - `KLASSEN` – alla namn. Mattias och Janet är lärare och får öppna klassrum och klubben.
-- `PIN` – en kod som behövs för att lägga till eller ta bort ansikten. **Sätt en kod**, annars kan
-  vem som helst spara sitt ansikte under namnet ”Raken”.
-- `TROSKEL` – hur lika ansiktena måste vara (lägre = strängare). Standard är 0.5.
 
-## Viktigt om Arduino
+## Arduino GIGA
 
-GIGA Display Shield kan **inte** köra HTML. Den ritar med LVGL / `Arduino_GigaDisplay_GFX` i C++.
-Så du kan antingen:
+`nfc-lasare.ino` gör att GIGA:n själv läser korten och visar svaret på GIGA-skärmen.
+Då behövs ingen webbsida. Den lyser också grönt eller rött med lampan på kortet och skickar
+kortets text över USB, så att HTML-skärmen kan kopplas in med 🔌.
 
-1. Visa HTML-filen på en surfplatta eller en Raspberry Pi med skärm i helskärmsläge, eller
-2. Använda den här designen som mall och bygga om den i LVGL på GIGA:n.
+Koppla PN532-läsaren (ställ den på I2C): VCC → 3.3V, GND → GND, SDA → 20, SCL → 21.
+
+Bibliotek:
+- `Arduino_GigaDisplay_GFX` (finns i Library Manager)
+- PN532 och NDEF från <https://github.com/Seeed-Studio/PN532>. Ladda ner zip-filen och lägg mapparna
+  `PN532`, `PN532_I2C` och `NDEF` i din `libraries`-mapp.
+
+Överst i filen ställer du in `PLATS` och `BEHORIGA`. För lådan: `{ "Raken" }`.
 
 ## Bra att veta
 
-Det här är ett skolprojekt och inget riktigt lås. Ansiktsigenkänning kan luras av ett foto
-och kan ibland ta fel på syskon. Använd den inte för saker som måste vara säkra.
+Vem som helst med en mobil kan skriva `isperson[Raken]` på ett eget NFC-klistermärke.
+Därför är det här ett kul skolprojekt och inget riktigt lås. Använd det inte för saker som måste vara säkra.
