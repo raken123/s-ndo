@@ -124,7 +124,7 @@
   .ok .status b { color: var(--ok); }
   .nej .status b { color: var(--danger); }
 
-  /* ---------- Demo-panel med namn ---------- */
+  /* ---------- Panel med namn ---------- */
   .panel {
     margin: 10px 10px 10px 0; padding: 10px;
     background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
@@ -132,8 +132,9 @@
   }
   .panel-topp { display: flex; align-items: center; gap: 8px; }
   .panel-topp p { font-size: 13px; color: var(--muted); }
+  .panel-topp p { margin-right: auto; }
   .panel-topp button {
-    margin-left: auto; font: inherit; font-size: 12px; font-weight: 600;
+    flex: none; font: inherit; font-size: 12px; font-weight: 600;
     color: var(--ink); background: var(--panel-2);
     border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; cursor: pointer;
   }
@@ -150,6 +151,15 @@
   .namn button:active { transform: scale(.96); }
   .namn button.okand { color: var(--danger); }
   .namn button:disabled { opacity: .4; cursor: default; }
+  .namn button.last { cursor: default; }
+  .namn button.last:active { transform: none; }
+  .namn button.sparad { border-color: var(--ok); }
+  .namn button.sparad::after { content: " ✓"; color: var(--ok); }
+  .panel.lagg-till { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .panel-topp button.aktiv {
+    color: #fff; border-color: transparent;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  }
 
   /* Stor färgblink när dörren öppnas / nekas */
   .blink { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
@@ -186,10 +196,11 @@
       <div class="status" id="status"></div>
     </section>
 
-    <aside class="panel">
+    <aside class="panel" id="panel">
       <div class="panel-topp">
-        <p>Demo: vem står framför kameran?</p>
-        <button id="kameraknapp" type="button">📷 Kamera</button>
+        <p id="paneltext"></p>
+        <button id="bortknapp" type="button" hidden>🗑 Ta bort</button>
+        <button id="lagerknapp" type="button" hidden>➕ Lägg till ansikte</button>
       </div>
       <div class="namn" id="namn"></div>
     </aside>
@@ -197,6 +208,7 @@
   <div class="blink"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7/dist/face-api.js"></script>
 <script>
   /* ================= INSTÄLLNINGAR – ändra här ================= */
 
@@ -229,8 +241,20 @@
     { id: "lada",     namn: "Rakens låda", ikon: "🔐", vem: ["Raken"] },
   ];
 
-  const SKANNTID_MS = 1800;   // hur länge "skanningen" pågår
-  const VISA_SVAR_MS = 4000;  // hur länge svaret visas innan skärmen återställs
+  // Kod som behövs för att lägga till eller ta bort ansikten. "" = ingen kod.
+  // Sätt en kod, annars kan vem som helst spara sitt ansikte som "Raken".
+  const PIN = "";
+
+  // Hur lika två ansikten måste vara för att räknas som samma person.
+  // Lägre = strängare (färre fel, men missar oftare). 0.45–0.55 brukar funka bra.
+  const TROSKEL = 0.5;
+
+  const BILDER_PER_PERSON = 5;  // hur många bilder som tas när ett ansikte läggs till
+  const SKANNTID_MS = 1200;     // hur länge skärmen tittar innan den bestämmer sig
+  const VISA_SVAR_MS = 4000;    // hur länge svaret visas innan skärmen återställs
+
+  // Varifrån AI-modellerna hämtas (behöver internet när sidan startar).
+  const MODELL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7/model/";
 
   /* ============================================================== */
 
@@ -244,16 +268,67 @@
   document.getElementById("undertitel").textContent = TEXT.rubrik;
   document.getElementById("logga").textContent = TEXT.ikon;
 
+  const skarm = document.getElementById("skarm");
   const skanner = document.getElementById("skanner");
+  const ram = document.getElementById("ram");
+  const video = document.getElementById("video");
   const statusEl = document.getElementById("status");
   const namnEl = document.getElementById("namn");
   const platserEl = document.getElementById("platser");
-  skanner.style.setProperty("--skanntid", SKANNTID_MS + "ms");
+  const panel = document.getElementById("panel");
+  const panelText = document.getElementById("paneltext");
+  const lagerknapp = document.getElementById("lagerknapp");
+  const bortknapp = document.getElementById("bortknapp");
 
+  // "startar" → "skanna" (kameran igång) eller "demo" (ingen kamera/internet).
+  // "lagg-till" = man sparar nya ansikten.
+  let lage = "startar";
+  let taBortLage = false;
   let plats = PLATSER[0];
   let upptagen = false;
   let aterstall = null;
 
+  /* ---------- Sparade ansikten ----------
+     Inga bilder sparas. Varje ansikte blir en lista med 128 tal,
+     och de ligger bara i den här webbläsaren (localStorage). */
+  const LAGRING = "munkmora-ansiktsnyckel";
+  let ansikten = {};
+  try { ansikten = JSON.parse(localStorage.getItem(LAGRING)) || {}; } catch (e) {}
+  function sparaAnsikten() {
+    try { localStorage.setItem(LAGRING, JSON.stringify(ansikten)); } catch (e) {}
+  }
+
+  function avstand(a, b) {
+    let s = 0;
+    for (let i = 0; i < a.length; i++) s += (a[i] - b[i]) ** 2;
+    return Math.sqrt(s);
+  }
+
+  // Vem liknar ansiktet mest? null om ingen är tillräckligt lik.
+  function kannIgen(beskrivning, utom) {
+    let bast = null, bastAvst = Infinity;
+    for (const [namn, lista] of Object.entries(ansikten)) {
+      if (namn === utom) continue;
+      for (const d of lista) {
+        const a = avstand(beskrivning, d);
+        if (a < bastAvst) { bastAvst = a; bast = namn; }
+      }
+    }
+    return bastAvst < TROSKEL ? bast : null;
+  }
+
+  async function hittaAnsikte() {
+    if (video.readyState < 2) return null;
+    const svar = await faceapi
+      .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }))
+      .withFaceLandmarks()
+      .withFaceDescriptor();
+    return svar ? svar.descriptor : null;
+  }
+
+  const vanta = ms => new Promise(r => setTimeout(r, ms));
+
+  /* ---------- Behörighet ---------- */
   function arLarare(namn) {
     return KLASSEN.some(p => p.namn === namn && p.roll === "Lärare");
   }
@@ -266,6 +341,7 @@
     return grupp.includes(namn);
   }
 
+  /* ---------- Visning ---------- */
   function visaStatus(rubrik, text) {
     statusEl.innerHTML = "";
     const b = document.createElement("b");
@@ -275,49 +351,170 @@
     statusEl.append(b, s);
   }
 
-  function vila() {
-    skanner.classList.remove("skannar", "ok", "nej");
-    document.getElementById("skarm").classList.remove("ok", "nej");
-    visaStatus("Titta in i kameran", plats.ikon + " " + plats.namn + " är låst");
-    upptagen = false;
-    namnEl.querySelectorAll("button").forEach(b => b.disabled = false);
+  function startaSkannVisning(ms) {
+    clearTimeout(aterstall);
+    skanner.style.setProperty("--skanntid", ms + "ms");
+    skanner.classList.remove("ok", "nej");
+    void skanner.offsetWidth;  // starta om animationerna
+    skanner.classList.add("skannar");
   }
 
-  function skanna(namn) {
-    if (upptagen) return;
-    upptagen = true;
-    clearTimeout(aterstall);
-    namnEl.querySelectorAll("button").forEach(b => b.disabled = true);
+  function visaSvar(resultat, rubrik, text) {
+    skanner.classList.remove("skannar");
+    visaStatus(rubrik, text);
+    skanner.classList.add(resultat);
+    skarm.classList.remove("ok", "nej");
+    void skarm.offsetWidth;
+    skarm.classList.add(resultat);
+    aterstall = setTimeout(vila, VISA_SVAR_MS);
+  }
 
-    skanner.classList.remove("ok", "nej");
-    // Starta om animationerna
-    void skanner.offsetWidth;
-    skanner.classList.add("skannar");
+  function visaLasSvar(namn) {
+    if (!namn) {
+      visaSvar("nej", "Okänt ansikte", "🔒 Åtkomst nekad");
+    } else if (harBehorighet(namn, plats)) {
+      visaSvar("ok", "Välkommen, " + namn + "!", "🔓 " + plats.namn + " är upplåst");
+    } else {
+      visaSvar("nej", "Hej " + namn + "!", "🔒 Du har inte nyckel till " + plats.namn);
+    }
+  }
+
+  function uppdateraPanel() {
+    panel.classList.toggle("lagg-till", lage === "lagg-till");
+    lagerknapp.hidden = lage === "demo" || lage === "startar";
+    lagerknapp.textContent = lage === "lagg-till" ? "✔ Klar" : "➕ Lägg till ansikte";
+    lagerknapp.classList.toggle("aktiv", lage === "lagg-till");
+    bortknapp.hidden = lage !== "lagg-till";
+    bortknapp.classList.toggle("aktiv", taBortLage);
+
+    const antal = Object.keys(ansikten).length;
+    panelText.textContent = {
+      startar: "Startar kameran…",
+      demo: "Demo: vem står framför kameran?",
+      skanna: antal + " av " + KLASSEN.length + " har sparat sitt ansikte",
+      "lagg-till": taBortLage ? "Tryck på namnet som ska tas bort" : "Tryck på namnet på den som står i kameran",
+    }[lage];
+
+    namnEl.querySelectorAll("button").forEach(b => {
+      const namn = b.dataset.namn;
+      b.classList.toggle("sparad", !!namn && !!ansikten[namn]);
+      b.classList.toggle("last", lage === "skanna" || lage === "startar");
+      b.disabled = upptagen;
+      if (!namn) b.hidden = lage !== "demo";
+    });
+  }
+
+  function vila() {
+    clearTimeout(aterstall);
+    skanner.classList.remove("skannar", "ok", "nej");
+    skarm.classList.remove("ok", "nej");
+    upptagen = false;
+    if (lage === "lagg-till") {
+      visaStatus(taBortLage ? "Ta bort ansikte" : "Lägg till ansikte",
+                 taBortLage ? "Välj namn i listan" : "Stå i ramen och tryck på ditt namn");
+    } else if (lage === "demo") {
+      visaStatus("Demoläge", plats.ikon + " " + plats.namn + " är låst");
+    } else if (lage === "skanna") {
+      visaStatus("Titta in i kameran", plats.ikon + " " + plats.namn + " är låst");
+    }
+    uppdateraPanel();
+  }
+
+  /* ---------- Riktig skanning ---------- */
+  async function skannaPerson(forsta) {
+    upptagen = true;
+    uppdateraPanel();
+    startaSkannVisning(SKANNTID_MS);
     visaStatus("Skannar ansikte…", "Stå still en sekund");
 
-    setTimeout(() => {
-      skanner.classList.remove("skannar");
-      const skarm = document.getElementById("skarm");
-      let resultat;
-      if (!namn) {
-        resultat = "nej";
-        visaStatus("Okänt ansikte", "🔒 Åtkomst nekad");
-      } else if (harBehorighet(namn, plats)) {
-        resultat = "ok";
-        visaStatus("Välkommen, " + namn + "!", "🔓 " + plats.namn + " är upplåst");
-      } else {
-        resultat = "nej";
-        visaStatus("Hej " + namn + "!", "🔒 Du har inte nyckel till " + plats.namn);
-      }
-      skanner.classList.add(resultat);
-      skarm.classList.remove("ok", "nej");
-      void skarm.offsetWidth;
-      skarm.classList.add(resultat);
-      aterstall = setTimeout(vila, VISA_SVAR_MS);
-    }, SKANNTID_MS);
+    if (!Object.keys(ansikten).length) {
+      await vanta(SKANNTID_MS);
+      visaSvar("nej", "Inga ansikten sparade", "Tryck på ➕ Lägg till ansikte");
+      return;
+    }
+
+    // Titta flera gånger och låt majoriteten bestämma, så en enstaka felbild inte öppnar.
+    const gissningar = [kannIgen(forsta)];
+    const slut = Date.now() + SKANNTID_MS;
+    while (Date.now() < slut) {
+      const d = await hittaAnsikte();
+      if (d) gissningar.push(kannIgen(d));
+      await vanta(100);
+    }
+    const rakna = {};
+    gissningar.forEach(n => rakna[n] = (rakna[n] || 0) + 1);
+    const [vem, antal] = Object.entries(rakna).sort((a, b) => b[1] - a[1])[0];
+    const namn = vem !== "null" && antal > gissningar.length / 2 ? vem : null;
+    visaLasSvar(namn);
   }
 
-  // Platsknappar
+  async function slinga() {
+    if (lage === "skanna" && !upptagen) {
+      try {
+        const d = await hittaAnsikte();
+        if (d && lage === "skanna" && !upptagen) await skannaPerson(d);
+      } catch (e) { console.error(e); }
+    }
+    setTimeout(slinga, 300);
+  }
+
+  /* ---------- Lägga till / ta bort ansikten ---------- */
+  async function laggTill(namn) {
+    if (ansikten[namn] && !confirm(namn + " har redan ett sparat ansikte. Ta nya bilder?")) return;
+    upptagen = true;
+    uppdateraPanel();
+    startaSkannVisning(BILDER_PER_PERSON * 600);
+    visaStatus("Titta in i kameran, " + namn, "Bild 0 av " + BILDER_PER_PERSON);
+
+    const nya = [];
+    const slut = Date.now() + 10000;
+    while (nya.length < BILDER_PER_PERSON && Date.now() < slut) {
+      const d = await hittaAnsikte();
+      if (d) {
+        nya.push(Array.from(d));
+        visaStatus("Titta in i kameran, " + namn, "Bild " + nya.length + " av " + BILDER_PER_PERSON + " – vrid huvudet lite");
+        await vanta(400);
+      } else {
+        await vanta(150);
+      }
+    }
+
+    if (nya.length < BILDER_PER_PERSON) {
+      visaSvar("nej", "Hittade inget ansikte", "Stå närmare kameran och försök igen");
+      return;
+    }
+    const liknar = kannIgen(nya[0], namn);
+    if (liknar) {
+      visaSvar("nej", "Inte sparat", "Ansiktet liknar redan " + liknar);
+      return;
+    }
+    ansikten[namn] = nya;
+    sparaAnsikten();
+    visaSvar("ok", "Sparat!", "Nu känner jag igen " + namn);
+  }
+
+  function taBort(namn) {
+    if (!ansikten[namn]) {
+      visaSvar("nej", namn, "Har inget sparat ansikte");
+      return;
+    }
+    if (!confirm("Ta bort " + namn + "s ansikte?")) return;
+    delete ansikten[namn];
+    sparaAnsikten();
+    visaSvar("ok", "Borttaget", namn + "s ansikte är raderat");
+  }
+
+  /* ---------- Demo utan kamera ---------- */
+  async function demoSkanna(namn) {
+    upptagen = true;
+    uppdateraPanel();
+    startaSkannVisning(SKANNTID_MS);
+    visaStatus("Skannar ansikte…", "Stå still en sekund");
+    await vanta(SKANNTID_MS);
+    visaLasSvar(namn);
+  }
+
+  /* ---------- Knappar ---------- */
   PLATSER.forEach(p => {
     const b = document.createElement("button");
     b.type = "button";
@@ -332,48 +529,79 @@
     platserEl.append(b);
   });
 
-  // Namnknappar (demo)
+  function namnKlick(namn) {
+    if (upptagen) return;
+    if (lage === "demo") demoSkanna(namn);
+    else if (lage === "lagg-till" && namn) taBortLage ? taBort(namn) : laggTill(namn);
+  }
+
   KLASSEN.forEach(p => {
     const b = document.createElement("button");
     b.type = "button";
     b.textContent = p.namn;
+    b.dataset.namn = p.namn;
     b.title = p.roll || "Elev";
-    b.onclick = () => skanna(p.namn);
+    b.onclick = () => namnKlick(p.namn);
     namnEl.append(b);
   });
   const okand = document.createElement("button");
   okand.type = "button";
   okand.className = "okand";
   okand.textContent = "❓ Okänd";
-  okand.onclick = () => skanna(null);
+  okand.onclick = () => namnKlick(null);
   namnEl.append(okand);
 
-  // Kamera (bara förhandsvisning – ingen igenkänning, ingenting sparas)
-  document.getElementById("kameraknapp").onclick = async () => {
-    const ram = document.getElementById("ram");
-    const video = document.getElementById("video");
-    if (video.srcObject) {
-      video.srcObject.getTracks().forEach(t => t.stop());
-      video.srcObject = null;
-      ram.classList.remove("kamera");
-      return;
+  lagerknapp.onclick = () => {
+    if (upptagen) return;
+    if (lage === "lagg-till") {
+      lage = "skanna";
+    } else {
+      if (PIN && prompt("Skriv koden för att ändra ansikten") !== PIN) return;
+      lage = "lagg-till";
     }
-    try {
-      video.srcObject = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-      ram.classList.add("kamera");
-    } catch (e) {
-      visaStatus("Ingen kamera", "Kunde inte starta kameran");
-    }
+    taBortLage = false;
+    vila();
   };
+  bortknapp.onclick = () => {
+    if (upptagen) return;
+    taBortLage = !taBortLage;
+    vila();
+  };
+
+  /* ---------- Start ---------- */
+  async function starta() {
+    uppdateraPanel();
+    visaStatus("Startar…", "Laddar ansiktsigenkänning");
+    try {
+      if (!window.faceapi) throw new Error("Kunde inte hämta face-api (inget internet?)");
+      video.srcObject = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user", width: 640, height: 480 },
+      });
+      ram.classList.add("kamera");
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODELL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODELL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODELL_URL),
+      ]);
+      lage = "skanna";
+      vila();
+      slinga();
+    } catch (e) {
+      console.error(e);
+      lage = "demo";
+      vila();
+      visaStatus("Demoläge", "Ingen kamera eller inget internet – tryck på ett namn");
+    }
+  }
 
   // Skala skärmen så den fyller fönstret men behåller 800 × 480
   function skala() {
     const s = Math.min(innerWidth / 800, innerHeight / 480);
-    document.getElementById("skarm").style.transform = "scale(" + s + ")";
+    skarm.style.transform = "scale(" + s + ")";
   }
   addEventListener("resize", skala);
   skala();
-  vila();
+  starta();
 </script>
 </body>
 </html>
