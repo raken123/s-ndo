@@ -33,6 +33,10 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Pages
         uses: actions/configure-pages@v5
+      # Nexora's installers (~250 MB) are downloaded from github.com, not Pages;
+      # leaving them out keeps the site under the 1 GB Pages limit.
+      - name: Leave Nexora installers out of the site
+        run: rm -f nexora/dist/*.exe nexora/dist/*.dmg nexora/dist/*.deb
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
