@@ -70,6 +70,7 @@ export function createApp({ db, env = {}, stripe = null, apns = null, webRoot = 
   const adminHash = env.ADMIN_PASSWORD ? hashPassword(env.ADMIN_PASSWORD) : DEFAULT_ADMIN_PASSWORD_HASH;
   const loginLimiter = createLimiter();
   const data = () => db.data;
+  const corsOrigins = String(env.CORS_ORIGINS || '').split(',').map((o) => o.trim()).filter(Boolean);
   // Bakom en omvänd proxy (TRUST_PROXY=1) används klientens IP från X-Forwarded-For.
   const clientIp = (req) => (env.TRUST_PROXY === '1' && String(req.headers['x-forwarded-for'] || '').split(',')[0].trim())
     || req.socket.remoteAddress;
@@ -675,6 +676,15 @@ export function createApp({ db, env = {}, stripe = null, apns = null, webRoot = 
   async function handler(req, res) {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    // CORS för fristående HTML-filer som ligger på en annan domän (CORS_ORIGINS=https://a.se,https://b.se).
+    const origin = req.headers.origin;
+    if (origin && corsOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Vary', 'Origin');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE');
+      if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+    }
     const url = new URL(req.url, 'http://x');
     try {
       if (!url.pathname.startsWith('/api/')) {

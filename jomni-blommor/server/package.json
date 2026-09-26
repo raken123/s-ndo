@@ -8,6 +8,7 @@
   "scripts": {
     "start": "node src/index.js",
     "demo": "DEMO_MODE=1 node src/index.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "build:html": "node scripts/build-standalone.mjs"
   }
 }

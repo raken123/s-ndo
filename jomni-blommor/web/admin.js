@@ -1,3 +1,5 @@
+// Serverns adress. Tom = samma domän. Fristående HTML-filer sätter <meta name="jomni-api">.
+const API_BASE = (document.querySelector('meta[name="jomni-api"]')?.content || '').replace(/\/$/, '');
 const $ = (sel, el = document) => el.querySelector(sel);
 const $$ = (sel, el = document) => [...el.querySelectorAll(sel)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -14,7 +16,7 @@ const state = { token: store.get('admin'), tab: 'orders', filter: 'active', unpa
 const root = $('#admin');
 
 async function api(path, { method = 'GET', body } = {}) {
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(`${API_BASE}/api${path}`, {
     method,
     headers: { 'Content-Type': 'application/json', ...(state.token ? { Authorization: `Bearer ${state.token}` } : {}) },
     body: body ? JSON.stringify(body) : undefined,
