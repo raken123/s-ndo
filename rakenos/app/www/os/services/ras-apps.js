@@ -73,6 +73,8 @@ class RasApps extends Emitter {
       for (;;) { const { done, value } = await reader.read(); if (done) break; chunks.push(value); got += value.length; onProgress && onProgress(total ? got / total : 0.5); }
       bytes = new Uint8Array(got); let o = 0; for (const c of chunks) { bytes.set(c, o); o += c.length; }
     } else bytes = new Uint8Array(await res.arrayBuffer());
+    // Web builds that cannot serve binary files ship packages as base64 text (same bytes once decoded).
+    if (url.endsWith('.b64.txt')) bytes = Uint8Array.from(atob(new TextDecoder().decode(bytes).trim()), (c) => c.charCodeAt(0));
     onProgress && onProgress(1);
     if (expectedSha && (await sha256(bytes)) !== expectedSha) throw new RasError('tampered', 'The downloaded package does not match the Store listing.');
     return bytes;

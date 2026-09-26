@@ -4,16 +4,21 @@ import { platform } from '../core/platform.js';
 
 const root = document.documentElement;
 const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+// When RakenOS is embedded in a host page that stamps its own light/dark choice on
+// the root element, Automatic follows that choice. On a device there is no host value.
+let hostTheme = root.getAttribute('data-theme');
+let appliedTheme = null;
 
 export function effectiveTheme() {
   const t = settings.get('theme');
-  if (t === 'auto') return mql && mql.matches ? 'dark' : 'light';
+  if (t === 'auto') return hostTheme || (mql && mql.matches ? 'dark' : 'light');
   return t;
 }
 
 export function applyAppearance() {
   const theme = effectiveTheme();
-  root.dataset.theme = theme;
+  appliedTheme = theme;
+  if (root.getAttribute('data-theme') !== theme) root.setAttribute('data-theme', theme);
   root.dataset.textSize = settings.get('textSize');
   root.dataset.boldText = settings.get('boldText') ? 'on' : 'off';
   root.dataset.motion = settings.get('reduceMotion') || settings.get('batterySaver') ? 'reduced' : 'full';
@@ -87,6 +92,10 @@ export function watchAppearance() {
   for (const k of ['theme', 'textSize', 'boldText', 'reduceMotion', 'increaseContrast', 'wallpaper', 'batterySaver']) settings.on(k, applyAppearance);
   settings.on('brightness', applyBrightness);
   if (mql) mql.addEventListener('change', () => { if (settings.get('theme') === 'auto') applyAppearance(); });
+  new MutationObserver(() => {
+    const v = root.getAttribute('data-theme');
+    if (v && v !== appliedTheme) { hostTheme = v; applyAppearance(); }
+  }).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
   applyAppearance();
   applyBrightness();
 }
