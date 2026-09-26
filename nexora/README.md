@@ -6,11 +6,12 @@ Windows-installation (EXE), macOS-skivavbild (DMG) och Linux-paket (DEB).
 | Fil | Plattform |
 |---|---|
 | `index.html` | Webbplatsen. En fristående fil som går att lägga på valfritt webbhotell. |
-| `dist/Nexora-Setup-1.0.0-x64.exe` | Windows 10/11, 64-bit |
-| `dist/Nexora-1.0.0-arm64.dmg` | macOS 12+ på Apple Silicon |
-| `dist/nexora_1.0.0_amd64.deb` | Debian, Ubuntu, Mint (x86-64) |
-| `dist/nexora-1.0.0.html` | Kopian som skrivbordsapparna laddar |
+| `dist/Nexora-Setup-1.1.0-x64.exe` | Windows 10/11, 64-bit |
+| `dist/Nexora-1.1.0-arm64.dmg` | macOS 12+ på Apple Silicon |
+| `dist/nexora_1.1.0_amd64.deb` | Debian, Ubuntu, Mint (x86-64) |
+| `dist/nexora-1.1.0.html` | Kopian som skrivbordsapparna laddar |
 | `colab/Nexora_Flash_1_Colab.ipynb` | Tränar en egen Nexora Flash-modell i Google Colab |
+| `marketing/nexora-short-9x16.mp4` | Kortreklam, 26 s, 1080×1920 (Shorts/Reels/TikTok) |
 
 ## Modellerna
 
@@ -24,6 +25,41 @@ Leverantören väljs under **⚙️ Inställningar**:
 | **Core 1** – Pro, men tänker | ″ | `claude-opus-5`, adaptivt tänkande (visas live), effort `xhigh` | ″ |
 | **Image 1** – bilder | Procedurella pixel-sprites (SVG) | `claude-opus-5` ritar SVG | `/images/generations` |
 | **3D 1** – 3D-modeller | Procedurella low-poly-modeller | `claude-opus-5` skriver mesh-JSON | ″ |
+| **Astryx 5 Pro** – AI-agent | Agentloop: bygger, testkör, gör om vid fel | `claude-opus-5` som agent med verktyg | skriv → testa → rätta, upp till 3 varv |
+
+### Nexora Astryx 5 Pro
+
+Astryx 5 Pro är en AI-agent. Den svarar inte med kod i ett enda svep. I stället arbetar den
+med fyra verktyg tills spelet fungerar:
+
+| Verktyg | Vad det gör |
+|---|---|
+| `write_game` | skriver hela spelet |
+| `edit_game` | exakt ersättning av en kodbit, för små rättningar |
+| `run_game` | kör spelet i en dold iframe, startar det, spelar med tangentbordet och returnerar fel, om bilden rör sig och en **skärmbild** som agenten tittar på |
+| `finish` | avslutar, bara tillåtet efter minst en testkörning |
+
+Agenten tänker med adaptivt tänkande, och tankarna visas live. Varje steg syns i Studio med
+skärmbilderna. Med Nexora Local kör samma loop offline med den lokala generatorn, och med
+en egen endpoint körs skriv → testa → rätta.
+
+Lanseringen styrs av datum per plan (`ROLLOUT` i `src/ai.js`):
+
+| Plan | Astryx 5 Pro |
+|---|---|
+| Studio (teamplanen) och Enterprise | från 26 september 2026 |
+| Pro | från 7 oktober 2026 |
+| Creator och Free | från 14 november 2026 |
+
+Före datumet visas en dialog med lanseringsplanen och möjligheten att uppgradera.
+
+### Krediter
+
+Är månadens spel slut kan man köpa krediter i stället för att byta till en dyrare plan.
+Krediterna är engångsköp och går aldrig ut: 25 för 49 kr, 100 för 149 kr eller 500 för 499 kr.
+Ett spel kostar 1 kredit och en Astryx-körning 3. Krediter dras bara när planens kvot är
+slut och låser inte upp funktioner från dyrare planer. Saldot visas i toppraden (🪙), och
+köp sker, precis som planerna, i demoläge utan betalning.
 
 - **Nexora Local** fungerar utan internet och utan nyckel. Den tolkar prompten (speltyp,
   tema, svårighet, antal spelare) och bygger ett av nio spel: plattformsspel, rymdskjutare,
@@ -73,7 +109,7 @@ API-nycklar lämnar aldrig enheten, förutom till den leverantör de hör till.
 
 ## Installation
 
-**Windows:** kör `Nexora-Setup-1.0.0-x64.exe`. Nexora installeras för din användare i
+**Windows:** kör `Nexora-Setup-1.1.0-x64.exe`. Nexora installeras för din användare i
 `%LOCALAPPDATA%\Programs\Nexora`, utan administratörsrättigheter, med genvägar på
 skrivbordet och i Start-menyn. Avinstallera via *Inställningar → Appar*. Filen är inte
 kodsignerad, så SmartScreen varnar: välj *Mer info → Kör ändå*.
@@ -82,18 +118,36 @@ kodsignerad, så SmartScreen varnar: välj *Mer info → Kör ändå*.
 notariserad. Första gången: högerklicka på appen och välj *Öppna*. På macOS 15 och senare
 godkänner du den under *Systeminställningar → Integritet och säkerhet → Öppna ändå*.
 
-**Linux:** `sudo apt install ./nexora_1.0.0_amd64.deb` och starta sedan `nexora` eller
+**Linux:** `sudo apt install ./nexora_1.1.0_amd64.deb` och starta sedan `nexora` eller
 välj Nexora i programmenyn.
 
 ## Bygga
 
 ```sh
-python3 nexora/build/build.py      # src/ → index.html + dist/nexora-1.0.0.html
+python3 nexora/build/build.py      # src/ → index.html + dist/nexora-1.1.0.html
 python3 nexora/build/desktop.py    # → dist/*.exe, *.dmg, *.deb  (körs på Linux)
 python3 nexora/build/build.py      # lägger in storlekar och SHA-256 på nedladdningssidan
 node nexora/build/dataset.js       # → colab/nexora_seed.jsonl
 node nexora/build/verify.js        # testar appen i headless Chromium (Playwright)
+FFMPEG=ffmpeg node nexora/build/ad.js   # renderar marketing/nexora-short-9x16.mp4
 ```
+
+## Reklamfilmen
+
+`marketing/nexora-short-9x16.mp4` är en kortreklam på 26 sekunder i 1080×1920 med H.264 och
+AAC, för YouTube Shorts, Instagram Reels och TikTok. Scenerna:
+
+1. "Du har en spelidé. Nexora gör den spelbar."
+2. En prompt skrivs i Studio.
+3. Riktiga Nexora-spel: 2D-plattformsspel, 3D-löpare, open world och rymdskjutare.
+4. Astryx 5 Pro med agentens steg och lanseringsdatumen.
+5. Krediterna.
+6. Slutskylt.
+
+Spelen i filmen är genererade av appen och spelas av en bot. `build/ad.js` renderar varje
+bildruta på en virtuell klocka, så filmen blir jämn oavsett maskin. Musiken och
+ljudeffekterna kommer från appens egna generatorer. `marketing/nexora-short-thumbnail.jpg`
+är slutskylten som miniatyrbild.
 
 `desktop.py` hämtar Electron 43.2.0 och bygger allt på Linux. Verktygen hämtas och byggs
 automatiskt till `build/.cache`:
@@ -114,7 +168,20 @@ automatiskt till `build/.cache`:
   utan fel och att planlåsningen fungerar. Alla nio speltyper genereras från riktiga
   promptar och spelas med tangenttryckningar utan fel. Den testar också spara/bibliotek,
   månadskvoten, kodredigeraren med versioner, Buggfix, alla verktyg, fyra exporttyper
-  (giltiga zip-filer) och att sidan inte scrollar i sidled i mobilbredd.
+  (giltiga zip-filer) och att sidan inte scrollar i sidled i mobilbredd. Totalt 68 kontroller.
+- Astryx 5 Pro:
+  - Lanseringsdatumen testas per plan och datum (26/9, 6/10, 7/10, 13/11 och 14/11).
+  - Pro-planen får lanseringsdialogen före 7 oktober.
+  - Den lokala agenten testkör spelet, visar skärmbilden och sammanfattningen och räknas
+    mot kvoten.
+  - Mot ett simulerat Messages API körs en hel verktygsloop (write_game → run_game →
+    finish). Testet kontrollerar att tankeblocket med signatur och `tool_use` skickas
+    tillbaka oförändrade, att `run_game` returnerar en riktig skärmbild och mätvärden,
+    att `eager_input_streaming` bara sitter på verktygen som bär kod, och att
+    `fallbacks` och promptcache är påslagna.
+- Krediter: när kvoten är slut öppnas köpdialogen. Ett köp av 25 krediter och ett spel ger
+  saldot 24 utan att månadskvoten ändras. Free-planen den 14 november drar 3 krediter för
+  Astryx.
 - AI-vägen testas mot simulerade svar. Testet kontrollerar att Core 1 skickar
   `claude-opus-5` med adaptivt tänkande och effort `xhigh` och att tankeströmmen visas,
   att Flash 1 skickar `claude-haiku-4-5`, att rätt headers skickas, att avböjda

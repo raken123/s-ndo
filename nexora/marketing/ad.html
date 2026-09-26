@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Nexora – kortreklam</title>
+<!-- Rendered frame by frame by nexora/build/ad.js: every visual here is a pure
+     function of the time t passed to __adFrame(t); nothing uses CSS animation. -->
+<style>
+  @font-face { font-family: Inter; src: url("../build/.cache/InterVariable.ttf"); font-weight: 100 900; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #06061a; color: #fff; font-family: Inter, "Liberation Sans", sans-serif; }
+  .abs { position: absolute; }
+  .scene { position: absolute; inset: 0; opacity: 0; }
+  .orb { position: absolute; border-radius: 50%; filter: blur(90px); }
+  .grad { background: linear-gradient(110deg, #9b7bff, #22d3ee); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .center { left: 0; right: 0; text-align: center; }
+  .h1 { font-size: 118px; font-weight: 850; letter-spacing: -4px; line-height: 1.02; }
+  .h2 { font-size: 78px; font-weight: 800; letter-spacing: -2.5px; line-height: 1.05; }
+  .p { font-size: 44px; font-weight: 500; color: #c9c9ee; line-height: 1.3; }
+  .pill { display: inline-block; padding: 14px 30px; border-radius: 999px; font-size: 34px; font-weight: 700; background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.18); }
+  .card { background: rgba(20, 18, 52, .92); border: 2px solid rgba(255,255,255,.12); border-radius: 44px; box-shadow: 0 40px 120px rgba(0,0,0,.5); }
+  .frame { position: absolute; overflow: hidden; border-radius: 40px; border: 3px solid rgba(255,255,255,.18); box-shadow: 0 40px 140px rgba(124,92,255,.35); background: #000; }
+  .frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .logo { width: 150px; height: 150px; }
+  .step { font-size: 40px; font-weight: 600; padding: 18px 0; display: flex; gap: 20px; align-items: center; }
+  .chip { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: 280px; height: 200px; border-radius: 36px; background: rgba(255,255,255,.07); border: 2px solid rgba(255,255,255,.14); }
+  .chip b { font-size: 64px; font-weight: 850; }
+  .chip span { font-size: 34px; color: #c9c9ee; font-weight: 600; }
+  .coin { position: absolute; width: 90px; height: 90px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff3a6, #ffc542 45%, #d18b00); box-shadow: inset 0 -6px 0 rgba(0,0,0,.2), 0 10px 30px rgba(255,197,66,.35); display: grid; place-items: center; font-weight: 900; font-size: 44px; color: #8a5a00; }
+</style>
+</head>
+<body>
+<div id="bg" class="abs" style="inset:0">
+  <div class="orb" id="o1" style="width:900px;height:900px;background:#7c5cff;opacity:.45"></div>
+  <div class="orb" id="o2" style="width:800px;height:800px;background:#22d3ee;opacity:.28"></div>
+  <div class="orb" id="o3" style="width:700px;height:700px;background:#ff4d8d;opacity:.18"></div>
+</div>
+
+<!-- 1: hook -->
+<div class="scene" id="s1">
+  <div class="abs center" style="top:230px"><svg class="logo" id="logo1" viewBox="0 0 64 64"><defs><linearGradient id="lg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#lg1)"/><path d="M18 46V18h6l16 18V18h6v28h-6L24 28v18z" fill="#0b0b20"/></svg></div>
+  <div class="abs center h1" id="s1a" style="top:640px">Du har en<br>spelidé.</div>
+  <div class="abs center h1" id="s1b" style="top:960px">Nexora gör den<br><span class="grad">spelbar.</span></div>
+</div>
+
+<!-- 2: prompt → game -->
+<div class="scene" id="s2">
+  <div class="abs center h2" style="top:200px">Beskriv spelet.</div>
+  <div class="abs card" id="s2card" style="left:70px;right:70px;top:420px;height:1060px;padding:60px">
+    <div style="font-size:34px;font-weight:700;color:#a3a3c8;margin-bottom:24px">🎮 Nexora Studio</div>
+    <div id="typed" style="min-height:330px;font-size:54px;font-weight:600;line-height:1.3;padding:34px;border-radius:28px;background:rgba(0,0,0,.35);border:2px solid rgba(124,92,255,.6)"></div>
+    <div id="btn" style="margin-top:44px;display:inline-block;padding:30px 54px;border-radius:28px;font-size:46px;font-weight:800;color:#0b0b20;background:linear-gradient(110deg,#7c5cff,#22d3ee)">✨ Skapa spel</div>
+    <div id="steps2" style="margin-top:44px"></div>
+  </div>
+</div>
+
+<!-- 3: montage of real games -->
+<div class="scene" id="s3">
+  <div class="abs center h2" style="top:170px">Spelbart på <span class="grad">sekunder.</span></div>
+  <div class="frame" id="stage3" style="left:60px;right:60px;top:380px;height:1180px"></div>
+  <div class="abs center" style="top:1610px"><span class="pill" id="cap3"></span></div>
+</div>
+
+<!-- 4: Astryx 5 Pro -->
+<div class="scene" id="s4">
+  <div class="abs center" style="top:170px"><span class="pill" style="background:linear-gradient(110deg,#7c5cff,#22d3ee);color:#0b0b20;border:0">🤖 NYHET · AI-AGENT</span></div>
+  <div class="abs center h1" style="top:300px;font-size:104px">Nexora<br><span class="grad">Astryx 5 Pro</span></div>
+  <div class="abs center p" style="top:560px;padding:0 90px">Agenten som bygger, testar och fixar spelet – helt själv.</div>
+  <div class="abs card" style="left:70px;right:70px;top:740px;height:640px;padding:44px 56px" id="log4"></div>
+  <div class="frame" id="stage4" style="left:600px;top:1060px;width:400px;height:290px;border-radius:26px"></div>
+  <div class="abs center" style="top:1450px;font-size:34px;font-weight:600;color:#c9c9ee;line-height:1.6" id="roll4">
+    <div><b style="color:#3ddc97">✓ Studio &amp; Enterprise: nu</b></div>
+    <div>📅 Pro: 7 oktober · 📅 Creator &amp; Free: 14 november</div>
+  </div>
+</div>
+
+<!-- 5: credits -->
+<div class="scene" id="s5">
+  <div id="coins" class="abs" style="inset:0;z-index:0"></div>
+  <div class="abs center h2" id="s5a" style="z-index:2;top:330px">Slut på spel<br>den här månaden?</div>
+  <div class="abs center h1" id="s5b" style="z-index:2;top:640px">Köp <span class="grad">krediter.</span></div>
+  <div class="abs center" id="s5c" style="z-index:2;top:960px;display:flex;justify-content:center;gap:30px">
+    <div class="chip"><b>25</b><span>49 kr</span></div>
+    <div class="chip" style="border-color:#7c5cff;background:rgba(124,92,255,.18)"><b>100</b><span>149 kr</span></div>
+    <div class="chip"><b>500</b><span>499 kr</span></div>
+  </div>
+  <div class="abs center p" id="s5d" style="z-index:2;top:1230px">Ingen prenumeration.<br>Krediterna går aldrig ut.</div>
+</div>
+
+<!-- 6: end card -->
+<div class="scene" id="s6">
+  <div class="abs center" style="top:420px"><svg id="logo6" style="width:300px;height:300px" viewBox="0 0 64 64"><defs><linearGradient id="lg6" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#lg6)"/><path d="M18 46V18h6l16 18V18h6v28h-6L24 28v18z" fill="#0b0b20"/></svg></div>
+  <div class="abs center h1" style="top:790px;font-size:150px">Nexora</div>
+  <div class="abs center p" style="top:980px;font-size:50px;color:#fff;font-weight:650">Beskriv ett spel.<br><span class="grad">Spela det direkt.</span></div>
+  <div class="abs center p" style="top:1200px;font-size:38px">Webb · Windows · macOS · Linux</div>
+  <div class="abs center" style="top:1330px"><span id="cta" style="display:inline-block;padding:34px 70px;border-radius:32px;font-size:50px;font-weight:850;color:#0b0b20;background:linear-gradient(110deg,#7c5cff,#22d3ee)">Börja gratis</span></div>
+</div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const ease = x => 1 - Math.pow(1 - clamp(x, 0, 1), 3);
+const inOut = (t, a, b, f) => Math.min(ease((t - a) / (f || 0.35)), ease((b - t) / (f || 0.35)));
+const SCENES = [['s1', 0, 3.1], ['s2', 2.9, 7.6], ['s3', 7.4, 13.6], ['s4', 13.4, 18.7], ['s5', 18.5, 22.6], ['s6', 22.4, 26.2]];
+const PROMPT = 'Ett plattformsspel i en lavavärld där man hoppar på drakar';
+const STEPS2 = [['🧠', 'Tolkar idén'], ['🧱', 'Bygger nivåer'], ['🔊', 'Lägger till ljud'], ['▶️', 'Testar spelet']];
+const LOG4 = [['🧠', 'Planerar spelet'], ['✍️', 'Skriver koden · 24 kB'], ['▶️', 'Testkör i webbläsaren'], ['🐞', 'Hittar en bugg'], ['🔧', 'Rättar den'], ['✅', 'Klart – spelet fungerar']];
+const MONTAGE = [['platformer', '2D-plattformsspel'], ['runner3d', '3D-löpare'], ['openworld', 'Open world med uppdrag'], ['shooter', 'Rymdskjutare med bossar']];
+
+// Game iframes run on a virtual clock (see CLOCK in ad.js) and are played by simple bots.
+const games = {};
+const BOTS = {
+  platformer: t => ({ ArrowRight: true, Space: (t % 0.5) < 0.12 }),
+  runner3d: t => ({ ArrowLeft: (t % 1.4) > 0.7 && (t % 1.4) < 0.8, ArrowRight: (t % 1.4) < 0.1, Space: (t % 1.1) < 0.1 }),
+  openworld: t => ({ ArrowRight: (t % 3) < 1.6, ArrowDown: (t % 3) >= 1.6 && (t % 3) < 2.4, ArrowUp: (t % 3) >= 2.4, Space: (t % 0.9) < 0.1 }),
+  shooter: t => ({ Space: true, ArrowLeft: (t % 1.6) < 0.8, ArrowRight: (t % 1.6) >= 0.8 }),
+  arena3d: t => ({ ArrowUp: true, ArrowLeft: (t % 2) < 0.5, Space: (t % 0.7) < 0.1 }),
+};
+const CODES = { Space: ' ', ArrowLeft: 'ArrowLeft', ArrowRight: 'ArrowRight', ArrowUp: 'ArrowUp', ArrowDown: 'ArrowDown' };
+
+window.__setup = function (list) {
+  for (const [id, html] of Object.entries(list)) {
+    const f = document.createElement('iframe');
+    f.srcdoc = html;
+    const holder = id === 'arena3d' ? $('stage4') : $('stage3');
+    f.style.opacity = id === 'arena3d' ? '1' : '0';
+    holder.appendChild(f);
+    games[id] = { f, held: {} };
+  }
+  return new Promise(r => setTimeout(r, 1500));
+};
+
+function drive(t, dt) {
+  for (const [id, g] of Object.entries(games)) {
+    const w = g.f.contentWindow;
+    if (!w || !w.__advance) continue;
+    const want = t < 0.6 ? {} : BOTS[id](t);
+    for (const code of Object.keys(CODES)) {
+      const on = !!want[code];
+      if (on !== !!g.held[code]) {
+        g.held[code] = on;
+        w.dispatchEvent(new w.KeyboardEvent(on ? 'keydown' : 'keyup', { code, key: CODES[code], bubbles: true }));
+      }
+    }
+    w.__advance(dt * 1000);
+  }
+}
+
+window.__adFrame = function (t, dt) {
+  drive(t, dt);
+  // background
+  $('o1').style.transform = `translate(${-200 + Math.sin(t * 0.5) * 160}px, ${-150 + Math.cos(t * 0.4) * 140}px)`;
+  $('o2').style.transform = `translate(${500 + Math.cos(t * 0.45) * 180}px, ${900 + Math.sin(t * 0.35) * 200}px)`;
+  $('o3').style.transform = `translate(${100 + Math.sin(t * 0.3) * 220}px, ${1400 + Math.cos(t * 0.5) * 120}px)`;
+  for (const [id, a, b] of SCENES) $(id).style.opacity = clamp(inOut(t, a, b, 0.3), 0, 1);
+
+  // 1
+  const pop = (el, at) => { const k = ease((t - at) / 0.45); el.style.opacity = k; el.style.transform = `translateY(${(1 - k) * 60}px) scale(${0.94 + k * 0.06})`; };
+  pop($('s1a'), 0.15); pop($('s1b'), 1.25);
+  $('logo1').style.transform = `scale(${0.6 + ease(t / 0.6) * 0.4}) rotate(${(1 - ease(t / 0.6)) * -20}deg)`;
+
+  // 2
+  const n = Math.floor(clamp((t - 3.3) * 24, 0, PROMPT.length));
+  $('typed').innerHTML = PROMPT.slice(0, n).replace(/&/g, '&amp;').replace(/</g, '&lt;') + (n < PROMPT.length || Math.floor(t * 2.5) % 2 ? '<span style="color:#22d3ee">|</span>' : '');
+  const press = t > 5.95 && t < 6.2 ? 0.93 : 1;
+  $('btn').style.transform = `scale(${press})`;
+  $('btn').style.boxShadow = t > 6 ? `0 0 ${60 + Math.sin(t * 8) * 20}px rgba(34,211,238,.6)` : 'none';
+  $('steps2').innerHTML = STEPS2.map(([i, s], k) => {
+    const at = 6.25 + k * 0.28, v = ease((t - at) / 0.25), done = t > at + 0.25;
+    return `<div class="step" style="opacity:${v};transform:translateX(${(1 - v) * -40}px)">${i} ${s} <b style="color:#3ddc97;margin-left:auto">${done ? '✓' : ''}</b></div>`;
+  }).join('');
+  $('s2card').style.transform = `translateY(${(1 - ease((t - 2.9) / 0.5)) * 80}px)`;
+
+  // 3
+  const seg = clamp(Math.floor((t - 7.5) / 1.52), 0, 3);
+  MONTAGE.forEach(([id], k) => { if (games[id]) games[id].f.style.opacity = k === seg ? '1' : '0'; });
+  $('cap3').textContent = MONTAGE[seg][1];
+  const segT = (t - 7.5) - seg * 1.52;
+  $('stage3').style.transform = `scale(${1.04 - ease(segT / 0.4) * 0.04})`;
+
+  // 4
+  $('log4').innerHTML = LOG4.map(([i, s], k) => {
+    const at = 14.1 + k * 0.52, v = ease((t - at) / 0.3);
+    return `<div class="step" style="opacity:${v};transform:translateX(${(1 - v) * -40}px);${k === 3 ? 'color:#ffc542' : k === 5 ? 'color:#3ddc97' : ''}">${i} ${s}</div>`;
+  }).join('');
+  const sv = ease((t - 16.9) / 0.4);
+  $('stage4').style.opacity = sv; $('stage4').style.transform = `scale(${0.8 + sv * 0.2})`;
+  $('roll4').style.opacity = ease((t - 15.2) / 0.5);
+
+  // 5
+  pop($('s5a'), 18.6); pop($('s5b'), 19.3); pop($('s5c'), 19.9); pop($('s5d'), 20.5);
+  let coins = '';
+  for (let i = 0; i < 14; i++) {
+    const start = 19.2 + (i % 7) * 0.16 + Math.floor(i / 7) * 0.7, y = (t - start) * 820 - 120;
+    if (y < -120 || y > 2000) continue;
+    // left and right margins only, so the coins never cover the text
+    const x = i % 2 ? 20 + ((i * 53) % 110) : 950 - ((i * 47) % 110), r = (t - start) * 240 * (i % 2 ? 1 : -1);
+    coins += `<div class="coin" style="left:${x}px;top:${y}px;transform:rotate(${r}deg) scaleX(${Math.abs(Math.cos((t - start) * 5)) * 0.7 + 0.3});opacity:.9">N</div>`;
+  }
+  $('coins').innerHTML = coins;
+
+  // 6
+  const k6 = ease((t - 22.5) / 0.6);
+  $('logo6').style.transform = `scale(${0.7 + k6 * 0.3})`;
+  $('logo6').style.filter = `drop-shadow(0 0 ${40 + Math.sin(t * 3) * 20}px rgba(124,92,255,.8))`;
+  $('cta').style.transform = `scale(${1 + Math.max(0, Math.sin((t - 23.5) * 4)) * 0.05 * (t > 23.5 ? 1 : 0)})`;
+};
+</script>
+</body>
+</html>

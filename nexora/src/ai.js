@@ -16,7 +16,11 @@
     core: { name: 'Nexora Core 1', short: 'Core 1', tag: 'Pro, men tänker', kind: 'text', minTier: 2, desc: 'Ingen bryr sig om den – men den planerar spelet steg för steg innan den skriver en rad kod. Du ser tankarna live.' },
     image: { name: 'Nexora Image 1', short: 'Image 1', tag: 'Bildmodell', kind: 'image', minTier: 1, desc: 'Sprites, bakgrunder och ikoner till dina spel.' },
     d3: { name: 'Nexora 3D 1', short: '3D 1', tag: '3D-generator', kind: 'mesh', minTier: 1, desc: 'Low-poly 3D-modeller som du kan rotera och exportera som .obj.' },
+    astryx: { name: 'Nexora Astryx 5 Pro', short: 'Astryx 5 Pro', tag: 'AI-agent', kind: 'agent', minTier: 0, agent: true,
+      desc: 'Vår första AI-agent. Den planerar, skriver spelet, testkör det, tittar på resultatet, hittar buggar och rättar dem – helt själv – tills spelet fungerar.' },
   };
+  // Staged rollout of Astryx 5 Pro: plan index → first day it is available (local date, YYYY-MM-DD).
+  const ROLLOUT = { astryx: ['2026-11-14', '2026-11-14', '2026-10-07', '2026-09-26', '2026-09-26'] };
 
   // What each Nexora model runs on with the Anthropic provider.
   const ANTHROPIC = {
@@ -25,6 +29,7 @@
     core: { model: 'claude-opus-5', max_tokens: 64000, thinking: { type: 'adaptive', display: 'summarized' }, output_config: { effort: 'xhigh' }, fallbacks: true },
     image: { model: 'claude-opus-5', max_tokens: 32000, output_config: { effort: 'medium' }, fallbacks: true },
     d3: { model: 'claude-opus-5', max_tokens: 32000, output_config: { effort: 'medium' }, fallbacks: true },
+    astryx: { model: 'claude-opus-5', max_tokens: 64000, thinking: { type: 'adaptive', display: 'summarized' }, output_config: { effort: 'high' }, fallbacks: true },
   };
 
   const DEFAULT_SETTINGS = {
@@ -32,7 +37,7 @@
     anthropicKey: '',
     openaiBase: 'https://api.openai.com/v1',
     openaiKey: '',
-    openaiModels: { flash: 'gpt-5-fast', pro: 'gpt-6-astra', core: 'gpt-6-astra', image: 'gpt-images-2.5', d3: 'gpt-6-astra' },
+    openaiModels: { flash: 'gpt-5-fast', pro: 'gpt-6-astra', core: 'gpt-6-astra', image: 'gpt-images-2.5', d3: 'gpt-6-astra', astryx: 'gpt-6-astra' },
     openaiImageApi: true,
   };
 
@@ -234,5 +239,156 @@
     return m;
   }
 
-  window.NexoraAI = { MODELS, ANTHROPIC, DEFAULT_SETTINGS, GAME_SYSTEM, gamePrompt, generateGame, fixGame, text, image, mesh, extractHtml };
+  // ------------------------------------------------------------------ Astryx 5 Pro: the agent
+  const AGENT_SYSTEM = GAME_SYSTEM + `
+
+You are Nexora Astryx 5 Pro, an autonomous game-building agent. You do not answer with code in text; you work through tools:
+1. write_game – write the complete game (one HTML document).
+2. run_game – run it in a real browser. You get runtime errors, whether the canvas animates, and a screenshot after the game has been started and played with the keyboard.
+3. Look hard at the result. Fix problems with edit_game (small exact replacements) or write_game (larger rewrites), then run_game again.
+4. finish – only after a run with no errors where the screenshot shows the game working. Give a short summary in Swedish.
+Always run the game at least once before finishing. Stay under about ten tool calls.`;
+
+  const AGENT_TOOLS = [
+    { name: 'write_game', eager_input_streaming: true,
+      description: 'Write the complete game as one self-contained HTML document. Replaces the current game entirely.',
+      input_schema: { type: 'object', properties: { title: { type: 'string', description: 'Game title in Swedish' }, html: { type: 'string', description: 'The full HTML document' } }, required: ['title', 'html'] } },
+    { name: 'edit_game', eager_input_streaming: true,
+      description: 'Replace one exact snippet in the current game. `find` must occur exactly once. Prefer this for small fixes.',
+      input_schema: { type: 'object', properties: { find: { type: 'string' }, replace: { type: 'string' } }, required: ['find', 'replace'] } },
+    { name: 'run_game',
+      description: 'Run the current game in a headless browser for about four seconds: presses Space to start, then arrow keys and WASD. Returns runtime errors, console errors, canvas activity and a screenshot.',
+      input_schema: { type: 'object', properties: {}, required: [] } },
+    { name: 'finish',
+      description: 'Finish when the game is written, tested and working. The summary is shown to the player.',
+      input_schema: { type: 'object', properties: { summary: { type: 'string', description: 'Two or three sentences in Swedish' } }, required: ['summary'] } },
+  ];
+
+  const isStr = v => typeof v === 'string';
+  function validate(name, input) {
+    if (!input || typeof input !== 'object') return 'input is not an object';
+    if (name === 'write_game') return isStr(input.html) && input.html.length > 200 && isStr(input.title) ? null : 'write_game needs `title` and a complete `html` document';
+    if (name === 'edit_game') return isStr(input.find) && input.find.length > 0 && isStr(input.replace) ? null : 'edit_game needs `find` and `replace` strings';
+    if (name === 'finish') return isStr(input.summary) ? null : 'finish needs `summary`';
+    if (name === 'run_game') return null;
+    return 'unknown tool ' + name;
+  }
+
+  // One streamed Messages API turn, reassembled into content blocks we can send back unchanged.
+  async function agentTurn(settings, messages, hooks, signal) {
+    const spec = ANTHROPIC.astryx;
+    const body = { model: spec.model, max_tokens: spec.max_tokens, stream: true, system: AGENT_SYSTEM, tools: AGENT_TOOLS,
+      thinking: spec.thinking, output_config: spec.output_config, cache_control: { type: 'ephemeral' }, fallbacks: 'default', messages };
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', signal, body: JSON.stringify(body),
+      headers: { 'content-type': 'application/json', 'x-api-key': settings.anthropicKey, 'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true', 'anthropic-beta': 'server-side-fallback-2026-07-01' },
+    });
+    if (!res.ok) throw await httpError(res);
+    const blocks = [];
+    let stop = null;
+    await readSSE(res, ev => {
+      if (ev.type === 'content_block_start') {
+        const b = Object.assign({}, ev.content_block);
+        if (b.type === 'tool_use') { b._json = ''; hooks.step && hooks.step('tool_start', b.name); }
+        blocks[ev.index] = b;
+      } else if (ev.type === 'content_block_delta') {
+        const b = blocks[ev.index], d = ev.delta;
+        if (!b) return;
+        if (d.type === 'text_delta') { b.text = (b.text || '') + d.text; hooks.text && hooks.text(d.text); }
+        else if (d.type === 'thinking_delta') { b.thinking = (b.thinking || '') + d.thinking; hooks.thinking && hooks.thinking(d.thinking); }
+        else if (d.type === 'signature_delta') b.signature = (b.signature || '') + d.signature;
+        else if (d.type === 'input_json_delta') { b._json += d.partial_json; hooks.progress && hooks.progress(b.name, b._json.length); }
+      } else if (ev.type === 'content_block_stop') {
+        const b = blocks[ev.index];
+        if (b && b.type === 'tool_use') {
+          try { b.input = b._json ? JSON.parse(b._json) : {}; b._bad = null; } catch (e) { b.input = {}; b._bad = b._json; }
+        }
+      } else if (ev.type === 'message_delta' && ev.delta) stop = ev.delta.stop_reason || stop;
+      else if (ev.type === 'error') throw apiError('AI-fel: ' + ((ev.error && ev.error.message) || 'okänt'));
+    }, signal);
+    if (stop === 'refusal') throw apiError('Astryx avböjde den här förfrågan. Försök formulera spelidén annorlunda.');
+    if (stop === 'max_tokens') throw apiError('Astryx svar blev för långt och klipptes av. Be om ett mindre spel.');
+    // After a mid-output fallback only text before the last `fallback` marker is echoed (and nothing there is run).
+    let cut = -1;
+    blocks.forEach((b, i) => { if (b && b.type === 'fallback') cut = i; });
+    const content = [], calls = [];
+    blocks.forEach((b, i) => {
+      if (!b || b.type === 'fallback') return;
+      if (i < cut && b.type !== 'text') return;
+      if (b.type === 'tool_use') { content.push({ type: 'tool_use', id: b.id, name: b.name, input: b.input }); calls.push(b); }
+      else if (b.type === 'text') { if (b.text) content.push({ type: 'text', text: b.text }); }
+      else if (b.type === 'thinking') content.push({ type: 'thinking', thinking: b.thinking || '', signature: b.signature || '' });
+      else content.push(b);
+    });
+    return { content, calls, stop };
+  }
+
+  // hooks: { runGame(html) → {errors, frames, colors, animating, image}, step(kind, detail), thinking(t), progress(tool, chars) }
+  async function agent(settings, prompt, opts, hooks, signal) {
+    const state = { html: null, title: null, summary: null, runs: 0, turns: 0 };
+    if (settings.provider !== 'anthropic') return agentPipeline(settings, prompt, opts, hooks, signal, state);
+    if (!settings.anthropicKey) throw apiError('Lägg in din Anthropic API-nyckel under Inställningar, eller välj Nexora Local.');
+    const messages = [{ role: 'user', content: gamePrompt(prompt, opts) }];
+    for (state.turns = 1; state.turns <= 14; state.turns++) {
+      const turn = await agentTurn(settings, messages, hooks, signal);
+      messages.push({ role: 'assistant', content: turn.content });
+      if (!turn.calls.length) break;
+      const results = [];
+      let done = false;
+      for (const c of turn.calls) {
+        const r = { type: 'tool_result', tool_use_id: c.id };
+        const bad = c._bad != null ? JSON.stringify({ INVALID_JSON: c._bad.slice(0, 2000) }) : validate(c.name, c.input);
+        if (bad) { r.is_error = true; r.content = bad; results.push(r); continue; }
+        const inp = c.input;
+        if (c.name === 'write_game') {
+          state.html = inp.html; state.title = inp.title;
+          hooks.step && hooks.step('write', Math.round(inp.html.length / 1000) + ' kB');
+          r.content = 'Saved (' + inp.html.length + ' chars). Run it with run_game.';
+        } else if (c.name === 'edit_game') {
+          const n = state.html ? state.html.split(inp.find).length - 1 : 0;
+          if (n !== 1) { r.is_error = true; r.content = state.html ? '`find` occurs ' + n + ' times; it must occur exactly once.' : 'There is no game yet; use write_game.'; }
+          else { state.html = state.html.replace(inp.find, () => inp.replace); r.content = 'Edited.'; hooks.step && hooks.step('edit', inp.find.slice(0, 60)); }
+        } else if (c.name === 'run_game') {
+          if (!state.html) { r.is_error = true; r.content = 'There is no game yet; use write_game first.'; }
+          else {
+            hooks.step && hooks.step('run');
+            const t = await hooks.runGame(state.html);
+            state.runs++;
+            hooks.step && hooks.step('ran', t.errors.length ? t.errors.length + ' fel' : 'inga fel');
+            r.content = [{ type: 'text', text: JSON.stringify({ errors: t.errors, canvas_colours: t.colors, animating: t.animating, frames_rendered: t.frames }) }];
+            if (t.image) r.content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: t.image } });
+          }
+        } else if (c.name === 'finish') {
+          if (!state.runs) { r.is_error = true; r.content = 'Run the game with run_game before finishing.'; }
+          else { state.summary = inp.summary; r.content = 'Done.'; done = true; }
+        }
+        results.push(r);
+      }
+      messages.push({ role: 'user', content: results });
+      if (done) break;
+    }
+    if (!state.html) throw apiError('Astryx hann inte skriva något spel. Försök igen.');
+    return { html: state.html, title: state.title, summary: state.summary || 'Astryx byggde och testade spelet.', turns: state.turns, runs: state.runs, model: ANTHROPIC.astryx.model };
+  }
+
+  // The same plan → write → test → fix loop for endpoints without tool calling.
+  async function agentPipeline(settings, prompt, opts, hooks, signal, state) {
+    hooks.step && hooks.step('tool_start', 'write_game');
+    const g = await generateGame(settings, 'astryx', prompt, opts, { thinking: hooks.thinking, text: (d, all) => hooks.progress && hooks.progress('write_game', all.length) }, signal);
+    state.html = g.html; hooks.step && hooks.step('write', Math.round(g.html.length / 1000) + ' kB');
+    for (let i = 0; i < 3; i++) {
+      hooks.step && hooks.step('run');
+      const t = await hooks.runGame(state.html); state.runs++;
+      hooks.step && hooks.step('ran', t.errors.length ? t.errors.length + ' fel' : 'inga fel');
+      if (!t.errors.length && t.animating) break;
+      if (i === 2) break;
+      hooks.step && hooks.step('edit', 'rättar ' + (t.errors.length ? t.errors.length + ' fel' : 'stillastående spel'));
+      state.html = await fixGame(settings, 'astryx', state.html, t.errors.length ? t.errors : ['The canvas did not change after pressing Space and arrow keys – the game may not start or render.'], { thinking: hooks.thinking }, signal);
+    }
+    const tm = state.html.match(/<title>([^<]{1,80})<\/title>/i);
+    return { html: state.html, title: tm ? tm[1].trim() : null, summary: 'Astryx skrev spelet, testkörde det ' + state.runs + ' gång' + (state.runs > 1 ? 'er' : '') + ' och rättade det som behövdes.', turns: state.runs, runs: state.runs, model: settings.openaiModels.astryx };
+  }
+
+  window.NexoraAI = { MODELS, ROLLOUT, ANTHROPIC, DEFAULT_SETTINGS, GAME_SYSTEM, AGENT_TOOLS, gamePrompt, generateGame, fixGame, text, image, mesh, agent, extractHtml };
 })();

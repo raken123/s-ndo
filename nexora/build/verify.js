@@ -212,6 +212,126 @@ const PROMPTS = [
   await page.evaluate(() => { localStorage.setItem('nexora.settings', JSON.stringify({ provider: 'local' })); });
   errors.length = 0;
 
+  // ---- Astryx 5 Pro: staged rollout by plan and date
+  const rel = await page.evaluate(() => {
+    const out = {};
+    for (const d of ['2026-09-26', '2026-10-06', '2026-10-07', '2026-11-13', '2026-11-14']) {
+      window.NEXORA_TODAY = d;
+      out[d] = [0, 1, 2, 3, 4].map(t => Nexora.released('astryx', t) ? 1 : 0).join('');
+    }
+    delete window.NEXORA_TODAY;
+    return out;
+  });
+  ok(rel['2026-09-26'] === '00011' && rel['2026-10-06'] === '00011', 'Astryx: only Studio + Enterprise before 7 Oct ' + JSON.stringify(rel));
+  ok(rel['2026-10-07'] === '00111' && rel['2026-11-13'] === '00111', 'Astryx: Pro from 7 Oct');
+  ok(rel['2026-11-14'] === '11111', 'Astryx: Creator + Free from 14 Nov');
+
+  await page.evaluate(() => { localStorage.setItem('nexora.plan', '"pro"'); window.NEXORA_TODAY = '2026-09-26'; location.hash = 'studio'; location.reload(); });
+  await page.waitForSelector('#prompt');
+  await page.evaluate(() => { window.NEXORA_TODAY = '2026-09-26'; Nexora.render(); });
+  await page.click('.model.agent');
+  ok(await page.locator('.modal', { hasText: '7 oktober' }).count() === 1, 'Pro plan before 7 Oct: Astryx shows the rollout dialog');
+  await page.screenshot({ path: path.join(SHOTS, 'astryx-locked.png') });
+  await page.keyboard.press('Escape');
+
+  // ---- Astryx on Nexora Local, end to end
+  await page.evaluate(() => { localStorage.setItem('nexora.plan', '"studio"'); localStorage.setItem('nexora.settings', '{"provider":"local"}'); location.reload(); });
+  await page.waitForSelector('#prompt');
+  await page.click('.model.agent');
+  ok(await page.locator('.model.agent.on').count() === 1, 'Studio plan: Astryx selectable');
+  await page.fill('#prompt', 'Ett plattformsspel i en lavavärld');
+  const usedBefore = await page.evaluate(() => JSON.parse(localStorage.getItem('nexora.usage') || '{}')[new Date().toISOString().slice(0, 7)] || 0);
+  await page.click('text=✨ Skapa spel');
+  await page.waitForSelector('.log img', { timeout: 20000 });
+  ok(true, 'Astryx (local) ran the game and shows its screenshot');
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: path.join(SHOTS, 'astryx-working.png') });
+  await page.waitForSelector('.screen iframe', { timeout: 30000 });
+  const summary = await page.locator('.stage .note').innerText();
+  ok(/Astryx byggde .* testkörde det/.test(summary), 'Astryx summary shown: ' + summary.slice(0, 90));
+  await page.screenshot({ path: path.join(SHOTS, 'astryx-done.png') });
+  const usedAfter = await page.evaluate(() => JSON.parse(localStorage.getItem('nexora.usage') || '{}')[new Date().toISOString().slice(0, 7)] || 0);
+  ok(usedAfter === usedBefore + 1, 'Astryx run counted against the plan');
+
+  // ---- credits
+  await page.evaluate(() => {
+    const u = {}; u[new Date().toISOString().slice(0, 7)] = 10;
+    localStorage.setItem('nexora.usage', JSON.stringify(u)); localStorage.setItem('nexora.plan', '"free"'); localStorage.setItem('nexora.credits', '0');
+    localStorage.setItem('nexora.studio', JSON.stringify({ model: 'flash', dim: '2d', opts: {}, prompt: 'Rymdskjutare' })); location.reload();
+  });
+  await page.waitForSelector('#prompt');
+  await page.click('text=✨ Skapa spel');
+  ok(await page.locator('.modal', { hasText: 'Köp krediter' }).count() === 1, 'quota used up → credits dialog');
+  await page.screenshot({ path: path.join(SHOTS, 'credits-modal.png') });
+  await page.locator('.modal .card .card', { hasText: '25 krediter' }).locator('button', { hasText: 'Köp' }).click();
+  await page.click('text=Betala 49 kr (demo)');
+  await page.waitForSelector('.screen iframe', { timeout: 10000 });
+  const cr = await page.evaluate(() => ({ c: JSON.parse(localStorage.getItem('nexora.credits')), u: JSON.parse(localStorage.getItem('nexora.usage'))[new Date().toISOString().slice(0, 7)] }));
+  ok(cr.c === 24 && cr.u === 10, 'bought 25 credits, the game used 1, monthly usage unchanged ' + JSON.stringify(cr));
+  ok((await page.locator('.pill.credits').innerText()).includes('24'), 'credit balance in the top bar');
+  await page.evaluate(() => { window.NEXORA_TODAY = '2026-11-14'; const s = JSON.parse(localStorage.getItem('nexora.studio')); s.model = 'astryx'; localStorage.setItem('nexora.studio', JSON.stringify(s)); Nexora.S.studio.model = 'astryx'; });
+  await page.click('text=✨ Skapa spel');
+  await page.waitForSelector('.stage .note', { state: 'visible', timeout: 30000 });
+  ok(await page.evaluate(() => JSON.parse(localStorage.getItem('nexora.credits'))) === 21, 'Free plan on 14 Nov: Astryx available and costs 3 credits');
+  await page.evaluate(() => { location.hash = 'priser'; });
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: path.join(SHOTS, 'priser-credits.png'), fullPage: true });
+
+  // ---- Astryx on Claude: a real tool-use loop against a mocked Messages API
+  const agentReqs = [];
+  const TOY = '<!doctype html><html><head><title>Färgspelet</title></head><body style="margin:0"><canvas id="c"></canvas><script>var t=0,c=document.getElementById("c");c.width=400;c.height=300;var x=c.getContext("2d");(function f(){t+=3;x.fillStyle="hsl("+t%360+",80%,50%)";x.fillRect(0,0,400,300);x.fillStyle="#fff";x.fillRect(t%400,140,20,20);requestAnimationFrame(f)})()</' + 'script></body></html>';
+  const writeJson = JSON.stringify({ title: 'Färgspelet', html: TOY });
+  const turns = [
+    [{ type: 'content_block_start', index: 0, content_block: { type: 'thinking', thinking: '' } },
+      { type: 'content_block_delta', index: 0, delta: { type: 'thinking_delta', thinking: 'Jag börjar med ett enkelt spel.' } },
+      { type: 'content_block_delta', index: 0, delta: { type: 'signature_delta', signature: 'sig123' } },
+      { type: 'content_block_stop', index: 0 },
+      { type: 'content_block_start', index: 1, content_block: { type: 'tool_use', id: 'toolu_1', name: 'write_game', input: {} } },
+      { type: 'content_block_delta', index: 1, delta: { type: 'input_json_delta', partial_json: writeJson.slice(0, 40) } },
+      { type: 'content_block_delta', index: 1, delta: { type: 'input_json_delta', partial_json: writeJson.slice(40) } },
+      { type: 'content_block_stop', index: 1 },
+      { type: 'message_delta', delta: { stop_reason: 'tool_use' } }],
+    [{ type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 'toolu_2', name: 'run_game', input: {} } },
+      { type: 'content_block_stop', index: 0 },
+      { type: 'message_delta', delta: { stop_reason: 'tool_use' } }],
+    [{ type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 'toolu_3', name: 'finish', input: {} } },
+      { type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: '{"summary":"Klart och testat."}' } },
+      { type: 'content_block_stop', index: 0 },
+      { type: 'message_delta', delta: { stop_reason: 'tool_use' } }],
+  ];
+  await page.unroute('https://api.anthropic.com/v1/messages').catch(() => {});
+  await page.route('https://api.anthropic.com/v1/messages', async route => {
+    const body = JSON.parse(route.request().postData());
+    agentReqs.push({ body, headers: route.request().headers() });
+    const evs = [{ type: 'message_start', message: { id: 'msg_a' + agentReqs.length, content: [] } }].concat(turns[agentReqs.length - 1] || [{ type: 'message_delta', delta: { stop_reason: 'end_turn' } }], [{ type: 'message_stop' }]);
+    await route.fulfill({ status: 200, headers: { 'content-type': 'text/event-stream', 'access-control-allow-origin': '*' }, body: sse(evs) });
+  });
+  await page.evaluate(() => {
+    delete window.NEXORA_TODAY;
+    localStorage.setItem('nexora.plan', '"enterprise"'); localStorage.setItem('nexora.settings', JSON.stringify({ provider: 'anthropic', anthropicKey: 'sk-ant-test' }));
+    localStorage.setItem('nexora.studio', JSON.stringify({ model: 'astryx', dim: '2d', opts: {}, prompt: 'Ett färgglatt reaktionsspel' }));
+    location.hash = 'studio'; location.reload();
+  });
+  await page.waitForSelector('#prompt');
+  await page.click('text=✨ Skapa spel');
+  await page.waitForSelector('.stage .note', { state: 'visible', timeout: 30000 });
+  ok(agentReqs.length === 3, 'agent made 3 turns (write → run → finish): ' + agentReqs.length);
+  const [q1, q2, q3] = agentReqs.map(r => r.body);
+  ok(q1.model === 'claude-opus-5' && q1.thinking.type === 'adaptive' && q1.output_config.effort === 'high' && q1.tools.map(t => t.name).join() === 'write_game,edit_game,run_game,finish', 'agent request: opus-5, adaptive thinking, four tools');
+  ok(q1.tools.find(t => t.name === 'write_game').eager_input_streaming === true && !('eager_input_streaming' in q1.tools.find(t => t.name === 'run_game')), 'eager input streaming on the tools that carry code');
+  ok(q1.fallbacks === 'default' && agentReqs[0].headers['anthropic-beta'] === 'server-side-fallback-2026-07-01' && q1.cache_control && q1.cache_control.type === 'ephemeral', 'agent: fallbacks + prompt caching');
+  const a1 = q2.messages[1];
+  ok(a1.role === 'assistant' && a1.content[0].type === 'thinking' && a1.content[0].signature === 'sig123' && a1.content[1].type === 'tool_use' && a1.content[1].input.html === TOY, 'thinking block (with signature) and tool_use echoed back unchanged');
+  const w1 = q2.messages[2].content[0];
+  ok(w1.type === "tool_result" && w1.tool_use_id === "toolu_1" && !w1.is_error, 'write_game result returned');
+  const r2 = q3.messages[4].content[0], r2json = JSON.parse(r2.content[0].text);
+  ok(r2.tool_use_id === 'toolu_2' && r2.content[1].type === 'image' && r2.content[1].source.media_type === 'image/jpeg' && r2.content[1].source.data.length > 1000, 'run_game result carries a screenshot');
+  ok(r2json.errors.length === 0 && r2json.animating === true && r2json.frames_rendered > 10, 'run_game measured the game: ' + JSON.stringify(r2json));
+  ok((await page.locator('.stage .note').innerText()).includes('Klart och testat.'), 'finish summary shown to the user');
+  ok(await page.locator('.bar .title').innerText() === 'Färgspelet', 'agent game title used');
+  await page.evaluate(() => { localStorage.setItem('nexora.settings', JSON.stringify({ provider: 'local' })); });
+  errors.length = 0;
+
   // phone width
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   await phone.goto('file://' + FILE + '#priser');

@@ -270,6 +270,8 @@ function NexoraRuntime(CFG, makeGame) {
   R.add = n => { R.score += n; };
   R.over = function () {
     if (R.state !== 'play') return;
+    // Attract/demo mode (used by the ad): no game-over screen, the round just restarts.
+    if (CFG.demo) { R.shake(0.2); R.score = 0; game.reset(); return; }
     R.state = 'over'; R.overT = 0; R.sfx('over'); R.shake(0.4);
     if (R.score > R.best) { R.best = R.score; try { localStorage.setItem('nx_best_' + CFG.id, R.best); } catch (e) { /* no storage */ } }
     try { parent.postMessage({ nexora: 'score', id: CFG.id, score: R.score }, '*'); } catch (e) { /* not framed */ }
@@ -288,6 +290,7 @@ function NexoraRuntime(CFG, makeGame) {
   addEventListener('resize', resize);
   resize();
   game.reset();
+  if (CFG.demo) R.state = 'play';
 
   function start() {
     R.score = 0; R.time = 0; R.won = false; R.particles.length = 0; R.paused = false;

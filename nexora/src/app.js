@@ -76,6 +76,31 @@
   const can = f => tier() >= FEAT[f][0];
   const month = () => new Date().toISOString().slice(0, 7);
   const used = () => S.usage[month()] || 0;
+  // Local calendar date as YYYY-MM-DD; NEXORA_TODAY overrides it in tests.
+  const today = () => window.NEXORA_TODAY || new Date().toLocaleDateString('sv-SE');
+  const releaseDate = (k, t) => (AI.ROLLOUT[k] ? AI.ROLLOUT[k][t == null ? tier() : t] : null);
+  const released = (k, t) => !AI.ROLLOUT[k] || today() >= releaseDate(k, t);
+  const fmtDate = d => new Date(d + 'T12:00:00').toLocaleDateString('sv-SE', { day: 'numeric', month: 'long' });
+  const ROLLOUT_GROUPS = [[[3, 4], 'Studio och Enterprise'], [[2], 'Pro'], [[0, 1], 'Creator och Free']];
+  const rolloutRows = () => ROLLOUT_GROUPS.map(([ts, label]) => {
+    const d = releaseDate('astryx', ts[0]), out = today() >= d;
+    return { label, date: d, out, text: out ? 'Tillgänglig nu' : 'Från ' + fmtDate(d) };
+  });
+
+  // Credits: one-off packs that pay for games once the monthly quota is used up.
+  const CREDIT_PACKS = [
+    { id: 'c25', credits: 25, price: 49 },
+    { id: 'c100', credits: 100, price: 149, hot: true },
+    { id: 'c500', credits: 500, price: 499 },
+  ];
+  const COST = { game: 1, astryx: 3 };
+  S.credits = store.get('credits', 0);
+  S.creditLog = store.get('creditLog', []);
+  function addCredits(n, note) {
+    S.credits += n;
+    S.creditLog = [{ t: Date.now(), n, note }].concat(S.creditLog).slice(0, 50);
+    store.set('credits', S.credits); store.set('creditLog', S.creditLog);
+  }
   const RT = {
     core: [nxRng, nxNoise, nxShade, Nx3D, NexoraRuntime].map(f => f.toString()).join('\n\n'),
     templates: { gamePlatformer, gameShooter, gameSnake, gameBreakout, gameDodger, gameCollector, gameOpenWorld, gameRunner3D, gameArena3D },
@@ -159,6 +184,7 @@
       h('nav', { class: 'tabs', 'aria-label': 'Huvudmeny' }, ROUTES.map(([id, label]) => h('a', { href: '#' + id, class: route() === id ? 'on' : '' }, label))),
       h('div', { class: 'who' },
         h('span', { class: 'pill usage', title: 'Spel skapade den här månaden' }, '🎮 ' + used() + '/' + lim),
+        h('span', { class: 'pill credits', title: 'Krediter – klicka för att köpa fler', onclick: () => creditsModal() }, '🪙 ' + S.credits),
         h('span', { class: 'pill plan', title: 'Din plan', onclick: () => { location.hash = 'priser'; } }, p.emoji + ' ' + p.name),
         h('button', { class: 'iconbtn', title: 'Inställningar', 'aria-label': 'Inställningar', onclick: settingsModal }, '⚙️'))));
   }
@@ -189,7 +215,7 @@
   VIEWS.hem = main => {
     main.append(
       h('section', { class: 'hero wrap' },
-        h('div', { class: 'pill', style: 'margin-bottom:18px' }, '✨ Nytt: Nexora Core 1 tänker innan den bygger'),
+        h('a', { class: 'pill', href: '#modeller', style: 'margin-bottom:18px;text-decoration:none;color:inherit' }, '🤖 Nytt: Nexora Astryx 5 Pro – vår första AI-agent →'),
         h('h1', null, 'Beskriv ett spel.', h('br'), h('span', { class: 'grad' }, 'Spela det direkt.')),
         h('p', { class: 'lead' }, 'Nexora gör spelbara 2D- och 3D-spel av en mening – med grafik, ljud, story och export till webb, PC och mobil.'),
         h('div', { class: 'row', style: 'justify-content:center' },
@@ -203,16 +229,81 @@
         ['📦', 'Export överallt', 'HTML för webb och mobil, PC-projekt, Steam-paket och portningspaket för konsol.'],
         ['🔌', 'Fungerar offline', 'Nexora Local bygger spel utan internet. Koppla in Claude eller din egen modell för mer.'],
       ].map(([ic, t, d]) => h('div', { class: 'card feat' }, h('div', { class: 'ic' }, ic), h('h3', null, t), h('p', { class: 'muted' }, d))))),
-      h('section', { class: 'wrap' }, h('h2', null, 'Fem modeller'), modelCards()),
-      h('section', { class: 'wrap' }, h('h2', null, 'Priser'), planCards()));
+      h('section', { class: 'wrap' }, astryxHero()),
+      h('section', { class: 'wrap' }, h('h2', null, 'Sex modeller'), modelCards()),
+      h('section', { class: 'wrap' }, h('h2', null, 'Priser'), planCards(), creditsSection()));
   };
 
+  function astryxHero() {
+    const steps = [['🧠', 'Planerar'], ['✍️', 'Skriver spelet'], ['▶️', 'Testkör'], ['👀', 'Tittar på resultatet'], ['🔧', 'Rättar buggar'], ['✅', 'Levererar']];
+    return h('div', { class: 'card astryx col' },
+      h('div', { class: 'pill', style: 'align-self:flex-start' }, '🤖 AI-agent'),
+      h('h2', null, 'Nexora ', h('span', { class: 'grad' }, 'Astryx 5 Pro')),
+      h('p', { class: 'lead', style: 'margin:0' }, AI.MODELS.astryx.desc),
+      h('div', { class: 'row' }, steps.map(([i, t]) => h('span', { class: 'chip' }, i + ' ' + t))),
+      rolloutList(),
+      h('div', { class: 'row' }, h('a', { class: 'btn primary', href: '#studio', onclick: () => { if (released('astryx')) { S.studio.model = 'astryx'; store.set('studio', S.studio); } } }, released('astryx') ? '🤖 Prova Astryx 5 Pro' : '🎮 Öppna Studio'),
+        !released('astryx') ? h('span', { class: 'small muted' }, 'Din plan (' + plan().name + ') får Astryx ' + fmtDate(releaseDate('astryx')) + '.') : null));
+  }
+  function rolloutList() {
+    return h('div', { class: 'rollout' }, rolloutRows().map(r => h('div', { class: 'rstep' + (r.out ? ' out' : '') },
+      h('b', null, r.label), h('span', null, r.out ? '✓ ' + r.text : '📅 ' + r.text))));
+  }
+  function astryxLocked() {
+    const close = modal([
+      h('h2', null, '🤖 Nexora ', h('span', { class: 'grad' }, 'Astryx 5 Pro')),
+      h('p', null, AI.MODELS.astryx.desc),
+      rolloutList(),
+      h('p', { class: 'muted' }, 'Din plan (' + plan().name + ') får Astryx 5 Pro ' + fmtDate(releaseDate('astryx')) + '. Vill du ha den nu ingår den i Studio och Enterprise.'),
+      h('div', { class: 'row' }, h('button', { class: 'btn primary', onclick: () => { close(); checkout(PLANS[3]); } }, 'Välj Studio – få Astryx nu'),
+        h('button', { class: 'btn ghost', onclick: () => close() }, 'Jag väntar'))]);
+  }
+
+  function creditsSection() {
+    return h('div', { class: 'col', style: 'margin-top:32px' },
+      h('h2', null, '🪙 Krediter'),
+      h('p', { class: 'muted', style: 'margin:0' }, 'Slut på månadens spel men vill inte betala mer varje månad? Köp krediter en gång – de går aldrig ut. 1 kredit = 1 spel, en körning med Astryx 5 Pro = 3 krediter.'),
+      creditPacks(),
+      h('p', { class: 'small muted' }, 'Krediter används först när planens spel för månaden är slut. De låser inte upp funktioner från dyrare planer. Ditt saldo: ', h('b', null, S.credits + ' krediter'), '.'));
+  }
+  function creditPacks(after) {
+    return h('div', { class: 'grid g3' }, CREDIT_PACKS.map(k => h('div', { class: 'card col' + (k.hot ? ' hot' : ''), style: k.hot ? 'border-color:var(--a1)' : '' },
+      h('div', { class: 'row', style: 'justify-content:space-between' }, h('h3', { style: 'margin:0' }, '🪙 ' + k.credits + ' krediter'), k.hot ? h('span', { class: 'pill' }, 'Bäst värde') : null),
+      h('div', { class: 'price' }, fmtKr(k.price)),
+      h('div', { class: 'small muted' }, (k.price / k.credits).toFixed(2).replace('.', ',') + ' kr per spel · engångsköp'),
+      h('button', { class: 'btn' + (k.hot ? ' primary' : ''), onclick: () => buyCredits(k, after) }, 'Köp'))));
+  }
+  function buyCredits(k, after) {
+    const close = modal([
+      h('h2', null, '🪙 ' + k.credits + ' krediter'),
+      h('div', { class: 'price' }, fmtKr(k.price), h('small', null, ' engångsköp')),
+      h('p', { class: 'note' }, 'Demoläge: ingen betalning dras. Krediterna läggs till direkt på den här enheten.'),
+      h('div', { class: 'row' },
+        h('button', { class: 'btn primary', onclick: () => { addCredits(k.credits, 'Köpte ' + k.credits + ' krediter (' + fmtKr(k.price) + ')'); close(); toast('🪙 +' + k.credits + ' krediter – saldo ' + S.credits); render.topOnly(); if (after) after(); else render(); } }, 'Betala ' + fmtKr(k.price) + ' (demo)'),
+        h('button', { class: 'btn ghost', onclick: () => close() }, 'Avbryt'))]);
+  }
+  function creditsModal(reason, after) {
+    const close = modal([
+      h('h2', null, '🪙 Krediter'),
+      reason ? h('p', null, reason) : null,
+      h('p', { class: 'muted' }, 'Saldo: ', h('b', null, S.credits + ' krediter'), ' · 1 kredit = 1 spel · Astryx 5 Pro = 3 krediter'),
+      creditPacks(() => { close(); if (after) after(); }),
+      S.creditLog.length ? h('details', null, h('summary', { class: 'small muted' }, 'Historik'),
+        h('table', { class: 't' }, S.creditLog.slice(0, 12).map(x => h('tr', null, h('td', null, new Date(x.t).toLocaleString('sv-SE')), h('td', null, x.note), h('td', { style: 'text-align:right;color:' + (x.n > 0 ? 'var(--ok)' : 'var(--muted)') }, (x.n > 0 ? '+' : '') + x.n))))) : null,
+      h('div', { class: 'row', style: 'margin-top:16px' },
+        tier() < PLANS.length - 1 ? h('button', { class: 'btn', onclick: () => { close(); location.hash = 'priser'; } }, 'Jämför planer') : null,
+        h('button', { class: 'btn ghost', onclick: () => close() }, 'Stäng'))], true);
+  }
+
   function modelCards() {
-    return h('div', { class: 'grid g5' }, Object.entries(AI.MODELS).map(([k, m]) =>
-      h('div', { class: 'card' },
-        h('div', { class: 'row', style: 'justify-content:space-between' }, h('h3', null, m.name), tier() < m.minTier ? h('span', { class: 'lock' }, '🔒 ' + PLANS[m.minTier].name) : null),
+    return h('div', { class: 'grid g5' }, Object.entries(AI.MODELS).map(([k, m]) => {
+      const lock = m.agent ? (released(k) ? null : '🔒 ' + fmtDate(releaseDate(k))) : tier() < m.minTier ? '🔒 ' + PLANS[m.minTier].name : null;
+      return h('div', { class: 'card' + (m.agent ? ' astryx' : '') },
+        h('div', { class: 'row', style: 'justify-content:space-between' }, h('h3', null, m.name), lock ? h('span', { class: 'lock' }, lock) : m.agent ? h('span', { class: 'lock new' }, 'NY') : null),
         h('div', { class: 'pill', style: 'margin-bottom:8px' }, m.tag),
-        h('p', { class: 'muted small' }, m.desc))));
+        h('p', { class: 'muted small' }, m.desc),
+        m.agent ? h('div', { class: 'small' }, rolloutRows().map(r => h('div', null, (r.out ? '✓ ' : '📅 ') + r.label + ': ' + r.text.toLowerCase()))) : null);
+    }));
   }
 
   function planCards() {
@@ -228,19 +319,22 @@
       h('h1', null, 'Välj din ', h('span', { class: 'grad' }, 'plan')),
       h('p', { class: 'muted' }, 'Alla priser per månad inklusive moms. Byt eller avsluta när du vill.'),
       planCards(),
-      h('p', { class: 'note', style: 'margin-top:20px' }, 'Den här versionen körs i demoläge: planer aktiveras lokalt utan betalning. Funktioner som kräver en server (molnlagring, teamsynk, dedikerade servrar, API) visas i planerna men är inte driftsatta än.')));
+      creditsSection(),
+      h('p', { class: 'note', style: 'margin-top:20px' }, 'Den här versionen körs i demoläge: planer och krediter aktiveras lokalt utan betalning. Funktioner som kräver en server (molnlagring, teamsynk, dedikerade servrar, API) visas i planerna men är inte driftsatta än.')));
   };
 
   VIEWS.modeller = main => {
     const rows = Object.entries(AI.MODELS).map(([k, m]) => h('tr', null,
       h('td', null, h('b', null, m.name), h('div', { class: 'small muted' }, m.tag)),
-      h('td', null, k === 'image' ? 'Procedurella pixel-sprites' : k === 'd3' ? 'Procedurella low-poly-modeller' : 'Mallbaserad spelgenerator (9 speltyper)'),
+      h('td', null, k === 'image' ? 'Procedurella pixel-sprites' : k === 'd3' ? 'Procedurella low-poly-modeller' : k === 'astryx' ? 'Agentloop: bygger, testkör i dold webbläsare, gör om vid fel' : 'Mallbaserad spelgenerator (9 speltyper)'),
       h('td', null, h('code', null, AI.ANTHROPIC[k].model), AI.ANTHROPIC[k].thinking ? h('div', { class: 'small muted' }, 'adaptivt tänkande, synligt') : AI.ANTHROPIC[k].output_config ? h('div', { class: 'small muted' }, 'effort: ' + AI.ANTHROPIC[k].output_config.effort) : null,
-        k === 'image' ? h('div', { class: 'small muted' }, 'ritar SVG') : k === 'd3' ? h('div', { class: 'small muted' }, 'skriver mesh-JSON') : null),
-      h('td', null, h('code', null, S.settings.openaiModels[k]))));
+        k === 'image' ? h('div', { class: 'small muted' }, 'ritar SVG') : k === 'd3' ? h('div', { class: 'small muted' }, 'skriver mesh-JSON') : k === 'astryx' ? h('div', { class: 'small muted' }, 'agent med verktygen write_game, edit_game, run_game (med skärmbild) och finish') : null),
+      h('td', null, h('code', null, S.settings.openaiModels[k]), k === 'astryx' ? h('div', { class: 'small muted' }, 'skriv → testa → rätta, upp till 3 varv') : null)));
     main.append(h('section', { class: 'wrap' },
       h('h1', null, 'Nexora-', h('span', { class: 'grad' }, 'modellerna')),
       modelCards(),
+      h('h2', { style: 'margin-top:40px' }, 'Lansering av Astryx 5 Pro'),
+      rolloutList(),
       h('h2', { style: 'margin-top:40px' }, 'Vad körs under huven?'),
       h('p', { class: 'muted' }, 'Varje Nexora-modell är ett lager med egen prompt och egna inställningar ovanpå en basmodell. Du väljer leverantör under Inställningar. Nuvarande: ', h('b', null, providerLabel()), '.'),
       h('div', { class: 'card', style: 'overflow-x:auto' }, h('table', { class: 't' },
@@ -290,6 +384,11 @@
           onclick: () => { if (locked) return upsell(null, m.name + ' ingår från ' + PLANS[m.minTier].name + '.', m.minTier); st.model = k; saveStudio(); drawModels(); } },
         locked ? h('span', { class: 'lock' }, '🔒') : null, h('b', null, m.short), h('span', null, m.tag)));
       });
+      const A = AI.MODELS.astryx, open = released('astryx');
+      modelsEl.append(h('div', { class: 'model agent' + (st.model === 'astryx' ? ' on' : ''), role: 'radio', tabindex: 0, 'aria-checked': st.model === 'astryx' ? 'true' : 'false',
+        onclick: () => { if (!open) return astryxLocked(); st.model = 'astryx'; saveStudio(); drawModels(); } },
+      h('span', { class: 'lock' + (open ? ' new' : '') }, open ? 'NY' : '🔒 ' + fmtDate(releaseDate('astryx'))),
+      h('b', null, '🤖 ' + A.short), h('span', null, 'AI-agent · bygger, testkör och rättar själv · ' + COST.astryx + ' krediter utöver planen')));
     }
     drawModels();
 
@@ -313,10 +412,13 @@
     const screen = h('div', { class: 'screen' }, h('div', { class: 'empty' }, h('div', null, h('div', { style: 'font-size:3rem' }, '🎮'), h('h3', null, 'Ditt spel visas här'), h('p', null, 'Skriv en idé och tryck på Skapa spel. Ctrl/⌘+Enter fungerar också.'))));
     const titleEl = h('span', { class: 'title' }, current ? current.title : 'Förhandsvisning');
     const bar = h('div', { class: 'bar' }, titleEl);
-    const stage = h('div', { class: 'stage' }, bar, screen);
+    const summaryEl = h('div', { class: 'note small', style: 'display:none' });
+    const stage = h('div', { class: 'stage' }, bar, summaryEl, screen);
 
     function toolbar() {
       bar.innerHTML = ''; titleEl.textContent = current ? current.title : 'Förhandsvisning'; bar.append(titleEl);
+      summaryEl.style.display = current && current.summary ? '' : 'none';
+      summaryEl.textContent = current && current.summary ? '🤖 ' + current.summary : '';
       if (!current) return;
       bar.append(
         h('button', { class: 'btn sm', onclick: () => play(current.html) }, '↻ Starta om'),
@@ -336,7 +438,13 @@
       const prompt = ta.value.trim();
       if (prompt.length < 4) { toast('Beskriv spelet med några ord först.'); ta.focus(); return; }
       const p = plan();
-      if (used() >= p.games) return upsell(null, 'Du har skapat ' + used() + ' av ' + p.games + ' spel den här månaden. Uppgradera för fler.', tier() + 1);
+      if (st.model === 'astryx' && !released('astryx')) return astryxLocked();
+      const cost = st.model === 'astryx' ? COST.astryx : COST.game;
+      let payWith = 'plan';
+      if (used() >= p.games) {
+        if (S.credits >= cost) payWith = 'credits';
+        else return creditsModal('Du har använt alla ' + p.games + ' spel i ' + p.name + ' den här månaden. Köp krediter och fortsätt direkt – ingen prenumeration – eller uppgradera din plan.' + (S.credits ? ' Du har ' + S.credits + ' krediter, det här kostar ' + cost + '.' : ''), () => go());
+      }
       const m = AI.MODELS[st.model];
       if (tier() < m.minTier) { st.model = 'flash'; drawModels(); }
       const features = OPTS.map(o => o[0]).filter(k => st.opts[k] && can(k));
@@ -348,8 +456,13 @@
       goBtn.textContent = '⏹ Avbryt';
       busy = new AbortController();
       try {
-        let html, meta;
-        if (S.settings.provider === 'local') {
+        let html, meta, summary = null;
+        if (st.model === 'astryx') {
+          stepEl.textContent = 'Astryx 5 Pro planerar…';
+          const r = await runAstryx(prompt, features, stepEl, log);
+          html = r.html; summary = r.summary;
+          meta = { title: r.title || prompt.slice(0, 40), genre: r.genre || 'AI-spel (agent)', dim: r.dim || st.dim, engine: 'Astryx 5 Pro · ' + r.model };
+        } else if (S.settings.provider === 'local') {
           const steps = ['Tolkar idén', 'Väljer speltyp och tema', 'Bygger nivåer', 'Lägger till ljud och kontroller', 'Testar spelet'];
           const cfg = L.config(prompt, { dim: st.dim, music: features.includes('music'), sfx: true, multiplayer: features.includes('multiplayer'), quests: features.includes('quest'), allowOpenWorld: can('openworld') && (st.dim === '2d'), variant: st.variant || '' });
           for (const s of steps) {
@@ -379,9 +492,10 @@
           const t = html.match(/<title>([^<]{1,80})<\/title>/i);
           meta = { title: t ? t[1].trim() : prompt.slice(0, 40), genre: 'AI-spel', dim: st.dim, engine: res.model };
         }
-        S.usage[month()] = used() + 1; store.set('usage', S.usage);
+        if (payWith === 'credits') { addCredits(-cost, 'Spel: ' + meta.title + (st.model === 'astryx' ? ' (Astryx)' : '')); toast('🪙 Använde ' + cost + ' kredit' + (cost > 1 ? 'er' : '') + ' – ' + S.credits + ' kvar'); }
+        else { S.usage[month()] = used() + 1; store.set('usage', S.usage); }
         const now = Date.now();
-        current = { id: 'g' + now.toString(36), title: meta.title, prompt, html, model: st.model, engine: meta.engine, provider: S.settings.provider, dim: meta.dim, genre: meta.genre, created: now, updated: now, versions: [] };
+        current = { id: 'g' + now.toString(36), title: meta.title, prompt, html, summary, model: st.model, engine: meta.engine, provider: S.settings.provider, dim: meta.dim, genre: meta.genre, created: now, updated: now, versions: [] };
         play(html); toolbar();
         const all = await games.all().catch(() => []);
         if (all.length >= plan().storage) toast('Lagringen är full (' + plan().storage + ' spel i ' + plan().name + '). Spelet sparades inte – ta bort ett spel eller uppgradera.', 5000);
@@ -397,6 +511,69 @@
       } finally {
         busy = null; goBtn.textContent = '✨ Skapa spel';
       }
+    }
+
+    const pause = ms => new Promise((r, j) => { const t = setTimeout(r, ms); busy && busy.signal.addEventListener('abort', () => { clearTimeout(t); j(new DOMException('Avbruten', 'AbortError')); }, { once: true }); });
+
+    async function runAstryx(prompt, features, stepEl, log) {
+      const LABEL = { write_game: 'Skriver spelet', edit_game: 'Rättar koden', run_game: 'Testkör', finish: 'Avslutar' };
+      const line = text => { const d = h('div', null, text); log.append(d); log.scrollTop = log.scrollHeight; return d; };
+      let cur = null, thinkEl = null;
+      const hooks = {
+        runGame: async html => {
+          const t = await testGame(html);
+          if (t.image) { log.append(h('img', { src: 'data:image/jpeg;base64,' + t.image, alt: 'Astryx skärmbild', style: 'max-width:220px;border-radius:8px;display:block;margin:4px 0' })); log.scrollTop = log.scrollHeight; }
+          return t;
+        },
+        step: (kind, detail) => {
+          thinkEl = null;
+          if (kind === 'tool_start') {
+            stepEl.textContent = 'Astryx: ' + (LABEL[detail] || detail) + '…';
+            if (detail === 'write_game' || detail === 'edit_game') cur = line('✍️ ' + LABEL[detail] + '…');
+          } else if (kind === 'write') { (cur || line('')).textContent = '✍️ Skrev spelet (' + detail + ')'; cur = null; }
+          else if (kind === 'edit') { (cur || line('')).textContent = '🔧 Rättade: ' + detail; cur = null; }
+          else if (kind === 'run') cur = line('▶️ Testkör spelet i en dold webbläsare…');
+          else if (kind === 'ran') { (cur || line('')).textContent = '▶️ Testkörning: ' + detail; cur = null; }
+        },
+        thinking: t => { if (!thinkEl) { thinkEl = h('div', { class: 'think' }, '💭 '); log.append(thinkEl); } thinkEl.textContent += t; log.scrollTop = log.scrollHeight; },
+        progress: (tool, n) => { if (cur && LABEL[tool]) cur.textContent = '✍️ ' + LABEL[tool] + '… ' + Math.round(n / 1000) + ' kB'; },
+      };
+      let r;
+      if (S.settings.provider === 'local') r = await localAgent(prompt, features, hooks);
+      else {
+        const assetsList = features.includes('assets') ? (await assets.all()).filter(a => a.svg) : [];
+        r = await AI.agent(S.settings, prompt, { dim: st.dim, features, assets: assetsList }, hooks, busy.signal);
+      }
+      stepEl.textContent = 'Astryx är klar'; line('✅ Klart – ' + r.runs + ' testkörning' + (r.runs === 1 ? '' : 'ar'));
+      await pause(1200);
+      return r;
+    }
+
+    // Astryx on Nexora Local: the same build → test → fix loop, with the offline generator doing the writing.
+    async function localAgent(prompt, features, hooks) {
+      const opts = { dim: st.dim, music: features.includes('music'), sfx: true, multiplayer: features.includes('multiplayer'), quests: true, allowOpenWorld: can('openworld') && st.dim === '2d' };
+      let cfg = L.config(prompt, Object.assign({ variant: st.variant || '' }, opts));
+      hooks.thinking('Det här låter som ett ' + cfg.genreLabel.toLowerCase() + ' med ' + cfg.tagline.split('· ')[1].toLowerCase() + '. Jag bygger det, testkör det och justerar tills det fungerar.');
+      await pause(500);
+      let html, t, runs = 0, fixes = 0;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        hooks.step('tool_start', 'write_game'); await pause(350);
+        html = L.buildHtml(cfg, RT); hooks.step('write', Math.round(html.length / 1000) + ' kB');
+        hooks.step('tool_start', 'run_game'); hooks.step('run');
+        t = await hooks.runGame(html); runs++;
+        hooks.step('ran', (t.errors.length ? t.errors.length + ' fel' : 'inga fel') + (t.animating ? ', spelet rör sig' : ', spelet står still'));
+        if (!t.errors.length && t.animating) break;
+        if (attempt === 2) break;
+        fixes++;
+        hooks.step('tool_start', 'edit_game');
+        hooks.step('edit', t.errors.length ? t.errors[0].slice(0, 80) : 'spelet stod still – bygger en ny variant');
+        cfg = L.config(prompt, Object.assign({ variant: 'fix' + attempt + Date.now() }, opts));
+      }
+      const premise = (L.story(prompt).match(/\*\*Premiss\.\*\* ([^\n]+)/) || [])[1];
+      return {
+        html, title: cfg.title, genre: cfg.genreLabel, dim: cfg.dim, model: 'Nexora Local', runs,
+        summary: 'Astryx byggde "' + cfg.title + '" (' + cfg.genreLabel.toLowerCase() + '), testkörde det ' + runs + ' gång' + (runs > 1 ? 'er' : '') + (fixes ? ' och rättade ' + fixes + ' problem' : ' utan fel') + '.' + (premise ? ' ' + premise : ''),
+      };
     }
 
     const variantBtn = h('button', { class: 'btn sm ghost', title: 'Samma idé, ny variant', onclick: () => { st.variant = String(Math.random()).slice(2, 8); saveStudio(); go(); } }, '🎲 Ny variant');
@@ -439,22 +616,88 @@
       h('div', { class: 'row' }, h('button', { class: 'btn', onclick: async () => { await saveVersion(g, 'Manuell version'); await games.put(g); close(); toast('Version sparad'); } }, 'Spara version nu'), h('button', { class: 'btn ghost', onclick: () => close() }, 'Stäng'))]);
   }
 
-  // Runs the game hidden for a few seconds and collects runtime errors.
-  function collectErrors(html, ms) {
+  // Runs inside the test iframe (serialized with toString): records errors and frames,
+  // starts the game with Space/Enter/click, plays with arrows and WASD, then reports
+  // how many colours the canvas shows, whether it still changes, and a JPEG screenshot.
+  function gameProbe(tag, ms) {
+    var frames = 0;
+    function send(o) { o[tag] = 1; parent.postMessage(o, '*'); }
+    function err(m) { send({ err: String(m).slice(0, 400) }); }
+    addEventListener('error', function (e) { err((e.message || 'Fel') + ' (rad ' + e.lineno + ')'); });
+    addEventListener('unhandledrejection', function (e) { err('Promise: ' + (e.reason && e.reason.message || e.reason)); });
+    var ce = console.error;
+    console.error = function () { err('console.error: ' + [].join.call(arguments, ' ')); ce.apply(console, arguments); };
+    var raf = window.requestAnimationFrame;
+    window.requestAnimationFrame = function (cb) { return raf.call(window, function (t) { frames++; cb(t); }); };
+    var KEYS = { Space: [' ', 32], Enter: ['Enter', 13], ArrowLeft: ['ArrowLeft', 37], ArrowRight: ['ArrowRight', 39], ArrowUp: ['ArrowUp', 38], ArrowDown: ['ArrowDown', 40], KeyW: ['w', 87], KeyA: ['a', 65], KeyS: ['s', 83], KeyD: ['d', 68] };
+    function key(type, code) {
+      var k = KEYS[code], ev = new KeyboardEvent(type, { code: code, key: k[0], bubbles: true, cancelable: true });
+      try { Object.defineProperty(ev, 'keyCode', { get: function () { return k[1]; } }); Object.defineProperty(ev, 'which', { get: function () { return k[1]; } }); } catch (x) { /* read-only */ }
+      (document.body || document).dispatchEvent(ev);
+    }
+    function tap(code, hold) { key('keydown', code); setTimeout(function () { key('keyup', code); }, hold || 120); }
+    function click() {
+      var c = document.querySelector('canvas') || document.body;
+      if (!c) return;
+      ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach(function (t) {
+        try { c.dispatchEvent(new MouseEvent(t, { bubbles: true, clientX: innerWidth / 2, clientY: innerHeight / 2 })); } catch (x) { /* ignore */ }
+      });
+    }
+    function snap() {
+      var best = null, area = 0;
+      [].forEach.call(document.querySelectorAll('canvas'), function (c) { if (c.width * c.height > area) { area = c.width * c.height; best = c; } });
+      if (!best) return null;
+      var w = Math.min(480, best.width), h = Math.max(1, Math.round(best.height * w / best.width)), o = document.createElement('canvas');
+      o.width = w; o.height = h;
+      try {
+        var x = o.getContext('2d'); x.drawImage(best, 0, 0, w, h);
+        var d = x.getImageData(0, 0, w, h).data, seen = {}, n = 0, sum = 0;
+        for (var i = 0; i < d.length; i += 4 * 37) {
+          var k = (d[i] >> 4) + ',' + (d[i + 1] >> 4) + ',' + (d[i + 2] >> 4);
+          if (!seen[k]) { seen[k] = 1; n++; }
+          sum = (Math.imul(sum, 31) + d[i] + d[i + 1] * 7 + d[i + 2] * 13) >>> 0;
+        }
+        return { colors: n, hash: sum, image: o.toDataURL('image/jpeg', 0.7).split(',')[1] };
+      } catch (x) { return { colors: 0, hash: 0, image: null }; }
+    }
+    setTimeout(function () { click(); tap('Space', 150); tap('Enter', 150); }, 700);
+    ['ArrowRight', 'ArrowUp', 'KeyD', 'Space', 'ArrowLeft', 'ArrowDown', 'KeyW', 'ArrowRight'].forEach(function (c, i) {
+      setTimeout(function () { tap(c, 260); }, 1100 + i * 300);
+    });
+    setTimeout(function () {
+      var a = snap();
+      setTimeout(function () {
+        var b = snap();
+        send({ report: 1, frames: frames, colors: b ? b.colors : 0, animating: !!(a && b && a.hash !== b.hash), image: b && b.image });
+      }, 400);
+    }, ms - 700);
+  }
+
+  // Runs a game in a hidden iframe: {errors, frames, colors, animating, image}.
+  function testGame(html, ms) {
+    ms = ms || 4200;
     return new Promise(res => {
       const errs = [], tag = 'nx' + Math.random().toString(36).slice(2);
-      const probe = '<script>(function(){function s(m){parent.postMessage({' + tag + ':String(m).slice(0,400)},"*")}' +
-        'addEventListener("error",function(e){s((e.message||"Fel")+" (rad "+e.lineno+")")});' +
-        'addEventListener("unhandledrejection",function(e){s("Promise: "+(e.reason&&e.reason.message||e.reason))});' +
-        'var ce=console.error;console.error=function(){s("console.error: "+[].join.call(arguments," "));ce.apply(console,arguments)};' +
-        'setTimeout(function(){try{["keydown","keyup"].forEach(function(t){dispatchEvent(new KeyboardEvent(t,{code:"Space",key:" "}))})}catch(e){s(e)}},600);})();</' + 'script>';
-      const withProbe = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, m => m + probe) : probe + html;
-      const f = h('iframe', { sandbox: 'allow-scripts', style: 'position:fixed;left:-9999px;width:800px;height:600px', srcdoc: withProbe });
-      const on = e => { if (e.data && e.data[tag] && errs.length < 20) errs.push(e.data[tag]); };
+      const probe = '<script>(' + gameProbe.toString() + ')(' + JSON.stringify(tag) + ',' + ms + ');</' + 'script>';
+      const withProbe = /<head(\s[^>]*)?>/i.test(html) ? html.replace(/<head(\s[^>]*)?>/i, m => m + probe) : probe + html;
+      // Kept on screen (but invisible) so the browser does not throttle its animation frames.
+      const f = h('iframe', { sandbox: 'allow-scripts', 'aria-hidden': 'true', tabindex: -1, style: 'position:fixed;left:0;top:0;width:800px;height:500px;opacity:0.001;pointer-events:none;border:0;z-index:-1', srcdoc: withProbe });
+      let report = null;
+      const on = e => {
+        const d = e.data;
+        if (!d || !d[tag]) return;
+        if (d.err && errs.length < 20) errs.push(d.err);
+        if (d.report) { report = d; finish(); }
+      };
+      const timer = setTimeout(() => finish(), ms + 2500);
+      function finish() {
+        clearTimeout(timer); removeEventListener('message', on); f.remove();
+        res({ errors: errs, frames: report ? report.frames : 0, colors: report ? report.colors : 0, animating: report ? report.animating : false, image: report ? report.image : null });
+      }
       addEventListener('message', on); document.body.appendChild(f);
-      setTimeout(() => { removeEventListener('message', on); f.remove(); res(errs); }, ms || 3500);
     });
   }
+  const collectErrors = html => testGame(html).then(r => r.errors);
   function bugfix(g, onDone) {
     const out = h('div', { class: 'log', style: 'max-height:260px;width:100%' }, 'Kör spelet och letar efter fel…\n');
     const close = modal([h('h2', null, '🐞 Buggfix-AI'), out, h('div', { class: 'row' }, h('button', { class: 'btn ghost', onclick: () => close() }, 'Stäng'))]);
@@ -844,5 +1087,5 @@
   }
 
   render();
-  window.Nexora = { S, PLANS, can, games, render, RT };
+  window.Nexora = { S, PLANS, can, games, render, RT, testGame, released, COST };
 })();
