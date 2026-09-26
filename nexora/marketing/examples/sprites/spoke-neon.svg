@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 256" width="1024" height="256" data-frames="4" data-style="neon"><defs><filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g transform="translate(0 0)"><rect width="256" height="256" fill="#0b0620"/>
+  <g filter="url(#glow)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 60 196 L 60 110 Q 60 40 128 40 Q 196 40 196 110 L 196 196 L 60 196 L 87 210 L 114 196 L 141 210 L 168 196 L 195 210" stroke="#7df9ff" stroke-width="8"/>
+  <path d="M 58 130 Q 30 120 26 150" stroke="#7df9ff" stroke-width="7"/>
+  <path d="M 198 130 Q 226 120 230 150" stroke="#7df9ff" stroke-width="7"/>
+  <circle cx="102" cy="106" r="11" stroke="#ff4dd8" stroke-width="7"/><circle cx="154" cy="106" r="11" stroke="#ff4dd8" stroke-width="7"/>
+  <path d="M 108 146 Q 128 160 148 146" stroke="#ff4dd8" stroke-width="7"/></g></g><g transform="translate(256 0)"><rect width="256" height="256" fill="#0b0620"/>
+  <g filter="url(#glow)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 60 188 L 60 102 Q 60 32 128 32 Q 196 32 196 102 L 196 188 L 60 185 L 87 205 L 114 185 L 141 205 L 168 185 L 195 205" stroke="#7df9ff" stroke-width="8"/>
+  <path d="M 58 122 Q 24 112 20 142" stroke="#7df9ff" stroke-width="7"/>
+  <path d="M 198 122 Q 232 112 236 142" stroke="#7df9ff" stroke-width="7"/>
+  <circle cx="102" cy="98" r="11" stroke="#ff4dd8" stroke-width="7"/><circle cx="154" cy="98" r="11" stroke="#ff4dd8" stroke-width="7"/>
+  <path d="M 108 138 Q 128 158 148 138" stroke="#ff4dd8" stroke-width="7"/></g></g><g transform="translate(512 0)"><rect width="256" height="256" fill="#0b0620"/>
+  <g filter="url(#glow)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 60 184 L 60 98 Q 60 28 128 28 Q 196 28 196 98 L 196 184 L 60 184 L 87 198 L 114 184 L 141 198 L 168 184 L 195 198" stroke="#7df9ff" stroke-width="8"/>
+  <path d="M 58 118 Q 30 108 26 138" stroke="#7df9ff" stroke-width="7"/>
+  <path d="M 198 118 Q 226 108 230 138" stroke="#7df9ff" stroke-width="7"/>
+  <circle cx="102" cy="94" r="11" stroke="#ff4dd8" stroke-width="7"/><circle cx="154" cy="94" r="11" stroke="#ff4dd8" stroke-width="7"/>
+  <path d="M 108 134 Q 128 148 148 134" stroke="#ff4dd8" stroke-width="7"/></g></g><g transform="translate(768 0)"><rect width="256" height="256" fill="#0b0620"/>
+  <g filter="url(#glow)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 60 190 L 60 104 Q 60 34 128 34 Q 196 34 196 104 L 196 190 L 60 193 L 87 201 L 114 193 L 141 201 L 168 193 L 195 201" stroke="#7df9ff" stroke-width="8"/>
+  <path d="M 58 124 Q 36 114 32 144" stroke="#7df9ff" stroke-width="7"/>
+  <path d="M 198 124 Q 220 114 224 144" stroke="#7df9ff" stroke-width="7"/>
+  <circle cx="102" cy="100" r="11" stroke="#ff4dd8" stroke-width="7"/><circle cx="154" cy="100" r="11" stroke="#ff4dd8" stroke-width="7"/>
+  <path d="M 108 140 Q 128 148 148 140" stroke="#ff4dd8" stroke-width="7"/></g></g></svg>

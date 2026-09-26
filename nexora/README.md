@@ -1,19 +1,41 @@
 # Nexora – skapa spel med AI
 
-Nexora gör spelbara 2D- och 3D-spel av en beskrivning. Samma app finns som webbplats,
-Windows-installation (EXE), macOS-skivavbild (DMG) och Linux-paket (DEB).
+Nexora gör vilket spel som helst av en beskrivning. Allt skapas av AI: spelen, bilderna,
+3D-modellerna, texterna, musiken och ljudeffekterna. Det finns inga mallar och inga
+speltyper att välja bland. Samma app finns som webbplats, Windows-installation (EXE),
+macOS-skivavbild (DMG) och Linux-paket (DEB).
 
 | Fil | Plattform |
 |---|---|
 | `index.html` | Webbplatsen. En fristående fil som går att lägga på valfritt webbhotell. |
-| `dist/Nexora-Setup-1.5.0-x64.exe` | Windows 10/11, 64-bit |
-| `dist/Nexora-1.5.0-arm64.dmg` | macOS 12+ på Apple Silicon |
-| `dist/nexora_1.5.0_amd64.deb` | Debian, Ubuntu, Mint (x86-64) |
-| `dist/nexora-1.5.0.html` | Kopian som skrivbordsapparna laddar |
+| `dist/Nexora-Setup-1.5.1-x64.exe` | Windows 10/11, 64-bit |
+| `dist/Nexora-1.5.1-arm64.dmg` | macOS 12+ på Apple Silicon |
+| `dist/nexora_1.5.1_amd64.deb` | Debian, Ubuntu, Mint (x86-64) |
+| `dist/nexora-1.5.1.html` | Kopian som skrivbordsapparna laddar |
 | `colab/Nexora_Flash_1_Colab.ipynb` | Tränar en egen Nexora Flash-modell i Google Colab |
+| `marketing/examples/` | AI-exemplen som reklamfilmen visar: sex spel, fyra sprites, fyra 3D-modeller, musik och ljud |
 | `marketing/nexora-short-9x16.mp4` | Kortreklam, 26 s, 1080×1920 (Shorts/Reels/TikTok) |
 | `marketing/nexora-plans-9x16.mp4` | Kortreklam om alla fem planerna, 38 s, 1080×1920 |
 | `marketing/nexora-15-9x16.mp4` | Lanseringsreklam för Nexora 1.5, 32 s, 1080×1920 |
+
+## Nyheter i 1.5.1: bara AI
+
+- **Offline-generatorn är borttagen.** Nexora Local, de tolv spelmallarna och de
+  procedurella generatorerna för sprites, 3D, text, musik och ljud finns inte längre.
+- **Alla modeller genererar med AI:**
+  - Flash, Pro och Core 1.5 skriver hela spelet från grunden efter beskrivningen, i vilken
+    genre som helst. Spelprompten säger uttryckligen att modellen ska bygga exakt det
+    användaren beskriver och aldrig byta ut idén mot en enklare eller vanligare spelsort.
+  - Image 1.5 och 3D 1.5 ritar och modellerar vad som helst.
+  - Astryx 5 Pro är alltid en AI-agent, både i HTML5 och i Godot-läget.
+- **Musik och ljudeffekter med AI.** AI:n komponerar ett noterat stycke (spår, toner och
+  trummor) och designar ljudeffekter som syntlager. `src/media.js` spelar upp och renderar
+  dem till WAV. Den kan fritt beskrivna ljud, och rösten kan få sin replik skriven av AI:n.
+- **Koppla in en AI.** Utan nyckel visar Studio och Verktyg "Koppla in en AI" och öppnar
+  Inställningar i stället för att generera. Välj Anthropic (Claude) eller en egen
+  OpenAI-kompatibel endpoint, till exempel modellen från Colab. Gamla inställningar som
+  pekade på Nexora Local flyttas automatiskt till Claude.
+- **Colab:** träningsdatan skapas nu av AI. Se [Colab](#colab).
 
 ## Nyheter i 1.5
 
@@ -26,36 +48,34 @@ Windows-installation (EXE), macOS-skivavbild (DMG) och Linux-paket (DEB).
   - Pro 1.5, Image 1.5 och 3D 1.5 kör på effort `high`.
   - Spelprompten kräver nu stöd för handkontroll och paus med Esc, och modellen ska
     granska sin kod innan den svarar.
-- **Tre nya speltyper i Nexora Local (12 totalt):**
-  - racing mot två AI-bilar på en slumpad bana, tre varv
-  - pusselspel med tre i rad, kombos, drag och mål
-  - tower defense med tio vågor, bossar och uppgraderbara torn
-- **Spelmotorn:** handkontroll (Gamepad API: styrspak eller styrkors, A/B/X/Y, Start för
-  paus), paus med Esc, och klick/touch för spel som styrs med pekaren.
+- **Vilket spel som helst:** spelprompten kräver handkontroll (Gamepad API), paus med
+  P/Esc och touchknappar i varje spel.
 - **Image 1.5:**
   - fyra stilar: pixel, platt, neon och retro 8-bit
   - animerade sprite-ark med fyra bildrutor och en gångcykel
   - export som PNG (256 px per bildruta) eller SVG
 - **3D 1.5:**
-  - nya modeller: svärd, skattkista, svamp, planet och fisk
+  - modeller av vad du än beskriver, med en färg per yta; appen rättar ogiltiga färger och ytor
   - export som binär glTF (`.glb`) med ett PBR-material per färg. Filerna är verifierade
     genom import och rendering i Godot 4.7 och öppnas också i Unity och Blender.
-- **Träningsdata:** `colab/nexora_seed.jsonl` har nu 260 exempel och alla tolv speltyper.
 - **Nyhetsruta** på startsidan och i sidfoten.
 
 ## Modellerna
 
-Varje Nexora-modell är ett eget lager (prompt och inställningar) ovanpå en basmodell.
+Varje Nexora-modell är ett eget lager (prompt och inställningar) ovanpå en AI-basmodell.
 Leverantören väljs under **⚙️ Inställningar**:
 
-| Modell | Nexora Local (offline, standard) | Anthropic (egen API-nyckel) | Egen endpoint |
-|---|---|---|---|
-| **Flash 1.5** – snabb + självtest | Spelgenerator med 12 speltyper | `claude-haiku-4-5` | valfritt modell-ID |
-| **Pro 1.5** – bättre resultat, testar själv | ″ | `claude-opus-5`, effort `high` | ″ |
-| **Core 1.5** – tänker, testar, förbättrar | ″ | `claude-opus-5`, adaptivt tänkande (visas live), effort `xhigh` | ″ |
-| **Image 1.5** – stilar, animation | Procedurella sprites i 4 stilar, animerade (SVG/PNG) | `claude-opus-5` ritar SVG | `/images/generations` |
-| **3D 1.5** – 3D-modeller, GLB | Procedurella low-poly-modeller (.glb/.obj) | `claude-opus-5` skriver mesh-JSON | ″ |
-| **Astryx 5 Pro** – AI-agent | Agentloop: bygger, testkör, gör om vid fel | `claude-opus-5` som agent med verktyg | skriv → testa → rätta, upp till 3 varv |
+| Modell | Anthropic (egen API-nyckel, standard) | Egen endpoint |
+|---|---|---|
+| **Flash 1.5** – snabb + självtest | `claude-haiku-4-5` | valfritt modell-ID |
+| **Pro 1.5** – bättre resultat, testar själv | `claude-opus-5`, effort `high` | ″ |
+| **Core 1.5** – tänker, testar, förbättrar | `claude-opus-5`, adaptivt tänkande (visas live), effort `xhigh` | ″ |
+| **Image 1.5** – stilar, animation | `claude-opus-5` ritar SVG | `/images/generations` |
+| **3D 1.5** – 3D-modeller, GLB | `claude-opus-5` skriver mesh-JSON | ″ |
+| **Astryx 5 Pro** – AI-agent | `claude-opus-5` som agent med verktyg | skriv → testa → rätta, upp till 3 varv |
+
+Verktygen använder samma modeller: story, dialog, NPC:er, uppdrag, ljudeffekter och
+röstrepliker går till Flash, och musiken komponeras av Pro.
 
 ### Nexora Astryx 5 Pro
 
@@ -70,8 +90,7 @@ med fyra verktyg tills spelet fungerar:
 | `finish` | avslutar, bara tillåtet efter minst en testkörning |
 
 Agenten tänker med adaptivt tänkande, och tankarna visas live. Varje steg syns i Studio med
-skärmbilderna. Med Nexora Local kör samma loop offline med den lokala generatorn, och med
-en egen endpoint körs skriv → testa → rätta.
+skärmbilderna. Med en egen endpoint körs skriv → testa → rätta.
 
 Lanseringen styrs av datum per plan (`ROLLOUT` i `src/ai.js`):
 
@@ -103,8 +122,8 @@ bakgrunden, med en live-logg, skärmbilder och en avisering när spelet är klar
   kontexten under långa körningar.
 - **Tidsgräns:** vid 85 % av tiden får agenten beskedet att sluta lägga till funktioner, och
   körningen avbryts hårt strax efter gränsen.
-- **Utan API-nyckel** bygger Nexora Local ett spelbart tredjepersonsspel i 3D med samma
-  kedja (Python → Godot → testkörning).
+- **Kräver Claude.** Godot-läget behöver verktyg, skärmbilder och långa arbetspass, så det
+  körs med en Anthropic-nyckel. Utan nyckel startar ingen körning och Inställningar öppnas.
 - **Godot** 4.7.2 laddas ner automatiskt vid första körningen (80–170 MB beroende på
   plattform). **Python 3.8+** måste finnas på datorn.
 - **Export:** Windows (.exe), Linux, macOS (.app i .zip) och webb, via Godots exportmallar
@@ -141,10 +160,8 @@ Claude går inte att finjustera. Astryx tränas i stället på tre sätt:
    i appdatan) och läser de 40 senaste före varje körning. Sidan 🤖 Astryx visar dem och kan
    starta **träningspass**: 3, 5 eller 8 spel från en varierad testsvit, 20 min per spel.
    Träningspassen kostar API-avgifter men inga krediter.
-3. **Egen modell i Colab.** `colab/nexora_godot_seed.jsonl` innehåller 120 Godot-byggskript
-   i Python, och varje exempel är verifierat i Godot. Notebooken tränar på HTML-, Godot- eller
-   båda dataseten (`DATASET`) och kan provköra Godot-läget: modellen skriver ett byggskript,
-   Godot kör projektet med testsonden och notebooken rapporterar fel.
+3. **Varierade uppdrag.** Träningspassen täcker plattform, skjutspel, racing, pussel,
+   utforskning, tower defense och överlevnad, så lärdomarna inte fastnar i en spelsort.
 
 ### Krediter
 
@@ -154,11 +171,6 @@ Ett spel kostar 1 kredit, en Astryx-körning 3 och hyperrealistiskt läge 10. Kr
 slut och låser inte upp funktioner från dyrare planer. Saldot visas i toppraden (🪙), och
 köp sker, precis som planerna, i demoläge utan betalning.
 
-- **Nexora Local** fungerar utan internet och utan nyckel. Den tolkar prompten (speltyp,
-  tema, svårighet, antal spelare) och bygger ett av nio spel: plattformsspel, rymdskjutare,
-  orm, blockkross, undvik-spel, samlarspel (1–2 spelare), open world med NPC:er och uppdrag,
-  3D-löpare och 3D-arena. Alla spel har titelskärm, poäng, rekord, game over, ljud,
-  procedurell musik och touchknappar.
 - **Anthropic** anropar Claude direkt från appen med användarens egen nyckel. Opus-anropen
   har `fallbacks: "default"` påslaget, så en förfrågan som säkerhetsfiltret avböjer körs om
   på en annan modell i stället för att bara misslyckas.
@@ -168,11 +180,18 @@ köp sker, precis som planerna, i demoläge utan betalning.
 ### Colab
 
 GPT-5 Fast, GPT-6 Astra, GPT Images 2.5 och Meshy 7 har inga öppna vikter, så de kan inte
-finjusteras i Colab. Anteckningsboken finjusterar i stället Qwen2.5-Coder med LoRA på
-`colab/nexora_seed.jsonl` (200 spel, alla speltyper), provkör modellen och startar en
-OpenAI-kompatibel server med en publik tunnel. Den adressen anger du sedan under
-*Egen endpoint*. Du kan träna vidare på dina egna spel: *Mina spel → 🧠 Träningsdata*
-exporterar dem i samma format.
+finjusteras i Colab. Anteckningsboken finjusterar i stället Qwen2.5-Coder med LoRA.
+
+Träningsdatan skapas av AI. `colab/nexora_prompts.json` innehåller 93 vitt skilda
+spelidéer, från matlagning och fotboll till rytmspel, skräck, simulatorer och ordspel. De
+är formaterade exakt som appens egna förfrågningar (`node nexora/build/prompts.js`).
+
+Steg 3 skickar idéerna till en lärarmodell, Claude, och sparar de färdiga spelen.
+Nyckeln läses från Colabs *Secrets* (`ANTHROPIC_API_KEY`), och spelen sparas löpande så
+att ett avbrutet steg kan fortsätta. Sedan tränas, provköras och serveras modellen med en
+OpenAI-kompatibel server och en publik tunnel. Den adressen anger du under
+*Egen endpoint*. Dina egna spel kan läggas till: *Mina spel → 🧠 Träningsdata* exporterar
+dem i samma format.
 
 ## Planerna
 
@@ -184,7 +203,7 @@ exporterar dem i samma format.
 Varje funktion i prislistan är kopplad till en plan i appen (`FEAT` i `src/app.js`), och
 låsta funktioner öppnar en uppgraderingsdialog. Så här ser det ut i den här versionen:
 
-- **Fungerar:** 2D/3D, alla fem modellerna, kod-, grafik-, story-, dialog-, NPC-, uppdrags-,
+- **Fungerar:** 2D/3D, alla sex modellerna, kod-, grafik-, story-, dialog-, NPC-, uppdrags-,
   musik-, ljudeffekt- och röstgeneratorn, open world, lokal multiplayer för två spelare,
   Buggfix-AI (kör spelet dolt, samlar fel och låter AI:n rätta dem), egna assets,
   versionshantering (30 versioner per spel), delade projekt via `.nexora.json` och en
@@ -202,7 +221,7 @@ API-nycklar lämnar aldrig enheten, förutom till den leverantör de hör till.
 
 ## Installation
 
-**Windows:** kör `Nexora-Setup-1.5.0-x64.exe`. Nexora installeras för din användare i
+**Windows:** kör `Nexora-Setup-1.5.1-x64.exe`. Nexora installeras för din användare i
 `%LOCALAPPDATA%\Programs\Nexora`, utan administratörsrättigheter, med genvägar på
 skrivbordet och i Start-menyn. Avinstallera via *Inställningar → Appar*. Filen är inte
 kodsignerad, så SmartScreen varnar: välj *Mer info → Kör ändå*.
@@ -211,22 +230,21 @@ kodsignerad, så SmartScreen varnar: välj *Mer info → Kör ändå*.
 notariserad. Första gången: högerklicka på appen och välj *Öppna*. På macOS 15 och senare
 godkänner du den under *Systeminställningar → Integritet och säkerhet → Öppna ändå*.
 
-**Linux:** `sudo apt install ./nexora_1.5.0_amd64.deb` och starta sedan `nexora` eller
+**Linux:** `sudo apt install ./nexora_1.5.1_amd64.deb` och starta sedan `nexora` eller
 välj Nexora i programmenyn.
 
 ## Bygga
 
 ```sh
-python3 nexora/build/build.py      # src/ → index.html + dist/nexora-1.5.0.html
+python3 nexora/build/build.py      # src/ → index.html + dist/nexora-1.5.1.html
 python3 nexora/build/desktop.py    # → dist/*.exe, *.dmg, *.deb  (körs på Linux)
 python3 nexora/build/build.py      # lägger in storlekar och SHA-256 på nedladdningssidan
-node nexora/build/dataset.js       # → colab/nexora_seed.jsonl
 node nexora/build/verify.js        # testar appen i headless Chromium (Playwright)
 python3 nexora/build/desktop.py dev   # oinstallerad Linux-app för tester
 NEXORA_APP=… NEXORA_GODOT=… [NEXORA_TPZ=…] xvfb-run -a node nexora/build/verify_desktop.js
-node nexora/build/dataset_godot.js     # → colab/nexora_godot_seed.jsonl
+node nexora/build/prompts.js           # → colab/nexora_prompts.json
 python3 nexora/build/make_notebook.py  # → colab/Nexora_Flash_1_Colab.ipynb
-FFMPEG=ffmpeg node nexora/build/ad.js [ad.html|plans.html|launch15.html]   # renderar en kortreklam
+[NEXORA_ANTHROPIC_KEY=…] FFMPEG=ffmpeg node nexora/build/ad.js launch15.html   # renderar en kortreklam
 ```
 
 ## Reklamfilmen
@@ -242,8 +260,8 @@ AAC, för YouTube Shorts, Instagram Reels och TikTok. Scenerna:
 6. Slutskylt.
 
 Spelen i filmen är genererade av appen och spelas av en bot. `build/ad.js` renderar varje
-bildruta på en virtuell klocka, så filmen blir jämn oavsett maskin. Musiken och
-ljudeffekterna kommer från appens egna generatorer. `marketing/nexora-short-thumbnail.jpg`
+bildruta på en virtuell klocka, så filmen blir jämn oavsett maskin. Filmen gjordes med
+1.5.0-versionens spel, musik och ljud. `marketing/nexora-short-thumbnail.jpg`
 är slutskylten som miniatyrbild.
 
 `marketing/nexora-plans-9x16.mp4` (38 s) går igenom alla fem planerna.
@@ -260,21 +278,43 @@ ljudeffekterna kommer från appens egna generatorer. `marketing/nexora-short-thu
 
 Byggs med `FFMPEG=ffmpeg node nexora/build/ad.js plans.html`.
 
-`marketing/nexora-15-9x16.mp4` (32 s) lanserar 1.5-uppdateringen:
+`marketing/nexora-15-9x16.mp4` (32 s) lanserar 1.5-uppdateringen med budskapet att man kan
+skapa **vilket spel som helst**:
 
-- **Krok:** "1.5" slås upp på skärmen.
-- **Självtest:** en logg där modellen testar och rättar sitt eget spel, följd av
-  märket "✓ Självtestad · inga fel".
-- **Nya speltyper:** racing mot AI-bilar, match-3 och tower defense, spelade live.
-- **Kontroller:** handkontroll, paus och touch.
-- **Image 1.5:** fyra animerade spritesheets i stilarna pixel, platt, neon och retro.
-- **3D 1.5:** svärd, skattkista, svamp och planet som `.glb`.
-- **Slutskylt:** "Nexora 1.5 – Ute nu".
+1. **Krok:** "1.5" slås upp på skärmen.
+2. **Vilket spel som helst:** sex vitt skilda idéer skrivs in en i taget, och spelet som
+   AI:n skrev för varje idé spelas direkt:
+   - pizzor i en food truck
+   - robotfotboll på månen
+   - ett rytmspel i regnet
+   - en katt som smyger förbi hundar
+   - en magisk trädgård
+   - ett skräckspel med ficklampa i tunnelbanan
 
-Spelen körs i demoläge (`CFG.demo`), där de spelar sig själva och aldrig visar
-game over. Demoläget används bara av reklamfilmerna. Byggs med
-`FFMPEG=ffmpeg node nexora/build/ad.js launch15.html`. Varje film beskriver sin
-längd, sina spel och ljudeffekter i `window.AD` i sin HTML-fil.
+   Undertexten lyder "Inga mallar – om du kan beskriva det kan AI:n bygga det".
+3. **Självtest:** loggen där modellen testar och rättar sitt spel, och "✓ Självtestad".
+4. **Kontroller:** handkontroll, paus och touch.
+5. **Image 1.5:** fyra animerade sprite-ark i stilarna pixel, platt, neon och retro.
+6. **3D 1.5:** svärd, skattkista, svamp och planet, som `.glb`.
+7. **Slutskylt:** "Nexora 1.5 – Vilket spel som helst. Ute nu."
+
+Allt i filmen är AI-utdata. Med `NEXORA_ANTHROPIC_KEY` genererar `build/ad.js` spelen,
+modellerna, sprite-arken, musiken och ljuden genom appens egna modeller. Utan nyckel
+används exemplen i `marketing/examples/`, i exakt de format modellerna returnerar:
+
+- `games/*.html`
+- `meshes.json`
+- `sprites/*.svg`
+- `music.json`
+- `sfx.json`
+
+Exemplen är skrivna av Claude, samma modellfamilj som Pro och Core kör på, eftersom
+byggmiljön inte hade någon API-nyckel. Exempelspelen har ett attract-läge
+(`window.NEXORA_DEMO`) där de spelar sig själva.
+
+De två äldre filmerna ovan renderades med 1.5.0-versionens spel. De ligger kvar som de
+är, och de behöver en nyckel, eller egna exempel under `marketing/examples/games/`, för
+att kunna renderas om.
 
 `desktop.py` hämtar Electron 43.2.0 och bygger allt på Linux. Verktygen hämtas och byggs
 automatiskt till `build/.cache`:
@@ -291,32 +331,44 @@ automatiskt till `build/.cache`:
 
 ## Vad som är testat
 
-- `verify.js` kör webbappen i headless Chromium. Den kontrollerar att alla vyer renderas
-  utan fel och att planlåsningen fungerar. Alla nio speltyper genereras från riktiga
-  promptar och spelas med tangenttryckningar utan fel. Den testar också spara/bibliotek,
-  månadskvoten, kodredigeraren med versioner, Buggfix, alla verktyg, fyra exporttyper
-  (giltiga zip-filer) och att sidan inte scrollar i sidled i mobilbredd. Totalt 86 kontroller. För 1.5 tillkommer tester av de tre nya speltyperna, som spelas
-  med tangenter och klick, och av självtestet: ett trasigt första svar körs, felet skickas
-  i en rättningsförfrågan och det rättade spelet visas. Dessutom testas Image 1.5 (neon,
-  fyra bildrutor, PNG på 1024×256), GLB-exporten (giltig header och ett material per färg),
-  nyhetsrutan och modellnamnen.
+- `verify.js` kör webbappen i headless Chromium mot ett simulerat Claude-API som svarar
+  som modellerna: spel, SVG, mesh-JSON, noter, syntlager, text och agentturer. Totalt 68
+  kontroller:
+  - Den byggda appen innehåller ingen offline-generator eller spelmall.
+  - Utan nyckel genereras ingenting. Studio visar "Koppla in en AI", inställningarna
+    erbjuder bara AI-leverantörer och gamla Local-inställningar flyttas till Claude.
+  - Idén "Laga pizzor åt otåliga kunder i en food truck" skickas ordagrant till AI:n,
+    tillsammans med instruktionen att bygga exakt det spelet i vilken genre som helst.
+  - Självtestet: ett trasigt första svar körs, felet skickas i en rättningsförfrågan och
+    det rättade spelet visas.
+  - Alla verktyg går till AI:n:
+    - Story.
+    - Image 1.5: neon, fyra bildrutor och en PNG på 1024×256.
+    - 3D 1.5: en `.glb` med ett material per färg, där ogiltiga färger rättas.
+    - Musik: noterna spelas upp och blir en WAV på 20 s.
+    - Ljudeffekt: ett fritt beskrivet ljud blir en WAV.
+    - Röstreplik.
+  - Övrigt: bibliotek, månadskvot, kodredigerare med versioner, Buggfix med AI, fyra
+    exporttyper (giltiga zip-filer), avböjda förfrågningar, 401, egen endpoint, krediter,
+    Astryx-lanseringen och mobilbredd.
 - Astryx 5 Pro:
   - Lanseringsdatumen testas per plan och datum (26/9, 6/10, 7/10, 13/11 och 14/11).
   - Pro-planen får lanseringsdialogen före 7 oktober.
-  - Den lokala agenten testkör spelet, visar skärmbilden och sammanfattningen och räknas
-    mot kvoten.
   - Mot ett simulerat Messages API körs en hel verktygsloop (write_game → run_game →
     finish). Testet kontrollerar att tankeblocket med signatur och `tool_use` skickas
     tillbaka oförändrade, att `run_game` returnerar en riktig skärmbild och mätvärden,
     att `eager_input_streaming` bara sitter på verktygen som bär kod, och att
-    `fallbacks` och promptcache är påslagna.
-- **Skrivbordsappen, end-to-end** (`verify_desktop.js`, 30 kontroller): testet styr den riktiga
-  Electron-appen under Xvfb, med riktig Python, riktig Godot 4.7.2 och en lokal kopia av
-  Poly Havens API med genererade glTF-, HDR- och PNG-filer.
-  - **Hyperrealistiskt läge med Nexora Local:** körningen drar 10 krediter, laddar ner
-    tre modeller, en HDRI-himmel och en marktextur och skriver `CREDITS.md`. Den bygger ett
-    Godot-projekt som använder dem med AgX, testkör det med tre skärmbilder och sparar
-    spelet i biblioteket.
+    `fallbacks` och promptcache är påslagna. Körningen räknas mot kvoten.
+- **Skrivbordsappen, end-to-end** (`verify_desktop.js`, 32 kontroller): testet styr den riktiga
+  Electron-appen under Xvfb, med riktig Python, riktig Godot 4.7.2, ett simulerat Claude-API
+  och en lokal kopia av Poly Havens API med genererade glTF-, HDR- och PNG-filer.
+  - **Hyperrealistiskt läge med Claude-agenten, via Studio:**
+    - Körningen drar 10 krediter.
+    - Agenten får asset-verktygen, söker och laddar ner en modell, en HDRI-himmel och en
+      marktextur, och `CREDITS.md` skrivs.
+    - Med Python bygger den en skog av dem med AgX. Skogen körs i Godot utan fel med tre
+      skärmbilder och sparas i biblioteket.
+    - Utan nyckel startar ingen körning.
   - **Claude-agenten mot ett simulerat API:** `run_python` skriver ett projekt och
     `godot_run` kör det utan fel med tre bilder. Sökning och nedladdning fungerar, och
     Python-skyddet blockerar läsning utanför projektet. Lärdomen sparas och finns med i
@@ -324,8 +376,6 @@ automatiskt till `build/.cache`:
     tillbaka.
   - **Riktiga exporter med Godots exportmallar:** Linux (73,7 MB), Windows .exe (109,3 MB),
     webb (40 MB) och macOS .zip (59,7 MB). Det exporterade Linux-spelet startar fristående.
-- **Träningsdatan för Godot:** exemplen körs med Python, och ett av de genererade projekten
-  körs i Godot med testsonden utan skriptfel.
 - Krediter: när kvoten är slut öppnas köpdialogen. Ett köp av 25 krediter och ett spel ger
   saldot 24 utan att månadskvoten ändras. Free-planen den 14 november drar 3 krediter för
   Astryx.
@@ -334,8 +384,9 @@ automatiskt till `build/.cache`:
   att Flash 1.5 skickar `claude-haiku-4-5`, att rätt headers skickas, att avböjda
   förfrågningar och 401 blir begripliga felmeddelanden och att egen endpoint får en
   OpenAI-förfrågan. Inget anrop gjordes mot det riktiga API:t, eftersom ingen nyckel fanns.
-- DEB-paketet packades upp och startades under Xvfb på Ubuntu 24.04. Där laddade appen och
-  genererade ett spel inuti Electron. Fyra beroenden (libnotify4, libxss1, xdg-utils,
+- DEB-paketet packades upp och startades under Xvfb på Ubuntu 24.04. Röktestet bekräftade
+  att appen laddar inuti Electron, att standardleverantören är Claude, att GLB-exporten
+  fungerar och att paketet inte innehåller någon offline-generator. Fyra beroenden (libnotify4, libxss1, xdg-utils,
   libsecret-1-0) gick inte att installera i byggmiljön, så `dpkg` konfigurerade aldrig
   paketet klart, men appen startade ändå.
 - DMG-filen packades upp igen: alla filer och symlänkar är identiska med källan,
@@ -345,28 +396,27 @@ automatiskt till `build/.cache`:
 - **Inte testat:**
   - EXE-filen har inte körts på Windows och DMG-filen har inte öppnats på en Mac, eftersom
     byggmiljön saknar båda.
-  - Colab-anteckningsboken har inte körts, eftersom byggmiljön saknar GPU.
+  - Colab-anteckningsboken har inte körts, eftersom byggmiljön saknar GPU och API-nyckel.
+    Alla kodceller kompilerar.
   - Poly Havens riktiga API är blockerat här, så sökning och nedladdning är testade mot en
     kopia med samma svarsformat.
   - Godot renderade i testerna med OpenGL-reserven (ingen GPU), så SDFGI, SSR och
     volymetrisk dimma syns först på en riktig dator.
-  - Ingen verklig Claude-körning av Astryx har gjorts, eftersom ingen API-nyckel fanns.
+  - Ingen verklig Claude-körning har gjorts, varken av spel, verktyg eller Astryx,
+    eftersom ingen API-nyckel fanns. Allt AI-flöde är testat mot simulerade svar.
 
 ## Källkod
 
 ```
-src/runtime.js   spelmotor: canvas, input (tangentbord + touch), ljud, musik, 3D-renderare
-src/games.js     de nio spelmallarna
-src/localgen.js  Nexora Local: tolkar prompten, text-/sprite-/3D-/musik-/ljudgeneratorer
-src/ai.js        Nexora-modellerna → Anthropic / OpenAI-kompatibel endpoint
+src/ai.js        Nexora-modellerna → Anthropic / OpenAI-kompatibel endpoint (spel, bild, 3D, text, musik, ljud, agenter)
+src/media.js     kontrollerar och renderar AI-utdata: .glb/.obj, musik och ljudeffekter till WAV
+src/viewer3d.js  3D-visaren för 3D 1.5
 src/app.js       gränssnitt, planer, Studio, verktyg, bibliotek, export
 src/app.css      stil
 src/shell.html   mall som build.py fyller i
 desktop/main.js  Electron-huvudprocessen: Godot, Python, projekt, testkörning, export, Poly Haven
 desktop/preload.js, unzip.js, python_guard.py
-desktop/godot/   testsonden (probe*.gd) och Nexora Locals Godot-generator i Python
+desktop/godot/   testsonden (probe*.gd) som Astryx använder i godot_run
 ```
 
-Funktionerna i `runtime.js` och `games.js` bäddas in i varje exporterat spel med
-`Function.toString()`. Ett exporterat spel är därför en enda fil som inte behöver Nexora
-för att köras.
+Varje spel som AI:n skriver är en fristående HTML-fil som inte behöver Nexora för att köras.

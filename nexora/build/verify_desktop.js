@@ -1,4 +1,4 @@
-// End-to-end test of the desktop app: Electron + Python + Godot + Poly Haven (mocked).
+// End-to-end test of the desktop app: Electron + Python + Godot, with Claude and Poly Haven mocked.
 //   python3 nexora/build/desktop.py dev            # unpacked app → prints the binary path
 //   NEXORA_APP=<that path> NEXORA_GODOT=<godot binary> xvfb-run -a node nexora/build/verify_desktop.js
 // Optional: NEXORA_TPZ=<export templates .tpz> also tests exports for all four platforms.
@@ -141,6 +141,66 @@ func _process(delta: float) -> void:
 print("wrote 3 files")
 `;
 
+// Hyperrealistic run: a project built from the downloaded Poly Haven assets.
+const HYPER_PY = `import pathlib
+pathlib.Path("project.godot").write_text('''config_version=5
+
+[application]
+config/name="Tallskogen"
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.7", "Forward Plus")
+''')
+pathlib.Path("main.tscn").write_text('[gd_scene load_steps=2 format=3]\\n\\n[ext_resource type="Script" path="res://main.gd" id="1"]\\n\\n[node name="Main" type="Node3D"]\\nscript = ExtResource("1")\\n')
+pathlib.Path("main.gd").write_text('''extends Node3D
+var t := 0.0
+var cam: Camera3D
+func _ready() -> void:
+\\tInputMap.add_action("look")
+\\tvar k := InputEventKey.new()
+\\tk.physical_keycode = KEY_SPACE
+\\tInputMap.action_add_event("look", k)
+\\tvar pano := PanoramaSkyMaterial.new()
+\\tpano.panorama = load("res://assets/polyhaven/forest_sky/forest_sky_2k.hdr")
+\\tvar sky := Sky.new()
+\\tsky.sky_material = pano
+\\tvar e := Environment.new()
+\\te.background_mode = Environment.BG_SKY
+\\te.sky = sky
+\\te.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+\\te.tonemap_mode = Environment.TONE_MAPPER_AGX
+\\tvar we := WorldEnvironment.new()
+\\twe.environment = e
+\\tadd_child(we)
+\\tvar sun := DirectionalLight3D.new()
+\\tsun.rotation_degrees = Vector3(-45, 30, 0)
+\\tsun.shadow_enabled = true
+\\tadd_child(sun)
+\\tvar mat := StandardMaterial3D.new()
+\\tmat.albedo_texture = load("res://assets/polyhaven/forest_ground_01/forest_ground_01_diff_2k.png")
+\\tmat.uv1_scale = Vector3(8, 8, 8)
+\\tvar plane := PlaneMesh.new()
+\\tplane.size = Vector2(30, 30)
+\\tvar ground := MeshInstance3D.new()
+\\tground.mesh = plane
+\\tground.material_override = mat
+\\tadd_child(ground)
+\\tvar tree_scene: PackedScene = load("res://assets/polyhaven/pine_tree_01/pine_tree_01_2k.gltf")
+\\tfor i in 7:
+\\t\\tvar tree := tree_scene.instantiate()
+\\t\\ttree.position = Vector3(cos(i * 0.9) * (3 + i), 0, sin(i * 0.9) * (3 + i))
+\\t\\ttree.scale = Vector3.ONE * (1.5 + i * 0.2)
+\\t\\tadd_child(tree)
+\\tcam = Camera3D.new()
+\\tadd_child(cam)
+\\tprint("Tallskogen redo")
+func _process(delta: float) -> void:
+\\tt += delta * (2.0 if Input.is_action_pressed("look") else 0.5)
+\\tcam.position = Vector3(sin(t) * 9, 2.5, cos(t) * 9)
+\\tcam.look_at(Vector3(0, 1, 0))
+''')
+print("wrote the forest")
+`;
+
 (async () => {
   const APP = process.env.NEXORA_APP, GODOT = process.env.NEXORA_GODOT;
   if (!APP || !GODOT) throw new Error('set NEXORA_APP and NEXORA_GODOT');
@@ -160,10 +220,30 @@ print("wrote 3 files")
   const info = await page.evaluate(() => window.nexoraDesktop.call('info'));
   ok(!!info.python && info.godot.path === process.env.NEXORA_GODOT || !!info.godot.path, 'desktop bridge: python ' + (info.python && info.python.version) + ', godot ' + info.godot.path);
 
-  // ---- 1. Nexora Local, hyperrealistic, through the Studio UI
+  // ---- mocked Claude Messages API: each run plays a scripted list of agent turns
+  const reqs = [];
+  let turns = [];
+  await page.route('https://api.anthropic.com/v1/messages', async route => {
+    reqs.push({ body: JSON.parse(route.request().postData()), headers: route.request().headers() });
+    const t = turns[reqs.length - 1] || [{ type: 'message_delta', delta: { stop_reason: 'end_turn' } }];
+    await route.fulfill({ status: 200, headers: { 'content-type': 'text/event-stream', 'access-control-allow-origin': '*' }, body: sse([{ type: 'message_start', message: { id: 'm' + reqs.length, content: [] } }].concat(t, [{ type: 'message_stop' }])) });
+  });
+
+  // ---- 1. Astryx, hyperrealistic, through the Studio UI: searches, downloads and builds with Poly Haven assets
+  turns = [
+    toolTurn('h1', 'search_assets', { query: 'pine tree', type: 'models' }),
+    toolTurn('h2', 'download_asset', { id: 'pine_tree_01', type: 'models', resolution: '2k' }),
+    toolTurn('h3', 'search_assets', { query: 'forest sky', type: 'hdris' }),
+    toolTurn('h4', 'download_asset', { id: 'forest_sky', type: 'hdris', resolution: '2k' }),
+    toolTurn('h5', 'search_assets', { query: 'forest ground', type: 'textures' }),
+    toolTurn('h6', 'download_asset', { id: 'forest_ground_01', type: 'textures', resolution: '2k' }),
+    toolTurn('h7', 'run_python', { purpose: 'Bygger skogen av de nedladdade modellerna', code: HYPER_PY }),
+    toolTurn('h8', 'godot_run', {}),
+    toolTurn('h9', 'finish', { summary: 'En fotorealistisk tallskog med HDRI-himmel.' }),
+  ];
   await page.evaluate(() => {
     localStorage.setItem('nexora.plan', '"studio"'); localStorage.setItem('nexora.credits', '25'); localStorage.setItem('nexora.godotConsent', 'true');
-    localStorage.setItem('nexora.settings', '{"provider":"local"}');
+    localStorage.setItem('nexora.settings', JSON.stringify({ provider: 'anthropic', anthropicKey: 'sk-ant-test' }));
     localStorage.setItem('nexora.studio', JSON.stringify({ model: 'astryx', dim: '3d', opts: {}, prompt: 'Ett utforskningsspel i en skog', astryx: { engine: 'godot', minutes: 120, hyperreal: true } }));
     location.hash = 'studio'; location.reload();
   });
@@ -174,22 +254,30 @@ print("wrote 3 files")
   await page.waitForSelector('.jobcard', { timeout: 10000 });
   ok(await page.evaluate(() => JSON.parse(localStorage.getItem('nexora.credits'))) === 15, 'hyperrealistic run charged 10 credits up front');
   await page.waitForFunction(() => Nexora.JOBS[0] && Nexora.JOBS[0].status !== 'running', null, { timeout: 600000, polling: 1000 });
-  const j1 = await page.evaluate(() => { const j = Nexora.JOBS[0]; return { status: j.status, error: j.error, runs: j.runs, assets: j.assets, shots: j.shots.length, project: j.project, dir: j.dir, log: j.log.map(l => l.text) }; });
-  ok(j1.status === 'done', 'local hyperrealistic job finished: ' + j1.status + (j1.error ? ' – ' + j1.error : ''));
-  ok(j1.assets && j1.assets.length === 5 && j1.assets.includes('forest_sky') && j1.assets.includes('forest_ground_01'), 'downloaded the matching models + HDRI + ground texture: ' + JSON.stringify(j1.assets));
+  const j1 = await page.evaluate(() => { const j = Nexora.JOBS[0]; return { status: j.status, error: j.error, title: j.title, runs: j.runs, assets: j.assets, shots: j.shots.length, project: j.project, dir: j.dir }; });
+  ok(j1.status === 'done' && j1.title === 'Tallskogen', 'hyperrealistic Claude job finished: ' + j1.status + (j1.error ? ' – ' + j1.error : ''));
+  ok(reqs[0].body.tools.map(t => t.name).includes('search_assets') && /HYPERREALISTIC/.test(reqs[0].body.system + JSON.stringify(reqs[0].body.messages)), 'hyperrealistic mode gives Astryx the asset tools and the guide');
+  ok(j1.assets && j1.assets.join() === 'pine_tree_01,forest_sky,forest_ground_01', 'downloaded the model, HDRI and ground texture it searched for: ' + JSON.stringify(j1.assets));
   ok(j1.shots >= 1, 'Godot screenshots captured: ' + j1.shots);
   const credits = fs.readFileSync(path.join(j1.dir, 'assets', 'polyhaven', 'CREDITS.md'), 'utf8');
   ok(credits.includes('pine_tree_01') && credits.includes('forest_sky') && credits.includes('CC0'), 'CREDITS.md lists every CC0 asset');
-  const mainGd = fs.readFileSync(path.join(j1.dir, 'main.gd'), 'utf8');
-  ok(/res:\/\/assets\/polyhaven\/\w+\/\w+_2k\.gltf/.test(mainGd) && mainGd.includes('forest_sky_2k.hdr') && mainGd.includes('TONE_MAPPER_AGX'), 'generated Godot project uses the downloaded models, HDRI and AgX tonemapping');
-  await page.screenshot({ path: path.join(SHOTS, 'desk-astryx-local-done.png'), fullPage: true });
+  const gr1 = reqs[8].body.messages[reqs[8].body.messages.length - 1].content[0], gr1j = JSON.parse(gr1.content[0].text);
+  ok(gr1j.ok === true && gr1j.errors.length === 0, 'the forest imports and runs in Godot without errors: ' + JSON.stringify(gr1j.errors));
+  await page.screenshot({ path: path.join(SHOTS, 'desk-astryx-hyperreal-done.png'), fullPage: true });
   const shot1 = await page.evaluate(() => Nexora.JOBS[0].shots.slice(-1)[0]);
   fs.writeFileSync(path.join(SHOTS, 'desk-godot-hyperreal.jpg'), Buffer.from(shot1, 'base64'));
   ok(await page.evaluate(() => Nexora.games.all().then(a => a.some(g => g.type === 'godot' && g.hyperreal))), 'Godot game saved to the library');
 
+  // ---- no Claude key: Godot mode asks for one instead of running
+  await page.evaluate(() => { localStorage.setItem('nexora.settings', JSON.stringify({ provider: 'anthropic', anthropicKey: '' })); location.hash = 'studio'; location.reload(); });
+  await page.waitForSelector('#prompt');
+  await page.click('text=✨ Skapa spel');
+  ok(await page.locator('.modal', { hasText: 'Koppla in en AI' }).count() === 1 && await page.evaluate(() => Nexora.JOBS[0].title) === 'Tallskogen', 'without a key no job starts and the settings dialog opens');
+  await page.keyboard.press('Escape');
+
   // ---- 2. Claude agent loop (mocked API), real Python + Godot + assets
-  const reqs = [];
-  const turns = [
+  reqs.length = 0;
+  turns = [
     toolTurn('t1', 'run_python', { purpose: 'Skriver projektet', code: AGENT_PY }),
     toolTurn('t2', 'godot_run', {}),
     toolTurn('t3', 'search_assets', { query: 'wooden barrel', type: 'models' }),
@@ -198,11 +286,6 @@ print("wrote 3 files")
     toolTurn('t6', 'save_lesson', { lesson: 'Definiera InputMap-actions i _ready så att testaren hittar dem.' }),
     toolTurn('t7', 'finish', { summary: 'Tunnan snurrar och testet gick utan fel.' }),
   ];
-  await page.route('https://api.anthropic.com/v1/messages', async route => {
-    reqs.push({ body: JSON.parse(route.request().postData()), headers: route.request().headers() });
-    const t = turns[reqs.length - 1] || [{ type: 'message_delta', delta: { stop_reason: 'end_turn' } }];
-    await route.fulfill({ status: 200, headers: { 'content-type': 'text/event-stream', 'access-control-allow-origin': '*' }, body: sse([{ type: 'message_start', message: { id: 'm' + reqs.length, content: [] } }].concat(t, [{ type: 'message_stop' }])) });
-  });
   await page.evaluate(() => {
     localStorage.setItem('nexora.settings', JSON.stringify({ provider: 'anthropic', anthropicKey: 'sk-ant-test' }));
     localStorage.setItem('nexora.studio', JSON.stringify({ model: 'astryx', dim: '3d', opts: {}, prompt: 'Ett spel med en snurrande tunna', astryx: { engine: 'godot', minutes: 30, hyperreal: false } }));

@@ -76,7 +76,7 @@ function safeJoin(root, rel) {
 function copyProbe(dir) {
   const dst = path.join(dir, '_nexora');
   fs.mkdirSync(dst, { recursive: true });
-  for (const f of ['probe.gd', 'probe_driver.gd', 'probe.tscn', 'nexora_godot_local.py']) fs.copyFileSync(path.join(HERE, 'godot', f), path.join(dst, f));
+  for (const f of ['probe.gd', 'probe_driver.gd', 'probe.tscn']) fs.copyFileSync(path.join(HERE, 'godot', f), path.join(dst, f));
 }
 
 // ------------------------------------------------------------------ python
@@ -413,8 +413,8 @@ function create() {
   if (process.env.NEXORA_SMOKE) {
     win.webContents.once('did-finish-load', async () => {
       const r = await win.webContents.executeJavaScript(
-        "new Promise(res => setTimeout(() => res(JSON.stringify({ ok: !!(window.Nexora && window.NexoraLocal && window.NexoraAI && document.querySelector('header.top')), " +
-        "desktop: !!window.nexoraDesktop, html: NexoraLocal.buildHtml(NexoraLocal.config('ett plattformsspel i lava', { dim: '2d' }), Nexora.RT).length })), 500))");
+        "new Promise(res => setTimeout(() => res(JSON.stringify({ ok: !!(window.Nexora && window.NexoraAI && window.NexoraMedia && document.querySelector('header.top')), " +
+        "desktop: !!window.nexoraDesktop, ai: NexoraAI.DEFAULT_SETTINGS.provider, glb: NexoraMedia.toGlb(NexoraMedia.cleanMesh({ vertices: [[0,0,0],[1,0,0],[0,1,0]], faces: [[0,1,2]] })).length })), 500))");
       console.log('SMOKE_RESULT=' + r);
       app.quit();
     });

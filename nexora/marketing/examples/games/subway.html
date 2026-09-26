@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="sv"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Sista tåget</title>
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#000;touch-action:none}canvas{display:block}</style>
+</head><body><canvas id="c"></canvas>
+<script>
+"use strict";
+// Sista tåget – en övergiven tunnelbana, en ficklampa och skuggor som bara rör sig i mörkret.
+// Pilar/WASD går · musen eller Q/E riktar ljuset · samla batterier och nå tåget längst in.
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const VW = 600, VH = 700;
+let W, H, S, OX, OY;
+const dark = document.createElement('canvas'), dctx = dark.getContext('2d');
+function fit() {
+  const d = Math.min(devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight; cv.width = W * d; cv.height = H * d; cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  S = Math.min(W / VW, H / VH); OX = (W - VW * S) / 2; OY = (H - VH * S) / 2; ctx.setTransform(d * S, 0, 0, d * S, d * OX, d * OY);
+  dark.width = VW; dark.height = VH;
+}
+addEventListener('resize', fit); fit();
+const demo = !!window.NEXORA_DEMO, keys = {};
+let aim = null;
+addEventListener('keydown', e => { keys[e.code] = true; if (e.code === 'KeyP' || e.code === 'Escape') paused = !paused; if (state !== 'play' && (e.code === 'Space' || e.code === 'Enter')) start(); if (/Arrow|Space/.test(e.code)) e.preventDefault(); });
+addEventListener('keyup', e => { keys[e.code] = false; });
+cv.addEventListener('pointermove', e => { aim = { x: (e.clientX - OX) / S, y: (e.clientY - OY) / S + cam }; });
+cv.addEventListener('pointerdown', () => { if (state !== 'play') start(); });
+
+const LEN = 2200; // the tunnel runs upwards from y = LEN to y = 0
+let state = demo ? 'play' : 'title', paused = false, t, me, shades, cells, cam, battery, scare, found;
+function start() {
+  state = 'play'; t = 0; battery = 1; scare = 0; found = 0;
+  me = { x: 300, y: LEN - 80, a: -Math.PI / 2, walk: 0 };
+  shades = Array.from({ length: 9 }, (_, i) => ({ x: 120 + (i * 173) % 360, y: LEN - 380 - i * 210, frozen: false, tw: Math.random() * 6 }));
+  cells = Array.from({ length: 7 }, (_, i) => ({ x: 110 + (i * 211) % 380, y: LEN - 260 - i * 280, got: false }));
+  cam = LEN - VH;
+}
+start(); if (!demo) state = 'title';
+
+function lit(x, y) {
+  const dx = x - me.x, dy = y - me.y, d = Math.hypot(dx, dy);
+  if (d < 46) return true;
+  let da = Math.atan2(dy, dx) - me.a; da = Math.atan2(Math.sin(da), Math.cos(da));
+  return battery > 0 && d < 190 + battery * 210 && Math.abs(da) < 0.42;
+}
+function update(dt) {
+  t += dt; scare = Math.max(0, scare - dt);
+  let mx = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0), my = (keys.ArrowDown || keys.KeyS ? 1 : 0) - (keys.ArrowUp || keys.KeyW ? 1 : 0);
+  let want = null;
+  if (aim) want = Math.atan2(aim.y - me.y, aim.x - me.x);
+  if (keys.KeyQ) me.a -= dt * 3; if (keys.KeyE) me.a += dt * 3;
+  if (demo) {
+    // demo: walk up the tunnel, sweep the light towards the nearest shadow, detour for batteries
+    const c = cells.find(c => !c.got && c.y < me.y + 40 && c.y > me.y - 260);
+    const tx = c ? c.x : 300 + Math.sin(t * 0.7) * 120; mx = Math.max(-1, Math.min(1, (tx - me.x) / 60)); my = -0.8;
+    const sh = shades.filter(s => Math.hypot(s.x - me.x, s.y - me.y) < 320).sort((a, b) => Math.hypot(a.x - me.x, a.y - me.y) - Math.hypot(b.x - me.x, b.y - me.y))[0];
+    want = sh ? Math.atan2(sh.y - me.y, sh.x - me.x) : -Math.PI / 2 + Math.sin(t * 1.3) * 0.7;
+  }
+  if (want !== null) me.a += Math.atan2(Math.sin(want - me.a), Math.cos(want - me.a)) * Math.min(1, dt * (demo ? 4 : 12));
+  const l = Math.hypot(mx, my) || 1;
+  if (mx || my) { me.x = Math.max(70, Math.min(530, me.x + mx / l * 120 * dt)); me.y = Math.max(20, Math.min(LEN - 40, me.y + my / l * 120 * dt)); me.walk += dt * 10; }
+  battery = Math.max(0, battery - dt * 0.02);
+  for (const c of cells) if (!c.got && Math.hypot(c.x - me.x, c.y - me.y) < 28) { c.got = true; battery = Math.min(1, battery + 0.4); found++; blip(880); }
+  for (const s of shades) {
+    s.frozen = lit(s.x, s.y);
+    if (!s.frozen) { const dx = me.x - s.x, dy = me.y - s.y, d = Math.hypot(dx, dy); if (d < 360) { s.x += dx / d * 85 * dt; s.y += dy / d * 85 * dt; } }
+    if (Math.hypot(me.x - s.x, me.y - s.y) < 26) { scare = 1.2; blip(80); if (demo) { s.y -= 400; } else { state = 'over'; } }
+  }
+  if (me.y < 90) { if (demo) start(); else state = 'won'; }
+  cam += ((me.y - VH * 0.72) - cam) * Math.min(1, dt * 4); cam = Math.max(0, Math.min(LEN - VH, cam));
+}
+let ac = null;
+function blip(f) { try { ac = ac || new AudioContext(); const t0 = ac.currentTime, o = ac.createOscillator(), g = ac.createGain(); o.type = f < 200 ? 'sawtooth' : 'sine'; o.frequency.setValueAtTime(f, t0); o.frequency.exponentialRampToValueAtTime(f * (f < 200 ? 0.5 : 1.5), t0 + 0.3); g.gain.setValueAtTime(0.15, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.3); o.connect(g); g.connect(ac.destination); o.start(); o.stop(t0 + 0.3); } catch (e) { /* no audio */ } }
+function text(c, s, x, y, size, col) { c.font = '900 ' + size + 'px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = 'rgba(0,0,0,.6)'; c.fillText(s, x + 2, y + 3); c.fillStyle = col; c.fillText(s, x, y); }
+
+function world() {
+  ctx.fillStyle = '#1c1f24'; ctx.fillRect(0, 0, VW, VH);
+  const y0 = -cam;
+  // platform edges, tiles, rails
+  ctx.fillStyle = '#2c3038'; ctx.fillRect(40, y0, 520, LEN);
+  ctx.strokeStyle = '#3a3f49'; ctx.lineWidth = 2;
+  for (let y = Math.floor(cam / 40) * 40; y < cam + VH; y += 40) { ctx.beginPath(); ctx.moveTo(40, y - cam); ctx.lineTo(560, y - cam); ctx.stroke(); }
+  ctx.fillStyle = '#d4a017'; ctx.fillRect(40, y0, 14, LEN); ctx.fillRect(546, y0, 14, LEN);
+  ctx.fillStyle = '#111317'; ctx.fillRect(0, y0, 40, LEN); ctx.fillRect(560, y0, 40, LEN);
+  ctx.fillStyle = '#6b6f78'; ctx.fillRect(10, y0, 5, LEN); ctx.fillRect(25, y0, 5, LEN); ctx.fillRect(570, y0, 5, LEN); ctx.fillRect(585, y0, 5, LEN);
+  // pillars, benches, signs
+  for (let y = 200; y < LEN; y += 260) {
+    ctx.fillStyle = '#4a4f5a'; ctx.fillRect(140, y - cam, 36, 36); ctx.fillRect(424, y - cam, 36, 36);
+    ctx.fillStyle = '#5b3d22'; ctx.fillRect(250, y + 120 - cam, 100, 18);
+    ctx.fillStyle = '#1e5aa8'; ctx.fillRect(230, y - 60 - cam, 140, 30); text(ctx, ['T-CENTRALEN', 'SLUSSEN', 'GAMLA STAN', 'MEDBORGARPL.'][(y / 260 | 0) % 4], 300, y - 45 - cam, 14, '#fff');
+  }
+  // the last train at the far end
+  ctx.fillStyle = '#9aa4b5'; ctx.fillRect(170, 0 - cam, 260, 70); ctx.fillStyle = '#ffe28a'; ctx.fillRect(190, 20 - cam, 60, 30); ctx.fillRect(350, 20 - cam, 60, 30); ctx.fillStyle = '#e63946'; ctx.fillRect(170, 60 - cam, 260, 10);
+  for (const c of cells) if (!c.got) { ctx.fillStyle = '#3ddc97'; ctx.fillRect(c.x - 7, c.y - 12 - cam, 14, 24); ctx.fillStyle = '#fff'; ctx.fillRect(c.x - 3, c.y - 16 - cam, 6, 4); }
+  for (const s of shades) {
+    const x = s.x, y = s.y - cam, j = s.frozen ? 0 : Math.sin(t * 30 + s.tw) * 2;
+    ctx.fillStyle = '#050507'; ctx.beginPath(); ctx.moveTo(x - 16 + j, y + 22); ctx.quadraticCurveTo(x - 20, y - 10, x, y - 30); ctx.quadraticCurveTo(x + 20, y - 10, x + 16 - j, y + 22); ctx.fill();
+    ctx.fillStyle = s.frozen ? '#fff' : '#ff2a2a'; ctx.beginPath(); ctx.arc(x - 6, y - 12, 3, 0, 7); ctx.arc(x + 6, y - 12, 3, 0, 7); ctx.fill();
+  }
+  // player
+  const x = me.x, y = me.y - cam, b = Math.sin(me.walk) * 2;
+  ctx.fillStyle = '#26547c'; ctx.beginPath(); ctx.arc(x, y + b, 14, 0, 7); ctx.fill();
+  ctx.fillStyle = '#f1c27d'; ctx.beginPath(); ctx.arc(x + Math.cos(me.a) * 4, y + Math.sin(me.a) * 4 + b, 8, 0, 7); ctx.fill();
+  ctx.fillStyle = '#ddd'; ctx.fillRect(x + Math.cos(me.a) * 14 - 3, y + Math.sin(me.a) * 14 - 3, 6, 6);
+}
+function draw() {
+  ctx.fillStyle = '#000'; ctx.fillRect(-OX / S, -OY / S, W / S, H / S);
+  world();
+  // darkness with the torch cone cut out
+  dctx.globalCompositeOperation = 'source-over'; dctx.fillStyle = 'rgba(0,0,0,.8)'; dctx.fillRect(0, 0, VW, VH);
+  dctx.globalCompositeOperation = 'destination-out';
+  const x = me.x, y = me.y - cam, R = 190 + battery * 210, flick = battery < 0.25 && Math.sin(t * 40) > 0.6 ? 0.4 : 1;
+  const g = dctx.createRadialGradient(x, y, 20, x, y, R); g.addColorStop(0, `rgba(0,0,0,${flick})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+  dctx.fillStyle = g; dctx.beginPath(); dctx.moveTo(x, y); dctx.arc(x, y, R, me.a - 0.42, me.a + 0.42); dctx.closePath(); dctx.fill();
+  const g2 = dctx.createRadialGradient(x, y, 5, x, y, 60); g2.addColorStop(0, 'rgba(0,0,0,.8)'); g2.addColorStop(1, 'rgba(0,0,0,0)'); dctx.fillStyle = g2; dctx.beginPath(); dctx.arc(x, y, 60, 0, 7); dctx.fill();
+  ctx.drawImage(dark, 0, 0, VW, VH);
+  // warm light tint in the cone
+  ctx.globalCompositeOperation = 'lighter'; const g3 = ctx.createRadialGradient(x, y, 20, x, y, R); g3.addColorStop(0, `rgba(255,220,150,${0.18 * flick})`); g3.addColorStop(1, 'rgba(255,220,150,0)');
+  ctx.fillStyle = g3; ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, R, me.a - 0.42, me.a + 0.42); ctx.closePath(); ctx.fill(); ctx.globalCompositeOperation = 'source-over';
+  // red eyes are visible in the dark too
+  for (const s of shades) if (!s.frozen && s.y - cam > -20 && s.y - cam < VH + 20) { ctx.fillStyle = '#ff2a2a'; ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 10; ctx.beginPath(); ctx.arc(s.x - 6, s.y - 12 - cam, 3, 0, 7); ctx.arc(s.x + 6, s.y - 12 - cam, 3, 0, 7); ctx.fill(); ctx.shadowBlur = 0; }
+  if (scare > 0) { ctx.fillStyle = `rgba(160,0,0,${scare * 0.5})`; ctx.fillRect(0, 0, VW, VH); }
+  // HUD
+  ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(20, 20, 160, 16); ctx.fillStyle = battery > 0.25 ? '#3ddc97' : '#ff4d4d'; ctx.fillRect(20, 20, 160 * battery, 16);
+  text(ctx, '🔋', 200, 28, 20, '#fff'); text(ctx, Math.max(0, Math.round((me.y - 90) / 10)) + ' m till tåget', VW - 110, 28, 18, '#ffe28a');
+  if (state !== 'play' || paused) {
+    ctx.fillStyle = 'rgba(0,0,0,.75)'; ctx.fillRect(0, 0, VW, VH);
+    text(ctx, paused ? 'PAUS' : state === 'over' ? 'Skuggorna tog dig' : state === 'won' ? 'Du hann med sista tåget!' : 'Sista tåget', VW / 2, 300, 50, '#ff4d4d');
+    if (!paused) text(ctx, 'Skuggorna rör sig bara i mörkret · rikta ficklampan med musen', VW / 2, 370, 17, '#fff');
+  }
+}
+let last = performance.now();
+function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; if (state === 'play' && !paused) update(dt); draw(); requestAnimationFrame(frame); }
+requestAnimationFrame(frame);
+</script>
+</body></html>

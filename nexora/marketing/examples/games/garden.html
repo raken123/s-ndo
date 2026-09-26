@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="sv"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Trollträdgården</title>
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#12091f;touch-action:none}canvas{display:block}</style>
+</head><body><canvas id="c"></canvas>
+<script>
+"use strict";
+// Trollträdgården – odla magiska växter och sälj dem på marknaden innan månen går ner.
+// Pilar flyttar trädgårdsmästaren · mellanslag planterar, vattnar och skördar · sälj på marknadsståndet.
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const VW = 600, VH = 700, COLS = 4, ROWS = 4, CELL = 110, GX = 80, GY = 190;
+let W, H, S, OX, OY;
+function fit() {
+  const d = Math.min(devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight; cv.width = W * d; cv.height = H * d; cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  S = Math.min(W / VW, H / VH); OX = (W - VW * S) / 2; OY = (H - VH * S) / 2; ctx.setTransform(d * S, 0, 0, d * S, d * OX, d * OY);
+}
+addEventListener('resize', fit); fit();
+const demo = !!window.NEXORA_DEMO, keys = {}, pressed = {};
+addEventListener('keydown', e => { keys[e.code] = true; if (e.code === 'KeyP' || e.code === 'Escape') paused = !paused; if (state !== 'play' && (e.code === 'Space' || e.code === 'Enter')) start(); if (/Arrow|Space/.test(e.code)) e.preventDefault(); });
+addEventListener('keyup', e => { keys[e.code] = false; });
+cv.addEventListener('pointerdown', e => {
+  if (state !== 'play') return start();
+  const x = (e.clientX - OX) / S, y = (e.clientY - OY) / S, c = Math.floor((x - GX) / CELL), r = Math.floor((y - GY) / CELL);
+  if (c >= 0 && c < COLS && r >= 0 && r < ROWS) { me.c = c; me.r = r; act(); }
+});
+const hit = k => { const on = !!keys[k], was = !!pressed[k]; pressed[k] = on; return on && !was; };
+
+const KINDS = [
+  { name: 'Stjärnlilja', col: '#ffd23f', glow: '#fff3a0', price: 12, grow: 5 },
+  { name: 'Månros', col: '#b69cff', glow: '#e4d9ff', price: 18, grow: 7 },
+  { name: 'Eldtulpan', col: '#ff5d5d', glow: '#ffb3a0', price: 25, grow: 9 },
+  { name: 'Frostklocka', col: '#4cc9f0', glow: '#c9f4ff', price: 15, grow: 6 },
+];
+let state = demo ? 'play' : 'title', paused = false, t, plots, me, coins, basket, fx, night, aiT;
+function start() {
+  state = 'play'; t = 0; coins = 0; basket = []; fx = []; night = 0; aiT = 0;
+  plots = Array.from({ length: COLS * ROWS }, (_, i) => (demo && i % 3 !== 1 ? { kind: i % 4, g: (i * 0.37) % 1, water: 1 } : null));
+  me = { c: 0, r: 0, x: GX + CELL / 2, y: GY + CELL / 2 };
+}
+start(); if (!demo) state = 'title';
+
+function act() {
+  const i = me.r * COLS + me.c, p = plots[i];
+  if (!p) { plots[i] = { kind: (me.c + me.r * 3 + Math.floor(t)) % 4, g: 0, water: 1 }; puff(i, '#8fd694'); tone(420, 0.1); }
+  else if (p.g >= 1) { if (basket.length < 6) { basket.push(p.kind); plots[i] = null; puff(i, KINDS[p.kind].glow, 18); tone(880, 0.12); tone(1320, 0.12, 0.08); } else fx.push({ x: 300, y: 150, txt: 'Korgen är full – sälj!', t: 1 }); }
+  else { p.water = 1; puff(i, '#6ec6ff'); tone(300, 0.08); }
+}
+function sell() {
+  if (!basket.length) return;
+  const sum = basket.reduce((a, k) => a + KINDS[k].price, 0); coins += sum; basket = [];
+  fx.push({ x: 470, y: 120, txt: '+' + sum + ' guld', t: 1.2 }); for (let i = 0; i < 12; i++) fx.push({ x: 470, y: 130, vx: (Math.random() - 0.5) * 240, vy: -200 - Math.random() * 150, coin: true, t: 1 });
+  tone(990, 0.1); tone(1480, 0.18, 0.1);
+}
+function puff(i, c, n) { const x = GX + (i % COLS) * CELL + CELL / 2, y = GY + Math.floor(i / COLS) * CELL + CELL / 2; for (let k = 0; k < (n || 10); k++) fx.push({ x, y, vx: (Math.random() - 0.5) * 180, vy: -Math.random() * 200, spark: c, t: 0.7 }); }
+
+function update(dt) {
+  t += dt; night = (Math.sin(t * 0.15) + 1) / 2;
+  if (hit('ArrowLeft') || hit('KeyA')) me.c = Math.max(0, me.c - 1);
+  if (hit('ArrowRight') || hit('KeyD')) me.c = Math.min(COLS - 1, me.c + 1);
+  if (hit('ArrowUp') || hit('KeyW')) { if (me.r === 0 && me.c === COLS - 1) sell(); else me.r = Math.max(0, me.r - 1); }
+  if (hit('ArrowDown') || hit('KeyS')) me.r = Math.min(ROWS - 1, me.r + 1);
+  if (hit('Space') || hit('Enter')) act();
+  if (demo && (aiT -= dt) <= 0) {
+    aiT = 0.28;
+    if (basket.length >= 4) { if (me.r > 0) me.r--; else if (me.c < COLS - 1) me.c++; else sell(); }
+    else {
+      let best = -1, bd = 1e9;
+      plots.forEach((p, i) => { const want = !p || p.g >= 1 || p.water < 0.3; const d = Math.abs(i % COLS - me.c) + Math.abs(Math.floor(i / COLS) - me.r) - (p && p.g >= 1 ? 3 : 0); if (want && d < bd) { bd = d; best = i; } });
+      if (best >= 0) { const c = best % COLS, r = Math.floor(best / COLS); if (c !== me.c) me.c += Math.sign(c - me.c); else if (r !== me.r) me.r += Math.sign(r - me.r); else act(); }
+    }
+  }
+  me.x += (GX + me.c * CELL + CELL / 2 - me.x) * Math.min(1, dt * 14); me.y += (GY + me.r * CELL + CELL / 2 - me.y) * Math.min(1, dt * 14);
+  for (const p of plots) if (p) { p.water = Math.max(0, p.water - dt * 0.07); if (p.water > 0) p.g = Math.min(1, p.g + dt / KINDS[p.kind].grow * (demo ? 2.2 : 1)); }
+  fx.forEach(f => { f.t -= dt; if (f.vx !== undefined) { f.x += f.vx * dt; f.y += f.vy * dt; f.vy += 400 * dt; } else f.y -= 40 * dt; });
+  fx = fx.filter(f => f.t > 0);
+}
+let ac = null;
+function tone(f, d, when) { try { ac = ac || new AudioContext(); const t0 = ac.currentTime + (when || 0), o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0.12, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + d); o.connect(g); g.connect(ac.destination); o.start(t0); o.stop(t0 + d); } catch (e) { /* no audio */ } }
+function text(s, x, y, size, col) { ctx.font = '900 ' + size + 'px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillText(s, x + 2, y + 3); ctx.fillStyle = col; ctx.fillText(s, x, y); }
+
+function plant(x, y, k, g) {
+  const K = KINDS[k], h = 12 + g * 46, sway = Math.sin(t * 2 + x) * 3 * g;
+  ctx.strokeStyle = '#4caf50'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x, y + 26); ctx.quadraticCurveTo(x + sway, y + 26 - h / 2, x + sway, y + 26 - h); ctx.stroke();
+  if (g > 0.3) { ctx.fillStyle = '#66bb6a'; ctx.beginPath(); ctx.ellipse(x - 10, y + 10 - g * 10, 10, 5, -0.5, 0, 7); ctx.ellipse(x + 10, y + 4 - g * 10, 10, 5, 0.5, 0, 7); ctx.fill(); }
+  const fx0 = x + sway, fy = y + 26 - h;
+  if (g >= 1) {
+    ctx.shadowColor = K.glow; ctx.shadowBlur = 25 + Math.sin(t * 4 + x) * 8;
+    ctx.fillStyle = K.col; for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3 + t * 0.5; ctx.beginPath(); ctx.ellipse(fx0 + Math.cos(a) * 11, fy + Math.sin(a) * 11, 10, 6, a, 0, 7); ctx.fill(); }
+    ctx.fillStyle = K.glow; ctx.beginPath(); ctx.arc(fx0, fy, 7, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
+    ctx.fillStyle = K.glow; for (let i = 0; i < 3; i++) { const a = t * 2 + i * 2.1; ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc(fx0 + Math.cos(a) * 24, fy + Math.sin(a) * 18, 2, 0, 7); ctx.fill(); } ctx.globalAlpha = 1;
+  } else if (g > 0.55) { ctx.fillStyle = K.col; ctx.beginPath(); ctx.ellipse(fx0, fy, 6 + g * 4, 9 + g * 4, 0, 0, 7); ctx.fill(); }
+}
+function draw() {
+  const sky = ctx.createLinearGradient(0, 0, 0, VH);
+  sky.addColorStop(0, `rgb(${40 - night * 25},${30 - night * 18},${90 - night * 40})`); sky.addColorStop(1, '#12091f');
+  ctx.fillStyle = '#12091f'; ctx.fillRect(-OX / S, -OY / S, W / S, H / S); ctx.fillStyle = sky; ctx.fillRect(0, 0, VW, VH);
+  ctx.fillStyle = '#fff8d6'; ctx.shadowColor = '#fff8d6'; ctx.shadowBlur = 30; ctx.beginPath(); ctx.arc(90, 80, 34, 0, Math.PI * 2); ctx.arc(104, 72, 30, 0, Math.PI * 2, true); ctx.fill(); ctx.shadowBlur = 0;
+  for (let i = 0; i < 40; i++) { ctx.globalAlpha = 0.3 + 0.7 * Math.abs(Math.sin(t + i)); ctx.fillStyle = '#fff'; ctx.fillRect((i * 137) % VW, (i * 71) % 150, 2, 2); } ctx.globalAlpha = 1;
+  // hills + market stall
+  ctx.fillStyle = '#23143d'; ctx.beginPath(); ctx.moveTo(0, 190); ctx.quadraticCurveTo(150, 120, 300, 180); ctx.quadraticCurveTo(450, 130, 600, 180); ctx.lineTo(600, 700); ctx.lineTo(0, 700); ctx.fill();
+  ctx.fillStyle = '#6d3fa0'; ctx.fillRect(420, 90, 110, 70); for (let i = 0; i < 5; i++) { ctx.fillStyle = i % 2 ? '#ffd23f' : '#ff5d8f'; ctx.beginPath(); ctx.moveTo(410 + i * 26, 90); ctx.lineTo(436 + i * 26, 90); ctx.lineTo(423 + i * 26, 110); ctx.fill(); }
+  text('MARKNAD', 475, 135, 16, '#ffd23f');
+  // soil grid
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const x = GX + c * CELL, y = GY + r * CELL, p = plots[r * COLS + c];
+    ctx.fillStyle = p && p.water > 0.3 ? '#4a2e1f' : '#6b4630'; ctx.beginPath(); ctx.roundRect(x + 6, y + 6, CELL - 12, CELL - 12, 14); ctx.fill();
+    ctx.strokeStyle = '#3a2418'; ctx.lineWidth = 3; for (let k = 1; k < 4; k++) { ctx.beginPath(); ctx.moveTo(x + 16, y + k * CELL / 4); ctx.lineTo(x + CELL - 16, y + k * CELL / 4); ctx.stroke(); }
+    if (p) { plant(x + CELL / 2, y + CELL / 2, p.kind, p.g); if (p.g < 1) { ctx.fillStyle = '#0006'; ctx.fillRect(x + 20, y + CELL - 20, CELL - 40, 6); ctx.fillStyle = p.water > 0 ? '#6ec6ff' : '#ff5d5d'; ctx.fillRect(x + 20, y + CELL - 20, (CELL - 40) * p.g, 6); } }
+  }
+  // gardener
+  const bob = Math.sin(t * 8) * 2;
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(me.x + 30, me.y + 44, 16, 6, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#3d5a80'; ctx.beginPath(); ctx.roundRect(me.x + 18, me.y + 10 + bob, 24, 30, 8); ctx.fill();
+  ctx.fillStyle = '#f1c27d'; ctx.beginPath(); ctx.arc(me.x + 30, me.y + 2 + bob, 11, 0, 7); ctx.fill();
+  ctx.fillStyle = '#7b2cbf'; ctx.beginPath(); ctx.moveTo(me.x + 15, me.y - 4 + bob); ctx.lineTo(me.x + 45, me.y - 4 + bob); ctx.lineTo(me.x + 32, me.y - 34 + bob); ctx.fill();
+  ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(me.x + 32, me.y - 20 + bob, 3, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(GX + me.c * CELL + 3, GY + me.r * CELL + 3, CELL - 6, CELL - 6, 16); ctx.stroke();
+  fx.forEach(f => { ctx.globalAlpha = Math.min(1, f.t * 2); if (f.coin) { ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(f.x, f.y, 6, 0, 7); ctx.fill(); } else if (f.spark) { ctx.fillStyle = f.spark; ctx.beginPath(); ctx.arc(f.x, f.y, 3, 0, 7); ctx.fill(); } else text(f.txt, f.x, f.y, 24, '#ffd23f'); }); ctx.globalAlpha = 1;
+  // HUD: gold + basket
+  ctx.fillStyle = 'rgba(10,6,25,.75)'; ctx.beginPath(); ctx.roundRect(20, 640, 560, 48, 16); ctx.fill();
+  text('🪙 ' + coins, 80, 664, 24, '#ffd23f');
+  basket.forEach((k, i) => { ctx.fillStyle = KINDS[k].col; ctx.shadowColor = KINDS[k].glow; ctx.shadowBlur = 10; ctx.beginPath(); ctx.arc(200 + i * 40, 664, 12, 0, 7); ctx.fill(); ctx.shadowBlur = 0; });
+  text('korg ' + basket.length + '/6', 520, 664, 16, '#ffffffaa');
+  if (state !== 'play' || paused) {
+    ctx.fillStyle = 'rgba(12,6,25,.72)'; ctx.fillRect(0, 0, VW, VH);
+    text(paused ? 'PAUS' : 'Trollträdgården', VW / 2, 300, 56, '#b69cff');
+    if (!paused) text('Plantera, vattna, skörda – sälj på marknaden (upp i hörnet)', VW / 2, 370, 18, '#fff');
+  }
+}
+let last = performance.now();
+function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; if (state === 'play' && !paused) update(dt); draw(); requestAnimationFrame(frame); }
+requestAnimationFrame(frame);
+</script>
+</body></html>

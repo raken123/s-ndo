@@ -1,0 +1,767 @@
+{
+ "system": "You are Nexora, an AI game studio. You write complete, polished, playable browser games.\nBuild exactly the game the user describes – any genre, mechanic, setting or mix of them, however unusual. Never swap the idea for a simpler or more common kind of game; if something is ambiguous, pick the most fun interpretation of what they asked for.\nOutput exactly one HTML document inside a single ```html fenced block and nothing after it.\nHard requirements:\n- Everything inline in that one file: no external scripts, fonts, images, CDNs or network requests. Draw graphics with canvas or inline SVG; make sound with the Web Audio API.\n- It runs inside a sandboxed iframe: wrap any localStorage access in try/catch.\n- Full-window responsive canvas that handles resize and devicePixelRatio.\n- Keyboard controls (arrows/WASD + Space), on-screen touch buttons on touch devices, and gamepad support (navigator.getGamepads: stick/d-pad + A).\n- Pause with P or Escape.\n- A title screen with the game name and how to play, a score/HUD, a game-over or win screen, and restart.\n- A steady requestAnimationFrame loop with delta time; no runaway memory growth.\n- All player-facing text in Swedish.\nMake it genuinely fun: juice (particles, screen shake, sound), a difficulty curve, and a clear goal.\nBefore answering, re-read your code once for runtime errors (undefined names, typos, missing restart) – the game is run automatically and errors are sent back to you.",
+ "requests": [
+  {
+   "idea": "Laga pizzor åt otåliga kunder i en food truck",
+   "dim": "2d",
+   "features": [],
+   "user": "Game idea: Laga pizzor åt otåliga kunder i en food truck\n\nDimension: 2D."
+  },
+  {
+   "idea": "Fotboll med robotar på månen",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Fotboll med robotar på månen\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Ett rytmspel där man trummar i takt med regnet",
+   "dim": "2d",
+   "features": [
+    "music",
+    "sfx"
+   ],
+   "user": "Game idea: Ett rytmspel där man trummar i takt med regnet\n\nDimension: 2D.\nMusic: a procedural background soundtrack with Web Audio, toggled with M.\nSound effects for every important action."
+  },
+  {
+   "idea": "En katt som smyger förbi hundar för att stjäla fisk",
+   "dim": "2d",
+   "features": [
+    "story"
+   ],
+   "user": "Game idea: En katt som smyger förbi hundar för att stjäla fisk\n\nDimension: 2D.\nStory: include a short narrative intro and an ending that pays it off."
+  },
+  {
+   "idea": "Odla magiska växter och sälj dem på marknaden",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Odla magiska växter och sälj dem på marknaden\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Ett skräckspel i en övergiven tunnelbana med ficklampa",
+   "dim": "2d",
+   "features": [
+    "npc",
+    "dialog"
+   ],
+   "user": "Game idea: Ett skräckspel i en övergiven tunnelbana med ficklampa\n\nDimension: 2D.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours.\nDialogue: characters speak in dialogue boxes the player advances with Space/tap."
+  },
+  {
+   "idea": "Styr en brandbil genom staden och släck bränder",
+   "dim": "2d",
+   "features": [
+    "quest",
+    "npc"
+   ],
+   "user": "Game idea: Styr en brandbil genom staden och släck bränder\n\nDimension: 2D.\nQuests: a quest log with at least three quests, tracked progress and rewards.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours."
+  },
+  {
+   "idea": "Vrid rör så att vattnet når fram till blommorna",
+   "dim": "2d",
+   "features": [],
+   "user": "Game idea: Vrid rör så att vattnet når fram till blommorna\n\nDimension: 2D."
+  },
+  {
+   "idea": "En bi som pollinerar blommor innan vintern kommer",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: En bi som pollinerar blommor innan vintern kommer\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Bygg ett torn av vingliga lådor så högt som möjligt",
+   "dim": "2d",
+   "features": [
+    "music",
+    "sfx"
+   ],
+   "user": "Game idea: Bygg ett torn av vingliga lådor så högt som möjligt\n\nDimension: 2D.\nMusic: a procedural background soundtrack with Web Audio, toggled with M.\nSound effects for every important action."
+  },
+  {
+   "idea": "Ett golfspel på en minigolfbana i rymden",
+   "dim": "2d",
+   "features": [
+    "story"
+   ],
+   "user": "Game idea: Ett golfspel på en minigolfbana i rymden\n\nDimension: 2D.\nStory: include a short narrative intro and an ending that pays it off."
+  },
+  {
+   "idea": "Flyg ett pappersflygplan genom ett klassrum",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Flyg ett pappersflygplan genom ett klassrum\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Sortera paket på ett löpande band innan de faller ner",
+   "dim": "2d",
+   "features": [
+    "npc",
+    "dialog"
+   ],
+   "user": "Game idea: Sortera paket på ett löpande band innan de faller ner\n\nDimension: 2D.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours.\nDialogue: characters speak in dialogue boxes the player advances with Space/tap."
+  },
+  {
+   "idea": "En pingvin som driver ett glasskafé på ett isflak",
+   "dim": "2d",
+   "features": [
+    "quest",
+    "npc"
+   ],
+   "user": "Game idea: En pingvin som driver ett glasskafé på ett isflak\n\nDimension: 2D.\nQuests: a quest log with at least three quests, tracked progress and rewards.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours."
+  },
+  {
+   "idea": "Minnesspel med par av djurkort",
+   "dim": "2d",
+   "features": [],
+   "user": "Game idea: Minnesspel med par av djurkort\n\nDimension: 2D."
+  },
+  {
+   "idea": "Ett schackliknande spel där pjäserna är grönsaker",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Ett schackliknande spel där pjäserna är grönsaker\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Fånga fjärilar med håv på en äng",
+   "dim": "2d",
+   "features": [
+    "music",
+    "sfx"
+   ],
+   "user": "Game idea: Fånga fjärilar med håv på en äng\n\nDimension: 2D.\nMusic: a procedural background soundtrack with Web Audio, toggled with M.\nSound effects for every important action."
+  },
+  {
+   "idea": "En detektiv som letar ledtrådar i ett hus",
+   "dim": "2d",
+   "features": [
+    "story"
+   ],
+   "user": "Game idea: En detektiv som letar ledtrådar i ett hus\n\nDimension: 2D.\nStory: include a short narrative intro and an ending that pays it off."
+  },
+  {
+   "idea": "Dirigera tåg så att de inte krockar",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Dirigera tåg så att de inte krockar\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Ett tennisspel mot en datorspelare",
+   "dim": "2d",
+   "features": [
+    "npc",
+    "dialog"
+   ],
+   "user": "Game idea: Ett tennisspel mot en datorspelare\n\nDimension: 2D.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours.\nDialogue: characters speak in dialogue boxes the player advances with Space/tap."
+  },
+  {
+   "idea": "Fiska i en sjö med olika fiskar och ett timingspel",
+   "dim": "2d",
+   "features": [
+    "quest",
+    "npc"
+   ],
+   "user": "Game idea: Fiska i en sjö med olika fiskar och ett timingspel\n\nDimension: 2D.\nQuests: a quest log with at least three quests, tracked progress and rewards.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours."
+  },
+  {
+   "idea": "Mata hungriga monster med rätt färg på godis",
+   "dim": "2d",
+   "features": [],
+   "user": "Game idea: Mata hungriga monster med rätt färg på godis\n\nDimension: 2D."
+  },
+  {
+   "idea": "Parkera bilar på trånga platser",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Parkera bilar på trånga platser\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Ett ubåtsspel där man undviker minor i mörkret",
+   "dim": "2d",
+   "features": [
+    "music",
+    "sfx"
+   ],
+   "user": "Game idea: Ett ubåtsspel där man undviker minor i mörkret\n\nDimension: 2D.\nMusic: a procedural background soundtrack with Web Audio, toggled with M.\nSound effects for every important action."
+  },
+  {
+   "idea": "Gräv efter skatter under jorden med en borr",
+   "dim": "2d",
+   "features": [
+    "story"
+   ],
+   "user": "Game idea: Gräv efter skatter under jorden med en borr\n\nDimension: 2D.\nStory: include a short narrative intro and an ending that pays it off."
+  },
+  {
+   "idea": "Hjälp ankungar över en väg",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Hjälp ankungar över en väg\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "En trollkarl som ritar runor med musen för att kasta besvärjelser",
+   "dim": "2d",
+   "features": [
+    "npc",
+    "dialog"
+   ],
+   "user": "Game idea: En trollkarl som ritar runor med musen för att kasta besvärjelser\n\nDimension: 2D.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours.\nDialogue: characters speak in dialogue boxes the player advances with Space/tap."
+  },
+  {
+   "idea": "Stapla hamburgare enligt beställningar",
+   "dim": "2d",
+   "features": [
+    "quest",
+    "npc"
+   ],
+   "user": "Game idea: Stapla hamburgare enligt beställningar\n\nDimension: 2D.\nQuests: a quest log with at least three quests, tracked progress and rewards.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours."
+  },
+  {
+   "idea": "Håll balansen på en enhjuling på en lina",
+   "dim": "2d",
+   "features": [],
+   "user": "Game idea: Håll balansen på en enhjuling på en lina\n\nDimension: 2D."
+  },
+  {
+   "idea": "Ett stridsspel med jättelika robotar, två spelare",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Ett stridsspel med jättelika robotar, två spelare\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Släpp kulor i en flipperspelsmaskin",
+   "dim": "2d",
+   "features": [
+    "music",
+    "sfx"
+   ],
+   "user": "Game idea: Släpp kulor i en flipperspelsmaskin\n\nDimension: 2D.\nMusic: a procedural background soundtrack with Web Audio, toggled with M.\nSound effects for every important action."
+  },
+  {
+   "idea": "Försvara ett slott med katapulter",
+   "dim": "2d",
+   "features": [
+    "story"
+   ],
+   "user": "Game idea: Försvara ett slott med katapulter\n\nDimension: 2D.\nStory: include a short narrative intro and an ending that pays it off."
+  },
+  {
+   "idea": "Ett tidsreseäventyr genom tre epoker",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Ett tidsreseäventyr genom tre epoker\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "En skateboardåkare som gör trick i en park",
+   "dim": "2d",
+   "features": [
+    "npc",
+    "dialog"
+   ],
+   "user": "Game idea: En skateboardåkare som gör trick i en park\n\nDimension: 2D.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours.\nDialogue: characters speak in dialogue boxes the player advances with Space/tap."
+  },
+  {
+   "idea": "Rädda astronauter som svävar i rymden",
+   "dim": "2d",
+   "features": [
+    "quest",
+    "npc"
+   ],
+   "user": "Game idea: Rädda astronauter som svävar i rymden\n\nDimension: 2D.\nQuests: a quest log with at least three quests, tracked progress and rewards.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours."
+  },
+  {
+   "idea": "Ett korsordsliknande ordspel på svenska",
+   "dim": "2d",
+   "features": [],
+   "user": "Game idea: Ett korsordsliknande ordspel på svenska\n\nDimension: 2D."
+  },
+  {
+   "idea": "Hoppa mellan molnen och samla regndroppar",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Hoppa mellan molnen och samla regndroppar\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Driv en lemonadstånd och sätt priser efter vädret",
+   "dim": "2d",
+   "features": [
+    "music",
+    "sfx"
+   ],
+   "user": "Game idea: Driv en lemonadstånd och sätt priser efter vädret\n\nDimension: 2D.\nMusic: a procedural background soundtrack with Web Audio, toggled with M.\nSound effects for every important action."
+  },
+  {
+   "idea": "Ett stealthspel där en robot undviker kameror",
+   "dim": "2d",
+   "features": [
+    "story"
+   ],
+   "user": "Game idea: Ett stealthspel där en robot undviker kameror\n\nDimension: 2D.\nStory: include a short narrative intro and an ending that pays it off."
+  },
+  {
+   "idea": "Måla hela golvet genom att rulla en färgboll",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Måla hela golvet genom att rulla en färgboll\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Ett curlingspel på is",
+   "dim": "2d",
+   "features": [
+    "npc",
+    "dialog"
+   ],
+   "user": "Game idea: Ett curlingspel på is\n\nDimension: 2D.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours.\nDialogue: characters speak in dialogue boxes the player advances with Space/tap."
+  },
+  {
+   "idea": "En hund som gräver upp ben i trädgården innan ägaren kommer hem",
+   "dim": "2d",
+   "features": [
+    "quest",
+    "npc"
+   ],
+   "user": "Game idea: En hund som gräver upp ben i trädgården innan ägaren kommer hem\n\nDimension: 2D.\nQuests: a quest log with at least three quests, tracked progress and rewards.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours."
+  },
+  {
+   "idea": "Styr ett segelfartyg med vinden",
+   "dim": "2d",
+   "features": [],
+   "user": "Game idea: Styr ett segelfartyg med vinden\n\nDimension: 2D."
+  },
+  {
+   "idea": "Ett överlevnadsspel på en öde ö med hunger och eld",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Ett överlevnadsspel på en öde ö med hunger och eld\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Kasta papperskulor i papperskorgen på kontoret",
+   "dim": "2d",
+   "features": [
+    "music",
+    "sfx"
+   ],
+   "user": "Game idea: Kasta papperskulor i papperskorgen på kontoret\n\nDimension: 2D.\nMusic: a procedural background soundtrack with Web Audio, toggled with M.\nSound effects for every important action."
+  },
+  {
+   "idea": "En ninja som springer på väggar i en neonstad",
+   "dim": "2d",
+   "features": [
+    "story"
+   ],
+   "user": "Game idea: En ninja som springer på väggar i en neonstad\n\nDimension: 2D.\nStory: include a short narrative intro and an ending that pays it off."
+  },
+  {
+   "idea": "Klicka på kakor för att baka mer och köp uppgraderingar",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Klicka på kakor för att baka mer och köp uppgraderingar\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Fånga fallande stjärnor i en korg",
+   "dim": "2d",
+   "features": [
+    "npc",
+    "dialog"
+   ],
+   "user": "Game idea: Fånga fallande stjärnor i en korg\n\nDimension: 2D.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours.\nDialogue: characters speak in dialogue boxes the player advances with Space/tap."
+  },
+  {
+   "idea": "Ett matteäventyr där man löser tal för att öppna dörrar",
+   "dim": "2d",
+   "features": [
+    "quest",
+    "npc"
+   ],
+   "user": "Game idea: Ett matteäventyr där man löser tal för att öppna dörrar\n\nDimension: 2D.\nQuests: a quest log with at least three quests, tracked progress and rewards.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours."
+  },
+  {
+   "idea": "En snöbollskrig mellan två lag",
+   "dim": "2d",
+   "features": [],
+   "user": "Game idea: En snöbollskrig mellan två lag\n\nDimension: 2D."
+  },
+  {
+   "idea": "Bygg en bro som klarar ett tåg",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Bygg en bro som klarar ett tåg\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Ett zombiespel där man barrikaderar ett hus",
+   "dim": "2d",
+   "features": [
+    "music",
+    "sfx"
+   ],
+   "user": "Game idea: Ett zombiespel där man barrikaderar ett hus\n\nDimension: 2D.\nMusic: a procedural background soundtrack with Web Audio, toggled with M.\nSound effects for every important action."
+  },
+  {
+   "idea": "Guida en fladdermus genom en grotta med ekolod",
+   "dim": "2d",
+   "features": [
+    "story"
+   ],
+   "user": "Game idea: Guida en fladdermus genom en grotta med ekolod\n\nDimension: 2D.\nStory: include a short narrative intro and an ending that pays it off."
+  },
+  {
+   "idea": "Ett kortspel där man bygger en armé av kort",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Ett kortspel där man bygger en armé av kort\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Styr en drönare som levererar paket till balkonger",
+   "dim": "2d",
+   "features": [
+    "npc",
+    "dialog"
+   ],
+   "user": "Game idea: Styr en drönare som levererar paket till balkonger\n\nDimension: 2D.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours.\nDialogue: characters speak in dialogue boxes the player advances with Space/tap."
+  },
+  {
+   "idea": "Balansera tallrikar som servitör i en restaurang",
+   "dim": "2d",
+   "features": [
+    "quest",
+    "npc"
+   ],
+   "user": "Game idea: Balansera tallrikar som servitör i en restaurang\n\nDimension: 2D.\nQuests: a quest log with at least three quests, tracked progress and rewards.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours."
+  },
+  {
+   "idea": "Ett labyrintspel som roterar",
+   "dim": "2d",
+   "features": [],
+   "user": "Game idea: Ett labyrintspel som roterar\n\nDimension: 2D."
+  },
+  {
+   "idea": "En groda som hoppar mellan näckrosblad",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: En groda som hoppar mellan näckrosblad\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Ett vattenpistolkrig i en trädgård, två spelare",
+   "dim": "2d",
+   "features": [
+    "music",
+    "sfx"
+   ],
+   "user": "Game idea: Ett vattenpistolkrig i en trädgård, två spelare\n\nDimension: 2D.\nMusic: a procedural background soundtrack with Web Audio, toggled with M.\nSound effects for every important action."
+  },
+  {
+   "idea": "Flyga en drake genom ringar av eld",
+   "dim": "2d",
+   "features": [
+    "story"
+   ],
+   "user": "Game idea: Flyga en drake genom ringar av eld\n\nDimension: 2D.\nStory: include a short narrative intro and an ending that pays it off."
+  },
+  {
+   "idea": "Ett spel om att städa ett stökigt rum på tid",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Ett spel om att städa ett stökigt rum på tid\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Bowling med pingviner som käglor",
+   "dim": "2d",
+   "features": [
+    "npc",
+    "dialog"
+   ],
+   "user": "Game idea: Bowling med pingviner som käglor\n\nDimension: 2D.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours.\nDialogue: characters speak in dialogue boxes the player advances with Space/tap."
+  },
+  {
+   "idea": "Dansspel där man följer pilar i takt",
+   "dim": "2d",
+   "features": [
+    "quest",
+    "npc"
+   ],
+   "user": "Game idea: Dansspel där man följer pilar i takt\n\nDimension: 2D.\nQuests: a quest log with at least three quests, tracked progress and rewards.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours."
+  },
+  {
+   "idea": "Ett hackerspel där man knäcker lösenord med logik",
+   "dim": "2d",
+   "features": [],
+   "user": "Game idea: Ett hackerspel där man knäcker lösenord med logik\n\nDimension: 2D."
+  },
+  {
+   "idea": "Styr en pizzabud på moped genom trafik",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Styr en pizzabud på moped genom trafik\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "En vulkan som ska få utbrott med rätt ingredienser",
+   "dim": "2d",
+   "features": [
+    "music",
+    "sfx"
+   ],
+   "user": "Game idea: En vulkan som ska få utbrott med rätt ingredienser\n\nDimension: 2D.\nMusic: a procedural background soundtrack with Web Audio, toggled with M.\nSound effects for every important action."
+  },
+  {
+   "idea": "Ett spel om att klippa gräset i mönster",
+   "dim": "2d",
+   "features": [
+    "story"
+   ],
+   "user": "Game idea: Ett spel om att klippa gräset i mönster\n\nDimension: 2D.\nStory: include a short narrative intro and an ending that pays it off."
+  },
+  {
+   "idea": "Jonglera med bollar som blir fler och fler",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Jonglera med bollar som blir fler och fler\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "En spökjägare med dammsugare",
+   "dim": "2d",
+   "features": [
+    "npc",
+    "dialog"
+   ],
+   "user": "Game idea: En spökjägare med dammsugare\n\nDimension: 2D.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours.\nDialogue: characters speak in dialogue boxes the player advances with Space/tap."
+  },
+  {
+   "idea": "Rulla en snöboll som växer nedför en backe",
+   "dim": "2d",
+   "features": [
+    "quest",
+    "npc"
+   ],
+   "user": "Game idea: Rulla en snöboll som växer nedför en backe\n\nDimension: 2D.\nQuests: a quest log with at least three quests, tracked progress and rewards.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours."
+  },
+  {
+   "idea": "Ett frågesportspel om djur",
+   "dim": "2d",
+   "features": [],
+   "user": "Game idea: Ett frågesportspel om djur\n\nDimension: 2D."
+  },
+  {
+   "idea": "Plocka äpplen innan maskarna tar dem",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Plocka äpplen innan maskarna tar dem\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Ett pusselspel med ljusstrålar och speglar",
+   "dim": "2d",
+   "features": [
+    "music",
+    "sfx"
+   ],
+   "user": "Game idea: Ett pusselspel med ljusstrålar och speglar\n\nDimension: 2D.\nMusic: a procedural background soundtrack with Web Audio, toggled with M.\nSound effects for every important action."
+  },
+  {
+   "idea": "Jaga en tjuv över hustaken",
+   "dim": "2d",
+   "features": [
+    "story"
+   ],
+   "user": "Game idea: Jaga en tjuv över hustaken\n\nDimension: 2D.\nStory: include a short narrative intro and an ending that pays it off."
+  },
+  {
+   "idea": "Rymdhandel mellan planeter med olika priser",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Rymdhandel mellan planeter med olika priser\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Håll en ballong uppe med fläktar",
+   "dim": "2d",
+   "features": [
+    "npc",
+    "dialog"
+   ],
+   "user": "Game idea: Håll en ballong uppe med fläktar\n\nDimension: 2D.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours.\nDialogue: characters speak in dialogue boxes the player advances with Space/tap."
+  },
+  {
+   "idea": "Ett basketspel med trickskott",
+   "dim": "2d",
+   "features": [
+    "quest",
+    "npc"
+   ],
+   "user": "Game idea: Ett basketspel med trickskott\n\nDimension: 2D.\nQuests: a quest log with at least three quests, tracked progress and rewards.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours."
+  },
+  {
+   "idea": "Styr en myrkoloni som samlar mat",
+   "dim": "2d",
+   "features": [],
+   "user": "Game idea: Styr en myrkoloni som samlar mat\n\nDimension: 2D."
+  },
+  {
+   "idea": "Ett spel där man stämmer gitarrsträngar på gehör",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Ett spel där man stämmer gitarrsträngar på gehör\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Fånga Pokémon-liknande varelser i högt gräs",
+   "dim": "2d",
+   "features": [
+    "music",
+    "sfx"
+   ],
+   "user": "Game idea: Fånga Pokémon-liknande varelser i högt gräs\n\nDimension: 2D.\nMusic: a procedural background soundtrack with Web Audio, toggled with M.\nSound effects for every important action."
+  },
+  {
+   "idea": "Ett ishockeyspel, två spelare",
+   "dim": "2d",
+   "features": [
+    "story"
+   ],
+   "user": "Game idea: Ett ishockeyspel, två spelare\n\nDimension: 2D.\nStory: include a short narrative intro and an ending that pays it off."
+  },
+  {
+   "idea": "En robotdammsugare som städar ett hus",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: En robotdammsugare som städar ett hus\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Släcka ljus i ett hus innan elräkningen blir för dyr",
+   "dim": "2d",
+   "features": [
+    "npc",
+    "dialog"
+   ],
+   "user": "Game idea: Släcka ljus i ett hus innan elräkningen blir för dyr\n\nDimension: 2D.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours.\nDialogue: characters speak in dialogue boxes the player advances with Space/tap."
+  },
+  {
+   "idea": "En ubåt som fotograferar djuphavsfiskar",
+   "dim": "2d",
+   "features": [
+    "quest",
+    "npc"
+   ],
+   "user": "Game idea: En ubåt som fotograferar djuphavsfiskar\n\nDimension: 2D.\nQuests: a quest log with at least three quests, tracked progress and rewards.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours."
+  },
+  {
+   "idea": "Ett vikingaskepp som ror genom en storm",
+   "dim": "2d",
+   "features": [],
+   "user": "Game idea: Ett vikingaskepp som ror genom en storm\n\nDimension: 2D."
+  },
+  {
+   "idea": "Bygg en snögubbe innan solen smälter den",
+   "dim": "2d",
+   "features": [
+    "sfx"
+   ],
+   "user": "Game idea: Bygg en snögubbe innan solen smälter den\n\nDimension: 2D.\nSound effects for every important action."
+  },
+  {
+   "idea": "Ett äventyr där man pratar med byborna och löser deras problem",
+   "dim": "2d",
+   "features": [
+    "music",
+    "sfx"
+   ],
+   "user": "Game idea: Ett äventyr där man pratar med byborna och löser deras problem\n\nDimension: 2D.\nMusic: a procedural background soundtrack with Web Audio, toggled with M.\nSound effects for every important action."
+  },
+  {
+   "idea": "Ett 3D-spel där man kör en rullstol genom ett hinderlopp",
+   "dim": "3d",
+   "features": [
+    "story",
+    "threeD"
+   ],
+   "user": "Game idea: Ett 3D-spel där man kör en rullstol genom ett hinderlopp\n\nDimension: 3D.\nStory: include a short narrative intro and an ending that pays it off.\n3D: render in real-time 3D with WebGL or your own canvas projection written from scratch (no libraries)."
+  },
+  {
+   "idea": "Flyg ett helikopter i 3D mellan skyskrapor",
+   "dim": "3d",
+   "features": [
+    "sfx",
+    "threeD"
+   ],
+   "user": "Game idea: Flyg ett helikopter i 3D mellan skyskrapor\n\nDimension: 3D.\nSound effects for every important action.\n3D: render in real-time 3D with WebGL or your own canvas projection written from scratch (no libraries)."
+  },
+  {
+   "idea": "Ett 3D-spel där man bygger med block",
+   "dim": "3d",
+   "features": [
+    "npc",
+    "dialog",
+    "threeD"
+   ],
+   "user": "Game idea: Ett 3D-spel där man bygger med block\n\nDimension: 3D.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours.\nDialogue: characters speak in dialogue boxes the player advances with Space/tap.\n3D: render in real-time 3D with WebGL or your own canvas projection written from scratch (no libraries)."
+  },
+  {
+   "idea": "Utforska en grotta i 3D med en fackla",
+   "dim": "3d",
+   "features": [
+    "quest",
+    "npc",
+    "threeD"
+   ],
+   "user": "Game idea: Utforska en grotta i 3D med en fackla\n\nDimension: 3D.\nQuests: a quest log with at least three quests, tracked progress and rewards.\nNPCs: several named NPCs with distinct personalities and schedules or behaviours.\n3D: render in real-time 3D with WebGL or your own canvas projection written from scratch (no libraries)."
+  },
+  {
+   "idea": "Ett 3D-racingspel med gräsklippare",
+   "dim": "3d",
+   "features": [
+    "threeD"
+   ],
+   "user": "Game idea: Ett 3D-racingspel med gräsklippare\n\nDimension: 3D.\n3D: render in real-time 3D with WebGL or your own canvas projection written from scratch (no libraries)."
+  },
+  {
+   "idea": "Spela bordtennis i 3D",
+   "dim": "3d",
+   "features": [
+    "sfx",
+    "threeD"
+   ],
+   "user": "Game idea: Spela bordtennis i 3D\n\nDimension: 3D.\nSound effects for every important action.\n3D: render in real-time 3D with WebGL or your own canvas projection written from scratch (no libraries)."
+  }
+ ]
+}

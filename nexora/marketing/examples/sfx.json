@@ -1,0 +1,84 @@
+{
+ "power": {
+  "name": "Powerup",
+  "layers": [
+   {
+    "wave": "square",
+    "start": 0,
+    "duration": 0.45,
+    "steps": [
+     523,
+     659,
+     784,
+     1047,
+     1319,
+     1568
+    ],
+    "volume": 0.5
+   },
+   {
+    "wave": "triangle",
+    "start": 0.05,
+    "duration": 0.5,
+    "freq": [
+     400,
+     1600
+    ],
+    "volume": 0.3
+   }
+  ]
+ },
+ "coin": {
+  "name": "Mynt",
+  "layers": [
+   {
+    "wave": "square",
+    "start": 0,
+    "duration": 0.07,
+    "freq": [
+     988,
+     988
+    ],
+    "volume": 0.5
+   },
+   {
+    "wave": "square",
+    "start": 0.07,
+    "duration": 0.3,
+    "freq": [
+     1319,
+     1319
+    ],
+    "volume": 0.5
+   }
+  ]
+ },
+ "laser": {
+  "name": "Swoosh",
+  "layers": [
+   {
+    "wave": "noise",
+    "start": 0,
+    "duration": 0.35,
+    "volume": 0.5,
+    "filter": {
+     "type": "bandpass",
+     "freq": [
+      600,
+      5000
+     ]
+    }
+   },
+   {
+    "wave": "sawtooth",
+    "start": 0,
+    "duration": 0.25,
+    "freq": [
+     1400,
+     180
+    ],
+    "volume": 0.25
+   }
+  ]
+ }
+}

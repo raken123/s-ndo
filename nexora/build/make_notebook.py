@@ -14,7 +14,7 @@ Den här anteckningsboken finjusterar en öppen kodmodell (**Qwen2.5-Coder-Instr
 2. Kör cellerna uppifrån och ned (*Körning → Kör alla*).
 3. Sista cellen skriver ut en URL. I Nexora: **⚙️ Inställningar → Egen endpoint**, klistra in URL:en som *Bas-URL* och sätt modell-ID till `nexora-flash-1`.
 
-**Data.** `DATASET` väljer vad modellen lär sig: `html` = 260 HTML5-spel (alla tolv speltyper), `godot` = 120 Godot-byggskript i Python (samma format som Astryx 5 Pro kör), `both` = allt. Bättre resultat får du med dina egna spel: i appen, *Mina spel → 🧠 Träningsdata* (Enterprise) exporterar allt du skapat med Pro 1.5/Core 1.5 i samma format. Sätt `USE_OWN_DATA = True` så får du ladda upp filen.
+**Data – skapad av AI.** Nexora har inga mallar, så träningsdatan skrivs av en AI-lärarmodell: steg 3 skickar upp till 93 vitt skilda spelidéer (matlagning, fotboll, rytmspel, skräck, pussel, simulatorer …) till Claude med Nexoras egen systemprompt och sparar de färdiga spelen. Du behöver en Anthropic API-nyckel i Colabs *Secrets* (🔑 i vänsterkanten) med namnet `ANTHROPIC_API_KEY`. Spelen du själv skapat i appen kan läggas till: *Mina spel → 🧠 Träningsdata* (Enterprise) och `USE_OWN_DATA = True`.
 
 > GPT-5 Fast, GPT-6 Astra, GPT Images 2.5 och Meshy 7 har inga öppna vikter, så de går inte att finjustera här. Har du API-åtkomst kan du i stället ange deras modell-ID under *Egen endpoint* i appen.
 """)
@@ -33,29 +33,61 @@ MODEL_ID = 'nexora-flash-1'  #@param {type:'string'}
 EPOCHS = 2  #@param {type:'integer'}
 MAX_LEN = 8192  #@param {type:'integer'}
 LEARNING_RATE = 2e-4  #@param {type:'number'}
-DATASET = 'both'  #@param ['html', 'godot', 'both']
+TEACHER = 'claude-opus-5'  #@param ['claude-opus-5', 'claude-haiku-4-5']
+N_EXAMPLES = 93  #@param {type:'integer'}
 USE_OWN_DATA = False  #@param {type:'boolean'}
 RAW = 'https://raw.githubusercontent.com/raken123/s-ndo/main/nexora/'
-SEED_URLS = {'html': [RAW + 'colab/nexora_seed.jsonl'], 'godot': [RAW + 'colab/nexora_godot_seed.jsonl']}
-SEED_URLS['both'] = SEED_URLS['html'] + SEED_URLS['godot']
 OUT_DIR = '/content/' + MODEL_ID
 """)
 
 code("""
-#@title 3. Hämta träningsdata
-import json, urllib.request
-rows = []
-for url in SEED_URLS[DATASET]:
-    part = [json.loads(l) for l in urllib.request.urlopen(url).read().decode('utf-8').splitlines() if l.strip()]
-    print(url.rsplit('/', 1)[1], '→', len(part), 'exempel')
-    rows += part
+#@title 3. Skapa träningsdata med AI (lärarmodellen skriver spelen)
+import json, re, urllib.request, concurrent.futures, os
+from google.colab import userdata
+KEY = userdata.get('ANTHROPIC_API_KEY')
+spec = json.loads(urllib.request.urlopen(RAW + 'colab/nexora_prompts.json').read().decode('utf-8'))
+SYSTEM = spec['system']
+CACHE = '/content/nexora_ai_games.jsonl'
+done = {}
+if os.path.exists(CACHE):
+    for l in open(CACHE, encoding='utf-8'):
+        r = json.loads(l); done[r['messages'][1]['content']] = r
+
+def teach(req):
+    # A compact game fits the student model's context (MAX_LEN tokens).
+    body = {'model': TEACHER, 'max_tokens': 12000, 'system': SYSTEM,
+            'messages': [{'role': 'user', 'content': req['user'] + '\\nKeep the whole file under about 20 kB.'}]}
+    if TEACHER.startswith('claude-opus'):
+        body['output_config'] = {'effort': 'high'}
+    http = urllib.request.Request('https://api.anthropic.com/v1/messages', data=json.dumps(body).encode(), method='POST',
+        headers={'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json'})
+    r = json.loads(urllib.request.urlopen(http, timeout=600).read())
+    text = ''.join(b.get('text', '') for b in r['content'] if b['type'] == 'text')
+    m = re.search(r'```html\\s*([\\s\\S]*?)```', text)
+    if not m:
+        return None
+    return {'messages': [{'role': 'system', 'content': SYSTEM}, {'role': 'user', 'content': req['user']},
+                         {'role': 'assistant', 'content': '```html\\n' + m.group(1).strip() + '\\n```'}]}
+
+todo = [q for q in spec['requests'][:N_EXAMPLES] if q['user'] not in done]
+print(len(done), 'spel finns redan,', len(todo), 'kvar att skapa med', TEACHER)
+with concurrent.futures.ThreadPoolExecutor(4) as pool, open(CACHE, 'a', encoding='utf-8') as f:
+    for q, fut in [(q, pool.submit(teach, q)) for q in todo]:
+        try:
+            ex = fut.result()
+        except Exception as e:
+            print('✗', q['idea'], '–', e); continue
+        if ex:
+            f.write(json.dumps(ex, ensure_ascii=False) + '\\n'); f.flush(); done[q['user']] = ex
+            print('✓', q['idea'])
+rows = list(done.values())
 if USE_OWN_DATA:
     from google.colab import files
     for name, data in files.upload().items():
         own = [json.loads(l) for l in data.decode('utf-8').splitlines() if l.strip()]
-        print(name, '→', len(own), 'egna exempel')
+        print(name, '→', len(own), 'egna spel')
         rows += own * 2  # egna spel väger dubbelt
-print('Totalt:', len(rows))
+print('Totalt:', len(rows), 'spel att träna på (sparade i', CACHE + ')')
 """)
 
 code("""
@@ -131,10 +163,9 @@ print('Sparad i', OUT_DIR)
 
 code("""
 #@title 8. Provkör: skapa ett spel
-PROMPT = 'Ett plattformsspel i en isvärld där en pingvin samlar fisk'  #@param {type:'string'}
+PROMPT = 'En pingvin som driver ett glasskafé på ett isflak'  #@param {type:'string'}
 import re, html as _html
 from IPython.display import HTML, display
-SYSTEM = rows[0]['messages'][0]['content']
 
 def generate(prompt, max_new_tokens=9000, temperature=0.7):
     msgs = [{'role': 'system', 'content': SYSTEM}, {'role': 'user', 'content': 'Game idea: ' + prompt + '\\n\\nDimension: 2D.'}]
@@ -148,40 +179,6 @@ m = re.search(r'```html\\s*([\\s\\S]*?)```', out)
 game = m.group(1) if m else out
 print(len(game), 'tecken HTML')
 display(HTML('<iframe style="width:100%;height:520px;border:0;border-radius:12px" sandbox="allow-scripts" srcdoc="' + _html.escape(game) + '"></iframe>'))
-""")
-
-code("""
-#@title 8b. Provkör Godot-läget: modellen skriver ett byggskript, Godot testkör projektet
-GODOT_PROMPT = 'Ett utforskningsspel i en skog med kristaller'  #@param {type:'string'}
-import os, pathlib, shutil, zipfile
-GODOT_SYSTEM = next((r['messages'][0]['content'] for r in rows if 'Godot mode' in r['messages'][0]['content']), None)
-if GODOT_SYSTEM is None:
-    print('Välj DATASET = "godot" eller "both" för att träna Godot-läget.')
-else:
-    msgs = [{'role': 'system', 'content': GODOT_SYSTEM}, {'role': 'user', 'content': 'Game idea: ' + GODOT_PROMPT + '\\n\\nEngine: Godot 4.7 (GDScript). Write one Python script that creates the whole project in the current folder.'}]
-    x = tok(tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True), return_tensors='pt', add_special_tokens=False).input_ids.to(model.device)
-    with torch.no_grad():
-        y = model.generate(x, max_new_tokens=9000, do_sample=True, temperature=0.6, top_p=0.95)
-    text = tok.decode(y[0, x.shape[1]:], skip_special_tokens=True)
-    code = (re.search(r'```python\\s*([\\s\\S]*?)```', text) or [None, text])[1]
-    proj = pathlib.Path('/content/godot_test'); shutil.rmtree(proj, ignore_errors=True); (proj / '_nexora').mkdir(parents=True)
-    (proj / 'build.py').write_text(code)
-    print(subprocess.run([sys.executable, 'build.py'], cwd=proj, capture_output=True, text=True).stdout)
-    # Godot 4.7 headless + Nexora's test probe
-    if not os.path.exists('/content/godot/godot'):
-        urllib.request.urlretrieve('https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip', '/content/godot.zip')
-        zipfile.ZipFile('/content/godot.zip').extractall('/content/godot')
-        os.rename('/content/godot/Godot_v4.7.2-stable_linux.x86_64', '/content/godot/godot'); os.chmod('/content/godot/godot', 0o755)
-    for f in ['probe.gd', 'probe_driver.gd', 'probe.tscn']:
-        urllib.request.urlretrieve(RAW + 'desktop/godot/' + f, proj / '_nexora' / f)
-    subprocess.run(['/content/godot/godot', '--headless', '--path', str(proj), '--import'], capture_output=True, timeout=300)
-    r = subprocess.run(['/content/godot/godot', '--headless', '--path', str(proj), '--fixed-fps', '30', 'res://_nexora/probe.tscn'], capture_output=True, text=True, timeout=300)
-    out = r.stdout + r.stderr
-    errors = [l for l in out.splitlines() if 'SCRIPT ERROR' in l or 'Parse Error' in l]
-    print('Spelet körde klart:', 'NEXORA_PROBE_DONE' in out, '| skriptfel:', len(errors))
-    print('\\n'.join(errors[:10]))
-    shutil.make_archive('/content/godot_test', 'zip', proj)
-    print('Projektet: /content/godot_test.zip (öppna i Godot 4.7)')
 """)
 
 code("""

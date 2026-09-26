@@ -29,7 +29,7 @@ CACHE = os.environ.get("NEXORA_CACHE", os.path.join(HERE, ".cache"))
 WORK = os.path.join(CACHE, "work")
 TOOLS = os.path.join(CACHE, "tools")
 
-VERSION = "1.5.0"
+VERSION = "1.5.1"
 NAME = "Nexora"
 APPID = "app.nexora.desktop"
 EV = "43.2.0"
@@ -44,7 +44,7 @@ KEEP_LPROJ = ("en.lproj", "sv.lproj", "Base.lproj")
 # The Electron main process, preload bridge and Godot/Python helpers live in nexora/desktop/.
 DESKTOP_SRC = os.path.join(ROOT, "desktop")
 DESKTOP_FILES = ["main.js", "preload.js", "unzip.js", "python_guard.py",
-                 "godot/probe.gd", "godot/probe_driver.gd", "godot/probe.tscn", "godot/nexora_godot_local.py"]
+                 "godot/probe.gd", "godot/probe_driver.gd", "godot/probe.tscn"]
 
 
 def log(*a):

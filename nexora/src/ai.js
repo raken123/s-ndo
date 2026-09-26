@@ -1,6 +1,7 @@
-/* Nexora AI layer: maps the five Nexora models onto a provider.
+/* Nexora AI layer: maps the Nexora models onto a provider. Everything Nexora
+ * makes – games, images, 3D models, text, music and sound effects – is generated
+ * by one of these AI providers; there are no templates.
  *
- *   local     – Nexora Local, the offline generator in localgen.js (no key needed)
  *   anthropic – Claude via the Messages API, called straight from the app with the user's own key
  *   openai    – any OpenAI-compatible endpoint, e.g. the model trained in the Colab notebook
  *               and served with vLLM/Ollama, or a hosted GPT model
@@ -13,15 +14,15 @@
   // 1.5: every 1-series model got an upgrade (see NEWS in app.js for the user-facing list).
   const MODELS = {
     flash: { name: 'Nexora Flash 1.5', short: 'Flash 1.5', tag: 'Snabb + självtest', kind: 'text', minTier: 0, selfTest: 1,
-      desc: 'Snabbast. Skriver spelet på sekunder, testkör det och rättar körfel en gång innan du får det.' },
+      desc: 'Snabbast. Skriver vilket spel du än beskriver på sekunder, testkör det och rättar körfel en gång innan du får det.' },
     pro: { name: 'Nexora Pro 1.5', short: 'Pro 1.5', tag: 'Bättre resultat, testar själv', kind: 'text', minTier: 1, selfTest: 2,
       desc: 'Större och mer polerade spel med högre ansträngning – testkörs och rättas upp till två gånger.' },
     core: { name: 'Nexora Core 1.5', short: 'Core 1.5', tag: 'Tänker, testar, förbättrar', kind: 'text', minTier: 2, selfTest: 3,
       desc: 'Ingen bryr sig om den – men den planerar spelet steg för steg, visar tankarna live och testar och förbättrar upp till tre gånger.' },
     image: { name: 'Nexora Image 1.5', short: 'Image 1.5', tag: 'Stilar, animation, PNG', kind: 'image', minTier: 1,
-      desc: 'Sprites i fyra stilar (pixel, platt, neon, retro), animerade sprite-ark och export som PNG eller SVG.' },
-    d3: { name: 'Nexora 3D 1.5', short: '3D 1.5', tag: 'Fler modeller, GLB-export', kind: 'mesh', minTier: 1,
-      desc: 'Low-poly 3D-modeller med färger, nu fler typer – och export som .glb för Godot, Unity och Blender, eller .obj.' },
+      desc: 'Ritar vad du än beskriver: sprites i fyra stilar (pixel, platt, neon, retro), animerade sprite-ark och export som PNG eller SVG.' },
+    d3: { name: 'Nexora 3D 1.5', short: '3D 1.5', tag: 'Vad som helst, GLB-export', kind: 'mesh', minTier: 1,
+      desc: 'Low-poly 3D-modeller av vad du än beskriver, med färger – och export som .glb för Godot, Unity och Blender, eller .obj.' },
     astryx: { name: 'Nexora Astryx 5 Pro', short: 'Astryx 5 Pro', tag: 'AI-agent', kind: 'agent', minTier: 0, agent: true,
       desc: 'Vår första AI-agent. Den planerar, skriver spelet, testkör det, tittar på resultatet, hittar buggar och rättar dem – helt själv – tills spelet fungerar. På datorn bygger den riktiga Godot-spel med Python i upp till två timmar, och i hyperrealistiskt läge av fotoskannade modeller.' },
   };
@@ -40,7 +41,7 @@
   };
 
   const DEFAULT_SETTINGS = {
-    provider: 'local',
+    provider: 'anthropic',
     anthropicKey: '',
     openaiBase: 'https://api.openai.com/v1',
     openaiKey: '',
@@ -50,6 +51,7 @@
 
   const GAME_SYSTEM = [
     'You are Nexora, an AI game studio. You write complete, polished, playable browser games.',
+    'Build exactly the game the user describes – any genre, mechanic, setting or mix of them, however unusual. Never swap the idea for a simpler or more common kind of game; if something is ambiguous, pick the most fun interpretation of what they asked for.',
     'Output exactly one HTML document inside a single ```html fenced block and nothing after it.',
     'Hard requirements:',
     '- Everything inline in that one file: no external scripts, fonts, images, CDNs or network requests. Draw graphics with canvas or inline SVG; make sound with the Web Audio API.',
@@ -123,6 +125,9 @@
   }
 
   function apiError(msg) { const e = new Error(msg); e.nexora = true; return e; }
+  function noKey() { const e = apiError('Koppla in en AI först: lägg in din Anthropic API-nyckel under ⚙️ Inställningar.'); e.noKey = true; return e; }
+  // Is an AI connected? Nexora generates everything with AI, so nothing works without one.
+  const configured = s => (s.provider === 'anthropic' ? !!s.anthropicKey : s.provider === 'openai' ? !!s.openaiBase : false);
 
   async function httpError(res) {
     let detail = '';
@@ -196,11 +201,11 @@
 
   function complete(settings, modelKey, system, user, cb, signal) {
     if (settings.provider === 'anthropic') {
-      if (!settings.anthropicKey) throw apiError('Lägg in din Anthropic API-nyckel under Inställningar, eller välj Nexora Local.');
+      if (!settings.anthropicKey) throw noKey();
       return anthropic(settings, modelKey, system, user, cb || {}, signal);
     }
     if (settings.provider === 'openai') return openai(settings, modelKey, system, user, cb || {}, signal);
-    throw apiError('Ingen AI-leverantör vald.');
+    throw noKey();
   }
 
   async function generateGame(settings, modelKey, prompt, opts, cb, signal) {
@@ -224,6 +229,7 @@
     npc: 'Create 4 NPCs for this game in Swedish. For each: name, role, personality, what they want, a signature line. Markdown list.',
     quest: 'Design 3 quests for this game in Swedish. For each: title, quest giver, goal, steps, reward. Markdown.',
     dialog: 'Write a short dialogue scene (6-10 lines) between two characters in this game, in Swedish, formatted "Namn: replik".',
+    line: 'Write one short spoken line (one or two sentences) that a character in this game says out loud, in Swedish. Only the line itself: no name, no quotes, no stage directions.',
   };
   async function text(settings, modelKey, task, prompt, cb, signal) {
     const r = await complete(settings, modelKey, 'You are Nexora, a creative writing assistant for game developers. Answer only with the requested content.', TEXT_TASKS[task] + '\n\nGame: ' + prompt, cb, signal);
@@ -252,6 +258,27 @@
     const m = extractJson(r.text);
     if (!Array.isArray(m.vertices) || !Array.isArray(m.faces)) throw apiError('Ogiltig 3D-modell i svaret.');
     return m;
+  }
+
+  // Music: the AI composes the score, NexoraMedia.renderMusic plays it.
+  async function music(settings, prompt, cb, signal) {
+    const r = await complete(settings, 'pro', 'You are Nexora\'s composer. You write original game music as note data.',
+      'Compose an original, loopable piece of game music for this description. It must loop seamlessly and suit the mood. ' +
+      'Use 8 to 16 bars in 4/4. Write 2 to 5 tracks (for example melody, harmony/pads, bass, arpeggio) with real musical structure: a memorable motif, a chord progression and variation. ' +
+      'Return only JSON: {"title": string (Swedish), "bpm": number, "bars": number, ' +
+      '"tracks": [{"name": string, "wave": "sine"|"square"|"triangle"|"sawtooth", "volume": 0-1, "notes": [[startBeat, midiNote, lengthInBeats, velocity0to1], ...]}], ' +
+      '"drums": [[beat, "kick"|"snare"|"hat", velocity0to1], ...]}. Beats count from 0; bar n starts at beat 4n.\n\nMusic: ' + prompt, cb, signal);
+    return extractJson(r.text);
+  }
+
+  // Sound effects: the AI designs the sound as synth layers, NexoraMedia.renderSfx renders it.
+  async function sfx(settings, prompt, cb, signal) {
+    const r = await complete(settings, 'flash', 'You are Nexora\'s sound designer. You design game sound effects as synthesizer layers.',
+      'Design this game sound effect. Combine 1 to 6 layers; each layer is an oscillator or noise with its own pitch movement, envelope and optional filter. Total length at most 2.5 s. ' +
+      'Return only JSON: {"name": string (Swedish), "layers": [{"wave": "sine"|"square"|"triangle"|"sawtooth"|"noise", "start": seconds, "duration": seconds, ' +
+      '"freq": [fromHz, toHz] or "steps": [hz, hz, ...] (an arpeggio over the duration), "volume": 0-1, "attack": seconds, ' +
+      '"filter": {"type": "lowpass"|"highpass"|"bandpass", "freq": [fromHz, toHz]} (optional)}]}.\n\nSound: ' + prompt, cb, signal);
+    return extractJson(r.text);
   }
 
   // ------------------------------------------------------------------ Astryx 5 Pro: the agent
@@ -345,7 +372,7 @@ Always run the game at least once before finishing. Stay under about ten tool ca
   async function agent(settings, prompt, opts, hooks, signal) {
     const state = { html: null, title: null, summary: null, runs: 0, turns: 0 };
     if (settings.provider !== 'anthropic') return agentPipeline(settings, prompt, opts, hooks, signal, state);
-    if (!settings.anthropicKey) throw apiError('Lägg in din Anthropic API-nyckel under Inställningar, eller välj Nexora Local.');
+    if (!settings.anthropicKey) throw noKey();
     const messages = [{ role: 'user', content: gamePrompt(prompt, opts) }];
     for (state.turns = 1; state.turns <= 14; state.turns++) {
       const turn = await agentTurn(settings, messages, hooks, signal);
@@ -493,7 +520,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
 
   // exec(name, input) runs a tool on the desktop and returns tool_result content.
   async function agentGodot(settings, prompt, opts, hooks, signal) {
-    if (!settings.anthropicKey) throw apiError('Godot-läget med Claude kräver en Anthropic API-nyckel. Utan nyckel bygger Nexora Local spelet offline.');
+    if (!settings.anthropicKey) throw noKey();
     const started = Date.now(), limitMs = (opts.maxMinutes || 120) * 60000;
     const tools = GODOT_TOOLS.filter(t => opts.hyperreal || !t.hyperreal).map(t => { const c = Object.assign({}, t); delete c.hyperreal; return c; });
     const lessons = (opts.lessons || []).slice(-40);
@@ -545,5 +572,5 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
     return { summary: st.summary || 'Astryx arbetade tills tiden tog slut. Spelet testkördes ' + st.runs + ' gånger.', runs: st.runs, cleanRuns: st.cleanRuns, turns: st.turns, minutes: Math.round((Date.now() - started) / 60000), lessons: st.lessons, shots: st.lastShots, model: ANTHROPIC.astryxGodot.model };
   }
 
-  window.NexoraAI = { MODELS, ROLLOUT, ANTHROPIC, DEFAULT_SETTINGS, GAME_SYSTEM, AGENT_TOOLS, GODOT_TOOLS, GODOT_GUIDE, gamePrompt, generateGame, fixGame, text, image, mesh, agent, agentGodot, extractHtml };
+  window.NexoraAI = { MODELS, ROLLOUT, ANTHROPIC, DEFAULT_SETTINGS, GAME_SYSTEM, AGENT_TOOLS, GODOT_TOOLS, GODOT_GUIDE, configured, gamePrompt, generateGame, fixGame, text, image, mesh, music, sfx, agent, agentGodot, extractHtml };
 })();

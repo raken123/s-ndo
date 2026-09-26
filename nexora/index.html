@@ -193,47 +193,17 @@ kbd { background: var(--card2); border: 1px solid var(--line); border-radius: 6p
 <div id="app"></div>
 <noscript><p style="padding:40px;text-align:center">Nexora behöver JavaScript.</p></noscript>
 <script>
-window.NEXORA_BUILD = {"version": "1.5.0", "downloads": [{"id": "exe", "file": "Nexora-Setup-1.5.0-x64.exe", "size": 81671159, "sha256": "fcf5aad2fee7af8eaca22de1c48c6be245f05703faa3bac1403f2554b7b5db46"}, {"id": "dmg", "file": "Nexora-1.5.0-arm64.dmg", "size": 84952814, "sha256": "de59497ff6e38f4f5e2fdb1a1849473663779ba7af34573066f4332893a57dea"}, {"id": "deb", "file": "nexora_1.5.0_amd64.deb", "size": 79682316, "sha256": "f21893244dcb9c28400afdf53300e2cd15fa75f971f288628fc7549c0d6682ef"}]};
+window.NEXORA_BUILD = {"version": "1.5.1", "downloads": [{"id": "exe", "file": "Nexora-Setup-1.5.1-x64.exe", "size": 81641846, "sha256": "47d8622cd18e03cb10b2a1a0bdfe60471209d150641c5f3c7ffc198197092faa"}, {"id": "dmg", "file": "Nexora-1.5.1-arm64.dmg", "size": 84956890, "sha256": "dbf1018597bdd36aba3a1127a9cbc497df19adb9cb617403a61881802275bdf2"}, {"id": "deb", "file": "nexora_1.5.1_amd64.deb", "size": 79656296, "sha256": "b9244b654d77055dc713eb428769930b34863fcdece995543c6ac24b94ff2584"}]};
 </script>
 <script>
-/* Nexora game runtime.
- *
- * Every function in this file is serialized into the games Nexora exports with
- * Function.prototype.toString(), so none of them may reference anything outside
- * this file. They may call each other: the exporter always embeds the whole set.
- */
-
-function nxRng(seed) {
-  let s = (seed >>> 0) || 0x9e3779b9;
-  return function () {
-    s ^= s << 13; s >>>= 0;
-    s ^= s >>> 17;
-    s ^= s << 5; s >>>= 0;
-    return s / 4294967296;
-  };
-}
-
-function nxNoise(seed) {
-  function h(x, y) {
-    let n = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(seed | 0, 1442695041)) | 0;
-    n = Math.imul(n ^ (n >>> 13), 1274126177);
-    return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
-  }
-  function sm(t) { return t * t * (3 - 2 * t); }
-  function v(x, y) {
-    const xi = Math.floor(x), yi = Math.floor(y), u = sm(x - xi), w = sm(y - yi);
-    const a = h(xi, yi), b = h(xi + 1, yi), c = h(xi, yi + 1), d = h(xi + 1, yi + 1);
-    return a + (b - a) * u + (c - a) * w + (a - b - c + d) * u * w;
-  }
-  return function (x, y) {
-    let t = 0, amp = 1, f = 1, norm = 0;
-    for (let o = 0; o < 4; o++) { t += v(x * f, y * f) * amp; norm += amp; amp *= 0.5; f *= 2; }
-    return t / norm;
-  };
-}
+/* Nexora 3D viewer: a small flat-shaded 3D renderer on a 2D canvas (painter's
+ * algorithm). It shows the models Nexora 3D 1.5 generates. It has no outside
+ * dependencies, so the ad renderer can also serialize it with toString(). */
 
 function nxShade(hex, k, fog, fogK) {
-  const n = parseInt(hex.slice(1), 16);
+  let s = String(hex || '').replace('#', '');
+  if (s.length === 3) s = s.split('').map(x => x + x).join('');
+  const n = /^[0-9a-f]{6}$/i.test(s) ? parseInt(s, 16) : 0x9aa4ff;
   let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
   r *= k; g *= k; b *= k;
   if (fog) {
@@ -243,7 +213,6 @@ function nxShade(hex, k, fog, fogK) {
   return 'rgb(' + (r < 0 ? 0 : r > 255 ? 255 : r | 0) + ',' + (g < 0 ? 0 : g > 255 ? 255 : g | 0) + ',' + (b < 0 ? 0 : b > 255 ? 255 : b | 0) + ')';
 }
 
-/* A small flat-shaded 3D renderer on a 2D canvas (painter's algorithm). */
 function Nx3D(ctx) {
   const faces = [];
   const cam = { x: 0, y: 3, z: -8, yaw: 0, pitch: 0.3, fov: 0.9, near: 0.3, far: 70, fog: null };
@@ -330,1568 +299,36 @@ function Nx3D(ctx) {
   return { cam, begin, project, poly, box, mesh, flush };
 }
 
-/* Shared game shell: canvas, input (keyboard + touch), title/game-over screens, HUD, sound, music. */
-function NexoraRuntime(CFG, makeGame) {
-  const cv = document.getElementById('c'), ctx = cv.getContext('2d');
-  const R = {
-    CFG, ctx, W: 0, H: 0, state: 'title', score: 0, best: 0, time: 0, lives: 0, shakeT: 0,
-    rng: nxRng(CFG.seed), pal: CFG.palette, particles: [], msg: null, msgT: 0,
-  };
-  try { R.best = +localStorage.getItem('nx_best_' + CFG.id) || 0; } catch (e) { /* sandboxed: no storage */ }
-
-  // ---- input ----
-  const down = {}, touch = {}, prev = [{}, {}];
-  let cur = [{}, {}];
-  const P1 = { left: ['KeyA'], right: ['KeyD'], up: ['KeyW'], down: ['KeyS'], action: ['Space', 'KeyF'] };
-  const P2 = { left: ['ArrowLeft'], right: ['ArrowRight'], up: ['ArrowUp'], down: ['ArrowDown'], action: ['Enter', 'ShiftRight', 'Slash'] };
-  const SOLO = {
-    left: ['ArrowLeft', 'KeyA'], right: ['ArrowRight', 'KeyD'], up: ['ArrowUp', 'KeyW'], down: ['ArrowDown', 'KeyS'],
-    action: ['Space', 'Enter', 'KeyZ', 'KeyX', 'KeyJ'],
-  };
-  // Gamepads (1.5): left stick or d-pad to move, A/B/X/Y to act, Start to pause.
-  let padPause = false;
-  function readPad(p) {
-    let gp = null;
-    try { const all = navigator.getGamepads ? navigator.getGamepads() : []; gp = all && all[p]; } catch (e) { gp = null; }
-    if (!gp || !gp.connected) return null;
-    const b = i => !!(gp.buttons[i] && gp.buttons[i].pressed), ax = i => gp.axes[i] || 0;
-    if (p === 0) { const st = b(9); if (st && !padPause && R.state === 'play') R.paused = !R.paused; padPause = st; }
-    return { left: ax(0) < -0.4 || b(14), right: ax(0) > 0.4 || b(15), up: ax(1) < -0.4 || b(12), down: ax(1) > 0.4 || b(13), action: b(0) || b(1) || b(2) || b(3) };
-  }
-  function readInput(p) {
-    const map = CFG.players === 2 ? (p === 0 ? P1 : P2) : SOLO, o = {}, gp = readPad(p);
-    for (const k in map) o[k] = map[k].some(c => down[c]) || (p === 0 && !!touch[k]) || !!(gp && gp[k]);
-    return o;
-  }
-  R.input = p => cur[p || 0];
-  R.hit = (name, p) => cur[p || 0][name] && !prev[p || 0][name];
-  addEventListener('keydown', e => {
-    if (e.code === 'KeyM') { R.toggleMusic(); return; }
-    if ((e.code === 'KeyP' || e.code === 'Escape') && R.state === 'play') { R.paused = !R.paused; return; }
-    down[e.code] = true; unlockAudio();
-    if (/^(Arrow|Space)/.test(e.code)) e.preventDefault();
-  }, { passive: false });
-  addEventListener('keyup', e => { down[e.code] = false; });
-  addEventListener('blur', () => { for (const k in down) down[k] = false; });
-
-  // touch pad
-  const ctrls = CFG.controls || ['left', 'right', 'action'];
-  const pad = document.createElement('div');
-  pad.style.cssText = 'position:fixed;inset:auto 0 0 0;display:flex;justify-content:space-between;padding:14px;pointer-events:none;user-select:none;-webkit-user-select:none;touch-action:none';
-  const L = { left: '◀', right: '▶', up: '▲', down: '▼', action: '●' };
-  const leftGrp = document.createElement('div'), rightGrp = document.createElement('div');
-  [leftGrp, rightGrp].forEach(g => { g.style.cssText = 'display:flex;gap:10px;align-items:flex-end'; pad.appendChild(g); });
-  ctrls.forEach(k => {
-    const b = document.createElement('div');
-    b.textContent = L[k];
-    b.style.cssText = 'width:62px;height:62px;border-radius:50%;display:grid;place-items:center;font:22px system-ui;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);pointer-events:auto;backdrop-filter:blur(4px)';
-    const on = e => { e.preventDefault(); touch[k] = true; unlockAudio(); b.style.background = 'rgba(255,255,255,.34)'; };
-    const off = e => { e.preventDefault(); touch[k] = false; b.style.background = 'rgba(255,255,255,.14)'; };
-    b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off);
-    b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
-    (k === 'action' || k === 'up' && ctrls.includes('down') === false ? rightGrp : leftGrp).appendChild(b);
-  });
-  if (matchMedia('(pointer: coarse)').matches) document.body.appendChild(pad);
-  // Pointer (1.5): games that are played by clicking/tapping read R.click() and R.ptr.
-  R.ptr = { x: -1, y: -1, down: false };
-  const clicks = [];
-  R.click = () => clicks.shift();
-  const at = e => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
-  cv.addEventListener('pointermove', e => Object.assign(R.ptr, at(e)));
-  cv.addEventListener('pointerup', () => { R.ptr.down = false; });
-  cv.addEventListener('pointerdown', e => {
-    unlockAudio();
-    Object.assign(R.ptr, at(e), { down: true });
-    if (R.state !== 'play') { touch.action = true; setTimeout(() => { touch.action = false; }, 90); }
-    else if (!R.paused) { clicks.push(at(e)); if (clicks.length > 8) clicks.shift(); }
-  });
-
-  // ---- audio ----
-  let ac = null, master = null, musicOn = !!CFG.music, musicTimer = null;
-  function unlockAudio() {
-    if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
-    try {
-      ac = new (window.AudioContext || window.webkitAudioContext)();
-      master = ac.createGain(); master.gain.value = 0.35; master.connect(ac.destination);
-    } catch (e) { ac = null; }
-  }
-  function tone(f0, f1, dur, type, vol, when) {
-    if (!ac) return;
-    const t = ac.currentTime + (when || 0), o = ac.createOscillator(), g = ac.createGain();
-    o.type = type || 'square'; o.frequency.setValueAtTime(f0, t);
-    if (f1) o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
-    g.gain.setValueAtTime(vol || 0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
-  }
-  function noise(dur, vol) {
-    if (!ac) return;
-    const n = ac.sampleRate * dur, buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0);
-    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
-    const s = ac.createBufferSource(), g = ac.createGain(); g.gain.value = vol || 0.4;
-    s.buffer = buf; s.connect(g); g.connect(master); s.start();
-  }
-  R.sfx = function (k) {
-    if (CFG.sfx === false || !ac) return;
-    if (k === 'jump') tone(320, 720, 0.16, 'square', 0.18);
-    else if (k === 'coin') { tone(880, 0, 0.08, 'square', 0.15); tone(1320, 0, 0.14, 'square', 0.15, 0.07); }
-    else if (k === 'shoot') tone(900, 220, 0.12, 'sawtooth', 0.1);
-    else if (k === 'hit') { tone(220, 60, 0.25, 'sawtooth', 0.25); noise(0.15, 0.2); }
-    else if (k === 'boom') noise(0.45, 0.5);
-    else if (k === 'power') { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0, 0.12, 'triangle', 0.2, i * 0.07)); }
-    else if (k === 'over') { [392, 330, 262, 196].forEach((f, i) => tone(f, 0, 0.22, 'triangle', 0.25, i * 0.15)); }
-    else if (k === 'talk') tone(520 + Math.random() * 200, 0, 0.05, 'square', 0.06);
-  };
-  // procedural background music: a seeded 16-step loop
-  const mr = nxRng(CFG.seed ^ 0x5bd1e995);
-  const scale = CFG.mood === 'dark' ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 7, 9];
-  const root = 196 * Math.pow(2, Math.floor(mr() * 5) / 12);
-  const mel = Array.from({ length: 16 }, () => (mr() < 0.62 ? scale[Math.floor(mr() * scale.length)] + 12 * Math.floor(mr() * 2) : null));
-  const bass = [0, 0, scale[3] || 5, scale[4] || 7];
-  let step = 0;
-  function musicTick() {
-    if (!ac || !musicOn || R.state !== 'play' || R.paused) return;
-    const n = mel[step % 16];
-    if (n !== null) tone(root * Math.pow(2, n / 12), 0, 0.18, 'triangle', 0.07);
-    if (step % 4 === 0) tone(root / 2 * Math.pow(2, bass[(step / 4) % 4] / 12), 0, 0.3, 'sine', 0.12);
-    if (step % 4 === 2) noise(0.03, 0.05);
-    step++;
-  }
-  R.toggleMusic = () => {
-    musicOn = !musicOn;
-    R.flash(musicOn ? 'Musik på' : 'Musik av');
-  };
-  musicTimer = setInterval(musicTick, 60000 / (CFG.bpm || 116) / 4);
-
-  // ---- helpers ----
-  R.text = function (s, x, y, size, color, align, weight) {
-    ctx.font = (weight || '700') + ' ' + size + 'px ' + (CFG.font || 'system-ui, sans-serif');
-    ctx.textAlign = align || 'left'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillText(s, x + 2, y + 2);
-    ctx.fillStyle = color || '#fff'; ctx.fillText(s, x, y);
-  };
-  R.burst = function (x, y, color, n, speed) {
-    for (let i = 0; i < (n || 12); i++) {
-      const a = Math.random() * Math.PI * 2, s = (speed || 180) * (0.3 + Math.random());
-      R.particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.5 + Math.random() * 0.4, color });
-    }
-  };
-  R.drawParticles = function (ox, oy) {
-    for (const p of R.particles) {
-      ctx.globalAlpha = Math.max(0, p.life * 1.6);
-      ctx.fillStyle = p.color; ctx.fillRect(p.x - (ox || 0) - 2, p.y - (oy || 0) - 2, 4, 4);
-    }
-    ctx.globalAlpha = 1;
-  };
-  R.shake = t => { R.shakeT = Math.max(R.shakeT, t || 0.25); };
-  R.flash = (m, t) => { R.msg = m; R.msgT = t || 1.6; };
-  R.add = n => { R.score += n; };
-  R.over = function () {
-    if (R.state !== 'play') return;
-    // Attract/demo mode (used by the ad): no game-over screen, the round just restarts.
-    if (CFG.demo) { R.shake(0.2); R.score = 0; game.reset(); return; }
-    R.state = 'over'; R.overT = 0; R.sfx('over'); R.shake(0.4);
-    if (R.score > R.best) { R.best = R.score; try { localStorage.setItem('nx_best_' + CFG.id, R.best); } catch (e) { /* no storage */ } }
-    try { parent.postMessage({ nexora: 'score', id: CFG.id, score: R.score }, '*'); } catch (e) { /* not framed */ }
-  };
-  R.win = function (m) { R.flash(m || 'Du vann!', 3); R.add(500); R.over(); R.won = true; };
-
-  const game = makeGame(R);
-  function resize() {
-    const d = Math.min(window.devicePixelRatio || 1, 2);
-    R.W = innerWidth; R.H = innerHeight;
-    cv.width = R.W * d; cv.height = R.H * d;
-    cv.style.width = R.W + 'px'; cv.style.height = R.H + 'px';
-    ctx.setTransform(d, 0, 0, d, 0, 0);
-    if (game.resize) game.resize();
-  }
-  addEventListener('resize', resize);
-  resize();
-  game.reset();
-  if (CFG.demo) R.state = 'play';
-
-  function start() {
-    R.score = 0; R.time = 0; R.won = false; R.particles.length = 0; R.paused = false;
-    game.reset(); R.state = 'play'; step = 0;
-  }
-
-  let last = performance.now();
-  function frame(now) {
-    let dt = Math.min(1 / 30, (now - last) / 1000); last = now;
-    cur = [readInput(0), readInput(1)];
-    if (R.state === 'play' && !R.paused) { R.time += dt; game.update(dt); }
-    else if (R.state === 'title' && R.hit('action')) start();
-    else if (R.state === 'over') { R.overT += dt; if (R.overT > 0.6 && R.hit('action')) start(); }
-    for (const p of R.particles) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 300 * dt; p.life -= dt; }
-    R.particles = R.particles.filter(p => p.life > 0);
-    if (R.msgT > 0) R.msgT -= dt;
-
-    ctx.save();
-    if (R.shakeT > 0) { R.shakeT -= dt; ctx.translate((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10); }
-    game.draw(ctx);
-    ctx.restore();
-
-    if (R.state === 'play') {
-      R.text(String(R.score), 18, 28, 26, '#fff');
-      R.text('Rekord ' + R.best, R.W - 18, 28, 16, 'rgba(255,255,255,.8)', 'right', '600');
-      if (game.hud) game.hud(ctx);
-      if (R.paused) { ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(0, 0, R.W, R.H); R.text('PAUS', R.W / 2, R.H / 2, 44, '#fff', 'center', '800'); R.text('Esc eller P för att fortsätta', R.W / 2, R.H / 2 + 44, 16, 'rgba(255,255,255,.8)', 'center', '500'); }
-    }
-    if (R.msgT > 0 && R.msg) {
-      ctx.globalAlpha = Math.min(1, R.msgT * 2);
-      R.text(R.msg, R.W / 2, R.H * 0.22, 26, R.pal.accent, 'center', '800');
-      ctx.globalAlpha = 1;
-    }
-    if (R.state !== 'play') {
-      ctx.fillStyle = 'rgba(5,6,16,.62)'; ctx.fillRect(0, 0, R.W, R.H);
-      const big = Math.min(64, R.W / 11);
-      if (R.state === 'title') {
-        R.text(CFG.title, R.W / 2, R.H * 0.36, big, R.pal.accent, 'center', '900');
-        R.text(CFG.tagline || '', R.W / 2, R.H * 0.36 + big * 0.9, Math.max(14, big * 0.32), '#e8e8ff', 'center', '500');
-        const pulse = 0.6 + 0.4 * Math.sin(now / 260);
-        ctx.globalAlpha = pulse;
-        R.text(matchMedia('(pointer: coarse)').matches ? 'Tryck för att spela' : 'Tryck MELLANSLAG för att spela', R.W / 2, R.H * 0.62, 20, '#fff', 'center');
-        ctx.globalAlpha = 1;
-        R.text(CFG.help || '', R.W / 2, R.H * 0.62 + 34, 14, 'rgba(255,255,255,.7)', 'center', '500');
-        if (CFG.players === 2) R.text('Spelare 1: WASD + F  ·  Spelare 2: pilar + Enter', R.W / 2, R.H * 0.62 + 58, 14, 'rgba(255,255,255,.7)', 'center', '500');
-      } else {
-        R.text(R.won ? 'Seger!' : 'Game over', R.W / 2, R.H * 0.38, big, R.won ? R.pal.coin : R.pal.enemy, 'center', '900');
-        R.text('Poäng ' + R.score + '   ·   Rekord ' + R.best, R.W / 2, R.H * 0.38 + big, 20, '#fff', 'center', '600');
-        if (R.overT > 0.6) R.text('Tryck MELLANSLAG / tryck för att spela igen', R.W / 2, R.H * 0.62, 17, 'rgba(255,255,255,.85)', 'center', '500');
-      }
-      R.text('Skapat med Nexora', R.W / 2, R.H - 22, 12, 'rgba(255,255,255,.45)', 'center', '500');
-    }
-    prev[0] = cur[0]; prev[1] = cur[1];
-    clicks.length = 0;
-    requestAnimationFrame(frame);
-  }
-  requestAnimationFrame(frame);
-  return R;
-}
-
 </script>
 <script>
-/* Nexora game templates used by the offline generator ("Nexora Local").
- *
- * Like runtime.js, each function is serialized into the exported game with
- * toString(), so it may only use its argument R and the runtime helpers
- * (nxRng, nxNoise, nxShade, Nx3D).
- */
-
-function gamePlatformer(R) {
-  const P = R.pal, C = R.CFG, G = 1900, TILE = 32;
-  let pl, plats, coins, foes, camX, genX, rng, deco;
-  function gen(until) {
-    while (genX < until) {
-      const gap = 60 + rng() * (90 + C.difficulty * 40), w = 120 + rng() * 260;
-      const last = plats[plats.length - 1];
-      const y = Math.max(R.H * 0.35, Math.min(R.H - 70, last.y + (rng() - 0.5) * 170));
-      const p = { x: genX + gap, y, w, h: R.H - y + 40 };
-      plats.push(p);
-      const nc = Math.floor(rng() * 4);
-      for (let i = 0; i < nc; i++) coins.push({ x: p.x + 30 + i * 34, y: p.y - 46 - (rng() < 0.3 ? 60 : 0), got: false, t: rng() * 6 });
-      if (w > 180 && rng() < 0.35 + C.difficulty * 0.12) foes.push({ x: p.x + w / 2, y: p.y - 26, min: p.x + 8, max: p.x + w - 34, vx: 60 + rng() * 60, dead: false });
-      if (rng() < 0.3) {
-        const fy = p.y - 110 - rng() * 60;
-        plats.push({ x: p.x + w * 0.3, y: fy, w: 90 + rng() * 60, h: 16, thin: true });
-        coins.push({ x: p.x + w * 0.3 + 30, y: fy - 40, got: false, t: 0 });
-      }
-      genX = p.x + w;
-    }
-  }
-  return {
-    reset() {
-      rng = nxRng(C.seed);
-      pl = { x: 80, y: R.H - 200, vx: 0, vy: 0, w: 26, h: 34, ground: false, coyote: 0, jumps: 0, face: 1 };
-      plats = [{ x: -200, y: R.H - 90, w: 700, h: 200 }];
-      coins = []; foes = []; camX = 0; genX = 500;
-      deco = Array.from({ length: 40 }, () => ({ x: rng() * 3000, y: rng() * R.H * 0.6, s: 0.5 + rng() * 2 }));
-      gen(R.W * 3);
-    },
-    update(dt) {
-      const k = R.input();
-      const acc = 2600, max = 260 + C.difficulty * 30;
-      if (k.left) { pl.vx -= acc * dt; pl.face = -1; }
-      else if (k.right) { pl.vx += acc * dt; pl.face = 1; }
-      else pl.vx *= Math.pow(0.0008, dt);
-      pl.vx = Math.max(-max, Math.min(max, pl.vx));
-      pl.coyote -= dt;
-      if ((R.hit('up') || R.hit('action')) && (pl.coyote > 0 || pl.jumps < (C.doubleJump ? 2 : 1))) {
-        pl.vy = -680; pl.coyote = 0; pl.jumps++; R.sfx('jump');
-      }
-      if (!(k.up || k.action) && pl.vy < -250) pl.vy += G * dt * 1.2; // short hop
-      pl.vy += G * dt; pl.x += pl.vx * dt;
-      const oy = pl.y; pl.y += pl.vy * dt; pl.ground = false;
-      for (const p of plats) {
-        if (pl.x + pl.w > p.x && pl.x < p.x + p.w) {
-          if (oy + pl.h <= p.y + 2 && pl.y + pl.h >= p.y && pl.vy >= 0) {
-            pl.y = p.y - pl.h; pl.vy = 0; pl.ground = true; pl.coyote = 0.1; pl.jumps = 0;
-          } else if (!p.thin && pl.y + pl.h > p.y + 4 && pl.y < p.y + p.h) {
-            pl.x = pl.vx > 0 ? p.x - pl.w : p.x + p.w; pl.vx = 0;
-          }
-        }
-      }
-      if (pl.x < camX) { pl.x = camX; pl.vx = 0; }
-      for (const c of coins) {
-        c.t += dt;
-        if (!c.got && Math.abs(pl.x + 13 - c.x) < 24 && Math.abs(pl.y + 17 - c.y) < 28) { c.got = true; R.add(10); R.sfx('coin'); R.burst(c.x, c.y, P.coin, 10); }
-      }
-      for (const f of foes) {
-        if (f.dead) continue;
-        f.x += f.vx * dt; if (f.x < f.min || f.x > f.max) f.vx *= -1;
-        if (pl.x + pl.w > f.x && pl.x < f.x + 28 && pl.y + pl.h > f.y && pl.y < f.y + 26) {
-          if (pl.vy > 0 && pl.y + pl.h - f.y < 18) { f.dead = true; pl.vy = -520; R.add(50); R.sfx('hit'); R.burst(f.x + 14, f.y + 13, P.enemy, 16); }
-          else { R.burst(pl.x, pl.y, P.player, 24); R.over(); }
-        }
-      }
-      if (pl.y > R.H + 80) R.over();
-      camX = Math.max(camX, pl.x - R.W * 0.35);
-      R.score = Math.max(R.score, Math.floor(camX / 10) + coins.filter(c => c.got).length * 10 + foes.filter(f => f.dead).length * 50);
-      gen(camX + R.W * 2);
-      plats = plats.filter(p => p.x + p.w > camX - 200);
-      coins = coins.filter(c => c.x > camX - 100); foes = foes.filter(f => f.x > camX - 100);
-    },
-    draw(ctx) {
-      const g = ctx.createLinearGradient(0, 0, 0, R.H);
-      g.addColorStop(0, P.bg1); g.addColorStop(1, P.bg2);
-      ctx.fillStyle = g; ctx.fillRect(0, 0, R.W, R.H);
-      ctx.fillStyle = P.deco;
-      for (const d of deco) { const x = ((d.x - camX * 0.2 * d.s * 0.3) % 3000 + 3000) % 3000 - 200; ctx.globalAlpha = 0.25 + d.s * 0.1; ctx.beginPath(); ctx.arc(x, d.y, d.s * 2.2, 0, 7); ctx.fill(); }
-      ctx.globalAlpha = 0.35; ctx.fillStyle = P.bg2;
-      for (let i = -1; i < R.W / 240 + 2; i++) { const x = i * 240 - (camX * 0.4) % 240; ctx.beginPath(); ctx.moveTo(x, R.H); ctx.lineTo(x + 120, R.H * 0.55); ctx.lineTo(x + 240, R.H); ctx.fill(); }
-      ctx.globalAlpha = 1;
-      ctx.save(); ctx.translate(-camX, 0);
-      for (const p of plats) {
-        ctx.fillStyle = P.ground; ctx.fillRect(p.x, p.y, p.w, p.h);
-        ctx.fillStyle = P.top; ctx.fillRect(p.x, p.y, p.w, p.thin ? 6 : 10);
-        if (!p.thin) { ctx.fillStyle = 'rgba(0,0,0,.12)'; for (let x = p.x; x < p.x + p.w; x += TILE) ctx.fillRect(x, p.y + 14, 2, p.h); }
-      }
-      for (const c of coins) if (!c.got) {
-        ctx.fillStyle = P.coin; ctx.beginPath(); ctx.ellipse(c.x, c.y + Math.sin(c.t * 4) * 3, 9 * Math.abs(Math.cos(c.t * 3)) + 2, 10, 0, 0, 7); ctx.fill();
-      }
-      for (const f of foes) if (!f.dead) {
-        ctx.fillStyle = P.enemy; ctx.beginPath(); ctx.roundRect(f.x, f.y, 28, 26, 8); ctx.fill();
-        ctx.fillStyle = '#fff'; ctx.fillRect(f.x + 6, f.y + 7, 5, 6); ctx.fillRect(f.x + 17, f.y + 7, 5, 6);
-      }
-      ctx.fillStyle = P.player; ctx.beginPath(); ctx.roundRect(pl.x, pl.y, pl.w, pl.h, 7); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.fillRect(pl.x + (pl.face > 0 ? 15 : 5), pl.y + 9, 6, 7);
-      ctx.fillStyle = '#111'; ctx.fillRect(pl.x + (pl.face > 0 ? 18 : 6), pl.y + 11, 3, 4);
-      ctx.restore();
-      R.drawParticles(camX, 0);
-    },
-  };
-}
-
-function gameShooter(R) {
-  const P = R.pal, C = R.CFG;
-  let pl, shots, foes, eshots, stars, powers, spawnT, fireT, boss, wave;
-  function spawn() {
-    const pattern = Math.floor(R.rng() * 3), n = 3 + Math.floor(R.rng() * (3 + C.difficulty));
-    const x0 = 60 + R.rng() * (R.W - 120);
-    for (let i = 0; i < n; i++) foes.push({ x: pattern === 1 ? 40 + (R.W - 80) * i / n : x0, y: -40 - i * 50, hp: 1 + (wave > 4 ? 1 : 0), t: i * 0.3, pattern, base: x0, r: 16 });
-  }
-  return {
-    reset() {
-      pl = { x: R.W / 2, y: R.H - 90, spread: 0, inv: 0 };
-      shots = []; foes = []; eshots = []; powers = []; spawnT = 1; fireT = 0; boss = null; wave = 0;
-      stars = Array.from({ length: 120 }, () => ({ x: Math.random() * R.W, y: Math.random() * R.H, s: Math.random() * 2 + 0.5 }));
-    },
-    update(dt) {
-      const k = R.input(), sp = 380;
-      if (k.left) pl.x -= sp * dt; if (k.right) pl.x += sp * dt;
-      if (k.up) pl.y -= sp * dt; if (k.down) pl.y += sp * dt;
-      pl.x = Math.max(20, Math.min(R.W - 20, pl.x)); pl.y = Math.max(R.H * 0.4, Math.min(R.H - 40, pl.y));
-      pl.inv -= dt; fireT -= dt;
-      if (fireT <= 0 && (k.action || C.autofire)) {
-        fireT = 0.16;
-        shots.push({ x: pl.x, y: pl.y - 20, vx: 0 });
-        if (pl.spread > 0) { shots.push({ x: pl.x, y: pl.y - 20, vx: -160 }, { x: pl.x, y: pl.y - 20, vx: 160 }); }
-        R.sfx('shoot');
-      }
-      pl.spread -= dt;
-      for (const s of stars) { s.y += s.s * 60 * dt; if (s.y > R.H) { s.y = 0; s.x = Math.random() * R.W; } }
-      spawnT -= dt;
-      if (spawnT <= 0 && !boss) { wave++; spawn(); spawnT = Math.max(0.9, 3 - wave * 0.12 - C.difficulty * 0.3); if (wave % 8 === 0) boss = { x: R.W / 2, y: -80, hp: 30 + wave * 3, max: 30 + wave * 3, t: 0 }; }
-      for (const s of shots) { s.y -= 700 * dt; s.x += s.vx * dt; }
-      shots = shots.filter(s => s.y > -20);
-      for (const f of foes) {
-        f.t += dt; f.y += (90 + wave * 4) * dt;
-        if (f.pattern === 0) f.x = f.base + Math.sin(f.t * 2.5) * 90;
-        if (f.pattern === 2 && f.y > R.H * 0.3) f.x += Math.sign(pl.x - f.x) * 120 * dt;
-        if (R.rng() < dt * (0.25 + C.difficulty * 0.15)) eshots.push({ x: f.x, y: f.y, vx: (pl.x - f.x) * 0.4, vy: 220 });
-      }
-      if (boss) {
-        boss.t += dt; boss.y = Math.min(110, boss.y + 60 * dt); boss.x = R.W / 2 + Math.sin(boss.t * 0.8) * R.W * 0.3;
-        if (R.rng() < dt * 3) for (let a = -2; a <= 2; a++) eshots.push({ x: boss.x, y: boss.y + 30, vx: a * 70, vy: 240 });
-      }
-      for (const e of eshots) { e.x += e.vx * dt; e.y += e.vy * dt; }
-      eshots = eshots.filter(e => e.y < R.H + 20);
-      for (const s of shots) {
-        for (const f of foes) if (f.hp > 0 && Math.hypot(s.x - f.x, s.y - f.y) < f.r + 4) {
-          f.hp--; s.y = -99;
-          if (f.hp <= 0) { R.add(25); R.sfx('boom'); R.burst(f.x, f.y, P.enemy, 18); if (R.rng() < 0.08) powers.push({ x: f.x, y: f.y }); }
-        }
-        if (boss && Math.abs(s.x - boss.x) < 60 && Math.abs(s.y - boss.y) < 34) {
-          boss.hp--; s.y = -99; R.burst(s.x, s.y, P.accent, 3);
-          if (boss.hp <= 0) { R.add(400); R.sfx('boom'); R.shake(0.6); R.burst(boss.x, boss.y, P.enemy, 60, 320); R.flash('Bossen besegrad!'); boss = null; }
-        }
-      }
-      foes = foes.filter(f => f.hp > 0 && f.y < R.H + 40);
-      for (const p of powers) { p.y += 120 * dt; if (Math.hypot(p.x - pl.x, p.y - pl.y) < 26) { p.y = R.H + 99; pl.spread = 8; R.sfx('power'); R.flash('Trippelskott!'); } }
-      powers = powers.filter(p => p.y < R.H + 20);
-      if (pl.inv <= 0) {
-        const hit = eshots.some(e => Math.hypot(e.x - pl.x, e.y - pl.y) < 12) || foes.some(f => Math.hypot(f.x - pl.x, f.y - pl.y) < f.r + 10);
-        if (hit) { R.burst(pl.x, pl.y, P.player, 30, 260); R.over(); }
-      }
-    },
-    draw(ctx) {
-      const g = ctx.createLinearGradient(0, 0, 0, R.H); g.addColorStop(0, P.bg1); g.addColorStop(1, P.bg2);
-      ctx.fillStyle = g; ctx.fillRect(0, 0, R.W, R.H);
-      ctx.fillStyle = P.deco;
-      for (const s of stars) { ctx.globalAlpha = s.s / 2.5; ctx.fillRect(s.x, s.y, s.s, s.s * 2); }
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = P.accent; for (const s of shots) ctx.fillRect(s.x - 2, s.y - 8, 4, 14);
-      ctx.fillStyle = P.enemy; for (const e of eshots) { ctx.beginPath(); ctx.arc(e.x, e.y, 5, 0, 7); ctx.fill(); }
-      for (const f of foes) {
-        ctx.fillStyle = P.enemy; ctx.beginPath(); ctx.moveTo(f.x, f.y + 16); ctx.lineTo(f.x - 16, f.y - 12); ctx.lineTo(f.x, f.y - 4); ctx.lineTo(f.x + 16, f.y - 12); ctx.closePath(); ctx.fill();
-      }
-      if (boss) {
-        ctx.fillStyle = P.enemy; ctx.beginPath(); ctx.roundRect(boss.x - 60, boss.y - 30, 120, 60, 18); ctx.fill();
-        ctx.fillStyle = P.coin; ctx.fillRect(boss.x - 30, boss.y - 6, 60, 12);
-        ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(R.W * 0.2, 56, R.W * 0.6, 8);
-        ctx.fillStyle = P.enemy; ctx.fillRect(R.W * 0.2, 56, R.W * 0.6 * boss.hp / boss.max, 8);
-      }
-      ctx.fillStyle = P.coin; for (const p of powers) { ctx.beginPath(); ctx.arc(p.x, p.y, 10, 0, 7); ctx.fill(); }
-      if (R.state !== 'over') {
-        ctx.fillStyle = P.player; ctx.beginPath(); ctx.moveTo(pl.x, pl.y - 22); ctx.lineTo(pl.x - 18, pl.y + 16); ctx.lineTo(pl.x, pl.y + 8); ctx.lineTo(pl.x + 18, pl.y + 16); ctx.closePath(); ctx.fill();
-        ctx.fillStyle = P.accent; ctx.fillRect(pl.x - 4, pl.y + 12, 8, 6 + Math.random() * 8);
-      }
-      R.drawParticles();
-    },
-  };
-}
-
-function gameSnake(R) {
-  const P = R.pal, C = R.CFG;
-  let cell, cols, rows, snake, dir, next, food, t, walls, speed, ox, oy;
-  function free() {
-    for (let i = 0; i < 500; i++) {
-      const p = { x: Math.floor(R.rng() * cols), y: Math.floor(R.rng() * rows) };
-      if (!snake.some(s => s.x === p.x && s.y === p.y) && !walls.some(w => w.x === p.x && w.y === p.y)) return p;
-    }
-    return { x: 0, y: 0 };
-  }
-  return {
-    reset() {
-      cell = Math.max(18, Math.floor(Math.min(R.W, R.H - 60) / 24));
-      cols = Math.floor(R.W / cell); rows = Math.floor((R.H - 60) / cell);
-      ox = (R.W - cols * cell) / 2; oy = 50 + (R.H - 60 - rows * cell) / 2;
-      const cx = Math.floor(cols / 2), cy = Math.floor(rows / 2);
-      snake = [{ x: cx, y: cy }, { x: cx - 1, y: cy }, { x: cx - 2, y: cy }];
-      dir = { x: 1, y: 0 }; next = dir; t = 0; speed = 8 + C.difficulty * 2;
-      walls = [];
-      const r = nxRng(C.seed);
-      for (let i = 0; i < C.difficulty * 3; i++) {
-        const wx = Math.floor(r() * cols), wy = Math.floor(r() * rows), len = 3 + Math.floor(r() * 4), h = r() < 0.5;
-        for (let j = 0; j < len; j++) { const w = { x: wx + (h ? j : 0), y: wy + (h ? 0 : j) }; if (Math.abs(w.y - cy) > 1) walls.push(w); }
-      }
-      food = free();
-    },
-    update(dt) {
-      const k = R.input();
-      if (k.left && dir.x === 0) next = { x: -1, y: 0 };
-      else if (k.right && dir.x === 0) next = { x: 1, y: 0 };
-      else if (k.up && dir.y === 0) next = { x: 0, y: -1 };
-      else if (k.down && dir.y === 0) next = { x: 0, y: 1 };
-      t += dt;
-      if (t < 1 / speed) return;
-      t = 0; dir = next;
-      const h = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
-      if (C.wrap) { h.x = (h.x + cols) % cols; h.y = (h.y + rows) % rows; }
-      if (h.x < 0 || h.y < 0 || h.x >= cols || h.y >= rows || snake.some(s => s.x === h.x && s.y === h.y) || walls.some(w => w.x === h.x && w.y === h.y)) {
-        R.burst(ox + h.x * cell, oy + h.y * cell, P.player, 30); R.over(); return;
-      }
-      snake.unshift(h);
-      if (h.x === food.x && h.y === food.y) {
-        R.add(10); R.sfx('coin'); R.burst(ox + h.x * cell + cell / 2, oy + h.y * cell + cell / 2, P.coin, 14);
-        food = free(); speed = Math.min(22, speed + 0.35);
-      } else snake.pop();
-    },
-    draw(ctx) {
-      ctx.fillStyle = P.bg2; ctx.fillRect(0, 0, R.W, R.H);
-      ctx.fillStyle = P.bg1; ctx.fillRect(ox, oy, cols * cell, rows * cell);
-      ctx.fillStyle = 'rgba(255,255,255,.035)';
-      for (let x = 0; x < cols; x++) for (let y = (x % 2); y < rows; y += 2) ctx.fillRect(ox + x * cell, oy + y * cell, cell, cell);
-      ctx.fillStyle = P.ground; for (const w of walls) ctx.fillRect(ox + w.x * cell + 1, oy + w.y * cell + 1, cell - 2, cell - 2);
-      ctx.fillStyle = P.coin; ctx.beginPath(); ctx.arc(ox + food.x * cell + cell / 2, oy + food.y * cell + cell / 2, cell * 0.36, 0, 7); ctx.fill();
-      snake.forEach((s, i) => {
-        ctx.fillStyle = i === 0 ? P.accent : P.player; ctx.globalAlpha = 1 - i / (snake.length * 1.8);
-        ctx.beginPath(); ctx.roundRect(ox + s.x * cell + 1, oy + s.y * cell + 1, cell - 2, cell - 2, cell * 0.3); ctx.fill();
-      });
-      ctx.globalAlpha = 1;
-      R.drawParticles();
-    },
-  };
-}
-
-function gameBreakout(R) {
-  const P = R.pal, C = R.CFG;
-  let pad, balls, bricks, drops, level, lives, wide;
-  function build() {
-    bricks = [];
-    const cols = Math.max(6, Math.floor(R.W / 80)), rows = 4 + Math.min(4, level + C.difficulty);
-    const bw = (R.W - 40) / cols, r = nxRng(C.seed + level * 77);
-    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
-      if (r() < 0.12 * (level % 3)) continue;
-      bricks.push({ x: 20 + x * bw, y: 80 + y * 26, w: bw - 4, h: 20, hp: r() < 0.15 + level * 0.05 ? 2 : 1, c: y });
-    }
-  }
-  function serve() { balls = [{ x: pad.x, y: pad.y - 14, vx: 0, vy: 0, stuck: true }]; }
-  return {
-    reset() { level = 0; lives = 3; wide = 0; pad = { x: R.W / 2, y: R.H - 60, w: 110 }; drops = []; build(); serve(); },
-    hud() { R.text('♥'.repeat(lives), R.W / 2, 28, 20, R.pal.enemy, 'center'); },
-    update(dt) {
-      const k = R.input();
-      if (k.left) pad.x -= 620 * dt; if (k.right) pad.x += 620 * dt;
-      wide -= dt; pad.w = wide > 0 ? 180 : 110;
-      pad.x = Math.max(pad.w / 2, Math.min(R.W - pad.w / 2, pad.x));
-      const spd = 420 + level * 30 + C.difficulty * 40;
-      for (const b of balls) {
-        if (b.stuck) { b.x = pad.x; b.y = pad.y - 14; if (k.action || k.up) { b.stuck = false; b.vx = (R.rng() - 0.5) * 300; b.vy = -spd; R.sfx('jump'); } continue; }
-        b.x += b.vx * dt; b.y += b.vy * dt;
-        if (b.x < 8) { b.x = 8; b.vx = Math.abs(b.vx); } if (b.x > R.W - 8) { b.x = R.W - 8; b.vx = -Math.abs(b.vx); }
-        if (b.y < 50) { b.y = 50; b.vy = Math.abs(b.vy); }
-        if (b.vy > 0 && b.y > pad.y - 8 && b.y < pad.y + 10 && Math.abs(b.x - pad.x) < pad.w / 2 + 6) {
-          const off = (b.x - pad.x) / (pad.w / 2), a = off * 1.05;
-          b.vx = Math.sin(a) * spd; b.vy = -Math.cos(a) * spd; R.sfx('coin');
-        }
-        for (const br of bricks) {
-          if (br.hp > 0 && b.x > br.x - 7 && b.x < br.x + br.w + 7 && b.y > br.y - 7 && b.y < br.y + br.h + 7) {
-            br.hp--;
-            const fromSide = Math.min(Math.abs(b.x - br.x), Math.abs(b.x - br.x - br.w)) < Math.min(Math.abs(b.y - br.y), Math.abs(b.y - br.y - br.h));
-            if (fromSide) b.vx *= -1; else b.vy *= -1;
-            if (br.hp <= 0) { R.add(10); R.burst(br.x + br.w / 2, br.y + 10, P.accent, 8); if (R.rng() < 0.1) drops.push({ x: br.x + br.w / 2, y: br.y, k: R.rng() < 0.5 ? 'multi' : 'wide' }); }
-            R.sfx('hit'); break;
-          }
-        }
-      }
-      balls = balls.filter(b => b.y < R.H + 20);
-      if (!balls.length) { lives--; R.shake(0.3); if (lives <= 0) R.over(); else serve(); }
-      for (const d of drops) {
-        d.y += 160 * dt;
-        if (d.y > pad.y - 10 && d.y < pad.y + 12 && Math.abs(d.x - pad.x) < pad.w / 2) {
-          d.y = R.H + 99; R.sfx('power');
-          if (d.k === 'wide') { wide = 12; R.flash('Bred racket!'); }
-          else { const b0 = balls[0]; if (b0) for (let i = 0; i < 2; i++) balls.push({ x: b0.x, y: b0.y, vx: (i ? 1 : -1) * 250, vy: -spd * 0.8 }); R.flash('Multiboll!'); }
-        }
-      }
-      drops = drops.filter(d => d.y < R.H + 20);
-      if (!bricks.some(b => b.hp > 0)) { level++; R.add(100); R.flash('Nivå ' + (level + 1)); build(); serve(); }
-    },
-    draw(ctx) {
-      const g = ctx.createLinearGradient(0, 0, 0, R.H); g.addColorStop(0, P.bg1); g.addColorStop(1, P.bg2);
-      ctx.fillStyle = g; ctx.fillRect(0, 0, R.W, R.H);
-      const cols = [P.enemy, P.coin, P.accent, P.player, P.top, P.deco, P.ground, P.enemy];
-      for (const b of bricks) if (b.hp > 0) {
-        ctx.fillStyle = cols[b.c % cols.length]; ctx.globalAlpha = b.hp > 1 ? 1 : 0.8;
-        ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, 5); ctx.fill();
-        if (b.hp > 1) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); }
-      }
-      ctx.globalAlpha = 1;
-      for (const d of drops) { ctx.fillStyle = d.k === 'wide' ? P.coin : P.accent; ctx.beginPath(); ctx.roundRect(d.x - 14, d.y - 7, 28, 14, 7); ctx.fill(); }
-      ctx.fillStyle = P.player; ctx.beginPath(); ctx.roundRect(pad.x - pad.w / 2, pad.y, pad.w, 12, 6); ctx.fill();
-      ctx.fillStyle = '#fff'; for (const b of balls) { ctx.beginPath(); ctx.arc(b.x, b.y, 7, 0, 7); ctx.fill(); }
-      R.drawParticles();
-    },
-  };
-}
-
-function gameDodger(R) {
-  const P = R.pal, C = R.CFG;
-  let pl, obs, items, t, speed, lanesY, bonus;
-  return {
-    reset() { pl = { x: R.W / 2, y: R.H - 110, shield: 0 }; obs = []; items = []; t = 0; speed = 240 + C.difficulty * 50; lanesY = 0; bonus = 0; },
-    update(dt) {
-      const k = R.input();
-      if (k.left) pl.x -= 440 * dt; if (k.right) pl.x += 440 * dt;
-      pl.x = Math.max(24, Math.min(R.W - 24, pl.x));
-      speed += dt * 6; t -= dt; lanesY = (lanesY + speed * dt) % 80; pl.shield -= dt;
-      if (t <= 0) {
-        t = Math.max(0.28, 0.9 - speed / 1400);
-        const w = 40 + R.rng() * 90;
-        obs.push({ x: R.rng() * (R.W - w) + w / 2, y: -60, w, h: 30 + R.rng() * 40, rot: R.rng() * 6 });
-        if (R.rng() < 0.35) items.push({ x: 20 + R.rng() * (R.W - 40), y: -30, k: R.rng() < 0.1 ? 'shield' : 'coin' });
-      }
-      for (const o of obs) { o.y += speed * dt; o.rot += dt; }
-      for (const it of items) it.y += speed * dt;
-      for (const it of items) if (Math.abs(it.x - pl.x) < 28 && Math.abs(it.y - pl.y) < 30) {
-        it.y = R.H + 99;
-        if (it.k === 'coin') { bonus += 15; R.sfx('coin'); R.burst(pl.x, pl.y - 20, P.coin, 10); } else { pl.shield = 5; R.sfx('power'); R.flash('Sköld!'); }
-      }
-      for (const o of obs) if (Math.abs(o.x - pl.x) < o.w / 2 + 16 && Math.abs(o.y - pl.y) < o.h / 2 + 22) {
-        if (pl.shield > 0) { o.y = R.H + 99; R.burst(o.x, o.y, P.enemy, 14); R.sfx('boom'); }
-        else { R.burst(pl.x, pl.y, P.player, 30, 260); R.shake(0.5); R.over(); }
-      }
-      obs = obs.filter(o => o.y < R.H + 80); items = items.filter(i => i.y < R.H + 40);
-      R.score = Math.floor(R.time * 10) + bonus;
-    },
-    draw(ctx) {
-      ctx.fillStyle = P.bg1; ctx.fillRect(0, 0, R.W, R.H);
-      ctx.fillStyle = P.bg2; ctx.fillRect(R.W * 0.08, 0, R.W * 0.84, R.H);
-      ctx.fillStyle = P.deco; ctx.globalAlpha = 0.5;
-      for (let y = -80 + lanesY; y < R.H; y += 80) { ctx.fillRect(R.W / 3 - 3, y, 6, 40); ctx.fillRect(R.W * 2 / 3 - 3, y, 6, 40); }
-      ctx.globalAlpha = 1;
-      for (const it of items) { ctx.fillStyle = it.k === 'coin' ? P.coin : P.accent; ctx.beginPath(); ctx.arc(it.x, it.y, it.k === 'coin' ? 10 : 13, 0, 7); ctx.fill(); }
-      for (const o of obs) {
-        ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(Math.sin(o.rot) * 0.2);
-        ctx.fillStyle = P.enemy; ctx.beginPath(); ctx.roundRect(-o.w / 2, -o.h / 2, o.w, o.h, 8); ctx.fill();
-        ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(-o.w / 2 + 6, -o.h / 2 + 6, o.w - 12, 6);
-        ctx.restore();
-      }
-      if (R.state !== 'over') {
-        if (pl.shield > 0) { ctx.strokeStyle = P.accent; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(pl.x, pl.y, 34, 0, 7); ctx.stroke(); }
-        ctx.fillStyle = P.player; ctx.beginPath(); ctx.roundRect(pl.x - 18, pl.y - 28, 36, 56, 10); ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fillRect(pl.x - 12, pl.y - 18, 24, 12);
-      }
-      R.drawParticles();
-    },
-  };
-}
-
-function gameCollector(R) {
-  const P = R.pal, C = R.CFG, two = C.players === 2;
-  let pls, gems, foes, t;
-  function place() { return { x: 40 + R.rng() * (R.W - 80), y: 70 + R.rng() * (R.H - 120) }; }
-  return {
-    reset() {
-      pls = [{ x: R.W * 0.4, y: R.H / 2, c: P.player, s: 0, alive: true }];
-      if (two) pls.push({ x: R.W * 0.6, y: R.H / 2, c: P.accent, s: 0, alive: true });
-      gems = Array.from({ length: 5 }, place); foes = []; t = 2;
-    },
-    hud() { if (two) R.text('P1 ' + pls[0].s + '   ·   P2 ' + pls[1].s, R.W / 2, 28, 18, '#fff', 'center'); },
-    update(dt) {
-      pls.forEach((p, i) => {
-        if (!p.alive) return;
-        const k = R.input(i), sp = 280;
-        let dx = (k.right ? 1 : 0) - (k.left ? 1 : 0), dy = (k.down ? 1 : 0) - (k.up ? 1 : 0);
-        const l = Math.hypot(dx, dy) || 1; p.x += dx / l * sp * dt; p.y += dy / l * sp * dt;
-        p.x = Math.max(16, Math.min(R.W - 16, p.x)); p.y = Math.max(56, Math.min(R.H - 16, p.y));
-        for (const g of gems) if (Math.hypot(g.x - p.x, g.y - p.y) < 26) {
-          p.s += 10; R.add(10); R.sfx('coin'); R.burst(g.x, g.y, P.coin, 12); Object.assign(g, place());
-        }
-      });
-      t -= dt;
-      if (t <= 0) { t = Math.max(1.2, 5 - R.time * 0.05 - C.difficulty); const e = R.rng() < 0.5 ? { x: R.rng() < 0.5 ? -20 : R.W + 20, y: 60 + R.rng() * R.H } : { x: R.rng() * R.W, y: R.H + 20 }; foes.push({ x: e.x, y: e.y, sp: 70 + R.rng() * 60 + C.difficulty * 20 }); }
-      for (const f of foes) {
-        const alive = pls.filter(p => p.alive);
-        if (!alive.length) break;
-        const tg = alive.reduce((a, b) => (Math.hypot(a.x - f.x, a.y - f.y) < Math.hypot(b.x - f.x, b.y - f.y) ? a : b));
-        const a = Math.atan2(tg.y - f.y, tg.x - f.x); f.x += Math.cos(a) * f.sp * dt; f.y += Math.sin(a) * f.sp * dt;
-        for (const p of alive) if (Math.hypot(p.x - f.x, p.y - f.y) < 26) { p.alive = false; R.burst(p.x, p.y, p.c, 30, 240); R.sfx('hit'); R.shake(0.3); }
-      }
-      if (!pls.some(p => p.alive)) {
-        if (two) R.flash(pls[0].s === pls[1].s ? 'Oavgjort!' : (pls[0].s > pls[1].s ? 'Spelare 1 vinner!' : 'Spelare 2 vinner!'), 4);
-        R.over();
-      }
-    },
-    draw(ctx) {
-      ctx.fillStyle = P.bg1; ctx.fillRect(0, 0, R.W, R.H);
-      ctx.strokeStyle = 'rgba(255,255,255,.05)';
-      for (let x = 0; x < R.W; x += 48) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, R.H); ctx.stroke(); }
-      for (let y = 0; y < R.H; y += 48) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(R.W, y); ctx.stroke(); }
-      for (const g of gems) { ctx.fillStyle = P.coin; ctx.beginPath(); ctx.moveTo(g.x, g.y - 12); ctx.lineTo(g.x + 10, g.y); ctx.lineTo(g.x, g.y + 12); ctx.lineTo(g.x - 10, g.y); ctx.closePath(); ctx.fill(); }
-      for (const f of foes) { ctx.fillStyle = P.enemy; ctx.beginPath(); ctx.arc(f.x, f.y, 15, 0, 7); ctx.fill(); ctx.fillStyle = '#fff'; ctx.fillRect(f.x - 7, f.y - 5, 4, 5); ctx.fillRect(f.x + 3, f.y - 5, 4, 5); }
-      for (const p of pls) if (p.alive) { ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, 16, 0, 7); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); }
-      R.drawParticles();
-    },
-  };
-}
-
-function gameOpenWorld(R) {
-  const P = R.pal, C = R.CFG, T = 40, N = 160;
-  const noise = nxNoise(C.seed), moist = nxNoise(C.seed + 99);
-  let map, pl, npcs, items, foes, cam, talk, quest, done, hp, hurtT;
-  const Q = C.quests && C.quests.length ? C.quests : [{ giver: 'Vandraren', item: 'kristall', count: 4, text: 'Hitta 4 kristaller åt mig.' }];
-  function tile(x, y) {
-    const e = noise(x / 22, y / 22), m = moist(x / 30, y / 30), edge = Math.min(x, y, N - 1 - x, N - 1 - y) / 12;
-    const h = e - Math.max(0, 1 - edge) * 0.5;
-    if (h < 0.34) return 0; // water
-    if (h < 0.38) return 1; // sand
-    if (h > 0.68) return 4; // rock
-    return m > 0.55 ? 3 : 2; // forest / grass
-  }
-  function walk(x, y) { const t = map[Math.floor(y / T) * N + Math.floor(x / T)]; return t === 1 || t === 2 || t === 3; }
-  function spot(r) {
-    for (let i = 0; i < 4000; i++) { const x = (4 + Math.floor(r() * (N - 8))) * T + T / 2, y = (4 + Math.floor(r() * (N - 8))) * T + T / 2; if (walk(x, y) && map[Math.floor(y / T) * N + Math.floor(x / T)] === 2) return { x, y }; }
-    return { x: N * T / 2, y: N * T / 2 };
-  }
-  return {
-    reset() {
-      map = new Uint8Array(N * N);
-      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) map[y * N + x] = tile(x, y);
-      const r = nxRng(C.seed);
-      pl = Object.assign(spot(r), { face: 0, atk: 0 });
-      npcs = Q.map((q, i) => Object.assign(spot(r), { name: q.giver, q: i, lines: q.lines || [q.text], c: [P.accent, P.coin, P.player, P.top][i % 4] }));
-      // place the first NPC near the player so the story starts quickly
-      if (npcs[0]) { npcs[0].x = pl.x + 80; npcs[0].y = pl.y; if (!walk(npcs[0].x, npcs[0].y)) { npcs[0].x = pl.x; npcs[0].y = pl.y - 60; } }
-      items = []; for (let i = 0; i < 70; i++) items.push(Object.assign(spot(r), { q: i % Q.length, got: false }));
-      foes = []; for (let i = 0; i < 26 + C.difficulty * 10; i++) foes.push(Object.assign(spot(r), { hp: 2, t: r() * 9, vx: 0, vy: 0 }));
-      foes = foes.filter(f => Math.hypot(f.x - pl.x, f.y - pl.y) > 300);
-      quest = -1; done = 0; hp = 5; hurtT = 0; talk = null; cam = { x: pl.x, y: pl.y };
-    },
-    hud() {
-      R.text('♥'.repeat(Math.max(0, hp)), R.W / 2, 28, 20, P.enemy, 'center');
-      const q = Q[quest];
-      if (q) { const have = items.filter(i => i.q === quest && i.got).length; R.text('Uppdrag: ' + q.text + ' (' + Math.min(have, q.count) + '/' + q.count + ')', 18, R.H - 26, 15, '#fff', 'left', '600'); }
-      else if (done < Q.length) R.text('Hitta någon att prata med (tryck ● nära en person)', 18, R.H - 26, 15, '#fff', 'left', '600');
-      if (talk) {
-        const w = Math.min(560, R.W - 30), x = (R.W - w) / 2, y = R.H - 150;
-        R.ctx.fillStyle = 'rgba(8,8,24,.9)'; R.ctx.beginPath(); R.ctx.roundRect(x, y, w, 110, 12); R.ctx.fill();
-        R.ctx.strokeStyle = P.accent; R.ctx.lineWidth = 2; R.ctx.stroke();
-        R.text(talk.name, x + 16, y + 20, 16, P.accent, 'left', '800');
-        const words = talk.line.split(' '); let ln = '', yy = y + 48;
-        R.ctx.font = '500 15px system-ui';
-        for (const wd of words) { if (R.ctx.measureText(ln + wd).width > w - 32) { R.text(ln, x + 16, yy, 15, '#fff', 'left', '500'); ln = ''; yy += 22; } ln += wd + ' '; }
-        R.text(ln, x + 16, yy, 15, '#fff', 'left', '500');
-      }
-    },
-    update(dt) {
-      if (talk) {
-        if (R.hit('action')) { talk.i++; R.sfx('talk'); if (talk.i >= talk.lines.length) { if (talk.onEnd) talk.onEnd(); talk = null; } else talk.line = talk.lines[talk.i]; }
-        return;
-      }
-      const k = R.input(), sp = 190;
-      let dx = (k.right ? 1 : 0) - (k.left ? 1 : 0), dy = (k.down ? 1 : 0) - (k.up ? 1 : 0);
-      const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l;
-      if (dx || dy) pl.face = Math.atan2(dy, dx);
-      if (walk(pl.x + dx * sp * dt, pl.y)) pl.x += dx * sp * dt;
-      if (walk(pl.x, pl.y + dy * sp * dt)) pl.y += dy * sp * dt;
-      pl.atk -= dt; hurtT -= dt;
-      if (R.hit('action')) {
-        const n = npcs.find(n => Math.hypot(n.x - pl.x, n.y - pl.y) < 60);
-        if (n) {
-          const q = Q[n.q], have = items.filter(i => i.q === n.q && i.got).length;
-          if (n.q < done) talk = { name: n.name, lines: ['Tack igen för hjälpen, vän!'] };
-          else if (quest === n.q && have >= q.count) {
-            talk = { name: n.name, lines: [q.thanks || 'Fantastiskt! Du klarade det. Här är din belöning.'], onEnd: () => { done++; quest = -1; R.add(250); R.sfx('power'); R.flash('Uppdrag klart!'); if (done >= Q.length) R.win('Alla uppdrag klara!'); } };
-          } else if (quest === n.q) talk = { name: n.name, lines: ['Du har ' + have + ' av ' + q.count + '. Fortsätt leta!'] };
-          else if (n.q === done) talk = { name: n.name, lines: n.lines.concat([q.text]), onEnd: () => { quest = n.q; R.flash('Nytt uppdrag!'); } };
-          else talk = { name: n.name, lines: ['Hej, äventyrare. Kom tillbaka senare, jag kan behöva din hjälp.'] };
-          if (talk) { talk.i = 0; talk.line = talk.lines[0]; R.sfx('talk'); }
-        } else { pl.atk = 0.25; R.sfx('shoot'); }
-      }
-      for (const it of items) if (!it.got && it.q === quest && Math.hypot(it.x - pl.x, it.y - pl.y) < 26) { it.got = true; R.add(20); R.sfx('coin'); R.burst(it.x, it.y, P.coin, 12); }
-      for (const f of foes) {
-        if (f.hp <= 0) continue;
-        f.t += dt;
-        const d = Math.hypot(pl.x - f.x, pl.y - f.y);
-        if (d < 260) { f.vx = (pl.x - f.x) / d * 85; f.vy = (pl.y - f.y) / d * 85; }
-        else if (f.t % 3 < dt * 2) { const a = Math.random() * 7; f.vx = Math.cos(a) * 40; f.vy = Math.sin(a) * 40; }
-        if (walk(f.x + f.vx * dt, f.y + f.vy * dt)) { f.x += f.vx * dt; f.y += f.vy * dt; }
-        if (pl.atk > 0 && d < 58) { f.hp--; f.x -= (pl.x - f.x) / d * 40; f.y -= (pl.y - f.y) / d * 40; R.burst(f.x, f.y, P.enemy, 8); if (f.hp <= 0) { R.add(30); R.sfx('boom'); } }
-        else if (d < 24 && hurtT <= 0) { hp--; hurtT = 1; R.sfx('hit'); R.shake(0.25); if (hp <= 0) R.over(); }
-      }
-      cam.x += (pl.x - cam.x) * Math.min(1, dt * 6); cam.y += (pl.y - cam.y) * Math.min(1, dt * 6);
-    },
-    draw(ctx) {
-      const cols = ['#2b5fa8', '#d8c07a', P.ground, P.top, '#77726e'];
-      const ox = cam.x - R.W / 2, oy = cam.y - R.H / 2;
-      ctx.fillStyle = cols[0]; ctx.fillRect(0, 0, R.W, R.H);
-      const x0 = Math.max(0, Math.floor(ox / T)), y0 = Math.max(0, Math.floor(oy / T));
-      const x1 = Math.min(N - 1, Math.ceil((ox + R.W) / T)), y1 = Math.min(N - 1, Math.ceil((oy + R.H) / T));
-      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
-        const t = map[y * N + x]; ctx.fillStyle = cols[t];
-        ctx.fillRect(Math.floor(x * T - ox), Math.floor(y * T - oy), T + 1, T + 1);
-        if (t === 3 && (x * 7 + y * 13) % 3 === 0) { ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.arc(x * T - ox + T / 2, y * T - oy + T / 2, T * 0.42, 0, 7); ctx.fill(); }
-        if (t === 0 && (x + y + Math.floor(R.time * 2)) % 7 === 0) { ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(x * T - ox + 8, y * T - oy + 18, 16, 3); }
-      }
-      for (const it of items) if (!it.got && (it.q === quest)) { ctx.fillStyle = P.coin; ctx.beginPath(); ctx.moveTo(it.x - ox, it.y - oy - 11); ctx.lineTo(it.x - ox + 8, it.y - oy); ctx.lineTo(it.x - ox, it.y - oy + 11); ctx.lineTo(it.x - ox - 8, it.y - oy); ctx.fill(); }
-      for (const f of foes) if (f.hp > 0) { ctx.fillStyle = P.enemy; ctx.beginPath(); ctx.ellipse(f.x - ox, f.y - oy + 4, 14, 11 + Math.sin(f.t * 6) * 2, 0, 0, 7); ctx.fill(); }
-      for (const n of npcs) {
-        ctx.fillStyle = n.c; ctx.beginPath(); ctx.arc(n.x - ox, n.y - oy, 14, 0, 7); ctx.fill();
-        ctx.fillStyle = '#f2d2b0'; ctx.beginPath(); ctx.arc(n.x - ox, n.y - oy - 16, 8, 0, 7); ctx.fill();
-        if (n.q === done && quest !== n.q || quest === n.q) R.text(quest === n.q ? '?' : '!', n.x - ox, n.y - oy - 38, 20, P.coin, 'center', '900');
-      }
-      if (hurtT <= 0 || Math.floor(hurtT * 12) % 2) {
-        ctx.fillStyle = P.player; ctx.beginPath(); ctx.arc(R.W / 2 + pl.x - cam.x, R.H / 2 + pl.y - cam.y, 15, 0, 7); ctx.fill();
-        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
-      }
-      if (pl.atk > 0) { ctx.strokeStyle = P.accent; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(R.W / 2 + pl.x - cam.x, R.H / 2 + pl.y - cam.y, 42, pl.face - 1, pl.face + 1); ctx.stroke(); }
-      R.drawParticles(ox, oy);
-      // minimap
-      const s = 1, mw = N * s;
-      ctx.globalAlpha = 0.8; ctx.fillStyle = '#000'; ctx.fillRect(R.W - mw - 16, 48, mw + 4, mw + 4);
-      if (!this.mini) {
-        const c = document.createElement('canvas'); c.width = N; c.height = N; const g = c.getContext('2d');
-        for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { g.fillStyle = cols[map[y * N + x]]; g.fillRect(x, y, 1, 1); }
-        this.mini = c;
-      }
-      ctx.drawImage(this.mini, R.W - mw - 14, 50, mw, mw);
-      ctx.fillStyle = '#fff'; ctx.fillRect(R.W - mw - 14 + pl.x / T * s - 2, 50 + pl.y / T * s - 2, 4, 4);
-      ctx.globalAlpha = 1;
-    },
-  };
-}
-
-function gameRunner3D(R) {
-  const P = R.pal, C = R.CFG, g3 = Nx3D(R.ctx);
-  let lane, x, y, vy, z, obs, coins, speed, nextZ;
-  g3.cam.fog = P.bg2; g3.cam.far = 80;
-  function gen() {
-    while (nextZ < z + 90) {
-      nextZ += 7 + R.rng() * 7 - Math.min(4, speed / 20);
-      const l = Math.floor(R.rng() * 3) - 1, tall = R.rng() < 0.4;
-      obs.push({ l, z: nextZ, h: tall ? 2.4 : 0.9 });
-      if (R.rng() < 0.6) { const cl = (l + 1 + Math.floor(R.rng() * 2)) % 3 - 1; for (let i = 0; i < 4; i++) coins.push({ l: cl, z: nextZ + i * 1.6, got: false }); }
-    }
-  }
-  return {
-    reset() { lane = 0; x = 0; y = 0; vy = 0; z = 0; obs = []; coins = []; speed = 14 + C.difficulty * 3; nextZ = 22; gen(); },
-    update(dt) {
-      if (R.hit('left')) lane = Math.max(-1, lane - 1);
-      if (R.hit('right')) lane = Math.min(1, lane + 1);
-      if ((R.hit('up') || R.hit('action')) && y <= 0) { vy = 9.5; R.sfx('jump'); }
-      vy -= 26 * dt; y = Math.max(0, y + vy * dt); if (y === 0) vy = Math.max(0, vy);
-      x += (lane * 2.2 - x) * Math.min(1, dt * 14);
-      speed += dt * 0.35; z += speed * dt;
-      R.score = Math.floor(z) + coins.filter(c => c.got).length * 10;
-      for (const c of coins) if (!c.got && Math.abs(c.z - z) < 0.8 && c.l === lane && y < 1.4) { c.got = true; R.sfx('coin'); }
-      for (const o of obs) if (Math.abs(o.z - z) < 0.7 && Math.abs(o.l * 2.2 - x) < 1.2 && y < o.h) { R.shake(0.5); R.sfx('hit'); R.over(); }
-      obs = obs.filter(o => o.z > z - 5); coins = coins.filter(c => c.z > z - 5);
-      gen();
-    },
-    draw(ctx) {
-      const g = ctx.createLinearGradient(0, 0, 0, R.H); g.addColorStop(0, P.bg1); g.addColorStop(1, P.bg2);
-      ctx.fillStyle = g; ctx.fillRect(0, 0, R.W, R.H);
-      const cam = g3.cam; cam.x = x * 0.6; cam.y = 3.4; cam.z = z - 7; cam.pitch = 0.28; cam.yaw = 0;
-      g3.begin(R.W, R.H);
-      const seg = 4, z0 = Math.floor(z / seg) * seg;
-      for (let i = -1; i < 20; i++) {
-        const zz = z0 + i * seg;
-        g3.poly([[-3.4, 0, zz], [3.4, 0, zz], [3.4, 0, zz + seg], [-3.4, 0, zz + seg]], (i + z0 / seg) % 2 ? P.ground : P.top, [0, 1, 0]);
-        g3.box(-4.2, 0, zz + seg / 2, 0.6, 0.8 + ((zz * 13) % 5) * 0.4, seg * 0.9, P.deco);
-        g3.box(4.2, 0, zz + seg / 2, 0.6, 0.8 + ((zz * 7) % 5) * 0.4, seg * 0.9, P.deco);
-      }
-      for (const o of obs) g3.box(o.l * 2.2, 0, o.z, 1.7, o.h, 0.9, P.enemy);
-      for (const c of coins) if (!c.got) g3.box(c.l * 2.2, 0.8 + Math.sin(c.z + R.time * 4) * 0.15, c.z, 0.5, 0.5, 0.2, P.coin);
-      if (R.state !== 'over') { g3.box(x, y, z, 0.9, 1.3, 0.9, P.player); g3.box(x, y + 1.3, z, 0.6, 0.5, 0.6, P.accent); }
-      g3.flush();
-    },
-  };
-}
-
-function gameArena3D(R) {
-  const P = R.pal, C = R.CFG, g3 = Nx3D(R.ctx), S = 14;
-  let pl, orbs, foes, pillars, t;
-  g3.cam.fog = P.bg2; g3.cam.far = 60;
-  function spot() { return { x: (R.rng() - 0.5) * S * 1.8, z: (R.rng() - 0.5) * S * 1.8 }; }
-  return {
-    reset() {
-      pl = { x: 0, z: 0, vx: 0, vz: 0, yaw: 0 };
-      const r = nxRng(C.seed); pillars = [];
-      for (let i = 0; i < 7; i++) { const p = { x: (r() - 0.5) * S * 1.6, z: (r() - 0.5) * S * 1.6, h: 1 + r() * 3 }; if (Math.hypot(p.x, p.z) > 3) pillars.push(p); }
-      orbs = Array.from({ length: 4 }, spot); foes = []; t = 3;
-    },
-    update(dt) {
-      const k = R.input();
-      if (k.left) pl.yaw -= 2.6 * dt; if (k.right) pl.yaw += 2.6 * dt;
-      const f = (k.up || k.action ? 1 : 0) - (k.down ? 0.6 : 0);
-      pl.vx += Math.sin(pl.yaw) * f * 28 * dt; pl.vz += Math.cos(pl.yaw) * f * 28 * dt;
-      pl.vx *= Math.pow(0.12, dt); pl.vz *= Math.pow(0.12, dt);
-      pl.x = Math.max(-S, Math.min(S, pl.x + pl.vx * dt)); pl.z = Math.max(-S, Math.min(S, pl.z + pl.vz * dt));
-      for (const p of pillars) { const d = Math.hypot(pl.x - p.x, pl.z - p.z); if (d < 1.2) { pl.x = p.x + (pl.x - p.x) / d * 1.2; pl.z = p.z + (pl.z - p.z) / d * 1.2; } }
-      for (const o of orbs) if (Math.hypot(o.x - pl.x, o.z - pl.z) < 1) { R.add(10); R.sfx('coin'); Object.assign(o, spot()); }
-      t -= dt;
-      if (t <= 0) { t = Math.max(1.5, 5 - R.time * 0.04 - C.difficulty * 0.5); const a = R.rng() * 7; foes.push({ x: Math.cos(a) * S, z: Math.sin(a) * S, sp: 2.2 + R.rng() * 1.5 + C.difficulty * 0.4 }); }
-      for (const e of foes) {
-        const d = Math.hypot(pl.x - e.x, pl.z - e.z) || 1; e.x += (pl.x - e.x) / d * e.sp * dt; e.z += (pl.z - e.z) / d * e.sp * dt;
-        if (d < 0.9) { R.sfx('hit'); R.shake(0.4); R.over(); }
-      }
-    },
-    draw(ctx) {
-      const g = ctx.createLinearGradient(0, 0, 0, R.H); g.addColorStop(0, P.bg1); g.addColorStop(1, P.bg2);
-      ctx.fillStyle = g; ctx.fillRect(0, 0, R.W, R.H);
-      const cam = g3.cam; cam.yaw = pl.yaw; cam.pitch = 0.45;
-      cam.x = pl.x - Math.sin(pl.yaw) * 7; cam.z = pl.z - Math.cos(pl.yaw) * 7; cam.y = 5.5;
-      g3.begin(R.W, R.H);
-      for (let i = -S; i < S; i += 4) for (let j = -S; j < S; j += 4) g3.poly([[i, 0, j], [i + 4, 0, j], [i + 4, 0, j + 4], [i, 0, j + 4]], ((i + j) / 4) % 2 ? P.ground : P.top, [0, 1, 0]);
-      for (let i = -S; i < S; i += 2) { g3.box(i + 1, 0, -S - 0.5, 2, 0.8, 0.4, P.deco); g3.box(i + 1, 0, S + 0.5, 2, 0.8, 0.4, P.deco); g3.box(-S - 0.5, 0, i + 1, 0.4, 0.8, 2, P.deco); g3.box(S + 0.5, 0, i + 1, 0.4, 0.8, 2, P.deco); }
-      for (const p of pillars) g3.box(p.x, 0, p.z, 1.2, p.h, 1.2, P.deco);
-      for (const o of orbs) g3.box(o.x, 0.4 + Math.sin(R.time * 3 + o.x) * 0.2, o.z, 0.5, 0.5, 0.5, P.coin);
-      for (const e of foes) { g3.box(e.x, 0, e.z, 0.9, 0.9, 0.9, P.enemy); }
-      if (R.state !== 'over') { g3.box(pl.x, 0, pl.z, 0.9, 1.1, 0.9, P.player); g3.box(pl.x + Math.sin(pl.yaw) * 0.45, 0.6, pl.z + Math.cos(pl.yaw) * 0.45, 0.3, 0.3, 0.3, P.accent); }
-      g3.flush();
-    },
-  };
-}
-
-/* ---- 1.5: racing, match-3 puzzle and tower defense ---- */
-
-function gameRacer(R) {
-  const P = R.pal, C = R.CFG, N = 96, WIDTH = 120;
-  let track, cars, me, lapsToWin, zoom, finishOrder;
-  function build() {
-    const n = nxNoise(C.seed), r0 = 900;
-    track = [];
-    for (let i = 0; i < N; i++) {
-      const a = i / N * Math.PI * 2, r = r0 * (0.75 + 0.5 * n(Math.cos(a) * 1.3 + 5, Math.sin(a) * 1.3 + 5));
-      track.push({ x: Math.cos(a) * r * 1.25, y: Math.sin(a) * r });
-    }
-  }
-  function nearest(car) {
-    let best = car.idx, bd = Infinity;
-    for (let k = -6; k <= 10; k++) {
-      const i = (car.idx + k + N) % N, p = track[i], d = (p.x - car.x) ** 2 + (p.y - car.y) ** 2;
-      if (d < bd) { bd = d; best = i; }
-    }
-    return { i: best, d: Math.sqrt(bd) };
-  }
-  function makeCar(off, color, ai) {
-    const p = track[0], q = track[1], a = Math.atan2(q.y - p.y, q.x - p.x);
-    return { x: p.x - Math.sin(a) * off, y: p.y + Math.cos(a) * off, a, v: 0, idx: 0, lap: 0, color, ai, skill: ai ? 0.86 + R.rng() * 0.1 + C.difficulty * 0.03 : 1, done: false };
-  }
-  const progress = c => c.lap * N + c.idx;
-  function step(c, dt, k) {
-    const max = 360 * c.skill, near = nearest(c), off = near.d > WIDTH / 2;
-    if (c.ai) {
-      const tgt = track[(near.i + 4) % N];
-      let da = Math.atan2(tgt.y - c.y, tgt.x - c.x) - c.a;
-      da = Math.atan2(Math.sin(da), Math.cos(da));
-      c.a += Math.max(-2.6, Math.min(2.6, da * 4)) * dt;
-      c.v += (max * (1 - Math.min(0.5, Math.abs(da))) - c.v) * dt * 1.5;
-    } else {
-      if (k.up || k.action) c.v += 420 * dt; else c.v *= Math.pow(0.5, dt);
-      if (k.down) c.v -= 520 * dt;
-      const steer = (k.right ? 1 : 0) - (k.left ? 1 : 0);
-      c.a += steer * 2.8 * dt * Math.min(1, Math.abs(c.v) / 120) * Math.sign(c.v || 1);
-      c.v = Math.max(-120, Math.min(off ? max * 0.45 : max, c.v));
-    }
-    c.x += Math.cos(c.a) * c.v * dt; c.y += Math.sin(c.a) * c.v * dt;
-    const n2 = nearest(c);
-    if (n2.i < 10 && c.idx > N - 10) { c.lap++; if (!c.ai && c.lap > 0 && c.lap < lapsToWin) { R.flash('Varv ' + (c.lap + 1) + '/' + lapsToWin); R.sfx('power'); } }
-    else if (n2.i > N - 10 && c.idx < 10) c.lap--;
-    c.idx = n2.i;
-    if (c.lap >= lapsToWin && !c.done) { c.done = true; finishOrder.push(c); }
-  }
-  return {
-    reset() {
-      build(); lapsToWin = 3; finishOrder = [];
-      cars = [makeCar(-30, P.player, false), makeCar(30, P.enemy, true), makeCar(0, P.accent, true)];
-      cars[2].x -= Math.cos(cars[2].a) * 60; cars[2].y -= Math.sin(cars[2].a) * 60;
-      me = cars[0];
-      if (C.demo) { me.ai = true; me.skill = 1.02; }  // attract mode: the player car drives itself
-    },
-    resize() { zoom = Math.min(1, Math.min(R.W, R.H) / 650) * (C.demo ? 1.8 : 1); },
-    hud() {
-      const pos = cars.slice().sort((a, b) => progress(b) - progress(a)).indexOf(me) + 1;
-      R.text('Varv ' + Math.min(lapsToWin, me.lap + 1) + '/' + lapsToWin + '   ·   Plats ' + pos + '/3   ·   ' + R.time.toFixed(1) + ' s', R.W / 2, 28, 18, '#fff', 'center');
-    },
-    update(dt) {
-      const k = R.input();
-      cars.forEach(c => step(c, dt, c.ai ? null : k));
-      for (let i = 0; i < cars.length; i++) for (let j = i + 1; j < cars.length; j++) {
-        const a = cars[i], b = cars[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
-        if (d < 34 && d > 0) { const push = (34 - d) / 2; a.x -= dx / d * push; a.y -= dy / d * push; b.x += dx / d * push; b.y += dy / d * push; a.v *= 0.97; b.v *= 0.97; }
-      }
-      R.score = Math.max(0, Math.floor(progress(me) * 5));
-      if (me.done) {
-        const place = finishOrder.indexOf(me) + 1;
-        R.score += [0, 1500, 800, 300][place] + Math.max(0, Math.floor(600 - R.time * 5));
-        if (place === 1) R.win('Du vann loppet!'); else { R.flash('Plats ' + place + ' – försök igen!', 3); R.over(); }
-      }
-    },
-    draw(ctx) {
-      ctx.fillStyle = P.bg2; ctx.fillRect(0, 0, R.W, R.H);
-      ctx.save();
-      ctx.translate(R.W / 2, R.H / 2); ctx.scale(zoom || 1, zoom || 1); ctx.translate(-me.x, -me.y);
-      ctx.fillStyle = 'rgba(255,255,255,.04)';
-      for (let x = Math.floor((me.x - 1200) / 120) * 120; x < me.x + 1200; x += 120) for (let y = Math.floor((me.y - 1200) / 120) * 120; y < me.y + 1200; y += 120) if (((x + y) / 120) % 2 === 0) ctx.fillRect(x, y, 120, 120);
-      const path = () => { ctx.beginPath(); track.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); };
-      ctx.lineJoin = 'round';
-      path(); ctx.strokeStyle = '#fff'; ctx.lineWidth = WIDTH + 14; ctx.stroke();
-      path(); ctx.strokeStyle = P.ground; ctx.lineWidth = WIDTH; ctx.stroke();
-      path(); ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 3; ctx.setLineDash([26, 26]); ctx.stroke(); ctx.setLineDash([]);
-      const s0 = track[0], s1 = track[1], sa = Math.atan2(s1.y - s0.y, s1.x - s0.x) + Math.PI / 2;
-      ctx.save(); ctx.translate(s0.x, s0.y); ctx.rotate(sa);
-      for (let i = -6; i < 6; i++) { ctx.fillStyle = i % 2 ? '#fff' : '#111'; ctx.fillRect(i * WIDTH / 12, -6, WIDTH / 12, 12); }
-      ctx.restore();
-      for (const c of cars) {
-        ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.a);
-        ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(-18, -9, 40, 22);
-        ctx.fillStyle = c.color; ctx.beginPath(); ctx.roundRect(-20, -11, 40, 22, 6); ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fillRect(2, -8, 8, 16);
-        ctx.fillStyle = '#111'; ctx.fillRect(-16, -14, 9, 4); ctx.fillRect(-16, 10, 9, 4); ctx.fillRect(8, -14, 9, 4); ctx.fillRect(8, 10, 9, 4);
-        ctx.restore();
-      }
-      ctx.restore();
-    },
-  };
-}
-
-function gameMatch3(R) {
-  const P = R.pal, C = R.CFG, N = 8, TYPES = 6;
-  // fixed, high-contrast gem colours (theme colours can be too close to each other)
-  const COLS = ['#ff4d6d', '#ffd23f', '#3a86ff', '#9b5de5', '#2ec4b6', '#ffffff'];
-  let grid, cell, ox, oy, sel, cursor, moves, goal, busy, combo, swapAnim;
-  const rnd = () => Math.floor(R.rng() * TYPES);
-  function fresh() {
-    grid = [];
-    for (let r = 0; r < N; r++) { grid.push([]); for (let c = 0; c < N; c++) { let t; do { t = rnd(); } while ((c > 1 && grid[r][c - 1].t === t && grid[r][c - 2].t === t) || (r > 1 && grid[r - 1][c].t === t && grid[r - 2][c].t === t)); grid[r].push({ t, off: -(N - r) * 1.2 - R.rng() }); } }
-  }
-  function matches() {
-    const hit = new Set();
-    for (let r = 0; r < N; r++) for (let c = 0; c < N - 2; c++) { const t = grid[r][c].t; if (t >= 0 && grid[r][c + 1].t === t && grid[r][c + 2].t === t) { hit.add(r * N + c); hit.add(r * N + c + 1); hit.add(r * N + c + 2); } }
-    for (let c = 0; c < N; c++) for (let r = 0; r < N - 2; r++) { const t = grid[r][c].t; if (t >= 0 && grid[r + 1][c].t === t && grid[r + 2][c].t === t) { hit.add(r * N + c); hit.add((r + 1) * N + c); hit.add((r + 2) * N + c); } }
-    return hit;
-  }
-  function resolve() {
-    const hit = matches();
-    if (!hit.size) { busy = 0; combo = 0; if (moves <= 0 && R.score < goal) R.over(); return false; }
-    combo++;
-    hit.forEach(k => { const r = Math.floor(k / N), c = k % N; R.burst(ox + c * cell + cell / 2, oy + r * cell + cell / 2, COLS[grid[r][c].t], 6); grid[r][c].t = -1; });
-    R.add(hit.size * 10 * combo); R.sfx(combo > 1 ? 'power' : 'coin');
-    if (combo > 1) R.flash('Kombo x' + combo + '!');
-    for (let c = 0; c < N; c++) {
-      let write = N - 1;
-      for (let r = N - 1; r >= 0; r--) if (grid[r][c].t >= 0) { const g = grid[r][c]; grid[write][c] = { t: g.t, off: g.off + (r - write) }; write--; }
-      for (let r = write; r >= 0; r--) grid[r][c] = { t: rnd(), off: r - write - 1.5 };
-    }
-    busy = 0.35;
-    if (R.score >= goal) R.win('Målet nått!');
-    return true;
-  }
-  function trySwap(a, b) {
-    const ga = grid[a.r][a.c], gb = grid[b.r][b.c];
-    grid[a.r][a.c] = gb; grid[b.r][b.c] = ga;
-    if (matches().size) { moves--; swapAnim = null; resolve(); }
-    else { grid[a.r][a.c] = ga; grid[b.r][b.c] = gb; swapAnim = { a, b, t: 0.25 }; R.sfx('hit'); }
-  }
-  function pick(p) {
-    if (busy > 0) return;
-    if (!sel) { sel = p; R.sfx('talk'); return; }
-    if (Math.abs(sel.r - p.r) + Math.abs(sel.c - p.c) === 1) trySwap(sel, p);
-    sel = null;
-  }
-  return {
-    reset() { fresh(); sel = null; cursor = { r: 3, c: 3 }; moves = 25 - C.difficulty * 3; goal = 1200 + C.difficulty * 400; busy = 0.6; combo = 0; swapAnim = null; },
-    resize() { cell = Math.floor(Math.min(R.W - 20, R.H - 120) / N); ox = Math.floor((R.W - cell * N) / 2); oy = Math.floor((R.H - cell * N) / 2) + 20; },
-    hud() {
-      R.text('Drag ' + moves + '   ·   Mål ' + goal, R.W / 2, 28, 18, '#fff', 'center');
-      const w = Math.min(300, R.W * 0.5), f = Math.min(1, R.score / goal);
-      R.ctx.fillStyle = 'rgba(255,255,255,.15)'; R.ctx.fillRect(R.W / 2 - w / 2, 46, w, 8);
-      R.ctx.fillStyle = P.coin; R.ctx.fillRect(R.W / 2 - w / 2, 46, w * f, 8);
-    },
-    update(dt) {
-      for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) { const g = grid[r][c]; if (g.off < 0) g.off = Math.min(0, g.off + dt * 9); else if (g.off > 0) g.off = Math.max(0, g.off - dt * 9); }
-      if (swapAnim) { swapAnim.t -= dt; if (swapAnim.t <= 0) swapAnim = null; }
-      if (busy > 0) { busy -= dt; if (busy <= 0) resolve(); }
-      if (C.demo && busy <= 0 && !swapAnim) {
-        this.demoT = (this.demoT || 0) - dt;
-        if (this.demoT <= 0) {
-          this.demoT = 0.9;
-          outer: for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) for (const [dr, dc] of [[0, 1], [1, 0]]) {
-            const r2 = r + dr, c2 = c + dc;
-            if (r2 >= N || c2 >= N) continue;
-            const a = grid[r][c], b = grid[r2][c2];
-            grid[r][c] = b; grid[r2][c2] = a;
-            const ok = matches().size > 0;
-            grid[r][c] = a; grid[r2][c2] = b;
-            if (ok && R.rng() < 0.35) { cursor = { r, c }; sel = null; moves++; trySwap({ r, c }, { r: r2, c: c2 }); break outer; }
-          }
-        }
-      }
-      const click = R.click();
-      if (click) {
-        const c = Math.floor((click.x - ox) / cell), r = Math.floor((click.y - oy) / cell);
-        if (r >= 0 && r < N && c >= 0 && c < N) { cursor = { r, c }; pick({ r, c }); }
-      }
-      if (R.hit('left')) cursor.c = Math.max(0, cursor.c - 1);
-      if (R.hit('right')) cursor.c = Math.min(N - 1, cursor.c + 1);
-      if (R.hit('up')) cursor.r = Math.max(0, cursor.r - 1);
-      if (R.hit('down')) cursor.r = Math.min(N - 1, cursor.r + 1);
-      if (R.hit('action')) pick({ r: cursor.r, c: cursor.c });
-    },
-    draw(ctx) {
-      const g0 = ctx.createLinearGradient(0, 0, 0, R.H); g0.addColorStop(0, P.bg1); g0.addColorStop(1, P.bg2);
-      ctx.fillStyle = g0; ctx.fillRect(0, 0, R.W, R.H);
-      ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.roundRect(ox - 8, oy - 8, cell * N + 16, cell * N + 16, 16); ctx.fill();
-      for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
-        const g = grid[r][c], x = ox + c * cell + cell / 2, y = oy + (r + g.off) * cell + cell / 2, s = cell * 0.36;
-        if ((r + c) % 2) { ctx.fillStyle = 'rgba(255,255,255,.04)'; ctx.fillRect(ox + c * cell, oy + r * cell, cell, cell); }
-        if (g.t < 0 || y < oy - cell / 2) continue;
-        let dx = 0;
-        if (swapAnim && ((swapAnim.a.r === r && swapAnim.a.c === c) || (swapAnim.b.r === r && swapAnim.b.c === c))) dx = Math.sin(swapAnim.t * 60) * 4;
-        ctx.save(); ctx.translate(x + dx, y);
-        ctx.fillStyle = COLS[g.t]; ctx.beginPath();
-        const t = g.t;
-        if (t === 0) ctx.arc(0, 0, s, 0, 7);
-        else if (t === 1) { ctx.moveTo(0, -s); ctx.lineTo(s, 0); ctx.lineTo(0, s); ctx.lineTo(-s, 0); }
-        else if (t === 2) ctx.roundRect(-s * 0.85, -s * 0.85, s * 1.7, s * 1.7, s * 0.3);
-        else if (t === 3) { for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; ctx.lineTo(Math.cos(a) * s, Math.sin(a) * s); } }
-        else if (t === 4) { ctx.moveTo(0, -s); ctx.lineTo(s * 0.95, s * 0.8); ctx.lineTo(-s * 0.95, s * 0.8); }
-        else { for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 - Math.PI / 2, rr = i % 2 ? s * 0.45 : s; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } }
-        ctx.closePath(); ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.arc(-s * 0.3, -s * 0.35, s * 0.18, 0, 7); ctx.fill();
-        ctx.restore();
-      }
-      const box = (p, col) => { ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.strokeRect(ox + p.c * cell + 2, oy + p.r * cell + 2, cell - 4, cell - 4); };
-      box(cursor, 'rgba(255,255,255,.5)');
-      if (sel) box(sel, P.coin);
-      R.drawParticles();
-    },
-  };
-}
-
-function gameTowerDefense(R) {
-  const P = R.pal, C = R.CFG, GW = 16, GH = 10;
-  let path, cells, towers, foes, shots, gold, lives, wave, spawnLeft, spawnT, nextWaveT, cell, ox, oy, cursor;
-  const COST = 50, UP = 70, WAVES = 10;
-  function buildPath() {
-    const r = nxRng(C.seed);
-    path = []; cells = new Set();
-    let x = 0, y = 2 + Math.floor(r() * (GH - 4));
-    const add = () => { path.push({ x, y }); cells.add(x + ',' + y); };
-    add();
-    while (x < GW - 1) {
-      const run = 2 + Math.floor(r() * 3);
-      for (let i = 0; i < run && x < GW - 1; i++) { x++; add(); }
-      if (x >= GW - 1) break;
-      const ty = Math.max(1, Math.min(GH - 2, y + (r() < 0.5 ? -1 : 1) * (2 + Math.floor(r() * 3))));
-      while (y !== ty) { y += Math.sign(ty - y); add(); }
-    }
-  }
-  const center = p => ({ x: ox + p.x * cell + cell / 2, y: oy + p.y * cell + cell / 2 });
-  function place(gx, gy) {
-    if (gx < 0 || gy < 0 || gx >= GW || gy >= GH || cells.has(gx + ',' + gy)) return;
-    const t = towers.find(t => t.gx === gx && t.gy === gy);
-    if (t) {
-      if (t.lvl >= 3) return R.flash('Max nivå');
-      if (gold < UP) return R.flash('Behöver ' + UP + ' guld');
-      gold -= UP; t.lvl++; R.sfx('power'); R.flash('Torn nivå ' + t.lvl); return;
-    }
-    if (gold < COST) return R.flash('Behöver ' + COST + ' guld');
-    gold -= COST; towers.push({ gx, gy, lvl: 1, cd: 0, aim: 0 }); R.sfx('coin');
-  }
-  function startWave() { wave++; spawnLeft = 6 + wave * 2; spawnT = 0; if (wave > 1) R.flash('Våg ' + wave); }
-  return {
-    reset() { buildPath(); towers = []; foes = []; shots = []; gold = C.demo ? 400 : 120; lives = 20; wave = 0; nextWaveT = C.demo ? 0.5 : 3; spawnLeft = 0; cursor = { x: 3, y: 1 }; },
-    resize() { cell = Math.floor(Math.min((R.W - 20) / GW, (R.H - 110) / GH)); ox = Math.floor((R.W - cell * GW) / 2); oy = Math.floor((R.H - cell * GH) / 2) + 24; },
-    hud() {
-      R.text('Våg ' + Math.max(1, wave) + '/' + WAVES + '   ·   ♥ ' + lives + '   ·   🪙 ' + gold, R.W / 2, 28, 18, '#fff', 'center');
-      R.text('Klicka/tryck på gräset: torn ' + COST + ' · klicka på torn: uppgradera ' + UP, R.W / 2, R.H - 16, 13, 'rgba(255,255,255,.75)', 'center', '500');
-    },
-    update(dt) {
-      const cl = R.click();
-      if (cl) place(Math.floor((cl.x - ox) / cell), Math.floor((cl.y - oy) / cell));
-      if (R.hit('left')) cursor.x = Math.max(0, cursor.x - 1);
-      if (R.hit('right')) cursor.x = Math.min(GW - 1, cursor.x + 1);
-      if (R.hit('up')) cursor.y = Math.max(0, cursor.y - 1);
-      if (R.hit('down')) cursor.y = Math.min(GH - 1, cursor.y + 1);
-      if (R.hit('action')) place(cursor.x, cursor.y);
-      if (C.demo && gold >= COST) {
-        const p = path[2 + Math.floor(R.rng() * (path.length - 4))], gx = p.x + (R.rng() < 0.5 ? -1 : 1), gy = p.y + (R.rng() < 0.5 ? -1 : 1);
-        if (!towers.some(t => t.gx === gx && t.gy === gy)) place(gx, gy);
-      }
-      if (!spawnLeft && !foes.length) {
-        if (wave >= WAVES) { R.win('Alla vågor stoppade!'); return; }
-        nextWaveT -= dt; if (nextWaveT <= 0) { startWave(); nextWaveT = 4; }
-      }
-      if (spawnLeft > 0) { spawnT -= dt; if (spawnT <= 0) { spawnT = Math.max(0.35, 0.9 - wave * 0.05); spawnLeft--; const hp = 20 + wave * 14 + C.difficulty * 10; foes.push({ i: 0, f: 0, hp, max: hp, sp: 1.3 + wave * 0.06 + (wave % 3 === 0 ? 0.6 : 0), boss: wave % 5 === 0 && spawnLeft === 0 }); if (foes[foes.length - 1].boss) { foes[foes.length - 1].hp *= 8; foes[foes.length - 1].max *= 8; } } }
-      for (const e of foes) {
-        e.f += e.sp * dt * (e.boss ? 0.6 : 1);
-        while (e.f >= 1 && e.i < path.length - 1) { e.f -= 1; e.i++; }
-        if (e.i >= path.length - 1) { e.hp = 0; e.leaked = true; lives -= e.boss ? 5 : 1; R.shake(0.2); R.sfx('hit'); }
-      }
-      for (const t of towers) {
-        t.cd -= dt;
-        const c = center({ x: t.gx, y: t.gy }), range = cell * (2.2 + t.lvl * 0.5);
-        let best = null, bi = -1;
-        for (const e of foes) { if (e.hp <= 0) continue; const p = foePos(e), d = Math.hypot(p.x - c.x, p.y - c.y); if (d < range && e.i + e.f > bi) { bi = e.i + e.f; best = e; } }
-        if (best) { const p = foePos(best); t.aim = Math.atan2(p.y - c.y, p.x - c.x); if (t.cd <= 0) { t.cd = 0.7 / t.lvl; shots.push({ x: c.x, y: c.y, e: best, dmg: 8 * t.lvl + 4 }); R.sfx('shoot'); } }
-      }
-      for (const s of shots) {
-        if (s.e.hp <= 0) { s.dead = true; continue; }
-        const p = foePos(s.e), d = Math.hypot(p.x - s.x, p.y - s.y), v = 520 * dt;
-        if (d < v) { s.dead = true; s.e.hp -= s.dmg; if (s.e.hp <= 0) { gold += s.e.boss ? 80 : 8 + wave; R.add(s.e.boss ? 200 : 20); R.burst(p.x, p.y, P.enemy, 10); R.sfx('boom'); } }
-        else { s.x += (p.x - s.x) / d * v; s.y += (p.y - s.y) / d * v; }
-      }
-      shots = shots.filter(s => !s.dead); foes = foes.filter(e => e.hp > 0);
-      if (lives <= 0) R.over();
-    },
-    draw(ctx) {
-      ctx.fillStyle = P.bg1; ctx.fillRect(0, 0, R.W, R.H);
-      for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
-        ctx.fillStyle = cells.has(x + ',' + y) ? P.ground : ((x + y) % 2 ? P.top : nxShade(P.top, 0.9));
-        ctx.fillRect(ox + x * cell, oy + y * cell, cell + 1, cell + 1);
-      }
-      const end = center(path[path.length - 1]);
-      ctx.fillStyle = P.accent; ctx.beginPath(); ctx.arc(end.x, end.y, cell * 0.42, 0, 7); ctx.fill();
-      for (const t of towers) {
-        const c = center({ x: t.gx, y: t.gy });
-        ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.arc(c.x + 3, c.y + 4, cell * 0.38, 0, 7); ctx.fill();
-        ctx.fillStyle = P.player; ctx.beginPath(); ctx.arc(c.x, c.y, cell * 0.38, 0, 7); ctx.fill();
-        ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(t.aim); ctx.fillStyle = P.deco; ctx.fillRect(0, -cell * 0.08, cell * 0.45, cell * 0.16); ctx.restore();
-        for (let k = 0; k < t.lvl; k++) { ctx.fillStyle = P.coin; ctx.beginPath(); ctx.arc(c.x - cell * 0.2 + k * cell * 0.2, c.y + cell * 0.46, cell * 0.06, 0, 7); ctx.fill(); }
-      }
-      for (const e of foes) {
-        const p = foePos(e), r = cell * (e.boss ? 0.36 : 0.24);
-        ctx.fillStyle = P.enemy; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 7); ctx.fill();
-        ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(p.x - r, p.y - r - 8, r * 2, 4);
-        ctx.fillStyle = '#7ff0bf'; ctx.fillRect(p.x - r, p.y - r - 8, r * 2 * e.hp / e.max, 4);
-      }
-      ctx.fillStyle = P.coin; for (const s of shots) { ctx.beginPath(); ctx.arc(s.x, s.y, 4, 0, 7); ctx.fill(); }
-      ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2; ctx.strokeRect(ox + cursor.x * cell + 2, oy + cursor.y * cell + 2, cell - 4, cell - 4);
-      R.drawParticles();
-    },
-  };
-  function foePos(e) {
-    const a = center(path[e.i]), b = center(path[Math.min(path.length - 1, e.i + 1)]);
-    return { x: a.x + (b.x - a.x) * e.f, y: a.y + (b.y - a.y) * e.f };
-  }
-}
-
-</script>
-<script>
-/* Nexora Local: the offline generator. It reads the prompt for genre, theme,
- * mood and difficulty, then builds a playable game from the templates in
- * games.js. Also offline story/NPC/quest/dialog text, pixel sprites, low-poly
- * meshes, music and sound effects. */
+/* Nexora media: turns what the AI models return into files and sound.
+ * The AI decides the content – the mesh, the melody, the sound design – and
+ * this file only checks it and renders it: .glb/.obj for 3D models, WAV for
+ * music and sound effects. */
 (function () {
   'use strict';
 
-  function hash(str) {
-    let h = 2166136261;
-    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
-    return h >>> 0;
-  }
-  const esc = w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  // A word counts when it starts a word in the prompt ("orm" in "orm-spel", not in "plattformsspel").
-  const starts = (p, w) => new RegExp('(^|[^a-z0-9åäöéü])' + esc(w.trim())).test(p);
-  const has = (p, words) => words.some(w => starts(p, w));
-  // Genre score: 2 per word-start match, 1 per longer word found inside a compound ("rymdskjutare").
-  const score = (p, words) => words.reduce((n, w) => n + (starts(p, w) ? 2 : w.length >= 5 && p.includes(w) ? 1 : 0), 0);
-
-  const GENRES = [
-    { id: 'openworld', label: 'Open world-äventyr', d3: false, words: ['open world', 'open-world', 'öppen värld', 'utforska', 'rpg', 'äventyr', 'quest', 'uppdrag', 'zelda', 'kungarike'] },
-    { id: 'runner3d', label: '3D-löpare', d3: true, words: ['löpare', 'runner', 'subway', 'spring', 'endless'] },
-    { id: 'arena3d', label: '3D-arena', d3: true, words: ['arena', 'samla', 'collect', 'kula', 'orb'] },
-    { id: 'shooter', label: 'Rymdskjutare', d3: false, words: ['skjut', 'shoot', 'rymd', 'space', 'alien', 'skepp', 'laser', 'invaders', 'galax'] },
-    { id: 'snake', label: 'Orm', d3: false, words: ['orm', 'snake', 'mask'] },
-    { id: 'breakout', label: 'Blockkross', d3: false, words: ['breakout', 'block', 'tegel', 'brick', 'boll', 'arkanoid', 'krossa'] },
-    { id: 'racer', label: 'Racingspel', d3: false, words: ['racing', 'race', 'racer', 'bilspel', 'bilrace', 'rally', 'formel', 'gokart', 'varv', 'tävling', 'kapplöpning', 'motorbana'] },
-    { id: 'match3', label: 'Pusselspel', d3: false, words: ['pussel', 'puzzle', 'match', 'matcha', 'tre i rad', 'candy crush', 'juvel', 'bejeweled', 'byt plats'] },
-    { id: 'towerdefense', label: 'Tower defense', d3: false, words: ['tower defense', 'tower-defense', 'towerdefense', 'försvar', 'försvara', 'bygg torn', 'torn', 'vågor', 'invasion'] },
-    { id: 'dodger', label: 'Undvik-spel', d3: false, words: ['undvik', 'dodge', 'bil', 'car', 'väg', 'trafik', 'fall'] },
-    { id: 'collector', label: 'Samlarspel', d3: false, words: ['samla', 'collect', 'mynt', 'coin', 'diamant', 'gem', 'jaga', 'två spelare', '2 spelare', 'multiplayer', 'kompis'] },
-    { id: 'platformer', label: 'Plattformsspel', d3: false, words: ['plattform', 'platform', 'hoppa', 'jump', 'mario', 'ninja', 'hopp'] },
-  ];
-
-  const THEMES = [
-    { words: ['lava', 'vulkan', 'eld', 'fire', 'helvete', 'drake', 'dragon'], name: 'Lava', mood: 'dark', pal: { bg1: '#2a0a0a', bg2: '#6b1d0c', ground: '#3b1f1a', top: '#ff6a2b', player: '#ffd166', enemy: '#ff3b3b', coin: '#ffe45e', accent: '#ff9f1c', deco: '#ffb38a' } },
-    { words: ['is', 'snö', 'vinter', 'ice', 'snow', 'frost', 'pingvin', 'jul'], name: 'Is', mood: 'bright', pal: { bg1: '#cfeaff', bg2: '#6fa8dc', ground: '#e8f4ff', top: '#ffffff', player: '#ff5d8f', enemy: '#3a4fff', coin: '#ffd23f', accent: '#1e90ff', deco: '#ffffff' } },
-    { words: ['skog', 'forest', 'djungel', 'jungle', 'natur', 'träd', 'alv'], name: 'Skog', mood: 'bright', pal: { bg1: '#8fd694', bg2: '#2e6b3a', ground: '#4a8a3a', top: '#7bc950', player: '#ff7b54', enemy: '#8a3ab9', coin: '#ffd23f', accent: '#ffe066', deco: '#d8f3dc' } },
-    { words: ['hav', 'vatten', 'ocean', 'sea', 'under', 'fisk', 'fish', 'pirat', 'strand'], name: 'Hav', mood: 'bright', pal: { bg1: '#0b3d6b', bg2: '#0a6e8a', ground: '#d9b77a', top: '#f2d49b', player: '#ffb703', enemy: '#e63946', coin: '#ffe45e', accent: '#48cae4', deco: '#90e0ef' } },
-    { words: ['neon', 'cyber', 'synth', 'retro', 'framtid', 'future', 'robot', 'hacker'], name: 'Neon', mood: 'dark', pal: { bg1: '#0d0221', bg2: '#261447', ground: '#2e1a47', top: '#ff2a6d', player: '#05d9e8', enemy: '#ff2a6d', coin: '#f9f871', accent: '#d1f7ff', deco: '#7b2fff' } },
-    { words: ['godis', 'candy', 'söt', 'kaka', 'glass', 'rosa', 'enhörning', 'unicorn'], name: 'Godis', mood: 'bright', pal: { bg1: '#ffd6e8', bg2: '#ff8fc7', ground: '#b5838d', top: '#ffafcc', player: '#7b2cbf', enemy: '#3a86ff', coin: '#ffbe0b', accent: '#ff006e', deco: '#ffffff' } },
-    { words: ['spöke', 'ghost', 'skräck', 'horror', 'zombie', 'halloween', 'natt', 'mörk'], name: 'Skräck', mood: 'dark', pal: { bg1: '#0b0c10', bg2: '#1f2833', ground: '#2b2b2b', top: '#5c5470', player: '#c5c6c7', enemy: '#8ac926', coin: '#ff9f1c', accent: '#b5179e', deco: '#66fcf1' } },
-    { words: ['öken', 'desert', 'sand', 'pyramid', 'egypt', 'cowboy'], name: 'Öken', mood: 'bright', pal: { bg1: '#ffcf88', bg2: '#e07a3f', ground: '#c98b4a', top: '#f4c27a', player: '#3d5a80', enemy: '#9d0208', coin: '#fff3b0', accent: '#ffffff', deco: '#fff1d0' } },
-  ];
-  const SPACE = { name: 'Rymd', mood: 'dark', pal: { bg1: '#05060f', bg2: '#1a1446', ground: '#2c2a5a', top: '#6c63ff', player: '#4cc9f0', enemy: '#f72585', coin: '#ffd60a', accent: '#b8f2e6', deco: '#ffffff' } };
-  const DEFAULT = { name: 'Nexora', mood: 'bright', pal: { bg1: '#1b1740', bg2: '#4b2a8a', ground: '#2d2366', top: '#8c7bff', player: '#38e1ff', enemy: '#ff4d8d', coin: '#ffd23f', accent: '#b69cff', deco: '#c9c1ff' } };
-
-  const CONTROLS = {
-    platformer: ['left', 'right', 'up'], shooter: ['left', 'right', 'up', 'down', 'action'], snake: ['left', 'right', 'up', 'down'],
-    breakout: ['left', 'right', 'action'], dodger: ['left', 'right'], collector: ['left', 'right', 'up', 'down'],
-    openworld: ['left', 'right', 'up', 'down', 'action'], runner3d: ['left', 'right', 'up'], arena3d: ['left', 'right', 'up', 'down'],
-    racer: ['left', 'right', 'up', 'down'], match3: [], towerdefense: [],
-  };
-  const HELP = {
-    platformer: 'Pilar/WASD för att springa · Mellanslag/upp för att hoppa · hoppa på fiender',
-    shooter: 'Pilar/WASD för att flyga · Mellanslag för att skjuta',
-    snake: 'Pilar/WASD för att styra · ät och väx',
-    breakout: 'Vänster/höger för racketen · Mellanslag för att serva',
-    dodger: 'Vänster/höger för att väja · samla mynt',
-    collector: 'Pilar/WASD för att röra dig · samla, undvik jägarna',
-    openworld: 'Pilar/WASD för att gå · Mellanslag för att prata/slåss',
-    runner3d: 'Vänster/höger byter fil · upp/mellanslag hoppar',
-    arena3d: 'Vänster/höger svänger · upp kör framåt',
-    racer: 'Upp gasar · ner bromsar · vänster/höger styr · tre varv',
-    match3: 'Klicka två grannar för att byta plats · tre i rad · pilar + mellanslag går också',
-    towerdefense: 'Klicka på gräset för torn · klicka på torn för att uppgradera · stoppa 10 vågor',
-  };
-  const TEMPLATE_FN = {
-    platformer: 'gamePlatformer', shooter: 'gameShooter', snake: 'gameSnake', breakout: 'gameBreakout', dodger: 'gameDodger',
-    collector: 'gameCollector', openworld: 'gameOpenWorld', runner3d: 'gameRunner3D', arena3d: 'gameArena3D',
-    racer: 'gameRacer', match3: 'gameMatch3', towerdefense: 'gameTowerDefense',
-  };
-
-  const NAMES_A = ['Stjärn', 'Skugg', 'Kristall', 'Neon', 'Storm', 'Drak', 'Mån', 'Pixel', 'Frost', 'Glöd', 'Kosmo', 'Turbo'];
-  const NAMES_B = ['jakten', 'flykten', 'riket', 'stormen', 'resan', 'kampen', 'legenden', 'rusningen', 'äventyret', 'mysteriet'];
-  const PEOPLE = ['Astrid', 'Björn', 'Freja', 'Ivar', 'Saga', 'Leif', 'Ylva', 'Tor', 'Ebba', 'Sigge', 'Tilde', 'Rune', 'Maja', 'Ove'];
-  const ROLES = ['smeden', 'fiskaren', 'magikern', 'bagaren', 'vakten', 'jägaren', 'bibliotekarien', 'handlaren', 'vandraren', 'drottningen'];
-  const ITEMS = ['kristaller', 'svampar', 'runstenar', 'fjädrar', 'guldmynt', 'stjärnfragment', 'äpplen', 'nycklar', 'pärlor', 'örter'];
-  const TRAITS = ['modig', 'misstänksam', 'glad', 'trött', 'nyfiken', 'grinig', 'hemlighetsfull', 'pratglad', 'klok', 'nervös'];
-  const WANTS = ['vill hitta sin försvunna bror', 'drömmer om att se havet', 'samlar på gamla kartor', 'vill bli den bästa i byn', 'gömmer ett gammalt svärd', 'letar efter en botemedel mot förbannelsen'];
-
-  function pick(r, arr) { return arr[Math.floor(r() * arr.length)]; }
-  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-  function rngOf(seed) {
-    let s = (seed >>> 0) || 1;
-    return () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  const num = (x, d) => (typeof x === 'number' && isFinite(x) ? x : d);
+  function hex(c) {
+    let s = String(c || '').trim().replace('#', '').toLowerCase();
+    if (s.length === 3) s = s.split('').map(x => x + x).join('');
+    return /^[0-9a-f]{6}$/.test(s) ? '#' + s : '#9aa4ff';
   }
 
-  function titleFrom(prompt, r, theme) {
-    const q = prompt.match(/["“”']([^"“”']{3,40})["“”']/);
-    if (q) return q[1];
-    const m = prompt.match(/(?:heter|kallat|kallas|named|called)\s+([A-ZÅÄÖa-zåäö0-9 ]{3,30})/i);
-    if (m) return cap(m[1].trim());
-    const pre = { Lava: 'Lava', Is: 'Is', Skog: 'Skogs', Hav: 'Havs', Neon: 'Neon', Godis: 'Godis', Skräck: 'Skugg', Öken: 'Öken', Rymd: 'Stjärn' }[theme.name];
-    return (pre && r() < 0.75 ? pre : pick(r, NAMES_A)) + pick(r, NAMES_B);
-  }
-
-  function analyze(prompt, opts) {
-    const p = ' ' + prompt.toLowerCase() + ' ';
-    const seed = hash(prompt + (opts.variant || ''));
-    const r = rngOf(seed);
-    const want3d = opts.dim === '3d' || (opts.dim !== '2d' && has(p, [' 3d', '3d-', 'tredimension']));
-    let genre = null, best = 0;
-    for (const g of GENRES) if (g.d3 === want3d) { const n = score(p, g.words); if (n > best) { best = n; genre = g; } }
-    if (!genre && want3d) genre = GENRES.find(g => g.id === (r() < 0.5 ? 'runner3d' : 'arena3d'));
-    if (!genre) genre = has(p, ['multiplayer', 'två spelare', '2 spelare']) ? GENRES.find(g => g.id === 'collector') : pick(r, GENRES.filter(g => !g.d3 && g.id !== 'openworld'));
-    if (genre.id === 'openworld' && !opts.allowOpenWorld) genre = GENRES.find(g => g.id === 'platformer');
-    let theme = THEMES.find(t => has(p, t.words));
-    if (!theme && (genre.id === 'shooter' || has(p, ['rymd', 'space', 'planet', 'stjärn']))) theme = SPACE;
-    theme = theme || DEFAULT;
-    const difficulty = has(p, ['svår', 'hard', 'brutal', 'omöjlig', 'utmanande']) ? 2 : has(p, ['lätt', 'easy', 'barn', 'kids', 'enkel', 'mysig']) ? 0 : 1;
-    return { seed, r, genre, theme, difficulty, title: titleFrom(prompt, r, theme) };
-  }
-
-  function questsFor(a, n) {
-    const r = rngOf(a.seed ^ 0xabc);
-    return Array.from({ length: n }, (_, i) => {
-      const giver = pick(r, PEOPLE) + ' ' + pick(r, ROLES), item = ITEMS[(a.seed + i * 3) % ITEMS.length], count = 3 + Math.floor(r() * 4);
-      return {
-        giver, item, count, text: 'Hitta ' + count + ' ' + item + '.',
-        lines: [
-          pick(r, ['Äntligen någon!', 'Hallå där, främling.', 'Vänta lite!', 'Du ser ut att kunna hjälpa till.']),
-          pick(r, ['Stormen i natt spred ut allt jag ägde.', 'Någon har stulit mina saker.', 'Jag behöver dem för ett viktigt recept.', 'Utan dem faller ' + a.theme.name.toLowerCase() + 'riket.']),
-        ],
-        thanks: pick(r, ['Du är en sann hjälte!', 'Tack! Nu kan jag äntligen sova.', 'Otroligt! Ta den här belöningen.']),
-      };
+  // ---------- 3D: validate the model JSON from Nexora 3D 1.5 ----------
+  function cleanMesh(m) {
+    if (!m || !Array.isArray(m.vertices) || !Array.isArray(m.faces)) throw new Error('Ogiltig 3D-modell i svaret.');
+    const vertices = m.vertices.filter(v => Array.isArray(v) && v.length >= 3).map(v => [num(+v[0], 0), num(+v[1], 0), num(+v[2], 0)]);
+    const faces = [], colors = [];
+    m.faces.forEach((f, i) => {
+      if (!Array.isArray(f) || f.length < 3 || f.some(k => !Number.isInteger(k) || k < 0 || k >= vertices.length)) return;
+      faces.push(f); colors.push(hex(m.colors && m.colors[i]));
     });
+    if (!faces.length) throw new Error('3D-modellen saknar giltiga ytor. Försök igen.');
+    return { name: String(m.name || 'Modell').slice(0, 60), vertices, faces, colors };
   }
 
-  function config(prompt, opts) {
-    const a = analyze(prompt, opts);
-    const g = a.genre.id;
-    return {
-      id: 'g' + a.seed.toString(36),
-      seed: a.seed, genre: g, genreLabel: a.genre.label, dim: a.genre.d3 ? '3d' : '2d',
-      title: a.title, tagline: a.genre.label + ' · ' + a.theme.name + '-tema',
-      palette: a.theme.pal, mood: a.theme.mood, difficulty: a.difficulty,
-      controls: CONTROLS[g], help: HELP[g], music: !!opts.music, sfx: opts.sfx !== false,
-      bpm: a.theme.mood === 'dark' ? 104 : 124,
-      players: opts.multiplayer && g === 'collector' ? 2 : 1,
-      doubleJump: /dubbel|double/.test(prompt.toLowerCase()) || a.difficulty === 0,
-      autofire: /auto/.test(prompt.toLowerCase()), wrap: /wrap|genom väggar/.test(prompt.toLowerCase()),
-      quests: g === 'openworld' ? questsFor(a, opts.quests ? 4 : 2) : undefined,
-      prompt,
-    };
-  }
-
-  function buildHtml(cfg, rt) {
-    const fn = rt.templates[TEMPLATE_FN[cfg.genre]];
-    const esc = s => String(s).replace(/[<&>"]/g, c => ({ '<': '&lt;', '&': '&amp;', '>': '&gt;', '"': '&quot;' }[c]));
-    const safeJson = JSON.stringify(cfg).replace(/</g, '\\u003c');
-    return '<!doctype html>\n<html lang="sv"><head><meta charset="utf-8">\n' +
-      '<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">\n' +
-      '<meta name="generator" content="Nexora">\n<title>' + esc(cfg.title) + '</title>\n' +
-      '<style>html,body{margin:0;height:100%;overflow:hidden;background:' + cfg.palette.bg1 + ';touch-action:none}canvas{display:block}</' + 'style>\n' +
-      '</head><body><canvas id="c"></canvas>\n<script>\n"use strict";\n' +
-      rt.core + '\n' + fn.toString() + '\nNexoraRuntime(' + safeJson + ', ' + fn.name + ');\n</' + 'script></body></html>\n';
-  }
-
-  // ---------- text generators ----------
-  function story(prompt) {
-    const a = analyze(prompt, { dim: '2d' }), r = rngOf(a.seed ^ 11);
-    const hero = pick(r, PEOPLE), villain = pick(r, ['Skuggkungen', 'Den Glömda', 'Järnhäxan', 'Mörkerdraken', 'Professor Kaos', 'Stormfursten']);
-    const place = a.theme.name + 'landet';
-    return [
-      '# ' + a.title,
-      '',
-      '**Premiss.** I ' + place + ' har ' + villain + ' stulit ' + pick(r, ['ljuset', 'de sju kristallerna', 'tiden', 'alla färger', 'kungens krona']) + '. ' + hero + ', en ' + pick(r, TRAITS) + ' ' + pick(r, ROLES).replace(/n$/, '') + ', är den enda som inte har fallit i sömn.',
-      '',
-      '**Akt 1 – Uppvaknandet.** ' + hero + ' vaknar i en tyst by och hittar ett meddelande: "' + pick(r, ['Följ stjärnorna norrut.', 'Lita inte på spegeln.', 'Nyckeln är under bron.']) + '"',
-      '',
-      '**Akt 2 – Resan.** Genom ' + pick(r, ['de brinnande slätterna', 'den frusna skogen', 'labyrinten av neon', 'det sjunkna templet']) + ' möter ' + hero + ' allierade, men också ett svek från ' + pick(r, PEOPLE) + '.',
-      '',
-      '**Akt 3 – Striden.** I ' + villain + 's torn avslöjas sanningen: ' + pick(r, ['skurken var en gång hjälte.', hero + ' och skurken är syskon.', 'allt var en dröm – men dröm kan bli verklighet.', 'kristallerna var aldrig stulna, bara gömda.']),
-      '',
-      '**Slut.** ' + pick(r, ['Ljuset återvänder och byn firar i tre dagar.', 'Hjälten blir ny väktare över landet.', 'Ett nytt hot anas vid horisonten…']),
-    ].join('\n');
-  }
-  function npcs(prompt, n) {
-    const a = analyze(prompt, { dim: '2d' }), r = rngOf(a.seed ^ 22);
-    return Array.from({ length: n || 4 }, () => {
-      const name = pick(r, PEOPLE);
-      return { name, role: pick(r, ROLES), trait: pick(r, TRAITS), want: pick(r, WANTS), line: pick(r, ['"Har du sett min katt?"', '"Här i ' + a.theme.name.toLowerCase() + 'landet händer inget… eller?"', '"Köp något eller gå vidare."', '"Jag vet mer än jag säger."']) };
-    });
-  }
-  function quests(prompt, n) {
-    const a = analyze(prompt, { dim: '2d' });
-    return questsFor(a, n || 3).map(q => ({ title: cap(q.item) + ' åt ' + q.giver, giver: q.giver, goal: q.text, reward: (q.count * 50) + ' guld', steps: [q.lines[1], 'Utforska och samla ' + q.count + ' ' + q.item + '.', 'Återvänd till ' + q.giver.split(' ')[0] + '.'] }));
-  }
-  function dialog(prompt) {
-    const list = npcs(prompt, 2), r = rngOf(hash(prompt) ^ 33);
-    const [x, y] = list;
-    return [
-      x.name + ': ' + pick(r, ['Du igen?', 'Äntligen är du här.', 'Shh, inte så högt!']),
-      y.name + ': ' + pick(r, ['Jag hörde vad som hände vid bron.', 'Vi har inte mycket tid.', 'Jag tog med kartan.']),
-      x.name + ': ' + pick(r, ['Då vet du att vi måste gå i natt.', 'Kartan ljuger. Den har alltid ljugit.', 'Bra. Men vem kan vi lita på?']),
-      y.name + ': ' + pick(r, ['Ingen. Bara varandra.', 'Smeden. Hon skyldar mig en tjänst.', 'Jag vet inte… men jag följer med.']),
-      x.name + ': ' + pick(r, ['Då kör vi.', 'Ta facklan. Vi går.', 'Om vi inte kommer tillbaka – säg inget till mamma.']),
-    ].join('\n');
-  }
-
-  // ---------- sprites (SVG), 1.5: four styles and animated sprite sheets ----------
-  const SPRITE_STYLES = ['pixel', 'platt', 'neon', 'retro'];
-  function sprite(prompt, size, opts) {
-    opts = opts || {};
-    const a = analyze(prompt, { dim: '2d' }), r = rngOf(a.seed ^ 44), n = size || 12, pal = a.theme.pal;
-    const style = SPRITE_STYLES.includes(opts.style) ? opts.style : 'pixel', frames = Math.max(1, Math.min(8, opts.frames || 1));
-    const half = Math.ceil(n / 2), grid = [];
-    for (let y = 0; y < n; y++) {
-      grid.push([]);
-      for (let x = 0; x < half; x++) {
-        const dx = (x - half + 0.5) / half, dy = (y - n / 2 + 0.5) / (n / 2);
-        const pr = 1.02 - Math.hypot(dx * 0.85, dy * 0.95) * 0.85;
-        grid[y][x] = r() < pr ? (r() < 0.75 ? 1 : 2) : 0;
-      }
-      // a solid spine keeps the figure in one piece
-      if (y > n * 0.15 && y < n * 0.85) grid[y][half - 1] = grid[y][half - 1] || 1;
-    }
-    const colors = style === 'retro' ? ['#306230', '#0f380f', '#8bac0f'] : style === 'neon' ? ['#05d9e8', '#ff2a6d', '#f9f871', '#b388ff'] : [pal.player, pal.accent, pal.enemy, pal.coin];
-    const c1 = pick(r, colors), c2 = pick(r, colors.filter(c => c !== c1));
-    const legRow = Math.floor(n * 0.72), ey = Math.floor(n * 0.4), W = n + 2;
-    let body = '';
-    for (let f = 0; f < frames; f++) {
-      const ox = f * W, bob = frames > 1 && f % 2 ? 1 : 0, step = frames > 1 ? [0, 1, 0, -1][f % 4] : 0;
-      let cells = '';
-      for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-        // legs: the lower rows shift sideways in opposite directions on each side (a walk cycle)
-        const legShift = y >= legRow ? (x < half ? step : -step) : 0;
-        const sx = x - legShift;
-        if (sx < 0 || sx >= n) continue;
-        const v = grid[y][sx < half ? sx : n - 1 - sx];
-        if (!v) continue;
-        const col = v === 1 ? c1 : c2, X = ox + x, Y = y + (y < legRow ? bob : 0);
-        if (style === 'platt') cells += '<rect x="' + (X + 0.04) + '" y="' + (Y + 0.04) + '" width="0.94" height="0.94" rx="0.32" fill="' + col + '"/>';
-        else cells += '<rect x="' + X + '" y="' + Y + '" width="1.02" height="1.02" fill="' + col + '"/>';
-      }
-      const eye = style === 'retro' ? '#0f380f' : '#fff';
-      cells += '<rect x="' + (ox + half - 3) + '" y="' + (ey + bob) + '" width="1" height="1" fill="' + eye + '"/><rect x="' + (ox + n - half + 2) + '" y="' + (ey + bob) + '" width="1" height="1" fill="' + eye + '"/>';
-      if (style === 'platt') cells = '<ellipse cx="' + (ox + n / 2) + '" cy="' + (n + 0.3) + '" rx="' + n * 0.35 + '" ry="0.5" fill="rgba(0,0,0,.25)"/>' + cells;
-      body += '<g>' + cells + '</g>';
-    }
-    let defs = '', bg = '', wrapA = '', wrapB = '';
-    if (style === 'neon') {
-      defs = '<defs><filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="0.45" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
-      bg = '<rect x="-1" y="-1" width="' + W * frames + '" height="' + W + '" fill="#0d0221"/>';
-      wrapA = '<g filter="url(#glow)">'; wrapB = '</g>';
-    } else if (style === 'retro') bg = '<rect x="-1" y="-1" width="' + W * frames + '" height="' + W + '" fill="#9bbc0f"/>';
-    const crisp = style === 'platt' || style === 'neon' ? '' : ' shape-rendering="crispEdges"';
-    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 ' + W * frames + ' ' + W + '"' + crisp + ' width="' + 256 * frames + '" height="256" data-frames="' + frames + '">' + defs + bg + wrapA + body + wrapB + '</svg>';
-  }
-
-  // ---------- low-poly meshes ----------
-  function mesh(prompt) {
-    const p = prompt.toLowerCase(), a = analyze(prompt, { dim: '3d' }), r = rngOf(a.seed ^ 55), pal = a.theme.pal;
-    const V = [], F = [], Cc = [];
-    function add(vs, fs, col) { const o = V.length; vs.forEach(v => V.push(v)); fs.forEach(f => { F.push(f.map(i => i + o)); Cc.push(typeof col === 'function' ? col() : col); }); }
-    function cyl(x, y, z, r0, r1, h, seg, col) {
-      const vs = [], fs = [];
-      for (let i = 0; i < seg; i++) { const t = i / seg * Math.PI * 2; vs.push([x + Math.cos(t) * r0, y, z + Math.sin(t) * r0]); vs.push([x + Math.cos(t) * r1, y + h, z + Math.sin(t) * r1]); }
-      for (let i = 0; i < seg; i++) { const j = (i + 1) % seg; fs.push([i * 2, j * 2, j * 2 + 1, i * 2 + 1]); }
-      const bot = [], top = []; for (let i = 0; i < seg; i++) { bot.push(i * 2); top.push(i * 2 + 1); }
-      fs.push(bot); if (r1 > 0.001) fs.push(top.reverse());
-      add(vs, fs, col);
-    }
-    function boxm(x, y, z, sx, sy, sz, col) {
-      const vs = []; for (let i = 0; i < 8; i++) vs.push([x + (i & 1 ? sx : -sx) / 2, y + (i & 2 ? sy : 0), z + (i & 4 ? sz : -sz) / 2]);
-      add(vs, [[0, 1, 3, 2], [4, 6, 7, 5], [0, 4, 5, 1], [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3]], col);
-    }
-    function rock(x, y, z, s, col) {
-      const vs = [], fs = [], seg = 7;
-      vs.push([x, y + s * (1.1 + r() * 0.4), z]);
-      for (let i = 0; i < seg; i++) { const t = i / seg * Math.PI * 2, rr = s * (0.8 + r() * 0.4); vs.push([x + Math.cos(t) * rr, y + s * 0.45 * r(), z + Math.sin(t) * rr]); }
-      for (let i = 0; i < seg; i++) { const j = (i + 1) % seg; fs.push([0, 1 + i, 1 + j]); }
-      const base = []; for (let i = 0; i < seg; i++) base.push(1 + i); fs.push(base);
-      add(vs, fs, col);
-    }
-    function sphere(x, y, z, rad, seg, rings, col, squash) {
-      const vs = [], fs = [];
-      for (let i = 0; i <= rings; i++) {
-        const ph = i / rings * Math.PI;
-        for (let j = 0; j < seg; j++) { const th = j / seg * Math.PI * 2; vs.push([x + Math.sin(ph) * Math.cos(th) * rad, y + Math.cos(ph) * rad * (squash || 1), z + Math.sin(ph) * Math.sin(th) * rad]); }
-      }
-      for (let i = 0; i < rings; i++) for (let j = 0; j < seg; j++) { const a = i * seg + j, b = i * seg + (j + 1) % seg; fs.push([a, b, b + seg, a + seg]); }
-      add(vs, fs, col);
-    }
-    let name;
-    if (has(p, ['träd', 'tree', 'gran', 'skog'])) {
-      name = 'Träd'; cyl(0, 0, 0, 0.18, 0.12, 1.2, 6, '#7a4a2a');
-      for (let i = 0; i < 3; i++) cyl(0, 0.9 + i * 0.55, 0, 0.95 - i * 0.25, 0.001, 1.0, 8, i % 2 ? '#2f8f46' : '#3fae57');
-    } else if (has(p, ['hus', 'house', 'stuga', 'hem'])) {
-      name = 'Hus'; boxm(0, 0, 0, 2, 1.3, 1.6, '#e9d8a6');
-      add([[-1.1, 1.3, -0.9], [1.1, 1.3, -0.9], [1.1, 1.3, 0.9], [-1.1, 1.3, 0.9], [0, 2.1, -0.9], [0, 2.1, 0.9]], [[0, 1, 4], [3, 5, 2], [0, 4, 5, 3], [1, 2, 5, 4]], '#ae2012');
-      boxm(0, 0, -0.81, 0.4, 0.8, 0.04, '#6b3e26'); boxm(0.6, 0.6, -0.81, 0.35, 0.35, 0.04, '#9bd1ff');
-    } else if (has(p, ['skepp', 'ship', 'rymdskepp', 'spaceship', 'raket', 'rocket'])) {
-      name = 'Rymdskepp'; cyl(0, 0, 0, 0.45, 0.001, 2.2, 8, pal.player); cyl(0, -0.4, 0, 0.3, 0.45, 0.4, 8, pal.accent);
-      add([[0, 0.2, 0], [1.2, -0.3, 0], [0, 1, 0]], [[0, 1, 2]], pal.enemy); add([[0, 0.2, 0], [-1.2, -0.3, 0], [0, 1, 0]], [[0, 1, 2]], pal.enemy);
-      add([[0, 0.2, 0], [0, -0.3, 1.2], [0, 1, 0]], [[0, 1, 2]], pal.enemy);
-    } else if (has(p, ['bil', 'car', 'racer'])) {
-      name = 'Bil'; boxm(0, 0.25, 0, 1.2, 0.45, 2.2, pal.enemy); boxm(0, 0.7, -0.1, 1.0, 0.4, 1.1, '#9bd1ff');
-      [[-0.62, 0.7], [0.62, 0.7], [-0.62, -0.7], [0.62, -0.7]].forEach(([x, z]) => cyl(x, 0, z, 0.26, 0.26, 0.2, 8, '#222'));
-    } else if (has(p, ['kristall', 'crystal', 'diamant', 'gem', 'ädelsten'])) {
-      name = 'Kristall';
-      for (let i = 0; i < 5; i++) { const a2 = r() * 6.28, d = i ? 0.35 + r() * 0.3 : 0; cyl(Math.cos(a2) * d, 0, Math.sin(a2) * d, 0.22 + r() * 0.1, 0.001, 0.9 + r() * 1.3, 6, () => pick(r, [pal.accent, pal.player, '#c8b6ff'])); }
-    } else if (has(p, ['torn', 'tower', 'slott', 'castle', 'borg'])) {
-      name = 'Torn'; cyl(0, 0, 0, 0.8, 0.7, 2.6, 10, '#b8b8c8');
-      for (let i = 0; i < 8; i++) { const t = i / 8 * 6.28; boxm(Math.cos(t) * 0.68, 2.6, Math.sin(t) * 0.68, 0.25, 0.3, 0.25, '#9a9ab0'); }
-      cyl(0, 2.6, 0, 0.6, 0.001, 1.1, 10, pal.enemy);
-    } else if (has(p, ['karaktär', 'character', 'gubbe', 'hjälte', 'hero', 'robot', 'figur'])) {
-      name = 'Karaktär'; boxm(0, 0.9, 0, 0.8, 0.9, 0.45, pal.player); boxm(0, 1.85, 0, 0.55, 0.55, 0.55, '#f2d2b0');
-      boxm(-0.18, 0, 0, 0.28, 0.9, 0.3, '#334'); boxm(0.18, 0, 0, 0.28, 0.9, 0.3, '#334');
-      boxm(-0.55, 1.05, 0, 0.22, 0.75, 0.25, pal.player); boxm(0.55, 1.05, 0, 0.22, 0.75, 0.25, pal.player);
-      boxm(-0.12, 2.0, -0.28, 0.08, 0.08, 0.02, '#111'); boxm(0.12, 2.0, -0.28, 0.08, 0.08, 0.02, '#111');
-    } else if (has(p, ['svärd', 'sword', 'kniv', 'blad'])) {
-      name = 'Svärd'; boxm(0, 0.9, 0, 0.16, 1.9, 0.05, '#dfe6ee'); add([[-0.08, 2.8, -0.025], [0.08, 2.8, -0.025], [0, 3.05, 0], [-0.08, 2.8, 0.025], [0.08, 2.8, 0.025]], [[0, 1, 2], [3, 2, 4], [0, 2, 3], [1, 4, 2]], '#dfe6ee');
-      boxm(0, 0.78, 0, 0.7, 0.12, 0.14, pal.coin); cyl(0, 0.2, 0, 0.06, 0.06, 0.58, 6, '#6b3e26'); sphere(0, 0.15, 0, 0.1, 8, 6, pal.coin);
-    } else if (has(p, ['kista', 'chest', 'skatt', 'treasure', 'låda'])) {
-      name = 'Skattkista'; boxm(0, 0, 0, 1.6, 0.8, 1.0, '#8b5a2b');
-      for (let i = 0; i < 6; i++) { const a0 = i / 6 * Math.PI, a1 = (i + 1) / 6 * Math.PI; add([[-0.8, 0.8 + Math.sin(a0) * 0.5, Math.cos(a0) * 0.5], [0.8, 0.8 + Math.sin(a0) * 0.5, Math.cos(a0) * 0.5], [0.8, 0.8 + Math.sin(a1) * 0.5, Math.cos(a1) * 0.5], [-0.8, 0.8 + Math.sin(a1) * 0.5, Math.cos(a1) * 0.5]], [[0, 1, 2, 3]], '#a0692f'); }
-      [-0.62, 0, 0.62].forEach(x => boxm(x, 0, 0, 0.1, 1.32, 1.04, pal.coin)); boxm(0, 0.55, -0.52, 0.22, 0.28, 0.06, '#ffd23f');
-    } else if (has(p, ['svamp', 'mushroom', 'flugsvamp'])) {
-      name = 'Svamp'; cyl(0, 0, 0, 0.28, 0.22, 1.0, 10, '#f3ead8');
-      sphere(0, 1.0, 0, 0.85, 14, 7, '#e63946', 0.55);
-      for (let i = 0; i < 7; i++) { const a2 = r() * 6.28, d = 0.2 + r() * 0.45; sphere(Math.cos(a2) * d, 1.0 + 0.44 - d * 0.35, Math.sin(a2) * d, 0.09, 6, 4, '#ffffff'); }
-    } else if (has(p, ['planet', 'måne', 'moon', 'värld', 'jordklot'])) {
-      name = 'Planet'; sphere(0, 1.3, 0, 1.0, 18, 10, pal.player);
-      const ring = [], rf = [];
-      for (let i = 0; i < 32; i++) { const t = i / 32 * Math.PI * 2; ring.push([Math.cos(t) * 1.8, 1.3 + Math.sin(t) * 0.25, Math.sin(t) * 1.8], [Math.cos(t) * 1.35, 1.3 + Math.sin(t) * 0.19, Math.sin(t) * 1.35]); }
-      for (let i = 0; i < 32; i++) { const j = (i + 1) % 32; rf.push([i * 2, j * 2, j * 2 + 1, i * 2 + 1]); }
-      add(ring, rf, pal.coin);
-    } else if (has(p, ['fisk', 'fish', 'haj', 'shark'])) {
-      name = 'Fisk'; sphere(0, 1, 0, 0.8, 12, 8, pal.accent, 0.55);
-      add([[0.7, 1, 0], [1.4, 1.5, 0], [1.4, 0.5, 0]], [[0, 1, 2]], pal.player); add([[-0.1, 1.4, 0], [0.3, 1.9, 0], [0.4, 1.35, 0]], [[0, 1, 2]], pal.player);
-      sphere(-0.55, 1.12, 0.3, 0.1, 6, 4, '#111'); sphere(-0.55, 1.12, -0.3, 0.1, 6, 4, '#111');
-    } else {
-      name = 'Sten'; rock(0, 0, 0, 1, '#8d8d99'); rock(0.9, 0, 0.4, 0.5, '#7a7a88'); rock(-0.7, 0, -0.5, 0.4, '#9a9aa8');
-    }
-    return { name, vertices: V.map(v => v.map(n => Math.round(n * 1000) / 1000)), faces: F, colors: Cc };
-  }
-
-  // Binary glTF 2.0 (.glb): flat-shaded triangles, one PBR material per face colour
-  // (vertex colours are ignored by several engines' default materials).
   function toGlb(m) {
     const lin = v => Math.pow(v / 255, 2.2), groups = new Map();
     m.faces.forEach((f, fi) => {
@@ -1938,15 +375,12 @@ function gameTowerDefense(R) {
     let o = b0 + 8; for (const c of chunks) { out.set(c, o); o += c.length; }
     return out;
   }
-
   function toObj(m) {
     let s = '# Nexora 3D 1.5 – ' + (m.name || 'modell') + '\n';
     m.vertices.forEach(v => { s += 'v ' + v.join(' ') + '\n'; });
     m.faces.forEach(f => { s += 'f ' + f.map(i => i + 1).join(' ') + '\n'; });
     return s;
   }
-
-  // ---------- audio rendering (music + sfx) to WAV ----------
   function wav(buffer) {
     const ch = buffer.numberOfChannels, sr = buffer.sampleRate, n = buffer.length;
     const out = new DataView(new ArrayBuffer(44 + n * ch * 2));
@@ -1959,77 +393,104 @@ function gameTowerDefense(R) {
     for (let i = 0; i < n; i++) for (let c = 0; c < ch; c++) { const v = Math.max(-1, Math.min(1, chans[c][i])); out.setInt16(o, v < 0 ? v * 0x8000 : v * 0x7fff, true); o += 2; }
     return new Blob([out], { type: 'audio/wav' });
   }
+
+  // ---------- music: plays the score the AI composed ----------
+  // score = { title, bpm, bars, tracks: [{ wave, volume, notes: [[beat, midi, beats, velocity?]] }], drums: [[beat, 'kick'|'snare'|'hat']] }
+  const WAVES = ['sine', 'square', 'triangle', 'sawtooth'];
+  const midiHz = n => 440 * Math.pow(2, (n - 69) / 12);
   function note(ctx, dest, f, t, dur, type, vol) {
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = type; o.frequency.value = f;
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0008, t + Math.max(0.03, dur));
     o.connect(g); g.connect(dest); o.start(t); o.stop(t + dur + 0.05);
   }
-  function drum(ctx, dest, t, kind) {
-    if (kind === 'kick') { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.15); g.gain.setValueAtTime(0.9, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3); o.connect(g); g.connect(dest); o.start(t); o.stop(t + 0.32); return; }
-    const len = kind === 'snare' ? 0.18 : 0.05, b = ctx.createBuffer(1, ctx.sampleRate * len, ctx.sampleRate), d = b.getChannelData(0);
+  function drum(ctx, dest, t, kind, vol) {
+    if (kind === 'kick') { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.15); g.gain.setValueAtTime(0.9 * vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3); o.connect(g); g.connect(dest); o.start(t); o.stop(t + 0.32); return; }
+    const len = kind === 'snare' ? 0.18 : 0.05, b = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * len), ctx.sampleRate), d = b.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
     const s = ctx.createBufferSource(), g = ctx.createGain(), hp = ctx.createBiquadFilter();
-    hp.type = 'highpass'; hp.frequency.value = kind === 'snare' ? 1200 : 7000; g.gain.value = kind === 'snare' ? 0.35 : 0.15;
+    hp.type = 'highpass'; hp.frequency.value = kind === 'snare' ? 1200 : 7000; g.gain.value = (kind === 'snare' ? 0.35 : 0.15) * vol;
     s.buffer = b; s.connect(hp); hp.connect(g); g.connect(dest); s.start(t);
   }
-  async function music(prompt, seconds) {
-    const a = analyze(prompt, { dim: '2d' }), r = rngOf(a.seed ^ 66), p = prompt.toLowerCase();
-    const dark = a.theme.mood === 'dark' || has(p, ['sorg', 'mörk', 'sad', 'boss', 'skräck', 'dramatisk']);
-    const bpm = has(p, ['snabb', 'fast', 'action', 'boss', 'energi']) ? 150 : has(p, ['lugn', 'calm', 'chill', 'mysig', 'meny']) ? 84 : 118;
-    const sr = 44100, len = seconds || 24, ctx = new OfflineAudioContext(2, sr * len, sr);
+  async function renderMusic(score, minSeconds) {
+    if (!score || !Array.isArray(score.tracks)) throw new Error('Ogiltigt musikstycke i svaret.');
+    const bpm = clamp(num(score.bpm, 120), 50, 220), beat = 60 / bpm;
+    let beats = clamp(Math.round(num(score.bars, 8)) * 4, 4, 256);
+    score.tracks.forEach(t => (t.notes || []).forEach(n => { beats = Math.max(beats, Math.ceil(num(n[0], 0) + num(n[2], 0))); }));
+    beats = Math.min(beats, 256);
+    const loop = beats * beat, reps = Math.max(1, Math.ceil((minSeconds || 0) / loop)), len = Math.min(90, loop * reps);
+    const sr = 44100, ctx = new OfflineAudioContext(2, Math.ceil(sr * len), sr);
     const master = ctx.createGain(); master.gain.value = 0.5; master.connect(ctx.destination);
-    const scale = dark ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
-    const prog = dark ? [0, 5, 3, 4] : pick(r, [[0, 4, 5, 3], [0, 3, 4, 4], [0, 5, 3, 4]]);
-    const root = 110 * Math.pow(2, Math.floor(r() * 7) / 12), beat = 60 / bpm;
-    const lead = pick(r, ['square', 'triangle', 'sawtooth']);
-    const motif = Array.from({ length: 8 }, () => (r() < 0.8 ? Math.floor(r() * 7) : null));
-    const f = deg => root * Math.pow(2, (scale[((deg % 7) + 7) % 7] + 12 * Math.floor(deg / 7)) / 12);
-    for (let bar = 0; bar * 4 * beat < len; bar++) {
-      const t0 = bar * 4 * beat, chord = prog[bar % 4];
-      [0, 2, 4].forEach(d => note(ctx, master, f(chord + d) * 2, t0, beat * 3.8, 'sine', 0.06));
-      for (let b = 0; b < 4; b++) {
-        note(ctx, master, f(chord) / 2, t0 + b * beat, beat * 0.9, 'triangle', 0.22);
-        drum(ctx, master, t0 + b * beat, b % 2 ? 'snare' : 'kick');
-        drum(ctx, master, t0 + b * beat + beat / 2, 'hat');
+    for (let r = 0; r < reps; r++) {
+      const t0 = r * loop;
+      for (const t of score.tracks.slice(0, 8)) {
+        const wave = WAVES.includes(t.wave) ? t.wave : 'triangle', vol = clamp(num(t.volume, 0.5), 0, 1) * 0.25;
+        for (const n of (t.notes || []).slice(0, 2000)) {
+          if (!Array.isArray(n)) continue;
+          const at = t0 + num(n[0], 0) * beat, pitch = clamp(num(n[1], 60), 20, 110);
+          if (at >= len) continue;
+          note(ctx, master, midiHz(pitch), at, clamp(num(n[2], 0.5), 0.05, 16) * beat, wave, vol * clamp(num(n[3], 1), 0, 1));
+        }
       }
-      if (bar >= 2) for (let i = 0; i < 8; i++) {
-        const m = motif[(i + bar * (bar % 3)) % 8];
-        if (m !== null) note(ctx, master, f(chord + m) * 4, t0 + i * beat / 2, beat * 0.45, lead, 0.07);
+      for (const d of (score.drums || []).slice(0, 2000)) {
+        if (!Array.isArray(d) || !['kick', 'snare', 'hat'].includes(d[1])) continue;
+        const at = t0 + num(d[0], 0) * beat;
+        if (at < len) drum(ctx, master, at, d[1], clamp(num(d[2], 1), 0, 1));
       }
     }
-    const buf = await ctx.startRendering();
-    return { blob: wav(buf), bpm, mood: dark ? 'moll' : 'dur', seconds: len };
+    return { blob: wav(await ctx.startRendering()), bpm, seconds: Math.round(len), title: String(score.title || '') };
   }
-  async function sfx(kind, seed) {
-    const sr = 44100, ctx = new OfflineAudioContext(1, sr * 0.8, sr), r = rngOf(hash(kind + seed));
-    const g = ctx.createGain(); g.gain.value = 0.7; g.connect(ctx.destination);
-    const o = ctx.createOscillator(), env = ctx.createGain(); o.connect(env); env.connect(g);
-    const j = 0.8 + r() * 0.4;
-    const set = (type, f0, f1, dur) => { o.type = type; o.frequency.setValueAtTime(f0 * j, 0); o.frequency.exponentialRampToValueAtTime(f1 * j, dur); env.gain.setValueAtTime(0.6, 0); env.gain.exponentialRampToValueAtTime(0.001, dur); o.start(0); o.stop(dur + 0.02); };
-    if (kind === 'hopp') set('square', 260, 780, 0.22);
-    else if (kind === 'mynt') { o.type = 'square'; o.frequency.setValueAtTime(988 * j, 0); o.frequency.setValueAtTime(1319 * j, 0.07); env.gain.setValueAtTime(0.5, 0); env.gain.exponentialRampToValueAtTime(0.001, 0.35); o.start(0); o.stop(0.4); }
-    else if (kind === 'laser') set('sawtooth', 1600, 120, 0.25);
-    else if (kind === 'powerup') { o.type = 'triangle'; [523, 659, 784, 1047, 1319].forEach((fq, i) => o.frequency.setValueAtTime(fq * j, i * 0.06)); env.gain.setValueAtTime(0.5, 0); env.gain.exponentialRampToValueAtTime(0.001, 0.5); o.start(0); o.stop(0.52); }
-    else if (kind === 'träff') set('sawtooth', 300, 50, 0.3);
-    else { // explosion
-      o.type = 'sine'; o.frequency.value = 60; env.gain.setValueAtTime(0.001, 0); o.start(0); o.stop(0.1);
-      const b = ctx.createBuffer(1, sr * 0.7, sr), d = b.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = (r() * 2 - 1) * Math.pow(1 - i / d.length, 2);
-      const s = ctx.createBufferSource(), lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(3000, 0); lp.frequency.exponentialRampToValueAtTime(200, 0.6);
-      s.buffer = b; s.connect(lp); lp.connect(g); s.start(0);
+
+  // ---------- sound effects: renders the sound design the AI wrote ----------
+  // spec = { name, layers: [{ wave: sine|square|triangle|sawtooth|noise, start, duration, freq: [from, to] | steps: [hz...],
+  //          volume, attack, filter: { type, freq: [from, to] } }] }
+  async function renderSfx(spec) {
+    if (!spec || !Array.isArray(spec.layers) || !spec.layers.length) throw new Error('Ogiltig ljudeffekt i svaret.');
+    const layers = spec.layers.slice(0, 8);
+    const len = clamp(Math.max.apply(null, layers.map(l => num(l.start, 0) + num(l.duration, 0.3))) + 0.05, 0.05, 3);
+    const sr = 44100, ctx = new OfflineAudioContext(1, Math.ceil(sr * len), sr);
+    const out = ctx.createGain(); out.gain.value = 0.8; out.connect(ctx.destination);
+    for (const l of layers) {
+      const t = clamp(num(l.start, 0), 0, 2.9), dur = clamp(num(l.duration, 0.3), 0.02, 3 - t), vol = clamp(num(l.volume, 0.6), 0, 1);
+      const env = ctx.createGain(), att = clamp(num(l.attack, 0.005), 0.001, dur / 2);
+      env.gain.setValueAtTime(0.0001, t); env.gain.linearRampToValueAtTime(vol, t + att); env.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+      let node = env;
+      if (l.filter && ['lowpass', 'highpass', 'bandpass'].includes(l.filter.type)) {
+        const f = ctx.createBiquadFilter(), fr = Array.isArray(l.filter.freq) ? l.filter.freq : [l.filter.freq, l.filter.freq];
+        f.type = l.filter.type; f.frequency.setValueAtTime(clamp(num(fr[0], 2000), 30, 18000), t); f.frequency.exponentialRampToValueAtTime(clamp(num(fr[1], fr[0] || 2000), 30, 18000), t + dur);
+        env.connect(f); node = f;
+      }
+      node.connect(out);
+      if (l.wave === 'noise') {
+        const b = ctx.createBuffer(1, Math.ceil(sr * dur), sr), d = b.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        const s = ctx.createBufferSource(); s.buffer = b; s.connect(env); s.start(t);
+        continue;
+      }
+      const o = ctx.createOscillator();
+      o.type = WAVES.includes(l.wave) ? l.wave : 'square';
+      if (Array.isArray(l.steps) && l.steps.length) {
+        const st = dur / l.steps.length;
+        l.steps.slice(0, 32).forEach((hz, i) => o.frequency.setValueAtTime(clamp(num(hz, 440), 20, 16000), t + i * st));
+      } else {
+        const fr = Array.isArray(l.freq) ? l.freq : [l.freq, l.freq];
+        o.frequency.setValueAtTime(clamp(num(fr[0], 440), 20, 16000), t);
+        o.frequency.exponentialRampToValueAtTime(clamp(num(fr[1], fr[0] || 440), 20, 16000), t + dur);
+      }
+      o.connect(env); o.start(t); o.stop(t + dur + 0.02);
     }
     return wav(await ctx.startRendering());
   }
 
-  window.NexoraLocal = { hash, analyze, config, buildHtml, story, npcs, quests, dialog, sprite, SPRITE_STYLES, mesh, toObj, toGlb, music, sfx, wav, GENRES, TEMPLATE_FN };
+  window.NexoraMedia = { cleanMesh, toGlb, toObj, wav, renderMusic, renderSfx };
 })();
 
 </script>
 <script>
-/* Nexora AI layer: maps the five Nexora models onto a provider.
+/* Nexora AI layer: maps the Nexora models onto a provider. Everything Nexora
+ * makes – games, images, 3D models, text, music and sound effects – is generated
+ * by one of these AI providers; there are no templates.
  *
- *   local     – Nexora Local, the offline generator in localgen.js (no key needed)
  *   anthropic – Claude via the Messages API, called straight from the app with the user's own key
  *   openai    – any OpenAI-compatible endpoint, e.g. the model trained in the Colab notebook
  *               and served with vLLM/Ollama, or a hosted GPT model
@@ -2042,15 +503,15 @@ function gameTowerDefense(R) {
   // 1.5: every 1-series model got an upgrade (see NEWS in app.js for the user-facing list).
   const MODELS = {
     flash: { name: 'Nexora Flash 1.5', short: 'Flash 1.5', tag: 'Snabb + självtest', kind: 'text', minTier: 0, selfTest: 1,
-      desc: 'Snabbast. Skriver spelet på sekunder, testkör det och rättar körfel en gång innan du får det.' },
+      desc: 'Snabbast. Skriver vilket spel du än beskriver på sekunder, testkör det och rättar körfel en gång innan du får det.' },
     pro: { name: 'Nexora Pro 1.5', short: 'Pro 1.5', tag: 'Bättre resultat, testar själv', kind: 'text', minTier: 1, selfTest: 2,
       desc: 'Större och mer polerade spel med högre ansträngning – testkörs och rättas upp till två gånger.' },
     core: { name: 'Nexora Core 1.5', short: 'Core 1.5', tag: 'Tänker, testar, förbättrar', kind: 'text', minTier: 2, selfTest: 3,
       desc: 'Ingen bryr sig om den – men den planerar spelet steg för steg, visar tankarna live och testar och förbättrar upp till tre gånger.' },
     image: { name: 'Nexora Image 1.5', short: 'Image 1.5', tag: 'Stilar, animation, PNG', kind: 'image', minTier: 1,
-      desc: 'Sprites i fyra stilar (pixel, platt, neon, retro), animerade sprite-ark och export som PNG eller SVG.' },
-    d3: { name: 'Nexora 3D 1.5', short: '3D 1.5', tag: 'Fler modeller, GLB-export', kind: 'mesh', minTier: 1,
-      desc: 'Low-poly 3D-modeller med färger, nu fler typer – och export som .glb för Godot, Unity och Blender, eller .obj.' },
+      desc: 'Ritar vad du än beskriver: sprites i fyra stilar (pixel, platt, neon, retro), animerade sprite-ark och export som PNG eller SVG.' },
+    d3: { name: 'Nexora 3D 1.5', short: '3D 1.5', tag: 'Vad som helst, GLB-export', kind: 'mesh', minTier: 1,
+      desc: 'Low-poly 3D-modeller av vad du än beskriver, med färger – och export som .glb för Godot, Unity och Blender, eller .obj.' },
     astryx: { name: 'Nexora Astryx 5 Pro', short: 'Astryx 5 Pro', tag: 'AI-agent', kind: 'agent', minTier: 0, agent: true,
       desc: 'Vår första AI-agent. Den planerar, skriver spelet, testkör det, tittar på resultatet, hittar buggar och rättar dem – helt själv – tills spelet fungerar. På datorn bygger den riktiga Godot-spel med Python i upp till två timmar, och i hyperrealistiskt läge av fotoskannade modeller.' },
   };
@@ -2069,7 +530,7 @@ function gameTowerDefense(R) {
   };
 
   const DEFAULT_SETTINGS = {
-    provider: 'local',
+    provider: 'anthropic',
     anthropicKey: '',
     openaiBase: 'https://api.openai.com/v1',
     openaiKey: '',
@@ -2079,6 +540,7 @@ function gameTowerDefense(R) {
 
   const GAME_SYSTEM = [
     'You are Nexora, an AI game studio. You write complete, polished, playable browser games.',
+    'Build exactly the game the user describes – any genre, mechanic, setting or mix of them, however unusual. Never swap the idea for a simpler or more common kind of game; if something is ambiguous, pick the most fun interpretation of what they asked for.',
     'Output exactly one HTML document inside a single ```html fenced block and nothing after it.',
     'Hard requirements:',
     '- Everything inline in that one file: no external scripts, fonts, images, CDNs or network requests. Draw graphics with canvas or inline SVG; make sound with the Web Audio API.',
@@ -2152,6 +614,9 @@ function gameTowerDefense(R) {
   }
 
   function apiError(msg) { const e = new Error(msg); e.nexora = true; return e; }
+  function noKey() { const e = apiError('Koppla in en AI först: lägg in din Anthropic API-nyckel under ⚙️ Inställningar.'); e.noKey = true; return e; }
+  // Is an AI connected? Nexora generates everything with AI, so nothing works without one.
+  const configured = s => (s.provider === 'anthropic' ? !!s.anthropicKey : s.provider === 'openai' ? !!s.openaiBase : false);
 
   async function httpError(res) {
     let detail = '';
@@ -2225,11 +690,11 @@ function gameTowerDefense(R) {
 
   function complete(settings, modelKey, system, user, cb, signal) {
     if (settings.provider === 'anthropic') {
-      if (!settings.anthropicKey) throw apiError('Lägg in din Anthropic API-nyckel under Inställningar, eller välj Nexora Local.');
+      if (!settings.anthropicKey) throw noKey();
       return anthropic(settings, modelKey, system, user, cb || {}, signal);
     }
     if (settings.provider === 'openai') return openai(settings, modelKey, system, user, cb || {}, signal);
-    throw apiError('Ingen AI-leverantör vald.');
+    throw noKey();
   }
 
   async function generateGame(settings, modelKey, prompt, opts, cb, signal) {
@@ -2253,6 +718,7 @@ function gameTowerDefense(R) {
     npc: 'Create 4 NPCs for this game in Swedish. For each: name, role, personality, what they want, a signature line. Markdown list.',
     quest: 'Design 3 quests for this game in Swedish. For each: title, quest giver, goal, steps, reward. Markdown.',
     dialog: 'Write a short dialogue scene (6-10 lines) between two characters in this game, in Swedish, formatted "Namn: replik".',
+    line: 'Write one short spoken line (one or two sentences) that a character in this game says out loud, in Swedish. Only the line itself: no name, no quotes, no stage directions.',
   };
   async function text(settings, modelKey, task, prompt, cb, signal) {
     const r = await complete(settings, modelKey, 'You are Nexora, a creative writing assistant for game developers. Answer only with the requested content.', TEXT_TASKS[task] + '\n\nGame: ' + prompt, cb, signal);
@@ -2281,6 +747,27 @@ function gameTowerDefense(R) {
     const m = extractJson(r.text);
     if (!Array.isArray(m.vertices) || !Array.isArray(m.faces)) throw apiError('Ogiltig 3D-modell i svaret.');
     return m;
+  }
+
+  // Music: the AI composes the score, NexoraMedia.renderMusic plays it.
+  async function music(settings, prompt, cb, signal) {
+    const r = await complete(settings, 'pro', 'You are Nexora\'s composer. You write original game music as note data.',
+      'Compose an original, loopable piece of game music for this description. It must loop seamlessly and suit the mood. ' +
+      'Use 8 to 16 bars in 4/4. Write 2 to 5 tracks (for example melody, harmony/pads, bass, arpeggio) with real musical structure: a memorable motif, a chord progression and variation. ' +
+      'Return only JSON: {"title": string (Swedish), "bpm": number, "bars": number, ' +
+      '"tracks": [{"name": string, "wave": "sine"|"square"|"triangle"|"sawtooth", "volume": 0-1, "notes": [[startBeat, midiNote, lengthInBeats, velocity0to1], ...]}], ' +
+      '"drums": [[beat, "kick"|"snare"|"hat", velocity0to1], ...]}. Beats count from 0; bar n starts at beat 4n.\n\nMusic: ' + prompt, cb, signal);
+    return extractJson(r.text);
+  }
+
+  // Sound effects: the AI designs the sound as synth layers, NexoraMedia.renderSfx renders it.
+  async function sfx(settings, prompt, cb, signal) {
+    const r = await complete(settings, 'flash', 'You are Nexora\'s sound designer. You design game sound effects as synthesizer layers.',
+      'Design this game sound effect. Combine 1 to 6 layers; each layer is an oscillator or noise with its own pitch movement, envelope and optional filter. Total length at most 2.5 s. ' +
+      'Return only JSON: {"name": string (Swedish), "layers": [{"wave": "sine"|"square"|"triangle"|"sawtooth"|"noise", "start": seconds, "duration": seconds, ' +
+      '"freq": [fromHz, toHz] or "steps": [hz, hz, ...] (an arpeggio over the duration), "volume": 0-1, "attack": seconds, ' +
+      '"filter": {"type": "lowpass"|"highpass"|"bandpass", "freq": [fromHz, toHz]} (optional)}]}.\n\nSound: ' + prompt, cb, signal);
+    return extractJson(r.text);
   }
 
   // ------------------------------------------------------------------ Astryx 5 Pro: the agent
@@ -2374,7 +861,7 @@ Always run the game at least once before finishing. Stay under about ten tool ca
   async function agent(settings, prompt, opts, hooks, signal) {
     const state = { html: null, title: null, summary: null, runs: 0, turns: 0 };
     if (settings.provider !== 'anthropic') return agentPipeline(settings, prompt, opts, hooks, signal, state);
-    if (!settings.anthropicKey) throw apiError('Lägg in din Anthropic API-nyckel under Inställningar, eller välj Nexora Local.');
+    if (!settings.anthropicKey) throw noKey();
     const messages = [{ role: 'user', content: gamePrompt(prompt, opts) }];
     for (state.turns = 1; state.turns <= 14; state.turns++) {
       const turn = await agentTurn(settings, messages, hooks, signal);
@@ -2522,7 +1009,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
 
   // exec(name, input) runs a tool on the desktop and returns tool_result content.
   async function agentGodot(settings, prompt, opts, hooks, signal) {
-    if (!settings.anthropicKey) throw apiError('Godot-läget med Claude kräver en Anthropic API-nyckel. Utan nyckel bygger Nexora Local spelet offline.');
+    if (!settings.anthropicKey) throw noKey();
     const started = Date.now(), limitMs = (opts.maxMinutes || 120) * 60000;
     const tools = GODOT_TOOLS.filter(t => opts.hyperreal || !t.hyperreal).map(t => { const c = Object.assign({}, t); delete c.hyperreal; return c; });
     const lessons = (opts.lessons || []).slice(-40);
@@ -2574,7 +1061,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
     return { summary: st.summary || 'Astryx arbetade tills tiden tog slut. Spelet testkördes ' + st.runs + ' gånger.', runs: st.runs, cleanRuns: st.cleanRuns, turns: st.turns, minutes: Math.round((Date.now() - started) / 60000), lessons: st.lessons, shots: st.lastShots, model: ANTHROPIC.astryxGodot.model };
   }
 
-  window.NexoraAI = { MODELS, ROLLOUT, ANTHROPIC, DEFAULT_SETTINGS, GAME_SYSTEM, AGENT_TOOLS, GODOT_TOOLS, GODOT_GUIDE, gamePrompt, generateGame, fixGame, text, image, mesh, agent, agentGodot, extractHtml };
+  window.NexoraAI = { MODELS, ROLLOUT, ANTHROPIC, DEFAULT_SETTINGS, GAME_SYSTEM, AGENT_TOOLS, GODOT_TOOLS, GODOT_GUIDE, configured, gamePrompt, generateGame, fixGame, text, image, mesh, music, sfx, agent, agentGodot, extractHtml };
 })();
 
 </script>
@@ -2582,7 +1069,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
 /* Nexora app: routing, plans and limits, Studio, tools, library, export. */
 (function () {
   'use strict';
-  const L = window.NexoraLocal, AI = window.NexoraAI, BUILD = window.NEXORA_BUILD || {};
+  const AI = window.NexoraAI, M = window.NexoraMedia, BUILD = window.NEXORA_BUILD || {};
   const VERSION = BUILD.version || '1.0.0';
   const REPO = 'https://github.com/raken123/s-ndo';
 
@@ -2652,6 +1139,9 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
     studio: store.get('studio', { model: 'flash', dim: '2d', opts: { sfx: true } }),
   };
   S.settings.openaiModels = Object.assign({}, AI.DEFAULT_SETTINGS.openaiModels, S.settings.openaiModels || {});
+  // Everything is generated by AI: settings from older versions that pointed at the removed offline generator move to Claude.
+  if (S.settings.provider !== 'anthropic' && S.settings.provider !== 'openai') { S.settings.provider = 'anthropic'; store.set('settings', S.settings); }
+  const aiReady = () => AI.configured(S.settings);
   const tier = () => Math.max(0, PLANS.findIndex(p => p.id === S.plan));
   const plan = () => PLANS[tier()];
   const can = f => tier() >= FEAT[f][0];
@@ -2682,10 +1172,6 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
     S.creditLog = [{ t: Date.now(), n, note }].concat(S.creditLog).slice(0, 50);
     store.set('credits', S.credits); store.set('creditLog', S.creditLog);
   }
-  const RT = {
-    core: [nxRng, nxNoise, nxShade, Nx3D, NexoraRuntime].map(f => f.toString()).join('\n\n'),
-    templates: { gamePlatformer, gameShooter, gameSnake, gameBreakout, gameDodger, gameCollector, gameOpenWorld, gameRunner3D, gameArena3D, gameRacer, gameMatch3, gameTowerDefense },
-  };
 
   // ---------------------------------------------------------------- dom helpers
   const $ = (s, el) => (el || document).querySelector(s);
@@ -2776,7 +1262,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
       h('span', null, 'AI-leverantör: ', providerLabel(), ' · ', h('a', { href: '#modeller' }, 'Om modellerna'), ' · ', h('a', { href: '#', onclick: e => { e.preventDefault(); newsModal(); } }, 'Nyheter i 1.5'))));
   }
   function providerLabel() {
-    return { local: 'Nexora Local (offline)', anthropic: 'Anthropic (Claude)', openai: 'Egen endpoint' }[S.settings.provider];
+    return ({ anthropic: 'Anthropic (Claude)', openai: 'Egen endpoint' }[S.settings.provider] || 'ingen') + (aiReady() ? '' : ' – inte inkopplad');
   }
 
   let mounted = null;
@@ -2801,17 +1287,17 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
           h('button', { class: 'pill', style: 'cursor:pointer;color:inherit', onclick: () => newsModal() }, '🎉 Nexora 1.5 är här – se nyheterna →'),
           h('a', { class: 'pill', href: '#astryx', style: 'text-decoration:none;color:inherit' }, '🤖 Astryx 5 Pro')),
         h('h1', null, 'Beskriv ett spel.', h('br'), h('span', { class: 'grad' }, 'Spela det direkt.')),
-        h('p', { class: 'lead' }, 'Nexora gör spelbara 2D- och 3D-spel av en mening – med grafik, ljud, story och export till webb, PC och mobil.'),
+        h('p', { class: 'lead' }, 'Nexora gör vilket spel som helst av en mening. AI:n skriver hela spelet från grunden – med grafik, ljud, story och export till webb, PC och mobil.'),
         h('div', { class: 'row', style: 'justify-content:center' },
           h('a', { class: 'btn primary big', href: '#studio' }, '🎮 Öppna Studio'),
           h('a', { class: 'btn big', href: '#ladda-ner' }, '⬇️ Ladda ner appen'))),
       h('section', { class: 'wrap' }, h('div', { class: 'grid g3' }, [
-        ['⚡', 'Från idé till spel på sekunder', 'Skriv "ett rymdspel med lava-tema" och spela det i förhandsvisningen direkt.'],
-        ['🧊', '2D och 3D', 'Plattformsspel, skjutare, open world, 3D-löpare och 3D-arenor.'],
-        ['🎨', 'Grafik, 3D-modeller, musik', 'Animerade sprites med Image 1.5, 3D-modeller med GLB-export i 3D 1.5, musik och ljudeffekter.'],
+        ['⚡', 'Från idé till spelbart spel', 'Skriv "en pingvin som driver ett glasskafé på ett isflak" – AI:n skriver, testkör och rättar spelet, och du spelar det direkt i förhandsvisningen.'],
+        ['♾️', 'Vilket spel som helst', 'Matlagning, fotboll, skräck, rytmspel, simulatorer eller något ingen har gjort förut – i 2D eller 3D. Inga mallar, inga speltyper att välja bland.'],
+        ['🎨', 'Grafik, 3D-modeller, musik', 'Animerade sprites med Image 1.5, 3D-modeller med GLB-export i 3D 1.5, och musik och ljudeffekter som AI:n komponerar.'],
         ['🧙', 'Story, NPC:er och uppdrag', 'Generera en värld med personer som ger dig uppdrag och pratar med dig.'],
         ['📦', 'Export överallt', 'HTML för webb och mobil, PC-projekt, Steam-paket och portningspaket för konsol.'],
-        ['🔌', 'Fungerar offline', 'Nexora Local bygger spel utan internet. Koppla in Claude eller din egen modell för mer.'],
+        ['🧠', 'Riktig AI i varje modell', 'Flash, Pro, Core, Image, 3D och Astryx är AI-modeller. Koppla in Claude eller din egen modell (t.ex. från Colab) under ⚙️.'],
       ].map(([ic, t, d]) => h('div', { class: 'card feat' }, h('div', { class: 'ic' }, ic), h('h3', null, t), h('p', { class: 'muted' }, d))))),
       h('section', { class: 'wrap' }, astryxHero()),
       h('section', { class: 'wrap' }, h('h2', null, 'Sex modeller'), modelCards()),
@@ -2821,11 +1307,12 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
   // ---------------------------------------------------------------- what's new in 1.5
   const NEWS = [
     ['🧪', 'Flash, Pro och Core 1.5 testar sina spel', 'Varje AI-spel körs automatiskt i en dold webbläsare. Körfel och spel som står still skickas tillbaka och rättas – Flash 1.5 en gång, Pro 1.5 två, Core 1.5 tre – innan du får spelet. Pro 1.5 arbetar dessutom med högre ansträngning.'],
-    ['🏁', 'Tre nya speltyper – 12 totalt', 'Racing mot två AI-bilar på en slumpad bana, pusselspel med tre-i-rad och kombos, och tower defense med tio vågor, bossar och uppgraderbara torn.'],
+    ['♾️', 'Vilket spel som helst', 'Allt skrivs av AI från grunden efter din beskrivning – inga mallar och inga speltyper att välja bland. Beskriv matlagning, fotboll, ett rytmspel, en skräckhistoria eller något helt nytt.'],
     ['🎮', 'Handkontroll, paus och touch', 'Alla spel fungerar med Xbox-, PlayStation- och andra handkontroller, pausas med Esc och kan styras med klick och touch.'],
     ['🎨', 'Image 1.5', 'Fyra stilar – pixel, platt, neon och retro 8-bit – animerade sprite-ark med fyra bildrutor och export som PNG eller SVG.'],
-    ['🧊', '3D 1.5', 'Nya modeller (svärd, skattkista, svamp, planet, fisk) och export som .glb med färger, som öppnas direkt i Godot, Unity och Blender.'],
-    ['🤖', 'Astryx 5 Pro', 'Agenten bygger nu också racing-, pussel- och tower defense-spel offline, och Godot-läget fortsätter som förut.'],
+    ['🧊', '3D 1.5', '3D-modeller av vad du än beskriver, och export som .glb med färger, som öppnas direkt i Godot, Unity och Blender.'],
+    ['🎵', 'Musik och ljudeffekter med AI', 'AI:n komponerar originalmusik och designar ljudeffekter efter din beskrivning, och du laddar ner dem som WAV.'],
+    ['🤖', 'Astryx 5 Pro', 'Agenten bygger vilket spel som helst – i HTML5 eller i Godot med Python – och testkör och rättar det själv.'],
   ];
   function newsModal() {
     const close = modal([
@@ -2926,7 +1413,6 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
   VIEWS.modeller = main => {
     const rows = Object.entries(AI.MODELS).map(([k, m]) => h('tr', null,
       h('td', null, h('b', null, m.name), h('div', { class: 'small muted' }, m.tag)),
-      h('td', null, k === 'image' ? 'Procedurella pixel-sprites' : k === 'd3' ? 'Procedurella low-poly-modeller' : k === 'astryx' ? 'Agentloop: bygger, testkör i dold webbläsare, gör om vid fel' : 'Mallbaserad spelgenerator (12 speltyper)'),
       h('td', null, h('code', null, AI.ANTHROPIC[k].model), AI.ANTHROPIC[k].thinking ? h('div', { class: 'small muted' }, 'adaptivt tänkande, synligt') : AI.ANTHROPIC[k].output_config ? h('div', { class: 'small muted' }, 'effort: ' + AI.ANTHROPIC[k].output_config.effort) : null,
         k === 'image' ? h('div', { class: 'small muted' }, 'ritar SVG') : k === 'd3' ? h('div', { class: 'small muted' }, 'skriver mesh-JSON') : k === 'astryx' ? h('div', { class: 'small muted' }, 'agent med verktygen write_game, edit_game, run_game (med skärmbild) och finish') : null),
       h('td', null, h('code', null, S.settings.openaiModels[k]), k === 'astryx' ? h('div', { class: 'small muted' }, 'skriv → testa → rätta, upp till 3 varv') : null)));
@@ -2936,9 +1422,9 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
       h('h2', { style: 'margin-top:40px' }, 'Lansering av Astryx 5 Pro'),
       rolloutList(),
       h('h2', { style: 'margin-top:40px' }, 'Vad körs under huven?'),
-      h('p', { class: 'muted' }, 'Varje Nexora-modell är ett lager med egen prompt och egna inställningar ovanpå en basmodell. Du väljer leverantör under Inställningar. Nuvarande: ', h('b', null, providerLabel()), '.'),
+      h('p', { class: 'muted' }, 'Varje Nexora-modell är ett lager med egen prompt och egna inställningar ovanpå en AI-basmodell. Allt – spel, bilder, 3D-modeller, text, musik och ljud – genereras av AI; det finns inga mallar. Du väljer leverantör under Inställningar. Nuvarande: ', h('b', null, providerLabel()), '.'),
       h('div', { class: 'card', style: 'overflow-x:auto' }, h('table', { class: 't' },
-        h('tr', null, h('th', null, 'Modell'), h('th', null, 'Nexora Local (offline)'), h('th', null, 'Anthropic'), h('th', null, 'Egen endpoint')), rows)),
+        h('tr', null, h('th', null, 'Modell'), h('th', null, 'Anthropic'), h('th', null, 'Egen endpoint')), rows)),
       h('h2', { style: 'margin-top:40px' }, 'Träna en egen modell i Google Colab'),
       h('div', { class: 'card col' },
         h('p', null, 'Anteckningsboken ', h('code', null, 'Nexora_Flash_1_Colab.ipynb'), ' finjusterar en öppen kodmodell (Qwen2.5-Coder) med LoRA på Nexoras spelexempel, provkör den och startar en OpenAI-kompatibel server. Peka sedan ', h('b', null, 'Egen endpoint'), ' i Inställningar mot den.'),
@@ -2951,17 +1437,16 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
 
   // ---------------------------------------------------------------- studio
   const EXAMPLES = [
-    'Ett plattformsspel i en lavavärld där man hoppar på drakar',
-    'Rymdskjutare med neon-tema och bossar',
+    'Laga pizzor åt otåliga kunder i en food truck',
+    'Fotboll med robotar på månen, två spelare',
+    'Ett rytmspel där man trummar i takt med regnet',
+    'En katt som smyger förbi hundar för att stjäla fisk',
+    'Odla magiska växter och sälj dem på marknaden',
+    'Ett skräckspel i en övergiven tunnelbana med ficklampa',
+    'Styr en brandbil genom staden och släck bränder',
+    'Ett pusselspel där man vrider rör så att vattnet når fram',
     'Open world-äventyr i en skog med uppdrag och NPC:er',
-    'En 3D-löpare på en isväg',
-    'Samla diamanter i en godisvärld, två spelare',
-    'Orm-spel under vattnet, svårt',
-    'Blockkross med spöken',
-    'Undvik bilar på en ökenväg',
-    'Ett racingspel på en ökenbana',
-    'Ett pusselspel med juveler i en godisvärld',
-    'Tower defense mot zombies i en skog',
+    'Flyg en pappersflygplan genom ett klassrum i 3D',
   ];
   const OPTS = [
     ['story', 'Story'], ['dialog', 'Dialog'], ['openworld', 'Open world'], ['npc', 'NPC:er'], ['quest', 'Uppdrag'],
@@ -2973,7 +1458,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
   VIEWS.studio = main => {
     const st = S.studio;
     const saveStudio = () => store.set('studio', st);
-    const ta = h('textarea', { id: 'prompt', placeholder: 'Beskriv ditt spel… t.ex. "Ett plattformsspel i en isvärld där en pingvin samlar fisk"', 'aria-label': 'Spelbeskrivning' });
+    const ta = h('textarea', { id: 'prompt', placeholder: 'Beskriv vilket spel som helst… t.ex. "En pingvin som driver ett glasskafé på en isflak och måste servera sälar innan isen smälter"', 'aria-label': 'Spelbeskrivning' });
     ta.value = st.prompt || '';
     ta.addEventListener('input', () => { st.prompt = ta.value; saveStudio(); });
     ta.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) go(); });
@@ -3063,6 +1548,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
       if (busy) { busy.abort(); return; }
       const prompt = ta.value.trim();
       if (prompt.length < 4) { toast('Beskriv spelet med några ord först.'); ta.focus(); return; }
+      if (!aiReady()) return settingsModal('Nexora skapar alla spel med AI. Koppla in en AI för att börja: lägg in din Anthropic API-nyckel (eller en egen endpoint, t.ex. modellen från Colab).');
       const p = plan();
       if (st.model === 'astryx' && !released('astryx')) return astryxLocked();
       if (st.model === 'astryx' && st.astryx.engine === 'godot') return goGodot(prompt, OPTS.map(o => o[0]).filter(k => st.opts[k] && can(k)));
@@ -3089,17 +1575,6 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
           const r = await runAstryx(prompt, features, stepEl, log);
           html = r.html; summary = r.summary;
           meta = { title: r.title || prompt.slice(0, 40), genre: r.genre || 'AI-spel (agent)', dim: r.dim || st.dim, engine: 'Astryx 5 Pro · ' + r.model };
-        } else if (S.settings.provider === 'local') {
-          const steps = ['Tolkar idén', 'Väljer speltyp och tema', 'Bygger nivåer', 'Lägger till ljud och kontroller', 'Testar spelet'];
-          const cfg = L.config(prompt, { dim: st.dim, music: features.includes('music'), sfx: true, multiplayer: features.includes('multiplayer'), quests: features.includes('quest'), allowOpenWorld: can('openworld') && (st.dim === '2d'), variant: st.variant || '' });
-          for (const s of steps) {
-            if (busy.signal.aborted) throw new DOMException('Avbruten', 'AbortError');
-            stepEl.textContent = s + '…'; log.textContent += '› ' + s + '\n';
-            await new Promise(r => setTimeout(r, 180 + Math.random() * 180));
-          }
-          log.textContent += '  speltyp: ' + cfg.genreLabel + '\n  tema: ' + cfg.tagline.split('· ')[1] + '\n';
-          html = L.buildHtml(cfg, RT);
-          meta = { title: cfg.title, genre: cfg.genreLabel, dim: cfg.dim, engine: 'Nexora Local' };
         } else {
           stepEl.textContent = m.name + (st.model === 'core' ? ' tänker…' : ' skriver spelet…');
           let thinkingShown = false, chars = 0;
@@ -3149,7 +1624,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
         else {
           screen.innerHTML = '';
           screen.append(h('div', { class: 'empty' }, h('div', null, h('div', { style: 'font-size:2.4rem' }, '⚠️'), h('h3', null, 'Det gick inte att skapa spelet'), h('p', null, e.message || String(e)),
-            S.settings.provider !== 'local' ? h('button', { class: 'btn', onclick: () => { S.settings.provider = 'local'; store.set('settings', S.settings); toast('Bytte till Nexora Local'); render(); } }, 'Använd Nexora Local (offline) istället') : null)));
+            h('div', { class: 'row', style: 'justify-content:center' }, h('button', { class: 'btn', onclick: () => go() }, '↻ Försök igen'), e.noKey || /nyckel|API/.test(e.message || '') ? h('button', { class: 'btn', onclick: () => settingsModal() }, '⚙️ Inställningar') : null))));
         }
       } finally {
         busy = null; goBtn.textContent = '✨ Skapa spel';
@@ -3181,42 +1656,11 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
         thinking: t => { if (!thinkEl) { thinkEl = h('div', { class: 'think' }, '💭 '); log.append(thinkEl); } thinkEl.textContent += t; log.scrollTop = log.scrollHeight; },
         progress: (tool, n) => { if (cur && LABEL[tool]) cur.textContent = '✍️ ' + LABEL[tool] + '… ' + Math.round(n / 1000) + ' kB'; },
       };
-      let r;
-      if (S.settings.provider === 'local') r = await localAgent(prompt, features, hooks);
-      else {
-        const assetsList = features.includes('assets') ? (await assets.all()).filter(a => a.svg) : [];
-        r = await AI.agent(S.settings, prompt, { dim: st.dim, features, assets: assetsList }, hooks, busy.signal);
-      }
+      const assetsList = features.includes('assets') ? (await assets.all()).filter(a => a.svg) : [];
+      const r = await AI.agent(S.settings, prompt, { dim: st.dim, features, assets: assetsList }, hooks, busy.signal);
       stepEl.textContent = 'Astryx är klar'; line('✅ Klart – ' + r.runs + ' testkörning' + (r.runs === 1 ? '' : 'ar'));
       await pause(1200);
       return r;
-    }
-
-    // Astryx on Nexora Local: the same build → test → fix loop, with the offline generator doing the writing.
-    async function localAgent(prompt, features, hooks) {
-      const opts = { dim: st.dim, music: features.includes('music'), sfx: true, multiplayer: features.includes('multiplayer'), quests: true, allowOpenWorld: can('openworld') && st.dim === '2d' };
-      let cfg = L.config(prompt, Object.assign({ variant: st.variant || '' }, opts));
-      hooks.thinking('Det här låter som ett ' + cfg.genreLabel.toLowerCase() + ' med ' + cfg.tagline.split('· ')[1].toLowerCase() + '. Jag bygger det, testkör det och justerar tills det fungerar.');
-      await pause(500);
-      let html, t, runs = 0, fixes = 0;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        hooks.step('tool_start', 'write_game'); await pause(350);
-        html = L.buildHtml(cfg, RT); hooks.step('write', Math.round(html.length / 1000) + ' kB');
-        hooks.step('tool_start', 'run_game'); hooks.step('run');
-        t = await hooks.runGame(html); runs++;
-        hooks.step('ran', (t.errors.length ? t.errors.length + ' fel' : 'inga fel') + (t.animating ? ', spelet rör sig' : ', spelet står still'));
-        if (!t.errors.length && t.animating) break;
-        if (attempt === 2) break;
-        fixes++;
-        hooks.step('tool_start', 'edit_game');
-        hooks.step('edit', t.errors.length ? t.errors[0].slice(0, 80) : 'spelet stod still – bygger en ny variant');
-        cfg = L.config(prompt, Object.assign({ variant: 'fix' + attempt + Date.now() }, opts));
-      }
-      const premise = (L.story(prompt).match(/\*\*Premiss\.\*\* ([^\n]+)/) || [])[1];
-      return {
-        html, title: cfg.title, genre: cfg.genreLabel, dim: cfg.dim, model: 'Nexora Local', runs,
-        summary: 'Astryx byggde "' + cfg.title + '" (' + cfg.genreLabel.toLowerCase() + '), testkörde det ' + runs + ' gång' + (runs > 1 ? 'er' : '') + (fixes ? ' och rättade ' + fixes + ' problem' : ' utan fel') + '.' + (premise ? ' ' + premise : ''),
-      };
     }
 
     async function goGodot(prompt, features) {
@@ -3226,6 +1670,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
           h('div', { class: 'row' }, h('a', { class: 'btn primary', href: '#ladda-ner', onclick: () => close() }, 'Ladda ner Nexora'), h('button', { class: 'btn ghost', onclick: () => close() }, 'Stäng'))]);
         return;
       }
+      if (S.settings.provider !== 'anthropic') return settingsModal('Godot-läget använder Claude som agent (verktyg, skärmbilder och långa arbetspass). Välj Anthropic och lägg in din API-nyckel.');
       const A = st.astryx, p = plan();
       let charge;
       if (A.hyperreal) {
@@ -3238,7 +1683,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
       startGodotJob({ prompt, minutes: A.minutes, hyperreal: !!A.hyperreal, features, charge });
     }
 
-    const variantBtn = h('button', { class: 'btn sm ghost', title: 'Samma idé, ny variant', onclick: () => { st.variant = String(Math.random()).slice(2, 8); saveStudio(); go(); } }, '🎲 Ny variant');
+    const variantBtn = h('button', { class: 'btn sm ghost', title: 'Samma idé – AI:n skriver en ny version', onclick: () => go() }, '🎲 Ny version');
     main.append(h('div', { class: 'wrap studio' },
       h('div', { class: 'panel' },
         h('div', null, h('h2', { style: 'margin-bottom:4px' }, 'Studio'), h('div', { class: 'small muted' }, 'Leverantör: ', providerLabel(), ' · ', h('a', { href: '#', onclick: e => { e.preventDefault(); settingsModal(); } }, 'ändra'))),
@@ -3248,7 +1693,8 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
         h('div', { class: 'row' }, h('b', { class: 'small' }, 'Dimension'), dimSeg),
         h('div', { class: 'col' }, h('b', { class: 'small' }, 'Innehåll'), optsEl),
         h('div', { class: 'row' }, goBtn, variantBtn),
-        S.settings.provider === 'local' ? h('p', { class: 'small muted' }, 'Nexora Local bygger spelet på enheten från 12 speltyper. För helt nya spelidéer: koppla in Claude eller en egen modell under Inställningar.') : null),
+        aiReady() ? h('p', { class: 'small muted' }, 'Beskriv vilket spel som helst – AI:n skriver hela spelet från grunden, testkör det och rättar fel.')
+          : h('div', { class: 'note small col connect' }, h('b', null, '🔌 Koppla in en AI för att börja'), 'Nexora skapar allt med AI. Lägg in din Anthropic API-nyckel – eller en egen endpoint, t.ex. din Colab-modell.', h('button', { class: 'btn sm primary', style: 'align-self:flex-start', onclick: () => settingsModal() }, '⚙️ Koppla in AI'))),
       stage));
     if (current) { play(current.html); toolbar(); }
     return { unmount() { if (busy) busy.abort(); } };
@@ -3366,10 +1812,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
     (async () => {
       const errs = await collectErrors(g.html);
       out.textContent += errs.length ? 'Hittade ' + errs.length + ' fel:\n' + errs.map(e => '  • ' + e).join('\n') + '\n' : 'Inga körfel hittades.\n';
-      if (S.settings.provider === 'local') {
-        out.textContent += errs.length ? '\nKoppla in Claude eller en egen modell under Inställningar för att låta AI:n rätta felen automatiskt.' : '\nSpelet ser friskt ut.';
-        return;
-      }
+      if (!aiReady()) { out.textContent += '\nKoppla in en AI under ⚙️ Inställningar för att låta Buggfix-AI:n rätta felen.'; return; }
       out.textContent += '\nBer ' + AI.MODELS[g.model === 'flash' ? 'flash' : 'pro'].name + ' att rätta spelet…\n';
       try {
         let n = 0;
@@ -3482,19 +1925,6 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
     if (DESK) await DESK.call('saveLessons', { lessons: ls }).catch(() => {}); else store.set('lessons', ls);
   }
 
-  // Poly Haven search terms per theme, for Nexora Local's hyperrealistic builds.
-  const THEME_ASSETS = {
-    Skog: { models: ['tree', 'fern', 'rock', 'log', 'stump'], hdri: 'forest', tex: 'forest ground' },
-    Öken: { models: ['rock', 'cactus', 'barrel', 'crate'], hdri: 'desert', tex: 'sand' },
-    Is: { models: ['pine', 'rock', 'boulder'], hdri: 'snow', tex: 'snow' },
-    Hav: { models: ['rock', 'boat', 'barrel', 'crate'], hdri: 'sea', tex: 'sand' },
-    Lava: { models: ['rock', 'boulder', 'stone'], hdri: 'sunset', tex: 'rock' },
-    Skräck: { models: ['dead tree', 'lantern', 'gravestone', 'rock'], hdri: 'night', tex: 'forest ground' },
-    Neon: { models: ['barrel', 'crate', 'bench', 'lamp'], hdri: 'night city', tex: 'asphalt' },
-    Godis: { models: ['flower', 'tree', 'rock'], hdri: 'sunny', tex: 'grass' },
-    Rymd: { models: ['rock', 'boulder', 'stone'], hdri: 'night', tex: 'rock' },
-    Nexora: { models: ['tree', 'rock', 'barrel', 'crate'], hdri: 'sky', tex: 'grass' },
-  };
   // Training set: varied briefs that exercise different Godot skills.
   const BENCH = [
     'Ett 3D-plattformsspel på flytande öar med rörliga plattformar och checkpoints',
@@ -3581,50 +2011,6 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
     throw new Error('okänt verktyg ' + name);
   }
 
-  // Astryx on Nexora Local: plan → (assets) → Python writes the project → Godot test → fix.
-  async function localGodotAgent(j) {
-    const a = L.config(j.prompt, { dim: '3d', variant: String(j.started) });
-    const themeName = a.tagline.split('· ')[1].replace('-tema', '');
-    const cfg = { title: a.title, tagline: a.genreLabel.replace('3D-', '') + ' · ' + themeName, seed: a.seed % 2147483647, difficulty: a.difficulty, palette: a.palette, hyperreal: j.hyperreal, models: [], hdri: '', ground_maps: {} };
-    jobLog(j, '🧠 Plan: tredjepersonsspel i 3D, ' + themeName.toLowerCase() + '-tema, samla kulor och undvik jägare' + (j.hyperreal ? ', fotorealistisk värld' : ''), 'think');
-    if (j.hyperreal) {
-      const T = THEME_ASSETS[themeName] || THEME_ASSETS.Nexora, taken = new Set();
-      const find = async (query, type) => {
-        const r = JSON.parse((await execTool(j, 'search_assets', { query, type })).content).results;
-        return r.find(x => !taken.has(x.id));
-      };
-      try {
-        for (const q of T.models) {
-          if (cfg.models.length >= 4) break;
-          const hit = await find(q, 'models');
-          if (!hit) continue;
-          taken.add(hit.id);
-          cfg.models.push(JSON.parse((await execTool(j, 'download_asset', { id: hit.id, type: 'models', resolution: '2k' })).content).path);
-        }
-        const sky = await find(T.hdri, 'hdris');
-        if (sky) cfg.hdri = JSON.parse((await execTool(j, 'download_asset', { id: sky.id, type: 'hdris', resolution: '2k' })).content).path;
-        const tex = await find(T.tex, 'textures');
-        if (tex) cfg.ground_maps = JSON.parse((await execTool(j, 'download_asset', { id: tex.id, type: 'textures', resolution: '2k' })).content).maps;
-      } catch (e) {
-        jobLog(j, '⚠️ Kunde inte hämta alla assets (' + e.message + ') – bygger med det som finns', 'warn');
-      }
-    }
-    const build = async () => {
-      await execTool(j, 'write_file', { path: 'nexora_build.json', content: JSON.stringify(cfg, null, 1) });
-      const r = await execTool(j, 'run_python', { purpose: 'Skriver Godot-projektet (project.godot, main.tscn, main.gd)', code: "import runpy, sys\nsys.argv = ['nexora_godot_local.py', 'nexora_build.json']\nrunpy.run_path('_nexora/nexora_godot_local.py', run_name='__main__')\n" });
-      if (r.is_error) throw new Error('Python-steget misslyckades: ' + lastLine(JSON.parse(r.content).stderr));
-      return JSON.parse((await execTool(j, 'godot_run', {})).content[0].text);
-    };
-    let t = await build();
-    if (!t.ok && cfg.models.length) {
-      jobLog(j, '🔧 Fel vid testkörning – bygger om utan de nedladdade modellerna');
-      cfg.models = [];
-      t = await build();
-    }
-    if (!t.ok) throw new Error('Godot-projektet fick fel vid testkörning: ' + (t.errors[0] || 'okänt'));
-    return { title: cfg.title, summary: 'Astryx byggde "' + cfg.title + '" i Godot 4.7 (' + (j.hyperreal ? 'fotorealistisk värld med ' + cfg.models.length + ' Poly Haven-modeller' + (cfg.hdri ? ', HDRI-himmel' : '') + (cfg.ground_maps.albedo ? ' och PBR-mark' : '') : 'stiliserad 3D') + ') och testkörde det ' + j.runs + ' gång' + (j.runs > 1 ? 'er' : '') + ' utan fel. Samla alla kulor innan tiden tar slut.' };
-  }
-
   function refund(j) {
     if (!j.charge) return;
     if (j.charge.credits) addCredits(j.charge.credits, 'Återbetalning: ' + j.title);
@@ -3638,36 +2024,32 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
     if (j.charge && j.charge.credits) addCredits(-j.charge.credits, (j.hyperreal ? 'Astryx hyperrealistiskt: ' : 'Astryx Godot: ') + j.title);
     if (j.charge && j.charge.quota) { S.usage[month()] = used() + 1; store.set('usage', S.usage); }
     JOBS.unshift(j);
-    jobLog(j, '🤖 Astryx 5 Pro startar' + (j.provider === 'anthropic' ? ' (Claude, upp till ' + j.minutes + ' min)' : ' (Nexora Local)') + (j.hyperreal ? ' · 📸 hyperrealistiskt' : ''));
+    jobLog(j, '🤖 Astryx 5 Pro startar (Claude, upp till ' + j.minutes + ' min)' + (j.hyperreal ? ' · 📸 hyperrealistiskt' : ''));
     if (!o.quiet) { render.topOnly(); if (location.hash !== '#astryx') location.hash = 'astryx'; }
     const ctl = new AbortController();
     liveCtl[j.id] = ctl;
     const run = (async () => {
       try {
+        if (j.provider !== 'anthropic' || !S.settings.anthropicKey) throw new Error('Godot-läget kräver Claude: välj Anthropic och lägg in din API-nyckel under ⚙️ Inställningar.');
         await ensureDesktopReady(j);
         const proj = await DESK.call('createProject', { name: o.prompt.slice(0, 30) });
         j.project = proj.id; j.dir = proj.dir;
         jobLog(j, '📁 Projekt: ' + proj.dir);
-        let r;
-        if (j.provider === 'anthropic') {
-          const thinkLine = { cur: null };
-          const hooks = {
-            exec: (name, input) => execTool(j, name, input),
-            step: (kind, detail) => { thinkLine.cur = null; if (kind === 'tool_start') { j.phase = ({ run_python: '🐍 Skriver Python', write_file: '📝 Skriver fil', godot_run: '▶️ Testkör i Godot', search_assets: '🔎 Söker assets', download_asset: '⬇️ Laddar ner', finish: '✅ Avslutar', save_lesson: '🎓 Sparar lärdom' }[detail] || detail) + '…'; jobChanged(j); } },
-            thinking: t => { if (!thinkLine.cur) { thinkLine.cur = { t: Date.now(), text: '💭 ', kind: 'think' }; j.log.push(thinkLine.cur); } thinkLine.cur.text += t; jobChanged(j); },
-            progress: (tool, n) => { j.phase = (tool === 'run_python' ? '🐍 Skriver Python… ' : '📝 Skriver fil… ') + Math.round(n / 1000) + ' kB'; jobChanged(j); },
-            lesson: l => { addLesson(l); jobLog(j, '🎓 Lärdom sparad: ' + l, 'ok'); },
-          };
-          r = await AI.agentGodot(S.settings, o.prompt, { maxMinutes: j.minutes, hyperreal: j.hyperreal, features: j.features, lessons: (await getLessons()).map(l => l.text) }, hooks, ctl.signal);
-          try { const pg = await DESK.call('readFile', { project: j.project, file: 'project.godot' }); const m = /config\/name="([^"]+)"/.exec(pg.content || ''); if (m) r.title = m[1]; } catch (e) { /* keep prompt title */ }
-        } else {
-          r = await localGodotAgent(j);
-        }
+        const thinkLine = { cur: null };
+        const hooks = {
+          exec: (name, input) => execTool(j, name, input),
+          step: (kind, detail) => { thinkLine.cur = null; if (kind === 'tool_start') { j.phase = ({ run_python: '🐍 Skriver Python', write_file: '📝 Skriver fil', godot_run: '▶️ Testkör i Godot', search_assets: '🔎 Söker assets', download_asset: '⬇️ Laddar ner', finish: '✅ Avslutar', save_lesson: '🎓 Sparar lärdom' }[detail] || detail) + '…'; jobChanged(j); } },
+          thinking: t => { if (!thinkLine.cur) { thinkLine.cur = { t: Date.now(), text: '💭 ', kind: 'think' }; j.log.push(thinkLine.cur); } thinkLine.cur.text += t; jobChanged(j); },
+          progress: (tool, n) => { j.phase = (tool === 'run_python' ? '🐍 Skriver Python… ' : '📝 Skriver fil… ') + Math.round(n / 1000) + ' kB'; jobChanged(j); },
+          lesson: l => { addLesson(l); jobLog(j, '🎓 Lärdom sparad: ' + l, 'ok'); },
+        };
+        const r = await AI.agentGodot(S.settings, o.prompt, { maxMinutes: j.minutes, hyperreal: j.hyperreal, features: j.features, lessons: (await getLessons()).map(l => l.text) }, hooks, ctl.signal);
+        try { const pg = await DESK.call('readFile', { project: j.project, file: 'project.godot' }); const m = /config\/name="([^"]+)"/.exec(pg.content || ''); if (m) r.title = m[1]; } catch (e) { /* keep prompt title */ }
         j.status = 'done'; j.summary = r.summary; j.title = r.title || j.title; j.phase = '✅ Klar';
         jobLog(j, '✅ Klart efter ' + fmtDur(Date.now() - j.started) + ' och ' + j.runs + ' testkörning' + (j.runs === 1 ? '' : 'ar'), 'ok');
         const now = Date.now();
         await games.put({ id: 'g' + now.toString(36), type: 'godot', project: j.project, dir: j.dir, title: j.title, prompt: o.prompt, summary: j.summary, thumb: j.shots[j.shots.length - 1] || null,
-          model: 'astryx', engine: 'Godot 4.7 · ' + (j.provider === 'anthropic' ? 'Claude' : 'Nexora Local'), hyperreal: j.hyperreal, dim: '3d', genre: j.hyperreal ? 'Godot · hyperrealistiskt' : 'Godot-spel', created: now, updated: now, versions: [] });
+          model: 'astryx', engine: 'Godot 4.7 · Claude', hyperreal: j.hyperreal, dim: '3d', genre: j.hyperreal ? 'Godot · hyperrealistiskt' : 'Godot-spel', created: now, updated: now, versions: [] });
         DESK.call('notify', { title: '🤖 Astryx är klar', body: j.title }).catch(() => {});
       } catch (e) {
         const aborted = e.name === 'AbortError' || ctl.signal.aborted;
@@ -3685,7 +2067,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
   }
 
   async function runTraining(n) {
-    if (S.settings.provider !== 'anthropic') return toast('Träning kräver Claude (Anthropic-nyckel) – Nexora Local lär sig inte.', 5000);
+    if (S.settings.provider !== 'anthropic' || !S.settings.anthropicKey) return settingsModal('Träning av Astryx körs med Claude. Välj Anthropic och lägg in din API-nyckel.');
     const picks = BENCH.slice().sort(() => Math.random() - 0.5).slice(0, n);
     toast('Träningspass startat: ' + n + ' spel à 20 min');
     for (const p of picks) {
@@ -3754,7 +2136,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
         h('tr', null, h('td', null, 'Python'), h('td', null, i.python ? '✅ ' + i.python.version : '❌ Saknas – installera Python 3 från python.org')),
         h('tr', null, h('td', null, 'Godot ' + i.godot.version), h('td', null, i.godot.path ? '✅ Installerat' : h('button', { class: 'btn sm', onclick: async e => { e.target.disabled = true; e.target.textContent = 'Laddar ner…'; try { await DESK.call('installGodot'); } catch (x) { toast(x.message); } drawStatus(); } }, 'Installera (~80–170 MB)'))),
         h('tr', null, h('td', null, 'Exportmallar'), h('td', null, i.godot.templates ? '✅ Installerade' : h('span', { class: 'muted' }, 'Hämtas vid första export (~1,3 GB)'))),
-        h('tr', null, h('td', null, 'AI'), h('td', null, S.settings.provider === 'anthropic' ? '✅ Claude – Astryx planerar, skriver och testar själv' : 'Nexora Local – snabb offlinebyggare. Lägg in en Anthropic-nyckel under ⚙️ för full agent.'))));
+        h('tr', null, h('td', null, 'AI'), h('td', null, S.settings.provider === 'anthropic' && S.settings.anthropicKey ? '✅ Claude – Astryx planerar, skriver och testar själv' : h('span', null, '❌ Godot-läget kräver Claude. ', h('a', { href: '#', onclick: e => { e.preventDefault(); settingsModal(); } }, 'Lägg in en Anthropic-nyckel'))))));
     }
     function jobCard(j) {
       const running = j.status === 'running', el = h('div', { class: 'card col jobcard' + (running ? ' running' : '') });
@@ -3762,8 +2144,8 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
       add(el, [
         h('div', { class: 'row', style: 'justify-content:space-between' }, h('h3', { style: 'margin:0' }, (j.training ? '🎓 ' : '🤖 ') + j.title),
           h('span', { class: 'pill' }, { running: '⏳ arbetar', done: '✅ klar', failed: '❌ misslyckades', cancelled: '⏹ avbruten', interrupted: '⚠️ avbröts' }[j.status] || j.status)),
-        h('div', { class: 'small muted' }, (j.hyperreal ? '📸 Hyperrealistiskt · ' : '') + (j.provider === 'anthropic' ? 'Claude' : 'Nexora Local') + ' · ' + fmtDur(elapsed) + (running && j.provider === 'anthropic' ? ' av max ' + fmtDur(j.minutes * 60000) : '') + ' · ' + (j.runs || 0) + ' testkörningar' + (j.assets ? ' · ' + j.assets.length + ' assets' : '')),
-        running ? h('div', { class: 'meter' }, h('i', { style: 'width:' + (j.provider === 'anthropic' ? pct : 50) + '%' })) : null,
+        h('div', { class: 'small muted' }, (j.hyperreal ? '📸 Hyperrealistiskt · ' : '') + 'Claude · ' + fmtDur(elapsed) + (running ? ' av max ' + fmtDur(j.minutes * 60000) : '') + ' · ' + (j.runs || 0) + ' testkörningar' + (j.assets ? ' · ' + j.assets.length + ' assets' : '')),
+        running ? h('div', { class: 'meter' }, h('i', { style: 'width:' + pct + '%' })) : null,
         running ? h('div', { class: 'small', style: 'font-weight:700' }, j.phase || '') : null,
         j.shots && j.shots.length ? h('div', { class: 'shots' }, j.shots.map(b => h('img', { src: 'data:image/jpeg;base64,' + b, alt: 'Skärmbild från testkörning' }))) : null,
         j.summary ? h('p', { class: 'note small', style: 'margin:0' }, '🤖 ' + j.summary) : null,
@@ -3828,9 +2210,9 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
       if (!all.length) { grid.append(h('div', { class: 'card' }, h('h3', null, 'Inga spel än'), h('p', { class: 'muted' }, 'Spel du skapar i Studio sparas här på enheten.'), h('a', { class: 'btn primary', href: '#studio' }, 'Skapa ditt första spel'))); return; }
       all.forEach(g => {
         if (g.type === 'godot') { grid.append(godotCard(g, draw)); return; }
-        const pal = (g.html.match(/"palette":\{"bg1":"(#[0-9a-f]{6})","bg2":"(#[0-9a-f]{6})"/i) || [0, '#4b2a8a', '#1b1740']);
+        let hue = 0; for (const ch of g.title) hue = (hue * 31 + ch.charCodeAt(0)) % 360;
         grid.append(h('div', { class: 'card gcard' },
-          h('div', { class: 'thumb', style: 'background:linear-gradient(135deg,' + pal[1] + ',' + pal[2] + ')' }, g.title),
+          h('div', { class: 'thumb', style: 'background:linear-gradient(135deg,hsl(' + hue + ',55%,38%),hsl(' + ((hue + 60) % 360) + ',60%,18%))' }, g.title),
           h('div', { class: 'row', style: 'justify-content:space-between' }, h('b', null, g.title), h('span', { class: 'pill' }, (g.dim || '2d').toUpperCase())),
           h('div', { class: 'small muted' }, g.genre + ' · ' + (AI.MODELS[g.model] ? AI.MODELS[g.model].short : '') + ' · ' + new Date(g.updated).toLocaleDateString('sv-SE')),
           h('div', { class: 'row' },
@@ -3867,27 +2249,27 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
       h('div', { class: 'row', style: 'justify-content:space-between' }, h('h3', null, icon + ' ' + title), locked ? h('span', { class: 'lock' }, lockLabel(feat)) : null),
       body);
   }
-  function runBtn(label, feat, fn) {
+  // ai: the button calls an AI model, so an AI must be connected first.
+  function runBtn(label, feat, fn, ai) {
     const b = h('button', { class: 'btn primary sm' }, label);
     b.addEventListener('click', async () => {
       if (feat && !need(feat)) return;
+      if (ai !== false && !aiReady()) return settingsModal('Alla verktyg genererar med AI. Koppla in en AI för att använda dem.');
       const old = b.textContent; b.disabled = true; b.textContent = 'Genererar…';
       try { await fn(); } catch (e) { toast(e.message || String(e), 5000); } finally { b.disabled = false; b.textContent = old; }
     });
     return b;
   }
-  const useAI = () => S.settings.provider !== 'local';
 
   VIEWS.verktyg = main => {
     const idea = h('input', { type: 'text', placeholder: 'Spelets idé, t.ex. "ett vikingaäventyr i en frusen skog"' });
     idea.value = S.studio.prompt || '';
-    const txt = (task, feat, localFn) => {
+    const txt = (task, feat) => {
       const out = h('div', { class: 'out muted' }, 'Resultatet visas här.');
       return [out, h('div', { class: 'row' }, runBtn('Generera', feat, async () => {
         const p = idea.value.trim() || 'ett äventyrsspel';
-        out.classList.remove('muted');
-        if (useAI()) { out.textContent = ''; await AI.text(S.settings, 'flash', task, p, { text: (d, all) => { out.textContent = all; } }); }
-        else out.textContent = localFn(p);
+        out.classList.remove('muted'); out.textContent = '';
+        await AI.text(S.settings, 'flash', task, p, { text: (d, all) => { out.textContent = all; } });
       }), h('button', { class: 'btn sm ghost', onclick: () => { navigator.clipboard && navigator.clipboard.writeText(out.textContent); toast('Kopierat'); } }, 'Kopiera'))];
     };
     // image
@@ -3920,7 +2302,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
     const imageBody = [imgIn, h('div', { class: 'row', style: 'flex-wrap:nowrap' }, styleSel, framesSel), art, h('div', { class: 'row' },
       runBtn('Generera', 'gfx', async () => {
         const p = imgIn.value.trim() || idea.value.trim() || 'en hjälte', opts = { style: styleSel.value, frames: +framesSel.value };
-        const r = useAI() ? await AI.image(S.settings, p, null, null, opts) : { svg: L.sprite(p + ' ' + Math.random(), 12, opts) };
+        const r = await AI.image(S.settings, p, null, null, opts);
         lastArt = Object.assign({ name: p.slice(0, 40) }, r);
         showArt(r, p);
       }),
@@ -3930,12 +2312,14 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
     // 3d
     const cv = h('canvas', { class: 'viewer', width: 600, height: 260 });
     const meshIn = h('input', { type: 'text', placeholder: 'T.ex. "ett svärd", "en skattkista", "en planet", "ett träd"' });
-    let curMesh = L.mesh('kristall'), rot = 0, raf = 0;
+    let curMesh = null, rot = 0, raf = 0;
     const g3 = Nx3D(cv.getContext('2d'));
     function spin() {
       const c = cv.getContext('2d'), w = cv.clientWidth || 600, hh = cv.clientHeight || 260, d = Math.min(devicePixelRatio || 1, 2);
       if (cv.width !== w * d) { cv.width = w * d; cv.height = hh * d; }
       c.setTransform(d, 0, 0, d, 0, 0); c.fillStyle = '#0b0b20'; c.fillRect(0, 0, w, hh);
+      raf = requestAnimationFrame(spin);
+      if (!curMesh) { c.fillStyle = 'rgba(255,255,255,.45)'; c.font = '600 14px system-ui, sans-serif'; c.textAlign = 'center'; c.fillText('Beskriv en modell – 3D 1.5 skapar den', w / 2, hh / 2); return; }
       const vs = curMesh.vertices, ys = vs.map(v => v[1]), top = Math.max.apply(null, ys.concat([1])), span = Math.max(1, top - Math.min.apply(null, ys));
       rot += 0.012; g3.cam.yaw = rot; g3.cam.pitch = 0.35;
       const dist = span * 1.8 + 1.4; g3.cam.x = -Math.sin(rot) * dist; g3.cam.z = -Math.cos(rot) * dist; g3.cam.y = top * 0.5 + dist * 0.36; g3.cam.far = 200; g3.cam.fov = 1.1;
@@ -3943,36 +2327,43 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
       for (let i = -3; i < 3; i++) for (let j = -3; j < 3; j++) g3.poly([[i, 0, j], [i + 1, 0, j], [i + 1, 0, j + 1], [i, 0, j + 1]], (i + j) % 2 ? '#1c1c3a' : '#24244a', [0, 1, 0]);
       g3.mesh(curMesh, 0, 0.001, 0, 1, 0);
       g3.flush();
-      raf = requestAnimationFrame(spin);
     }
     raf = requestAnimationFrame(spin);
-    const meshInfo = h('div', { class: 'small muted' }, curMesh.name + ' · ' + curMesh.faces.length + ' ytor');
+    const meshInfo = h('div', { class: 'small muted' }, 'Ingen modell än');
+    const needMesh = () => { if (!curMesh) toast('Generera en modell först'); return !!curMesh; };
     const meshBody = [meshIn, cv, meshInfo, h('div', { class: 'row' },
       runBtn('Generera', 'mesh', async () => {
         const p = meshIn.value.trim() || 'en kristall';
-        curMesh = useAI() ? await AI.mesh(S.settings, p) : L.mesh(p);
+        curMesh = M.cleanMesh(await AI.mesh(S.settings, p));
         meshInfo.textContent = (curMesh.name || p) + ' · ' + curMesh.faces.length + ' ytor · ' + curMesh.vertices.length + ' hörn';
       }),
-      h('button', { class: 'btn sm', title: 'Binär glTF – Godot, Unity, Blender', onclick: () => download(slug(curMesh.name) + '.glb', new Blob([L.toGlb(curMesh)], { type: 'model/gltf-binary' })) }, '.glb'),
-      h('button', { class: 'btn sm', onclick: () => download(slug(curMesh.name) + '.obj', L.toObj(curMesh)) }, '.obj'),
-      h('button', { class: 'btn sm ghost', onclick: () => download(slug(curMesh.name) + '.json', JSON.stringify(curMesh)) }, '.json'))];
+      h('button', { class: 'btn sm', title: 'Binär glTF – Godot, Unity, Blender', onclick: () => needMesh() && download(slug(curMesh.name) + '.glb', new Blob([M.toGlb(curMesh)], { type: 'model/gltf-binary' })) }, '.glb'),
+      h('button', { class: 'btn sm', onclick: () => needMesh() && download(slug(curMesh.name) + '.obj', M.toObj(curMesh)) }, '.obj'),
+      h('button', { class: 'btn sm ghost', onclick: () => needMesh() && download(slug(curMesh.name) + '.json', JSON.stringify(curMesh)) }, '.json'))];
     // music
     const musIn = h('input', { type: 'text', placeholder: 'Stämning, t.ex. "snabb boss-musik", "lugn skogsmeny"' });
     const player = h('div');
     const musicBody = [musIn, player, h('div', { class: 'row' }, runBtn('Komponera', 'music', async () => {
-      const r = await L.music((musIn.value.trim() || idea.value.trim() || 'äventyr') + ' ' + Date.now(), 24);
+      player.innerHTML = ''; player.append(h('div', { class: 'small muted' }, '🎼 AI:n komponerar…'));
+      const score = await AI.music(S.settings, musIn.value.trim() || 'huvudtema för ' + (idea.value.trim() || 'ett äventyrsspel'));
+      const r = await M.renderMusic(score, 20);
       const url = URL.createObjectURL(r.blob);
       player.innerHTML = '';
-      player.append(h('div', { class: 'small muted' }, r.bpm + ' BPM · ' + r.mood + ' · ' + r.seconds + ' s loop'), h('audio', { controls: true, src: url, style: 'width:100%', loop: true }),
+      player.append(h('div', { class: 'small muted' }, (r.title ? '🎵 ' + r.title + ' · ' : '') + r.bpm + ' BPM · ' + r.seconds + ' s loop'), h('audio', { controls: true, src: url, style: 'width:100%', loop: true }),
         h('button', { class: 'btn sm', onclick: () => download('nexora-musik.wav', r.blob) }, 'Ladda ner WAV'));
       $('audio', player).play().catch(() => {});
     }))];
     // sfx
-    const sfxBody = [h('p', { class: 'small muted' }, 'Klicka för att generera och spela. Varje klick ger en ny variant.'), h('div', { class: 'row' },
-      ['hopp', 'mynt', 'laser', 'explosion', 'powerup', 'träff'].map(k => runBtn(k, 'sfx', async () => {
-        const blob = await L.sfx(k, Date.now()), url = URL.createObjectURL(blob), a = new Audio(url); a.play().catch(() => {});
-        sfxLast = { k, blob };
-      }))), h('button', { class: 'btn sm ghost', onclick: () => sfxLast ? download('nexora-' + sfxLast.k + '.wav', sfxLast.blob) : toast('Generera ett ljud först') }, 'Ladda ner senaste')];
+    const sfxIn = h('input', { type: 'text', placeholder: 'Beskriv ljudet, t.ex. "en slemmig dörr som öppnas"' });
+    const sfxMake = async k => {
+      const spec = await AI.sfx(S.settings, k), blob = await M.renderSfx(spec), a = new Audio(URL.createObjectURL(blob));
+      a.play().catch(() => {});
+      sfxLast = { k: spec.name || k, blob };
+    };
+    const sfxBody = [sfxIn, h('div', { class: 'row' }, runBtn('Skapa ljud', 'sfx', () => sfxMake(sfxIn.value.trim() || 'ett magiskt powerup-ljud'))),
+      h('p', { class: 'small muted' }, 'Eller välj ett förslag – AI:n designar ett nytt ljud varje gång:'), h('div', { class: 'row' },
+      ['hopp', 'mynt', 'laser', 'explosion', 'powerup', 'träff'].map(k => runBtn(k, 'sfx', () => sfxMake(k)))),
+      h('button', { class: 'btn sm ghost', onclick: () => sfxLast ? download('nexora-' + slug(sfxLast.k) + '.wav', sfxLast.blob) : toast('Generera ett ljud först') }, 'Ladda ner senaste')];
     let sfxLast = null;
     // voice
     const vText = h('textarea', { style: 'min-height:70px' }); vText.value = 'Välkommen, äventyrare. Kungariket behöver din hjälp.';
@@ -3993,6 +2384,9 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
       const u = new SpeechSynthesisUtterance(vText.value); const v = vSel._voices && vSel._voices[+vSel.value];
       if (v) { u.voice = v; u.lang = v.lang; } else u.lang = 'sv-SE';
       u.pitch = +pitch.value; u.rate = +rate.value; speechSynthesis.speak(u);
+    }, false), runBtn('✨ AI skriver repliken', 'voice', async () => {
+      vText.value = '';
+      await AI.text(S.settings, 'flash', 'line', idea.value.trim() || 'ett äventyrsspel', { text: (d, all) => { vText.value = all; } });
     })), h('p', { class: 'small muted' }, 'Rösten spelas upp med operativsystemets talsyntes.')];
     // assets
     const assetGrid = h('div', { class: 'row' });
@@ -4021,13 +2415,13 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
 
     main.append(h('section', { class: 'wrap' },
       h('h1', null, 'AI-', h('span', { class: 'grad' }, 'verktyg')),
-      h('p', { class: 'muted' }, 'Leverantör: ', providerLabel(), useAI() ? ' – text, bilder och 3D skapas av AI.' : ' – allt genereras på enheten, även offline.'),
+      h('p', { class: 'muted' }, 'Leverantör: ', providerLabel(), ' – text, bilder, 3D-modeller, musik och ljudeffekter skapas av AI.'),
       h('label', { class: 'f', style: 'margin:18px 0' }, 'Spelets idé (används av text-verktygen)', idea),
       h('div', { class: 'grid g2' },
-        toolCard('📖', 'Story', 'story', txt('story', 'story', L.story)),
-        toolCard('💬', 'Dialog', 'dialog', txt('dialog', 'dialog', L.dialog)),
-        toolCard('🧑‍🌾', 'NPC:er', 'npc', txt('npc', 'npc', p => L.npcs(p, 4).map(n => '• ' + n.name + ', ' + n.role + ' – ' + n.trait + ', ' + n.want + '.\n  ' + n.line).join('\n\n'))),
-        toolCard('🗺️', 'Uppdrag', 'quest', txt('quest', 'quest', p => L.quests(p, 3).map(q => '■ ' + q.title + '\n  Givare: ' + q.giver + '\n  Mål: ' + q.goal + '\n  Steg: ' + q.steps.join(' → ') + '\n  Belöning: ' + q.reward).join('\n\n'))),
+        toolCard('📖', 'Story', 'story', txt('story', 'story')),
+        toolCard('💬', 'Dialog', 'dialog', txt('dialog', 'dialog')),
+        toolCard('🧑‍🌾', 'NPC:er', 'npc', txt('npc', 'npc')),
+        toolCard('🗺️', 'Uppdrag', 'quest', txt('quest', 'quest')),
         toolCard('🎨', 'Grafik – Nexora Image 1.5', 'gfx', imageBody),
         toolCard('🧊', '3D – Nexora 3D 1.5', 'mesh', meshBody),
         toolCard('🎵', 'Musik', 'music', musicBody),
@@ -4086,24 +2480,26 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
     };
     main.append(h('section', { class: 'wrap' },
       h('h1', null, 'Ladda ner ', h('span', { class: 'grad' }, 'Nexora')),
-      h('p', { class: 'muted' }, 'Version ' + VERSION + '. Samma app överallt – den fungerar offline och sparar dina spel på datorn.'),
+      h('p', { class: 'muted' }, 'Version ' + VERSION + '. Samma app överallt – den sparar dina spel på datorn. Spelen skapas av AI, så du behöver internet och en AI-nyckel när du genererar.'),
       h('div', { class: 'grid g2' },
         card('🪟', 'Windows', 'Windows 10/11, 64-bit. Installerar Nexora för din användare (inga administratörsrättigheter behövs) med genväg på skrivbordet och i Start-menyn.', 'exe', h('span', null, 'Om SmartScreen varnar: ', h('b', null, 'Mer info → Kör ändå'), ' (appen är inte kodsignerad).')),
         card('🍎', 'macOS', 'macOS 12+ på Apple Silicon (M1–M4). Öppna DMG-filen och dra Nexora till Program.', 'dmg', h('span', null, 'Första gången: högerklicka på Nexora → ', h('b', null, 'Öppna'), ' (appen är inte notariserad).')),
         card('🐧', 'Linux', 'Debian, Ubuntu, Mint, Pop!_OS (x86-64).', 'deb', h('code', null, 'sudo apt install ./' + ((byId('deb') || {}).file || 'nexora.deb'))),
-        card('🌐', 'Webb', 'Kör direkt i webbläsaren utan installation – det är den här sidan.', 'html', h('span', null, 'Kan även sparas som en fil och öppnas offline.')))));
+        card('🌐', 'Webb', 'Kör direkt i webbläsaren utan installation – det är den här sidan.', 'html', h('span', null, 'Kan även sparas som en enda HTML-fil.')))));
   };
 
   // ---------------------------------------------------------------- settings
-  function settingsModal() {
+  // note: why the dialog was opened (e.g. "connect an AI first").
+  function settingsModal(note) {
+    if (note && typeof note !== 'string') note = null;
     const s = JSON.parse(JSON.stringify(S.settings));
-    const prov = h('select', null, [['local', 'Nexora Local – offline, gratis'], ['anthropic', 'Anthropic (Claude) – egen API-nyckel'], ['openai', 'Egen endpoint (OpenAI-kompatibel) – t.ex. din Colab-modell']].map(([v, l]) => h('option', { value: v, selected: s.provider === v }, l)));
+    const prov = h('select', null, [['anthropic', 'Anthropic (Claude) – egen API-nyckel'], ['openai', 'Egen endpoint (OpenAI-kompatibel) – t.ex. din Colab-modell']].map(([v, l]) => h('option', { value: v, selected: s.provider === v }, l)));
     const aKey = h('input', { type: 'password', placeholder: 'sk-ant-…', value: s.anthropicKey, autocomplete: 'off' });
     const oBase = h('input', { type: 'url', value: s.openaiBase }), oKey = h('input', { type: 'password', value: s.openaiKey, placeholder: 'valfri', autocomplete: 'off' });
     const oModels = Object.keys(AI.MODELS).map(k => { const i = h('input', { type: 'text', value: s.openaiModels[k] }); i.dataset.k = k; return i; });
     const oImg = h('input', { type: 'checkbox', checked: s.openaiImageApi });
     const aBox = h('div', { class: 'col' }, h('label', { class: 'f' }, 'Anthropic API-nyckel', aKey),
-      h('p', { class: 'small muted' }, 'Skapa en nyckel på console.anthropic.com. Nyckeln sparas bara på den här enheten och skickas endast till api.anthropic.com.'));
+      h('p', { class: 'small muted' }, 'Skapa en nyckel på ', h('a', { href: 'https://console.anthropic.com/settings/keys', target: '_blank', rel: 'noopener' }, 'console.anthropic.com'), '. Nyckeln sparas bara på den här enheten och skickas endast till api.anthropic.com.'));
     const oBox = h('div', { class: 'col' }, h('label', { class: 'f' }, 'Bas-URL', oBase), h('label', { class: 'f' }, 'API-nyckel', oKey),
       h('div', { class: 'grid', style: 'grid-template-columns:1fr 1fr;gap:8px' }, oModels.map(i => h('label', { class: 'f small' }, AI.MODELS[i.dataset.k].name, i))),
       h('label', { class: 'opt' }, oImg, 'Image 1.5 använder /images/generations'),
@@ -4112,12 +2508,14 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
     prov.addEventListener('change', sync); sync();
     const close = modal([
       h('h2', null, '⚙️ Inställningar'),
+      note ? h('p', { class: 'note' }, '🔌 ' + note) : null,
       h('label', { class: 'f' }, 'AI-leverantör', prov), aBox, oBox,
       h('div', { class: 'row', style: 'margin-top:14px' },
         h('button', { class: 'btn primary', onclick: () => {
           s.provider = prov.value; s.anthropicKey = aKey.value.trim(); s.openaiBase = oBase.value.trim() || AI.DEFAULT_SETTINGS.openaiBase; s.openaiKey = oKey.value.trim(); s.openaiImageApi = oImg.checked;
           oModels.forEach(i => { s.openaiModels[i.dataset.k] = i.value.trim() || AI.DEFAULT_SETTINGS.openaiModels[i.dataset.k]; });
           if (s.provider === 'anthropic' && !s.anthropicKey) { toast('Fyll i API-nyckeln'); return; }
+          if (s.provider === 'openai' && !s.openaiBase) { toast('Fyll i bas-URL:en'); return; }
           S.settings = s; store.set('settings', s); close(); toast('Sparat'); render();
         } }, 'Spara'),
         h('button', { class: 'btn ghost', onclick: () => close() }, 'Avbryt'),
@@ -4130,7 +2528,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
   }
 
   render();
-  window.Nexora = { S, PLANS, can, games, render, RT, testGame, released, COST, JOBS, startGodotJob, getLessons };
+  window.Nexora = { S, PLANS, can, games, render, testGame, released, COST, JOBS, startGodotJob, getLessons };
 })();
 
 </script>

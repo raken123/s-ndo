@@ -14,7 +14,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 SRC = os.path.join(ROOT, "src")
 DIST = os.path.join(ROOT, "dist")
-VERSION = "1.5.0"
+VERSION = "1.5.1"
 
 
 def read(name):
@@ -25,9 +25,8 @@ def read(name):
 def build():
     parts = {
         "CSS": read("app.css"),
-        "RUNTIME": read("runtime.js"),
-        "GAMES": read("games.js"),
-        "LOCALGEN": read("localgen.js"),
+        "VIEWER3D": read("viewer3d.js"),
+        "MEDIA": read("media.js"),
         "AI": read("ai.js"),
         "APP": read("app.js"),
     }

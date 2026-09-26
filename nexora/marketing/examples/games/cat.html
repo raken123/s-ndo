@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="sv"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Kattkuppen</title>
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#1d1b2e;touch-action:none}canvas{display:block}</style>
+</head><body><canvas id="c"></canvas>
+<script>
+"use strict";
+// Kattkuppen – smyg förbi vakthundarna och stjäl fisken från köksbordet.
+// Pilar/WASD smyger · håll mellanslag för att krypa tyst (långsammare, hundarna hör dig inte).
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const VW = 600, VH = 700;
+let W, H, S, OX, OY;
+function fit() {
+  const d = Math.min(devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight; cv.width = W * d; cv.height = H * d; cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  S = Math.min(W / VW, H / VH); OX = (W - VW * S) / 2; OY = (H - VH * S) / 2; ctx.setTransform(d * S, 0, 0, d * S, d * OX, d * OY);
+}
+addEventListener('resize', fit); fit();
+const demo = !!window.NEXORA_DEMO, keys = {};
+addEventListener('keydown', e => { keys[e.code] = true; if (e.code === 'KeyP' || e.code === 'Escape') paused = !paused; if (state !== 'play' && (e.code === 'Space' || e.code === 'Enter')) start(); if (/Arrow|Space/.test(e.code)) e.preventDefault(); });
+addEventListener('keyup', e => { keys[e.code] = false; });
+cv.addEventListener('pointerdown', e => { if (state !== 'play') start(); else tap = { x: (e.clientX - OX) / S, y: (e.clientY - OY) / S }; });
+
+// the house: furniture blocks the dogs' view and the cat's path
+const WALLS = [[40, 330, 200, 24], [360, 330, 200, 24], [270, 120, 24, 150], [100, 480, 120, 60], [380, 470, 70, 110], [120, 150, 110, 70], [400, 150, 90, 60]];
+const RUGS = [[70, 380, 460, 70, '#3b2f5c'], [320, 560, 200, 110, '#5c2f3b']];
+let state = demo ? 'play' : 'title', paused = false, t, cat, dogs, fish, score, seen, tap = null, alarm, stepT;
+const ROUTE = [[80, 640], [80, 420], [300, 420], [300, 300], [330, 240], [330, 110], [440, 95]];
+function start() {
+  state = 'play'; t = 0; score = 0; alarm = 0; stepT = 0;
+  cat = { x: 80, y: 640, a: -1.2, walk: 0, wp: 1, wait: 0 };
+  dogs = [
+    { path: [[80, 250], [220, 250]], i: 0, x: 80, y: 250, a: 0, sp: 70 },
+    { path: [[520, 400], [520, 620], [460, 620]], i: 0, x: 520, y: 400, a: 1.57, sp: 60 },
+    { path: [[360, 270], [540, 270]], i: 0, x: 360, y: 270, a: 0, sp: 80 },
+  ];
+  fish = { x: 470, y: 90 };
+}
+start(); if (!demo) state = 'title';
+
+function blocked(x, y, r) { if (x < 30 + r || x > VW - 30 - r || y < 60 + r || y > VH - 20 - r) return true; return WALLS.some(([wx, wy, ww, wh]) => x > wx - r && x < wx + ww + r && y > wy - r && y < wy + wh + r); }
+function lineClear(x0, y0, x1, y1) { for (let k = 0; k <= 20; k++) { const x = x0 + (x1 - x0) * k / 20, y = y0 + (y1 - y0) * k / 20; if (WALLS.some(([wx, wy, ww, wh]) => x > wx && x < wx + ww && y > wy && y < wy + wh)) return false; } return true; }
+function sees(d, x, y) {
+  const dx = x - d.x, dy = y - d.y, dist = Math.hypot(dx, dy);
+  if (dist > 170) return false;
+  let da = Math.atan2(dy, dx) - d.a; da = Math.atan2(Math.sin(da), Math.cos(da));
+  return Math.abs(da) < 0.55 && lineClear(d.x, d.y, x, y);
+}
+
+function update(dt) {
+  t += dt; alarm = Math.max(0, alarm - dt);
+  let mx = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0), my = (keys.ArrowDown || keys.KeyS ? 1 : 0) - (keys.ArrowUp || keys.KeyW ? 1 : 0);
+  if (tap) { const dx = tap.x - cat.x, dy = tap.y - cat.y, l = Math.hypot(dx, dy); if (l < 8) tap = null; else { mx = dx / l; my = dy / l; } }
+  let quiet = !!keys.Space;
+  if (demo) {
+    // demo cat: follows its route and waits whenever the next step would be seen
+    const [tx, ty] = ROUTE[cat.wp], dx = tx - cat.x, dy = ty - cat.y, l = Math.hypot(dx, dy);
+    const nx = cat.x + dx / l * 20, ny = cat.y + dy / l * 20;
+    if (dogs.some(d => sees(d, nx, ny) || Math.hypot(d.x - nx, d.y - ny) < 60)) { mx = my = 0; }
+    else { mx = dx / l; my = dy / l; quiet = true; }
+    if (l < 6) cat.wp = Math.min(ROUTE.length - 1, cat.wp + 1);
+  }
+  const l = Math.hypot(mx, my) || 1, sp = quiet ? 95 : 150;
+  if (mx || my) {
+    const nx = cat.x + mx / l * sp * dt, ny = cat.y + my / l * sp * dt;
+    if (!blocked(nx, cat.y, 12)) cat.x = nx; if (!blocked(cat.x, ny, 12)) cat.y = ny;
+    cat.a = Math.atan2(my, mx); cat.walk += dt * (quiet ? 8 : 14);
+  }
+  for (const d of dogs) {
+    const [tx, ty] = d.path[d.i], dx = tx - d.x, dy = ty - d.y, dl = Math.hypot(dx, dy);
+    if (dl < 3) { d.i = (d.i + 1) % d.path.length; d.pause = 0.8; }
+    else if ((d.pause = (d.pause || 0) - dt) <= 0) { d.x += dx / dl * d.sp * dt; d.y += dy / dl * d.sp * dt; const want = Math.atan2(dy, dx); d.a += Math.atan2(Math.sin(want - d.a), Math.cos(want - d.a)) * Math.min(1, dt * 6); }
+    else d.a += Math.sin(t * 2 + d.x) * dt * 0.8;
+    const heard = !quiet && (mx || my) && Math.hypot(cat.x - d.x, cat.y - d.y) < 90;
+    if (sees(d, cat.x, cat.y) || heard) { alarm = 1.4; woof(); cat.x = 80; cat.y = 640; cat.wp = 1; if (!demo) { score = Math.max(0, score - 1); } }
+  }
+  if (Math.hypot(cat.x - fish.x, cat.y - fish.y) < 26) { score++; meow(); fish = [{ x: 470, y: 90 }, { x: 90, y: 110 }][score % 2]; cat.x = 80; cat.y = 640; cat.wp = 1; }
+}
+let ac = null, lastWoof = 0;
+function snd(f0, f1, d, type) { try { ac = ac || new AudioContext(); const t0 = ac.currentTime, o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(f1, t0 + d); g.gain.setValueAtTime(0.15, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + d); o.connect(g); g.connect(ac.destination); o.start(); o.stop(t0 + d); } catch (e) { /* no audio */ } }
+function woof() { if (t - lastWoof > 1) { lastWoof = t; snd(220, 90, 0.25, 'sawtooth'); } }
+function meow() { snd(600, 900, 0.18, 'triangle'); snd(900, 500, 0.3, 'triangle'); }
+function text(s, x, y, size, col) { ctx.font = '900 ' + size + 'px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillText(s, x + 2, y + 3); ctx.fillStyle = col; ctx.fillText(s, x, y); }
+
+function drawCat() {
+  ctx.save(); ctx.translate(cat.x, cat.y); ctx.rotate(cat.a + Math.PI / 2);
+  const w = Math.sin(cat.walk) * 3;
+  ctx.fillStyle = '#ff9f43';
+  ctx.strokeStyle = '#ff9f43'; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(0, 14); ctx.quadraticCurveTo(10 + w * 2, 28, 4, 38); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(0, 4, 11, 16, 0, 0, 7); ctx.fill();
+  [[-8, -4 + w], [8, -4 - w], [-8, 12 - w], [8, 12 + w]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 4, 0, 7); ctx.fill(); });
+  ctx.beginPath(); ctx.arc(0, -14, 10, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-9, -18); ctx.lineTo(-7, -29); ctx.lineTo(-1, -21); ctx.moveTo(9, -18); ctx.lineTo(7, -29); ctx.lineTo(1, -21); ctx.fill();
+  ctx.fillStyle = '#c56a1a'; ctx.fillRect(-3, -2, 6, 3); ctx.fillRect(-3, 6, 6, 3);
+  ctx.fillStyle = '#b8ff5c'; ctx.beginPath(); ctx.arc(-4, -17, 2.2, 0, 7); ctx.arc(4, -17, 2.2, 0, 7); ctx.fill();
+  ctx.restore();
+}
+function drawDog(d) {
+  // vision cone (walls cut it short)
+  const pts = [[d.x, d.y]];
+  for (let k = -10; k <= 10; k++) {
+    const a = d.a + k * 0.055; let r = 170;
+    for (let s = 8; s <= 170; s += 6) { const x = d.x + Math.cos(a) * s, y = d.y + Math.sin(a) * s; if (WALLS.some(([wx, wy, ww, wh]) => x > wx && x < wx + ww && y > wy && y < wy + wh)) { r = s; break; } }
+    pts.push([d.x + Math.cos(a) * r, d.y + Math.sin(a) * r]);
+  }
+  const cg = ctx.createRadialGradient(d.x, d.y, 10, d.x, d.y, 170); cg.addColorStop(0, alarm > 0 ? 'rgba(255,60,60,.5)' : 'rgba(255,230,120,.45)'); cg.addColorStop(1, 'rgba(255,230,120,0)');
+  ctx.save(); ctx.beginPath(); ctx.rect(36, 66, VW - 72, VH - 92); ctx.clip();
+  ctx.fillStyle = cg; ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.fill();
+  ctx.restore();
+  ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.a + Math.PI / 2);
+  ctx.fillStyle = '#6b4f3a'; ctx.beginPath(); ctx.ellipse(0, 8, 15, 22, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, -16, 13, 0, 7); ctx.fill(); ctx.fillStyle = '#3e2c20'; ctx.beginPath(); ctx.ellipse(-12, -14, 5, 10, 0.3, 0, 7); ctx.ellipse(12, -14, 5, 10, -0.3, 0, 7); ctx.fill();
+  ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(0, -27, 4, 0, 7); ctx.fill();
+  ctx.fillStyle = '#e63946'; ctx.fillRect(-10, -6, 20, 4);
+  ctx.restore();
+  if (alarm > 0 && Math.hypot(cat.x - d.x, cat.y - d.y) < 400) text('!', d.x, d.y - 40, 34, '#ff4d4d');
+}
+function draw() {
+  ctx.fillStyle = '#1d1b2e'; ctx.fillRect(-OX / S, -OY / S, W / S, H / S);
+  // floor boards
+  ctx.fillStyle = '#c9a27a'; ctx.fillRect(30, 60, VW - 60, VH - 80);
+  ctx.strokeStyle = '#b08962'; ctx.lineWidth = 2; for (let y = 60; y < VH - 20; y += 26) { ctx.beginPath(); ctx.moveTo(30, y); ctx.lineTo(VW - 30, y); ctx.stroke(); }
+  RUGS.forEach(([x, y, w, h, c]) => { ctx.fillStyle = c; ctx.beginPath(); ctx.roundRect(x, y, w, h, 12); ctx.fill(); ctx.strokeStyle = '#ffffff33'; ctx.lineWidth = 3; ctx.strokeRect(x + 8, y + 8, w - 16, h - 16); });
+  ctx.strokeStyle = '#2e2a44'; ctx.lineWidth = 12; ctx.strokeRect(30, 60, VW - 60, VH - 80);
+  // fish on a plate
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(fish.x, fish.y, 26, 16, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#6ec6ff'; ctx.beginPath(); ctx.ellipse(fish.x - 3, fish.y, 15, 8, 0, 0, 7); ctx.fill(); ctx.beginPath(); ctx.moveTo(fish.x + 10, fish.y); ctx.lineTo(fish.x + 20, fish.y - 8); ctx.lineTo(fish.x + 20, fish.y + 8); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(fish.x - 11, fish.y - 2, 2, 0, 7); ctx.fill();
+  ctx.globalAlpha = 0.5 + 0.5 * Math.sin(t * 5); ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(fish.x, fish.y, 34, 0, 7); ctx.stroke(); ctx.globalAlpha = 1;
+  dogs.forEach(drawDog);
+  // furniture
+  WALLS.forEach(([x, y, w, h], i) => { ctx.fillStyle = i < 3 ? '#4a4466' : '#7a4e2d'; ctx.beginPath(); ctx.roundRect(x, y, w, h, 6); ctx.fill(); ctx.fillStyle = i < 3 ? '#5c5580' : '#936038'; ctx.fillRect(x + 4, y + 4, w - 8, Math.min(10, h - 8)); });
+  drawCat();
+  ctx.fillStyle = 'rgba(20,18,40,.85)'; ctx.fillRect(0, 0, VW, 50);
+  text('🐟 ' + score, 60, 27, 26, '#fff'); text('Kattkuppen', VW / 2, 27, 24, '#ff9f43'); text(alarm > 0 ? 'UPPTÄCKT!' : 'smyg…', VW - 90, 27, 20, alarm > 0 ? '#ff4d4d' : '#b8ff5c');
+  if (state !== 'play' || paused) {
+    ctx.fillStyle = 'rgba(15,12,30,.72)'; ctx.fillRect(0, 0, VW, VH);
+    text(paused ? 'PAUS' : 'Kattkuppen', VW / 2, 300, 60, '#ff9f43');
+    if (!paused) text('Stjäl fisken utan att hundarna ser dig · håll mellanslag för att smyga tyst', VW / 2, 370, 17, '#fff');
+  }
+}
+let last = performance.now();
+function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; if (state === 'play' && !paused) update(dt); draw(); requestAnimationFrame(frame); }
+requestAnimationFrame(frame);
+</script>
+</body></html>

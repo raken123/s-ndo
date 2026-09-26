@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="sv"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Regnrytm</title>
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#0b1026;touch-action:none}canvas{display:block}</style>
+</head><body><canvas id="c"></canvas>
+<script>
+"use strict";
+// Regnrytm – trumma i takt med regnet. Dropparna faller i fyra banor; slå på trumman när droppen når den.
+// Tangenter: vänster, ner, upp, höger (eller D F J K). Touch: tryck på trummorna.
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const VW = 600, VH = 700, LANES = 4, HIT_Y = 590, SPEED = 330, BPM = 116, BEAT = 60 / BPM;
+const COLS = ['#ff5d8f', '#ffd23f', '#3ddc97', '#4cc9f0'];
+let W, H, S, OX, OY;
+function fit() {
+  const d = Math.min(devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight; cv.width = W * d; cv.height = H * d; cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  S = Math.min(W / VW, H / VH); OX = (W - VW * S) / 2; OY = (H - VH * S) / 2; ctx.setTransform(d * S, 0, 0, d * S, d * OX, d * OY);
+}
+addEventListener('resize', fit); fit();
+const laneX = i => 120 + i * 120;
+const demo = !!window.NEXORA_DEMO;
+const KEYMAP = { ArrowLeft: 0, KeyD: 0, ArrowDown: 1, KeyF: 1, ArrowUp: 2, KeyJ: 2, ArrowRight: 3, KeyK: 3 };
+addEventListener('keydown', e => {
+  if (e.code === 'KeyP' || e.code === 'Escape') { paused = !paused; return; }
+  if (state !== 'play') { if (e.code === 'Space' || e.code === 'Enter') start(); return; }
+  if (e.code in KEYMAP && !e.repeat) strike(KEYMAP[e.code]);
+  if (/Arrow|Space/.test(e.code)) e.preventDefault();
+});
+cv.addEventListener('pointerdown', e => {
+  if (state !== 'play') return start();
+  const x = (e.clientX - OX) / S; strike(Math.max(0, Math.min(3, Math.round((x - 120) / 120))));
+});
+
+// Pattern: a seeded groove that gets busier every 8 bars.
+function pattern(bar) {
+  const out = [], dens = Math.min(0.9, 0.45 + bar * 0.03);
+  for (let s = 0; s < 8; s++) {
+    const r = Math.abs(Math.sin(bar * 12.9898 + s * 78.233) * 43758.5453) % 1;
+    if (s % 2 === 0 || r < dens * 0.6) out.push({ beat: bar * 4 + s / 2, lane: Math.floor((r * 97 + s * 3 + bar) % 4) });
+  }
+  return out;
+}
+let state = demo ? 'play' : 'title', paused = false, song, drops, nextBar, score, combo, best, lives, flashes, rain, bolt, drums, ac = null;
+function start() { state = 'play'; song = 0; drops = []; nextBar = 0; score = 0; combo = 0; best = 0; lives = 10; flashes = []; bolt = 0; drums = [0, 0, 0, 0]; }
+start(); if (!demo) state = 'title';
+rain = Array.from({ length: 140 }, (_, i) => ({ x: (i * 67.1) % VW, y: (i * 131.7) % VH, l: 10 + (i % 5) * 4, v: 500 + (i % 7) * 60 }));
+
+function drum(lane) {
+  try {
+    ac = ac || new AudioContext();
+    const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+    o.frequency.setValueAtTime([110, 160, 220, 300][lane], t); o.frequency.exponentialRampToValueAtTime(50, t + 0.2);
+    g.gain.setValueAtTime(0.4, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.25); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + 0.26);
+  } catch (e) { /* no audio */ }
+}
+function strike(lane) {
+  drums[lane] = 1; drum(lane);
+  let best = null;
+  for (const d of drops) if (d.lane === lane && !d.hit && Math.abs(d.y - HIT_Y) < 70 && (!best || Math.abs(d.y - HIT_Y) < Math.abs(best.y - HIT_Y))) best = d;
+  if (!best) { combo = 0; return; }
+  const off = Math.abs(best.y - HIT_Y), grade = off < 18 ? ['PERFEKT!', 300] : off < 40 ? ['BRA', 150] : ['OK', 50];
+  best.hit = true; combo++; score += grade[1] * (1 + Math.floor(combo / 10)); best_ = Math.max(best_, combo);
+  flashes.push({ lane, txt: grade[0], t: 0.6 });
+  for (let i = 0; i < 12; i++) flashes.push({ lane, spl: true, x: laneX(lane), y: HIT_Y, vx: (Math.random() - 0.5) * 300, vy: -Math.random() * 300, t: 0.5 });
+  if (combo % 16 === 0) bolt = 0.35;
+}
+let best_ = 0;
+
+function update(dt) {
+  song += dt;
+  const beatNow = song / BEAT;
+  while (nextBar * 4 < beatNow + 8) { for (const n of pattern(nextBar)) drops.push({ lane: n.lane, beat: n.beat, y: -100, hit: false }); nextBar++; }
+  for (const d of drops) {
+    d.y = HIT_Y - (d.beat - beatNow) * BEAT * SPEED;
+    if (demo && !d.hit && d.y >= HIT_Y - 4 - (d.beat % 3) * 6) strike(d.lane);
+  }
+  for (const d of drops) if (!d.hit && d.y > HIT_Y + 70) { d.hit = true; d.miss = true; combo = 0; lives--; flashes.push({ lane: d.lane, txt: 'MISS', t: 0.5, miss: true }); if (lives <= 0) { if (demo) start(); else state = 'over'; } }
+  drops = drops.filter(d => d.y < VH + 40 && !(d.hit && !d.miss));
+  drops = drops.filter(d => !d.miss);
+  flashes.forEach(f => { f.t -= dt; if (f.spl) { f.x += f.vx * dt; f.y += f.vy * dt; f.vy += 900 * dt; } });
+  flashes = flashes.filter(f => f.t > 0);
+  drums = drums.map(v => Math.max(0, v - dt * 5)); bolt = Math.max(0, bolt - dt);
+}
+function text(s, x, y, size, col) { ctx.font = '900 ' + size + 'px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillText(s, x + 2, y + 3); ctx.fillStyle = col; ctx.fillText(s, x, y); }
+function drop(x, y, c, r) { ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(x, y - r * 1.8); ctx.bezierCurveTo(x + r, y - r * 0.4, x + r, y + r, x, y + r); ctx.bezierCurveTo(x - r, y + r, x - r, y - r * 0.4, x, y - r * 1.8); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.beginPath(); ctx.arc(x - r * 0.35, y - r * 0.1, r * 0.25, 0, 7); ctx.fill(); }
+
+function draw(dt) {
+  const sky = ctx.createLinearGradient(0, 0, 0, VH); sky.addColorStop(0, bolt > 0 ? '#5a6bb0' : '#141a3d'); sky.addColorStop(1, '#070a1c');
+  ctx.fillStyle = '#070a1c'; ctx.fillRect(-OX / S, -OY / S, W / S, H / S); ctx.fillStyle = sky; ctx.fillRect(0, 0, VW, VH);
+  // clouds
+  ctx.fillStyle = '#2a3263'; for (let i = 0; i < 9; i++) { ctx.beginPath(); ctx.arc(i * 80 - 20 + Math.sin(i + (song || 0) * 0.3) * 10, 30 + (i % 3) * 14, 60, 0, 7); ctx.fill(); }
+  if (bolt > 0) { ctx.strokeStyle = '#fff8b0'; ctx.lineWidth = 5; ctx.beginPath(); let x = 420, y = 60; ctx.moveTo(x, y); for (let i = 0; i < 6; i++) { x += (i % 2 ? 30 : -40); y += 60; ctx.lineTo(x, y); } ctx.stroke(); }
+  // background rain
+  ctx.strokeStyle = 'rgba(160,190,255,.25)'; ctx.lineWidth = 1.5; ctx.beginPath();
+  for (const r of rain) { r.y += r.v * (dt || 0); if (r.y > VH) r.y -= VH + 20; ctx.moveTo(r.x, r.y); ctx.lineTo(r.x - 3, r.y + r.l); } ctx.stroke();
+  // lanes
+  for (let i = 0; i < LANES; i++) {
+    const g = ctx.createLinearGradient(0, 80, 0, HIT_Y); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, COLS[i] + '33');
+    ctx.fillStyle = g; ctx.fillRect(laneX(i) - 46, 80, 92, HIT_Y - 80);
+  }
+  // drops
+  for (const d of drops) if (!d.hit && d.y > 60) { ctx.shadowColor = COLS[d.lane]; ctx.shadowBlur = 18; drop(laneX(d.lane), d.y, COLS[d.lane], 18); ctx.shadowBlur = 0; }
+  // drums
+  for (let i = 0; i < LANES; i++) {
+    const x = laneX(i), k = drums[i];
+    ctx.fillStyle = '#3b2a1a'; ctx.beginPath(); ctx.ellipse(x, HIT_Y + 34, 48, 22, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#5b3d22'; ctx.fillRect(x - 48, HIT_Y + 4, 96, 30);
+    ctx.fillStyle = k > 0 ? '#fff' : '#f1e3c8'; ctx.beginPath(); ctx.ellipse(x, HIT_Y + 4 + k * 3, 48, 20, 0, 0, 7); ctx.fill();
+    ctx.strokeStyle = COLS[i]; ctx.lineWidth = 5; ctx.shadowColor = COLS[i]; ctx.shadowBlur = 10 + k * 30; ctx.stroke(); ctx.shadowBlur = 0;
+    text(['◀', '▼', '▲', '▶'][i], x, HIT_Y + 60, 18, 'rgba(255,255,255,.6)');
+  }
+  for (const f of flashes) {
+    ctx.globalAlpha = Math.min(1, f.t * 2.5);
+    if (f.spl) { ctx.fillStyle = COLS[f.lane]; ctx.beginPath(); ctx.arc(f.x, f.y, 4, 0, 7); ctx.fill(); }
+    else text(f.txt, laneX(f.lane), HIT_Y - 90 - (0.6 - f.t) * 60, f.miss ? 22 : 26, f.miss ? '#8a93b8' : COLS[f.lane]);
+  }
+  ctx.globalAlpha = 1;
+  text(String(score), VW / 2, 110, 44, '#fff');
+  if (combo > 2) text(combo + '× KOMBO', VW / 2, 155, 24, '#ffd23f');
+  ctx.fillStyle = 'rgba(255,255,255,.15)'; ctx.fillRect(20, 20, 150, 10); ctx.fillStyle = '#4cc9f0'; ctx.fillRect(20, 20, 15 * Math.max(0, lives), 10);
+  if (state !== 'play' || paused) {
+    ctx.fillStyle = 'rgba(5,8,25,.72)'; ctx.fillRect(0, 0, VW, VH);
+    text(paused ? 'PAUS' : state === 'over' ? 'Stormen tog slut' : 'Regnrytm', VW / 2, 300, 60, '#4cc9f0');
+    if (!paused) text(state === 'over' ? 'Poäng ' + score + ' · längsta kombo ' + best_ : 'Pilarna trummar · tryck mellanslag för att börja', VW / 2, 370, 20, '#fff');
+  }
+}
+let last = performance.now();
+function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; if (state === 'play' && !paused) update(dt); draw(state === 'play' && !paused ? dt : 0.016); requestAnimationFrame(frame); }
+requestAnimationFrame(frame);
+</script>
+</body></html>

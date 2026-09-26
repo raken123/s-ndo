@@ -21,6 +21,8 @@
   .card { background: rgba(20, 18, 52, .92); border: 2px solid rgba(255,255,255,.12); border-radius: 44px; box-shadow: 0 40px 120px rgba(0,0,0,.5); }
   .frame { position: absolute; overflow: hidden; border-radius: 38px; border: 3px solid rgba(255,255,255,.18); box-shadow: 0 40px 140px rgba(124,92,255,.35); background: #000; }
   .frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .prompt { font-size: 40px; font-weight: 650; line-height: 1.3; min-height: 104px; }
+  .prompt .cur { display: inline-block; width: 4px; height: 44px; background: #22d3ee; vertical-align: -6px; margin-left: 4px; }
   .step { font-size: 40px; font-weight: 650; padding: 14px 0; display: flex; gap: 20px; align-items: center; }
   .icon { display: inline-flex; flex-direction: column; align-items: center; gap: 14px; width: 290px; }
   .icon div { font-size: 150px; line-height: 1; }
@@ -45,20 +47,23 @@
   <div class="abs center p" id="s1b" style="top:1080px">Den största uppdateringen hittills.</div>
 </div>
 
-<!-- 2: self-test -->
+<!-- 2: any game – six prompts, six AI-written games -->
 <div class="scene" id="s2">
-  <div class="abs center h2" style="top:180px">AI:n testar sina<br><span class="grad">egna spel.</span></div>
-  <div class="abs card" style="left:70px;right:70px;top:450px;height:560px;padding:40px 54px" id="log2"></div>
-  <div class="frame" id="stage2" style="left:190px;right:190px;top:1060px;height:520px"></div>
-  <div class="abs center" id="badge2" style="top:1620px"><span class="pill" style="background:#3ddc97;color:#0b0b20;border:0">✓ Självtestad · inga fel</span></div>
+  <div class="abs center h2" style="top:130px">Vilket spel<br><span class="grad">som helst.</span></div>
+  <div class="abs card" style="left:70px;right:70px;top:380px;height:180px;padding:30px 44px">
+    <div class="small" style="font-size:26px;color:#9d9dcc;font-weight:700;margin-bottom:8px">✍️ Beskriv ditt spel</div>
+    <div class="prompt" id="prompt2"></div>
+  </div>
+  <div class="frame" id="stage2" style="left:90px;right:90px;top:600px;height:960px"><div class="abs center" style="top:440px;font-size:38px;font-weight:750;color:#9d9dcc">✨ AI:n skriver spelet…</div></div>
+  <div class="abs center" style="top:1610px"><span class="pill" id="cap2">✨ AI:n skriver hela spelet från grunden</span></div>
 </div>
 
-<!-- 3: new game types -->
+<!-- 3: self-test -->
 <div class="scene" id="s3">
-  <div class="abs center h2" style="top:170px"><span class="grad">3 nya</span> speltyper.</div>
-  <div class="abs center p" style="top:290px">12 totalt – offline, på sekunder.</div>
-  <div class="frame" id="stage3" style="left:60px;right:60px;top:420px;height:1100px"></div>
-  <div class="abs center" style="top:1570px"><span class="pill" id="cap3"></span></div>
+  <div class="abs center h2" style="top:180px">AI:n testar sina<br><span class="grad">egna spel.</span></div>
+  <div class="abs card" style="left:70px;right:70px;top:450px;height:560px;padding:40px 54px" id="log3"></div>
+  <div class="frame" id="stage3" style="left:190px;right:190px;top:1060px;height:520px"></div>
+  <div class="abs center" id="badge3" style="top:1620px"><span class="pill" style="background:#3ddc97;color:#0b0b20;border:0">✓ Självtestad · inga fel</span></div>
 </div>
 
 <!-- 4: gamepad, pause, touch -->
@@ -75,14 +80,14 @@
 <!-- 5: Image 1.5 -->
 <div class="scene" id="s5">
   <div class="abs center h2" style="top:170px">Image <span class="grad">1.5</span></div>
-  <div class="abs center p" style="top:290px">4 stilar · animerade sprites · PNG</div>
+  <div class="abs center p" style="top:290px">Rita vad som helst · 4 stilar · animerat</div>
   <div class="abs" id="sprites" style="left:80px;right:80px;top:420px;display:grid;grid-template-columns:1fr 1fr;gap:40px;justify-items:center"></div>
 </div>
 
 <!-- 6: 3D 1.5 -->
 <div class="scene" id="s6">
   <div class="abs center h2" style="top:170px">3D <span class="grad">1.5</span></div>
-  <div class="abs center p" style="top:290px">Nya modeller · export som .glb</div>
+  <div class="abs center p" style="top:290px">Modellera vad som helst · export som .glb</div>
   <canvas id="mesh" class="abs" width="1080" height="1100" style="left:0;top:400px"></canvas>
   <div class="abs center" style="top:1420px"><span class="pill" id="meshname" style="font-size:40px"></span></div>
   <div class="abs center" style="top:1540px"><span class="pill">Öppnas i Godot · Unity · Blender</span></div>
@@ -92,31 +97,36 @@
 <div class="scene" id="s7">
   <div class="abs center" style="top:420px"><svg id="logo7" style="width:280px;height:280px" viewBox="0 0 64 64"><defs><linearGradient id="lg7" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#lg7)"/><path d="M18 46V18h6l16 18V18h6v28h-6L24 28v18z" fill="#0b0b20"/></svg></div>
   <div class="abs center h1" style="top:780px;font-size:140px">Nexora <span class="grad">1.5</span></div>
-  <div class="abs center p" style="top:960px;font-size:54px;color:#fff;font-weight:700">Ute nu.</div>
+  <div class="abs center p" style="top:960px;font-size:54px;color:#fff;font-weight:700">Vilket spel som helst. Ute nu.</div>
   <div class="abs center p" style="top:1060px;font-size:38px">Webb · Windows · macOS · Linux</div>
   <div class="abs center" style="top:1190px"><span id="cta" style="display:inline-block;padding:34px 70px;border-radius:32px;font-size:50px;font-weight:850;color:#0b0b20;background:linear-gradient(110deg,#7c5cff,#22d3ee)">Börja gratis</span></div>
 </div>
 
 <script>
 'use strict';
-const SCENES = [['s1', 0, 3.2], ['s2', 3.0, 9.0], ['s3', 8.8, 17.4], ['s4', 17.2, 20.8], ['s5', 20.6, 24.8], ['s6', 24.6, 28.8], ['s7', 28.6, 32.5]];
+const SCENES = [['s1', 0, 3.2], ['s2', 3.0, 13.8], ['s3', 13.6, 19.2], ['s4', 19.0, 22.6], ['s5', 22.4, 26.2], ['s6', 26.0, 29.6], ['s7', 29.4, 32.5]];
+// Six very different ideas: each one is typed, then the game the AI wrote for it plays.
+const MONTAGE = [
+  ['pizza', 'Laga pizzor åt otåliga kunder i en food truck'],
+  ['football', 'Fotboll med robotar på månen'],
+  ['rhythm', 'Ett rytmspel där man trummar i takt med regnet'],
+  ['cat', 'En katt som smyger förbi hundar för att stjäla fisk'],
+  ['garden', 'Odla magiska växter och sälj dem på marknaden'],
+  ['subway', 'Ett skräckspel i en övergiven tunnelbana med ficklampa'],
+];
+const T2 = 3.4, SEG = 1.7;
 window.AD = {
   out: 'nexora-15-9x16.mp4', thumb: 'nexora-15-thumbnail.jpg', thumbAt: 1.6, duration: 32,
-  music: 'snabb energi action trailer glad',
-  games: {
-    shooter: ['Rymdskjutare med neon-tema och bossar "Neonstormen"', '2d'],
-    racer: ['Ett racingspel på en ökenbana "Ökenrallyt"', '2d'],
-    match3: ['Ett pusselspel med juveler i en godisvärld "Godisjuvelerna"', '2d'],
-    towerdefense: ['Tower defense i en skog "Skogsförsvaret"', '2d'],
-  },
+  music: 'energisk lanseringslåt för ett spelverktyg, 128 BPM, glad och pampig',
+  games: Object.fromEntries(MONTAGE),
   extras: {
-    meshes: ['ett svärd', 'en skattkista', 'en svamp', 'en planet'],
-    sprites: [['en drake', 'pixel'], ['en robot', 'platt'], ['ett spöke', 'neon'], ['en riddare', 'retro']],
+    meshes: ['ett svärd', 'en skattkista', 'en svamp', 'en planet med ring'],
+    sprites: [['drake-pixel', 'en drake som flaxar', 'pixel'], ['robot-platt', 'en robot som går', 'platt'], ['spoke-neon', 'ett spöke som svävar', 'neon'], ['riddare-retro', 'en riddare som går', 'retro']],
   },
-  sfx: [['power', 0.3], ['laser', 3.0], ['laser', 5.3], ['power', 7.3], ['laser', 8.8], ['laser', 11.6], ['laser', 14.4], ['power', 17.3], ['coin', 20.7], ['coin', 24.7], ['power', 28.7]],
+  sounds: { power: 'ett glatt powerup-ljud', coin: 'ett myntljud', laser: 'ett snabbt swoosh-ljud för klipp' },
+  sfx: [['power', 0.3]].concat(MONTAGE.map((m, k) => ['laser', T2 + k * SEG - 0.1]), [['power', 13.7], ['laser', 19.1], ['coin', 22.5], ['coin', 26.1], ['power', 29.5]]),
 };
-const LOG2 = [['✍️', 'Flash 1.5 skriver spelet'], ['▶️', 'Självtest 1 – kör spelet'], ['🐞', '1 fel hittat'], ['🔧', 'Rättar felet'], ['▶️', 'Självtest 2'], ['✅', 'Inga fel – klart!']];
-const MONTAGE = [['racer', '🏁 Racing mot AI-bilar'], ['match3', '💎 Pussel – tre i rad'], ['towerdefense', '🏰 Tower defense']];
+const LOG3 = [['✍️', 'Pro 1.5 skriver spelet'], ['▶️', 'Självtest 1 – kör spelet'], ['🐞', '1 fel hittat'], ['🔧', 'Rättar felet'], ['▶️', 'Självtest 2'], ['✅', 'Inga fel – klart!']];
 const STYLE = ['Pixel', 'Platt', 'Neon', 'Retro 8-bit'];
 
 const $ = id => document.getElementById(id);
@@ -125,10 +135,7 @@ const ease = x => 1 - Math.pow(1 - clamp(x, 0, 1), 3);
 const inOut = (t, a, b, f) => Math.min(ease((t - a) / (f || 0.35)), ease((b - t) / (f || 0.35)));
 
 const games = {};
-const BOTS = {
-  shooter: t => ({ Space: true, ArrowLeft: (t % 1.6) < 0.8, ArrowRight: (t % 1.6) >= 0.8 }),
-  racer: () => ({}), match3: () => ({}), towerdefense: () => ({}),  // these play themselves in demo mode
-};
+const BOTS = {}; // every example game plays itself in demo mode
 const CODES = { Space: ' ', ArrowLeft: 'ArrowLeft', ArrowRight: 'ArrowRight', ArrowUp: 'ArrowUp', ArrowDown: 'ArrowDown' };
 let meshes = [], g3 = null;
 
@@ -136,10 +143,13 @@ window.__setup = function (list, extras) {
   for (const [id, html] of Object.entries(list)) {
     const f = document.createElement('iframe');
     f.srcdoc = html;
-    f.style.opacity = id === 'shooter' ? '1' : '0';
-    (id === 'shooter' ? $('stage2') : $('stage3')).appendChild(f);
+    f.style.opacity = '0';
+    $('stage2').appendChild(f);
     games[id] = { f, held: {} };
   }
+  // the self-test scene shows one more copy of the pizza game
+  const f = document.createElement('iframe');
+  f.srcdoc = list.pizza; $('stage3').appendChild(f); games.selftest = { f, held: {} };
   meshes = extras.meshes;
   g3 = new Function(extras.nx3d + '\nreturn Nx3D;')()($('mesh').getContext('2d'));
   $('sprites').innerHTML = extras.sprites.map((svg, i) => `<div class="spr"><div class="strip" id="strip${i}">${svg}</div><b>${STYLE[i]}</b></div>`).join('');
@@ -151,7 +161,7 @@ function drive(t, dt) {
   for (const [id, g] of Object.entries(games)) {
     const w = g.f.contentWindow;
     if (!w || !w.__advance) continue;
-    const want = t < 0.6 ? {} : BOTS[id](t);
+    const want = t < 0.6 || !BOTS[id] ? {} : BOTS[id](t);
     for (const code of Object.keys(CODES)) {
       const on = !!want[code];
       if (on !== !!g.held[code]) {
@@ -178,34 +188,38 @@ window.__adFrame = function (t, dt) {
   $('logo1').style.opacity = ease(t / 0.4);
   pop($('s1a'), 0.8); pop($('s1b'), 1.3);
 
-  // 2
-  $('log2').innerHTML = LOG2.map(([i, s], k) => {
-    const at = 3.4 + k * 0.62, v = ease((t - at) / 0.3);
+  // 2: type the idea, then play the game the AI wrote for it
+  const seg = clamp(Math.floor((t - T2) / SEG), 0, MONTAGE.length - 1), lt = t - T2 - seg * SEG, [gid, idea] = MONTAGE[seg];
+  const typed = t < T2 ? '' : idea.slice(0, Math.ceil(clamp(lt / 0.5, 0, 1) * idea.length));
+  $('prompt2').innerHTML = typed.replace(/&/g, '&amp;').replace(/</g, '&lt;') + (lt < 0.5 || Math.floor(t * 3) % 2 ? '<span class="cur"></span>' : '');
+  // the previous game keeps playing while the next idea is typed, then the new game cuts in
+  const reveal = clamp((lt - 0.45) / 0.12, 0, 1);
+  MONTAGE.forEach(([id], k) => { if (games[id]) games[id].f.style.opacity = t < T2 ? '0' : k === seg ? String(reveal) : k === seg - 1 && reveal < 1 ? '1' : '0'; });
+  $('stage2').style.transform = `scale(${1.03 - ease((lt - 0.35) / 0.4) * 0.03})`;
+  $('cap2').textContent = seg === MONTAGE.length - 1 && lt > 0.9 ? '♾️ Inga mallar – om du kan beskriva det kan AI:n bygga det' : '✨ AI:n skriver hela spelet från grunden';
+
+  // 3: self-test log, then the tested game
+  $('log3').innerHTML = LOG3.map(([i, s], k) => {
+    const at = 14.0 + k * 0.5, v = ease((t - at) / 0.3);
     return `<div class="step" style="opacity:${v};transform:translateX(${(1 - v) * -40}px);${k === 2 ? 'color:#ffc542' : k === 5 ? 'color:#3ddc97' : ''}">${i} ${s}</div>`;
   }).join('');
-  $('stage2').style.opacity = ease((t - 6.6) / 0.4);
-  $('stage2').style.transform = `scale(${0.85 + ease((t - 6.6) / 0.4) * 0.15})`;
-  const b2 = ease((t - 7.0) / 0.35);
-  $('badge2').style.opacity = b2; $('badge2').style.transform = `scale(${0.7 + b2 * 0.3})`;
-
-  // 3
-  const seg = clamp(Math.floor((t - 9.0) / 2.8), 0, 2);
-  MONTAGE.forEach(([id], k) => { if (games[id]) games[id].f.style.opacity = k === seg ? '1' : '0'; });
-  $('cap3').textContent = MONTAGE[seg][1];
-  $('stage3').style.transform = `scale(${1.04 - ease(((t - 9.0) - seg * 2.8) / 0.4) * 0.04})`;
+  $('stage3').style.opacity = ease((t - 16.9) / 0.4);
+  $('stage3').style.transform = `scale(${0.85 + ease((t - 16.9) / 0.4) * 0.15})`;
+  const b3 = ease((t - 17.3) / 0.35);
+  $('badge3').style.opacity = b3; $('badge3').style.transform = `scale(${0.7 + b3 * 0.3})`;
 
   // 4
-  [...$('icons4').children].forEach((c, k) => { const v = ease((t - 17.6 - k * 0.3) / 0.35); c.style.opacity = v; c.style.transform = `scale(${0.5 + v * 0.5}) translateY(${Math.sin(t * 3 + k) * 8}px)`; });
-  pop($('s4b'), 18.8);
+  [...$('icons4').children].forEach((c, k) => { const v = ease((t - 19.4 - k * 0.3) / 0.35); c.style.opacity = v; c.style.transform = `scale(${0.5 + v * 0.5}) translateY(${Math.sin(t * 3 + k) * 8}px)`; });
+  pop($('s4b'), 20.6);
 
   // 5: animated sprite sheets, 4 frames each
-  if (t > 20.4 && t < 25) [0, 1, 2, 3].forEach(i => {
+  if (t > 22.2 && t < 26.4) [0, 1, 2, 3].forEach(i => {
     const f = Math.floor(t / 0.16) % 4, el = $('strip' + i);
-    if (el) { el.style.left = -f * 440 + 'px'; el.parentNode.style.transform = `scale(${0.8 + ease((t - 20.8 - i * 0.15) / 0.3) * 0.2})`; el.parentNode.style.opacity = ease((t - 20.8 - i * 0.15) / 0.3); }
+    if (el) { el.style.left = -f * 440 + 'px'; el.parentNode.style.transform = `scale(${0.8 + ease((t - 22.6 - i * 0.15) / 0.3) * 0.2})`; el.parentNode.style.opacity = ease((t - 22.6 - i * 0.15) / 0.3); }
   });
 
   // 6: rotating meshes rendered with Nexora's own 3D renderer
-  if (g3 && t > 24.4 && t < 29) {
+  if (g3 && t > 25.8 && t < 29.8) {
     const c = $('mesh').getContext('2d');
     c.clearRect(0, 0, 1080, 1100);
     const cam = g3.cam; const rot = t * 0.9;
@@ -213,19 +227,19 @@ window.__adFrame = function (t, dt) {
     g3.begin(1080, 1100);
     for (let i = -3; i < 3; i++) for (let j = -2; j < 3; j++) g3.poly([[i * 2, 0, j * 2], [i * 2 + 2, 0, j * 2], [i * 2 + 2, 0, j * 2 + 2], [i * 2, 0, j * 2 + 2]], (i + j) % 2 ? '#1c1c3a' : '#26264c', [0, 1, 0]);
     // one hero model at a time, turning, with its name
-    const idx = clamp(Math.floor((t - 24.8) / 1.0), 0, meshes.length - 1), m = meshes[idx], lt = t - 24.8 - idx * 1.0;
+    const idx = clamp(Math.floor((t - 26.2) / 0.8), 0, meshes.length - 1), m = meshes[idx], lt = t - 26.2 - idx * 0.8;
     const k = ease(lt / 0.3), ys = m.vertices.map(v => v[1]), top = Math.max.apply(null, ys);
     const sc = 2.4 / Math.max(1.2, top);
-    g3.mesh(m, 0, 0.01, 0, sc * (0.6 + k * 0.4), rot * 1.4 + idx);
+    g3.mesh(m, 0, 0.01, 0, sc * (0.6 + k * 0.4), 0.55 + Math.sin(lt * 2.6) * 0.45);  // a gentle sway in 3/4 view
     $('meshname').textContent = '🧊 ' + m.name + '.glb';
     g3.flush();
   }
 
   // 7
-  const k7 = ease((t - 28.7) / 0.6);
+  const k7 = ease((t - 29.5) / 0.6);
   $('logo7').style.transform = `scale(${0.7 + k7 * 0.3})`;
   $('logo7').style.filter = `drop-shadow(0 0 ${40 + Math.sin(t * 3) * 20}px rgba(124,92,255,.8))`;
-  $('cta').style.transform = `scale(${1 + (t > 29.6 ? Math.max(0, Math.sin((t - 29.6) * 4)) * 0.05 : 0)})`;
+  $('cta').style.transform = `scale(${1 + (t > 30.4 ? Math.max(0, Math.sin((t - 30.4) * 4)) * 0.05 : 0)})`;
 };
 </script>
 </body>
