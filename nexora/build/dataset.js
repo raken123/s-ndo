@@ -26,6 +26,9 @@ const GENRES = [
   ['2d', ['Ett open world-äventyr med uppdrag', 'Utforska ett kungarike och hjälp byborna']],
   ['3d', ['En 3D-löpare med tre filer', 'Endless runner i 3D där man hoppar över hinder']],
   ['3d', ['En 3D-arena där man samlar kulor', 'Samla orbs i en 3D-arena och undvik fiender']],
+  ['2d', ['Ett racingspel mot AI-bilar', 'Gokart-tävling på en slingrig bana']],
+  ['2d', ['Ett pusselspel med tre i rad', 'Matcha juveler och gör kombos']],
+  ['2d', ['Tower defense mot vågor av fiender', 'Försvara basen med uppgraderbara torn']],
 ];
 const THEMES = ['i en lavavärld', 'på is och snö', 'i en skog', 'under havet', 'med neon-tema', 'i en godisvärld', 'i ett spökhus', 'i öknen', 'i rymden', ''];
 const LEVEL = ['', ', lätt för barn', ', svårt'];

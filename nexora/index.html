@@ -193,7 +193,7 @@ kbd { background: var(--card2); border: 1px solid var(--line); border-radius: 6p
 <div id="app"></div>
 <noscript><p style="padding:40px;text-align:center">Nexora behöver JavaScript.</p></noscript>
 <script>
-window.NEXORA_BUILD = {"version": "1.2.0", "downloads": [{"id": "exe", "file": "Nexora-Setup-1.2.0-x64.exe", "size": 81662937, "sha256": "1a5e29b364f357021fb1d1132fa6f1ef8a6a7538032c1b0164334586d9176518"}, {"id": "dmg", "file": "Nexora-1.2.0-arm64.dmg", "size": 84920986, "sha256": "bd6290d4af6518c777342e16703329637e130b848d5bb18063d401b09b3a6e7b"}, {"id": "deb", "file": "nexora_1.2.0_amd64.deb", "size": 79689456, "sha256": "1926ff1e1fbcfc4088e68d795d1c5fe1561e687508b8045fcdaa585b045b64ab"}]};
+window.NEXORA_BUILD = {"version": "1.5.0", "downloads": [{"id": "exe", "file": "Nexora-Setup-1.5.0-x64.exe", "size": 81671159, "sha256": "fcf5aad2fee7af8eaca22de1c48c6be245f05703faa3bac1403f2554b7b5db46"}, {"id": "dmg", "file": "Nexora-1.5.0-arm64.dmg", "size": 84952814, "sha256": "de59497ff6e38f4f5e2fdb1a1849473663779ba7af34573066f4332893a57dea"}, {"id": "deb", "file": "nexora_1.5.0_amd64.deb", "size": 79682316, "sha256": "f21893244dcb9c28400afdf53300e2cd15fa75f971f288628fc7549c0d6682ef"}]};
 </script>
 <script>
 /* Nexora game runtime.
@@ -348,16 +348,26 @@ function NexoraRuntime(CFG, makeGame) {
     left: ['ArrowLeft', 'KeyA'], right: ['ArrowRight', 'KeyD'], up: ['ArrowUp', 'KeyW'], down: ['ArrowDown', 'KeyS'],
     action: ['Space', 'Enter', 'KeyZ', 'KeyX', 'KeyJ'],
   };
+  // Gamepads (1.5): left stick or d-pad to move, A/B/X/Y to act, Start to pause.
+  let padPause = false;
+  function readPad(p) {
+    let gp = null;
+    try { const all = navigator.getGamepads ? navigator.getGamepads() : []; gp = all && all[p]; } catch (e) { gp = null; }
+    if (!gp || !gp.connected) return null;
+    const b = i => !!(gp.buttons[i] && gp.buttons[i].pressed), ax = i => gp.axes[i] || 0;
+    if (p === 0) { const st = b(9); if (st && !padPause && R.state === 'play') R.paused = !R.paused; padPause = st; }
+    return { left: ax(0) < -0.4 || b(14), right: ax(0) > 0.4 || b(15), up: ax(1) < -0.4 || b(12), down: ax(1) > 0.4 || b(13), action: b(0) || b(1) || b(2) || b(3) };
+  }
   function readInput(p) {
-    const map = CFG.players === 2 ? (p === 0 ? P1 : P2) : SOLO, o = {};
-    for (const k in map) o[k] = map[k].some(c => down[c]) || (p === 0 && !!touch[k]);
+    const map = CFG.players === 2 ? (p === 0 ? P1 : P2) : SOLO, o = {}, gp = readPad(p);
+    for (const k in map) o[k] = map[k].some(c => down[c]) || (p === 0 && !!touch[k]) || !!(gp && gp[k]);
     return o;
   }
   R.input = p => cur[p || 0];
   R.hit = (name, p) => cur[p || 0][name] && !prev[p || 0][name];
   addEventListener('keydown', e => {
     if (e.code === 'KeyM') { R.toggleMusic(); return; }
-    if (e.code === 'KeyP' && R.state === 'play') { R.paused = !R.paused; return; }
+    if ((e.code === 'KeyP' || e.code === 'Escape') && R.state === 'play') { R.paused = !R.paused; return; }
     down[e.code] = true; unlockAudio();
     if (/^(Arrow|Space)/.test(e.code)) e.preventDefault();
   }, { passive: false });
@@ -382,9 +392,18 @@ function NexoraRuntime(CFG, makeGame) {
     (k === 'action' || k === 'up' && ctrls.includes('down') === false ? rightGrp : leftGrp).appendChild(b);
   });
   if (matchMedia('(pointer: coarse)').matches) document.body.appendChild(pad);
-  cv.addEventListener('pointerdown', () => {
+  // Pointer (1.5): games that are played by clicking/tapping read R.click() and R.ptr.
+  R.ptr = { x: -1, y: -1, down: false };
+  const clicks = [];
+  R.click = () => clicks.shift();
+  const at = e => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  cv.addEventListener('pointermove', e => Object.assign(R.ptr, at(e)));
+  cv.addEventListener('pointerup', () => { R.ptr.down = false; });
+  cv.addEventListener('pointerdown', e => {
     unlockAudio();
+    Object.assign(R.ptr, at(e), { down: true });
     if (R.state !== 'play') { touch.action = true; setTimeout(() => { touch.action = false; }, 90); }
+    else if (!R.paused) { clicks.push(at(e)); if (clicks.length > 8) clicks.shift(); }
   });
 
   // ---- audio ----
@@ -515,7 +534,7 @@ function NexoraRuntime(CFG, makeGame) {
       R.text(String(R.score), 18, 28, 26, '#fff');
       R.text('Rekord ' + R.best, R.W - 18, 28, 16, 'rgba(255,255,255,.8)', 'right', '600');
       if (game.hud) game.hud(ctx);
-      if (R.paused) { ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(0, 0, R.W, R.H); R.text('PAUS', R.W / 2, R.H / 2, 44, '#fff', 'center', '800'); }
+      if (R.paused) { ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(0, 0, R.W, R.H); R.text('PAUS', R.W / 2, R.H / 2, 44, '#fff', 'center', '800'); R.text('Esc eller P för att fortsätta', R.W / 2, R.H / 2 + 44, 16, 'rgba(255,255,255,.8)', 'center', '500'); }
     }
     if (R.msgT > 0 && R.msg) {
       ctx.globalAlpha = Math.min(1, R.msgT * 2);
@@ -542,6 +561,7 @@ function NexoraRuntime(CFG, makeGame) {
       R.text('Skapat med Nexora', R.W / 2, R.H - 22, 12, 'rgba(255,255,255,.45)', 'center', '500');
     }
     prev[0] = cur[0]; prev[1] = cur[1];
+    clicks.length = 0;
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
@@ -1204,6 +1224,311 @@ function gameArena3D(R) {
   };
 }
 
+/* ---- 1.5: racing, match-3 puzzle and tower defense ---- */
+
+function gameRacer(R) {
+  const P = R.pal, C = R.CFG, N = 96, WIDTH = 120;
+  let track, cars, me, lapsToWin, zoom, finishOrder;
+  function build() {
+    const n = nxNoise(C.seed), r0 = 900;
+    track = [];
+    for (let i = 0; i < N; i++) {
+      const a = i / N * Math.PI * 2, r = r0 * (0.75 + 0.5 * n(Math.cos(a) * 1.3 + 5, Math.sin(a) * 1.3 + 5));
+      track.push({ x: Math.cos(a) * r * 1.25, y: Math.sin(a) * r });
+    }
+  }
+  function nearest(car) {
+    let best = car.idx, bd = Infinity;
+    for (let k = -6; k <= 10; k++) {
+      const i = (car.idx + k + N) % N, p = track[i], d = (p.x - car.x) ** 2 + (p.y - car.y) ** 2;
+      if (d < bd) { bd = d; best = i; }
+    }
+    return { i: best, d: Math.sqrt(bd) };
+  }
+  function makeCar(off, color, ai) {
+    const p = track[0], q = track[1], a = Math.atan2(q.y - p.y, q.x - p.x);
+    return { x: p.x - Math.sin(a) * off, y: p.y + Math.cos(a) * off, a, v: 0, idx: 0, lap: 0, color, ai, skill: ai ? 0.86 + R.rng() * 0.1 + C.difficulty * 0.03 : 1, done: false };
+  }
+  const progress = c => c.lap * N + c.idx;
+  function step(c, dt, k) {
+    const max = 360 * c.skill, near = nearest(c), off = near.d > WIDTH / 2;
+    if (c.ai) {
+      const tgt = track[(near.i + 4) % N];
+      let da = Math.atan2(tgt.y - c.y, tgt.x - c.x) - c.a;
+      da = Math.atan2(Math.sin(da), Math.cos(da));
+      c.a += Math.max(-2.6, Math.min(2.6, da * 4)) * dt;
+      c.v += (max * (1 - Math.min(0.5, Math.abs(da))) - c.v) * dt * 1.5;
+    } else {
+      if (k.up || k.action) c.v += 420 * dt; else c.v *= Math.pow(0.5, dt);
+      if (k.down) c.v -= 520 * dt;
+      const steer = (k.right ? 1 : 0) - (k.left ? 1 : 0);
+      c.a += steer * 2.8 * dt * Math.min(1, Math.abs(c.v) / 120) * Math.sign(c.v || 1);
+      c.v = Math.max(-120, Math.min(off ? max * 0.45 : max, c.v));
+    }
+    c.x += Math.cos(c.a) * c.v * dt; c.y += Math.sin(c.a) * c.v * dt;
+    const n2 = nearest(c);
+    if (n2.i < 10 && c.idx > N - 10) { c.lap++; if (!c.ai && c.lap > 0 && c.lap < lapsToWin) { R.flash('Varv ' + (c.lap + 1) + '/' + lapsToWin); R.sfx('power'); } }
+    else if (n2.i > N - 10 && c.idx < 10) c.lap--;
+    c.idx = n2.i;
+    if (c.lap >= lapsToWin && !c.done) { c.done = true; finishOrder.push(c); }
+  }
+  return {
+    reset() {
+      build(); lapsToWin = 3; finishOrder = [];
+      cars = [makeCar(-30, P.player, false), makeCar(30, P.enemy, true), makeCar(0, P.accent, true)];
+      cars[2].x -= Math.cos(cars[2].a) * 60; cars[2].y -= Math.sin(cars[2].a) * 60;
+      me = cars[0];
+    },
+    resize() { zoom = Math.min(1, Math.min(R.W, R.H) / 650); },
+    hud() {
+      const pos = cars.slice().sort((a, b) => progress(b) - progress(a)).indexOf(me) + 1;
+      R.text('Varv ' + Math.min(lapsToWin, me.lap + 1) + '/' + lapsToWin + '   ·   Plats ' + pos + '/3   ·   ' + R.time.toFixed(1) + ' s', R.W / 2, 28, 18, '#fff', 'center');
+    },
+    update(dt) {
+      const k = R.input();
+      cars.forEach(c => step(c, dt, c.ai ? null : k));
+      for (let i = 0; i < cars.length; i++) for (let j = i + 1; j < cars.length; j++) {
+        const a = cars[i], b = cars[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+        if (d < 34 && d > 0) { const push = (34 - d) / 2; a.x -= dx / d * push; a.y -= dy / d * push; b.x += dx / d * push; b.y += dy / d * push; a.v *= 0.97; b.v *= 0.97; }
+      }
+      R.score = Math.max(0, Math.floor(progress(me) * 5));
+      if (me.done) {
+        const place = finishOrder.indexOf(me) + 1;
+        R.score += [0, 1500, 800, 300][place] + Math.max(0, Math.floor(600 - R.time * 5));
+        if (place === 1) R.win('Du vann loppet!'); else { R.flash('Plats ' + place + ' – försök igen!', 3); R.over(); }
+      }
+    },
+    draw(ctx) {
+      ctx.fillStyle = P.bg2; ctx.fillRect(0, 0, R.W, R.H);
+      ctx.save();
+      ctx.translate(R.W / 2, R.H / 2); ctx.scale(zoom || 1, zoom || 1); ctx.translate(-me.x, -me.y);
+      ctx.fillStyle = 'rgba(255,255,255,.04)';
+      for (let x = Math.floor((me.x - 1200) / 120) * 120; x < me.x + 1200; x += 120) for (let y = Math.floor((me.y - 1200) / 120) * 120; y < me.y + 1200; y += 120) if (((x + y) / 120) % 2 === 0) ctx.fillRect(x, y, 120, 120);
+      const path = () => { ctx.beginPath(); track.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); };
+      ctx.lineJoin = 'round';
+      path(); ctx.strokeStyle = '#fff'; ctx.lineWidth = WIDTH + 14; ctx.stroke();
+      path(); ctx.strokeStyle = P.ground; ctx.lineWidth = WIDTH; ctx.stroke();
+      path(); ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 3; ctx.setLineDash([26, 26]); ctx.stroke(); ctx.setLineDash([]);
+      const s0 = track[0], s1 = track[1], sa = Math.atan2(s1.y - s0.y, s1.x - s0.x) + Math.PI / 2;
+      ctx.save(); ctx.translate(s0.x, s0.y); ctx.rotate(sa);
+      for (let i = -6; i < 6; i++) { ctx.fillStyle = i % 2 ? '#fff' : '#111'; ctx.fillRect(i * WIDTH / 12, -6, WIDTH / 12, 12); }
+      ctx.restore();
+      for (const c of cars) {
+        ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.a);
+        ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(-18, -9, 40, 22);
+        ctx.fillStyle = c.color; ctx.beginPath(); ctx.roundRect(-20, -11, 40, 22, 6); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fillRect(2, -8, 8, 16);
+        ctx.fillStyle = '#111'; ctx.fillRect(-16, -14, 9, 4); ctx.fillRect(-16, 10, 9, 4); ctx.fillRect(8, -14, 9, 4); ctx.fillRect(8, 10, 9, 4);
+        ctx.restore();
+      }
+      ctx.restore();
+    },
+  };
+}
+
+function gameMatch3(R) {
+  const P = R.pal, C = R.CFG, N = 8, TYPES = 6;
+  // fixed, high-contrast gem colours (theme colours can be too close to each other)
+  const COLS = ['#ff4d6d', '#ffd23f', '#3a86ff', '#9b5de5', '#2ec4b6', '#ffffff'];
+  let grid, cell, ox, oy, sel, cursor, moves, goal, busy, combo, swapAnim;
+  const rnd = () => Math.floor(R.rng() * TYPES);
+  function fresh() {
+    grid = [];
+    for (let r = 0; r < N; r++) { grid.push([]); for (let c = 0; c < N; c++) { let t; do { t = rnd(); } while ((c > 1 && grid[r][c - 1].t === t && grid[r][c - 2].t === t) || (r > 1 && grid[r - 1][c].t === t && grid[r - 2][c].t === t)); grid[r].push({ t, off: -(N - r) * 1.2 - R.rng() }); } }
+  }
+  function matches() {
+    const hit = new Set();
+    for (let r = 0; r < N; r++) for (let c = 0; c < N - 2; c++) { const t = grid[r][c].t; if (t >= 0 && grid[r][c + 1].t === t && grid[r][c + 2].t === t) { hit.add(r * N + c); hit.add(r * N + c + 1); hit.add(r * N + c + 2); } }
+    for (let c = 0; c < N; c++) for (let r = 0; r < N - 2; r++) { const t = grid[r][c].t; if (t >= 0 && grid[r + 1][c].t === t && grid[r + 2][c].t === t) { hit.add(r * N + c); hit.add((r + 1) * N + c); hit.add((r + 2) * N + c); } }
+    return hit;
+  }
+  function resolve() {
+    const hit = matches();
+    if (!hit.size) { busy = 0; combo = 0; if (moves <= 0 && R.score < goal) R.over(); return false; }
+    combo++;
+    hit.forEach(k => { const r = Math.floor(k / N), c = k % N; R.burst(ox + c * cell + cell / 2, oy + r * cell + cell / 2, COLS[grid[r][c].t], 6); grid[r][c].t = -1; });
+    R.add(hit.size * 10 * combo); R.sfx(combo > 1 ? 'power' : 'coin');
+    if (combo > 1) R.flash('Kombo x' + combo + '!');
+    for (let c = 0; c < N; c++) {
+      let write = N - 1;
+      for (let r = N - 1; r >= 0; r--) if (grid[r][c].t >= 0) { const g = grid[r][c]; grid[write][c] = { t: g.t, off: g.off + (r - write) }; write--; }
+      for (let r = write; r >= 0; r--) grid[r][c] = { t: rnd(), off: r - write - 1.5 };
+    }
+    busy = 0.35;
+    if (R.score >= goal) R.win('Målet nått!');
+    return true;
+  }
+  function trySwap(a, b) {
+    const ga = grid[a.r][a.c], gb = grid[b.r][b.c];
+    grid[a.r][a.c] = gb; grid[b.r][b.c] = ga;
+    if (matches().size) { moves--; swapAnim = null; resolve(); }
+    else { grid[a.r][a.c] = ga; grid[b.r][b.c] = gb; swapAnim = { a, b, t: 0.25 }; R.sfx('hit'); }
+  }
+  function pick(p) {
+    if (busy > 0) return;
+    if (!sel) { sel = p; R.sfx('talk'); return; }
+    if (Math.abs(sel.r - p.r) + Math.abs(sel.c - p.c) === 1) trySwap(sel, p);
+    sel = null;
+  }
+  return {
+    reset() { fresh(); sel = null; cursor = { r: 3, c: 3 }; moves = 25 - C.difficulty * 3; goal = 1200 + C.difficulty * 400; busy = 0.6; combo = 0; swapAnim = null; },
+    resize() { cell = Math.floor(Math.min(R.W - 20, R.H - 120) / N); ox = Math.floor((R.W - cell * N) / 2); oy = Math.floor((R.H - cell * N) / 2) + 20; },
+    hud() {
+      R.text('Drag ' + moves + '   ·   Mål ' + goal, R.W / 2, 28, 18, '#fff', 'center');
+      const w = Math.min(300, R.W * 0.5), f = Math.min(1, R.score / goal);
+      R.ctx.fillStyle = 'rgba(255,255,255,.15)'; R.ctx.fillRect(R.W / 2 - w / 2, 46, w, 8);
+      R.ctx.fillStyle = P.coin; R.ctx.fillRect(R.W / 2 - w / 2, 46, w * f, 8);
+    },
+    update(dt) {
+      for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) { const g = grid[r][c]; if (g.off < 0) g.off = Math.min(0, g.off + dt * 9); else if (g.off > 0) g.off = Math.max(0, g.off - dt * 9); }
+      if (swapAnim) { swapAnim.t -= dt; if (swapAnim.t <= 0) swapAnim = null; }
+      if (busy > 0) { busy -= dt; if (busy <= 0) resolve(); }
+      const click = R.click();
+      if (click) {
+        const c = Math.floor((click.x - ox) / cell), r = Math.floor((click.y - oy) / cell);
+        if (r >= 0 && r < N && c >= 0 && c < N) { cursor = { r, c }; pick({ r, c }); }
+      }
+      if (R.hit('left')) cursor.c = Math.max(0, cursor.c - 1);
+      if (R.hit('right')) cursor.c = Math.min(N - 1, cursor.c + 1);
+      if (R.hit('up')) cursor.r = Math.max(0, cursor.r - 1);
+      if (R.hit('down')) cursor.r = Math.min(N - 1, cursor.r + 1);
+      if (R.hit('action')) pick({ r: cursor.r, c: cursor.c });
+    },
+    draw(ctx) {
+      const g0 = ctx.createLinearGradient(0, 0, 0, R.H); g0.addColorStop(0, P.bg1); g0.addColorStop(1, P.bg2);
+      ctx.fillStyle = g0; ctx.fillRect(0, 0, R.W, R.H);
+      ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.roundRect(ox - 8, oy - 8, cell * N + 16, cell * N + 16, 16); ctx.fill();
+      for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+        const g = grid[r][c], x = ox + c * cell + cell / 2, y = oy + (r + g.off) * cell + cell / 2, s = cell * 0.36;
+        if ((r + c) % 2) { ctx.fillStyle = 'rgba(255,255,255,.04)'; ctx.fillRect(ox + c * cell, oy + r * cell, cell, cell); }
+        if (g.t < 0 || y < oy - cell / 2) continue;
+        let dx = 0;
+        if (swapAnim && ((swapAnim.a.r === r && swapAnim.a.c === c) || (swapAnim.b.r === r && swapAnim.b.c === c))) dx = Math.sin(swapAnim.t * 60) * 4;
+        ctx.save(); ctx.translate(x + dx, y);
+        ctx.fillStyle = COLS[g.t]; ctx.beginPath();
+        const t = g.t;
+        if (t === 0) ctx.arc(0, 0, s, 0, 7);
+        else if (t === 1) { ctx.moveTo(0, -s); ctx.lineTo(s, 0); ctx.lineTo(0, s); ctx.lineTo(-s, 0); }
+        else if (t === 2) ctx.roundRect(-s * 0.85, -s * 0.85, s * 1.7, s * 1.7, s * 0.3);
+        else if (t === 3) { for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; ctx.lineTo(Math.cos(a) * s, Math.sin(a) * s); } }
+        else if (t === 4) { ctx.moveTo(0, -s); ctx.lineTo(s * 0.95, s * 0.8); ctx.lineTo(-s * 0.95, s * 0.8); }
+        else { for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 - Math.PI / 2, rr = i % 2 ? s * 0.45 : s; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } }
+        ctx.closePath(); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.arc(-s * 0.3, -s * 0.35, s * 0.18, 0, 7); ctx.fill();
+        ctx.restore();
+      }
+      const box = (p, col) => { ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.strokeRect(ox + p.c * cell + 2, oy + p.r * cell + 2, cell - 4, cell - 4); };
+      box(cursor, 'rgba(255,255,255,.5)');
+      if (sel) box(sel, P.coin);
+      R.drawParticles();
+    },
+  };
+}
+
+function gameTowerDefense(R) {
+  const P = R.pal, C = R.CFG, GW = 16, GH = 10;
+  let path, cells, towers, foes, shots, gold, lives, wave, spawnLeft, spawnT, nextWaveT, cell, ox, oy, cursor;
+  const COST = 50, UP = 70, WAVES = 10;
+  function buildPath() {
+    const r = nxRng(C.seed);
+    path = []; cells = new Set();
+    let x = 0, y = 2 + Math.floor(r() * (GH - 4));
+    const add = () => { path.push({ x, y }); cells.add(x + ',' + y); };
+    add();
+    while (x < GW - 1) {
+      const run = 2 + Math.floor(r() * 3);
+      for (let i = 0; i < run && x < GW - 1; i++) { x++; add(); }
+      if (x >= GW - 1) break;
+      const ty = Math.max(1, Math.min(GH - 2, y + (r() < 0.5 ? -1 : 1) * (2 + Math.floor(r() * 3))));
+      while (y !== ty) { y += Math.sign(ty - y); add(); }
+    }
+  }
+  const center = p => ({ x: ox + p.x * cell + cell / 2, y: oy + p.y * cell + cell / 2 });
+  function place(gx, gy) {
+    if (gx < 0 || gy < 0 || gx >= GW || gy >= GH || cells.has(gx + ',' + gy)) return;
+    const t = towers.find(t => t.gx === gx && t.gy === gy);
+    if (t) {
+      if (t.lvl >= 3) return R.flash('Max nivå');
+      if (gold < UP) return R.flash('Behöver ' + UP + ' guld');
+      gold -= UP; t.lvl++; R.sfx('power'); R.flash('Torn nivå ' + t.lvl); return;
+    }
+    if (gold < COST) return R.flash('Behöver ' + COST + ' guld');
+    gold -= COST; towers.push({ gx, gy, lvl: 1, cd: 0, aim: 0 }); R.sfx('coin');
+  }
+  function startWave() { wave++; spawnLeft = 6 + wave * 2; spawnT = 0; if (wave > 1) R.flash('Våg ' + wave); }
+  return {
+    reset() { buildPath(); towers = []; foes = []; shots = []; gold = 120; lives = 20; wave = 0; nextWaveT = 3; spawnLeft = 0; cursor = { x: 3, y: 1 }; },
+    resize() { cell = Math.floor(Math.min((R.W - 20) / GW, (R.H - 110) / GH)); ox = Math.floor((R.W - cell * GW) / 2); oy = Math.floor((R.H - cell * GH) / 2) + 24; },
+    hud() {
+      R.text('Våg ' + Math.max(1, wave) + '/' + WAVES + '   ·   ♥ ' + lives + '   ·   🪙 ' + gold, R.W / 2, 28, 18, '#fff', 'center');
+      R.text('Klicka/tryck på gräset: torn ' + COST + ' · klicka på torn: uppgradera ' + UP, R.W / 2, R.H - 16, 13, 'rgba(255,255,255,.75)', 'center', '500');
+    },
+    update(dt) {
+      const cl = R.click();
+      if (cl) place(Math.floor((cl.x - ox) / cell), Math.floor((cl.y - oy) / cell));
+      if (R.hit('left')) cursor.x = Math.max(0, cursor.x - 1);
+      if (R.hit('right')) cursor.x = Math.min(GW - 1, cursor.x + 1);
+      if (R.hit('up')) cursor.y = Math.max(0, cursor.y - 1);
+      if (R.hit('down')) cursor.y = Math.min(GH - 1, cursor.y + 1);
+      if (R.hit('action')) place(cursor.x, cursor.y);
+      if (!spawnLeft && !foes.length) {
+        if (wave >= WAVES) { R.win('Alla vågor stoppade!'); return; }
+        nextWaveT -= dt; if (nextWaveT <= 0) { startWave(); nextWaveT = 4; }
+      }
+      if (spawnLeft > 0) { spawnT -= dt; if (spawnT <= 0) { spawnT = Math.max(0.35, 0.9 - wave * 0.05); spawnLeft--; const hp = 20 + wave * 14 + C.difficulty * 10; foes.push({ i: 0, f: 0, hp, max: hp, sp: 1.3 + wave * 0.06 + (wave % 3 === 0 ? 0.6 : 0), boss: wave % 5 === 0 && spawnLeft === 0 }); if (foes[foes.length - 1].boss) { foes[foes.length - 1].hp *= 8; foes[foes.length - 1].max *= 8; } } }
+      for (const e of foes) {
+        e.f += e.sp * dt * (e.boss ? 0.6 : 1);
+        while (e.f >= 1 && e.i < path.length - 1) { e.f -= 1; e.i++; }
+        if (e.i >= path.length - 1) { e.hp = 0; e.leaked = true; lives -= e.boss ? 5 : 1; R.shake(0.2); R.sfx('hit'); }
+      }
+      for (const t of towers) {
+        t.cd -= dt;
+        const c = center({ x: t.gx, y: t.gy }), range = cell * (2.2 + t.lvl * 0.5);
+        let best = null, bi = -1;
+        for (const e of foes) { if (e.hp <= 0) continue; const p = foePos(e), d = Math.hypot(p.x - c.x, p.y - c.y); if (d < range && e.i + e.f > bi) { bi = e.i + e.f; best = e; } }
+        if (best) { const p = foePos(best); t.aim = Math.atan2(p.y - c.y, p.x - c.x); if (t.cd <= 0) { t.cd = 0.7 / t.lvl; shots.push({ x: c.x, y: c.y, e: best, dmg: 8 * t.lvl + 4 }); R.sfx('shoot'); } }
+      }
+      for (const s of shots) {
+        if (s.e.hp <= 0) { s.dead = true; continue; }
+        const p = foePos(s.e), d = Math.hypot(p.x - s.x, p.y - s.y), v = 520 * dt;
+        if (d < v) { s.dead = true; s.e.hp -= s.dmg; if (s.e.hp <= 0) { gold += s.e.boss ? 80 : 8 + wave; R.add(s.e.boss ? 200 : 20); R.burst(p.x, p.y, P.enemy, 10); R.sfx('boom'); } }
+        else { s.x += (p.x - s.x) / d * v; s.y += (p.y - s.y) / d * v; }
+      }
+      shots = shots.filter(s => !s.dead); foes = foes.filter(e => e.hp > 0);
+      if (lives <= 0) R.over();
+    },
+    draw(ctx) {
+      ctx.fillStyle = P.bg1; ctx.fillRect(0, 0, R.W, R.H);
+      for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
+        ctx.fillStyle = cells.has(x + ',' + y) ? P.ground : ((x + y) % 2 ? P.top : nxShade(P.top, 0.9));
+        ctx.fillRect(ox + x * cell, oy + y * cell, cell + 1, cell + 1);
+      }
+      const end = center(path[path.length - 1]);
+      ctx.fillStyle = P.accent; ctx.beginPath(); ctx.arc(end.x, end.y, cell * 0.42, 0, 7); ctx.fill();
+      for (const t of towers) {
+        const c = center({ x: t.gx, y: t.gy });
+        ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.arc(c.x + 3, c.y + 4, cell * 0.38, 0, 7); ctx.fill();
+        ctx.fillStyle = P.player; ctx.beginPath(); ctx.arc(c.x, c.y, cell * 0.38, 0, 7); ctx.fill();
+        ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(t.aim); ctx.fillStyle = P.deco; ctx.fillRect(0, -cell * 0.08, cell * 0.45, cell * 0.16); ctx.restore();
+        for (let k = 0; k < t.lvl; k++) { ctx.fillStyle = P.coin; ctx.beginPath(); ctx.arc(c.x - cell * 0.2 + k * cell * 0.2, c.y + cell * 0.46, cell * 0.06, 0, 7); ctx.fill(); }
+      }
+      for (const e of foes) {
+        const p = foePos(e), r = cell * (e.boss ? 0.36 : 0.24);
+        ctx.fillStyle = P.enemy; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 7); ctx.fill();
+        ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(p.x - r, p.y - r - 8, r * 2, 4);
+        ctx.fillStyle = '#7ff0bf'; ctx.fillRect(p.x - r, p.y - r - 8, r * 2 * e.hp / e.max, 4);
+      }
+      ctx.fillStyle = P.coin; for (const s of shots) { ctx.beginPath(); ctx.arc(s.x, s.y, 4, 0, 7); ctx.fill(); }
+      ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2; ctx.strokeRect(ox + cursor.x * cell + 2, oy + cursor.y * cell + 2, cell - 4, cell - 4);
+      R.drawParticles();
+    },
+  };
+  function foePos(e) {
+    const a = center(path[e.i]), b = center(path[Math.min(path.length - 1, e.i + 1)]);
+    return { x: a.x + (b.x - a.x) * e.f, y: a.y + (b.y - a.y) * e.f };
+  }
+}
+
 </script>
 <script>
 /* Nexora Local: the offline generator. It reads the prompt for genre, theme,
@@ -1232,7 +1557,10 @@ function gameArena3D(R) {
     { id: 'shooter', label: 'Rymdskjutare', d3: false, words: ['skjut', 'shoot', 'rymd', 'space', 'alien', 'skepp', 'laser', 'invaders', 'galax'] },
     { id: 'snake', label: 'Orm', d3: false, words: ['orm', 'snake', 'mask'] },
     { id: 'breakout', label: 'Blockkross', d3: false, words: ['breakout', 'block', 'tegel', 'brick', 'boll', 'arkanoid', 'krossa'] },
-    { id: 'dodger', label: 'Undvik-spel', d3: false, words: ['undvik', 'dodge', 'bil', 'car', 'race', 'racing', 'väg', 'trafik', 'fall'] },
+    { id: 'racer', label: 'Racingspel', d3: false, words: ['racing', 'race', 'racer', 'bilspel', 'bilrace', 'rally', 'formel', 'gokart', 'varv', 'tävling', 'kapplöpning', 'motorbana'] },
+    { id: 'match3', label: 'Pusselspel', d3: false, words: ['pussel', 'puzzle', 'match', 'matcha', 'tre i rad', 'candy crush', 'juvel', 'bejeweled', 'byt plats'] },
+    { id: 'towerdefense', label: 'Tower defense', d3: false, words: ['tower defense', 'tower-defense', 'towerdefense', 'försvar', 'försvara', 'bygg torn', 'torn', 'vågor', 'invasion'] },
+    { id: 'dodger', label: 'Undvik-spel', d3: false, words: ['undvik', 'dodge', 'bil', 'car', 'väg', 'trafik', 'fall'] },
     { id: 'collector', label: 'Samlarspel', d3: false, words: ['samla', 'collect', 'mynt', 'coin', 'diamant', 'gem', 'jaga', 'två spelare', '2 spelare', 'multiplayer', 'kompis'] },
     { id: 'platformer', label: 'Plattformsspel', d3: false, words: ['plattform', 'platform', 'hoppa', 'jump', 'mario', 'ninja', 'hopp'] },
   ];
@@ -1254,6 +1582,7 @@ function gameArena3D(R) {
     platformer: ['left', 'right', 'up'], shooter: ['left', 'right', 'up', 'down', 'action'], snake: ['left', 'right', 'up', 'down'],
     breakout: ['left', 'right', 'action'], dodger: ['left', 'right'], collector: ['left', 'right', 'up', 'down'],
     openworld: ['left', 'right', 'up', 'down', 'action'], runner3d: ['left', 'right', 'up'], arena3d: ['left', 'right', 'up', 'down'],
+    racer: ['left', 'right', 'up', 'down'], match3: [], towerdefense: [],
   };
   const HELP = {
     platformer: 'Pilar/WASD för att springa · Mellanslag/upp för att hoppa · hoppa på fiender',
@@ -1265,10 +1594,14 @@ function gameArena3D(R) {
     openworld: 'Pilar/WASD för att gå · Mellanslag för att prata/slåss',
     runner3d: 'Vänster/höger byter fil · upp/mellanslag hoppar',
     arena3d: 'Vänster/höger svänger · upp kör framåt',
+    racer: 'Upp gasar · ner bromsar · vänster/höger styr · tre varv',
+    match3: 'Klicka två grannar för att byta plats · tre i rad · pilar + mellanslag går också',
+    towerdefense: 'Klicka på gräset för torn · klicka på torn för att uppgradera · stoppa 10 vågor',
   };
   const TEMPLATE_FN = {
     platformer: 'gamePlatformer', shooter: 'gameShooter', snake: 'gameSnake', breakout: 'gameBreakout', dodger: 'gameDodger',
     collector: 'gameCollector', openworld: 'gameOpenWorld', runner3d: 'gameRunner3D', arena3d: 'gameArena3D',
+    racer: 'gameRacer', match3: 'gameMatch3', towerdefense: 'gameTowerDefense',
   };
 
   const NAMES_A = ['Stjärn', 'Skugg', 'Kristall', 'Neon', 'Storm', 'Drak', 'Mån', 'Pixel', 'Frost', 'Glöd', 'Kosmo', 'Turbo'];
@@ -1399,30 +1732,54 @@ function gameArena3D(R) {
     ].join('\n');
   }
 
-  // ---------- pixel sprite (SVG) ----------
-  function sprite(prompt, size) {
+  // ---------- sprites (SVG), 1.5: four styles and animated sprite sheets ----------
+  const SPRITE_STYLES = ['pixel', 'platt', 'neon', 'retro'];
+  function sprite(prompt, size, opts) {
+    opts = opts || {};
     const a = analyze(prompt, { dim: '2d' }), r = rngOf(a.seed ^ 44), n = size || 12, pal = a.theme.pal;
-    const colors = [pal.player, pal.accent, pal.enemy, pal.coin];
+    const style = SPRITE_STYLES.includes(opts.style) ? opts.style : 'pixel', frames = Math.max(1, Math.min(8, opts.frames || 1));
     const half = Math.ceil(n / 2), grid = [];
     for (let y = 0; y < n; y++) {
       grid.push([]);
       for (let x = 0; x < half; x++) {
         const dx = (x - half + 0.5) / half, dy = (y - n / 2 + 0.5) / (n / 2);
-        const pr = 0.85 - Math.hypot(dx * 0.9, dy) * 0.9;
+        const pr = 1.02 - Math.hypot(dx * 0.85, dy * 0.95) * 0.85;
         grid[y][x] = r() < pr ? (r() < 0.75 ? 1 : 2) : 0;
       }
+      // a solid spine keeps the figure in one piece
+      if (y > n * 0.15 && y < n * 0.85) grid[y][half - 1] = grid[y][half - 1] || 1;
     }
-    let rects = '';
+    const colors = style === 'retro' ? ['#306230', '#0f380f', '#8bac0f'] : style === 'neon' ? ['#05d9e8', '#ff2a6d', '#f9f871', '#b388ff'] : [pal.player, pal.accent, pal.enemy, pal.coin];
     const c1 = pick(r, colors), c2 = pick(r, colors.filter(c => c !== c1));
-    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-      const v = grid[y][x < half ? x : n - 1 - x];
-      if (!v) continue;
-      rects += '<rect x="' + x + '" y="' + y + '" width="1.02" height="1.02" fill="' + (v === 1 ? c1 : c2) + '"/>';
+    const legRow = Math.floor(n * 0.72), ey = Math.floor(n * 0.4), W = n + 2;
+    let body = '';
+    for (let f = 0; f < frames; f++) {
+      const ox = f * W, bob = frames > 1 && f % 2 ? 1 : 0, step = frames > 1 ? [0, 1, 0, -1][f % 4] : 0;
+      let cells = '';
+      for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+        // legs: the lower rows shift sideways in opposite directions on each side (a walk cycle)
+        const legShift = y >= legRow ? (x < half ? step : -step) : 0;
+        const sx = x - legShift;
+        if (sx < 0 || sx >= n) continue;
+        const v = grid[y][sx < half ? sx : n - 1 - sx];
+        if (!v) continue;
+        const col = v === 1 ? c1 : c2, X = ox + x, Y = y + (y < legRow ? bob : 0);
+        if (style === 'platt') cells += '<rect x="' + (X + 0.04) + '" y="' + (Y + 0.04) + '" width="0.94" height="0.94" rx="0.32" fill="' + col + '"/>';
+        else cells += '<rect x="' + X + '" y="' + Y + '" width="1.02" height="1.02" fill="' + col + '"/>';
+      }
+      const eye = style === 'retro' ? '#0f380f' : '#fff';
+      cells += '<rect x="' + (ox + half - 3) + '" y="' + (ey + bob) + '" width="1" height="1" fill="' + eye + '"/><rect x="' + (ox + n - half + 2) + '" y="' + (ey + bob) + '" width="1" height="1" fill="' + eye + '"/>';
+      if (style === 'platt') cells = '<ellipse cx="' + (ox + n / 2) + '" cy="' + (n + 0.3) + '" rx="' + n * 0.35 + '" ry="0.5" fill="rgba(0,0,0,.25)"/>' + cells;
+      body += '<g>' + cells + '</g>';
     }
-    // outline + eyes
-    const ey = Math.floor(n * 0.4);
-    rects += '<rect x="' + (half - 3) + '" y="' + ey + '" width="1" height="1" fill="#fff"/><rect x="' + (n - half + 2) + '" y="' + ey + '" width="1" height="1" fill="#fff"/>';
-    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 ' + (n + 2) + ' ' + (n + 2) + '" shape-rendering="crispEdges" width="256" height="256">' + rects + '</svg>';
+    let defs = '', bg = '', wrapA = '', wrapB = '';
+    if (style === 'neon') {
+      defs = '<defs><filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="0.45" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+      bg = '<rect x="-1" y="-1" width="' + W * frames + '" height="' + W + '" fill="#0d0221"/>';
+      wrapA = '<g filter="url(#glow)">'; wrapB = '</g>';
+    } else if (style === 'retro') bg = '<rect x="-1" y="-1" width="' + W * frames + '" height="' + W + '" fill="#9bbc0f"/>';
+    const crisp = style === 'platt' || style === 'neon' ? '' : ' shape-rendering="crispEdges"';
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 ' + W * frames + ' ' + W + '"' + crisp + ' width="' + 256 * frames + '" height="256" data-frames="' + frames + '">' + defs + bg + wrapA + body + wrapB + '</svg>';
   }
 
   // ---------- low-poly meshes ----------
@@ -1448,6 +1805,15 @@ function gameArena3D(R) {
       for (let i = 0; i < seg; i++) { const t = i / seg * Math.PI * 2, rr = s * (0.8 + r() * 0.4); vs.push([x + Math.cos(t) * rr, y + s * 0.45 * r(), z + Math.sin(t) * rr]); }
       for (let i = 0; i < seg; i++) { const j = (i + 1) % seg; fs.push([0, 1 + i, 1 + j]); }
       const base = []; for (let i = 0; i < seg; i++) base.push(1 + i); fs.push(base);
+      add(vs, fs, col);
+    }
+    function sphere(x, y, z, rad, seg, rings, col, squash) {
+      const vs = [], fs = [];
+      for (let i = 0; i <= rings; i++) {
+        const ph = i / rings * Math.PI;
+        for (let j = 0; j < seg; j++) { const th = j / seg * Math.PI * 2; vs.push([x + Math.sin(ph) * Math.cos(th) * rad, y + Math.cos(ph) * rad * (squash || 1), z + Math.sin(ph) * Math.sin(th) * rad]); }
+      }
+      for (let i = 0; i < rings; i++) for (let j = 0; j < seg; j++) { const a = i * seg + j, b = i * seg + (j + 1) % seg; fs.push([a, b, b + seg, a + seg]); }
       add(vs, fs, col);
     }
     let name;
@@ -1477,14 +1843,84 @@ function gameArena3D(R) {
       boxm(-0.18, 0, 0, 0.28, 0.9, 0.3, '#334'); boxm(0.18, 0, 0, 0.28, 0.9, 0.3, '#334');
       boxm(-0.55, 1.05, 0, 0.22, 0.75, 0.25, pal.player); boxm(0.55, 1.05, 0, 0.22, 0.75, 0.25, pal.player);
       boxm(-0.12, 2.0, -0.28, 0.08, 0.08, 0.02, '#111'); boxm(0.12, 2.0, -0.28, 0.08, 0.08, 0.02, '#111');
+    } else if (has(p, ['svärd', 'sword', 'kniv', 'blad'])) {
+      name = 'Svärd'; boxm(0, 0.9, 0, 0.16, 1.9, 0.05, '#dfe6ee'); add([[-0.08, 2.8, -0.025], [0.08, 2.8, -0.025], [0, 3.05, 0], [-0.08, 2.8, 0.025], [0.08, 2.8, 0.025]], [[0, 1, 2], [3, 2, 4], [0, 2, 3], [1, 4, 2]], '#dfe6ee');
+      boxm(0, 0.78, 0, 0.7, 0.12, 0.14, pal.coin); cyl(0, 0.2, 0, 0.06, 0.06, 0.58, 6, '#6b3e26'); sphere(0, 0.15, 0, 0.1, 8, 6, pal.coin);
+    } else if (has(p, ['kista', 'chest', 'skatt', 'treasure', 'låda'])) {
+      name = 'Skattkista'; boxm(0, 0, 0, 1.6, 0.8, 1.0, '#8b5a2b');
+      for (let i = 0; i < 6; i++) { const a0 = i / 6 * Math.PI, a1 = (i + 1) / 6 * Math.PI; add([[-0.8, 0.8 + Math.sin(a0) * 0.5, Math.cos(a0) * 0.5], [0.8, 0.8 + Math.sin(a0) * 0.5, Math.cos(a0) * 0.5], [0.8, 0.8 + Math.sin(a1) * 0.5, Math.cos(a1) * 0.5], [-0.8, 0.8 + Math.sin(a1) * 0.5, Math.cos(a1) * 0.5]], [[0, 1, 2, 3]], '#a0692f'); }
+      [-0.62, 0, 0.62].forEach(x => boxm(x, 0, 0, 0.1, 1.32, 1.04, pal.coin)); boxm(0, 0.55, -0.52, 0.22, 0.28, 0.06, '#ffd23f');
+    } else if (has(p, ['svamp', 'mushroom', 'flugsvamp'])) {
+      name = 'Svamp'; cyl(0, 0, 0, 0.28, 0.22, 1.0, 10, '#f3ead8');
+      sphere(0, 1.0, 0, 0.85, 14, 7, '#e63946', 0.55);
+      for (let i = 0; i < 7; i++) { const a2 = r() * 6.28, d = 0.2 + r() * 0.45; sphere(Math.cos(a2) * d, 1.0 + 0.44 - d * 0.35, Math.sin(a2) * d, 0.09, 6, 4, '#ffffff'); }
+    } else if (has(p, ['planet', 'måne', 'moon', 'värld', 'jordklot'])) {
+      name = 'Planet'; sphere(0, 1.3, 0, 1.0, 18, 10, pal.player);
+      const ring = [], rf = [];
+      for (let i = 0; i < 32; i++) { const t = i / 32 * Math.PI * 2; ring.push([Math.cos(t) * 1.8, 1.3 + Math.sin(t) * 0.25, Math.sin(t) * 1.8], [Math.cos(t) * 1.35, 1.3 + Math.sin(t) * 0.19, Math.sin(t) * 1.35]); }
+      for (let i = 0; i < 32; i++) { const j = (i + 1) % 32; rf.push([i * 2, j * 2, j * 2 + 1, i * 2 + 1]); }
+      add(ring, rf, pal.coin);
+    } else if (has(p, ['fisk', 'fish', 'haj', 'shark'])) {
+      name = 'Fisk'; sphere(0, 1, 0, 0.8, 12, 8, pal.accent, 0.55);
+      add([[0.7, 1, 0], [1.4, 1.5, 0], [1.4, 0.5, 0]], [[0, 1, 2]], pal.player); add([[-0.1, 1.4, 0], [0.3, 1.9, 0], [0.4, 1.35, 0]], [[0, 1, 2]], pal.player);
+      sphere(-0.55, 1.12, 0.3, 0.1, 6, 4, '#111'); sphere(-0.55, 1.12, -0.3, 0.1, 6, 4, '#111');
     } else {
       name = 'Sten'; rock(0, 0, 0, 1, '#8d8d99'); rock(0.9, 0, 0.4, 0.5, '#7a7a88'); rock(-0.7, 0, -0.5, 0.4, '#9a9aa8');
     }
     return { name, vertices: V.map(v => v.map(n => Math.round(n * 1000) / 1000)), faces: F, colors: Cc };
   }
 
+  // Binary glTF 2.0 (.glb): flat-shaded triangles, one PBR material per face colour
+  // (vertex colours are ignored by several engines' default materials).
+  function toGlb(m) {
+    const lin = v => Math.pow(v / 255, 2.2), groups = new Map();
+    m.faces.forEach((f, fi) => {
+      let hex = ((m.colors && m.colors[fi]) || '#9aa4ff').replace('#', '').toLowerCase();
+      if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
+      if (!/^[0-9a-f]{6}$/.test(hex)) hex = '9aa4ff';
+      if (!groups.has(hex)) groups.set(hex, { P: [], N: [] });
+      const g = groups.get(hex), v = f.map(i => m.vertices[i]).filter(Boolean);
+      for (let k = 1; k + 1 < v.length; k++) {
+        const a = v[0], b = v[k], c = v[k + 1];
+        const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], w = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+        let nn = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
+        const l = Math.hypot(nn[0], nn[1], nn[2]) || 1; nn = nn.map(x => x / l);
+        [a, b, c].forEach(p => { g.P.push(p[0], p[1], p[2]); g.N.push(nn[0], nn[1], nn[2]); });
+      }
+    });
+    const json = { asset: { version: '2.0', generator: 'Nexora 3D 1.5' }, scene: 0, scenes: [{ nodes: [0] }], nodes: [{ mesh: 0, name: m.name || 'Nexora' }],
+      meshes: [{ name: m.name || 'Nexora', primitives: [] }], materials: [], buffers: [{ byteLength: 0 }], bufferViews: [], accessors: [] };
+    const chunks = [];
+    let off = 0;
+    for (const [hex, g] of groups) {
+      if (!g.P.length) continue;
+      const n = parseInt(hex, 16), pos = new Float32Array(g.P), nor = new Float32Array(g.N), count = g.P.length / 3;
+      const min = [Infinity, Infinity, Infinity], max = [-Infinity, -Infinity, -Infinity];
+      for (let i = 0; i < count; i++) for (let k = 0; k < 3; k++) { min[k] = Math.min(min[k], pos[i * 3 + k]); max[k] = Math.max(max[k], pos[i * 3 + k]); }
+      const mat = json.materials.length;
+      json.materials.push({ name: '#' + hex, pbrMetallicRoughness: { baseColorFactor: [lin((n >> 16) & 255), lin((n >> 8) & 255), lin(n & 255), 1], metallicFactor: 0, roughnessFactor: 0.75 }, doubleSided: true });
+      for (const arr of [pos, nor]) {
+        json.bufferViews.push({ buffer: 0, byteOffset: off, byteLength: arr.byteLength, target: 34962 });
+        chunks.push(new Uint8Array(arr.buffer)); off += arr.byteLength;
+      }
+      const a0 = json.accessors.length;
+      json.accessors.push({ bufferView: a0, componentType: 5126, count, type: 'VEC3', min, max }, { bufferView: a0 + 1, componentType: 5126, count, type: 'VEC3' });
+      json.meshes[0].primitives.push({ attributes: { POSITION: a0, NORMAL: a0 + 1 }, material: mat, mode: 4 });
+    }
+    json.buffers[0].byteLength = off;
+    const js = new TextEncoder().encode(JSON.stringify(json)), jpad = (4 - js.length % 4) % 4;
+    const total = 12 + 8 + js.length + jpad + 8 + off, out = new Uint8Array(total), dv = new DataView(out.buffer);
+    dv.setUint32(0, 0x46546c67, true); dv.setUint32(4, 2, true); dv.setUint32(8, total, true);
+    dv.setUint32(12, js.length + jpad, true); dv.setUint32(16, 0x4e4f534a, true);
+    out.set(js, 20); for (let i = 0; i < jpad; i++) out[20 + js.length + i] = 0x20;
+    const b0 = 20 + js.length + jpad;
+    dv.setUint32(b0, off, true); dv.setUint32(b0 + 4, 0x004e4942, true);
+    let o = b0 + 8; for (const c of chunks) { out.set(c, o); o += c.length; }
+    return out;
+  }
+
   function toObj(m) {
-    let s = '# Nexora 3D 1 – ' + (m.name || 'modell') + '\n';
+    let s = '# Nexora 3D 1.5 – ' + (m.name || 'modell') + '\n';
     m.vertices.forEach(v => { s += 'v ' + v.join(' ') + '\n'; });
     m.faces.forEach(f => { s += 'f ' + f.map(i => i + 1).join(' ') + '\n'; });
     return s;
@@ -1566,7 +2002,7 @@ function gameArena3D(R) {
     return wav(await ctx.startRendering());
   }
 
-  window.NexoraLocal = { hash, analyze, config, buildHtml, story, npcs, quests, dialog, sprite, mesh, toObj, music, sfx, wav, GENRES, TEMPLATE_FN };
+  window.NexoraLocal = { hash, analyze, config, buildHtml, story, npcs, quests, dialog, sprite, SPRITE_STYLES, mesh, toObj, toGlb, music, sfx, wav, GENRES, TEMPLATE_FN };
 })();
 
 </script>
@@ -1583,12 +2019,18 @@ function gameArena3D(R) {
 (function () {
   'use strict';
 
+  // 1.5: every 1-series model got an upgrade (see NEWS in app.js for the user-facing list).
   const MODELS = {
-    flash: { name: 'Nexora Flash 1', short: 'Flash 1', tag: 'Snabb', kind: 'text', minTier: 0, desc: 'Snabbast. Bra för prototyper och små spel på några sekunder.' },
-    pro: { name: 'Nexora Pro 1', short: 'Pro 1', tag: 'Långsam men bra resultat', kind: 'text', minTier: 1, desc: 'Tar längre tid men skriver större, mer polerade spel med fler mekaniker.' },
-    core: { name: 'Nexora Core 1', short: 'Core 1', tag: 'Pro, men tänker', kind: 'text', minTier: 2, desc: 'Ingen bryr sig om den – men den planerar spelet steg för steg innan den skriver en rad kod. Du ser tankarna live.' },
-    image: { name: 'Nexora Image 1', short: 'Image 1', tag: 'Bildmodell', kind: 'image', minTier: 1, desc: 'Sprites, bakgrunder och ikoner till dina spel.' },
-    d3: { name: 'Nexora 3D 1', short: '3D 1', tag: '3D-generator', kind: 'mesh', minTier: 1, desc: 'Low-poly 3D-modeller som du kan rotera och exportera som .obj.' },
+    flash: { name: 'Nexora Flash 1.5', short: 'Flash 1.5', tag: 'Snabb + självtest', kind: 'text', minTier: 0, selfTest: 1,
+      desc: 'Snabbast. Skriver spelet på sekunder, testkör det och rättar körfel en gång innan du får det.' },
+    pro: { name: 'Nexora Pro 1.5', short: 'Pro 1.5', tag: 'Bättre resultat, testar själv', kind: 'text', minTier: 1, selfTest: 2,
+      desc: 'Större och mer polerade spel med högre ansträngning – testkörs och rättas upp till två gånger.' },
+    core: { name: 'Nexora Core 1.5', short: 'Core 1.5', tag: 'Tänker, testar, förbättrar', kind: 'text', minTier: 2, selfTest: 3,
+      desc: 'Ingen bryr sig om den – men den planerar spelet steg för steg, visar tankarna live och testar och förbättrar upp till tre gånger.' },
+    image: { name: 'Nexora Image 1.5', short: 'Image 1.5', tag: 'Stilar, animation, PNG', kind: 'image', minTier: 1,
+      desc: 'Sprites i fyra stilar (pixel, platt, neon, retro), animerade sprite-ark och export som PNG eller SVG.' },
+    d3: { name: 'Nexora 3D 1.5', short: '3D 1.5', tag: 'Fler modeller, GLB-export', kind: 'mesh', minTier: 1,
+      desc: 'Low-poly 3D-modeller med färger, nu fler typer – och export som .glb för Godot, Unity och Blender, eller .obj.' },
     astryx: { name: 'Nexora Astryx 5 Pro', short: 'Astryx 5 Pro', tag: 'AI-agent', kind: 'agent', minTier: 0, agent: true,
       desc: 'Vår första AI-agent. Den planerar, skriver spelet, testkör det, tittar på resultatet, hittar buggar och rättar dem – helt själv – tills spelet fungerar. På datorn bygger den riktiga Godot-spel med Python i upp till två timmar, och i hyperrealistiskt läge av fotoskannade modeller.' },
   };
@@ -1598,10 +2040,10 @@ function gameArena3D(R) {
   // What each Nexora model runs on with the Anthropic provider.
   const ANTHROPIC = {
     flash: { model: 'claude-haiku-4-5', max_tokens: 16000 },
-    pro: { model: 'claude-opus-5', max_tokens: 64000, output_config: { effort: 'medium' }, fallbacks: true },
+    pro: { model: 'claude-opus-5', max_tokens: 64000, output_config: { effort: 'high' }, fallbacks: true },
     core: { model: 'claude-opus-5', max_tokens: 64000, thinking: { type: 'adaptive', display: 'summarized' }, output_config: { effort: 'xhigh' }, fallbacks: true },
-    image: { model: 'claude-opus-5', max_tokens: 32000, output_config: { effort: 'medium' }, fallbacks: true },
-    d3: { model: 'claude-opus-5', max_tokens: 32000, output_config: { effort: 'medium' }, fallbacks: true },
+    image: { model: 'claude-opus-5', max_tokens: 32000, output_config: { effort: 'high' }, fallbacks: true },
+    d3: { model: 'claude-opus-5', max_tokens: 32000, output_config: { effort: 'high' }, fallbacks: true },
     astryx: { model: 'claude-opus-5', max_tokens: 64000, thinking: { type: 'adaptive', display: 'summarized' }, output_config: { effort: 'high' }, fallbacks: true },
     astryxGodot: { model: 'claude-opus-5', max_tokens: 64000, thinking: { type: 'adaptive', display: 'summarized' }, output_config: { effort: 'xhigh' }, fallbacks: true },
   };
@@ -1622,11 +2064,13 @@ function gameArena3D(R) {
     '- Everything inline in that one file: no external scripts, fonts, images, CDNs or network requests. Draw graphics with canvas or inline SVG; make sound with the Web Audio API.',
     '- It runs inside a sandboxed iframe: wrap any localStorage access in try/catch.',
     '- Full-window responsive canvas that handles resize and devicePixelRatio.',
-    '- Keyboard controls (arrows/WASD + Space) AND on-screen touch buttons on touch devices.',
+    '- Keyboard controls (arrows/WASD + Space), on-screen touch buttons on touch devices, and gamepad support (navigator.getGamepads: stick/d-pad + A).',
+    '- Pause with P or Escape.',
     '- A title screen with the game name and how to play, a score/HUD, a game-over or win screen, and restart.',
     '- A steady requestAnimationFrame loop with delta time; no runaway memory growth.',
     '- All player-facing text in Swedish.',
     'Make it genuinely fun: juice (particles, screen shake, sound), a difficulty curve, and a clear goal.',
+    'Before answering, re-read your code once for runtime errors (undefined names, typos, missing restart) – the game is run automatically and errors are sent back to you.',
   ].join('\n');
 
   const FEATURE_TEXT = {
@@ -1795,18 +2239,24 @@ function gameArena3D(R) {
     return r.text.trim();
   }
 
-  async function image(settings, prompt, cb, signal) {
-    if (settings.provider === 'openai' && settings.openaiImageApi) return { url: await openaiImage(settings, prompt, signal) };
-    const r = await complete(settings, 'image', 'You are Nexora Image 1, a game artist that draws with SVG code.',
-      'Draw a game asset as a single self-contained SVG (viewBox 0 0 256 256, no external references, no text unless asked). Clean shapes, strong silhouette, game-ready. Return only the SVG.\n\nAsset: ' + prompt, cb, signal);
+  const IMAGE_STYLES = { pixel: 'pixel art on a coarse grid (use crispEdges rects)', platt: 'flat vector style with bold shapes and soft shading', neon: 'glowing neon line art on a dark background (use SVG filters for glow)', retro: '8-bit retro console style with a limited 4-colour palette' };
+  async function image(settings, prompt, cb, signal, opts) {
+    opts = opts || {};
+    const style = IMAGE_STYLES[opts.style] || IMAGE_STYLES.pixel;
+    if (settings.provider === 'openai' && settings.openaiImageApi) return { url: await openaiImage(settings, prompt + ' – ' + style + (opts.frames > 1 ? ', sprite sheet with ' + opts.frames + ' animation frames in a row' : ''), signal) };
+    const layout = opts.frames > 1
+      ? 'a sprite sheet: ' + opts.frames + ' animation frames side by side (viewBox 0 0 ' + 256 * opts.frames + ' 256, each frame 256x256, a smooth loop such as walking or flapping)'
+      : 'one sprite (viewBox 0 0 256 256)';
+    const r = await complete(settings, 'image', 'You are Nexora Image 1.5, a game artist that draws with SVG code.',
+      'Draw a game asset as a single self-contained SVG: ' + layout + '. Style: ' + style + '. No external references, no text unless asked. Strong silhouette, transparent background unless the style needs one, game-ready. Return only the SVG.\n\nAsset: ' + prompt, cb, signal);
     const svg = extractSvg(r.text);
     if (!svg) throw apiError('Ingen SVG i svaret. Försök igen.');
     return { svg };
   }
 
   async function mesh(settings, prompt, cb, signal) {
-    const r = await complete(settings, 'd3', 'You are Nexora 3D 1, a low-poly 3D modeller.',
-      'Model this as a low-poly mesh (40-400 faces), ground at y=0, about 2 units tall, centred on x/z. ' +
+    const r = await complete(settings, 'd3', 'You are Nexora 3D 1.5, a low-poly 3D modeller.',
+      'Model this as a low-poly mesh (60-800 faces, consistent outward winding, closed where it should be solid), ground at y=0, about 2 units tall, centred on x/z, with a pleasing colour palette. ' +
       'Return only JSON: {"name": string, "vertices": [[x,y,z],...], "faces": [[i,j,k,...],...] (0-based, counter-clockwise seen from outside), "colors": ["#rrggbb" per face]}.\n\nModel: ' + prompt, cb, signal);
     const m = extractJson(r.text);
     if (!Array.isArray(m.vertices) || !Array.isArray(m.faces)) throw apiError('Ogiltig 3D-modell i svaret.');
@@ -2214,7 +2664,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
   }
   const RT = {
     core: [nxRng, nxNoise, nxShade, Nx3D, NexoraRuntime].map(f => f.toString()).join('\n\n'),
-    templates: { gamePlatformer, gameShooter, gameSnake, gameBreakout, gameDodger, gameCollector, gameOpenWorld, gameRunner3D, gameArena3D },
+    templates: { gamePlatformer, gameShooter, gameSnake, gameBreakout, gameDodger, gameCollector, gameOpenWorld, gameRunner3D, gameArena3D, gameRacer, gameMatch3, gameTowerDefense },
   };
 
   // ---------------------------------------------------------------- dom helpers
@@ -2303,7 +2753,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
   function footer() {
     return h('footer', null, h('div', { class: 'wrap row', style: 'justify-content:space-between' },
       h('span', null, '© ' + new Date().getFullYear() + ' Nexora · version ' + VERSION),
-      h('span', null, 'AI-leverantör: ', providerLabel(), ' · ', h('a', { href: '#modeller' }, 'Om modellerna'))));
+      h('span', null, 'AI-leverantör: ', providerLabel(), ' · ', h('a', { href: '#modeller' }, 'Om modellerna'), ' · ', h('a', { href: '#', onclick: e => { e.preventDefault(); newsModal(); } }, 'Nyheter i 1.5'))));
   }
   function providerLabel() {
     return { local: 'Nexora Local (offline)', anthropic: 'Anthropic (Claude)', openai: 'Egen endpoint' }[S.settings.provider];
@@ -2327,7 +2777,9 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
   VIEWS.hem = main => {
     main.append(
       h('section', { class: 'hero wrap' },
-        h('a', { class: 'pill', href: '#modeller', style: 'margin-bottom:18px;text-decoration:none;color:inherit' }, '🤖 Nytt: Nexora Astryx 5 Pro – vår första AI-agent →'),
+        h('div', { class: 'row', style: 'justify-content:center;margin-bottom:18px' },
+          h('button', { class: 'pill', style: 'cursor:pointer;color:inherit', onclick: () => newsModal() }, '🎉 Nexora 1.5 är här – se nyheterna →'),
+          h('a', { class: 'pill', href: '#astryx', style: 'text-decoration:none;color:inherit' }, '🤖 Astryx 5 Pro')),
         h('h1', null, 'Beskriv ett spel.', h('br'), h('span', { class: 'grad' }, 'Spela det direkt.')),
         h('p', { class: 'lead' }, 'Nexora gör spelbara 2D- och 3D-spel av en mening – med grafik, ljud, story och export till webb, PC och mobil.'),
         h('div', { class: 'row', style: 'justify-content:center' },
@@ -2336,7 +2788,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
       h('section', { class: 'wrap' }, h('div', { class: 'grid g3' }, [
         ['⚡', 'Från idé till spel på sekunder', 'Skriv "ett rymdspel med lava-tema" och spela det i förhandsvisningen direkt.'],
         ['🧊', '2D och 3D', 'Plattformsspel, skjutare, open world, 3D-löpare och 3D-arenor.'],
-        ['🎨', 'Grafik, 3D-modeller, musik', 'Sprites med Image 1, low-poly-modeller med 3D 1, musik och ljudeffekter.'],
+        ['🎨', 'Grafik, 3D-modeller, musik', 'Animerade sprites med Image 1.5, 3D-modeller med GLB-export i 3D 1.5, musik och ljudeffekter.'],
         ['🧙', 'Story, NPC:er och uppdrag', 'Generera en värld med personer som ger dig uppdrag och pratar med dig.'],
         ['📦', 'Export överallt', 'HTML för webb och mobil, PC-projekt, Steam-paket och portningspaket för konsol.'],
         ['🔌', 'Fungerar offline', 'Nexora Local bygger spel utan internet. Koppla in Claude eller din egen modell för mer.'],
@@ -2345,6 +2797,22 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
       h('section', { class: 'wrap' }, h('h2', null, 'Sex modeller'), modelCards()),
       h('section', { class: 'wrap' }, h('h2', null, 'Priser'), planCards(), creditsSection()));
   };
+
+  // ---------------------------------------------------------------- what's new in 1.5
+  const NEWS = [
+    ['🧪', 'Flash, Pro och Core 1.5 testar sina spel', 'Varje AI-spel körs automatiskt i en dold webbläsare. Körfel och spel som står still skickas tillbaka och rättas – Flash 1.5 en gång, Pro 1.5 två, Core 1.5 tre – innan du får spelet. Pro 1.5 arbetar dessutom med högre ansträngning.'],
+    ['🏁', 'Tre nya speltyper – 12 totalt', 'Racing mot två AI-bilar på en slumpad bana, pusselspel med tre-i-rad och kombos, och tower defense med tio vågor, bossar och uppgraderbara torn.'],
+    ['🎮', 'Handkontroll, paus och touch', 'Alla spel fungerar med Xbox-, PlayStation- och andra handkontroller, pausas med Esc och kan styras med klick och touch.'],
+    ['🎨', 'Image 1.5', 'Fyra stilar – pixel, platt, neon och retro 8-bit – animerade sprite-ark med fyra bildrutor och export som PNG eller SVG.'],
+    ['🧊', '3D 1.5', 'Nya modeller (svärd, skattkista, svamp, planet, fisk) och export som .glb med färger, som öppnas direkt i Godot, Unity och Blender.'],
+    ['🤖', 'Astryx 5 Pro', 'Agenten bygger nu också racing-, pussel- och tower defense-spel offline, och Godot-läget fortsätter som förut.'],
+  ];
+  function newsModal() {
+    const close = modal([
+      h('h2', null, '🎉 Nyheter i Nexora ', h('span', { class: 'grad' }, '1.5')),
+      h('div', { class: 'col' }, NEWS.map(([i, t, d]) => h('div', { class: 'row', style: 'align-items:flex-start;flex-wrap:nowrap' }, h('div', { style: 'font-size:1.6rem' }, i), h('div', null, h('b', null, t), h('div', { class: 'small muted' }, d))))),
+      h('div', { class: 'row', style: 'margin-top:14px' }, h('a', { class: 'btn primary', href: '#studio', onclick: () => close() }, 'Prova i Studio'), h('button', { class: 'btn ghost', onclick: () => close() }, 'Stäng'))], true);
+  }
 
   function astryxHero() {
     const steps = [['🧠', 'Planerar'], ['🐍', 'Skriver Godot-projektet med Python'], ['▶️', 'Testkör i Godot'], ['👀', 'Tittar på skärmbilder'], ['🔧', 'Rättar buggar'], ['📸', 'Hyperrealistiskt läge'], ['⏱', 'Upp till 2 timmar per spel']];
@@ -2438,7 +2906,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
   VIEWS.modeller = main => {
     const rows = Object.entries(AI.MODELS).map(([k, m]) => h('tr', null,
       h('td', null, h('b', null, m.name), h('div', { class: 'small muted' }, m.tag)),
-      h('td', null, k === 'image' ? 'Procedurella pixel-sprites' : k === 'd3' ? 'Procedurella low-poly-modeller' : k === 'astryx' ? 'Agentloop: bygger, testkör i dold webbläsare, gör om vid fel' : 'Mallbaserad spelgenerator (9 speltyper)'),
+      h('td', null, k === 'image' ? 'Procedurella pixel-sprites' : k === 'd3' ? 'Procedurella low-poly-modeller' : k === 'astryx' ? 'Agentloop: bygger, testkör i dold webbläsare, gör om vid fel' : 'Mallbaserad spelgenerator (12 speltyper)'),
       h('td', null, h('code', null, AI.ANTHROPIC[k].model), AI.ANTHROPIC[k].thinking ? h('div', { class: 'small muted' }, 'adaptivt tänkande, synligt') : AI.ANTHROPIC[k].output_config ? h('div', { class: 'small muted' }, 'effort: ' + AI.ANTHROPIC[k].output_config.effort) : null,
         k === 'image' ? h('div', { class: 'small muted' }, 'ritar SVG') : k === 'd3' ? h('div', { class: 'small muted' }, 'skriver mesh-JSON') : k === 'astryx' ? h('div', { class: 'small muted' }, 'agent med verktygen write_game, edit_game, run_game (med skärmbild) och finish') : null),
       h('td', null, h('code', null, S.settings.openaiModels[k]), k === 'astryx' ? h('div', { class: 'small muted' }, 'skriv → testa → rätta, upp till 3 varv') : null)));
@@ -2471,6 +2939,9 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
     'Orm-spel under vattnet, svårt',
     'Blockkross med spöken',
     'Undvik bilar på en ökenväg',
+    'Ett racingspel på en ökenbana',
+    'Ett pusselspel med juveler i en godisvärld',
+    'Tower defense mot zombies i en skog',
   ];
   const OPTS = [
     ['story', 'Story'], ['dialog', 'Dialog'], ['openworld', 'Open world'], ['npc', 'NPC:er'], ['quest', 'Uppdrag'],
@@ -2550,8 +3021,10 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
 
     function toolbar() {
       bar.innerHTML = ''; titleEl.textContent = current ? current.title : 'Förhandsvisning'; bar.append(titleEl);
-      summaryEl.style.display = current && current.summary ? '' : 'none';
-      summaryEl.textContent = current && current.summary ? '🤖 ' + current.summary : '';
+      const tst = current && current.tested;
+      const sumText = current && current.summary ? '🤖 ' + current.summary : tst ? (tst.errors ? '⚠️ Självtest: ' + tst.errors + ' problem kvar efter ' + tst.fixes + ' rättning' + (tst.fixes === 1 ? '' : 'ar') + ' – prova 🐞 Buggfix' : '✓ Självtestad – ' + tst.runs + ' testkörning' + (tst.runs === 1 ? '' : 'ar') + (tst.fixes ? ', ' + tst.fixes + ' rättning' + (tst.fixes === 1 ? '' : 'ar') : '') + ', inga fel') : '';
+      summaryEl.style.display = sumText ? '' : 'none';
+      summaryEl.textContent = sumText;
       if (!current) return;
       bar.append(
         h('button', { class: 'btn sm', onclick: () => play(current.html) }, '↻ Starta om'),
@@ -2623,13 +3096,29 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
             },
           }, busy.signal);
           html = res.html;
+          // 1.5 self-test: run the game hidden, send runtime errors back, up to m.selfTest fix rounds.
+          const tested = { runs: 0, fixes: 0, errors: 0 };
+          for (let round = 0; round <= (m.selfTest || 0); round++) {
+            stepEl.textContent = m.name + ': självtest ' + (round + 1) + '…';
+            log.append(h('div', null, '▶️ Självtest ' + (round + 1) + ' – kör spelet i en dold webbläsare…')); log.scrollTop = log.scrollHeight;
+            const tr = await testGame(html);
+            tested.runs++; tested.errors = tr.errors.length + (tr.animating ? 0 : 1);
+            if (!tr.errors.length && tr.animating) { log.append(h('div', { class: 'okline' }, '✅ Inga fel – spelet startar och rör sig')); break; }
+            const problems = tr.errors.length ? tr.errors : ['The canvas did not change after pressing Space and the arrow keys: the game may not start, render or loop.'];
+            log.append(h('div', { class: 'err' }, '🐞 ' + problems.length + ' problem: ' + problems[0].slice(0, 140)));
+            if (round === (m.selfTest || 0)) break;
+            stepEl.textContent = m.name + ' rättar ' + problems.length + ' problem…';
+            let fixChars = 0;
+            html = await AI.fixGame(S.settings, st.model, html, problems, { text: (d, all) => { if (all.length - fixChars > 2000) { fixChars = all.length; stepEl.textContent = m.name + ' rättar… ' + Math.round(all.length / 1000) + ' kB'; } } }, busy.signal);
+            tested.fixes++;
+          }
           const t = html.match(/<title>([^<]{1,80})<\/title>/i);
-          meta = { title: t ? t[1].trim() : prompt.slice(0, 40), genre: 'AI-spel', dim: st.dim, engine: res.model };
+          meta = { title: t ? t[1].trim() : prompt.slice(0, 40), genre: 'AI-spel', dim: st.dim, engine: res.model, tested };
         }
         if (payWith === 'credits') { addCredits(-cost, 'Spel: ' + meta.title + (st.model === 'astryx' ? ' (Astryx)' : '')); toast('🪙 Använde ' + cost + ' kredit' + (cost > 1 ? 'er' : '') + ' – ' + S.credits + ' kvar'); }
         else { S.usage[month()] = used() + 1; store.set('usage', S.usage); }
         const now = Date.now();
-        current = { id: 'g' + now.toString(36), title: meta.title, prompt, html, summary, model: st.model, engine: meta.engine, provider: S.settings.provider, dim: meta.dim, genre: meta.genre, created: now, updated: now, versions: [] };
+        current = { id: 'g' + now.toString(36), title: meta.title, prompt, html, summary, tested: meta.tested || null, model: st.model, engine: meta.engine, provider: S.settings.provider, dim: meta.dim, genre: meta.genre, created: now, updated: now, versions: [] };
         play(html); toolbar();
         const all = await games.all().catch(() => []);
         if (all.length >= plan().storage) toast('Lagringen är full (' + plan().storage + ' spel i ' + plan().name + '). Spelet sparades inte – ta bort ett spel eller uppgradera.', 5000);
@@ -2739,7 +3228,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
         h('div', { class: 'row' }, h('b', { class: 'small' }, 'Dimension'), dimSeg),
         h('div', { class: 'col' }, h('b', { class: 'small' }, 'Innehåll'), optsEl),
         h('div', { class: 'row' }, goBtn, variantBtn),
-        S.settings.provider === 'local' ? h('p', { class: 'small muted' }, 'Nexora Local bygger spelet på enheten från 9 speltyper. För helt nya spelidéer: koppla in Claude eller en egen modell under Inställningar.') : null),
+        S.settings.provider === 'local' ? h('p', { class: 'small muted' }, 'Nexora Local bygger spelet på enheten från 12 speltyper. För helt nya spelidéer: koppla in Claude eller en egen modell under Inställningar.') : null),
       stage));
     if (current) { play(current.html); toolbar(); }
     return { unmount() { if (busy) busy.abort(); } };
@@ -3383,21 +3872,44 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
     };
     // image
     const art = h('div', { class: 'art' }, h('span', { class: 'muted' }, 'Ingen bild än'));
-    const imgIn = h('input', { type: 'text', placeholder: 'T.ex. "en söt drake i pixelstil"' });
-    let lastArt = null;
-    const imageBody = [imgIn, art, h('div', { class: 'row' },
+    const imgIn = h('input', { type: 'text', placeholder: 'T.ex. "en söt drake"' });
+    const styleSel = h('select', { 'aria-label': 'Stil' }, [['pixel', '🟪 Pixel'], ['platt', '🔷 Platt'], ['neon', '💡 Neon'], ['retro', '🎮 Retro 8-bit']].map(([v, l]) => h('option', { value: v }, l)));
+    const framesSel = h('select', { 'aria-label': 'Bildrutor' }, [[1, 'Stillbild'], [4, 'Animation, 4 rutor']].map(([v, l]) => h('option', { value: v }, l)));
+    let lastArt = null, animT = 0;
+    // Shows one frame of a horizontal sprite sheet at a time.
+    function showArt(r, p) {
+      clearInterval(animT); art.innerHTML = '';
+      if (!r.svg) { art.append(h('img', { src: r.url, alt: p })); return; }
+      const frames = +((/data-frames="(\d+)"/.exec(r.svg) || [0, 1])[1]);
+      if (frames <= 1) { art.innerHTML = r.svg; return; }
+      const win = h('div', { style: 'width:220px;height:220px;overflow:hidden;position:relative' }), strip = h('div', { html: r.svg, style: 'position:absolute;left:0;top:0;width:' + 220 * frames + 'px;height:220px' });
+      const svg = $('svg', strip); svg.setAttribute('width', 220 * frames); svg.setAttribute('height', 220);
+      win.append(strip); art.append(win);
+      let f = 0; animT = setInterval(() => { f = (f + 1) % frames; strip.style.left = -f * 220 + 'px'; }, 160);
+    }
+    // Renders the SVG to a PNG (256 px per frame) for engines that do not read SVG.
+    async function svgToPng(svg) {
+      const frames = +((/data-frames="(\d+)"/.exec(svg) || [0, 1])[1]), img = new Image();
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      await img.decode();
+      const c = h('canvas', { width: 256 * frames, height: 256 }), x = c.getContext('2d');
+      x.imageSmoothingEnabled = false; x.drawImage(img, 0, 0, 256 * frames, 256);
+      return new Promise(res => c.toBlob(res, 'image/png'));
+    }
+    styleSel.style.cssText = framesSel.style.cssText = 'width:auto;flex:1';
+    const imageBody = [imgIn, h('div', { class: 'row', style: 'flex-wrap:nowrap' }, styleSel, framesSel), art, h('div', { class: 'row' },
       runBtn('Generera', 'gfx', async () => {
-        const p = imgIn.value.trim() || idea.value.trim() || 'en hjälte';
-        const r = useAI() ? await AI.image(S.settings, p) : { svg: L.sprite(p + ' ' + Math.random()) };
+        const p = imgIn.value.trim() || idea.value.trim() || 'en hjälte', opts = { style: styleSel.value, frames: +framesSel.value };
+        const r = useAI() ? await AI.image(S.settings, p, null, null, opts) : { svg: L.sprite(p + ' ' + Math.random(), 12, opts) };
         lastArt = Object.assign({ name: p.slice(0, 40) }, r);
-        art.innerHTML = '';
-        if (r.svg) art.innerHTML = r.svg; else art.append(h('img', { src: r.url, alt: p }));
+        showArt(r, p);
       }),
       h('button', { class: 'btn sm', onclick: () => { if (!lastArt) return toast('Generera en bild först'); if (!need('assets')) return; assets.put({ id: 'a' + Date.now().toString(36), name: lastArt.name, svg: lastArt.svg || null, url: lastArt.url || null, t: Date.now() }).then(() => { toast('Sparad i Mina assets'); drawAssets(); }); } }, 'Spara som asset'),
-      h('button', { class: 'btn sm ghost', onclick: () => { if (!lastArt) return; if (lastArt.svg) download(slug(lastArt.name) + '.svg', lastArt.svg, 'image/svg+xml'); else window.open(lastArt.url, '_blank'); } }, 'Ladda ner'))];
+      h('button', { class: 'btn sm ghost', onclick: async () => { if (!lastArt) return toast('Generera en bild först'); if (lastArt.svg) download(slug(lastArt.name) + '.png', await svgToPng(lastArt.svg)); else window.open(lastArt.url, '_blank'); } }, '.png'),
+      h('button', { class: 'btn sm ghost', onclick: () => { if (!lastArt) return; if (lastArt.svg) download(slug(lastArt.name) + '.svg', lastArt.svg, 'image/svg+xml'); else window.open(lastArt.url, '_blank'); } }, '.svg'))];
     // 3d
     const cv = h('canvas', { class: 'viewer', width: 600, height: 260 });
-    const meshIn = h('input', { type: 'text', placeholder: 'T.ex. "ett torn", "ett träd", "ett rymdskepp"' });
+    const meshIn = h('input', { type: 'text', placeholder: 'T.ex. "ett svärd", "en skattkista", "en planet", "ett träd"' });
     let curMesh = L.mesh('kristall'), rot = 0, raf = 0;
     const g3 = Nx3D(cv.getContext('2d'));
     function spin() {
@@ -3421,6 +3933,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
         curMesh = useAI() ? await AI.mesh(S.settings, p) : L.mesh(p);
         meshInfo.textContent = (curMesh.name || p) + ' · ' + curMesh.faces.length + ' ytor · ' + curMesh.vertices.length + ' hörn';
       }),
+      h('button', { class: 'btn sm', title: 'Binär glTF – Godot, Unity, Blender', onclick: () => download(slug(curMesh.name) + '.glb', new Blob([L.toGlb(curMesh)], { type: 'model/gltf-binary' })) }, '.glb'),
       h('button', { class: 'btn sm', onclick: () => download(slug(curMesh.name) + '.obj', L.toObj(curMesh)) }, '.obj'),
       h('button', { class: 'btn sm ghost', onclick: () => download(slug(curMesh.name) + '.json', JSON.stringify(curMesh)) }, '.json'))];
     // music
@@ -3466,7 +3979,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
     async function drawAssets() {
       const list = await assets.all().catch(() => []);
       assetGrid.innerHTML = '';
-      if (!list.length) assetGrid.append(h('span', { class: 'muted small' }, 'Inga assets än. Spara bilder från Image 1 eller ladda upp egna.'));
+      if (!list.length) assetGrid.append(h('span', { class: 'muted small' }, 'Inga assets än. Spara bilder från Image 1.5 eller ladda upp egna.'));
       list.forEach(a => {
         const t = h('div', { class: 'art', style: 'width:92px;height:92px;min-height:0;position:relative', title: a.name });
         if (a.svg) t.innerHTML = a.svg; else t.append(h('img', { src: a.url, alt: a.name }));
@@ -3495,15 +4008,15 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
         toolCard('💬', 'Dialog', 'dialog', txt('dialog', 'dialog', L.dialog)),
         toolCard('🧑‍🌾', 'NPC:er', 'npc', txt('npc', 'npc', p => L.npcs(p, 4).map(n => '• ' + n.name + ', ' + n.role + ' – ' + n.trait + ', ' + n.want + '.\n  ' + n.line).join('\n\n'))),
         toolCard('🗺️', 'Uppdrag', 'quest', txt('quest', 'quest', p => L.quests(p, 3).map(q => '■ ' + q.title + '\n  Givare: ' + q.giver + '\n  Mål: ' + q.goal + '\n  Steg: ' + q.steps.join(' → ') + '\n  Belöning: ' + q.reward).join('\n\n'))),
-        toolCard('🎨', 'Grafik – Nexora Image 1', 'gfx', imageBody),
-        toolCard('🧊', '3D – Nexora 3D 1', 'mesh', meshBody),
+        toolCard('🎨', 'Grafik – Nexora Image 1.5', 'gfx', imageBody),
+        toolCard('🧊', '3D – Nexora 3D 1.5', 'mesh', meshBody),
         toolCard('🎵', 'Musik', 'music', musicBody),
         toolCard('🔊', 'Ljudeffekter', 'sfx', sfxBody),
         toolCard('🗣️', 'Röst', 'voice', voiceBody),
         toolCard('🗃️', 'Mina assets', 'assets', [assetGrid, h('div', { class: 'row' }, h('button', { class: 'btn sm', onclick: () => { if (need('assets')) up.click(); } }, 'Ladda upp bilder'), up),
           h('p', { class: 'small muted' }, 'SVG-assets skickas med till AI:n när du kryssar i "Mina assets" i Studio.')]))));
     drawAssets();
-    return { unmount() { cancelAnimationFrame(raf); if (window.speechSynthesis) speechSynthesis.cancel(); } };
+    return { unmount() { cancelAnimationFrame(raf); clearInterval(animT); if (window.speechSynthesis) speechSynthesis.cancel(); } };
   };
 
   // ---------------------------------------------------------------- team
@@ -3573,7 +4086,7 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
       h('p', { class: 'small muted' }, 'Skapa en nyckel på console.anthropic.com. Nyckeln sparas bara på den här enheten och skickas endast till api.anthropic.com.'));
     const oBox = h('div', { class: 'col' }, h('label', { class: 'f' }, 'Bas-URL', oBase), h('label', { class: 'f' }, 'API-nyckel', oKey),
       h('div', { class: 'grid', style: 'grid-template-columns:1fr 1fr;gap:8px' }, oModels.map(i => h('label', { class: 'f small' }, AI.MODELS[i.dataset.k].name, i))),
-      h('label', { class: 'opt' }, oImg, 'Image 1 använder /images/generations'),
+      h('label', { class: 'opt' }, oImg, 'Image 1.5 använder /images/generations'),
       h('p', { class: 'small muted' }, 'Fungerar med OpenAI, vLLM, Ollama (http://localhost:11434/v1), LM Studio och modellen från Colab-anteckningsboken.'));
     const sync = () => { aBox.style.display = prov.value === 'anthropic' ? '' : 'none'; oBox.style.display = prov.value === 'openai' ? '' : 'none'; };
     prov.addEventListener('change', sync); sync();

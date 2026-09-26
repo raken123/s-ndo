@@ -24,7 +24,10 @@
     { id: 'shooter', label: 'Rymdskjutare', d3: false, words: ['skjut', 'shoot', 'rymd', 'space', 'alien', 'skepp', 'laser', 'invaders', 'galax'] },
     { id: 'snake', label: 'Orm', d3: false, words: ['orm', 'snake', 'mask'] },
     { id: 'breakout', label: 'Blockkross', d3: false, words: ['breakout', 'block', 'tegel', 'brick', 'boll', 'arkanoid', 'krossa'] },
-    { id: 'dodger', label: 'Undvik-spel', d3: false, words: ['undvik', 'dodge', 'bil', 'car', 'race', 'racing', 'väg', 'trafik', 'fall'] },
+    { id: 'racer', label: 'Racingspel', d3: false, words: ['racing', 'race', 'racer', 'bilspel', 'bilrace', 'rally', 'formel', 'gokart', 'varv', 'tävling', 'kapplöpning', 'motorbana'] },
+    { id: 'match3', label: 'Pusselspel', d3: false, words: ['pussel', 'puzzle', 'match', 'matcha', 'tre i rad', 'candy crush', 'juvel', 'bejeweled', 'byt plats'] },
+    { id: 'towerdefense', label: 'Tower defense', d3: false, words: ['tower defense', 'tower-defense', 'towerdefense', 'försvar', 'försvara', 'bygg torn', 'torn', 'vågor', 'invasion'] },
+    { id: 'dodger', label: 'Undvik-spel', d3: false, words: ['undvik', 'dodge', 'bil', 'car', 'väg', 'trafik', 'fall'] },
     { id: 'collector', label: 'Samlarspel', d3: false, words: ['samla', 'collect', 'mynt', 'coin', 'diamant', 'gem', 'jaga', 'två spelare', '2 spelare', 'multiplayer', 'kompis'] },
     { id: 'platformer', label: 'Plattformsspel', d3: false, words: ['plattform', 'platform', 'hoppa', 'jump', 'mario', 'ninja', 'hopp'] },
   ];
@@ -46,6 +49,7 @@
     platformer: ['left', 'right', 'up'], shooter: ['left', 'right', 'up', 'down', 'action'], snake: ['left', 'right', 'up', 'down'],
     breakout: ['left', 'right', 'action'], dodger: ['left', 'right'], collector: ['left', 'right', 'up', 'down'],
     openworld: ['left', 'right', 'up', 'down', 'action'], runner3d: ['left', 'right', 'up'], arena3d: ['left', 'right', 'up', 'down'],
+    racer: ['left', 'right', 'up', 'down'], match3: [], towerdefense: [],
   };
   const HELP = {
     platformer: 'Pilar/WASD för att springa · Mellanslag/upp för att hoppa · hoppa på fiender',
@@ -57,10 +61,14 @@
     openworld: 'Pilar/WASD för att gå · Mellanslag för att prata/slåss',
     runner3d: 'Vänster/höger byter fil · upp/mellanslag hoppar',
     arena3d: 'Vänster/höger svänger · upp kör framåt',
+    racer: 'Upp gasar · ner bromsar · vänster/höger styr · tre varv',
+    match3: 'Klicka två grannar för att byta plats · tre i rad · pilar + mellanslag går också',
+    towerdefense: 'Klicka på gräset för torn · klicka på torn för att uppgradera · stoppa 10 vågor',
   };
   const TEMPLATE_FN = {
     platformer: 'gamePlatformer', shooter: 'gameShooter', snake: 'gameSnake', breakout: 'gameBreakout', dodger: 'gameDodger',
     collector: 'gameCollector', openworld: 'gameOpenWorld', runner3d: 'gameRunner3D', arena3d: 'gameArena3D',
+    racer: 'gameRacer', match3: 'gameMatch3', towerdefense: 'gameTowerDefense',
   };
 
   const NAMES_A = ['Stjärn', 'Skugg', 'Kristall', 'Neon', 'Storm', 'Drak', 'Mån', 'Pixel', 'Frost', 'Glöd', 'Kosmo', 'Turbo'];
@@ -191,30 +199,54 @@
     ].join('\n');
   }
 
-  // ---------- pixel sprite (SVG) ----------
-  function sprite(prompt, size) {
+  // ---------- sprites (SVG), 1.5: four styles and animated sprite sheets ----------
+  const SPRITE_STYLES = ['pixel', 'platt', 'neon', 'retro'];
+  function sprite(prompt, size, opts) {
+    opts = opts || {};
     const a = analyze(prompt, { dim: '2d' }), r = rngOf(a.seed ^ 44), n = size || 12, pal = a.theme.pal;
-    const colors = [pal.player, pal.accent, pal.enemy, pal.coin];
+    const style = SPRITE_STYLES.includes(opts.style) ? opts.style : 'pixel', frames = Math.max(1, Math.min(8, opts.frames || 1));
     const half = Math.ceil(n / 2), grid = [];
     for (let y = 0; y < n; y++) {
       grid.push([]);
       for (let x = 0; x < half; x++) {
         const dx = (x - half + 0.5) / half, dy = (y - n / 2 + 0.5) / (n / 2);
-        const pr = 0.85 - Math.hypot(dx * 0.9, dy) * 0.9;
+        const pr = 1.02 - Math.hypot(dx * 0.85, dy * 0.95) * 0.85;
         grid[y][x] = r() < pr ? (r() < 0.75 ? 1 : 2) : 0;
       }
+      // a solid spine keeps the figure in one piece
+      if (y > n * 0.15 && y < n * 0.85) grid[y][half - 1] = grid[y][half - 1] || 1;
     }
-    let rects = '';
+    const colors = style === 'retro' ? ['#306230', '#0f380f', '#8bac0f'] : style === 'neon' ? ['#05d9e8', '#ff2a6d', '#f9f871', '#b388ff'] : [pal.player, pal.accent, pal.enemy, pal.coin];
     const c1 = pick(r, colors), c2 = pick(r, colors.filter(c => c !== c1));
-    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-      const v = grid[y][x < half ? x : n - 1 - x];
-      if (!v) continue;
-      rects += '<rect x="' + x + '" y="' + y + '" width="1.02" height="1.02" fill="' + (v === 1 ? c1 : c2) + '"/>';
+    const legRow = Math.floor(n * 0.72), ey = Math.floor(n * 0.4), W = n + 2;
+    let body = '';
+    for (let f = 0; f < frames; f++) {
+      const ox = f * W, bob = frames > 1 && f % 2 ? 1 : 0, step = frames > 1 ? [0, 1, 0, -1][f % 4] : 0;
+      let cells = '';
+      for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+        // legs: the lower rows shift sideways in opposite directions on each side (a walk cycle)
+        const legShift = y >= legRow ? (x < half ? step : -step) : 0;
+        const sx = x - legShift;
+        if (sx < 0 || sx >= n) continue;
+        const v = grid[y][sx < half ? sx : n - 1 - sx];
+        if (!v) continue;
+        const col = v === 1 ? c1 : c2, X = ox + x, Y = y + (y < legRow ? bob : 0);
+        if (style === 'platt') cells += '<rect x="' + (X + 0.04) + '" y="' + (Y + 0.04) + '" width="0.94" height="0.94" rx="0.32" fill="' + col + '"/>';
+        else cells += '<rect x="' + X + '" y="' + Y + '" width="1.02" height="1.02" fill="' + col + '"/>';
+      }
+      const eye = style === 'retro' ? '#0f380f' : '#fff';
+      cells += '<rect x="' + (ox + half - 3) + '" y="' + (ey + bob) + '" width="1" height="1" fill="' + eye + '"/><rect x="' + (ox + n - half + 2) + '" y="' + (ey + bob) + '" width="1" height="1" fill="' + eye + '"/>';
+      if (style === 'platt') cells = '<ellipse cx="' + (ox + n / 2) + '" cy="' + (n + 0.3) + '" rx="' + n * 0.35 + '" ry="0.5" fill="rgba(0,0,0,.25)"/>' + cells;
+      body += '<g>' + cells + '</g>';
     }
-    // outline + eyes
-    const ey = Math.floor(n * 0.4);
-    rects += '<rect x="' + (half - 3) + '" y="' + ey + '" width="1" height="1" fill="#fff"/><rect x="' + (n - half + 2) + '" y="' + ey + '" width="1" height="1" fill="#fff"/>';
-    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 ' + (n + 2) + ' ' + (n + 2) + '" shape-rendering="crispEdges" width="256" height="256">' + rects + '</svg>';
+    let defs = '', bg = '', wrapA = '', wrapB = '';
+    if (style === 'neon') {
+      defs = '<defs><filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="0.45" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+      bg = '<rect x="-1" y="-1" width="' + W * frames + '" height="' + W + '" fill="#0d0221"/>';
+      wrapA = '<g filter="url(#glow)">'; wrapB = '</g>';
+    } else if (style === 'retro') bg = '<rect x="-1" y="-1" width="' + W * frames + '" height="' + W + '" fill="#9bbc0f"/>';
+    const crisp = style === 'platt' || style === 'neon' ? '' : ' shape-rendering="crispEdges"';
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 ' + W * frames + ' ' + W + '"' + crisp + ' width="' + 256 * frames + '" height="256" data-frames="' + frames + '">' + defs + bg + wrapA + body + wrapB + '</svg>';
   }
 
   // ---------- low-poly meshes ----------
@@ -240,6 +272,15 @@
       for (let i = 0; i < seg; i++) { const t = i / seg * Math.PI * 2, rr = s * (0.8 + r() * 0.4); vs.push([x + Math.cos(t) * rr, y + s * 0.45 * r(), z + Math.sin(t) * rr]); }
       for (let i = 0; i < seg; i++) { const j = (i + 1) % seg; fs.push([0, 1 + i, 1 + j]); }
       const base = []; for (let i = 0; i < seg; i++) base.push(1 + i); fs.push(base);
+      add(vs, fs, col);
+    }
+    function sphere(x, y, z, rad, seg, rings, col, squash) {
+      const vs = [], fs = [];
+      for (let i = 0; i <= rings; i++) {
+        const ph = i / rings * Math.PI;
+        for (let j = 0; j < seg; j++) { const th = j / seg * Math.PI * 2; vs.push([x + Math.sin(ph) * Math.cos(th) * rad, y + Math.cos(ph) * rad * (squash || 1), z + Math.sin(ph) * Math.sin(th) * rad]); }
+      }
+      for (let i = 0; i < rings; i++) for (let j = 0; j < seg; j++) { const a = i * seg + j, b = i * seg + (j + 1) % seg; fs.push([a, b, b + seg, a + seg]); }
       add(vs, fs, col);
     }
     let name;
@@ -269,14 +310,84 @@
       boxm(-0.18, 0, 0, 0.28, 0.9, 0.3, '#334'); boxm(0.18, 0, 0, 0.28, 0.9, 0.3, '#334');
       boxm(-0.55, 1.05, 0, 0.22, 0.75, 0.25, pal.player); boxm(0.55, 1.05, 0, 0.22, 0.75, 0.25, pal.player);
       boxm(-0.12, 2.0, -0.28, 0.08, 0.08, 0.02, '#111'); boxm(0.12, 2.0, -0.28, 0.08, 0.08, 0.02, '#111');
+    } else if (has(p, ['svärd', 'sword', 'kniv', 'blad'])) {
+      name = 'Svärd'; boxm(0, 0.9, 0, 0.16, 1.9, 0.05, '#dfe6ee'); add([[-0.08, 2.8, -0.025], [0.08, 2.8, -0.025], [0, 3.05, 0], [-0.08, 2.8, 0.025], [0.08, 2.8, 0.025]], [[0, 1, 2], [3, 2, 4], [0, 2, 3], [1, 4, 2]], '#dfe6ee');
+      boxm(0, 0.78, 0, 0.7, 0.12, 0.14, pal.coin); cyl(0, 0.2, 0, 0.06, 0.06, 0.58, 6, '#6b3e26'); sphere(0, 0.15, 0, 0.1, 8, 6, pal.coin);
+    } else if (has(p, ['kista', 'chest', 'skatt', 'treasure', 'låda'])) {
+      name = 'Skattkista'; boxm(0, 0, 0, 1.6, 0.8, 1.0, '#8b5a2b');
+      for (let i = 0; i < 6; i++) { const a0 = i / 6 * Math.PI, a1 = (i + 1) / 6 * Math.PI; add([[-0.8, 0.8 + Math.sin(a0) * 0.5, Math.cos(a0) * 0.5], [0.8, 0.8 + Math.sin(a0) * 0.5, Math.cos(a0) * 0.5], [0.8, 0.8 + Math.sin(a1) * 0.5, Math.cos(a1) * 0.5], [-0.8, 0.8 + Math.sin(a1) * 0.5, Math.cos(a1) * 0.5]], [[0, 1, 2, 3]], '#a0692f'); }
+      [-0.62, 0, 0.62].forEach(x => boxm(x, 0, 0, 0.1, 1.32, 1.04, pal.coin)); boxm(0, 0.55, -0.52, 0.22, 0.28, 0.06, '#ffd23f');
+    } else if (has(p, ['svamp', 'mushroom', 'flugsvamp'])) {
+      name = 'Svamp'; cyl(0, 0, 0, 0.28, 0.22, 1.0, 10, '#f3ead8');
+      sphere(0, 1.0, 0, 0.85, 14, 7, '#e63946', 0.55);
+      for (let i = 0; i < 7; i++) { const a2 = r() * 6.28, d = 0.2 + r() * 0.45; sphere(Math.cos(a2) * d, 1.0 + 0.44 - d * 0.35, Math.sin(a2) * d, 0.09, 6, 4, '#ffffff'); }
+    } else if (has(p, ['planet', 'måne', 'moon', 'värld', 'jordklot'])) {
+      name = 'Planet'; sphere(0, 1.3, 0, 1.0, 18, 10, pal.player);
+      const ring = [], rf = [];
+      for (let i = 0; i < 32; i++) { const t = i / 32 * Math.PI * 2; ring.push([Math.cos(t) * 1.8, 1.3 + Math.sin(t) * 0.25, Math.sin(t) * 1.8], [Math.cos(t) * 1.35, 1.3 + Math.sin(t) * 0.19, Math.sin(t) * 1.35]); }
+      for (let i = 0; i < 32; i++) { const j = (i + 1) % 32; rf.push([i * 2, j * 2, j * 2 + 1, i * 2 + 1]); }
+      add(ring, rf, pal.coin);
+    } else if (has(p, ['fisk', 'fish', 'haj', 'shark'])) {
+      name = 'Fisk'; sphere(0, 1, 0, 0.8, 12, 8, pal.accent, 0.55);
+      add([[0.7, 1, 0], [1.4, 1.5, 0], [1.4, 0.5, 0]], [[0, 1, 2]], pal.player); add([[-0.1, 1.4, 0], [0.3, 1.9, 0], [0.4, 1.35, 0]], [[0, 1, 2]], pal.player);
+      sphere(-0.55, 1.12, 0.3, 0.1, 6, 4, '#111'); sphere(-0.55, 1.12, -0.3, 0.1, 6, 4, '#111');
     } else {
       name = 'Sten'; rock(0, 0, 0, 1, '#8d8d99'); rock(0.9, 0, 0.4, 0.5, '#7a7a88'); rock(-0.7, 0, -0.5, 0.4, '#9a9aa8');
     }
     return { name, vertices: V.map(v => v.map(n => Math.round(n * 1000) / 1000)), faces: F, colors: Cc };
   }
 
+  // Binary glTF 2.0 (.glb): flat-shaded triangles, one PBR material per face colour
+  // (vertex colours are ignored by several engines' default materials).
+  function toGlb(m) {
+    const lin = v => Math.pow(v / 255, 2.2), groups = new Map();
+    m.faces.forEach((f, fi) => {
+      let hex = ((m.colors && m.colors[fi]) || '#9aa4ff').replace('#', '').toLowerCase();
+      if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
+      if (!/^[0-9a-f]{6}$/.test(hex)) hex = '9aa4ff';
+      if (!groups.has(hex)) groups.set(hex, { P: [], N: [] });
+      const g = groups.get(hex), v = f.map(i => m.vertices[i]).filter(Boolean);
+      for (let k = 1; k + 1 < v.length; k++) {
+        const a = v[0], b = v[k], c = v[k + 1];
+        const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], w = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+        let nn = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
+        const l = Math.hypot(nn[0], nn[1], nn[2]) || 1; nn = nn.map(x => x / l);
+        [a, b, c].forEach(p => { g.P.push(p[0], p[1], p[2]); g.N.push(nn[0], nn[1], nn[2]); });
+      }
+    });
+    const json = { asset: { version: '2.0', generator: 'Nexora 3D 1.5' }, scene: 0, scenes: [{ nodes: [0] }], nodes: [{ mesh: 0, name: m.name || 'Nexora' }],
+      meshes: [{ name: m.name || 'Nexora', primitives: [] }], materials: [], buffers: [{ byteLength: 0 }], bufferViews: [], accessors: [] };
+    const chunks = [];
+    let off = 0;
+    for (const [hex, g] of groups) {
+      if (!g.P.length) continue;
+      const n = parseInt(hex, 16), pos = new Float32Array(g.P), nor = new Float32Array(g.N), count = g.P.length / 3;
+      const min = [Infinity, Infinity, Infinity], max = [-Infinity, -Infinity, -Infinity];
+      for (let i = 0; i < count; i++) for (let k = 0; k < 3; k++) { min[k] = Math.min(min[k], pos[i * 3 + k]); max[k] = Math.max(max[k], pos[i * 3 + k]); }
+      const mat = json.materials.length;
+      json.materials.push({ name: '#' + hex, pbrMetallicRoughness: { baseColorFactor: [lin((n >> 16) & 255), lin((n >> 8) & 255), lin(n & 255), 1], metallicFactor: 0, roughnessFactor: 0.75 }, doubleSided: true });
+      for (const arr of [pos, nor]) {
+        json.bufferViews.push({ buffer: 0, byteOffset: off, byteLength: arr.byteLength, target: 34962 });
+        chunks.push(new Uint8Array(arr.buffer)); off += arr.byteLength;
+      }
+      const a0 = json.accessors.length;
+      json.accessors.push({ bufferView: a0, componentType: 5126, count, type: 'VEC3', min, max }, { bufferView: a0 + 1, componentType: 5126, count, type: 'VEC3' });
+      json.meshes[0].primitives.push({ attributes: { POSITION: a0, NORMAL: a0 + 1 }, material: mat, mode: 4 });
+    }
+    json.buffers[0].byteLength = off;
+    const js = new TextEncoder().encode(JSON.stringify(json)), jpad = (4 - js.length % 4) % 4;
+    const total = 12 + 8 + js.length + jpad + 8 + off, out = new Uint8Array(total), dv = new DataView(out.buffer);
+    dv.setUint32(0, 0x46546c67, true); dv.setUint32(4, 2, true); dv.setUint32(8, total, true);
+    dv.setUint32(12, js.length + jpad, true); dv.setUint32(16, 0x4e4f534a, true);
+    out.set(js, 20); for (let i = 0; i < jpad; i++) out[20 + js.length + i] = 0x20;
+    const b0 = 20 + js.length + jpad;
+    dv.setUint32(b0, off, true); dv.setUint32(b0 + 4, 0x004e4942, true);
+    let o = b0 + 8; for (const c of chunks) { out.set(c, o); o += c.length; }
+    return out;
+  }
+
   function toObj(m) {
-    let s = '# Nexora 3D 1 – ' + (m.name || 'modell') + '\n';
+    let s = '# Nexora 3D 1.5 – ' + (m.name || 'modell') + '\n';
     m.vertices.forEach(v => { s += 'v ' + v.join(' ') + '\n'; });
     m.faces.forEach(f => { s += 'f ' + f.map(i => i + 1).join(' ') + '\n'; });
     return s;
@@ -358,5 +469,5 @@
     return wav(await ctx.startRendering());
   }
 
-  window.NexoraLocal = { hash, analyze, config, buildHtml, story, npcs, quests, dialog, sprite, mesh, toObj, music, sfx, wav, GENRES, TEMPLATE_FN };
+  window.NexoraLocal = { hash, analyze, config, buildHtml, story, npcs, quests, dialog, sprite, SPRITE_STYLES, mesh, toObj, toGlb, music, sfx, wav, GENRES, TEMPLATE_FN };
 })();

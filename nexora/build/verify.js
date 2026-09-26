@@ -23,6 +23,9 @@ const PROMPTS = [
   ['Samla diamanter i en godisvärld, två spelare', '2d', 'collector'],
   ['En 3D-löpare på en isväg', '3d', 'runner3d'],
   ['3D arena där man samlar kulor i rymden', '3d', 'arena3d'],
+  ['Ett racingspel på en ökenbana', '2d', 'racer'],
+  ['Ett pusselspel med juveler i en godisvärld', '2d', 'match3'],
+  ['Tower defense mot zombies i en skog', '2d', 'towerdefense'],
 ];
 
 (async () => {
@@ -42,6 +45,15 @@ const PROMPTS = [
     await page.screenshot({ path: path.join(SHOTS, 'view-' + r + '.png'), fullPage: r === 'hem' || r === 'priser' });
   }
   ok(errors.length === 0, 'all views render without errors ' + (errors.length ? JSON.stringify(errors) : ''));
+
+  // what's new in 1.5
+  await page.evaluate(() => { location.hash = 'hem'; });
+  await page.click('text=Nexora 1.5 är här');
+  ok(await page.locator('.modal', { hasText: 'Tre nya speltyper' }).count() === 1, 'the 1.5 news dialog opens from the home page');
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => { location.hash = 'modeller'; });
+  await page.waitForTimeout(200);
+  ok((await page.locator('main').innerText()).includes('Nexora Flash 1.5') && (await page.locator('main').innerText()).includes('12 speltyper'), 'models page shows the 1.5 names');
 
   // plan gating on Free
   await page.evaluate(() => { location.hash = 'studio'; });
@@ -70,6 +82,7 @@ const PROMPTS = [
       const k = keys[i % keys.length];
       await g.keyboard.down(k); await g.waitForTimeout(110); await g.keyboard.up(k);
     }
+    if (want === 'match3' || want === 'towerdefense') for (let i = 0; i < 24; i++) { await g.mouse.click(200 + (i * 97) % 800, 180 + (i * 53) % 420); await g.waitForTimeout(50); }
     const colors = await g.evaluate(() => {
       const c = document.getElementById('c'), x = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, s = new Set();
       for (let i = 0; i < x.length; i += 4 * 97) s.add((x[i] >> 3) + ',' + (x[i + 1] >> 3) + ',' + (x[i + 2] >> 3));
@@ -135,7 +148,21 @@ const PROMPTS = [
     await page.waitForTimeout(250);
   }
   ok((await tools.filter({ hasText: 'Story' }).first().locator('.out').innerText()).includes('Akt 1'), 'story generator writes a story');
-  ok(await tools.filter({ hasText: 'Grafik' }).first().locator('.art svg').count() === 1, 'Image 1 (local) draws a sprite');
+  ok(await tools.filter({ hasText: 'Grafik' }).first().locator('.art svg').count() === 1, 'Image 1.5 (local) draws a sprite');
+  const gfx = tools.filter({ hasText: 'Grafik' }).first();
+  await gfx.locator('select').first().selectOption('neon'); await gfx.locator('select').nth(1).selectOption('4');
+  await gfx.locator('button', { hasText: 'Generera' }).click(); await page.waitForTimeout(400);
+  ok(await gfx.locator('.art svg[data-frames="4"] filter').count() === 1, 'Image 1.5: neon style, 4-frame animated sprite sheet');
+  const [pngDl] = await Promise.all([page.waitForEvent('download'), gfx.locator('button', { hasText: '.png' }).click()]);
+  const png = fs.readFileSync(await pngDl.path());
+  ok(png.slice(1, 4).toString() === 'PNG' && png.readUInt32BE(16) === 1024 && png.readUInt32BE(20) === 256, 'PNG export: 1024x256 sprite sheet');
+  const d3 = tools.filter({ hasText: '3D – Nexora' }).first();
+  await d3.locator('input').fill('en skattkista'); await d3.locator('button', { hasText: 'Generera' }).click(); await page.waitForTimeout(300);
+  const [glbDl] = await Promise.all([page.waitForEvent('download'), d3.locator('button', { hasText: '.glb' }).click()]);
+  const glb = fs.readFileSync(await glbDl.path());
+  const gj = JSON.parse(glb.slice(20, 20 + glb.readUInt32LE(12)).toString());
+  ok(glb.slice(0, 4).toString() === 'glTF' && glb.readUInt32LE(8) === glb.length && gj.meshes[0].primitives.length === gj.materials.length && gj.materials.length >= 3, '3D 1.5: .glb export (' + glb.length + ' bytes, ' + gj.materials.length + ' materials)');
+  if (process.env.SHOTS_GLB) fs.writeFileSync(process.env.SHOTS_GLB, glb);
   await tools.filter({ hasText: 'Musik' }).first().locator('button', { hasText: 'Komponera' }).click();
   await page.waitForSelector('audio', { timeout: 20000 });
   ok(true, 'music generator renders a WAV');
@@ -144,12 +171,15 @@ const PROMPTS = [
 
   // AI providers, with the network mocked: request shape, SSE parsing, thinking stream
   const sent = [];
-  const GAME = '<!doctype html><html><head><title>Mock-spelet</title></head><body><canvas id="c"></canvas><script>document.title="Mock-spelet"</' + 'script></body></html>';
+  // an animated canvas, so the 1.5 self-test passes on the first run
+  const GAME = '<!doctype html><html><head><title>Mock-spelet</title></head><body style="margin:0"><canvas id="c" width="300" height="200"></canvas><script>var t=0,x=document.getElementById("c").getContext("2d");(function f(){t+=4;x.fillStyle="hsl("+t%360+",70%,50%)";x.fillRect(0,0,300,200);x.fillStyle="#fff";x.fillRect(t%300,90,20,20);requestAnimationFrame(f)})()</' + 'script></body></html>';
+  const BROKEN = '<!doctype html><html><head><title>Trasigt</title></head><body><canvas id="c"></canvas><script>var x=document.getElementById("c").getContext("2d");requestAnimationFrame(function f(){ undefinedPlayer.move(); })</' + 'script></body></html>';
+  const gameQueue = [];
   const sse = evs => evs.map(e => 'event: ' + (e.type || 'x') + '\ndata: ' + JSON.stringify(e) + '\n\n').join('');
   await page.route('https://api.anthropic.com/v1/messages', async route => {
     const req = route.request();
     sent.push({ headers: req.headers(), body: JSON.parse(req.postData()) });
-    const text = 'Här är spelet:\n```html\n' + GAME + '\n```';
+    const text = 'Här är spelet:\n```html\n' + (gameQueue.shift() || GAME) + '\n```';
     await route.fulfill({ status: 200, headers: { 'content-type': 'text/event-stream', 'access-control-allow-origin': '*' }, body: sse([
       { type: 'message_start', message: { id: 'msg_1', type: 'message', role: 'assistant', content: [] } },
       { type: 'content_block_start', index: 0, content_block: { type: 'thinking', thinking: '' } },
@@ -183,7 +213,18 @@ const PROMPTS = [
   await page.click('text=✨ Skapa spel');
   await page.waitForSelector('.screen iframe', { timeout: 10000 });
   const r1 = sent[1];
-  ok(r1 && r1.body.model === 'claude-haiku-4-5' && !r1.body.thinking && !r1.body.fallbacks && !r1.headers['anthropic-beta'], 'Flash 1 request: haiku-4-5, no thinking, no beta header');
+  ok(r1 && r1.body.model === 'claude-haiku-4-5' && !r1.body.thinking && !r1.body.fallbacks && !r1.headers['anthropic-beta'], 'Flash 1.5 request: haiku-4-5, no thinking, no beta header');
+  ok((await page.locator('.stage .note').innerText()).includes('Självtestad'), 'passing game is marked as self-tested');
+
+  // 1.5 self-test: a broken first answer is run, its error is sent back and the fixed game is kept
+  gameQueue.push(BROKEN, GAME);
+  const before = sent.length;
+  await page.click('text=✨ Skapa spel');
+  await page.waitForFunction(() => { const n = document.querySelector('.stage .note'); return n && /Självtestad/.test(n.textContent) && document.querySelector('.screen iframe'); }, null, { timeout: 30000 });
+  ok(sent.length === before + 2, 'self-test: generate + one fix request (' + (sent.length - before) + ')');
+  const fixMsg = sent[before + 1].body.messages[0].content;
+  ok(/undefinedPlayer/.test(fixMsg) && /```html/.test(fixMsg), 'the runtime error and the broken game were sent to the fix request');
+  ok(await page.locator('.bar .title').innerText() === 'Mock-spelet' && /1 rättning/.test(await page.locator('.stage .note').innerText()), 'fixed game shown: ' + await page.locator('.stage .note').innerText());
 
   // refusal surfaces as a readable error
   await page.unroute('https://api.anthropic.com/v1/messages');

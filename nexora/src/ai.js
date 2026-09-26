@@ -10,12 +10,18 @@
 (function () {
   'use strict';
 
+  // 1.5: every 1-series model got an upgrade (see NEWS in app.js for the user-facing list).
   const MODELS = {
-    flash: { name: 'Nexora Flash 1', short: 'Flash 1', tag: 'Snabb', kind: 'text', minTier: 0, desc: 'Snabbast. Bra för prototyper och små spel på några sekunder.' },
-    pro: { name: 'Nexora Pro 1', short: 'Pro 1', tag: 'Långsam men bra resultat', kind: 'text', minTier: 1, desc: 'Tar längre tid men skriver större, mer polerade spel med fler mekaniker.' },
-    core: { name: 'Nexora Core 1', short: 'Core 1', tag: 'Pro, men tänker', kind: 'text', minTier: 2, desc: 'Ingen bryr sig om den – men den planerar spelet steg för steg innan den skriver en rad kod. Du ser tankarna live.' },
-    image: { name: 'Nexora Image 1', short: 'Image 1', tag: 'Bildmodell', kind: 'image', minTier: 1, desc: 'Sprites, bakgrunder och ikoner till dina spel.' },
-    d3: { name: 'Nexora 3D 1', short: '3D 1', tag: '3D-generator', kind: 'mesh', minTier: 1, desc: 'Low-poly 3D-modeller som du kan rotera och exportera som .obj.' },
+    flash: { name: 'Nexora Flash 1.5', short: 'Flash 1.5', tag: 'Snabb + självtest', kind: 'text', minTier: 0, selfTest: 1,
+      desc: 'Snabbast. Skriver spelet på sekunder, testkör det och rättar körfel en gång innan du får det.' },
+    pro: { name: 'Nexora Pro 1.5', short: 'Pro 1.5', tag: 'Bättre resultat, testar själv', kind: 'text', minTier: 1, selfTest: 2,
+      desc: 'Större och mer polerade spel med högre ansträngning – testkörs och rättas upp till två gånger.' },
+    core: { name: 'Nexora Core 1.5', short: 'Core 1.5', tag: 'Tänker, testar, förbättrar', kind: 'text', minTier: 2, selfTest: 3,
+      desc: 'Ingen bryr sig om den – men den planerar spelet steg för steg, visar tankarna live och testar och förbättrar upp till tre gånger.' },
+    image: { name: 'Nexora Image 1.5', short: 'Image 1.5', tag: 'Stilar, animation, PNG', kind: 'image', minTier: 1,
+      desc: 'Sprites i fyra stilar (pixel, platt, neon, retro), animerade sprite-ark och export som PNG eller SVG.' },
+    d3: { name: 'Nexora 3D 1.5', short: '3D 1.5', tag: 'Fler modeller, GLB-export', kind: 'mesh', minTier: 1,
+      desc: 'Low-poly 3D-modeller med färger, nu fler typer – och export som .glb för Godot, Unity och Blender, eller .obj.' },
     astryx: { name: 'Nexora Astryx 5 Pro', short: 'Astryx 5 Pro', tag: 'AI-agent', kind: 'agent', minTier: 0, agent: true,
       desc: 'Vår första AI-agent. Den planerar, skriver spelet, testkör det, tittar på resultatet, hittar buggar och rättar dem – helt själv – tills spelet fungerar. På datorn bygger den riktiga Godot-spel med Python i upp till två timmar, och i hyperrealistiskt läge av fotoskannade modeller.' },
   };
@@ -25,10 +31,10 @@
   // What each Nexora model runs on with the Anthropic provider.
   const ANTHROPIC = {
     flash: { model: 'claude-haiku-4-5', max_tokens: 16000 },
-    pro: { model: 'claude-opus-5', max_tokens: 64000, output_config: { effort: 'medium' }, fallbacks: true },
+    pro: { model: 'claude-opus-5', max_tokens: 64000, output_config: { effort: 'high' }, fallbacks: true },
     core: { model: 'claude-opus-5', max_tokens: 64000, thinking: { type: 'adaptive', display: 'summarized' }, output_config: { effort: 'xhigh' }, fallbacks: true },
-    image: { model: 'claude-opus-5', max_tokens: 32000, output_config: { effort: 'medium' }, fallbacks: true },
-    d3: { model: 'claude-opus-5', max_tokens: 32000, output_config: { effort: 'medium' }, fallbacks: true },
+    image: { model: 'claude-opus-5', max_tokens: 32000, output_config: { effort: 'high' }, fallbacks: true },
+    d3: { model: 'claude-opus-5', max_tokens: 32000, output_config: { effort: 'high' }, fallbacks: true },
     astryx: { model: 'claude-opus-5', max_tokens: 64000, thinking: { type: 'adaptive', display: 'summarized' }, output_config: { effort: 'high' }, fallbacks: true },
     astryxGodot: { model: 'claude-opus-5', max_tokens: 64000, thinking: { type: 'adaptive', display: 'summarized' }, output_config: { effort: 'xhigh' }, fallbacks: true },
   };
@@ -49,11 +55,13 @@
     '- Everything inline in that one file: no external scripts, fonts, images, CDNs or network requests. Draw graphics with canvas or inline SVG; make sound with the Web Audio API.',
     '- It runs inside a sandboxed iframe: wrap any localStorage access in try/catch.',
     '- Full-window responsive canvas that handles resize and devicePixelRatio.',
-    '- Keyboard controls (arrows/WASD + Space) AND on-screen touch buttons on touch devices.',
+    '- Keyboard controls (arrows/WASD + Space), on-screen touch buttons on touch devices, and gamepad support (navigator.getGamepads: stick/d-pad + A).',
+    '- Pause with P or Escape.',
     '- A title screen with the game name and how to play, a score/HUD, a game-over or win screen, and restart.',
     '- A steady requestAnimationFrame loop with delta time; no runaway memory growth.',
     '- All player-facing text in Swedish.',
     'Make it genuinely fun: juice (particles, screen shake, sound), a difficulty curve, and a clear goal.',
+    'Before answering, re-read your code once for runtime errors (undefined names, typos, missing restart) – the game is run automatically and errors are sent back to you.',
   ].join('\n');
 
   const FEATURE_TEXT = {
@@ -222,18 +230,24 @@
     return r.text.trim();
   }
 
-  async function image(settings, prompt, cb, signal) {
-    if (settings.provider === 'openai' && settings.openaiImageApi) return { url: await openaiImage(settings, prompt, signal) };
-    const r = await complete(settings, 'image', 'You are Nexora Image 1, a game artist that draws with SVG code.',
-      'Draw a game asset as a single self-contained SVG (viewBox 0 0 256 256, no external references, no text unless asked). Clean shapes, strong silhouette, game-ready. Return only the SVG.\n\nAsset: ' + prompt, cb, signal);
+  const IMAGE_STYLES = { pixel: 'pixel art on a coarse grid (use crispEdges rects)', platt: 'flat vector style with bold shapes and soft shading', neon: 'glowing neon line art on a dark background (use SVG filters for glow)', retro: '8-bit retro console style with a limited 4-colour palette' };
+  async function image(settings, prompt, cb, signal, opts) {
+    opts = opts || {};
+    const style = IMAGE_STYLES[opts.style] || IMAGE_STYLES.pixel;
+    if (settings.provider === 'openai' && settings.openaiImageApi) return { url: await openaiImage(settings, prompt + ' – ' + style + (opts.frames > 1 ? ', sprite sheet with ' + opts.frames + ' animation frames in a row' : ''), signal) };
+    const layout = opts.frames > 1
+      ? 'a sprite sheet: ' + opts.frames + ' animation frames side by side (viewBox 0 0 ' + 256 * opts.frames + ' 256, each frame 256x256, a smooth loop such as walking or flapping)'
+      : 'one sprite (viewBox 0 0 256 256)';
+    const r = await complete(settings, 'image', 'You are Nexora Image 1.5, a game artist that draws with SVG code.',
+      'Draw a game asset as a single self-contained SVG: ' + layout + '. Style: ' + style + '. No external references, no text unless asked. Strong silhouette, transparent background unless the style needs one, game-ready. Return only the SVG.\n\nAsset: ' + prompt, cb, signal);
     const svg = extractSvg(r.text);
     if (!svg) throw apiError('Ingen SVG i svaret. Försök igen.');
     return { svg };
   }
 
   async function mesh(settings, prompt, cb, signal) {
-    const r = await complete(settings, 'd3', 'You are Nexora 3D 1, a low-poly 3D modeller.',
-      'Model this as a low-poly mesh (40-400 faces), ground at y=0, about 2 units tall, centred on x/z. ' +
+    const r = await complete(settings, 'd3', 'You are Nexora 3D 1.5, a low-poly 3D modeller.',
+      'Model this as a low-poly mesh (60-800 faces, consistent outward winding, closed where it should be solid), ground at y=0, about 2 units tall, centred on x/z, with a pleasing colour palette. ' +
       'Return only JSON: {"name": string, "vertices": [[x,y,z],...], "faces": [[i,j,k,...],...] (0-based, counter-clockwise seen from outside), "colors": ["#rrggbb" per face]}.\n\nModel: ' + prompt, cb, signal);
     const m = extractJson(r.text);
     if (!Array.isArray(m.vertices) || !Array.isArray(m.faces)) throw apiError('Ogiltig 3D-modell i svaret.');

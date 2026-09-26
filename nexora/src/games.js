@@ -651,3 +651,308 @@ function gameArena3D(R) {
     },
   };
 }
+
+/* ---- 1.5: racing, match-3 puzzle and tower defense ---- */
+
+function gameRacer(R) {
+  const P = R.pal, C = R.CFG, N = 96, WIDTH = 120;
+  let track, cars, me, lapsToWin, zoom, finishOrder;
+  function build() {
+    const n = nxNoise(C.seed), r0 = 900;
+    track = [];
+    for (let i = 0; i < N; i++) {
+      const a = i / N * Math.PI * 2, r = r0 * (0.75 + 0.5 * n(Math.cos(a) * 1.3 + 5, Math.sin(a) * 1.3 + 5));
+      track.push({ x: Math.cos(a) * r * 1.25, y: Math.sin(a) * r });
+    }
+  }
+  function nearest(car) {
+    let best = car.idx, bd = Infinity;
+    for (let k = -6; k <= 10; k++) {
+      const i = (car.idx + k + N) % N, p = track[i], d = (p.x - car.x) ** 2 + (p.y - car.y) ** 2;
+      if (d < bd) { bd = d; best = i; }
+    }
+    return { i: best, d: Math.sqrt(bd) };
+  }
+  function makeCar(off, color, ai) {
+    const p = track[0], q = track[1], a = Math.atan2(q.y - p.y, q.x - p.x);
+    return { x: p.x - Math.sin(a) * off, y: p.y + Math.cos(a) * off, a, v: 0, idx: 0, lap: 0, color, ai, skill: ai ? 0.86 + R.rng() * 0.1 + C.difficulty * 0.03 : 1, done: false };
+  }
+  const progress = c => c.lap * N + c.idx;
+  function step(c, dt, k) {
+    const max = 360 * c.skill, near = nearest(c), off = near.d > WIDTH / 2;
+    if (c.ai) {
+      const tgt = track[(near.i + 4) % N];
+      let da = Math.atan2(tgt.y - c.y, tgt.x - c.x) - c.a;
+      da = Math.atan2(Math.sin(da), Math.cos(da));
+      c.a += Math.max(-2.6, Math.min(2.6, da * 4)) * dt;
+      c.v += (max * (1 - Math.min(0.5, Math.abs(da))) - c.v) * dt * 1.5;
+    } else {
+      if (k.up || k.action) c.v += 420 * dt; else c.v *= Math.pow(0.5, dt);
+      if (k.down) c.v -= 520 * dt;
+      const steer = (k.right ? 1 : 0) - (k.left ? 1 : 0);
+      c.a += steer * 2.8 * dt * Math.min(1, Math.abs(c.v) / 120) * Math.sign(c.v || 1);
+      c.v = Math.max(-120, Math.min(off ? max * 0.45 : max, c.v));
+    }
+    c.x += Math.cos(c.a) * c.v * dt; c.y += Math.sin(c.a) * c.v * dt;
+    const n2 = nearest(c);
+    if (n2.i < 10 && c.idx > N - 10) { c.lap++; if (!c.ai && c.lap > 0 && c.lap < lapsToWin) { R.flash('Varv ' + (c.lap + 1) + '/' + lapsToWin); R.sfx('power'); } }
+    else if (n2.i > N - 10 && c.idx < 10) c.lap--;
+    c.idx = n2.i;
+    if (c.lap >= lapsToWin && !c.done) { c.done = true; finishOrder.push(c); }
+  }
+  return {
+    reset() {
+      build(); lapsToWin = 3; finishOrder = [];
+      cars = [makeCar(-30, P.player, false), makeCar(30, P.enemy, true), makeCar(0, P.accent, true)];
+      cars[2].x -= Math.cos(cars[2].a) * 60; cars[2].y -= Math.sin(cars[2].a) * 60;
+      me = cars[0];
+    },
+    resize() { zoom = Math.min(1, Math.min(R.W, R.H) / 650); },
+    hud() {
+      const pos = cars.slice().sort((a, b) => progress(b) - progress(a)).indexOf(me) + 1;
+      R.text('Varv ' + Math.min(lapsToWin, me.lap + 1) + '/' + lapsToWin + '   ·   Plats ' + pos + '/3   ·   ' + R.time.toFixed(1) + ' s', R.W / 2, 28, 18, '#fff', 'center');
+    },
+    update(dt) {
+      const k = R.input();
+      cars.forEach(c => step(c, dt, c.ai ? null : k));
+      for (let i = 0; i < cars.length; i++) for (let j = i + 1; j < cars.length; j++) {
+        const a = cars[i], b = cars[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+        if (d < 34 && d > 0) { const push = (34 - d) / 2; a.x -= dx / d * push; a.y -= dy / d * push; b.x += dx / d * push; b.y += dy / d * push; a.v *= 0.97; b.v *= 0.97; }
+      }
+      R.score = Math.max(0, Math.floor(progress(me) * 5));
+      if (me.done) {
+        const place = finishOrder.indexOf(me) + 1;
+        R.score += [0, 1500, 800, 300][place] + Math.max(0, Math.floor(600 - R.time * 5));
+        if (place === 1) R.win('Du vann loppet!'); else { R.flash('Plats ' + place + ' – försök igen!', 3); R.over(); }
+      }
+    },
+    draw(ctx) {
+      ctx.fillStyle = P.bg2; ctx.fillRect(0, 0, R.W, R.H);
+      ctx.save();
+      ctx.translate(R.W / 2, R.H / 2); ctx.scale(zoom || 1, zoom || 1); ctx.translate(-me.x, -me.y);
+      ctx.fillStyle = 'rgba(255,255,255,.04)';
+      for (let x = Math.floor((me.x - 1200) / 120) * 120; x < me.x + 1200; x += 120) for (let y = Math.floor((me.y - 1200) / 120) * 120; y < me.y + 1200; y += 120) if (((x + y) / 120) % 2 === 0) ctx.fillRect(x, y, 120, 120);
+      const path = () => { ctx.beginPath(); track.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); };
+      ctx.lineJoin = 'round';
+      path(); ctx.strokeStyle = '#fff'; ctx.lineWidth = WIDTH + 14; ctx.stroke();
+      path(); ctx.strokeStyle = P.ground; ctx.lineWidth = WIDTH; ctx.stroke();
+      path(); ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 3; ctx.setLineDash([26, 26]); ctx.stroke(); ctx.setLineDash([]);
+      const s0 = track[0], s1 = track[1], sa = Math.atan2(s1.y - s0.y, s1.x - s0.x) + Math.PI / 2;
+      ctx.save(); ctx.translate(s0.x, s0.y); ctx.rotate(sa);
+      for (let i = -6; i < 6; i++) { ctx.fillStyle = i % 2 ? '#fff' : '#111'; ctx.fillRect(i * WIDTH / 12, -6, WIDTH / 12, 12); }
+      ctx.restore();
+      for (const c of cars) {
+        ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.a);
+        ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(-18, -9, 40, 22);
+        ctx.fillStyle = c.color; ctx.beginPath(); ctx.roundRect(-20, -11, 40, 22, 6); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fillRect(2, -8, 8, 16);
+        ctx.fillStyle = '#111'; ctx.fillRect(-16, -14, 9, 4); ctx.fillRect(-16, 10, 9, 4); ctx.fillRect(8, -14, 9, 4); ctx.fillRect(8, 10, 9, 4);
+        ctx.restore();
+      }
+      ctx.restore();
+    },
+  };
+}
+
+function gameMatch3(R) {
+  const P = R.pal, C = R.CFG, N = 8, TYPES = 6;
+  // fixed, high-contrast gem colours (theme colours can be too close to each other)
+  const COLS = ['#ff4d6d', '#ffd23f', '#3a86ff', '#9b5de5', '#2ec4b6', '#ffffff'];
+  let grid, cell, ox, oy, sel, cursor, moves, goal, busy, combo, swapAnim;
+  const rnd = () => Math.floor(R.rng() * TYPES);
+  function fresh() {
+    grid = [];
+    for (let r = 0; r < N; r++) { grid.push([]); for (let c = 0; c < N; c++) { let t; do { t = rnd(); } while ((c > 1 && grid[r][c - 1].t === t && grid[r][c - 2].t === t) || (r > 1 && grid[r - 1][c].t === t && grid[r - 2][c].t === t)); grid[r].push({ t, off: -(N - r) * 1.2 - R.rng() }); } }
+  }
+  function matches() {
+    const hit = new Set();
+    for (let r = 0; r < N; r++) for (let c = 0; c < N - 2; c++) { const t = grid[r][c].t; if (t >= 0 && grid[r][c + 1].t === t && grid[r][c + 2].t === t) { hit.add(r * N + c); hit.add(r * N + c + 1); hit.add(r * N + c + 2); } }
+    for (let c = 0; c < N; c++) for (let r = 0; r < N - 2; r++) { const t = grid[r][c].t; if (t >= 0 && grid[r + 1][c].t === t && grid[r + 2][c].t === t) { hit.add(r * N + c); hit.add((r + 1) * N + c); hit.add((r + 2) * N + c); } }
+    return hit;
+  }
+  function resolve() {
+    const hit = matches();
+    if (!hit.size) { busy = 0; combo = 0; if (moves <= 0 && R.score < goal) R.over(); return false; }
+    combo++;
+    hit.forEach(k => { const r = Math.floor(k / N), c = k % N; R.burst(ox + c * cell + cell / 2, oy + r * cell + cell / 2, COLS[grid[r][c].t], 6); grid[r][c].t = -1; });
+    R.add(hit.size * 10 * combo); R.sfx(combo > 1 ? 'power' : 'coin');
+    if (combo > 1) R.flash('Kombo x' + combo + '!');
+    for (let c = 0; c < N; c++) {
+      let write = N - 1;
+      for (let r = N - 1; r >= 0; r--) if (grid[r][c].t >= 0) { const g = grid[r][c]; grid[write][c] = { t: g.t, off: g.off + (r - write) }; write--; }
+      for (let r = write; r >= 0; r--) grid[r][c] = { t: rnd(), off: r - write - 1.5 };
+    }
+    busy = 0.35;
+    if (R.score >= goal) R.win('Målet nått!');
+    return true;
+  }
+  function trySwap(a, b) {
+    const ga = grid[a.r][a.c], gb = grid[b.r][b.c];
+    grid[a.r][a.c] = gb; grid[b.r][b.c] = ga;
+    if (matches().size) { moves--; swapAnim = null; resolve(); }
+    else { grid[a.r][a.c] = ga; grid[b.r][b.c] = gb; swapAnim = { a, b, t: 0.25 }; R.sfx('hit'); }
+  }
+  function pick(p) {
+    if (busy > 0) return;
+    if (!sel) { sel = p; R.sfx('talk'); return; }
+    if (Math.abs(sel.r - p.r) + Math.abs(sel.c - p.c) === 1) trySwap(sel, p);
+    sel = null;
+  }
+  return {
+    reset() { fresh(); sel = null; cursor = { r: 3, c: 3 }; moves = 25 - C.difficulty * 3; goal = 1200 + C.difficulty * 400; busy = 0.6; combo = 0; swapAnim = null; },
+    resize() { cell = Math.floor(Math.min(R.W - 20, R.H - 120) / N); ox = Math.floor((R.W - cell * N) / 2); oy = Math.floor((R.H - cell * N) / 2) + 20; },
+    hud() {
+      R.text('Drag ' + moves + '   ·   Mål ' + goal, R.W / 2, 28, 18, '#fff', 'center');
+      const w = Math.min(300, R.W * 0.5), f = Math.min(1, R.score / goal);
+      R.ctx.fillStyle = 'rgba(255,255,255,.15)'; R.ctx.fillRect(R.W / 2 - w / 2, 46, w, 8);
+      R.ctx.fillStyle = P.coin; R.ctx.fillRect(R.W / 2 - w / 2, 46, w * f, 8);
+    },
+    update(dt) {
+      for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) { const g = grid[r][c]; if (g.off < 0) g.off = Math.min(0, g.off + dt * 9); else if (g.off > 0) g.off = Math.max(0, g.off - dt * 9); }
+      if (swapAnim) { swapAnim.t -= dt; if (swapAnim.t <= 0) swapAnim = null; }
+      if (busy > 0) { busy -= dt; if (busy <= 0) resolve(); }
+      const click = R.click();
+      if (click) {
+        const c = Math.floor((click.x - ox) / cell), r = Math.floor((click.y - oy) / cell);
+        if (r >= 0 && r < N && c >= 0 && c < N) { cursor = { r, c }; pick({ r, c }); }
+      }
+      if (R.hit('left')) cursor.c = Math.max(0, cursor.c - 1);
+      if (R.hit('right')) cursor.c = Math.min(N - 1, cursor.c + 1);
+      if (R.hit('up')) cursor.r = Math.max(0, cursor.r - 1);
+      if (R.hit('down')) cursor.r = Math.min(N - 1, cursor.r + 1);
+      if (R.hit('action')) pick({ r: cursor.r, c: cursor.c });
+    },
+    draw(ctx) {
+      const g0 = ctx.createLinearGradient(0, 0, 0, R.H); g0.addColorStop(0, P.bg1); g0.addColorStop(1, P.bg2);
+      ctx.fillStyle = g0; ctx.fillRect(0, 0, R.W, R.H);
+      ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.roundRect(ox - 8, oy - 8, cell * N + 16, cell * N + 16, 16); ctx.fill();
+      for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+        const g = grid[r][c], x = ox + c * cell + cell / 2, y = oy + (r + g.off) * cell + cell / 2, s = cell * 0.36;
+        if ((r + c) % 2) { ctx.fillStyle = 'rgba(255,255,255,.04)'; ctx.fillRect(ox + c * cell, oy + r * cell, cell, cell); }
+        if (g.t < 0 || y < oy - cell / 2) continue;
+        let dx = 0;
+        if (swapAnim && ((swapAnim.a.r === r && swapAnim.a.c === c) || (swapAnim.b.r === r && swapAnim.b.c === c))) dx = Math.sin(swapAnim.t * 60) * 4;
+        ctx.save(); ctx.translate(x + dx, y);
+        ctx.fillStyle = COLS[g.t]; ctx.beginPath();
+        const t = g.t;
+        if (t === 0) ctx.arc(0, 0, s, 0, 7);
+        else if (t === 1) { ctx.moveTo(0, -s); ctx.lineTo(s, 0); ctx.lineTo(0, s); ctx.lineTo(-s, 0); }
+        else if (t === 2) ctx.roundRect(-s * 0.85, -s * 0.85, s * 1.7, s * 1.7, s * 0.3);
+        else if (t === 3) { for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; ctx.lineTo(Math.cos(a) * s, Math.sin(a) * s); } }
+        else if (t === 4) { ctx.moveTo(0, -s); ctx.lineTo(s * 0.95, s * 0.8); ctx.lineTo(-s * 0.95, s * 0.8); }
+        else { for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 - Math.PI / 2, rr = i % 2 ? s * 0.45 : s; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } }
+        ctx.closePath(); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.arc(-s * 0.3, -s * 0.35, s * 0.18, 0, 7); ctx.fill();
+        ctx.restore();
+      }
+      const box = (p, col) => { ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.strokeRect(ox + p.c * cell + 2, oy + p.r * cell + 2, cell - 4, cell - 4); };
+      box(cursor, 'rgba(255,255,255,.5)');
+      if (sel) box(sel, P.coin);
+      R.drawParticles();
+    },
+  };
+}
+
+function gameTowerDefense(R) {
+  const P = R.pal, C = R.CFG, GW = 16, GH = 10;
+  let path, cells, towers, foes, shots, gold, lives, wave, spawnLeft, spawnT, nextWaveT, cell, ox, oy, cursor;
+  const COST = 50, UP = 70, WAVES = 10;
+  function buildPath() {
+    const r = nxRng(C.seed);
+    path = []; cells = new Set();
+    let x = 0, y = 2 + Math.floor(r() * (GH - 4));
+    const add = () => { path.push({ x, y }); cells.add(x + ',' + y); };
+    add();
+    while (x < GW - 1) {
+      const run = 2 + Math.floor(r() * 3);
+      for (let i = 0; i < run && x < GW - 1; i++) { x++; add(); }
+      if (x >= GW - 1) break;
+      const ty = Math.max(1, Math.min(GH - 2, y + (r() < 0.5 ? -1 : 1) * (2 + Math.floor(r() * 3))));
+      while (y !== ty) { y += Math.sign(ty - y); add(); }
+    }
+  }
+  const center = p => ({ x: ox + p.x * cell + cell / 2, y: oy + p.y * cell + cell / 2 });
+  function place(gx, gy) {
+    if (gx < 0 || gy < 0 || gx >= GW || gy >= GH || cells.has(gx + ',' + gy)) return;
+    const t = towers.find(t => t.gx === gx && t.gy === gy);
+    if (t) {
+      if (t.lvl >= 3) return R.flash('Max nivå');
+      if (gold < UP) return R.flash('Behöver ' + UP + ' guld');
+      gold -= UP; t.lvl++; R.sfx('power'); R.flash('Torn nivå ' + t.lvl); return;
+    }
+    if (gold < COST) return R.flash('Behöver ' + COST + ' guld');
+    gold -= COST; towers.push({ gx, gy, lvl: 1, cd: 0, aim: 0 }); R.sfx('coin');
+  }
+  function startWave() { wave++; spawnLeft = 6 + wave * 2; spawnT = 0; if (wave > 1) R.flash('Våg ' + wave); }
+  return {
+    reset() { buildPath(); towers = []; foes = []; shots = []; gold = 120; lives = 20; wave = 0; nextWaveT = 3; spawnLeft = 0; cursor = { x: 3, y: 1 }; },
+    resize() { cell = Math.floor(Math.min((R.W - 20) / GW, (R.H - 110) / GH)); ox = Math.floor((R.W - cell * GW) / 2); oy = Math.floor((R.H - cell * GH) / 2) + 24; },
+    hud() {
+      R.text('Våg ' + Math.max(1, wave) + '/' + WAVES + '   ·   ♥ ' + lives + '   ·   🪙 ' + gold, R.W / 2, 28, 18, '#fff', 'center');
+      R.text('Klicka/tryck på gräset: torn ' + COST + ' · klicka på torn: uppgradera ' + UP, R.W / 2, R.H - 16, 13, 'rgba(255,255,255,.75)', 'center', '500');
+    },
+    update(dt) {
+      const cl = R.click();
+      if (cl) place(Math.floor((cl.x - ox) / cell), Math.floor((cl.y - oy) / cell));
+      if (R.hit('left')) cursor.x = Math.max(0, cursor.x - 1);
+      if (R.hit('right')) cursor.x = Math.min(GW - 1, cursor.x + 1);
+      if (R.hit('up')) cursor.y = Math.max(0, cursor.y - 1);
+      if (R.hit('down')) cursor.y = Math.min(GH - 1, cursor.y + 1);
+      if (R.hit('action')) place(cursor.x, cursor.y);
+      if (!spawnLeft && !foes.length) {
+        if (wave >= WAVES) { R.win('Alla vågor stoppade!'); return; }
+        nextWaveT -= dt; if (nextWaveT <= 0) { startWave(); nextWaveT = 4; }
+      }
+      if (spawnLeft > 0) { spawnT -= dt; if (spawnT <= 0) { spawnT = Math.max(0.35, 0.9 - wave * 0.05); spawnLeft--; const hp = 20 + wave * 14 + C.difficulty * 10; foes.push({ i: 0, f: 0, hp, max: hp, sp: 1.3 + wave * 0.06 + (wave % 3 === 0 ? 0.6 : 0), boss: wave % 5 === 0 && spawnLeft === 0 }); if (foes[foes.length - 1].boss) { foes[foes.length - 1].hp *= 8; foes[foes.length - 1].max *= 8; } } }
+      for (const e of foes) {
+        e.f += e.sp * dt * (e.boss ? 0.6 : 1);
+        while (e.f >= 1 && e.i < path.length - 1) { e.f -= 1; e.i++; }
+        if (e.i >= path.length - 1) { e.hp = 0; e.leaked = true; lives -= e.boss ? 5 : 1; R.shake(0.2); R.sfx('hit'); }
+      }
+      for (const t of towers) {
+        t.cd -= dt;
+        const c = center({ x: t.gx, y: t.gy }), range = cell * (2.2 + t.lvl * 0.5);
+        let best = null, bi = -1;
+        for (const e of foes) { if (e.hp <= 0) continue; const p = foePos(e), d = Math.hypot(p.x - c.x, p.y - c.y); if (d < range && e.i + e.f > bi) { bi = e.i + e.f; best = e; } }
+        if (best) { const p = foePos(best); t.aim = Math.atan2(p.y - c.y, p.x - c.x); if (t.cd <= 0) { t.cd = 0.7 / t.lvl; shots.push({ x: c.x, y: c.y, e: best, dmg: 8 * t.lvl + 4 }); R.sfx('shoot'); } }
+      }
+      for (const s of shots) {
+        if (s.e.hp <= 0) { s.dead = true; continue; }
+        const p = foePos(s.e), d = Math.hypot(p.x - s.x, p.y - s.y), v = 520 * dt;
+        if (d < v) { s.dead = true; s.e.hp -= s.dmg; if (s.e.hp <= 0) { gold += s.e.boss ? 80 : 8 + wave; R.add(s.e.boss ? 200 : 20); R.burst(p.x, p.y, P.enemy, 10); R.sfx('boom'); } }
+        else { s.x += (p.x - s.x) / d * v; s.y += (p.y - s.y) / d * v; }
+      }
+      shots = shots.filter(s => !s.dead); foes = foes.filter(e => e.hp > 0);
+      if (lives <= 0) R.over();
+    },
+    draw(ctx) {
+      ctx.fillStyle = P.bg1; ctx.fillRect(0, 0, R.W, R.H);
+      for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
+        ctx.fillStyle = cells.has(x + ',' + y) ? P.ground : ((x + y) % 2 ? P.top : nxShade(P.top, 0.9));
+        ctx.fillRect(ox + x * cell, oy + y * cell, cell + 1, cell + 1);
+      }
+      const end = center(path[path.length - 1]);
+      ctx.fillStyle = P.accent; ctx.beginPath(); ctx.arc(end.x, end.y, cell * 0.42, 0, 7); ctx.fill();
+      for (const t of towers) {
+        const c = center({ x: t.gx, y: t.gy });
+        ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.arc(c.x + 3, c.y + 4, cell * 0.38, 0, 7); ctx.fill();
+        ctx.fillStyle = P.player; ctx.beginPath(); ctx.arc(c.x, c.y, cell * 0.38, 0, 7); ctx.fill();
+        ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(t.aim); ctx.fillStyle = P.deco; ctx.fillRect(0, -cell * 0.08, cell * 0.45, cell * 0.16); ctx.restore();
+        for (let k = 0; k < t.lvl; k++) { ctx.fillStyle = P.coin; ctx.beginPath(); ctx.arc(c.x - cell * 0.2 + k * cell * 0.2, c.y + cell * 0.46, cell * 0.06, 0, 7); ctx.fill(); }
+      }
+      for (const e of foes) {
+        const p = foePos(e), r = cell * (e.boss ? 0.36 : 0.24);
+        ctx.fillStyle = P.enemy; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 7); ctx.fill();
+        ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(p.x - r, p.y - r - 8, r * 2, 4);
+        ctx.fillStyle = '#7ff0bf'; ctx.fillRect(p.x - r, p.y - r - 8, r * 2 * e.hp / e.max, 4);
+      }
+      ctx.fillStyle = P.coin; for (const s of shots) { ctx.beginPath(); ctx.arc(s.x, s.y, 4, 0, 7); ctx.fill(); }
+      ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2; ctx.strokeRect(ox + cursor.x * cell + 2, oy + cursor.y * cell + 2, cell - 4, cell - 4);
+      R.drawParticles();
+    },
+  };
+  function foePos(e) {
+    const a = center(path[e.i]), b = center(path[Math.min(path.length - 1, e.i + 1)]);
+    return { x: a.x + (b.x - a.x) * e.f, y: a.y + (b.y - a.y) * e.f };
+  }
+}

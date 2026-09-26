@@ -29,7 +29,7 @@ CACHE = os.environ.get("NEXORA_CACHE", os.path.join(HERE, ".cache"))
 WORK = os.path.join(CACHE, "work")
 TOOLS = os.path.join(CACHE, "tools")
 
-VERSION = "1.2.0"
+VERSION = "1.5.0"
 NAME = "Nexora"
 APPID = "app.nexora.desktop"
 EV = "43.2.0"

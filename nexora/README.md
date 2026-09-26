@@ -6,13 +6,41 @@ Windows-installation (EXE), macOS-skivavbild (DMG) och Linux-paket (DEB).
 | Fil | Plattform |
 |---|---|
 | `index.html` | Webbplatsen. En fristående fil som går att lägga på valfritt webbhotell. |
-| `dist/Nexora-Setup-1.2.0-x64.exe` | Windows 10/11, 64-bit |
-| `dist/Nexora-1.2.0-arm64.dmg` | macOS 12+ på Apple Silicon |
-| `dist/nexora_1.2.0_amd64.deb` | Debian, Ubuntu, Mint (x86-64) |
-| `dist/nexora-1.2.0.html` | Kopian som skrivbordsapparna laddar |
+| `dist/Nexora-Setup-1.5.0-x64.exe` | Windows 10/11, 64-bit |
+| `dist/Nexora-1.5.0-arm64.dmg` | macOS 12+ på Apple Silicon |
+| `dist/nexora_1.5.0_amd64.deb` | Debian, Ubuntu, Mint (x86-64) |
+| `dist/nexora-1.5.0.html` | Kopian som skrivbordsapparna laddar |
 | `colab/Nexora_Flash_1_Colab.ipynb` | Tränar en egen Nexora Flash-modell i Google Colab |
 | `marketing/nexora-short-9x16.mp4` | Kortreklam, 26 s, 1080×1920 (Shorts/Reels/TikTok) |
 | `marketing/nexora-plans-9x16.mp4` | Kortreklam om alla fem planerna, 38 s, 1080×1920 |
+
+## Nyheter i 1.5
+
+1.5-uppdateringen förbättrar alla 1-modellerna:
+
+- **Självtest:** Flash, Pro och Core 1.5 testar sina spel. Varje AI-genererat spel körs i en
+  dold webbläsare. Körfel, och spel som står still, skickas tillbaka till modellen för
+  rättning innan du får spelet: en runda för Flash 1.5, två för Pro 1.5 och tre för
+  Core 1.5. Studio visar "✓ Självtestad" eller hur många problem som finns kvar.
+  - Pro 1.5, Image 1.5 och 3D 1.5 kör på effort `high`.
+  - Spelprompten kräver nu stöd för handkontroll och paus med Esc, och modellen ska
+    granska sin kod innan den svarar.
+- **Tre nya speltyper i Nexora Local (12 totalt):**
+  - racing mot två AI-bilar på en slumpad bana, tre varv
+  - pusselspel med tre i rad, kombos, drag och mål
+  - tower defense med tio vågor, bossar och uppgraderbara torn
+- **Spelmotorn:** handkontroll (Gamepad API: styrspak eller styrkors, A/B/X/Y, Start för
+  paus), paus med Esc, och klick/touch för spel som styrs med pekaren.
+- **Image 1.5:**
+  - fyra stilar: pixel, platt, neon och retro 8-bit
+  - animerade sprite-ark med fyra bildrutor och en gångcykel
+  - export som PNG (256 px per bildruta) eller SVG
+- **3D 1.5:**
+  - nya modeller: svärd, skattkista, svamp, planet och fisk
+  - export som binär glTF (`.glb`) med ett PBR-material per färg. Filerna är verifierade
+    genom import och rendering i Godot 4.7 och öppnas också i Unity och Blender.
+- **Träningsdata:** `colab/nexora_seed.jsonl` har nu 260 exempel och alla tolv speltyper.
+- **Nyhetsruta** på startsidan och i sidfoten.
 
 ## Modellerna
 
@@ -21,11 +49,11 @@ Leverantören väljs under **⚙️ Inställningar**:
 
 | Modell | Nexora Local (offline, standard) | Anthropic (egen API-nyckel) | Egen endpoint |
 |---|---|---|---|
-| **Flash 1** – snabb | Spelgenerator med 9 speltyper | `claude-haiku-4-5` | valfritt modell-ID |
-| **Pro 1** – långsam men bra | ″ | `claude-opus-5`, effort `medium` | ″ |
-| **Core 1** – Pro, men tänker | ″ | `claude-opus-5`, adaptivt tänkande (visas live), effort `xhigh` | ″ |
-| **Image 1** – bilder | Procedurella pixel-sprites (SVG) | `claude-opus-5` ritar SVG | `/images/generations` |
-| **3D 1** – 3D-modeller | Procedurella low-poly-modeller | `claude-opus-5` skriver mesh-JSON | ″ |
+| **Flash 1.5** – snabb + självtest | Spelgenerator med 12 speltyper | `claude-haiku-4-5` | valfritt modell-ID |
+| **Pro 1.5** – bättre resultat, testar själv | ″ | `claude-opus-5`, effort `high` | ″ |
+| **Core 1.5** – tänker, testar, förbättrar | ″ | `claude-opus-5`, adaptivt tänkande (visas live), effort `xhigh` | ″ |
+| **Image 1.5** – stilar, animation | Procedurella sprites i 4 stilar, animerade (SVG/PNG) | `claude-opus-5` ritar SVG | `/images/generations` |
+| **3D 1.5** – 3D-modeller, GLB | Procedurella low-poly-modeller (.glb/.obj) | `claude-opus-5` skriver mesh-JSON | ″ |
 | **Astryx 5 Pro** – AI-agent | Agentloop: bygger, testkör, gör om vid fel | `claude-opus-5` som agent med verktyg | skriv → testa → rätta, upp till 3 varv |
 
 ### Nexora Astryx 5 Pro
@@ -173,7 +201,7 @@ API-nycklar lämnar aldrig enheten, förutom till den leverantör de hör till.
 
 ## Installation
 
-**Windows:** kör `Nexora-Setup-1.2.0-x64.exe`. Nexora installeras för din användare i
+**Windows:** kör `Nexora-Setup-1.5.0-x64.exe`. Nexora installeras för din användare i
 `%LOCALAPPDATA%\Programs\Nexora`, utan administratörsrättigheter, med genvägar på
 skrivbordet och i Start-menyn. Avinstallera via *Inställningar → Appar*. Filen är inte
 kodsignerad, så SmartScreen varnar: välj *Mer info → Kör ändå*.
@@ -182,13 +210,13 @@ kodsignerad, så SmartScreen varnar: välj *Mer info → Kör ändå*.
 notariserad. Första gången: högerklicka på appen och välj *Öppna*. På macOS 15 och senare
 godkänner du den under *Systeminställningar → Integritet och säkerhet → Öppna ändå*.
 
-**Linux:** `sudo apt install ./nexora_1.2.0_amd64.deb` och starta sedan `nexora` eller
+**Linux:** `sudo apt install ./nexora_1.5.0_amd64.deb` och starta sedan `nexora` eller
 välj Nexora i programmenyn.
 
 ## Bygga
 
 ```sh
-python3 nexora/build/build.py      # src/ → index.html + dist/nexora-1.2.0.html
+python3 nexora/build/build.py      # src/ → index.html + dist/nexora-1.5.0.html
 python3 nexora/build/desktop.py    # → dist/*.exe, *.dmg, *.deb  (körs på Linux)
 python3 nexora/build/build.py      # lägger in storlekar och SHA-256 på nedladdningssidan
 node nexora/build/dataset.js       # → colab/nexora_seed.jsonl
@@ -251,7 +279,11 @@ automatiskt till `build/.cache`:
   utan fel och att planlåsningen fungerar. Alla nio speltyper genereras från riktiga
   promptar och spelas med tangenttryckningar utan fel. Den testar också spara/bibliotek,
   månadskvoten, kodredigeraren med versioner, Buggfix, alla verktyg, fyra exporttyper
-  (giltiga zip-filer) och att sidan inte scrollar i sidled i mobilbredd. Totalt 68 kontroller.
+  (giltiga zip-filer) och att sidan inte scrollar i sidled i mobilbredd. Totalt 86 kontroller. För 1.5 tillkommer tester av de tre nya speltyperna, som spelas
+  med tangenter och klick, och av självtestet: ett trasigt första svar körs, felet skickas
+  i en rättningsförfrågan och det rättade spelet visas. Dessutom testas Image 1.5 (neon,
+  fyra bildrutor, PNG på 1024×256), GLB-exporten (giltig header och ett material per färg),
+  nyhetsrutan och modellnamnen.
 - Astryx 5 Pro:
   - Lanseringsdatumen testas per plan och datum (26/9, 6/10, 7/10, 13/11 och 14/11).
   - Pro-planen får lanseringsdialogen före 7 oktober.
@@ -281,9 +313,9 @@ automatiskt till `build/.cache`:
 - Krediter: när kvoten är slut öppnas köpdialogen. Ett köp av 25 krediter och ett spel ger
   saldot 24 utan att månadskvoten ändras. Free-planen den 14 november drar 3 krediter för
   Astryx.
-- AI-vägen testas mot simulerade svar. Testet kontrollerar att Core 1 skickar
+- AI-vägen testas mot simulerade svar. Testet kontrollerar att Core 1.5 skickar
   `claude-opus-5` med adaptivt tänkande och effort `xhigh` och att tankeströmmen visas,
-  att Flash 1 skickar `claude-haiku-4-5`, att rätt headers skickas, att avböjda
+  att Flash 1.5 skickar `claude-haiku-4-5`, att rätt headers skickas, att avböjda
   förfrågningar och 401 blir begripliga felmeddelanden och att egen endpoint får en
   OpenAI-förfrågan. Inget anrop gjordes mot det riktiga API:t, eftersom ingen nyckel fanns.
 - DEB-paketet packades upp och startades under Xvfb på Ubuntu 24.04. Där laddade appen och

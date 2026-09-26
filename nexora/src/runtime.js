@@ -150,16 +150,26 @@ function NexoraRuntime(CFG, makeGame) {
     left: ['ArrowLeft', 'KeyA'], right: ['ArrowRight', 'KeyD'], up: ['ArrowUp', 'KeyW'], down: ['ArrowDown', 'KeyS'],
     action: ['Space', 'Enter', 'KeyZ', 'KeyX', 'KeyJ'],
   };
+  // Gamepads (1.5): left stick or d-pad to move, A/B/X/Y to act, Start to pause.
+  let padPause = false;
+  function readPad(p) {
+    let gp = null;
+    try { const all = navigator.getGamepads ? navigator.getGamepads() : []; gp = all && all[p]; } catch (e) { gp = null; }
+    if (!gp || !gp.connected) return null;
+    const b = i => !!(gp.buttons[i] && gp.buttons[i].pressed), ax = i => gp.axes[i] || 0;
+    if (p === 0) { const st = b(9); if (st && !padPause && R.state === 'play') R.paused = !R.paused; padPause = st; }
+    return { left: ax(0) < -0.4 || b(14), right: ax(0) > 0.4 || b(15), up: ax(1) < -0.4 || b(12), down: ax(1) > 0.4 || b(13), action: b(0) || b(1) || b(2) || b(3) };
+  }
   function readInput(p) {
-    const map = CFG.players === 2 ? (p === 0 ? P1 : P2) : SOLO, o = {};
-    for (const k in map) o[k] = map[k].some(c => down[c]) || (p === 0 && !!touch[k]);
+    const map = CFG.players === 2 ? (p === 0 ? P1 : P2) : SOLO, o = {}, gp = readPad(p);
+    for (const k in map) o[k] = map[k].some(c => down[c]) || (p === 0 && !!touch[k]) || !!(gp && gp[k]);
     return o;
   }
   R.input = p => cur[p || 0];
   R.hit = (name, p) => cur[p || 0][name] && !prev[p || 0][name];
   addEventListener('keydown', e => {
     if (e.code === 'KeyM') { R.toggleMusic(); return; }
-    if (e.code === 'KeyP' && R.state === 'play') { R.paused = !R.paused; return; }
+    if ((e.code === 'KeyP' || e.code === 'Escape') && R.state === 'play') { R.paused = !R.paused; return; }
     down[e.code] = true; unlockAudio();
     if (/^(Arrow|Space)/.test(e.code)) e.preventDefault();
   }, { passive: false });
@@ -184,9 +194,18 @@ function NexoraRuntime(CFG, makeGame) {
     (k === 'action' || k === 'up' && ctrls.includes('down') === false ? rightGrp : leftGrp).appendChild(b);
   });
   if (matchMedia('(pointer: coarse)').matches) document.body.appendChild(pad);
-  cv.addEventListener('pointerdown', () => {
+  // Pointer (1.5): games that are played by clicking/tapping read R.click() and R.ptr.
+  R.ptr = { x: -1, y: -1, down: false };
+  const clicks = [];
+  R.click = () => clicks.shift();
+  const at = e => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  cv.addEventListener('pointermove', e => Object.assign(R.ptr, at(e)));
+  cv.addEventListener('pointerup', () => { R.ptr.down = false; });
+  cv.addEventListener('pointerdown', e => {
     unlockAudio();
+    Object.assign(R.ptr, at(e), { down: true });
     if (R.state !== 'play') { touch.action = true; setTimeout(() => { touch.action = false; }, 90); }
+    else if (!R.paused) { clicks.push(at(e)); if (clicks.length > 8) clicks.shift(); }
   });
 
   // ---- audio ----
@@ -317,7 +336,7 @@ function NexoraRuntime(CFG, makeGame) {
       R.text(String(R.score), 18, 28, 26, '#fff');
       R.text('Rekord ' + R.best, R.W - 18, 28, 16, 'rgba(255,255,255,.8)', 'right', '600');
       if (game.hud) game.hud(ctx);
-      if (R.paused) { ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(0, 0, R.W, R.H); R.text('PAUS', R.W / 2, R.H / 2, 44, '#fff', 'center', '800'); }
+      if (R.paused) { ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(0, 0, R.W, R.H); R.text('PAUS', R.W / 2, R.H / 2, 44, '#fff', 'center', '800'); R.text('Esc eller P för att fortsätta', R.W / 2, R.H / 2 + 44, 16, 'rgba(255,255,255,.8)', 'center', '500'); }
     }
     if (R.msgT > 0 && R.msg) {
       ctx.globalAlpha = Math.min(1, R.msgT * 2);
@@ -344,6 +363,7 @@ function NexoraRuntime(CFG, makeGame) {
       R.text('Skapat med Nexora', R.W / 2, R.H - 22, 12, 'rgba(255,255,255,.45)', 'center', '500');
     }
     prev[0] = cur[0]; prev[1] = cur[1];
+    clicks.length = 0;
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);

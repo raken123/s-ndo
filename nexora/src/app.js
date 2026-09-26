@@ -103,7 +103,7 @@
   }
   const RT = {
     core: [nxRng, nxNoise, nxShade, Nx3D, NexoraRuntime].map(f => f.toString()).join('\n\n'),
-    templates: { gamePlatformer, gameShooter, gameSnake, gameBreakout, gameDodger, gameCollector, gameOpenWorld, gameRunner3D, gameArena3D },
+    templates: { gamePlatformer, gameShooter, gameSnake, gameBreakout, gameDodger, gameCollector, gameOpenWorld, gameRunner3D, gameArena3D, gameRacer, gameMatch3, gameTowerDefense },
   };
 
   // ---------------------------------------------------------------- dom helpers
@@ -192,7 +192,7 @@
   function footer() {
     return h('footer', null, h('div', { class: 'wrap row', style: 'justify-content:space-between' },
       h('span', null, '© ' + new Date().getFullYear() + ' Nexora · version ' + VERSION),
-      h('span', null, 'AI-leverantör: ', providerLabel(), ' · ', h('a', { href: '#modeller' }, 'Om modellerna'))));
+      h('span', null, 'AI-leverantör: ', providerLabel(), ' · ', h('a', { href: '#modeller' }, 'Om modellerna'), ' · ', h('a', { href: '#', onclick: e => { e.preventDefault(); newsModal(); } }, 'Nyheter i 1.5'))));
   }
   function providerLabel() {
     return { local: 'Nexora Local (offline)', anthropic: 'Anthropic (Claude)', openai: 'Egen endpoint' }[S.settings.provider];
@@ -216,7 +216,9 @@
   VIEWS.hem = main => {
     main.append(
       h('section', { class: 'hero wrap' },
-        h('a', { class: 'pill', href: '#modeller', style: 'margin-bottom:18px;text-decoration:none;color:inherit' }, '🤖 Nytt: Nexora Astryx 5 Pro – vår första AI-agent →'),
+        h('div', { class: 'row', style: 'justify-content:center;margin-bottom:18px' },
+          h('button', { class: 'pill', style: 'cursor:pointer;color:inherit', onclick: () => newsModal() }, '🎉 Nexora 1.5 är här – se nyheterna →'),
+          h('a', { class: 'pill', href: '#astryx', style: 'text-decoration:none;color:inherit' }, '🤖 Astryx 5 Pro')),
         h('h1', null, 'Beskriv ett spel.', h('br'), h('span', { class: 'grad' }, 'Spela det direkt.')),
         h('p', { class: 'lead' }, 'Nexora gör spelbara 2D- och 3D-spel av en mening – med grafik, ljud, story och export till webb, PC och mobil.'),
         h('div', { class: 'row', style: 'justify-content:center' },
@@ -225,7 +227,7 @@
       h('section', { class: 'wrap' }, h('div', { class: 'grid g3' }, [
         ['⚡', 'Från idé till spel på sekunder', 'Skriv "ett rymdspel med lava-tema" och spela det i förhandsvisningen direkt.'],
         ['🧊', '2D och 3D', 'Plattformsspel, skjutare, open world, 3D-löpare och 3D-arenor.'],
-        ['🎨', 'Grafik, 3D-modeller, musik', 'Sprites med Image 1, low-poly-modeller med 3D 1, musik och ljudeffekter.'],
+        ['🎨', 'Grafik, 3D-modeller, musik', 'Animerade sprites med Image 1.5, 3D-modeller med GLB-export i 3D 1.5, musik och ljudeffekter.'],
         ['🧙', 'Story, NPC:er och uppdrag', 'Generera en värld med personer som ger dig uppdrag och pratar med dig.'],
         ['📦', 'Export överallt', 'HTML för webb och mobil, PC-projekt, Steam-paket och portningspaket för konsol.'],
         ['🔌', 'Fungerar offline', 'Nexora Local bygger spel utan internet. Koppla in Claude eller din egen modell för mer.'],
@@ -234,6 +236,22 @@
       h('section', { class: 'wrap' }, h('h2', null, 'Sex modeller'), modelCards()),
       h('section', { class: 'wrap' }, h('h2', null, 'Priser'), planCards(), creditsSection()));
   };
+
+  // ---------------------------------------------------------------- what's new in 1.5
+  const NEWS = [
+    ['🧪', 'Flash, Pro och Core 1.5 testar sina spel', 'Varje AI-spel körs automatiskt i en dold webbläsare. Körfel och spel som står still skickas tillbaka och rättas – Flash 1.5 en gång, Pro 1.5 två, Core 1.5 tre – innan du får spelet. Pro 1.5 arbetar dessutom med högre ansträngning.'],
+    ['🏁', 'Tre nya speltyper – 12 totalt', 'Racing mot två AI-bilar på en slumpad bana, pusselspel med tre-i-rad och kombos, och tower defense med tio vågor, bossar och uppgraderbara torn.'],
+    ['🎮', 'Handkontroll, paus och touch', 'Alla spel fungerar med Xbox-, PlayStation- och andra handkontroller, pausas med Esc och kan styras med klick och touch.'],
+    ['🎨', 'Image 1.5', 'Fyra stilar – pixel, platt, neon och retro 8-bit – animerade sprite-ark med fyra bildrutor och export som PNG eller SVG.'],
+    ['🧊', '3D 1.5', 'Nya modeller (svärd, skattkista, svamp, planet, fisk) och export som .glb med färger, som öppnas direkt i Godot, Unity och Blender.'],
+    ['🤖', 'Astryx 5 Pro', 'Agenten bygger nu också racing-, pussel- och tower defense-spel offline, och Godot-läget fortsätter som förut.'],
+  ];
+  function newsModal() {
+    const close = modal([
+      h('h2', null, '🎉 Nyheter i Nexora ', h('span', { class: 'grad' }, '1.5')),
+      h('div', { class: 'col' }, NEWS.map(([i, t, d]) => h('div', { class: 'row', style: 'align-items:flex-start;flex-wrap:nowrap' }, h('div', { style: 'font-size:1.6rem' }, i), h('div', null, h('b', null, t), h('div', { class: 'small muted' }, d))))),
+      h('div', { class: 'row', style: 'margin-top:14px' }, h('a', { class: 'btn primary', href: '#studio', onclick: () => close() }, 'Prova i Studio'), h('button', { class: 'btn ghost', onclick: () => close() }, 'Stäng'))], true);
+  }
 
   function astryxHero() {
     const steps = [['🧠', 'Planerar'], ['🐍', 'Skriver Godot-projektet med Python'], ['▶️', 'Testkör i Godot'], ['👀', 'Tittar på skärmbilder'], ['🔧', 'Rättar buggar'], ['📸', 'Hyperrealistiskt läge'], ['⏱', 'Upp till 2 timmar per spel']];
@@ -327,7 +345,7 @@
   VIEWS.modeller = main => {
     const rows = Object.entries(AI.MODELS).map(([k, m]) => h('tr', null,
       h('td', null, h('b', null, m.name), h('div', { class: 'small muted' }, m.tag)),
-      h('td', null, k === 'image' ? 'Procedurella pixel-sprites' : k === 'd3' ? 'Procedurella low-poly-modeller' : k === 'astryx' ? 'Agentloop: bygger, testkör i dold webbläsare, gör om vid fel' : 'Mallbaserad spelgenerator (9 speltyper)'),
+      h('td', null, k === 'image' ? 'Procedurella pixel-sprites' : k === 'd3' ? 'Procedurella low-poly-modeller' : k === 'astryx' ? 'Agentloop: bygger, testkör i dold webbläsare, gör om vid fel' : 'Mallbaserad spelgenerator (12 speltyper)'),
       h('td', null, h('code', null, AI.ANTHROPIC[k].model), AI.ANTHROPIC[k].thinking ? h('div', { class: 'small muted' }, 'adaptivt tänkande, synligt') : AI.ANTHROPIC[k].output_config ? h('div', { class: 'small muted' }, 'effort: ' + AI.ANTHROPIC[k].output_config.effort) : null,
         k === 'image' ? h('div', { class: 'small muted' }, 'ritar SVG') : k === 'd3' ? h('div', { class: 'small muted' }, 'skriver mesh-JSON') : k === 'astryx' ? h('div', { class: 'small muted' }, 'agent med verktygen write_game, edit_game, run_game (med skärmbild) och finish') : null),
       h('td', null, h('code', null, S.settings.openaiModels[k]), k === 'astryx' ? h('div', { class: 'small muted' }, 'skriv → testa → rätta, upp till 3 varv') : null)));
@@ -360,6 +378,9 @@
     'Orm-spel under vattnet, svårt',
     'Blockkross med spöken',
     'Undvik bilar på en ökenväg',
+    'Ett racingspel på en ökenbana',
+    'Ett pusselspel med juveler i en godisvärld',
+    'Tower defense mot zombies i en skog',
   ];
   const OPTS = [
     ['story', 'Story'], ['dialog', 'Dialog'], ['openworld', 'Open world'], ['npc', 'NPC:er'], ['quest', 'Uppdrag'],
@@ -439,8 +460,10 @@
 
     function toolbar() {
       bar.innerHTML = ''; titleEl.textContent = current ? current.title : 'Förhandsvisning'; bar.append(titleEl);
-      summaryEl.style.display = current && current.summary ? '' : 'none';
-      summaryEl.textContent = current && current.summary ? '🤖 ' + current.summary : '';
+      const tst = current && current.tested;
+      const sumText = current && current.summary ? '🤖 ' + current.summary : tst ? (tst.errors ? '⚠️ Självtest: ' + tst.errors + ' problem kvar efter ' + tst.fixes + ' rättning' + (tst.fixes === 1 ? '' : 'ar') + ' – prova 🐞 Buggfix' : '✓ Självtestad – ' + tst.runs + ' testkörning' + (tst.runs === 1 ? '' : 'ar') + (tst.fixes ? ', ' + tst.fixes + ' rättning' + (tst.fixes === 1 ? '' : 'ar') : '') + ', inga fel') : '';
+      summaryEl.style.display = sumText ? '' : 'none';
+      summaryEl.textContent = sumText;
       if (!current) return;
       bar.append(
         h('button', { class: 'btn sm', onclick: () => play(current.html) }, '↻ Starta om'),
@@ -512,13 +535,29 @@
             },
           }, busy.signal);
           html = res.html;
+          // 1.5 self-test: run the game hidden, send runtime errors back, up to m.selfTest fix rounds.
+          const tested = { runs: 0, fixes: 0, errors: 0 };
+          for (let round = 0; round <= (m.selfTest || 0); round++) {
+            stepEl.textContent = m.name + ': självtest ' + (round + 1) + '…';
+            log.append(h('div', null, '▶️ Självtest ' + (round + 1) + ' – kör spelet i en dold webbläsare…')); log.scrollTop = log.scrollHeight;
+            const tr = await testGame(html);
+            tested.runs++; tested.errors = tr.errors.length + (tr.animating ? 0 : 1);
+            if (!tr.errors.length && tr.animating) { log.append(h('div', { class: 'okline' }, '✅ Inga fel – spelet startar och rör sig')); break; }
+            const problems = tr.errors.length ? tr.errors : ['The canvas did not change after pressing Space and the arrow keys: the game may not start, render or loop.'];
+            log.append(h('div', { class: 'err' }, '🐞 ' + problems.length + ' problem: ' + problems[0].slice(0, 140)));
+            if (round === (m.selfTest || 0)) break;
+            stepEl.textContent = m.name + ' rättar ' + problems.length + ' problem…';
+            let fixChars = 0;
+            html = await AI.fixGame(S.settings, st.model, html, problems, { text: (d, all) => { if (all.length - fixChars > 2000) { fixChars = all.length; stepEl.textContent = m.name + ' rättar… ' + Math.round(all.length / 1000) + ' kB'; } } }, busy.signal);
+            tested.fixes++;
+          }
           const t = html.match(/<title>([^<]{1,80})<\/title>/i);
-          meta = { title: t ? t[1].trim() : prompt.slice(0, 40), genre: 'AI-spel', dim: st.dim, engine: res.model };
+          meta = { title: t ? t[1].trim() : prompt.slice(0, 40), genre: 'AI-spel', dim: st.dim, engine: res.model, tested };
         }
         if (payWith === 'credits') { addCredits(-cost, 'Spel: ' + meta.title + (st.model === 'astryx' ? ' (Astryx)' : '')); toast('🪙 Använde ' + cost + ' kredit' + (cost > 1 ? 'er' : '') + ' – ' + S.credits + ' kvar'); }
         else { S.usage[month()] = used() + 1; store.set('usage', S.usage); }
         const now = Date.now();
-        current = { id: 'g' + now.toString(36), title: meta.title, prompt, html, summary, model: st.model, engine: meta.engine, provider: S.settings.provider, dim: meta.dim, genre: meta.genre, created: now, updated: now, versions: [] };
+        current = { id: 'g' + now.toString(36), title: meta.title, prompt, html, summary, tested: meta.tested || null, model: st.model, engine: meta.engine, provider: S.settings.provider, dim: meta.dim, genre: meta.genre, created: now, updated: now, versions: [] };
         play(html); toolbar();
         const all = await games.all().catch(() => []);
         if (all.length >= plan().storage) toast('Lagringen är full (' + plan().storage + ' spel i ' + plan().name + '). Spelet sparades inte – ta bort ett spel eller uppgradera.', 5000);
@@ -628,7 +667,7 @@
         h('div', { class: 'row' }, h('b', { class: 'small' }, 'Dimension'), dimSeg),
         h('div', { class: 'col' }, h('b', { class: 'small' }, 'Innehåll'), optsEl),
         h('div', { class: 'row' }, goBtn, variantBtn),
-        S.settings.provider === 'local' ? h('p', { class: 'small muted' }, 'Nexora Local bygger spelet på enheten från 9 speltyper. För helt nya spelidéer: koppla in Claude eller en egen modell under Inställningar.') : null),
+        S.settings.provider === 'local' ? h('p', { class: 'small muted' }, 'Nexora Local bygger spelet på enheten från 12 speltyper. För helt nya spelidéer: koppla in Claude eller en egen modell under Inställningar.') : null),
       stage));
     if (current) { play(current.html); toolbar(); }
     return { unmount() { if (busy) busy.abort(); } };
@@ -1272,21 +1311,44 @@
     };
     // image
     const art = h('div', { class: 'art' }, h('span', { class: 'muted' }, 'Ingen bild än'));
-    const imgIn = h('input', { type: 'text', placeholder: 'T.ex. "en söt drake i pixelstil"' });
-    let lastArt = null;
-    const imageBody = [imgIn, art, h('div', { class: 'row' },
+    const imgIn = h('input', { type: 'text', placeholder: 'T.ex. "en söt drake"' });
+    const styleSel = h('select', { 'aria-label': 'Stil' }, [['pixel', '🟪 Pixel'], ['platt', '🔷 Platt'], ['neon', '💡 Neon'], ['retro', '🎮 Retro 8-bit']].map(([v, l]) => h('option', { value: v }, l)));
+    const framesSel = h('select', { 'aria-label': 'Bildrutor' }, [[1, 'Stillbild'], [4, 'Animation, 4 rutor']].map(([v, l]) => h('option', { value: v }, l)));
+    let lastArt = null, animT = 0;
+    // Shows one frame of a horizontal sprite sheet at a time.
+    function showArt(r, p) {
+      clearInterval(animT); art.innerHTML = '';
+      if (!r.svg) { art.append(h('img', { src: r.url, alt: p })); return; }
+      const frames = +((/data-frames="(\d+)"/.exec(r.svg) || [0, 1])[1]);
+      if (frames <= 1) { art.innerHTML = r.svg; return; }
+      const win = h('div', { style: 'width:220px;height:220px;overflow:hidden;position:relative' }), strip = h('div', { html: r.svg, style: 'position:absolute;left:0;top:0;width:' + 220 * frames + 'px;height:220px' });
+      const svg = $('svg', strip); svg.setAttribute('width', 220 * frames); svg.setAttribute('height', 220);
+      win.append(strip); art.append(win);
+      let f = 0; animT = setInterval(() => { f = (f + 1) % frames; strip.style.left = -f * 220 + 'px'; }, 160);
+    }
+    // Renders the SVG to a PNG (256 px per frame) for engines that do not read SVG.
+    async function svgToPng(svg) {
+      const frames = +((/data-frames="(\d+)"/.exec(svg) || [0, 1])[1]), img = new Image();
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      await img.decode();
+      const c = h('canvas', { width: 256 * frames, height: 256 }), x = c.getContext('2d');
+      x.imageSmoothingEnabled = false; x.drawImage(img, 0, 0, 256 * frames, 256);
+      return new Promise(res => c.toBlob(res, 'image/png'));
+    }
+    styleSel.style.cssText = framesSel.style.cssText = 'width:auto;flex:1';
+    const imageBody = [imgIn, h('div', { class: 'row', style: 'flex-wrap:nowrap' }, styleSel, framesSel), art, h('div', { class: 'row' },
       runBtn('Generera', 'gfx', async () => {
-        const p = imgIn.value.trim() || idea.value.trim() || 'en hjälte';
-        const r = useAI() ? await AI.image(S.settings, p) : { svg: L.sprite(p + ' ' + Math.random()) };
+        const p = imgIn.value.trim() || idea.value.trim() || 'en hjälte', opts = { style: styleSel.value, frames: +framesSel.value };
+        const r = useAI() ? await AI.image(S.settings, p, null, null, opts) : { svg: L.sprite(p + ' ' + Math.random(), 12, opts) };
         lastArt = Object.assign({ name: p.slice(0, 40) }, r);
-        art.innerHTML = '';
-        if (r.svg) art.innerHTML = r.svg; else art.append(h('img', { src: r.url, alt: p }));
+        showArt(r, p);
       }),
       h('button', { class: 'btn sm', onclick: () => { if (!lastArt) return toast('Generera en bild först'); if (!need('assets')) return; assets.put({ id: 'a' + Date.now().toString(36), name: lastArt.name, svg: lastArt.svg || null, url: lastArt.url || null, t: Date.now() }).then(() => { toast('Sparad i Mina assets'); drawAssets(); }); } }, 'Spara som asset'),
-      h('button', { class: 'btn sm ghost', onclick: () => { if (!lastArt) return; if (lastArt.svg) download(slug(lastArt.name) + '.svg', lastArt.svg, 'image/svg+xml'); else window.open(lastArt.url, '_blank'); } }, 'Ladda ner'))];
+      h('button', { class: 'btn sm ghost', onclick: async () => { if (!lastArt) return toast('Generera en bild först'); if (lastArt.svg) download(slug(lastArt.name) + '.png', await svgToPng(lastArt.svg)); else window.open(lastArt.url, '_blank'); } }, '.png'),
+      h('button', { class: 'btn sm ghost', onclick: () => { if (!lastArt) return; if (lastArt.svg) download(slug(lastArt.name) + '.svg', lastArt.svg, 'image/svg+xml'); else window.open(lastArt.url, '_blank'); } }, '.svg'))];
     // 3d
     const cv = h('canvas', { class: 'viewer', width: 600, height: 260 });
-    const meshIn = h('input', { type: 'text', placeholder: 'T.ex. "ett torn", "ett träd", "ett rymdskepp"' });
+    const meshIn = h('input', { type: 'text', placeholder: 'T.ex. "ett svärd", "en skattkista", "en planet", "ett träd"' });
     let curMesh = L.mesh('kristall'), rot = 0, raf = 0;
     const g3 = Nx3D(cv.getContext('2d'));
     function spin() {
@@ -1310,6 +1372,7 @@
         curMesh = useAI() ? await AI.mesh(S.settings, p) : L.mesh(p);
         meshInfo.textContent = (curMesh.name || p) + ' · ' + curMesh.faces.length + ' ytor · ' + curMesh.vertices.length + ' hörn';
       }),
+      h('button', { class: 'btn sm', title: 'Binär glTF – Godot, Unity, Blender', onclick: () => download(slug(curMesh.name) + '.glb', new Blob([L.toGlb(curMesh)], { type: 'model/gltf-binary' })) }, '.glb'),
       h('button', { class: 'btn sm', onclick: () => download(slug(curMesh.name) + '.obj', L.toObj(curMesh)) }, '.obj'),
       h('button', { class: 'btn sm ghost', onclick: () => download(slug(curMesh.name) + '.json', JSON.stringify(curMesh)) }, '.json'))];
     // music
@@ -1355,7 +1418,7 @@
     async function drawAssets() {
       const list = await assets.all().catch(() => []);
       assetGrid.innerHTML = '';
-      if (!list.length) assetGrid.append(h('span', { class: 'muted small' }, 'Inga assets än. Spara bilder från Image 1 eller ladda upp egna.'));
+      if (!list.length) assetGrid.append(h('span', { class: 'muted small' }, 'Inga assets än. Spara bilder från Image 1.5 eller ladda upp egna.'));
       list.forEach(a => {
         const t = h('div', { class: 'art', style: 'width:92px;height:92px;min-height:0;position:relative', title: a.name });
         if (a.svg) t.innerHTML = a.svg; else t.append(h('img', { src: a.url, alt: a.name }));
@@ -1384,15 +1447,15 @@
         toolCard('💬', 'Dialog', 'dialog', txt('dialog', 'dialog', L.dialog)),
         toolCard('🧑‍🌾', 'NPC:er', 'npc', txt('npc', 'npc', p => L.npcs(p, 4).map(n => '• ' + n.name + ', ' + n.role + ' – ' + n.trait + ', ' + n.want + '.\n  ' + n.line).join('\n\n'))),
         toolCard('🗺️', 'Uppdrag', 'quest', txt('quest', 'quest', p => L.quests(p, 3).map(q => '■ ' + q.title + '\n  Givare: ' + q.giver + '\n  Mål: ' + q.goal + '\n  Steg: ' + q.steps.join(' → ') + '\n  Belöning: ' + q.reward).join('\n\n'))),
-        toolCard('🎨', 'Grafik – Nexora Image 1', 'gfx', imageBody),
-        toolCard('🧊', '3D – Nexora 3D 1', 'mesh', meshBody),
+        toolCard('🎨', 'Grafik – Nexora Image 1.5', 'gfx', imageBody),
+        toolCard('🧊', '3D – Nexora 3D 1.5', 'mesh', meshBody),
         toolCard('🎵', 'Musik', 'music', musicBody),
         toolCard('🔊', 'Ljudeffekter', 'sfx', sfxBody),
         toolCard('🗣️', 'Röst', 'voice', voiceBody),
         toolCard('🗃️', 'Mina assets', 'assets', [assetGrid, h('div', { class: 'row' }, h('button', { class: 'btn sm', onclick: () => { if (need('assets')) up.click(); } }, 'Ladda upp bilder'), up),
           h('p', { class: 'small muted' }, 'SVG-assets skickas med till AI:n när du kryssar i "Mina assets" i Studio.')]))));
     drawAssets();
-    return { unmount() { cancelAnimationFrame(raf); if (window.speechSynthesis) speechSynthesis.cancel(); } };
+    return { unmount() { cancelAnimationFrame(raf); clearInterval(animT); if (window.speechSynthesis) speechSynthesis.cancel(); } };
   };
 
   // ---------------------------------------------------------------- team
@@ -1462,7 +1525,7 @@
       h('p', { class: 'small muted' }, 'Skapa en nyckel på console.anthropic.com. Nyckeln sparas bara på den här enheten och skickas endast till api.anthropic.com.'));
     const oBox = h('div', { class: 'col' }, h('label', { class: 'f' }, 'Bas-URL', oBase), h('label', { class: 'f' }, 'API-nyckel', oKey),
       h('div', { class: 'grid', style: 'grid-template-columns:1fr 1fr;gap:8px' }, oModels.map(i => h('label', { class: 'f small' }, AI.MODELS[i.dataset.k].name, i))),
-      h('label', { class: 'opt' }, oImg, 'Image 1 använder /images/generations'),
+      h('label', { class: 'opt' }, oImg, 'Image 1.5 använder /images/generations'),
       h('p', { class: 'small muted' }, 'Fungerar med OpenAI, vLLM, Ollama (http://localhost:11434/v1), LM Studio och modellen från Colab-anteckningsboken.'));
     const sync = () => { aBox.style.display = prov.value === 'anthropic' ? '' : 'none'; oBox.style.display = prov.value === 'openai' ? '' : 'none'; };
     prov.addEventListener('change', sync); sync();
