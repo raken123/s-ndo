@@ -33,13 +33,19 @@ final class ApplePayCheckout: NSObject, ApplePayContextDelegate {
     }
 
     func applePayContext(_ context: STPApplePayContext, didCreatePaymentMethod paymentMethod: StripeAPI.PaymentMethod,
-                         paymentInformation: PKPayment) async throws -> String {
-        let res = try await makeOrder()
-        created = res
-        guard let secret = res.payment.clientSecret else {
-            throw APIError(message: "Betalningen kunde inte startas.")
+                         paymentInformation: PKPayment, completion: @escaping STPIntentClientSecretCompletionBlock) {
+        Task { @MainActor in
+            do {
+                let res = try await makeOrder()
+                created = res
+                guard let secret = res.payment.clientSecret else {
+                    throw APIError(message: "Betalningen kunde inte startas.")
+                }
+                completion(secret, nil)
+            } catch {
+                completion(nil, error)
+            }
         }
-        return secret
     }
 
     func applePayContext(_ context: STPApplePayContext, didCompleteWith status: STPApplePayContext.PaymentStatus, error: Error?) {
