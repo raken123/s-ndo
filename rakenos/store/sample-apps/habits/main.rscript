@@ -1,0 +1,18 @@
+// Streaks — daily habits.
+state habits = []
+state draft = ""
+
+on start { habits = storage.get("habits", [{ name: "Read 10 pages", streak: 3, last: "" }, { name: "Walk", streak: 12, last: "" }]) }
+on action "done" (i) {
+  let today = date_label(now())
+  if habits[i].last == today { ui.toast("Already done today"); return }
+  habits[i].streak += 1
+  habits[i].last = today
+  storage.set("habits", habits)
+}
+on action "add" {
+  if trim(draft) == "" { return }
+  push(habits, { name: trim(draft), streak: 0, last: "" })
+  draft = ""
+  storage.set("habits", habits)
+}

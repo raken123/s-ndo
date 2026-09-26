@@ -1,0 +1,20 @@
+{
+  "name": "com.raken.rakenos",
+  "displayName": "RakenOS",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RakenOS — one operating system app for every compatible device.",
+  "scripts": {
+    "prepare-www": "node ../tools/assemble-www.mjs",
+    "build": "bash ../tools/build-apk.sh"
+  },
+  "devDependencies": {
+    "cordova": "13.0.0",
+    "cordova-android": "15.1.0",
+    "cordova-plugin-raken-system": "file:plugins-src/cordova-plugin-raken-system"
+  },
+  "cordova": {
+    "platforms": ["android"],
+    "plugins": { "cordova-plugin-raken-system": {} }
+  }
+}

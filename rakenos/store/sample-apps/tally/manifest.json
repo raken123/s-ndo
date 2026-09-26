@@ -1,0 +1,21 @@
+{
+  "format": 1,
+  "id": "com.raken.samples.tally",
+  "name": "Tally",
+  "version": "2.1.0",
+  "versionCode": 7,
+  "minRakenOS": "1.0.0",
+  "rasApiLevel": 1,
+  "entry": "main.rscript",
+  "design": "ui.rdesign.json",
+  "icon": { "glyph": "counter", "background": "#2F5AE0" },
+  "permissions": [{ "id": "storage", "reason": "Keeps your counts between sessions." }, { "id": "vibrate", "reason": "Gives a subtle tap each time you count." }],
+  "capabilities": { "required": [], "optional": ["vibration"] },
+  "store": {
+    "developer": "Raken Labs",
+    "category": "productivity",
+    "summary": "Count anything with one tap",
+    "description": "Tally is a fast, focused counter for people, laps, stock or anything else worth counting. Choose a step size, undo mistakes and keep a history of every saved count.",
+    "releaseNotes": "Saved counts now show the time they were recorded, and undo remembers the last ten taps."
+  }
+}

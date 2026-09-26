@@ -1,0 +1,20 @@
+{
+  "format": 1,
+  "id": "com.raken.samples.packing",
+  "name": "Packing List",
+  "version": "1.2.0",
+  "versionCode": 5,
+  "minRakenOS": "1.0.0",
+  "rasApiLevel": 1,
+  "entry": "main.rscript",
+  "design": "ui.rdesign.json",
+  "icon": { "glyph": "suitcase", "background": "#B86E00" },
+  "permissions": [{ "id": "storage", "reason": "Saves your lists." }],
+  "store": {
+    "developer": "Northwind Apps",
+    "category": "travel",
+    "summary": "Never forget the charger again",
+    "description": "Build a packing list in seconds, tick items off as you pack and reuse the list for your next trip.",
+    "releaseNotes": "Packed items move to the bottom of the list."
+  }
+}

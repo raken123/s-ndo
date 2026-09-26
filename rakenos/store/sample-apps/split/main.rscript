@@ -1,0 +1,26 @@
+// Split — divide a bill between people.
+state total = null
+state tip = 10
+state people = 2
+state roundUp = false
+state perPerson = "0.00"
+state tipAmount = "0.00"
+state grand = "0.00"
+
+fn recalc() {
+  let t = total
+  if t == null or t < 0 { t = 0 }
+  let tipValue = t * tip / 100
+  let each = (t + tipValue) / max(1, people)
+  if roundUp { each = ceil(each) }
+  perPerson = fixed(each, 2)
+  tipAmount = fixed(tipValue, 2)
+  grand = fixed(each * people, 2)
+}
+
+on start { tip = storage.get("tip", 10); recalc() }
+on change "total" { recalc() }
+on change "tip" { storage.set("tip", tip); recalc() }
+on change "roundUp" { recalc() }
+on action "more" { people = min(50, people + 1); recalc() }
+on action "fewer" { people = max(1, people - 1); recalc() }

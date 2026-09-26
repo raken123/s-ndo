@@ -1,0 +1,15 @@
+// Dice — roll up to six dice.
+state count = 2
+state faces = []
+state total = 0
+state history = []
+
+on action "roll" {
+  faces = map(range(count), fn (i) { return random(1, 6) })
+  total = sum(faces)
+  insert(history, 0, { faces: join(faces, " · "), total: total })
+  if len(history) > 8 { pop(history) }
+  haptics.tap()
+}
+on action "fewer" { count = max(1, count - 1) }
+on action "more" { count = min(6, count + 1) }

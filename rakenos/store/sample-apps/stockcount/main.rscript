@@ -1,0 +1,12 @@
+// Stock Count — requires the scanner2d capability.
+state counts = {}
+state lines = []
+fn rebuild() { lines = map(keys(counts), fn (k) { return { code: k, n: counts[k] } }) }
+on start { counts = storage.get("counts", {}); rebuild() }
+on action "manual" {
+  let code = "EAN-" + str(random(100000, 999999))
+  counts[code] = (counts[code] or 0) + 1
+  storage.set("counts", counts)
+  rebuild()
+}
+on action "clear" { counts = {}; storage.set("counts", counts); rebuild() }

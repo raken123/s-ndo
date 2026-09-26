@@ -1,0 +1,11 @@
+{
+  "4529a0ce6d9d0cc8": {
+    "publisher": "Raken Labs",
+    "jwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "tU-aBDG5BM5Lb-Wu514zT8vbiSa5TeIWsL5kh4bDjHk",
+      "y": "YbOooVJ1IGbe4JSt5WCehOKsnSeMFpvDQnCuss9ZYIU"
+    }
+  }
+}

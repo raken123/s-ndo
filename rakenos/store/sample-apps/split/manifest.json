@@ -1,0 +1,20 @@
+{
+  "format": 1,
+  "id": "com.raken.samples.split",
+  "name": "Split",
+  "version": "1.4.2",
+  "versionCode": 12,
+  "minRakenOS": "1.0.0",
+  "rasApiLevel": 1,
+  "entry": "main.rscript",
+  "design": "ui.rdesign.json",
+  "icon": { "glyph": "split", "background": "#16945A" },
+  "permissions": [{ "id": "storage", "reason": "Remembers your preferred tip." }],
+  "store": {
+    "developer": "Raken Labs",
+    "category": "finance",
+    "summary": "Split the bill and the tip, fairly",
+    "description": "Enter the total, choose a tip and the number of people, and Split shows exactly what everyone pays — rounded the way you prefer.",
+    "releaseNotes": "Rounding up to whole amounts is now available for every currency."
+  }
+}

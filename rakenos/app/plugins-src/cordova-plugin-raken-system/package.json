@@ -1,0 +1,8 @@
+{
+  "name": "cordova-plugin-raken-system",
+  "version": "1.0.0",
+  "description": "RakenOS system services: hardware capability detection (never model names), battery, brightness, torch, haptics and the Android package installer flow.",
+  "cordova": { "id": "cordova-plugin-raken-system", "platforms": ["android"] },
+  "keywords": ["ecosystem:cordova", "cordova-android"],
+  "license": "Apache-2.0"
+}

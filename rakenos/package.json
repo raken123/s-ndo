@@ -1,0 +1,20 @@
+{
+  "name": "rakenos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RakenOS — one operating system app for every compatible Raken device.",
+  "scripts": {
+    "generate:updates": "node tools/generate-updates.js",
+    "build:samples": "node tools/ras-studio.mjs build-samples",
+    "assemble": "node tools/assemble-www.mjs",
+    "backend": "node mock-backend/server.mjs",
+    "scan:model-names": "node tools/scan-model-names.mjs",
+    "test:unit": "node --test tests/unit/*.test.mjs",
+    "test:e2e": "node tests/e2e/run.mjs",
+    "test": "npm run assemble && npm run scan:model-names && npm run test:unit && npm run test:e2e",
+    "build:apk": "bash tools/build-apk.sh"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.1"
+  }
+}

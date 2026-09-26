@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android"
+        id="cordova-plugin-raken-system" version="1.0.0">
+    <name>RakenSystem</name>
+    <description>RakenOS system services for Android.</description>
+    <js-module src="www/raken-system.js" name="RakenSystem">
+        <clobbers target="RakenSystem" />
+    </js-module>
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="RakenSystem">
+                <param name="android-package" value="com.raken.rakenos.system.RakenSystem" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <!-- Package visibility for detecting built-in barcode scanner services (capability scanner2d). -->
+            <queries>
+                <package android:name="com.symbol.datawedge" />
+                <package android:name="com.honeywell.decode" />
+                <package android:name="com.honeywell.aidc" />
+                <package android:name="com.datalogic.decodewedge" />
+                <package android:name="com.sunmi.scanner" />
+                <package android:name="com.android.scanner" />
+            </queries>
+        </config-file>
+        <config-file target="AndroidManifest.xml" parent="/manifest/application">
+            <provider android:name="com.raken.rakenos.system.RakenFileProvider"
+                      android:authorities="${applicationId}.raken.fileprovider"
+                      android:exported="false" android:grantUriPermissions="true">
+                <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/raken_file_paths" />
+            </provider>
+        </config-file>
+        <source-file src="src/android/RakenSystem.java" target-dir="src/com/raken/rakenos/system" />
+        <source-file src="src/android/RakenFileProvider.java" target-dir="src/com/raken/rakenos/system" />
+        <resource-file src="src/android/raken_file_paths.xml" target="res/xml/raken_file_paths.xml" />
+    </platform>
+</plugin>

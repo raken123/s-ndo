@@ -1,0 +1,10 @@
+{
+  "type": "screen",
+  "title": "Units",
+  "children": [
+    { "type": "segmented", "bind": "kind", "options": [ { "label": "Length", "value": "length" }, { "label": "Weight", "value": "weight" }, { "label": "Temperature", "value": "temperature" } ] },
+    { "type": "input", "bind": "amount", "inputType": "number", "placeholder": "Amount" },
+    { "type": "text", "text": "{kind == 'length' and 'Amount in metres' or kind == 'weight' and 'Amount in kilograms' or 'Amount in degrees'}", "style": "footnote", "color": "secondary" },
+    { "type": "list", "items": "rows", "template": { "type": "cell", "title": "{item.name}", "value": "{item.value}" } }
+  ]
+}

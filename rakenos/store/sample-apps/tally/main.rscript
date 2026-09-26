@@ -1,0 +1,41 @@
+// Tally — a focused counter.
+state count = 0
+state step = 1
+state saved = []
+let undo = []
+
+on start {
+  count = storage.get("count", 0)
+  step = storage.get("step", 1)
+  saved = storage.get("saved", [])
+}
+
+fn persist() {
+  storage.set("count", count)
+  storage.set("step", step)
+  storage.set("saved", saved)
+}
+
+fn change(delta) {
+  push(undo, count)
+  if len(undo) > 10 { remove_at(undo, 0) }
+  count = max(0, count + delta)
+  haptics.tap()
+  persist()
+}
+
+on action "add" { change(step) }
+on action "subtract" { change(-step) }
+on action "undo" {
+  if len(undo) == 0 { ui.toast("Nothing to undo"); return }
+  count = pop(undo)
+  persist()
+}
+on action "save" {
+  insert(saved, 0, { value: count, time: time_hm(now()) })
+  ui.toast("Saved " + str(count))
+  count = 0
+  persist()
+}
+on action "remove" (i) { remove_at(saved, i); persist() }
+on change "step" (v) { persist() }

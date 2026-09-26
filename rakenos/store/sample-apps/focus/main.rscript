@@ -1,0 +1,54 @@
+// Focus Timer — focused sessions with breaks.
+state minutes = 25
+state remaining = 25 * 60 * 1000
+state running = false
+state phase = "Focus"
+state completed = 0
+let endsAt = 0
+
+on start {
+  completed = storage.get("completed", 0)
+  minutes = storage.get("minutes", 25)
+  remaining = minutes * 60 * 1000
+}
+
+fn finish() {
+  running = false
+  timer.cancel("tick")
+  if phase == "Focus" {
+    completed += 1
+    storage.set("completed", completed)
+    notify("Focus session complete", "Time for a 5 minute break.")
+    phase = "Break"
+    remaining = 5 * 60 * 1000
+  } else {
+    notify("Break is over", "Ready for the next session?")
+    phase = "Focus"
+    remaining = minutes * 60 * 1000
+  }
+}
+
+on timer "tick" {
+  remaining = max(0, endsAt - now())
+  if remaining == 0 { finish() }
+}
+on action "toggle" {
+  if running {
+    running = false
+    timer.cancel("tick")
+  } else {
+    running = true
+    endsAt = now() + remaining
+    timer.every(250, "tick")
+  }
+}
+on action "reset" {
+  running = false
+  timer.cancel("tick")
+  phase = "Focus"
+  remaining = minutes * 60 * 1000
+}
+on change "minutes" (m) {
+  storage.set("minutes", m)
+  if not running and phase == "Focus" { remaining = m * 60 * 1000 }
+}

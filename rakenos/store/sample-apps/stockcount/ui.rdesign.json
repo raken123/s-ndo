@@ -1,0 +1,12 @@
+{
+  "type": "screen",
+  "title": "Stock Count",
+  "children": [
+    { "type": "text", "text": "Press the scan trigger to count an item.", "style": "subhead", "color": "secondary" },
+    { "type": "list", "items": "lines", "empty": "No items counted yet.", "template": { "type": "cell", "title": "{item.code}", "value": "{item.n}" } },
+    { "type": "row", "children": [
+      { "type": "button", "label": "Add test item", "action": "manual" },
+      { "type": "button", "label": "Clear", "action": "clear", "variant": "destructive" }
+    ]}
+  ]
+}

@@ -1,0 +1,460 @@
+{
+  "schema": "raken.store.catalog/1",
+  "generatedBy": "Raken Developer Studio",
+  "categories": [
+    {
+      "id": "productivity",
+      "name": "Productivity",
+      "icon": "checklist"
+    },
+    {
+      "id": "utilities",
+      "name": "Utilities",
+      "icon": "settings"
+    },
+    {
+      "id": "health",
+      "name": "Health & Fitness",
+      "icon": "heart"
+    },
+    {
+      "id": "finance",
+      "name": "Finance",
+      "icon": "split"
+    },
+    {
+      "id": "travel",
+      "name": "Travel",
+      "icon": "suitcase"
+    },
+    {
+      "id": "games",
+      "name": "Games",
+      "icon": "dice"
+    },
+    {
+      "id": "business",
+      "name": "Business",
+      "icon": "package"
+    }
+  ],
+  "featured": {
+    "appId": "com.raken.samples.focus",
+    "eyebrow": "App of the day",
+    "title": "Do deep work, then rest",
+    "text": "Focus Timer turns a long task into calm, manageable sessions."
+  },
+  "collections": [
+    {
+      "title": "Essentials",
+      "apps": [
+        "com.raken.samples.tally",
+        "com.raken.samples.units",
+        "com.raken.samples.split",
+        "com.raken.samples.packing"
+      ]
+    },
+    {
+      "title": "Look after yourself",
+      "apps": [
+        "com.raken.samples.hydrate",
+        "com.raken.samples.habits",
+        "com.raken.samples.focus"
+      ]
+    },
+    {
+      "title": "For work devices",
+      "apps": [
+        "com.raken.samples.stockcount",
+        "com.raken.samples.tagreader"
+      ]
+    }
+  ],
+  "preinstalled": [
+    {
+      "id": "com.raken.samples.tally",
+      "version": "2.0.0",
+      "package": "packages/factory/com.raken.samples.tally-2.0.0.ras",
+      "sha256": "1ff4478b475aec68e7fce0573e3afb19094b8404aa91938f3fc004ac5cb62547"
+    }
+  ],
+  "apps": [
+    {
+      "id": "com.raken.samples.dice",
+      "name": "Dice",
+      "version": "1.1.0",
+      "versionCode": 3,
+      "developer": "Tabletop Tools",
+      "category": "games",
+      "summary": "Roll one to six dice for any board game",
+      "description": "Pick how many dice you need and roll. Dice keeps the last rolls so everyone at the table can check the result.",
+      "releaseNotes": "Totals are now shown for every roll in the history.",
+      "minRakenOS": "1.0.0",
+      "rasApiLevel": 1,
+      "permissions": [
+        {
+          "id": "vibrate",
+          "reason": "Makes each roll feel physical."
+        }
+      ],
+      "capabilities": {
+        "required": [],
+        "optional": []
+      },
+      "icon": {
+        "glyph": "dice",
+        "background": "#3B3F46"
+      },
+      "package": "packages/com.raken.samples.dice-1.1.0.ras",
+      "sizeBytes": 3065,
+      "sha256": "fbf31555b7e8f6c3d84c69b04fa55d6c23115128f56dd332128a880ad1368365",
+      "rating": 4.4,
+      "ratingCount": 330,
+      "ageRating": "4+",
+      "verified": true,
+      "updated": "May 3"
+    },
+    {
+      "id": "com.raken.samples.focus",
+      "name": "Focus Timer",
+      "version": "3.0.1",
+      "versionCode": 21,
+      "developer": "Raken Labs",
+      "category": "productivity",
+      "summary": "Work in focused sessions with short breaks",
+      "description": "Focus Timer alternates focused work sessions with short breaks. Choose a session length, start, and put the device aside — you will be notified when it is time for a break.",
+      "releaseNotes": "Sessions can now be paused, and completed sessions are counted per day.",
+      "minRakenOS": "1.0.0",
+      "rasApiLevel": 1,
+      "permissions": [
+        {
+          "id": "notifications",
+          "reason": "Tells you when a session ends."
+        },
+        {
+          "id": "storage",
+          "reason": "Keeps your session statistics."
+        }
+      ],
+      "capabilities": {
+        "required": [],
+        "optional": []
+      },
+      "icon": {
+        "glyph": "target",
+        "background": "#D23A3A"
+      },
+      "package": "packages/com.raken.samples.focus-3.0.1.ras",
+      "sizeBytes": 4063,
+      "sha256": "bf32f186c28a48ecc205af8a46a2ef1046b5794cc05831fd292c9a5afdc4a7ef",
+      "rating": 4.9,
+      "ratingCount": 5310,
+      "ageRating": "4+",
+      "verified": true,
+      "updated": "May 19"
+    },
+    {
+      "id": "com.raken.samples.habits",
+      "name": "Streaks",
+      "version": "4.2.0",
+      "versionCode": 30,
+      "developer": "Evergreen Labs",
+      "category": "health",
+      "summary": "Build habits one day at a time",
+      "description": "Streaks tracks up to twelve daily habits and shows how many days in a row you have kept each one. It uses the accessibility APIs introduced with RAS API level 12.",
+      "releaseNotes": "Streak labels are now fully described for Raken Narrator.",
+      "minRakenOS": "12.0.0",
+      "rasApiLevel": 12,
+      "permissions": [
+        {
+          "id": "storage",
+          "reason": "Saves your habits and streaks."
+        },
+        {
+          "id": "notifications",
+          "reason": "Reminds you in the evening."
+        }
+      ],
+      "capabilities": {
+        "required": [],
+        "optional": []
+      },
+      "icon": {
+        "glyph": "leafy",
+        "background": "#128A6C"
+      },
+      "package": "packages/com.raken.samples.habits-4.2.0.ras",
+      "sizeBytes": 2908,
+      "sha256": "a633c2a1134073b09ab35de5852d1550d8e86028294e6f70dd489c725c35035b",
+      "rating": 4.8,
+      "ratingCount": 1980,
+      "ageRating": "4+",
+      "verified": true,
+      "updated": "May 21"
+    },
+    {
+      "id": "com.raken.samples.hydrate",
+      "name": "Hydrate",
+      "version": "1.0.3",
+      "versionCode": 4,
+      "developer": "Clearwater Studio",
+      "category": "health",
+      "summary": "A calm way to drink enough water",
+      "description": "Log glasses of water with one tap, set a daily goal that suits you and see your progress through the day.",
+      "releaseNotes": "The daily goal can now be adjusted in 100 ml steps.",
+      "minRakenOS": "1.0.0",
+      "rasApiLevel": 1,
+      "permissions": [
+        {
+          "id": "storage",
+          "reason": "Keeps today's total."
+        },
+        {
+          "id": "notifications",
+          "reason": "Celebrates when you reach your goal."
+        }
+      ],
+      "capabilities": {
+        "required": [],
+        "optional": []
+      },
+      "icon": {
+        "glyph": "water",
+        "background": "#1E8FD0"
+      },
+      "package": "packages/com.raken.samples.hydrate-1.0.3.ras",
+      "sizeBytes": 3826,
+      "sha256": "27111c509584dc669c2071ca19c992f629125ac66592ae9c476aeeb6b6f73462",
+      "rating": 4.7,
+      "ratingCount": 1290,
+      "ageRating": "4+",
+      "verified": true,
+      "updated": "April 9"
+    },
+    {
+      "id": "com.raken.samples.packing",
+      "name": "Packing List",
+      "version": "1.2.0",
+      "versionCode": 5,
+      "developer": "Northwind Apps",
+      "category": "travel",
+      "summary": "Never forget the charger again",
+      "description": "Build a packing list in seconds, tick items off as you pack and reuse the list for your next trip.",
+      "releaseNotes": "Packed items move to the bottom of the list.",
+      "minRakenOS": "1.0.0",
+      "rasApiLevel": 1,
+      "permissions": [
+        {
+          "id": "storage",
+          "reason": "Saves your lists."
+        }
+      ],
+      "capabilities": {
+        "required": [],
+        "optional": []
+      },
+      "icon": {
+        "glyph": "suitcase",
+        "background": "#B86E00"
+      },
+      "package": "packages/com.raken.samples.packing-1.2.0.ras",
+      "sizeBytes": 3395,
+      "sha256": "76c94db725e9b46708c3711636f537f6461d5a24feca1fa0728f506364c478cb",
+      "rating": 4.5,
+      "ratingCount": 410,
+      "ageRating": "4+",
+      "verified": true,
+      "updated": "March 30"
+    },
+    {
+      "id": "com.raken.samples.split",
+      "name": "Split",
+      "version": "1.4.2",
+      "versionCode": 12,
+      "developer": "Raken Labs",
+      "category": "finance",
+      "summary": "Split the bill and the tip, fairly",
+      "description": "Enter the total, choose a tip and the number of people, and Split shows exactly what everyone pays — rounded the way you prefer.",
+      "releaseNotes": "Rounding up to whole amounts is now available for every currency.",
+      "minRakenOS": "1.0.0",
+      "rasApiLevel": 1,
+      "permissions": [
+        {
+          "id": "storage",
+          "reason": "Remembers your preferred tip."
+        }
+      ],
+      "capabilities": {
+        "required": [],
+        "optional": []
+      },
+      "icon": {
+        "glyph": "split",
+        "background": "#16945A"
+      },
+      "package": "packages/com.raken.samples.split-1.4.2.ras",
+      "sizeBytes": 3591,
+      "sha256": "fd0a8c005b988ecb6094ae6a76917c85440b8a33b0ee061254c2cb31de10d938",
+      "rating": 4.6,
+      "ratingCount": 870,
+      "ageRating": "4+",
+      "verified": true,
+      "updated": "April 28"
+    },
+    {
+      "id": "com.raken.samples.stockcount",
+      "name": "Stock Count",
+      "version": "2.3.1",
+      "versionCode": 19,
+      "developer": "Warehouse Works",
+      "category": "business",
+      "summary": "Count inventory with the built-in scanner",
+      "description": "Stock Count uses the built-in 2D scanner to count items by barcode. It is available on devices with a dedicated scanner.",
+      "releaseNotes": "Duplicate scans within one second are ignored.",
+      "minRakenOS": "1.0.0",
+      "rasApiLevel": 1,
+      "permissions": [
+        {
+          "id": "scanner",
+          "reason": "Receives barcodes from the built-in scanner."
+        },
+        {
+          "id": "storage",
+          "reason": "Saves counts until you export them."
+        }
+      ],
+      "capabilities": {
+        "required": [
+          "scanner2d"
+        ],
+        "optional": [
+          "vibration"
+        ]
+      },
+      "icon": {
+        "glyph": "scanner",
+        "background": "#14A38B"
+      },
+      "package": "packages/com.raken.samples.stockcount-2.3.1.ras",
+      "sizeBytes": 2931,
+      "sha256": "669c44908dc9bc2eb53d0304c3306346fbb34aa07bdabf93a5396ddb726e17ce",
+      "rating": 4.6,
+      "ratingCount": 240,
+      "ageRating": "4+",
+      "verified": true,
+      "updated": "May 7"
+    },
+    {
+      "id": "com.raken.samples.tagreader",
+      "name": "Tag Reader",
+      "version": "1.0.0",
+      "versionCode": 1,
+      "developer": "Raken Labs",
+      "category": "utilities",
+      "summary": "Inspect NFC tags and copy their contents",
+      "description": "Tag Reader shows the type and contents of NFC tags. It requires a device with NFC hardware and is only offered where that hardware is present.",
+      "releaseNotes": "First release.",
+      "minRakenOS": "1.0.0",
+      "rasApiLevel": 1,
+      "permissions": [
+        {
+          "id": "nfc",
+          "reason": "Reads NFC tags you hold near the device."
+        },
+        {
+          "id": "clipboard",
+          "reason": "Copies tag contents."
+        }
+      ],
+      "capabilities": {
+        "required": [
+          "nfc"
+        ],
+        "optional": []
+      },
+      "icon": {
+        "glyph": "nfc",
+        "background": "#0E7C86"
+      },
+      "package": "packages/com.raken.samples.tagreader-1.0.0.ras",
+      "sizeBytes": 2434,
+      "sha256": "ab0ddc8ebb6220283e44f21a665718de5a3ff5a1abe90a169865fa34634fa636",
+      "rating": 4.3,
+      "ratingCount": 95,
+      "ageRating": "4+",
+      "verified": true,
+      "updated": "April 14"
+    },
+    {
+      "id": "com.raken.samples.tally",
+      "name": "Tally",
+      "version": "2.1.0",
+      "versionCode": 7,
+      "developer": "Raken Labs",
+      "category": "productivity",
+      "summary": "Count anything with one tap",
+      "description": "Tally is a fast, focused counter for people, laps, stock or anything else worth counting. Choose a step size, undo mistakes and keep a history of every saved count.",
+      "releaseNotes": "Saved counts now show the time they were recorded, and undo remembers the last ten taps.",
+      "minRakenOS": "1.0.0",
+      "rasApiLevel": 1,
+      "permissions": [
+        {
+          "id": "storage",
+          "reason": "Keeps your counts between sessions."
+        },
+        {
+          "id": "vibrate",
+          "reason": "Gives a subtle tap each time you count."
+        }
+      ],
+      "capabilities": {
+        "required": [],
+        "optional": [
+          "vibration"
+        ]
+      },
+      "icon": {
+        "glyph": "counter",
+        "background": "#2F5AE0"
+      },
+      "package": "packages/com.raken.samples.tally-2.1.0.ras",
+      "sizeBytes": 4054,
+      "sha256": "6c628bed155525c9d9b53e7410f1013873357df5e53b2e66b53c782836706686",
+      "rating": 4.8,
+      "ratingCount": 2140,
+      "ageRating": "4+",
+      "verified": true,
+      "updated": "May 12"
+    },
+    {
+      "id": "com.raken.samples.units",
+      "name": "Units",
+      "version": "2.0.0",
+      "versionCode": 9,
+      "developer": "Raken Labs",
+      "category": "utilities",
+      "summary": "Length, weight and temperature in one place",
+      "description": "Units converts between metric and imperial units as you type. No network access, no permissions — just conversions.",
+      "releaseNotes": "Temperature conversions now support Kelvin.",
+      "minRakenOS": "1.0.0",
+      "rasApiLevel": 1,
+      "permissions": [],
+      "capabilities": {
+        "required": [],
+        "optional": []
+      },
+      "icon": {
+        "glyph": "ruler",
+        "background": "#5B4FD6"
+      },
+      "package": "packages/com.raken.samples.units-2.0.0.ras",
+      "sizeBytes": 3270,
+      "sha256": "dda6bfd177eeb4435bdd29b340f2a97849e17e4f426089486d1be1e8e7024121",
+      "rating": 4.6,
+      "ratingCount": 760,
+      "ageRating": "4+",
+      "verified": true,
+      "updated": "March 17"
+    }
+  ]
+}

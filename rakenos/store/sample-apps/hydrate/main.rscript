@@ -1,0 +1,25 @@
+// Hydrate — daily water tracking.
+state goal = 2000
+state drunk = 0
+state log = []
+
+fn today() { return date_label(now()) }
+
+on start {
+  goal = storage.get("goal", 2000)
+  if storage.get("day", "") == today() {
+    drunk = storage.get("drunk", 0)
+    log = storage.get("log", [])
+  }
+}
+fn add(ml) {
+  let before = drunk
+  drunk += ml
+  insert(log, 0, { ml: ml, time: time_hm(now()) })
+  storage.set("day", today()); storage.set("drunk", drunk); storage.set("log", log)
+  if before < goal and drunk >= goal { notify("Daily goal reached", "You drank " + str(drunk) + " ml today.") }
+}
+on action "glass" { add(250) }
+on action "bottle" { add(500) }
+on action "clear" { drunk = 0; log = []; storage.set("drunk", 0); storage.set("log", []) }
+on change "goal" (g) { storage.set("goal", g) }

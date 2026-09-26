@@ -1,0 +1,21 @@
+{
+  "format": 1,
+  "id": "com.raken.samples.stockcount",
+  "name": "Stock Count",
+  "version": "2.3.1",
+  "versionCode": 19,
+  "minRakenOS": "1.0.0",
+  "rasApiLevel": 1,
+  "entry": "main.rscript",
+  "design": "ui.rdesign.json",
+  "icon": { "glyph": "scanner", "background": "#14A38B" },
+  "permissions": [{ "id": "scanner", "reason": "Receives barcodes from the built-in scanner." }, { "id": "storage", "reason": "Saves counts until you export them." }],
+  "capabilities": { "required": ["scanner2d"], "optional": ["vibration"] },
+  "store": {
+    "developer": "Warehouse Works",
+    "category": "business",
+    "summary": "Count inventory with the built-in scanner",
+    "description": "Stock Count uses the built-in 2D scanner to count items by barcode. It is available on devices with a dedicated scanner.",
+    "releaseNotes": "Duplicate scans within one second are ignored."
+  }
+}

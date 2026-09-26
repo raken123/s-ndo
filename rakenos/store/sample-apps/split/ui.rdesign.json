@@ -1,0 +1,23 @@
+{
+  "type": "screen",
+  "title": "Split",
+  "children": [
+    { "type": "input", "bind": "total", "inputType": "number", "placeholder": "Bill total" },
+    { "type": "section", "header": "Tip", "children": [
+      { "type": "cell", "title": "Tip", "value": "{tip}% · {tipAmount}" }
+    ]},
+    { "type": "slider", "bind": "tip", "min": 0, "max": 30, "step": 1, "icon": "sparkle", "label": "Tip percentage" },
+    { "type": "section", "header": "People", "children": [
+      { "type": "cell", "title": "Splitting between", "value": "{people} {people == 1 and 'person' or 'people'}" },
+      { "type": "toggle", "label": "Round up each share", "bind": "roundUp" }
+    ]},
+    { "type": "row", "children": [
+      { "type": "button", "label": "Fewer", "icon": "minus", "action": "fewer" },
+      { "type": "button", "label": "More", "icon": "plus", "action": "more" }
+    ]},
+    { "type": "grid", "columns": 2, "children": [
+      { "type": "stat", "label": "Each person pays", "value": "{perPerson}" },
+      { "type": "stat", "label": "Total with tip", "value": "{grand}" }
+    ]}
+  ]
+}

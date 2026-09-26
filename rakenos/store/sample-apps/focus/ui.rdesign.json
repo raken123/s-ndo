@@ -1,0 +1,20 @@
+{
+  "type": "screen",
+  "title": "Focus Timer",
+  "children": [
+    { "type": "card", "children": [
+      { "type": "badge", "text": "{phase}", "tone": "accent" },
+      { "type": "text", "text": "{duration(remaining)}", "style": "display", "align": "center", "mono": true },
+      { "type": "progress", "value": "1 - remaining / ((phase == 'Focus' and minutes or 5) * 60000)" },
+      { "type": "row", "children": [
+        { "type": "button", "label": "Reset", "action": "reset" },
+        { "type": "button", "label": "{running and 'Pause' or 'Start'}", "action": "toggle", "variant": "primary" }
+      ]}
+    ]},
+    { "type": "section", "header": "Session length", "children": [
+      { "type": "cell", "title": "Focus", "value": "{minutes} min" }
+    ]},
+    { "type": "slider", "bind": "minutes", "min": 5, "max": 60, "step": 5, "icon": "timer", "label": "Session length" },
+    { "type": "stat", "label": "Completed sessions", "value": "{completed}" }
+  ]
+}

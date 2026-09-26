@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#f3f4f6">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob: https://localhost; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http:; media-src 'self' blob: mediastream:; connect-src 'self' https: http://localhost:* http://127.0.0.1:* http://10.0.2.2:*; frame-src https: http:; font-src 'self' data:">
+  <title>RakenOS</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="lib/design-system/tokens.css">
+  <link rel="stylesheet" href="lib/design-system/components.css">
+  <link rel="stylesheet" href="os/os.css">
+  <link rel="stylesheet" href="os/apps.css">
+</head>
+<body>
+  <div id="device" class="r-root">
+    <div id="wallpaper" aria-hidden="true"></div>
+    <main id="home" class="layer" aria-label="Home Screen"></main>
+    <div id="windows" class="layer"></div>
+    <div id="recents" class="layer" aria-label="Recent apps" hidden></div>
+    <div id="search" class="layer" role="search" hidden></div>
+    <div id="lock" class="layer" aria-label="Lock Screen"></div>
+    <div id="panels"></div>
+    <div id="banners" aria-live="polite"></div>
+    <header id="statusbar" aria-label="Status"></header>
+    <div id="gesturebar" role="button" tabindex="-1" aria-label="Swipe up to go Home, swipe up and hold for recent apps"><span></span></div>
+    <div id="overlay"></div>
+    <div id="screen-off" hidden aria-label="Display off. Tap to wake."></div>
+    <div id="system-layer"></div>
+    <div id="brightness-scrim" aria-hidden="true"></div>
+  </div>
+  <script src="cordova.js" onerror="this.remove()"></script>
+  <script type="module" src="os/main.js"></script>
+</body>
+</html>

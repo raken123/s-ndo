@@ -1,0 +1,8 @@
+{
+  "type": "screen",
+  "title": "Tag Reader",
+  "children": [
+    { "type": "card", "children": [ { "type": "icon", "name": "nfc", "size": 40 }, { "type": "text", "text": "{status}", "style": "callout" } ] },
+    { "type": "button", "label": "Copy last tag", "action": "copy", "variant": "tinted" }
+  ]
+}

@@ -1,0 +1,19 @@
+// Optional Gradle init script: resolve Maven Central through a mirror.
+// Used by tools/build-apk.sh when RAKENOS_MAVEN_MIRROR is set, e.g.
+//   RAKENOS_MAVEN_MIRROR=https://maven-central.storage-download.googleapis.com/maven2/ npm run build:apk
+def mirror = System.getenv('RAKENOS_MAVEN_MIRROR') ?: 'https://maven-central.storage-download.googleapis.com/maven2/'
+def redirect = { RepositoryHandler repos ->
+    repos.configureEach { r ->
+        if (r instanceof MavenArtifactRepository && r.url.toString().startsWith('https://repo.maven.apache.org/maven2')) {
+            r.url = mirror
+        }
+    }
+}
+settingsEvaluated { s ->
+    redirect(s.pluginManagement.repositories)
+    redirect(s.dependencyResolutionManagement.repositories)
+}
+allprojects {
+    redirect(buildscript.repositories)
+    redirect(repositories)
+}

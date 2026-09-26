@@ -1,0 +1,20 @@
+{
+  "format": 1,
+  "id": "com.raken.samples.units",
+  "name": "Units",
+  "version": "2.0.0",
+  "versionCode": 9,
+  "minRakenOS": "1.0.0",
+  "rasApiLevel": 1,
+  "entry": "main.rscript",
+  "design": "ui.rdesign.json",
+  "icon": { "glyph": "ruler", "background": "#5B4FD6" },
+  "permissions": [],
+  "store": {
+    "developer": "Raken Labs",
+    "category": "utilities",
+    "summary": "Length, weight and temperature in one place",
+    "description": "Units converts between metric and imperial units as you type. No network access, no permissions — just conversions.",
+    "releaseNotes": "Temperature conversions now support Kelvin."
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "format": 1,
+  "id": "com.raken.samples.dice",
+  "name": "Dice",
+  "version": "1.1.0",
+  "versionCode": 3,
+  "minRakenOS": "1.0.0",
+  "rasApiLevel": 1,
+  "entry": "main.rscript",
+  "design": "ui.rdesign.json",
+  "icon": { "glyph": "dice", "background": "#3B3F46" },
+  "permissions": [{ "id": "vibrate", "reason": "Makes each roll feel physical." }],
+  "store": {
+    "developer": "Tabletop Tools",
+    "category": "games",
+    "summary": "Roll one to six dice for any board game",
+    "description": "Pick how many dice you need and roll. Dice keeps the last rolls so everyone at the table can check the result.",
+    "releaseNotes": "Totals are now shown for every roll in the history."
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "categories": [
+    {
+      "id": "productivity",
+      "name": "Productivity",
+      "icon": "checklist"
+    },
+    {
+      "id": "utilities",
+      "name": "Utilities",
+      "icon": "settings"
+    },
+    {
+      "id": "health",
+      "name": "Health & Fitness",
+      "icon": "heart"
+    },
+    {
+      "id": "finance",
+      "name": "Finance",
+      "icon": "split"
+    },
+    {
+      "id": "travel",
+      "name": "Travel",
+      "icon": "suitcase"
+    },
+    {
+      "id": "games",
+      "name": "Games",
+      "icon": "dice"
+    },
+    {
+      "id": "business",
+      "name": "Business",
+      "icon": "package"
+    }
+  ],
+  "featured": {
+    "appId": "com.raken.samples.focus",
+    "eyebrow": "App of the day",
+    "title": "Do deep work, then rest",
+    "text": "Focus Timer turns a long task into calm, manageable sessions."
+  },
+  "collections": [
+    {
+      "title": "Essentials",
+      "apps": [
+        "com.raken.samples.tally",
+        "com.raken.samples.units",
+        "com.raken.samples.split",
+        "com.raken.samples.packing"
+      ]
+    },
+    {
+      "title": "Look after yourself",
+      "apps": [
+        "com.raken.samples.hydrate",
+        "com.raken.samples.habits",
+        "com.raken.samples.focus"
+      ]
+    },
+    {
+      "title": "For work devices",
+      "apps": [
+        "com.raken.samples.stockcount",
+        "com.raken.samples.tagreader"
+      ]
+    }
+  ],
+  "apps": {
+    "com.raken.samples.tally": {
+      "rating": 4.8,
+      "ratingCount": 2140,
+      "updated": "May 12"
+    },
+    "com.raken.samples.split": {
+      "rating": 4.6,
+      "ratingCount": 870,
+      "updated": "April 28"
+    },
+    "com.raken.samples.focus": {
+      "rating": 4.9,
+      "ratingCount": 5310,
+      "updated": "May 19"
+    },
+    "com.raken.samples.packing": {
+      "rating": 4.5,
+      "ratingCount": 410,
+      "updated": "March 30"
+    },
+    "com.raken.samples.hydrate": {
+      "rating": 4.7,
+      "ratingCount": 1290,
+      "updated": "April 9"
+    },
+    "com.raken.samples.units": {
+      "rating": 4.6,
+      "ratingCount": 760,
+      "updated": "March 17"
+    },
+    "com.raken.samples.dice": {
+      "rating": 4.4,
+      "ratingCount": 330,
+      "updated": "May 3"
+    },
+    "com.raken.samples.habits": {
+      "rating": 4.8,
+      "ratingCount": 1980,
+      "updated": "May 21"
+    },
+    "com.raken.samples.tagreader": {
+      "rating": 4.3,
+      "ratingCount": 95,
+      "updated": "April 14"
+    },
+    "com.raken.samples.stockcount": {
+      "rating": 4.6,
+      "ratingCount": 240,
+      "updated": "May 7"
+    }
+  },
+  "preinstalled": [
+    {
+      "id": "com.raken.samples.tally",
+      "version": "2.0.0",
+      "versionCode": 6,
+      "releaseNotes": "Adds step sizes of 5 and 10."
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "type": "screen",
+  "title": "Streaks",
+  "children": [
+    { "type": "list", "items": "habits", "template": { "type": "cell", "title": "{item.name}", "subtitle": "{item.streak} day streak", "value": "Done", "action": "done", "arg": "index", "chevron": false } },
+    { "type": "row", "children": [
+      { "type": "input", "bind": "draft", "placeholder": "New habit", "submit": "add" },
+      { "type": "icon-button", "icon": "plus", "label": "Add habit", "action": "add" }
+    ]}
+  ]
+}

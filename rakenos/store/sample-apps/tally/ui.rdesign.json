@@ -1,0 +1,24 @@
+{
+  "type": "screen",
+  "title": "Tally",
+  "children": [
+    { "type": "card", "children": [
+      { "type": "text", "text": "{count}", "style": "display", "align": "center", "mono": true },
+      { "type": "text", "text": "Step {step}", "style": "footnote", "color": "secondary", "align": "center" },
+      { "type": "row", "children": [
+        { "type": "button", "label": "−", "action": "subtract" },
+        { "type": "button", "label": "+", "action": "add", "variant": "primary" }
+      ]},
+      { "type": "segmented", "bind": "step", "options": [ { "label": "1", "value": 1 }, { "label": "5", "value": 5 }, { "label": "10", "value": 10 } ] }
+    ]},
+    { "type": "row", "children": [
+      { "type": "button", "label": "Undo", "icon": "history", "action": "undo" },
+      { "type": "button", "label": "Save", "icon": "check", "action": "save", "variant": "tinted" }
+    ]},
+    { "type": "section", "header": "Saved counts", "children": [
+      { "type": "list", "items": "saved", "empty": "Saved counts appear here.", "template":
+        { "type": "cell", "title": "{item.value}", "subtitle": "Saved at {item.time}", "value": "Remove", "action": "remove", "arg": "index", "chevron": false }
+      }
+    ]}
+  ]
+}

@@ -1,0 +1,25 @@
+// Packing List — a reusable checklist.
+state draft = ""
+state items = []
+state packed = 0
+
+fn save() {
+  items = sort(items, fn (a, b) { if a.done == b.done { return 0 } if a.done { return 1 } return -1 })
+  packed = len(filter(items, fn (x) { return x.done }))
+  storage.set("items", items)
+}
+
+on start {
+  items = storage.get("items", [{ name: "Passport", done: false }, { name: "Charger", done: false }, { name: "Toothbrush", done: false }])
+  save()
+}
+on action "add" {
+  let name = trim(draft)
+  if name == "" { return }
+  push(items, { name: name, done: false })
+  draft = ""
+  save()
+}
+on action "toggle" (i) { items[i].done = not items[i].done; save() }
+on action "delete" (i) { remove_at(items, i); save() }
+on action "reset" { for item in items { item.done = false } save() }

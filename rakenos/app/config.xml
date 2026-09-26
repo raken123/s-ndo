@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.raken.rakenos" version="1.0.0" android-versionCode="10000"
+        xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>RakenOS</name>
+    <description>RakenOS — one operating system for every compatible device. Features are enabled from detected hardware capabilities.</description>
+    <author href="https://raken.example">Raken</author>
+    <content src="index.html" />
+
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <access origin="*" />
+    <allow-navigation href="https://localhost/*" />
+
+    <platform name="android">
+        <preference name="android-minSdkVersion" value="26" />
+        <preference name="android-targetSdkVersion" value="36" />
+        <preference name="AndroidWindowSplashScreenBackground" value="#07080A" />
+        <preference name="AndroidWindowSplashScreenAnimatedIcon" value="res/splash-mark.xml" />
+        <preference name="AndroidPostSplashScreenTheme" value="@style/Theme.AppCompat.NoActionBar" />
+        <preference name="AndroidEdgeToEdge" value="true" />
+        <preference name="StatusBarOverlaysWebView" value="true" />
+        <preference name="Fullscreen" value="true" />
+        <preference name="Orientation" value="portrait" />
+        <preference name="BackgroundColor" value="0xff07080a" />
+        <preference name="AndroidInsecureFileModeEnabled" value="false" />
+        <preference name="GradlePluginKotlinEnabled" value="false" />
+        <icon density="mdpi" src="res/icon/icon-48.png" />
+        <icon density="hdpi" src="res/icon/icon-72.png" />
+        <icon density="xhdpi" src="res/icon/icon-96.png" />
+        <icon density="xxhdpi" src="res/icon/icon-144.png" />
+        <icon density="xxxhdpi" src="res/icon/icon-192.png" />
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="android.permission.CAMERA" />
+            <uses-permission android:name="android.permission.VIBRATE" />
+            <uses-permission android:name="android.permission.FLASHLIGHT" />
+            <uses-permission android:name="android.permission.NFC" />
+            <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+            <uses-feature android:name="android.hardware.camera" android:required="false" />
+            <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
+            <uses-feature android:name="android.hardware.nfc" android:required="false" />
+            <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
+            <uses-feature android:name="android.hardware.telephony" android:required="false" />
+        </config-file>
+    </platform>
+</widget>

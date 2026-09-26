@@ -1,0 +1,169 @@
+/*
+ * Raken Design System — tokens
+ * Every colour, type style, spacing step, radius and motion curve used by
+ * RakenOS and RDesign components is defined here. Components never use raw
+ * values; they reference these custom properties.
+ */
+
+@font-face {
+  font-family: 'Raken Sans';
+  src: url('fonts/inter-latin-wght-normal.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Raken Sans';
+  src: url('fonts/inter-latin-ext-wght-normal.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root {
+  /* Typography */
+  --r-type-scale: 1;
+  --r-font: 'Raken Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --r-font-mono: ui-monospace, 'SFMono-Regular', 'Roboto Mono', Menlo, monospace;
+  --r-text-display: 600 calc(34px * var(--r-type-scale))/calc(40px * var(--r-type-scale)) var(--r-font);
+  --r-text-title1: 650 calc(28px * var(--r-type-scale))/calc(34px * var(--r-type-scale)) var(--r-font);
+  --r-text-title2: 620 calc(22px * var(--r-type-scale))/calc(28px * var(--r-type-scale)) var(--r-font);
+  --r-text-title3: 600 calc(19px * var(--r-type-scale))/calc(24px * var(--r-type-scale)) var(--r-font);
+  --r-text-headline: 600 calc(16px * var(--r-type-scale))/calc(22px * var(--r-type-scale)) var(--r-font);
+  --r-text-body: 430 calc(16px * var(--r-type-scale))/calc(22px * var(--r-type-scale)) var(--r-font);
+  --r-text-callout: 430 calc(15px * var(--r-type-scale))/calc(20px * var(--r-type-scale)) var(--r-font);
+  --r-text-subhead: 450 calc(14px * var(--r-type-scale))/calc(19px * var(--r-type-scale)) var(--r-font);
+  --r-text-footnote: 450 calc(13px * var(--r-type-scale))/calc(18px * var(--r-type-scale)) var(--r-font);
+  --r-text-caption: 500 calc(12px * var(--r-type-scale))/calc(16px * var(--r-type-scale)) var(--r-font);
+  --r-text-micro: 600 calc(11px * var(--r-type-scale))/calc(14px * var(--r-type-scale)) var(--r-font);
+  --r-tracking-tight: -0.022em;
+  --r-tracking-normal: -0.011em;
+
+  /* Spacing — 4 px base grid */
+  --r-space-1: 4px;
+  --r-space-2: 8px;
+  --r-space-3: 12px;
+  --r-space-4: 16px;
+  --r-space-5: 20px;
+  --r-space-6: 24px;
+  --r-space-8: 32px;
+  --r-space-10: 40px;
+  --r-gutter: 16px;
+
+  /* Radii */
+  --r-radius-xs: 6px;
+  --r-radius-sm: 10px;
+  --r-radius-md: 14px;
+  --r-radius-lg: 20px;
+  --r-radius-xl: 28px;
+  --r-radius-icon: 23%;
+  --r-radius-full: 999px;
+
+  /* Sizes */
+  --r-row-height: 48px;
+  --r-control-height: 40px;
+  --r-control-height-sm: 32px;
+  --r-status-bar: 32px;
+  --r-gesture-bar: 22px;
+  --r-app-icon: 58px;
+
+  /* Motion */
+  --r-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --r-ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
+  --r-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --r-dur-fast: 140ms;
+  --r-dur-base: 240ms;
+  --r-dur-slow: 380ms;
+
+  /* Colour — light (default) */
+  color-scheme: light;
+  --r-bg: #f3f4f6;
+  --r-bg-elevated: #ffffff;
+  --r-surface: #ffffff;
+  --r-surface-2: #eceef1;
+  --r-surface-3: #e2e5ea;
+  --r-surface-pressed: #e6e8ec;
+  --r-text: #101217;
+  --r-text-2: #565d6a;
+  --r-text-3: #8a909b;
+  --r-text-on-accent: #ffffff;
+  --r-separator: rgba(16, 18, 23, 0.09);
+  --r-separator-strong: rgba(16, 18, 23, 0.16);
+  --r-accent: #2f5ae0;
+  --r-accent-pressed: #2449bd;
+  --r-accent-soft: rgba(47, 90, 224, 0.11);
+  --r-success: #16945a;
+  --r-success-soft: rgba(22, 148, 90, 0.12);
+  --r-warning: #b86e00;
+  --r-warning-soft: rgba(184, 110, 0, 0.12);
+  --r-danger: #d23a3a;
+  --r-danger-soft: rgba(210, 58, 58, 0.11);
+  --r-scrim: rgba(10, 12, 16, 0.36);
+  --r-switch-off: #d5d8de;
+  --r-shadow-1: 0 1px 2px rgba(16, 18, 23, 0.06), 0 1px 1px rgba(16, 18, 23, 0.04);
+  --r-shadow-2: 0 6px 24px rgba(16, 18, 23, 0.12), 0 1px 3px rgba(16, 18, 23, 0.08);
+  --r-shadow-3: 0 18px 48px rgba(16, 18, 23, 0.22);
+  --r-focus: 0 0 0 3px rgba(47, 90, 224, 0.35);
+  --r-material: rgba(248, 249, 251, 0.82);
+  --r-material-strong: rgba(250, 251, 252, 0.94);
+  --r-material-border: rgba(255, 255, 255, 0.6);
+}
+
+/* Colour — dark */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --r-bg: #0c0d10;
+  --r-bg-elevated: #17191d;
+  --r-surface: #16181c;
+  --r-surface-2: #202328;
+  --r-surface-3: #2a2e34;
+  --r-surface-pressed: #262a30;
+  --r-text: #f1f2f4;
+  --r-text-2: #a3a9b3;
+  --r-text-3: #6d737d;
+  --r-separator: rgba(255, 255, 255, 0.085);
+  --r-separator-strong: rgba(255, 255, 255, 0.15);
+  --r-accent: #6d8bff;
+  --r-accent-pressed: #5874e6;
+  --r-accent-soft: rgba(109, 139, 255, 0.16);
+  --r-success: #3cc47f;
+  --r-success-soft: rgba(60, 196, 127, 0.15);
+  --r-warning: #f0a23a;
+  --r-warning-soft: rgba(240, 162, 58, 0.15);
+  --r-danger: #ff6b66;
+  --r-danger-soft: rgba(255, 107, 102, 0.14);
+  --r-scrim: rgba(0, 0, 0, 0.55);
+  --r-switch-off: #3a3e45;
+  --r-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --r-shadow-2: 0 8px 28px rgba(0, 0, 0, 0.5);
+  --r-shadow-3: 0 18px 48px rgba(0, 0, 0, 0.6);
+  --r-focus: 0 0 0 3px rgba(109, 139, 255, 0.45);
+  --r-material: rgba(26, 28, 33, 0.8);
+  --r-material-strong: rgba(24, 26, 30, 0.95);
+  --r-material-border: rgba(255, 255, 255, 0.06);
+}
+
+/* Reduced motion — both the OS setting and the RakenOS Reduce Motion switch */
+:root[data-motion='reduced'] {
+  --r-dur-fast: 1ms;
+  --r-dur-base: 1ms;
+  --r-dur-slow: 1ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --r-dur-fast: 1ms; --r-dur-base: 1ms; --r-dur-slow: 1ms; }
+}
+
+/* Text size preference */
+:root[data-text-size='small'] { --r-type-scale: 0.92; }
+:root[data-text-size='large'] { --r-type-scale: 1.12; }
+:root[data-text-size='larger'] { --r-type-scale: 1.25; }
+
+/* Bold text preference */
+:root[data-bold-text='on'] {
+  --r-text-body: 560 calc(16px * var(--r-type-scale))/calc(22px * var(--r-type-scale)) var(--r-font);
+  --r-text-callout: 560 calc(15px * var(--r-type-scale))/calc(20px * var(--r-type-scale)) var(--r-font);
+  --r-text-subhead: 580 calc(14px * var(--r-type-scale))/calc(19px * var(--r-type-scale)) var(--r-font);
+  --r-text-footnote: 580 calc(13px * var(--r-type-scale))/calc(18px * var(--r-type-scale)) var(--r-font);
+}

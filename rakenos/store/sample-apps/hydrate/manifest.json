@@ -1,0 +1,20 @@
+{
+  "format": 1,
+  "id": "com.raken.samples.hydrate",
+  "name": "Hydrate",
+  "version": "1.0.3",
+  "versionCode": 4,
+  "minRakenOS": "1.0.0",
+  "rasApiLevel": 1,
+  "entry": "main.rscript",
+  "design": "ui.rdesign.json",
+  "icon": { "glyph": "water", "background": "#1E8FD0" },
+  "permissions": [{ "id": "storage", "reason": "Keeps today's total." }, { "id": "notifications", "reason": "Celebrates when you reach your goal." }],
+  "store": {
+    "developer": "Clearwater Studio",
+    "category": "health",
+    "summary": "A calm way to drink enough water",
+    "description": "Log glasses of water with one tap, set a daily goal that suits you and see your progress through the day.",
+    "releaseNotes": "The daily goal can now be adjusted in 100 ml steps."
+  }
+}

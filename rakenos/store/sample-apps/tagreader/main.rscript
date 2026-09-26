@@ -1,0 +1,5 @@
+// Tag Reader — requires the nfc capability.
+state status = "Hold a tag near the back of the device."
+state last = ""
+on start { if not device.has("nfc") { status = "NFC is not available." } }
+on action "copy" { if last != "" { clipboard.copy(last); ui.toast("Copied") } }

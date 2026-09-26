@@ -1,0 +1,18 @@
+{
+  "type": "screen",
+  "title": "Dice",
+  "children": [
+    { "type": "card", "children": [
+      { "type": "text", "text": "{len(faces) > 0 and join(faces, '  ') or 'Tap Roll'}", "style": "title1", "align": "center", "mono": true },
+      { "type": "text", "text": "{len(faces) > 0 and 'Total ' + str(total) or str(count) + ' dice ready'}", "style": "subhead", "color": "secondary", "align": "center" },
+      { "type": "button", "label": "Roll", "action": "roll", "variant": "primary", "block": true }
+    ]},
+    { "type": "row", "children": [
+      { "type": "button", "label": "Fewer dice", "action": "fewer" },
+      { "type": "button", "label": "More dice", "action": "more" }
+    ]},
+    { "type": "section", "header": "Recent rolls", "children": [
+      { "type": "list", "items": "history", "empty": "No rolls yet.", "template": { "type": "cell", "title": "{item.faces}", "value": "{item.total}" } }
+    ]}
+  ]
+}

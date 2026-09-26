@@ -1,0 +1,21 @@
+{
+  "format": 1,
+  "id": "com.raken.samples.tagreader",
+  "name": "Tag Reader",
+  "version": "1.0.0",
+  "versionCode": 1,
+  "minRakenOS": "1.0.0",
+  "rasApiLevel": 1,
+  "entry": "main.rscript",
+  "design": "ui.rdesign.json",
+  "icon": { "glyph": "nfc", "background": "#0E7C86" },
+  "permissions": [{ "id": "nfc", "reason": "Reads NFC tags you hold near the device." }, { "id": "clipboard", "reason": "Copies tag contents." }],
+  "capabilities": { "required": ["nfc"], "optional": [] },
+  "store": {
+    "developer": "Raken Labs",
+    "category": "utilities",
+    "summary": "Inspect NFC tags and copy their contents",
+    "description": "Tag Reader shows the type and contents of NFC tags. It requires a device with NFC hardware and is only offered where that hardware is present.",
+    "releaseNotes": "First release."
+  }
+}

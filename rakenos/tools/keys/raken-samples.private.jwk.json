@@ -1,0 +1,15 @@
+{
+  "keyId": "4529a0ce6d9d0cc8",
+  "publisher": "Raken Labs",
+  "jwk": {
+    "key_ops": [
+      "sign"
+    ],
+    "ext": true,
+    "kty": "EC",
+    "x": "tU-aBDG5BM5Lb-Wu514zT8vbiSa5TeIWsL5kh4bDjHk",
+    "y": "YbOooVJ1IGbe4JSt5WCehOKsnSeMFpvDQnCuss9ZYIU",
+    "crv": "P-256",
+    "d": "5ZV1Fh9Ikt3zvH_IvLCFwINlWfUCv9XWHeqCludl6Cc"
+  }
+}

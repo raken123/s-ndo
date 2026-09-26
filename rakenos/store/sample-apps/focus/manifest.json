@@ -1,0 +1,20 @@
+{
+  "format": 1,
+  "id": "com.raken.samples.focus",
+  "name": "Focus Timer",
+  "version": "3.0.1",
+  "versionCode": 21,
+  "minRakenOS": "1.0.0",
+  "rasApiLevel": 1,
+  "entry": "main.rscript",
+  "design": "ui.rdesign.json",
+  "icon": { "glyph": "target", "background": "#D23A3A" },
+  "permissions": [{ "id": "notifications", "reason": "Tells you when a session ends." }, { "id": "storage", "reason": "Keeps your session statistics." }],
+  "store": {
+    "developer": "Raken Labs",
+    "category": "productivity",
+    "summary": "Work in focused sessions with short breaks",
+    "description": "Focus Timer alternates focused work sessions with short breaks. Choose a session length, start, and put the device aside — you will be notified when it is time for a break.",
+    "releaseNotes": "Sessions can now be paused, and completed sessions are counted per day."
+  }
+}

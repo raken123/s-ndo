@@ -1,0 +1,23 @@
+{
+  "type": "screen",
+  "title": "Hydrate",
+  "children": [
+    { "type": "card", "children": [
+      { "type": "text", "text": "{drunk} ml", "style": "title1" },
+      { "type": "text", "text": "{drunk >= goal and 'Goal reached — well done' or str(goal - drunk) + ' ml to go'}", "style": "subhead", "color": "secondary" },
+      { "type": "progress", "value": "drunk / goal" }
+    ]},
+    { "type": "row", "children": [
+      { "type": "button", "label": "Glass · 250 ml", "action": "glass", "variant": "tinted" },
+      { "type": "button", "label": "Bottle · 500 ml", "action": "bottle", "variant": "tinted" }
+    ]},
+    { "type": "section", "header": "Daily goal", "footer": "Adjust the goal to what suits you.", "children": [
+      { "type": "cell", "title": "Goal", "value": "{goal} ml" }
+    ]},
+    { "type": "slider", "bind": "goal", "min": 1000, "max": 4000, "step": 100, "icon": "water", "label": "Daily goal" },
+    { "type": "section", "header": "Today", "children": [
+      { "type": "list", "items": "log", "empty": "Nothing logged yet today.", "template": { "type": "cell", "title": "{item.ml} ml", "value": "{item.time}" } }
+    ]},
+    { "type": "button", "label": "Clear today", "action": "clear", "variant": "plain" }
+  ]
+}

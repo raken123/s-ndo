@@ -1,0 +1,29 @@
+// Units — offline unit conversion.
+state kind = "length"
+state amount = 1
+state rows = []
+
+let tables = {
+  length: [["Metres", 1], ["Centimetres", 0.01], ["Kilometres", 1000], ["Inches", 0.0254], ["Feet", 0.3048], ["Miles", 1609.344]],
+  weight: [["Kilograms", 1], ["Grams", 0.001], ["Pounds", 0.45359237], ["Ounces", 0.028349523]]
+}
+
+fn convert() {
+  let a = amount
+  if a == null { a = 0 }
+  rows = []
+  if kind == "temperature" {
+    push(rows, { name: "Celsius → Fahrenheit", value: fixed(a * 9 / 5 + 32, 1) + " °F" })
+    push(rows, { name: "Fahrenheit → Celsius", value: fixed((a - 32) * 5 / 9, 1) + " °C" })
+    push(rows, { name: "Celsius → Kelvin", value: fixed(a + 273.15, 2) + " K" })
+    return
+  }
+  let t = tables[kind]
+  for row in t {
+    push(rows, { name: row[0], value: str(round(a / row[1] * tables[kind][0][1], 4)) })
+  }
+}
+
+on start { convert() }
+on change "kind" { convert() }
+on change "amount" { convert() }

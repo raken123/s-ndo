@@ -1,0 +1,16 @@
+{
+  "type": "screen",
+  "title": "Packing List",
+  "children": [
+    { "type": "row", "children": [
+      { "type": "input", "bind": "draft", "placeholder": "Add an item", "submit": "add" },
+      { "type": "icon-button", "icon": "plus", "label": "Add item", "action": "add" }
+    ]},
+    { "type": "text", "text": "{packed} of {len(items)} packed", "style": "footnote", "color": "secondary" },
+    { "type": "progress", "value": "len(items) > 0 and packed / len(items) or 0" },
+    { "type": "list", "items": "items", "empty": "Your list is empty.", "template":
+      { "type": "cell", "icon": "{item.done and 'check' or 'minus'}", "iconColor": "var(--r-success)", "title": "{item.name}", "subtitle": "{item.done and 'Packed' or 'Not packed'}", "action": "toggle", "arg": "index", "chevron": false }
+    },
+    { "type": "button", "label": "Unpack everything", "action": "reset", "variant": "plain" }
+  ]
+}
