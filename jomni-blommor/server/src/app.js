@@ -70,6 +70,9 @@ export function createApp({ db, env = {}, stripe = null, apns = null, webRoot = 
   const adminHash = env.ADMIN_PASSWORD ? hashPassword(env.ADMIN_PASSWORD) : DEFAULT_ADMIN_PASSWORD_HASH;
   const loginLimiter = createLimiter();
   const data = () => db.data;
+  // Bakom en omvänd proxy (TRUST_PROXY=1) används klientens IP från X-Forwarded-For.
+  const clientIp = (req) => (env.TRUST_PROXY === '1' && String(req.headers['x-forwarded-for'] || '').split(',')[0].trim())
+    || req.socket.remoteAddress;
 
   // ---------------------------------------------------------------- helpers
   function publicOrder(o) {
@@ -362,7 +365,7 @@ export function createApp({ db, env = {}, stripe = null, apns = null, webRoot = 
   });
 
   route('POST', '/api/auth/login', ({ req, body }) => {
-    const key = `u:${req.socket.remoteAddress}`;
+    const key = `u:${clientIp(req)}`;
     if (loginLimiter.blocked(key)) throw new HttpError(429, 'För många försök. Vänta en stund.');
     const mail = String(body.email || '').trim().toLowerCase();
     const user = data().users.find((u) => u.email === mail);
@@ -499,7 +502,7 @@ export function createApp({ db, env = {}, stripe = null, apns = null, webRoot = 
 
   // --- Admin
   route('POST', '/api/admin/login', ({ req, body }) => {
-    const key = `a:${req.socket.remoteAddress}`;
+    const key = `a:${clientIp(req)}`;
     if (loginLimiter.blocked(key)) throw new HttpError(429, 'För många försök. Vänta 15 minuter.');
     if (!verifyPassword(String(body.password || ''), adminHash)) {
       loginLimiter.fail(key);
@@ -678,10 +681,14 @@ export function createApp({ db, env = {}, stripe = null, apns = null, webRoot = 
 
       let raw = '';
       if (req.method !== 'GET' && req.method !== 'HEAD') {
+        const chunks = [];
+        let size = 0;
         for await (const chunk of req) {
-          raw += chunk;
-          if (raw.length > 100_000) throw new HttpError(413, 'För stor förfrågan.');
+          size += chunk.length;
+          if (size > 100_000) throw new HttpError(413, 'För stor förfrågan.');
+          chunks.push(chunk);
         }
+        raw = Buffer.concat(chunks).toString('utf8');
       }
       let body = {};
       if (raw && !url.pathname.startsWith('/api/stripe/')) {
