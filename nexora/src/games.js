@@ -706,8 +706,9 @@ function gameRacer(R) {
       cars = [makeCar(-30, P.player, false), makeCar(30, P.enemy, true), makeCar(0, P.accent, true)];
       cars[2].x -= Math.cos(cars[2].a) * 60; cars[2].y -= Math.sin(cars[2].a) * 60;
       me = cars[0];
+      if (C.demo) { me.ai = true; me.skill = 1.02; }  // attract mode: the player car drives itself
     },
-    resize() { zoom = Math.min(1, Math.min(R.W, R.H) / 650); },
+    resize() { zoom = Math.min(1, Math.min(R.W, R.H) / 650) * (C.demo ? 1.8 : 1); },
     hud() {
       const pos = cars.slice().sort((a, b) => progress(b) - progress(a)).indexOf(me) + 1;
       R.text('Varv ' + Math.min(lapsToWin, me.lap + 1) + '/' + lapsToWin + '   ·   Plats ' + pos + '/3   ·   ' + R.time.toFixed(1) + ' s', R.W / 2, 28, 18, '#fff', 'center');
@@ -811,6 +812,21 @@ function gameMatch3(R) {
       for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) { const g = grid[r][c]; if (g.off < 0) g.off = Math.min(0, g.off + dt * 9); else if (g.off > 0) g.off = Math.max(0, g.off - dt * 9); }
       if (swapAnim) { swapAnim.t -= dt; if (swapAnim.t <= 0) swapAnim = null; }
       if (busy > 0) { busy -= dt; if (busy <= 0) resolve(); }
+      if (C.demo && busy <= 0 && !swapAnim) {
+        this.demoT = (this.demoT || 0) - dt;
+        if (this.demoT <= 0) {
+          this.demoT = 0.9;
+          outer: for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) for (const [dr, dc] of [[0, 1], [1, 0]]) {
+            const r2 = r + dr, c2 = c + dc;
+            if (r2 >= N || c2 >= N) continue;
+            const a = grid[r][c], b = grid[r2][c2];
+            grid[r][c] = b; grid[r2][c2] = a;
+            const ok = matches().size > 0;
+            grid[r][c] = a; grid[r2][c2] = b;
+            if (ok && R.rng() < 0.35) { cursor = { r, c }; sel = null; moves++; trySwap({ r, c }, { r: r2, c: c2 }); break outer; }
+          }
+        }
+      }
       const click = R.click();
       if (click) {
         const c = Math.floor((click.x - ox) / cell), r = Math.floor((click.y - oy) / cell);
@@ -885,7 +901,7 @@ function gameTowerDefense(R) {
   }
   function startWave() { wave++; spawnLeft = 6 + wave * 2; spawnT = 0; if (wave > 1) R.flash('Våg ' + wave); }
   return {
-    reset() { buildPath(); towers = []; foes = []; shots = []; gold = 120; lives = 20; wave = 0; nextWaveT = 3; spawnLeft = 0; cursor = { x: 3, y: 1 }; },
+    reset() { buildPath(); towers = []; foes = []; shots = []; gold = C.demo ? 400 : 120; lives = 20; wave = 0; nextWaveT = C.demo ? 0.5 : 3; spawnLeft = 0; cursor = { x: 3, y: 1 }; },
     resize() { cell = Math.floor(Math.min((R.W - 20) / GW, (R.H - 110) / GH)); ox = Math.floor((R.W - cell * GW) / 2); oy = Math.floor((R.H - cell * GH) / 2) + 24; },
     hud() {
       R.text('Våg ' + Math.max(1, wave) + '/' + WAVES + '   ·   ♥ ' + lives + '   ·   🪙 ' + gold, R.W / 2, 28, 18, '#fff', 'center');
@@ -899,6 +915,10 @@ function gameTowerDefense(R) {
       if (R.hit('up')) cursor.y = Math.max(0, cursor.y - 1);
       if (R.hit('down')) cursor.y = Math.min(GH - 1, cursor.y + 1);
       if (R.hit('action')) place(cursor.x, cursor.y);
+      if (C.demo && gold >= COST) {
+        const p = path[2 + Math.floor(R.rng() * (path.length - 4))], gx = p.x + (R.rng() < 0.5 ? -1 : 1), gy = p.y + (R.rng() < 0.5 ? -1 : 1);
+        if (!towers.some(t => t.gx === gx && t.gy === gy)) place(gx, gy);
+      }
       if (!spawnLeft && !foes.length) {
         if (wave >= WAVES) { R.win('Alla vågor stoppade!'); return; }
         nextWaveT -= dt; if (nextWaveT <= 0) { startWave(); nextWaveT = 4; }

@@ -13,6 +13,7 @@ Windows-installation (EXE), macOS-skivavbild (DMG) och Linux-paket (DEB).
 | `colab/Nexora_Flash_1_Colab.ipynb` | Tränar en egen Nexora Flash-modell i Google Colab |
 | `marketing/nexora-short-9x16.mp4` | Kortreklam, 26 s, 1080×1920 (Shorts/Reels/TikTok) |
 | `marketing/nexora-plans-9x16.mp4` | Kortreklam om alla fem planerna, 38 s, 1080×1920 |
+| `marketing/nexora-15-9x16.mp4` | Lanseringsreklam för Nexora 1.5, 32 s, 1080×1920 |
 
 ## Nyheter i 1.5
 
@@ -225,7 +226,7 @@ python3 nexora/build/desktop.py dev   # oinstallerad Linux-app för tester
 NEXORA_APP=… NEXORA_GODOT=… [NEXORA_TPZ=…] xvfb-run -a node nexora/build/verify_desktop.js
 node nexora/build/dataset_godot.js     # → colab/nexora_godot_seed.jsonl
 python3 nexora/build/make_notebook.py  # → colab/Nexora_Flash_1_Colab.ipynb
-FFMPEG=ffmpeg node nexora/build/ad.js [ad.html|plans.html]   # renderar en kortreklam
+FFMPEG=ffmpeg node nexora/build/ad.js [ad.html|plans.html|launch15.html]   # renderar en kortreklam
 ```
 
 ## Reklamfilmen
@@ -257,7 +258,22 @@ ljudeffekterna kommer från appens egna generatorer. `marketing/nexora-short-thu
   - Enterprise: White Label, där Nexora-loggan byts mot "DittSpelbolag"
 - **Avslutning:** en scen om krediterna och en slutskylt.
 
-Byggs med `FFMPEG=ffmpeg node nexora/build/ad.js plans.html`. Varje film beskriver sin
+Byggs med `FFMPEG=ffmpeg node nexora/build/ad.js plans.html`.
+
+`marketing/nexora-15-9x16.mp4` (32 s) lanserar 1.5-uppdateringen:
+
+- **Krok:** "1.5" slås upp på skärmen.
+- **Självtest:** en logg där modellen testar och rättar sitt eget spel, följd av
+  märket "✓ Självtestad · inga fel".
+- **Nya speltyper:** racing mot AI-bilar, match-3 och tower defense, spelade live.
+- **Kontroller:** handkontroll, paus och touch.
+- **Image 1.5:** fyra animerade spritesheets i stilarna pixel, platt, neon och retro.
+- **3D 1.5:** svärd, skattkista, svamp och planet som `.glb`.
+- **Slutskylt:** "Nexora 1.5 – Ute nu".
+
+Spelen körs i demoläge (`CFG.demo`), där de spelar sig själva och aldrig visar
+game over. Demoläget används bara av reklamfilmerna. Byggs med
+`FFMPEG=ffmpeg node nexora/build/ad.js launch15.html`. Varje film beskriver sin
 längd, sina spel och ljudeffekter i `window.AD` i sin HTML-fil.
 
 `desktop.py` hämtar Electron 43.2.0 och bygger allt på Linux. Verktygen hämtas och byggs

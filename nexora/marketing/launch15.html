@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Nexora 1.5 – lanseringsreklam</title>
+<!-- Rendered frame by frame by nexora/build/ad.js (node nexora/build/ad.js launch15.html).
+     Every visual is a pure function of t; nothing uses CSS animation. -->
+<style>
+  @font-face { font-family: Inter; src: url("../build/.cache/InterVariable.ttf"); font-weight: 100 900; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #06061a; color: #fff; font-family: Inter, "Liberation Sans", sans-serif; }
+  .abs { position: absolute; }
+  .scene { position: absolute; inset: 0; opacity: 0; }
+  .orb { position: absolute; border-radius: 50%; filter: blur(90px); }
+  .grad { background: linear-gradient(110deg, #9b7bff, #22d3ee); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .center { left: 0; right: 0; text-align: center; }
+  .h1 { font-size: 118px; font-weight: 850; letter-spacing: -4px; line-height: 1.02; }
+  .h2 { font-size: 84px; font-weight: 820; letter-spacing: -2.5px; line-height: 1.05; }
+  .p { font-size: 44px; font-weight: 500; color: #c9c9ee; line-height: 1.3; }
+  .pill { display: inline-block; padding: 14px 30px; border-radius: 999px; font-size: 34px; font-weight: 750; background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.18); }
+  .card { background: rgba(20, 18, 52, .92); border: 2px solid rgba(255,255,255,.12); border-radius: 44px; box-shadow: 0 40px 120px rgba(0,0,0,.5); }
+  .frame { position: absolute; overflow: hidden; border-radius: 38px; border: 3px solid rgba(255,255,255,.18); box-shadow: 0 40px 140px rgba(124,92,255,.35); background: #000; }
+  .frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .step { font-size: 40px; font-weight: 650; padding: 14px 0; display: flex; gap: 20px; align-items: center; }
+  .icon { display: inline-flex; flex-direction: column; align-items: center; gap: 14px; width: 290px; }
+  .icon div { font-size: 150px; line-height: 1; }
+  .icon span { font-size: 38px; font-weight: 750; }
+  .spr { width: 440px; height: 440px; border-radius: 36px; overflow: hidden; position: relative; background: repeating-conic-gradient(#1a1a33 0 25%, #121226 0 50%) 0 0/40px 40px; border: 2px solid rgba(255,255,255,.14); }
+  .spr .strip { position: absolute; top: 0; left: 0; height: 440px; }
+  .spr b { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font-size: 32px; font-weight: 800; text-shadow: 0 2px 10px #000; }
+</style>
+</head>
+<body>
+<div class="abs" style="inset:0">
+  <div class="orb" id="o1" style="width:900px;height:900px;background:#7c5cff;opacity:.45"></div>
+  <div class="orb" id="o2" style="width:800px;height:800px;background:#22d3ee;opacity:.25"></div>
+  <div class="orb" id="o3" style="width:700px;height:700px;background:#ff4d8d;opacity:.16"></div>
+</div>
+
+<!-- 1: hook -->
+<div class="scene" id="s1">
+  <div class="abs center" style="top:300px"><svg id="logo1" style="width:150px;height:150px" viewBox="0 0 64 64"><defs><linearGradient id="lg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#lg1)"/><path d="M18 46V18h6l16 18V18h6v28h-6L24 28v18z" fill="#0b0b20"/></svg></div>
+  <div class="abs center" id="big15" style="top:540px;font-size:360px;font-weight:900;letter-spacing:-16px;line-height:1"><span class="grad">1.5</span></div>
+  <div class="abs center h2" id="s1a" style="top:960px">Nexora 1.5</div>
+  <div class="abs center p" id="s1b" style="top:1080px">Den största uppdateringen hittills.</div>
+</div>
+
+<!-- 2: self-test -->
+<div class="scene" id="s2">
+  <div class="abs center h2" style="top:180px">AI:n testar sina<br><span class="grad">egna spel.</span></div>
+  <div class="abs card" style="left:70px;right:70px;top:450px;height:560px;padding:40px 54px" id="log2"></div>
+  <div class="frame" id="stage2" style="left:190px;right:190px;top:1060px;height:520px"></div>
+  <div class="abs center" id="badge2" style="top:1620px"><span class="pill" style="background:#3ddc97;color:#0b0b20;border:0">✓ Självtestad · inga fel</span></div>
+</div>
+
+<!-- 3: new game types -->
+<div class="scene" id="s3">
+  <div class="abs center h2" style="top:170px"><span class="grad">3 nya</span> speltyper.</div>
+  <div class="abs center p" style="top:290px">12 totalt – offline, på sekunder.</div>
+  <div class="frame" id="stage3" style="left:60px;right:60px;top:420px;height:1100px"></div>
+  <div class="abs center" style="top:1570px"><span class="pill" id="cap3"></span></div>
+</div>
+
+<!-- 4: gamepad, pause, touch -->
+<div class="scene" id="s4">
+  <div class="abs center h2" style="top:420px">Spela som<br><span class="grad">du vill.</span></div>
+  <div class="abs center" id="icons4" style="top:800px;display:flex;justify-content:center;gap:10px">
+    <div class="icon"><div>🎮</div><span>Handkontroll</span></div>
+    <div class="icon"><div>⏸️</div><span>Paus med Esc</span></div>
+    <div class="icon"><div>👆</div><span>Klick &amp; touch</span></div>
+  </div>
+  <div class="abs center p" id="s4b" style="top:1230px">Xbox, PlayStation och fler – i alla spel.</div>
+</div>
+
+<!-- 5: Image 1.5 -->
+<div class="scene" id="s5">
+  <div class="abs center h2" style="top:170px">Image <span class="grad">1.5</span></div>
+  <div class="abs center p" style="top:290px">4 stilar · animerade sprites · PNG</div>
+  <div class="abs" id="sprites" style="left:80px;right:80px;top:420px;display:grid;grid-template-columns:1fr 1fr;gap:40px;justify-items:center"></div>
+</div>
+
+<!-- 6: 3D 1.5 -->
+<div class="scene" id="s6">
+  <div class="abs center h2" style="top:170px">3D <span class="grad">1.5</span></div>
+  <div class="abs center p" style="top:290px">Nya modeller · export som .glb</div>
+  <canvas id="mesh" class="abs" width="1080" height="1100" style="left:0;top:400px"></canvas>
+  <div class="abs center" style="top:1420px"><span class="pill" id="meshname" style="font-size:40px"></span></div>
+  <div class="abs center" style="top:1540px"><span class="pill">Öppnas i Godot · Unity · Blender</span></div>
+</div>
+
+<!-- 7: end card -->
+<div class="scene" id="s7">
+  <div class="abs center" style="top:420px"><svg id="logo7" style="width:280px;height:280px" viewBox="0 0 64 64"><defs><linearGradient id="lg7" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#lg7)"/><path d="M18 46V18h6l16 18V18h6v28h-6L24 28v18z" fill="#0b0b20"/></svg></div>
+  <div class="abs center h1" style="top:780px;font-size:140px">Nexora <span class="grad">1.5</span></div>
+  <div class="abs center p" style="top:960px;font-size:54px;color:#fff;font-weight:700">Ute nu.</div>
+  <div class="abs center p" style="top:1060px;font-size:38px">Webb · Windows · macOS · Linux</div>
+  <div class="abs center" style="top:1190px"><span id="cta" style="display:inline-block;padding:34px 70px;border-radius:32px;font-size:50px;font-weight:850;color:#0b0b20;background:linear-gradient(110deg,#7c5cff,#22d3ee)">Börja gratis</span></div>
+</div>
+
+<script>
+'use strict';
+const SCENES = [['s1', 0, 3.2], ['s2', 3.0, 9.0], ['s3', 8.8, 17.4], ['s4', 17.2, 20.8], ['s5', 20.6, 24.8], ['s6', 24.6, 28.8], ['s7', 28.6, 32.5]];
+window.AD = {
+  out: 'nexora-15-9x16.mp4', thumb: 'nexora-15-thumbnail.jpg', thumbAt: 1.6, duration: 32,
+  music: 'snabb energi action trailer glad',
+  games: {
+    shooter: ['Rymdskjutare med neon-tema och bossar "Neonstormen"', '2d'],
+    racer: ['Ett racingspel på en ökenbana "Ökenrallyt"', '2d'],
+    match3: ['Ett pusselspel med juveler i en godisvärld "Godisjuvelerna"', '2d'],
+    towerdefense: ['Tower defense i en skog "Skogsförsvaret"', '2d'],
+  },
+  extras: {
+    meshes: ['ett svärd', 'en skattkista', 'en svamp', 'en planet'],
+    sprites: [['en drake', 'pixel'], ['en robot', 'platt'], ['ett spöke', 'neon'], ['en riddare', 'retro']],
+  },
+  sfx: [['power', 0.3], ['laser', 3.0], ['laser', 5.3], ['power', 7.3], ['laser', 8.8], ['laser', 11.6], ['laser', 14.4], ['power', 17.3], ['coin', 20.7], ['coin', 24.7], ['power', 28.7]],
+};
+const LOG2 = [['✍️', 'Flash 1.5 skriver spelet'], ['▶️', 'Självtest 1 – kör spelet'], ['🐞', '1 fel hittat'], ['🔧', 'Rättar felet'], ['▶️', 'Självtest 2'], ['✅', 'Inga fel – klart!']];
+const MONTAGE = [['racer', '🏁 Racing mot AI-bilar'], ['match3', '💎 Pussel – tre i rad'], ['towerdefense', '🏰 Tower defense']];
+const STYLE = ['Pixel', 'Platt', 'Neon', 'Retro 8-bit'];
+
+const $ = id => document.getElementById(id);
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const ease = x => 1 - Math.pow(1 - clamp(x, 0, 1), 3);
+const inOut = (t, a, b, f) => Math.min(ease((t - a) / (f || 0.35)), ease((b - t) / (f || 0.35)));
+
+const games = {};
+const BOTS = {
+  shooter: t => ({ Space: true, ArrowLeft: (t % 1.6) < 0.8, ArrowRight: (t % 1.6) >= 0.8 }),
+  racer: () => ({}), match3: () => ({}), towerdefense: () => ({}),  // these play themselves in demo mode
+};
+const CODES = { Space: ' ', ArrowLeft: 'ArrowLeft', ArrowRight: 'ArrowRight', ArrowUp: 'ArrowUp', ArrowDown: 'ArrowDown' };
+let meshes = [], g3 = null;
+
+window.__setup = function (list, extras) {
+  for (const [id, html] of Object.entries(list)) {
+    const f = document.createElement('iframe');
+    f.srcdoc = html;
+    f.style.opacity = id === 'shooter' ? '1' : '0';
+    (id === 'shooter' ? $('stage2') : $('stage3')).appendChild(f);
+    games[id] = { f, held: {} };
+  }
+  meshes = extras.meshes;
+  g3 = new Function(extras.nx3d + '\nreturn Nx3D;')()($('mesh').getContext('2d'));
+  $('sprites').innerHTML = extras.sprites.map((svg, i) => `<div class="spr"><div class="strip" id="strip${i}">${svg}</div><b>${STYLE[i]}</b></div>`).join('');
+  extras.sprites.forEach((svg, i) => { const s = $('strip' + i).querySelector('svg'); s.setAttribute('width', 440 * 4); s.setAttribute('height', 440); });
+  return new Promise(r => setTimeout(r, 1500));
+};
+
+function drive(t, dt) {
+  for (const [id, g] of Object.entries(games)) {
+    const w = g.f.contentWindow;
+    if (!w || !w.__advance) continue;
+    const want = t < 0.6 ? {} : BOTS[id](t);
+    for (const code of Object.keys(CODES)) {
+      const on = !!want[code];
+      if (on !== !!g.held[code]) {
+        g.held[code] = on;
+        w.dispatchEvent(new w.KeyboardEvent(on ? 'keydown' : 'keyup', { code, key: CODES[code], bubbles: true }));
+      }
+    }
+    w.__advance(dt * 1000);
+  }
+}
+
+window.__adFrame = function (t, dt) {
+  drive(t, dt);
+  $('o1').style.transform = `translate(${-200 + Math.sin(t * 0.5) * 160}px, ${-150 + Math.cos(t * 0.4) * 140}px)`;
+  $('o2').style.transform = `translate(${500 + Math.cos(t * 0.45) * 180}px, ${900 + Math.sin(t * 0.35) * 200}px)`;
+  $('o3').style.transform = `translate(${100 + Math.sin(t * 0.3) * 220}px, ${1400 + Math.cos(t * 0.5) * 120}px)`;
+  for (const [id, a, b] of SCENES) $(id).style.opacity = clamp(inOut(t, a, b, 0.3), 0, 1);
+  const pop = (el, at) => { const k = ease((t - at) / 0.45); el.style.opacity = k; el.style.transform = `translateY(${(1 - k) * 60}px)`; };
+
+  // 1
+  const k1 = ease((t - 0.1) / 0.7);
+  $('big15').style.transform = `scale(${0.4 + k1 * 0.6})`;
+  $('big15').style.filter = `drop-shadow(0 0 ${50 + Math.sin(t * 4) * 25}px rgba(124,92,255,.8))`;
+  $('logo1').style.opacity = ease(t / 0.4);
+  pop($('s1a'), 0.8); pop($('s1b'), 1.3);
+
+  // 2
+  $('log2').innerHTML = LOG2.map(([i, s], k) => {
+    const at = 3.4 + k * 0.62, v = ease((t - at) / 0.3);
+    return `<div class="step" style="opacity:${v};transform:translateX(${(1 - v) * -40}px);${k === 2 ? 'color:#ffc542' : k === 5 ? 'color:#3ddc97' : ''}">${i} ${s}</div>`;
+  }).join('');
+  $('stage2').style.opacity = ease((t - 6.6) / 0.4);
+  $('stage2').style.transform = `scale(${0.85 + ease((t - 6.6) / 0.4) * 0.15})`;
+  const b2 = ease((t - 7.0) / 0.35);
+  $('badge2').style.opacity = b2; $('badge2').style.transform = `scale(${0.7 + b2 * 0.3})`;
+
+  // 3
+  const seg = clamp(Math.floor((t - 9.0) / 2.8), 0, 2);
+  MONTAGE.forEach(([id], k) => { if (games[id]) games[id].f.style.opacity = k === seg ? '1' : '0'; });
+  $('cap3').textContent = MONTAGE[seg][1];
+  $('stage3').style.transform = `scale(${1.04 - ease(((t - 9.0) - seg * 2.8) / 0.4) * 0.04})`;
+
+  // 4
+  [...$('icons4').children].forEach((c, k) => { const v = ease((t - 17.6 - k * 0.3) / 0.35); c.style.opacity = v; c.style.transform = `scale(${0.5 + v * 0.5}) translateY(${Math.sin(t * 3 + k) * 8}px)`; });
+  pop($('s4b'), 18.8);
+
+  // 5: animated sprite sheets, 4 frames each
+  if (t > 20.4 && t < 25) [0, 1, 2, 3].forEach(i => {
+    const f = Math.floor(t / 0.16) % 4, el = $('strip' + i);
+    if (el) { el.style.left = -f * 440 + 'px'; el.parentNode.style.transform = `scale(${0.8 + ease((t - 20.8 - i * 0.15) / 0.3) * 0.2})`; el.parentNode.style.opacity = ease((t - 20.8 - i * 0.15) / 0.3); }
+  });
+
+  // 6: rotating meshes rendered with Nexora's own 3D renderer
+  if (g3 && t > 24.4 && t < 29) {
+    const c = $('mesh').getContext('2d');
+    c.clearRect(0, 0, 1080, 1100);
+    const cam = g3.cam; const rot = t * 0.9;
+    cam.yaw = 0; cam.pitch = 0.16; cam.x = 0; cam.y = 2.6; cam.z = -6.8; cam.fov = 1.0; cam.far = 200; cam.fog = null;
+    g3.begin(1080, 1100);
+    for (let i = -3; i < 3; i++) for (let j = -2; j < 3; j++) g3.poly([[i * 2, 0, j * 2], [i * 2 + 2, 0, j * 2], [i * 2 + 2, 0, j * 2 + 2], [i * 2, 0, j * 2 + 2]], (i + j) % 2 ? '#1c1c3a' : '#26264c', [0, 1, 0]);
+    // one hero model at a time, turning, with its name
+    const idx = clamp(Math.floor((t - 24.8) / 1.0), 0, meshes.length - 1), m = meshes[idx], lt = t - 24.8 - idx * 1.0;
+    const k = ease(lt / 0.3), ys = m.vertices.map(v => v[1]), top = Math.max.apply(null, ys);
+    const sc = 2.4 / Math.max(1.2, top);
+    g3.mesh(m, 0, 0.01, 0, sc * (0.6 + k * 0.4), rot * 1.4 + idx);
+    $('meshname').textContent = '🧊 ' + m.name + '.glb';
+    g3.flush();
+  }
+
+  // 7
+  const k7 = ease((t - 28.7) / 0.6);
+  $('logo7').style.transform = `scale(${0.7 + k7 * 0.3})`;
+  $('logo7').style.filter = `drop-shadow(0 0 ${40 + Math.sin(t * 3) * 20}px rgba(124,92,255,.8))`;
+  $('cta').style.transform = `scale(${1 + (t > 29.6 ? Math.max(0, Math.sin((t - 29.6) * 4)) * 0.05 : 0)})`;
+};
+</script>
+</body>
+</html>

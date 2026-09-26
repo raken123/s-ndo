@@ -54,9 +54,16 @@ const CLOCK = '<script>(function(){var now=0,q=[],T=[],id=0;' +
     const mk = (p, dim, o) => { const cfg = L.config(p, Object.assign({ dim, sfx: true, allowOpenWorld: true, quests: true }, o || {})); cfg.demo = true; return L.buildHtml(cfg, RT); };
     const games = {};
     for (const [id, [prompt, dim]] of Object.entries(AD.games)) games[id] = mk(prompt, dim);
+    // optional extras for the page: 3D meshes (+ the renderer's source) and animated sprites
+    const ex = AD.extras || {};
+    const extras = {
+      meshes: (ex.meshes || []).map(p => L.mesh(p)),
+      sprites: (ex.sprites || []).map(([p, style]) => L.sprite(p, 12, { style, frames: 4 })),
+      nx3d: nxShade.toString() + '\n' + Nx3D.toString(),
+    };
     const b64 = async blob => { const b = new Uint8Array(await blob.arrayBuffer()); let s = ''; for (let i = 0; i < b.length; i += 32768) s += String.fromCharCode.apply(null, b.subarray(i, i + 32768)); return btoa(s); };
     const music = await L.music(AD.music, AD.duration + 1);
-    return { games, music: await b64(music.blob), power: await b64(await L.sfx('powerup', 7)), coin: await b64(await L.sfx('mynt', 3)), laser: await b64(await L.sfx('laser', 5)) };
+    return { games, extras, music: await b64(music.blob), power: await b64(await L.sfx('powerup', 7)), coin: await b64(await L.sfx('mynt', 3)), laser: await b64(await L.sfx('laser', 5)) };
   }, AD);
   await app.close();
   for (const k of ['music', 'power', 'coin', 'laser']) fs.writeFileSync(path.join(CACHE, 'ad-' + k + '.wav'), Buffer.from(assets[k], 'base64'));
@@ -68,7 +75,7 @@ const CLOCK = '<script>(function(){var now=0,q=[],T=[],id=0;' +
   await page.evaluate(() => document.fonts.ready);
   const withClock = {};
   for (const [k, html] of Object.entries(assets.games)) withClock[k] = html.replace(/<head(\s[^>]*)?>/i, m => m + CLOCK);
-  await page.evaluate(g => window.__setup(g), withClock);
+  await page.evaluate(([g, x]) => window.__setup(g, x), [withClock, assets.extras]);
   const n = FPS * DURATION;
   const thumbFrame = Math.min(n - 1, Math.round((AD.thumbAt != null ? AD.thumbAt : DURATION) * FPS));
   for (let i = 0; i < n; i++) {
