@@ -98,6 +98,17 @@
 
 <script>
 'use strict';
+window.AD = {
+  out: 'nexora-short-9x16.mp4', thumb: 'nexora-short-thumbnail.jpg', duration: 26, music: 'snabb energi action trailer',
+  games: {
+    platformer: ['Ett plattformsspel i en lavavärld där man hoppar på drakar "Lavajakten"', '2d'],
+    runner3d: ['En 3D-löpare på en isväg "Frostrusningen"', '3d'],
+    openworld: ['Open world-äventyr i en skog med uppdrag "Skogsriket"', '2d'],
+    shooter: ['Rymdskjutare med neon-tema och bossar "Neonstormen"', '2d'],
+    arena3d: ['3D arena där man samlar kulor i rymden', '3d'],
+  },
+  sfx: [['power', 6.0], ['laser', 7.45], ['power', 13.5], ['coin', 19.25], ['coin', 19.55], ['coin', 19.85], ['laser', 22.4]],
+};
 const $ = id => document.getElementById(id);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const ease = x => 1 - Math.pow(1 - clamp(x, 0, 1), 3);

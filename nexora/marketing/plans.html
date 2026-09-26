@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Nexora – planerna (kortreklam)</title>
+<!-- Rendered frame by frame by nexora/build/ad.js (node nexora/build/ad.js plans.html).
+     Every visual is a pure function of t; nothing uses CSS animation. -->
+<style>
+  @font-face { font-family: Inter; src: url("../build/.cache/InterVariable.ttf"); font-weight: 100 900; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #06061a; color: #fff; font-family: Inter, "Liberation Sans", sans-serif; }
+  .abs { position: absolute; }
+  .scene { position: absolute; inset: 0; opacity: 0; }
+  .orb { position: absolute; border-radius: 50%; filter: blur(90px); }
+  .grad { background: linear-gradient(110deg, #9b7bff, #22d3ee); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .center { left: 0; right: 0; text-align: center; }
+  .h1 { font-size: 124px; font-weight: 850; letter-spacing: -4px; line-height: 1.02; }
+  .p { font-size: 44px; font-weight: 500; color: #c9c9ee; line-height: 1.3; }
+  .pill { display: inline-block; padding: 12px 28px; border-radius: 999px; font-size: 32px; font-weight: 750; background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.18); }
+  .frame { position: absolute; overflow: hidden; border-radius: 34px; border: 3px solid rgba(255,255,255,.18); background: #000; }
+  .frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .dots { display: flex; justify-content: center; gap: 14px; }
+  .dots i { width: 64px; height: 10px; border-radius: 99px; background: rgba(255,255,255,.18); display: block; }
+  .name { font-size: 96px; font-weight: 850; letter-spacing: -3px; }
+  .price { font-size: 150px; font-weight: 900; letter-spacing: -6px; line-height: 1; }
+  .price small { font-size: 48px; font-weight: 700; letter-spacing: 0; color: #c9c9ee; }
+  .feats { display: grid; gap: 14px 30px; font-size: 32px; font-weight: 600; line-height: 1.2; }
+  .feats div { display: flex; gap: 14px; align-items: flex-start; }
+  .feats b { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 24px; color: #0b0b20; margin-top: -2px; }
+  .chip { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: 176px; height: 176px; border-radius: 36px; background: rgba(255,255,255,.07); border: 2px solid rgba(255,255,255,.14); }
+  .chip .e { font-size: 64px; }
+  .chip span { font-size: 28px; font-weight: 750; margin-top: 6px; }
+  .pack { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: 290px; height: 220px; border-radius: 36px; background: rgba(255,255,255,.07); border: 2px solid rgba(255,255,255,.14); }
+  .pack b { font-size: 70px; font-weight: 900; }
+  .pack span { font-size: 34px; color: #c9c9ee; font-weight: 650; }
+  .avatar { position: absolute; width: 120px; height: 120px; border-radius: 50%; display: grid; place-items: center; font-size: 60px; border: 5px solid #06061a; }
+</style>
+</head>
+<body>
+<div id="bg" class="abs" style="inset:0">
+  <div class="orb" id="o1" style="width:900px;height:900px;opacity:.45"></div>
+  <div class="orb" id="o2" style="width:800px;height:800px;background:#22d3ee;opacity:.22"></div>
+</div>
+
+<!-- intro -->
+<div class="scene" id="intro">
+  <div class="abs center" style="top:260px"><svg id="logo0" style="width:150px;height:150px" viewBox="0 0 64 64"><defs><linearGradient id="lg0" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#lg0)"/><path d="M18 46V18h6l16 18V18h6v28h-6L24 28v18z" fill="#0b0b20"/></svg></div>
+  <div class="abs center h1" id="i1" style="top:560px">5 planer.</div>
+  <div class="abs center h1" id="i2" style="top:700px;font-size:92px"><span class="grad">Hitta din.</span></div>
+  <div class="abs center" id="chips0" style="top:980px;display:flex;justify-content:center;gap:18px"></div>
+  <div class="abs center p" id="i3" style="top:1260px">Från 0 kr till en hel spelstudio.</div>
+</div>
+
+<!-- one scene per plan, filled by script -->
+<div id="plans"></div>
+
+<!-- credits -->
+<div class="scene" id="credits">
+  <div class="abs center" style="top:250px;font-size:120px" id="coinE">🪙</div>
+  <div class="abs center h1" id="c1" style="top:430px;font-size:96px">Slut på spel<br>i månaden?</div>
+  <div class="abs center h1" id="c2" style="top:700px;font-size:108px">Köp <span class="grad">krediter.</span></div>
+  <div class="abs center" id="c3" style="top:950px;display:flex;justify-content:center;gap:26px">
+    <div class="pack"><b>25</b><span>49 kr</span></div>
+    <div class="pack" style="border-color:#7c5cff;background:rgba(124,92,255,.18)"><b>100</b><span>149 kr</span></div>
+    <div class="pack"><b>500</b><span>499 kr</span></div>
+  </div>
+  <div class="abs center p" id="c4" style="top:1240px">Ingen prenumeration. Går aldrig ut.<br><span style="font-size:36px">1 spel = 1 kredit · 🤖 Astryx = 3 · 📸 hyperrealistiskt = 10</span></div>
+</div>
+
+<!-- end card -->
+<div class="scene" id="end">
+  <div class="abs center" style="top:400px"><svg id="logo9" style="width:280px;height:280px" viewBox="0 0 64 64"><defs><linearGradient id="lg9" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#lg9)"/><path d="M18 46V18h6l16 18V18h6v28h-6L24 28v18z" fill="#0b0b20"/></svg></div>
+  <div class="abs center h1" style="top:760px;font-size:150px">Nexora</div>
+  <div class="abs center p" style="top:950px;font-size:50px;color:#fff;font-weight:650">Börja gratis.<br><span class="grad">Uppgradera när du vill.</span></div>
+  <div class="abs center p" style="top:1170px;font-size:38px">Webb · Windows · macOS · Linux</div>
+  <div class="abs center" style="top:1300px"><span id="cta" style="display:inline-block;padding:34px 70px;border-radius:32px;font-size:50px;font-weight:850;color:#0b0b20;background:linear-gradient(110deg,#7c5cff,#22d3ee)">Välj din plan</span></div>
+</div>
+
+<script>
+'use strict';
+const PLANS = [
+  { id: 'free', emoji: '🆓', name: 'Free', price: '0 kr', color: '#94a3b8', game: 'platformer', caption: '2D-spel på sekunder', astryx: 'Från 14 november',
+    features: ['10 spel/månad', '2D-spel', 'Grundläggande AI', 'Community-support'] },
+  { id: 'creator', emoji: '🚀', name: 'Creator', price: '199 kr', color: '#9b7bff', game: 'runner3d', caption: '2D & 3D-spel', badge: 'Populärast', astryx: 'Från 14 november',
+    features: ['100 spel/månad', '2D & 3D-spel', 'AI-kodgenerator', 'AI-grafikgenerator', 'AI-storygenerator', 'AI-dialoggenerator', 'Export till PC & mobil', 'Egna assets'] },
+  { id: 'pro', emoji: '💎', name: 'Pro', price: '499 kr', color: '#22d3ee', game: 'openworld', caption: 'Open world med NPC:er och uppdrag', astryx: 'Från 7 oktober',
+    features: ['Obegränsade spel', 'Open-world-generator', 'AI-NPC-generator', 'AI-questgenerator', 'AI-musikgenerator', 'AI-ljudeffekter', 'AI-röstgenerator', 'Multiplayer', 'Steam-export', 'Buggfix-AI', 'Obegränsad lagring', 'Prioriterad support'] },
+  { id: 'studio', emoji: '🏢', name: 'Studio', price: '999 kr', color: '#3ddc97', game: 'shooter', caption: 'Bygg tillsammans i teamet', team: true, astryx: 'Ingår nu',
+    features: ['Allt i Pro', 'Teamarbete', 'Delade projekt', 'Versionshantering', 'Privat molnlagring', 'Dedicated servrar', 'API-åtkomst', 'Xbox-export', 'PlayStation-export', 'Nintendo-export', 'Prioriterad rendering', 'Tidig tillgång till nya funktioner'] },
+  { id: 'enterprise', emoji: '👑', name: 'Enterprise', price: '2 999 kr', color: '#ffc542', whitelabel: true, caption: 'Ditt varumärke, din AI', astryx: 'Ingår nu',
+    features: ['Allt i Studio', 'Obegränsade teammedlemmar', 'White Label', 'Egen AI-modell', 'Företagssupport dygnet runt', 'Anpassade integrationer', 'Företagssäkerhet', 'Avancerad analys', 'Egen domän', 'Personlig account manager'] },
+];
+const T0 = 3.0, SEG = 5.4;  // plan i shows from T0 + i*SEG for SEG seconds
+const T_CREDITS = T0 + PLANS.length * SEG, T_END = T_CREDITS + 3.8, DURATION = T_END + 4.0;
+
+window.AD = {
+  out: 'nexora-plans-9x16.mp4', thumb: 'nexora-plans-thumbnail.jpg', thumbAt: T0 + 1 * SEG + 3.2, duration: Math.round(DURATION * 10) / 10,
+  music: 'energi pop trailer glad', games: {
+    platformer: ['Ett plattformsspel i en godisvärld "Godisjakten"', '2d'],
+    runner3d: ['En 3D-löpare i en neonstad "Neonrusningen"', '3d'],
+    openworld: ['Open world-äventyr i en skog med uppdrag "Skogsriket"', '2d'],
+    shooter: ['Rymdskjutare med bossar i rymden "Stjärnstormen"', '2d'],
+  },
+  sfx: [['power', 0.2]].concat(PLANS.map((p, i) => ['laser', T0 + i * SEG - 0.15]), [['coin', T_CREDITS + 0.4], ['coin', T_CREDITS + 0.7], ['coin', T_CREDITS + 1.0], ['power', T_END + 0.1]]),
+};
+
+const $ = id => document.getElementById(id);
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const ease = x => 1 - Math.pow(1 - clamp(x, 0, 1), 3);
+const inOut = (t, a, b, f) => Math.min(ease((t - a) / (f || 0.35)), ease((b - t) / (f || 0.35)));
+
+// build plan scenes
+$('plans').innerHTML = PLANS.map((p, i) => `
+<div class="scene" id="plan${i}">
+  <div class="abs center" style="top:130px"><div class="dots">${PLANS.map((q, k) => `<i style="background:${k === i ? p.color : k < i ? 'rgba(255,255,255,.45)' : 'rgba(255,255,255,.15)'}"></i>`).join('')}</div>
+    <div style="font-size:28px;font-weight:650;color:#a3a3c8;margin-top:16px">Plan ${i + 1} av ${PLANS.length}</div></div>
+  <div class="abs center name" id="nm${i}" style="top:230px">${p.emoji} ${p.name}${p.badge ? ` <span class="pill" style="vertical-align:middle;font-size:30px;background:${p.color};color:#0b0b20;border:0">${p.badge}</span>` : ''}</div>
+  <div class="abs center price" id="pr${i}" style="top:370px;color:${p.color}">${p.price}<small> /mån</small></div>
+  <div class="frame" id="vis${i}" style="left:70px;right:70px;top:560px;height:430px;border-color:${p.color}"></div>
+  <div class="abs center" style="top:1005px"><span class="pill" style="border-color:${p.color}">${p.caption}</span></div>
+  <div class="abs feats" id="ft${i}" style="left:80px;right:80px;top:1100px;grid-template-columns:${p.features.length > 6 ? '1fr 1fr' : '1fr'};${p.features.length <= 6 ? 'font-size:40px;left:200px' : ''}">
+    ${p.features.map(f => `<div><b style="background:${p.color}">✓</b><span>${f}</span></div>`).join('')}
+  </div>
+  <div class="abs center" id="as${i}" style="top:1560px;font-size:32px;font-weight:700;color:#e8e8ff">🤖 Astryx 5 Pro: <span style="color:${p.astryx === 'Ingår nu' ? '#3ddc97' : '#ffc542'}">${p.astryx}</span></div>
+</div>`).join('');
+$('chips0').innerHTML = PLANS.map(p => `<div class="chip" style="border-color:${p.color}"><div class="e">${p.emoji}</div><span>${p.name}</span></div>`).join('');
+
+// Studio: team avatars over the game; Enterprise: white-label logo swap
+const TEAM = ['🧑‍🎨', '👩‍💻', '🧑‍🎤', '👨‍💼'], TEAMC = ['#ff7b54', '#7c5cff', '#22d3ee', '#3ddc97'];
+$('vis3').insertAdjacentHTML('beforeend', `<div id="team" style="position:absolute;left:24px;bottom:24px;height:120px;width:440px;z-index:3">${TEAM.map((e, k) => `<div class="avatar" id="av${k}" style="left:${k * 90}px;background:${TEAMC[k]}">${e}</div>`).join('')}</div>
+  <div id="teamtag" style="position:absolute;right:24px;bottom:40px;z-index:3;font-size:30px;font-weight:750;background:rgba(6,6,26,.8);padding:14px 22px;border-radius:18px">✓ Version 12 sparad</div>`);
+$('vis4').style.background = 'radial-gradient(600px 300px at 50% 40%, rgba(255,197,66,.25), transparent 70%), #0b0b20';
+$('vis4').insertAdjacentHTML('beforeend', `<div id="wl" style="position:absolute;inset:0;display:grid;place-items:center;text-align:center">
+  <div><div id="wlA" style="font-size:96px;font-weight:900;letter-spacing:-3px"><span class="grad">Nexora</span></div>
+  <div id="wlB" style="font-size:96px;font-weight:900;letter-spacing:-3px;color:#ffc542">DittSpelbolag</div>
+  <div id="wlC" style="font-size:34px;font-weight:650;color:#c9c9ee;margin-top:10px">dittspelbolag.se · egen AI-modell</div></div></div>`);
+
+const games = {};
+const BOTS = {
+  platformer: t => ({ ArrowRight: true, Space: (t % 0.5) < 0.12 }),
+  runner3d: t => ({ ArrowLeft: (t % 1.4) > 0.7 && (t % 1.4) < 0.8, ArrowRight: (t % 1.4) < 0.1, Space: (t % 1.1) < 0.1 }),
+  openworld: t => ({ ArrowRight: (t % 3) < 1.6, ArrowDown: (t % 3) >= 1.6 && (t % 3) < 2.4, ArrowUp: (t % 3) >= 2.4, Space: (t % 0.9) < 0.1 }),
+  shooter: t => ({ Space: true, ArrowLeft: (t % 1.6) < 0.8, ArrowRight: (t % 1.6) >= 0.8 }),
+};
+const CODES = { Space: ' ', ArrowLeft: 'ArrowLeft', ArrowRight: 'ArrowRight', ArrowUp: 'ArrowUp', ArrowDown: 'ArrowDown' };
+
+window.__setup = function (list) {
+  PLANS.forEach((p, i) => {
+    if (!p.game || !list[p.game]) return;
+    const f = document.createElement('iframe');
+    f.srcdoc = list[p.game];
+    $('vis' + i).insertBefore(f, $('vis' + i).firstChild);
+    games[p.game] = { f, held: {} };
+  });
+  return new Promise(r => setTimeout(r, 1500));
+};
+
+function drive(t, dt) {
+  for (const [id, g] of Object.entries(games)) {
+    const w = g.f.contentWindow;
+    if (!w || !w.__advance) continue;
+    const want = t < 0.6 ? {} : BOTS[id](t);
+    for (const code of Object.keys(CODES)) {
+      const on = !!want[code];
+      if (on !== !!g.held[code]) {
+        g.held[code] = on;
+        w.dispatchEvent(new w.KeyboardEvent(on ? 'keydown' : 'keyup', { code, key: CODES[code], bubbles: true }));
+      }
+    }
+    w.__advance(dt * 1000);
+  }
+}
+
+window.__adFrame = function (t, dt) {
+  drive(t, dt);
+  // background tinted by the current plan
+  const cur = clamp(Math.floor((t - T0) / SEG), -1, PLANS.length - 1), col = cur >= 0 && t < T_CREDITS ? PLANS[cur].color : '#7c5cff';
+  $('o1').style.background = col;
+  $('o1').style.transform = `translate(${-200 + Math.sin(t * 0.5) * 160}px, ${-150 + Math.cos(t * 0.4) * 140}px)`;
+  $('o2').style.transform = `translate(${500 + Math.cos(t * 0.45) * 180}px, ${1000 + Math.sin(t * 0.35) * 200}px)`;
+
+  const pop = (el, at, dy) => { const k = ease((t - at) / 0.45); el.style.opacity = k; el.style.transform = `translateY(${(1 - k) * (dy || 60)}px)`; };
+
+  // intro
+  $('intro').style.opacity = clamp(inOut(t, -1, T0 + 0.1, 0.3), 0, 1);
+  $('logo0').style.transform = `scale(${0.6 + ease(t / 0.6) * 0.4})`;
+  pop($('i1'), 0.2); pop($('i2'), 0.7); pop($('i3'), 1.9);
+  [...$('chips0').children].forEach((c, k) => { const v = ease((t - 1.1 - k * 0.12) / 0.35); c.style.opacity = v; c.style.transform = `scale(${0.6 + v * 0.4})`; });
+
+  // plans
+  PLANS.forEach((p, i) => {
+    const a = T0 + i * SEG, b = a + SEG, el = $('plan' + i);
+    const vin = ease((t - a) / 0.4), vout = ease((t - (b - 0.25)) / 0.4);
+    const visible = t > a - 0.1 && t < b + 0.5;
+    el.style.opacity = visible ? clamp(Math.min(vin, 1 - vout), 0, 1) : 0;
+    el.style.transform = `translateX(${(1 - vin) * 160 - vout * 160}px)`;
+    if (!visible) return;
+    const lt = t - a;
+    const pk = ease((lt - 0.25) / 0.35);
+    $('pr' + i).style.transform = `scale(${0.8 + pk * 0.2})`;
+    [...$('ft' + i).children].forEach((d, k) => { const v = ease((lt - 0.8 - k * 0.1) / 0.3); d.style.opacity = v; d.style.transform = `translateX(${(1 - v) * -40}px)`; });
+    $('as' + i).style.opacity = ease((lt - 2.2) / 0.4);
+    if (p.team) {
+      TEAM.forEach((e, k) => { const v = ease((lt - 0.6 - k * 0.2) / 0.3); $('av' + k).style.transform = `scale(${v}) translateY(${Math.sin(t * 3 + k) * 4}px)`; });
+      $('teamtag').style.opacity = ease((lt - 1.6) / 0.3);
+    }
+    if (p.whitelabel) {
+      const sw = ease((lt - 1.4) / 0.5);
+      $('wlA').style.display = sw < 0.5 ? '' : 'none';
+      $('wlB').style.display = sw >= 0.5 ? '' : 'none';
+      const s = sw < 0.5 ? 1 - sw * 2 : (sw - 0.5) * 2;
+      (sw < 0.5 ? $('wlA') : $('wlB')).style.transform = `scaleY(${Math.max(0.02, s)})`;
+      $('wlC').style.opacity = ease((lt - 2.0) / 0.4);
+    }
+  });
+
+  // credits
+  $('credits').style.opacity = clamp(inOut(t, T_CREDITS, T_END + 0.1, 0.3), 0, 1);
+  pop($('c1'), T_CREDITS + 0.1); pop($('c2'), T_CREDITS + 0.6); pop($('c3'), T_CREDITS + 1.1); pop($('c4'), T_CREDITS + 1.6);
+  $('coinE').style.transform = `rotateY(${(t - T_CREDITS) * 360}deg)`;
+
+  // end
+  $('end').style.opacity = clamp(ease((t - T_END) / 0.35), 0, 1);
+  const k9 = ease((t - T_END) / 0.6);
+  $('logo9').style.transform = `scale(${0.7 + k9 * 0.3})`;
+  $('logo9').style.filter = `drop-shadow(0 0 ${40 + Math.sin(t * 3) * 20}px rgba(124,92,255,.8))`;
+  $('cta').style.transform = `scale(${1 + (t > T_END + 1 ? Math.max(0, Math.sin((t - T_END) * 4)) * 0.05 : 0)})`;
+};
+</script>
+</body>
+</html>

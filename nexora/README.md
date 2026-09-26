@@ -12,6 +12,7 @@ Windows-installation (EXE), macOS-skivavbild (DMG) och Linux-paket (DEB).
 | `dist/nexora-1.2.0.html` | Kopian som skrivbordsapparna laddar |
 | `colab/Nexora_Flash_1_Colab.ipynb` | Tränar en egen Nexora Flash-modell i Google Colab |
 | `marketing/nexora-short-9x16.mp4` | Kortreklam, 26 s, 1080×1920 (Shorts/Reels/TikTok) |
+| `marketing/nexora-plans-9x16.mp4` | Kortreklam om alla fem planerna, 38 s, 1080×1920 |
 
 ## Modellerna
 
@@ -196,7 +197,7 @@ python3 nexora/build/desktop.py dev   # oinstallerad Linux-app för tester
 NEXORA_APP=… NEXORA_GODOT=… [NEXORA_TPZ=…] xvfb-run -a node nexora/build/verify_desktop.js
 node nexora/build/dataset_godot.js     # → colab/nexora_godot_seed.jsonl
 python3 nexora/build/make_notebook.py  # → colab/Nexora_Flash_1_Colab.ipynb
-FFMPEG=ffmpeg node nexora/build/ad.js   # renderar marketing/nexora-short-9x16.mp4
+FFMPEG=ffmpeg node nexora/build/ad.js [ad.html|plans.html]   # renderar en kortreklam
 ```
 
 ## Reklamfilmen
@@ -215,6 +216,21 @@ Spelen i filmen är genererade av appen och spelas av en bot. `build/ad.js` rend
 bildruta på en virtuell klocka, så filmen blir jämn oavsett maskin. Musiken och
 ljudeffekterna kommer från appens egna generatorer. `marketing/nexora-short-thumbnail.jpg`
 är slutskylten som miniatyrbild.
+
+`marketing/nexora-plans-9x16.mp4` (38 s) går igenom alla fem planerna.
+
+- **Planerna:** varje plan har en egen scen med pris, hela funktionslistan och när planen
+  får Astryx 5 Pro.
+- **Bilderna i scenerna:**
+  - Free: ett 2D-spel
+  - Creator: en 3D-löpare
+  - Pro: open world
+  - Studio: teamet och versioner
+  - Enterprise: White Label, där Nexora-loggan byts mot "DittSpelbolag"
+- **Avslutning:** en scen om krediterna och en slutskylt.
+
+Byggs med `FFMPEG=ffmpeg node nexora/build/ad.js plans.html`. Varje film beskriver sin
+längd, sina spel och ljudeffekter i `window.AD` i sin HTML-fil.
 
 `desktop.py` hämtar Electron 43.2.0 och bygger allt på Linux. Verktygen hämtas och byggs
 automatiskt till `build/.cache`:

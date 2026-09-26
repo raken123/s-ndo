@@ -1,5 +1,7 @@
-// Renders the Nexora short ad (1080x1920, 30 fps) from nexora/marketing/ad.html.
-//   node nexora/build/ad.js
+// Renders a Nexora short ad (1080x1920, 30 fps) from a page in nexora/marketing/.
+//   node nexora/build/ad.js [ad.html | plans.html]
+// The page declares window.AD = { out, thumb, thumbAt, duration, music, games, sfx } and
+// draws every frame in __adFrame(t, dt).
 // Needs ffmpeg with libx264 on PATH (or FFMPEG=/path/to/ffmpeg) and the Inter font
 // in build/.cache (downloaded on first run). Every frame is rendered on a virtual
 // clock, so the video is perfectly smooth no matter how slow the machine is.
@@ -14,7 +16,8 @@ const CACHE = path.join(__dirname, '.cache');
 const FRAMES = path.join(CACHE, 'ad-frames');
 const OUT = path.join(ROOT, 'marketing');
 const FFMPEG = process.env.FFMPEG || 'ffmpeg';
-const FPS = 30, DURATION = 26;
+const FPS = 30;
+const PAGE = process.argv[2] || 'ad.html';
 
 // Replaces time in a game iframe: rAF, timers and clocks only move when __advance(ms) is called.
 const CLOCK = '<script>(function(){var now=0,q=[],T=[],id=0;' +
@@ -37,47 +40,49 @@ const CLOCK = '<script>(function(){var now=0,q=[],T=[],id=0;' +
   fs.rmSync(FRAMES, { recursive: true, force: true });
   fs.mkdirSync(FRAMES, { recursive: true });
   const browser = await pw.chromium.launch();
+  const probe = await browser.newPage();
+  await probe.goto('file://' + path.join(OUT, PAGE));
+  const AD = await probe.evaluate(() => window.AD);
+  await probe.close();
+  const DURATION = AD.duration;
 
   // 1. games and audio from the real app
   const app = await browser.newPage();
   await app.goto('file://' + path.join(ROOT, 'index.html'));
-  const assets = await app.evaluate(async () => {
+  const assets = await app.evaluate(async AD => {
     const L = NexoraLocal, RT = Nexora.RT;
     const mk = (p, dim, o) => { const cfg = L.config(p, Object.assign({ dim, sfx: true, allowOpenWorld: true, quests: true }, o || {})); cfg.demo = true; return L.buildHtml(cfg, RT); };
-    const games = {
-      platformer: mk('Ett plattformsspel i en lavavärld där man hoppar på drakar "Lavajakten"', '2d'),
-      runner3d: mk('En 3D-löpare på en isväg "Frostrusningen"', '3d'),
-      openworld: mk('Open world-äventyr i en skog med uppdrag "Skogsriket"', '2d'),
-      shooter: mk('Rymdskjutare med neon-tema och bossar "Neonstormen"', '2d'),
-      arena3d: mk('3D arena där man samlar kulor i rymden', '3d'),
-    };
+    const games = {};
+    for (const [id, [prompt, dim]] of Object.entries(AD.games)) games[id] = mk(prompt, dim);
     const b64 = async blob => { const b = new Uint8Array(await blob.arrayBuffer()); let s = ''; for (let i = 0; i < b.length; i += 32768) s += String.fromCharCode.apply(null, b.subarray(i, i + 32768)); return btoa(s); };
-    const music = await L.music('snabb energi action trailer', 27);
+    const music = await L.music(AD.music, AD.duration + 1);
     return { games, music: await b64(music.blob), power: await b64(await L.sfx('powerup', 7)), coin: await b64(await L.sfx('mynt', 3)), laser: await b64(await L.sfx('laser', 5)) };
-  });
+  }, AD);
   await app.close();
   for (const k of ['music', 'power', 'coin', 'laser']) fs.writeFileSync(path.join(CACHE, 'ad-' + k + '.wav'), Buffer.from(assets[k], 'base64'));
 
   // 2. frames
   const page = await browser.newPage({ viewport: { width: 1080, height: 1920 }, deviceScaleFactor: 1 });
   page.on('pageerror', e => console.error('page error:', e.message));
-  await page.goto('file://' + path.join(OUT, 'ad.html'));
+  await page.goto('file://' + path.join(OUT, PAGE));
   await page.evaluate(() => document.fonts.ready);
   const withClock = {};
   for (const [k, html] of Object.entries(assets.games)) withClock[k] = html.replace(/<head(\s[^>]*)?>/i, m => m + CLOCK);
   await page.evaluate(g => window.__setup(g), withClock);
   const n = FPS * DURATION;
+  const thumbFrame = Math.min(n - 1, Math.round((AD.thumbAt != null ? AD.thumbAt : DURATION) * FPS));
   for (let i = 0; i < n; i++) {
     await page.evaluate(([t, dt]) => window.__adFrame(t, dt), [i / FPS, 1 / FPS]);
-    await page.screenshot({ path: path.join(FRAMES, 'f' + String(i).padStart(5, '0') + '.jpg'), type: 'jpeg', quality: 92 });
+    const f = path.join(FRAMES, 'f' + String(i).padStart(5, '0') + '.jpg');
+    await page.screenshot({ path: f, type: 'jpeg', quality: 92 });
+    if (i === thumbFrame) fs.copyFileSync(f, path.join(OUT, AD.thumb));
     if (i % 90 === 0) console.log('frame', i, '/', n);
   }
-  await page.screenshot({ path: path.join(OUT, 'nexora-short-thumbnail.jpg'), type: 'jpeg', quality: 90 });
   await browser.close();
 
   // 3. encode: music + sound effects on the cuts
-  const out = path.join(OUT, 'nexora-short-9x16.mp4');
-  const sfx = [['power', 6.0], ['laser', 7.45], ['power', 13.5], ['coin', 19.25], ['coin', 19.55], ['coin', 19.85], ['laser', 22.4]];
+  const out = path.join(OUT, AD.out);
+  const sfx = AD.sfx;
   const args = ['-y', '-loglevel', 'error', '-framerate', String(FPS), '-i', path.join(FRAMES, 'f%05d.jpg'), '-i', path.join(CACHE, 'ad-music.wav')];
   sfx.forEach(([k]) => args.push('-i', path.join(CACHE, 'ad-' + k + '.wav')));
   let filter = `[1:a]volume=0.85,afade=t=in:d=0.4,afade=t=out:st=${DURATION - 1.8}:d=1.8[m]`;
