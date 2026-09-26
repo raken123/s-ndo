@@ -162,3 +162,17 @@ kbd { background: var(--card2); border: 1px solid var(--line); border-radius: 6p
 .rstep.out span { color: var(--ok); }
 .pill.credits { cursor: pointer; }
 .log img { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4); }
+
+/* Astryx Godot jobs */
+.pill.working { text-decoration: none; color: #0b0b20; background: linear-gradient(110deg, #ffc542, #ff8a3d); border: 0; }
+.meter { height: 8px; border-radius: 99px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--grad); border-radius: 99px; }
+.jobcard.running { border-color: rgba(124, 92, 255, 0.6); }
+.shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.shots img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
+.log .err { color: #ff9db5; }
+.log .okline { color: #7ff0bf; }
+.astryxbox { background: rgba(124, 92, 255, 0.08); border-color: rgba(124, 92, 255, 0.35); }
+.astryxbox select { padding: 8px 10px; }
+.astryxbox .seg { display: flex; }
+.astryxbox .seg button { flex: 1; white-space: nowrap; }

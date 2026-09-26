@@ -46,7 +46,7 @@ const PROMPTS = [
   // plan gating on Free
   await page.evaluate(() => { location.hash = 'studio'; });
   await page.waitForTimeout(200);
-  await page.click('.seg button:nth-child(2)');
+  await page.click('.seg[aria-label=Dimension] button:nth-child(2)');
   ok(await page.$('.modal') !== null, 'Free plan: 3D opens the upgrade dialog');
   await page.keyboard.press('Escape');
 
@@ -252,6 +252,20 @@ const PROMPTS = [
   await page.screenshot({ path: path.join(SHOTS, 'astryx-done.png') });
   const usedAfter = await page.evaluate(() => JSON.parse(localStorage.getItem('nexora.usage') || '{}')[new Date().toISOString().slice(0, 7)] || 0);
   ok(usedAfter === usedBefore + 1, 'Astryx run counted against the plan');
+
+  // ---- Godot mode in the browser: explained, not attempted
+  await page.click('.model.agent');
+  await page.click('text=🎮 Godot + Python');
+  ok(await page.locator('.astryxbox', { hasText: 'Hyperrealistiskt läge' }).isVisible() && await page.locator('.astryxbox', { hasText: 'Nexora för dator' }).isVisible(), 'web: Godot options visible with a desktop-app note');
+  await page.click('text=✨ Skapa spel');
+  ok(await page.locator('.modal', { hasText: 'kräver Nexora för dator' }).count() === 1, 'web: Godot run asks for the desktop app');
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => { const s = JSON.parse(localStorage.getItem('nexora.studio')); s.astryx.engine = 'html'; localStorage.setItem('nexora.studio', JSON.stringify(s)); Nexora.S.studio.astryx.engine = 'html'; location.hash = 'astryx'; });
+  await page.waitForSelector('text=Godot-läget körs på datorn');
+  ok(true, 'web: Astryx page explains the desktop requirement');
+  await page.screenshot({ path: path.join(SHOTS, 'astryx-web.png'), fullPage: true });
+  await page.evaluate(() => { location.hash = 'studio'; });
+  await page.waitForSelector('#prompt');
 
   // ---- credits
   await page.evaluate(() => {

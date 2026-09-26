@@ -93,7 +93,7 @@
     { id: 'c100', credits: 100, price: 149, hot: true },
     { id: 'c500', credits: 500, price: 499 },
   ];
-  const COST = { game: 1, astryx: 3 };
+  const COST = { game: 1, astryx: 3, hyper: 10 };
   S.credits = store.get('credits', 0);
   S.creditLog = store.get('creditLog', []);
   function addCredits(n, note) {
@@ -173,7 +173,7 @@
 
   // ---------------------------------------------------------------- layout
   const ROUTES = [
-    ['hem', 'Hem'], ['studio', 'Studio'], ['verktyg', 'Verktyg'], ['spel', 'Mina spel'], ['team', 'Team'],
+    ['hem', 'Hem'], ['studio', 'Studio'], ['astryx', '🤖 Astryx'], ['verktyg', 'Verktyg'], ['spel', 'Mina spel'], ['team', 'Team'],
     ['modeller', 'Modeller'], ['priser', 'Priser'], ['ladda-ner', 'Ladda ner'],
   ];
   const route = () => (location.hash.slice(1) || 'hem').split('/')[0];
@@ -184,6 +184,7 @@
       h('nav', { class: 'tabs', 'aria-label': 'Huvudmeny' }, ROUTES.map(([id, label]) => h('a', { href: '#' + id, class: route() === id ? 'on' : '' }, label))),
       h('div', { class: 'who' },
         h('span', { class: 'pill usage', title: 'Spel skapade den här månaden' }, '🎮 ' + used() + '/' + lim),
+        JOBS.some(j => j.status === 'running') ? h('a', { class: 'pill working', href: '#astryx', title: 'Astryx arbetar i bakgrunden' }, '🤖 Astryx arbetar') : null,
         h('span', { class: 'pill credits', title: 'Krediter – klicka för att köpa fler', onclick: () => creditsModal() }, '🪙 ' + S.credits),
         h('span', { class: 'pill plan', title: 'Din plan', onclick: () => { location.hash = 'priser'; } }, p.emoji + ' ' + p.name),
         h('button', { class: 'iconbtn', title: 'Inställningar', 'aria-label': 'Inställningar', onclick: settingsModal }, '⚙️'))));
@@ -235,7 +236,7 @@
   };
 
   function astryxHero() {
-    const steps = [['🧠', 'Planerar'], ['✍️', 'Skriver spelet'], ['▶️', 'Testkör'], ['👀', 'Tittar på resultatet'], ['🔧', 'Rättar buggar'], ['✅', 'Levererar']];
+    const steps = [['🧠', 'Planerar'], ['🐍', 'Skriver Godot-projektet med Python'], ['▶️', 'Testkör i Godot'], ['👀', 'Tittar på skärmbilder'], ['🔧', 'Rättar buggar'], ['📸', 'Hyperrealistiskt läge'], ['⏱', 'Upp till 2 timmar per spel']];
     return h('div', { class: 'card astryx col' },
       h('div', { class: 'pill', style: 'align-self:flex-start' }, '🤖 AI-agent'),
       h('h2', null, 'Nexora ', h('span', { class: 'grad' }, 'Astryx 5 Pro')),
@@ -262,9 +263,9 @@
   function creditsSection() {
     return h('div', { class: 'col', style: 'margin-top:32px' },
       h('h2', null, '🪙 Krediter'),
-      h('p', { class: 'muted', style: 'margin:0' }, 'Slut på månadens spel men vill inte betala mer varje månad? Köp krediter en gång – de går aldrig ut. 1 kredit = 1 spel, en körning med Astryx 5 Pro = 3 krediter.'),
+      h('p', { class: 'muted', style: 'margin:0' }, 'Slut på månadens spel men vill inte betala mer varje månad? Köp krediter en gång – de går aldrig ut. 1 kredit = 1 spel, en körning med Astryx 5 Pro = 3 krediter, hyperrealistiskt läge = ' + COST.hyper + ' krediter.'),
       creditPacks(),
-      h('p', { class: 'small muted' }, 'Krediter används först när planens spel för månaden är slut. De låser inte upp funktioner från dyrare planer. Ditt saldo: ', h('b', null, S.credits + ' krediter'), '.'));
+      h('p', { class: 'small muted' }, 'Krediter används när planens spel för månaden är slut – och alltid för hyperrealistiskt läge. De låser inte upp funktioner från dyrare planer. Ditt saldo: ', h('b', null, S.credits + ' krediter'), '.'));
   }
   function creditPacks(after) {
     return h('div', { class: 'grid g3' }, CREDIT_PACKS.map(k => h('div', { class: 'card col' + (k.hot ? ' hot' : ''), style: k.hot ? 'border-color:var(--a1)' : '' },
@@ -286,7 +287,7 @@
     const close = modal([
       h('h2', null, '🪙 Krediter'),
       reason ? h('p', null, reason) : null,
-      h('p', { class: 'muted' }, 'Saldo: ', h('b', null, S.credits + ' krediter'), ' · 1 kredit = 1 spel · Astryx 5 Pro = 3 krediter'),
+      h('p', { class: 'muted' }, 'Saldo: ', h('b', null, S.credits + ' krediter'), ' · 1 kredit = 1 spel · Astryx 5 Pro = 3 krediter · 📸 hyperrealistiskt = ' + COST.hyper + ' krediter'),
       creditPacks(() => { close(); if (after) after(); }),
       S.creditLog.length ? h('details', null, h('summary', { class: 'small muted' }, 'Historik'),
         h('table', { class: 't' }, S.creditLog.slice(0, 12).map(x => h('tr', null, h('td', null, new Date(x.t).toLocaleString('sv-SE')), h('td', null, x.note), h('td', { style: 'text-align:right;color:' + (x.n > 0 ? 'var(--ok)' : 'var(--muted)') }, (x.n > 0 ? '+' : '') + x.n))))) : null,
@@ -389,10 +390,31 @@
         onclick: () => { if (!open) return astryxLocked(); st.model = 'astryx'; saveStudio(); drawModels(); } },
       h('span', { class: 'lock' + (open ? ' new' : '') }, open ? 'NY' : '🔒 ' + fmtDate(releaseDate('astryx'))),
       h('b', null, '🤖 ' + A.short), h('span', null, 'AI-agent · bygger, testkör och rättar själv · ' + COST.astryx + ' krediter utöver planen')));
+      drawAstryx();
+    }
+    // Astryx options: engine (HTML5 or Godot + Python), working time, hyperrealistic mode.
+    st.astryx = Object.assign({ engine: 'html', minutes: 120, hyperreal: false }, st.astryx || {});
+    const astryxBox = h('div', { class: 'card col astryxbox', style: 'padding:14px;display:none' });
+    function drawAstryx() {
+      astryxBox.style.display = st.model === 'astryx' ? '' : 'none';
+      astryxBox.innerHTML = '';
+      const A = st.astryx, eng = h('div', { class: 'seg' });
+      [['html', '⚡ HTML5'], ['godot', '🎮 Godot + Python']].forEach(([k, l]) => eng.append(h('button', { class: A.engine === k ? 'on' : '', onclick: () => { A.engine = k; saveStudio(); drawAstryx(); } }, l)));
+      astryxBox.append(h('b', { class: 'small' }, '🤖 Astryx-motor'), eng);
+      if (A.engine !== 'godot') { astryxBox.append(h('p', { class: 'small muted', style: 'margin:0' }, 'Snabbt: ett HTML5-spel som testkörs och rättas i webbläsaren.')); return; }
+      if (!DESK) astryxBox.append(h('p', { class: 'note small', style: 'margin:0' }, 'Godot-läget körs i Nexora för dator (Windows, macOS, Linux), som har Python och Godot. ', h('a', { href: '#ladda-ner' }, 'Ladda ner appen')));
+      const mins = h('select', { 'aria-label': 'Arbetstid' }, [[15, '15 minuter'], [30, '30 minuter'], [60, '1 timme'], [120, 'Upp till 2 timmar']].map(([v, l]) => h('option', { value: v, selected: A.minutes === v }, l)));
+      mins.addEventListener('change', () => { A.minutes = +mins.value; saveStudio(); });
+      const hyper = h('input', { type: 'checkbox', checked: !!A.hyperreal });
+      hyper.addEventListener('change', () => { A.hyperreal = hyper.checked; saveStudio(); });
+      astryxBox.append(
+        h('label', { class: 'f small' }, 'Arbetstid', mins),
+        h('p', { class: 'small muted', style: 'margin:0' }, 'Astryx planerar, skriver Godot-projektet med Python, testkör det i Godot, tittar på skärmbilder och förbättrar spelet tills det är klart – upp till vald tid. Den fortsätter i bakgrunden medan du gör annat.'),
+        h('label', { class: 'opt' }, hyper, h('span', null, h('b', null, '📸 Hyperrealistiskt läge'), h('br'), h('span', { class: 'small muted' }, 'Söker fotorealistiska 3D-modeller, HDRI-himlar och PBR-texturer (Poly Haven, CC0) och bygger världen av dem.')), h('span', { class: 'lock', style: 'margin-left:auto;white-space:nowrap' }, '🪙 ' + COST.hyper)));
     }
     drawModels();
 
-    const dimSeg = h('div', { class: 'seg' });
+    const dimSeg = h('div', { class: 'seg', 'aria-label': 'Dimension' });
     function drawDim() {
       dimSeg.innerHTML = '';
       [['2d', '2D'], ['3d', '3D']].forEach(([k, l]) => dimSeg.append(h('button', { class: st.dim === k ? 'on' : '', onclick: () => {
@@ -439,6 +461,7 @@
       if (prompt.length < 4) { toast('Beskriv spelet med några ord först.'); ta.focus(); return; }
       const p = plan();
       if (st.model === 'astryx' && !released('astryx')) return astryxLocked();
+      if (st.model === 'astryx' && st.astryx.engine === 'godot') return goGodot(prompt, OPTS.map(o => o[0]).filter(k => st.opts[k] && can(k)));
       const cost = st.model === 'astryx' ? COST.astryx : COST.game;
       let payWith = 'plan';
       if (used() >= p.games) {
@@ -576,13 +599,32 @@
       };
     }
 
+    async function goGodot(prompt, features) {
+      if (!DESK) {
+        const close = modal([h('h2', null, '🎮 Godot-läget kräver Nexora för dator'),
+          h('p', null, 'Astryx bygger Godot-spel med Python och testkör dem i Godot-motorn på din dator. Det går inte i en webbläsare.'),
+          h('div', { class: 'row' }, h('a', { class: 'btn primary', href: '#ladda-ner', onclick: () => close() }, 'Ladda ner Nexora'), h('button', { class: 'btn ghost', onclick: () => close() }, 'Stäng'))]);
+        return;
+      }
+      const A = st.astryx, p = plan();
+      let charge;
+      if (A.hyperreal) {
+        if (S.credits < COST.hyper) return creditsModal('Hyperrealistiskt läge kostar ' + COST.hyper + ' krediter per spel. Du har ' + S.credits + '.', () => go());
+        charge = { credits: COST.hyper };
+      } else if (used() >= p.games) {
+        if (S.credits < COST.astryx) return creditsModal('Du har använt alla ' + p.games + ' spel i ' + p.name + ' den här månaden. En Astryx-körning kostar ' + COST.astryx + ' krediter.', () => go());
+        charge = { credits: COST.astryx };
+      } else charge = { quota: 1 };
+      startGodotJob({ prompt, minutes: A.minutes, hyperreal: !!A.hyperreal, features, charge });
+    }
+
     const variantBtn = h('button', { class: 'btn sm ghost', title: 'Samma idé, ny variant', onclick: () => { st.variant = String(Math.random()).slice(2, 8); saveStudio(); go(); } }, '🎲 Ny variant');
     main.append(h('div', { class: 'wrap studio' },
       h('div', { class: 'panel' },
         h('div', null, h('h2', { style: 'margin-bottom:4px' }, 'Studio'), h('div', { class: 'small muted' }, 'Leverantör: ', providerLabel(), ' · ', h('a', { href: '#', onclick: e => { e.preventDefault(); settingsModal(); } }, 'ändra'))),
         ta,
         h('div', { class: 'chips' }, EXAMPLES.map(x => h('span', { class: 'chip', onclick: () => { ta.value = x; st.prompt = x; saveStudio(); } }, x))),
-        h('div', { class: 'col' }, h('b', { class: 'small' }, 'Modell'), modelsEl),
+        h('div', { class: 'col' }, h('b', { class: 'small' }, 'Modell'), modelsEl, astryxBox),
         h('div', { class: 'row' }, h('b', { class: 'small' }, 'Dimension'), dimSeg),
         h('div', { class: 'col' }, h('b', { class: 'small' }, 'Innehåll'), optsEl),
         h('div', { class: 'row' }, goBtn, variantBtn),
@@ -792,6 +834,362 @@
   }
 
   // ---------------------------------------------------------------- library
+  // ---------------------------------------------------------------- Astryx 5 Pro in Godot mode (desktop)
+  const DESK = window.nexoraDesktop || null;
+  const JOBS = store.get('jobs', []).map(j => (j.status === 'running' ? Object.assign(j, { status: 'interrupted', ended: j.ended || Date.now() }) : j));
+  const jobListeners = new Set(), liveCtl = {}, deskListeners = new Set();
+  let jobSavedAt = 0;
+  if (DESK) DESK.on(ev => deskListeners.forEach(f => f(ev)));
+  function saveJobs() { store.set('jobs', JOBS.slice(0, 30).map(j => Object.assign({}, j, { log: j.log.slice(-250) }))); }
+  function jobChanged(j) {
+    jobListeners.forEach(f => f(j));
+    if (Date.now() - jobSavedAt > 3000 || j.status !== 'running') { jobSavedAt = Date.now(); saveJobs(); }
+  }
+  function jobLog(j, text, kind) { j.log.push({ t: Date.now(), text, kind: kind || '' }); jobChanged(j); }
+  const fmtDur = ms => { const m = Math.floor(ms / 60000), s = Math.floor(ms / 1000) % 60; return m >= 60 ? Math.floor(m / 60) + ' h ' + (m % 60) + ' min' : m + ':' + String(s).padStart(2, '0'); };
+  const lastLine = s => String(s || '').trim().split('\n').slice(-1)[0].slice(0, 200);
+
+  // Lessons: what Astryx learned in earlier runs, fed back into its instructions.
+  let lessonsCache = null;
+  async function getLessons() {
+    if (!lessonsCache) lessonsCache = DESK ? await DESK.call('lessons').catch(() => []) : store.get('lessons', []);
+    return lessonsCache;
+  }
+  async function addLesson(text) {
+    const ls = await getLessons();
+    if (ls.some(l => l.text === text)) return;
+    ls.push({ text, t: Date.now() });
+    if (DESK) await DESK.call('saveLessons', { lessons: ls }).catch(() => {}); else store.set('lessons', ls);
+  }
+
+  // Poly Haven search terms per theme, for Nexora Local's hyperrealistic builds.
+  const THEME_ASSETS = {
+    Skog: { models: ['tree', 'fern', 'rock', 'log', 'stump'], hdri: 'forest', tex: 'forest ground' },
+    Öken: { models: ['rock', 'cactus', 'barrel', 'crate'], hdri: 'desert', tex: 'sand' },
+    Is: { models: ['pine', 'rock', 'boulder'], hdri: 'snow', tex: 'snow' },
+    Hav: { models: ['rock', 'boat', 'barrel', 'crate'], hdri: 'sea', tex: 'sand' },
+    Lava: { models: ['rock', 'boulder', 'stone'], hdri: 'sunset', tex: 'rock' },
+    Skräck: { models: ['dead tree', 'lantern', 'gravestone', 'rock'], hdri: 'night', tex: 'forest ground' },
+    Neon: { models: ['barrel', 'crate', 'bench', 'lamp'], hdri: 'night city', tex: 'asphalt' },
+    Godis: { models: ['flower', 'tree', 'rock'], hdri: 'sunny', tex: 'grass' },
+    Rymd: { models: ['rock', 'boulder', 'stone'], hdri: 'night', tex: 'rock' },
+    Nexora: { models: ['tree', 'rock', 'barrel', 'crate'], hdri: 'sky', tex: 'grass' },
+  };
+  // Training set: varied briefs that exercise different Godot skills.
+  const BENCH = [
+    'Ett 3D-plattformsspel på flytande öar med rörliga plattformar och checkpoints',
+    'Ett top-down 2D-skjutspel i en rymdstation med vågor av fiender och uppgraderingar',
+    'Ett racingspel i 3D på en ökenbana med varvtider och en AI-motståndare',
+    'Ett pusselspel i 2D där man leder ljusstrålar med speglar genom 10 nivåer',
+    'Ett tredjepersons utforskningsspel i en skog med dag/natt-cykel och samlarobjekt',
+    'Ett tower defense-spel i 3D med tre torntyper och fem vågor',
+    'Ett 2D-plattformsspel med dubbelhopp, väggsprång och en boss',
+    'Ett överlevnadsspel i snö där man samlar ved för att hålla elden vid liv',
+  ];
+
+  async function ensureDesktopReady(j) {
+    const info = await DESK.call('info');
+    if (!info.python) throw new Error('Python 3 hittades inte på datorn. Installera det från python.org (kryssa i "Add to PATH" på Windows) och starta om Nexora.');
+    if (!store.get('godotConsent', false)) {
+      const ok = await DESK.call('confirm', { title: 'Astryx 5 Pro', ok: 'Godkänn', message: 'Låt Astryx köra kod på den här datorn?',
+        detail: 'I Godot-läget skriver Astryx Python-skript och kör dem, och startar Godot för att testa spelet. Koden körs i projektmappen (' + info.projects + ') och spärras från nätverk, andra program och filer utanför projektet.' });
+      if (!ok.ok) throw new Error('Du godkände inte att Astryx kör kod på datorn.');
+      store.set('godotConsent', true);
+    }
+    if (!info.godot.path) {
+      jobLog(j, '⬇️ Laddar ner Godot ' + info.godot.version + ' (engångsnedladdning, ~80–170 MB)…');
+      const off = watchDownloads(j);
+      try { await DESK.call('installGodot'); } finally { off(); }
+      jobLog(j, '✅ Godot installerat', 'ok');
+    }
+    return info;
+  }
+  function watchDownloads(j) {
+    let last = 0;
+    const f = ev => {
+      if (ev.type === 'download' && (ev.done || Date.now() - last > 1500)) {
+        last = Date.now();
+        j.phase = '⬇️ ' + ev.what + ' ' + (ev.total ? Math.round(ev.got / ev.total * 100) + ' %' : Math.round(ev.got / 1e6) + ' MB');
+        jobChanged(j);
+      } else if (ev.type === 'status') { j.phase = ev.text; jobChanged(j); }
+    };
+    deskListeners.add(f);
+    return () => deskListeners.delete(f);
+  }
+
+  // Runs one Astryx tool on the desktop; returns tool_result content for the agent.
+  async function execTool(j, name, input) {
+    const P = j.project;
+    if (name === 'run_python') {
+      jobLog(j, '🐍 ' + (input.purpose || 'Kör Python'));
+      const r = await DESK.call('runPython', { project: P, code: input.code, timeout: 240 });
+      if (r.exit !== 0) jobLog(j, '⚠️ Python: ' + lastLine(r.stderr || r.stdout), 'warn');
+      return { content: JSON.stringify({ exit: r.exit, stdout: r.stdout, stderr: r.stderr, timedOut: r.timedOut }), is_error: r.exit !== 0 };
+    }
+    if (name === 'write_file') {
+      const w = await DESK.call('writeFile', { project: P, file: input.path, content: input.content });
+      jobLog(j, '📝 ' + input.path + ' (' + Math.round(w.bytes / 100) / 10 + ' kB)');
+      return { content: 'Wrote ' + w.bytes + ' bytes to ' + input.path };
+    }
+    if (name === 'read_file') { const r = await DESK.call('readFile', { project: P, file: input.path }); return { content: r.content != null ? r.content : r.error, is_error: r.content == null }; }
+    if (name === 'list_files') return { content: JSON.stringify((await DESK.call('listFiles', { project: P })).files) };
+    if (name === 'godot_run') {
+      jobLog(j, '▶️ Importerar och testkör i Godot…');
+      j.phase = '▶️ Testkör i Godot';
+      const g = await DESK.call('godotRun', { project: P });
+      j.runs = (j.runs || 0) + 1;
+      if (g.shots.length) j.shots = g.shots.slice(-3).map(x => x.jpeg);
+      jobLog(j, g.ok ? '✅ Testkörning ' + j.runs + ': inga fel' : '🐞 Testkörning ' + j.runs + ': ' + g.errors.length + ' fel', g.ok ? 'ok' : 'warn');
+      g.errors.slice(0, 3).forEach(e => jobLog(j, '   ' + e.slice(0, 200), 'err'));
+      const text = JSON.stringify({ ok: g.ok, completed: g.frames > 0, frames: g.frames, errors: g.errors, screenshots: g.shots.length, windowed: g.windowed, log_tail: (g.log || '').slice(-2500) });
+      return { content: [{ type: 'text', text }].concat(g.shots.map(x => ({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: x.jpeg } }))) };
+    }
+    if (name === 'search_assets') {
+      jobLog(j, '🔎 Söker ' + ({ models: 'modeller', hdris: 'HDRI-himlar', textures: 'texturer' }[input.type] || input.type) + ': "' + input.query + '"');
+      const r = await DESK.call('searchAssets', { query: input.query, type: input.type, limit: 10 });
+      return { content: JSON.stringify(r) };
+    }
+    if (name === 'download_asset') {
+      jobLog(j, '⬇️ Laddar ner ' + input.id + ' (' + (input.resolution || '2k') + ')');
+      const off = watchDownloads(j);
+      try {
+        const d = await DESK.call('downloadAsset', { project: P, id: input.id, type: input.type, resolution: input.resolution || '2k' });
+        (j.assets = j.assets || []).push(input.id);
+        return { content: JSON.stringify(d) };
+      } finally { off(); }
+    }
+    throw new Error('okänt verktyg ' + name);
+  }
+
+  // Astryx on Nexora Local: plan → (assets) → Python writes the project → Godot test → fix.
+  async function localGodotAgent(j) {
+    const a = L.config(j.prompt, { dim: '3d', variant: String(j.started) });
+    const themeName = a.tagline.split('· ')[1].replace('-tema', '');
+    const cfg = { title: a.title, tagline: a.genreLabel.replace('3D-', '') + ' · ' + themeName, seed: a.seed % 2147483647, difficulty: a.difficulty, palette: a.palette, hyperreal: j.hyperreal, models: [], hdri: '', ground_maps: {} };
+    jobLog(j, '🧠 Plan: tredjepersonsspel i 3D, ' + themeName.toLowerCase() + '-tema, samla kulor och undvik jägare' + (j.hyperreal ? ', fotorealistisk värld' : ''), 'think');
+    if (j.hyperreal) {
+      const T = THEME_ASSETS[themeName] || THEME_ASSETS.Nexora, taken = new Set();
+      const find = async (query, type) => {
+        const r = JSON.parse((await execTool(j, 'search_assets', { query, type })).content).results;
+        return r.find(x => !taken.has(x.id));
+      };
+      try {
+        for (const q of T.models) {
+          if (cfg.models.length >= 4) break;
+          const hit = await find(q, 'models');
+          if (!hit) continue;
+          taken.add(hit.id);
+          cfg.models.push(JSON.parse((await execTool(j, 'download_asset', { id: hit.id, type: 'models', resolution: '2k' })).content).path);
+        }
+        const sky = await find(T.hdri, 'hdris');
+        if (sky) cfg.hdri = JSON.parse((await execTool(j, 'download_asset', { id: sky.id, type: 'hdris', resolution: '2k' })).content).path;
+        const tex = await find(T.tex, 'textures');
+        if (tex) cfg.ground_maps = JSON.parse((await execTool(j, 'download_asset', { id: tex.id, type: 'textures', resolution: '2k' })).content).maps;
+      } catch (e) {
+        jobLog(j, '⚠️ Kunde inte hämta alla assets (' + e.message + ') – bygger med det som finns', 'warn');
+      }
+    }
+    const build = async () => {
+      await execTool(j, 'write_file', { path: 'nexora_build.json', content: JSON.stringify(cfg, null, 1) });
+      const r = await execTool(j, 'run_python', { purpose: 'Skriver Godot-projektet (project.godot, main.tscn, main.gd)', code: "import runpy, sys\nsys.argv = ['nexora_godot_local.py', 'nexora_build.json']\nrunpy.run_path('_nexora/nexora_godot_local.py', run_name='__main__')\n" });
+      if (r.is_error) throw new Error('Python-steget misslyckades: ' + lastLine(JSON.parse(r.content).stderr));
+      return JSON.parse((await execTool(j, 'godot_run', {})).content[0].text);
+    };
+    let t = await build();
+    if (!t.ok && cfg.models.length) {
+      jobLog(j, '🔧 Fel vid testkörning – bygger om utan de nedladdade modellerna');
+      cfg.models = [];
+      t = await build();
+    }
+    if (!t.ok) throw new Error('Godot-projektet fick fel vid testkörning: ' + (t.errors[0] || 'okänt'));
+    return { title: cfg.title, summary: 'Astryx byggde "' + cfg.title + '" i Godot 4.7 (' + (j.hyperreal ? 'fotorealistisk värld med ' + cfg.models.length + ' Poly Haven-modeller' + (cfg.hdri ? ', HDRI-himmel' : '') + (cfg.ground_maps.albedo ? ' och PBR-mark' : '') : 'stiliserad 3D') + ') och testkörde det ' + j.runs + ' gång' + (j.runs > 1 ? 'er' : '') + ' utan fel. Samla alla kulor innan tiden tar slut.' };
+  }
+
+  function refund(j) {
+    if (!j.charge) return;
+    if (j.charge.credits) addCredits(j.charge.credits, 'Återbetalning: ' + j.title);
+    else if (j.charge.quota) { S.usage[month()] = Math.max(0, used() - 1); store.set('usage', S.usage); }
+    j.charge = null;
+  }
+
+  function startGodotJob(o) {
+    const j = { id: 'j' + Date.now().toString(36), title: o.prompt.slice(0, 70), prompt: o.prompt, status: 'running', started: Date.now(), minutes: o.minutes || 120,
+      hyperreal: !!o.hyperreal, training: !!o.training, features: o.features || [], log: [], shots: [], runs: 0, provider: S.settings.provider, charge: o.charge || null, phase: 'Startar…' };
+    if (j.charge && j.charge.credits) addCredits(-j.charge.credits, (j.hyperreal ? 'Astryx hyperrealistiskt: ' : 'Astryx Godot: ') + j.title);
+    if (j.charge && j.charge.quota) { S.usage[month()] = used() + 1; store.set('usage', S.usage); }
+    JOBS.unshift(j);
+    jobLog(j, '🤖 Astryx 5 Pro startar' + (j.provider === 'anthropic' ? ' (Claude, upp till ' + j.minutes + ' min)' : ' (Nexora Local)') + (j.hyperreal ? ' · 📸 hyperrealistiskt' : ''));
+    if (!o.quiet) { render.topOnly(); if (location.hash !== '#astryx') location.hash = 'astryx'; }
+    const ctl = new AbortController();
+    liveCtl[j.id] = ctl;
+    const run = (async () => {
+      try {
+        await ensureDesktopReady(j);
+        const proj = await DESK.call('createProject', { name: o.prompt.slice(0, 30) });
+        j.project = proj.id; j.dir = proj.dir;
+        jobLog(j, '📁 Projekt: ' + proj.dir);
+        let r;
+        if (j.provider === 'anthropic') {
+          const thinkLine = { cur: null };
+          const hooks = {
+            exec: (name, input) => execTool(j, name, input),
+            step: (kind, detail) => { thinkLine.cur = null; if (kind === 'tool_start') { j.phase = ({ run_python: '🐍 Skriver Python', write_file: '📝 Skriver fil', godot_run: '▶️ Testkör i Godot', search_assets: '🔎 Söker assets', download_asset: '⬇️ Laddar ner', finish: '✅ Avslutar', save_lesson: '🎓 Sparar lärdom' }[detail] || detail) + '…'; jobChanged(j); } },
+            thinking: t => { if (!thinkLine.cur) { thinkLine.cur = { t: Date.now(), text: '💭 ', kind: 'think' }; j.log.push(thinkLine.cur); } thinkLine.cur.text += t; jobChanged(j); },
+            progress: (tool, n) => { j.phase = (tool === 'run_python' ? '🐍 Skriver Python… ' : '📝 Skriver fil… ') + Math.round(n / 1000) + ' kB'; jobChanged(j); },
+            lesson: l => { addLesson(l); jobLog(j, '🎓 Lärdom sparad: ' + l, 'ok'); },
+          };
+          r = await AI.agentGodot(S.settings, o.prompt, { maxMinutes: j.minutes, hyperreal: j.hyperreal, features: j.features, lessons: (await getLessons()).map(l => l.text) }, hooks, ctl.signal);
+          try { const pg = await DESK.call('readFile', { project: j.project, file: 'project.godot' }); const m = /config\/name="([^"]+)"/.exec(pg.content || ''); if (m) r.title = m[1]; } catch (e) { /* keep prompt title */ }
+        } else {
+          r = await localGodotAgent(j);
+        }
+        j.status = 'done'; j.summary = r.summary; j.title = r.title || j.title; j.phase = '✅ Klar';
+        jobLog(j, '✅ Klart efter ' + fmtDur(Date.now() - j.started) + ' och ' + j.runs + ' testkörning' + (j.runs === 1 ? '' : 'ar'), 'ok');
+        const now = Date.now();
+        await games.put({ id: 'g' + now.toString(36), type: 'godot', project: j.project, dir: j.dir, title: j.title, prompt: o.prompt, summary: j.summary, thumb: j.shots[j.shots.length - 1] || null,
+          model: 'astryx', engine: 'Godot 4.7 · ' + (j.provider === 'anthropic' ? 'Claude' : 'Nexora Local'), hyperreal: j.hyperreal, dim: '3d', genre: j.hyperreal ? 'Godot · hyperrealistiskt' : 'Godot-spel', created: now, updated: now, versions: [] });
+        DESK.call('notify', { title: '🤖 Astryx är klar', body: j.title }).catch(() => {});
+      } catch (e) {
+        const aborted = e.name === 'AbortError' || ctl.signal.aborted;
+        j.status = aborted ? 'cancelled' : 'failed'; j.error = e.message; j.phase = aborted ? 'Avbruten' : 'Misslyckades';
+        jobLog(j, (aborted ? '⏹ Avbruten' : '❌ ' + e.message), 'err');
+        const paid = !!j.charge;
+        refund(j);
+        if (paid) jobLog(j, '↩️ Kostnaden återbetalades', 'ok');
+      } finally {
+        j.ended = Date.now(); delete liveCtl[j.id]; jobChanged(j); render.topOnly();
+      }
+    })();
+    j._promise = run;
+    return j;
+  }
+
+  async function runTraining(n) {
+    if (S.settings.provider !== 'anthropic') return toast('Träning kräver Claude (Anthropic-nyckel) – Nexora Local lär sig inte.', 5000);
+    const picks = BENCH.slice().sort(() => Math.random() - 0.5).slice(0, n);
+    toast('Träningspass startat: ' + n + ' spel à 20 min');
+    for (const p of picks) {
+      const j = startGodotJob({ prompt: p, minutes: 20, training: true, quiet: true });
+      await j._promise;
+      if (j.status === 'cancelled') break;
+    }
+    toast('Träningspasset är klart');
+  }
+
+  function godotCard(g, redraw) {
+    return h('div', { class: 'card gcard' },
+      g.thumb ? h('img', { class: 'thumb', src: 'data:image/jpeg;base64,' + g.thumb, alt: g.title, style: 'object-fit:cover;width:100%;padding:0' }) : h('div', { class: 'thumb', style: 'background:linear-gradient(135deg,#243b55,#141e30)' }, '🎮 ' + g.title),
+      h('div', { class: 'row', style: 'justify-content:space-between' }, h('b', null, g.title), h('span', { class: 'pill' }, g.hyperreal ? '📸 GODOT' : 'GODOT')),
+      h('div', { class: 'small muted' }, g.engine + ' · ' + new Date(g.updated).toLocaleDateString('sv-SE')),
+      g.summary ? h('div', { class: 'small' }, g.summary) : null,
+      DESK ? h('div', { class: 'row' },
+        h('button', { class: 'btn sm primary', onclick: () => DESK.call('godotPlay', { project: g.project }).catch(e => toast(e.message)) }, '▶ Spela'),
+        h('button', { class: 'btn sm', onclick: () => godotExportModal(g) }, 'Exportera'),
+        h('button', { class: 'btn sm', onclick: () => DESK.call('godotEditor', { project: g.project }).catch(e => toast(e.message)) }, 'Öppna i Godot'),
+        h('button', { class: 'btn sm ghost', onclick: () => DESK.call('reveal', { project: g.project }) }, 'Visa mapp'),
+        h('button', { class: 'btn sm ghost danger', onclick: async () => { if (confirm('Ta bort "' + g.title + '" från biblioteket? Projektmappen finns kvar på datorn.')) { await games.del(g.id); redraw(); } } }, 'Ta bort'))
+        : h('p', { class: 'small muted' }, 'Godot-projekt öppnas i Nexora för dator.'));
+  }
+
+  function godotExportModal(g) {
+    const out = h('div', { class: 'small muted' });
+    const off = DESK.on(ev => { if (ev.type === 'download') out.textContent = '⬇️ ' + ev.what + ' ' + (ev.total ? Math.round(ev.got / ev.total * 100) + ' %' : ''); if (ev.type === 'status') out.textContent = ev.text; });
+    const doExport = async (target, label) => {
+      try {
+        const info = await DESK.call('info');
+        if (!info.godot.templates) {
+          const ok = await DESK.call('confirm', { title: 'Exportmallar', ok: 'Ladda ner', message: 'Godots exportmallar behövs (engångsnedladdning, ca 1,3 GB).', detail: 'De används för att bygga .exe, macOS-appar, Linux-program och webbversioner av dina Godot-spel.' });
+          if (!ok.ok) return;
+          out.textContent = 'Laddar ner exportmallar…';
+          await DESK.call('installTemplates');
+        }
+        out.textContent = 'Exporterar ' + label + '…';
+        const r = await DESK.call('godotExport', { project: g.project, target });
+        if (!r.ok) { out.textContent = '❌ ' + (r.errors || []).join(' · ').slice(0, 400); return; }
+        out.textContent = '✅ ' + label + ' klar (' + (r.size / 1e6).toFixed(1) + ' MB): ' + r.files.join(', ');
+        DESK.call('reveal', { file: r.path });
+      } catch (e) { out.textContent = '❌ ' + e.message; }
+    };
+    const close = modal([
+      h('h2', null, '📦 Exportera ' + g.title),
+      h('div', { class: 'col' }, [['windows', '🪟 Windows (.exe)'], ['macos', '🍎 macOS (.app i .zip)'], ['linux', '🐧 Linux'], ['web', '🌐 Webb (HTML5)']].map(([t, l]) =>
+        h('button', { class: 'btn', onclick: () => doExport(t, l) }, l))),
+      h('button', { class: 'btn', style: 'margin-top:8px', onclick: async () => { const r = await DESK.call('zipProject', { project: g.project, name: slug(g.title) }); out.textContent = '✅ ' + r.files + ' filer i ' + r.path; DESK.call('reveal', { file: r.path }); } }, '🗂️ Godot-projekt (.zip)'),
+      out,
+      h('div', { class: 'row' }, h('button', { class: 'btn ghost', onclick: () => { off(); close(); } }, 'Stäng'))]);
+  }
+
+  VIEWS.astryx = main => {
+    const box = h('div', { class: 'col' });
+    const status = h('div', { class: 'card col' });
+    const lessonsEl = h('div', { class: 'col' });
+    async function drawStatus() {
+      status.innerHTML = '';
+      if (!DESK) {
+        status.append(h('h3', null, '💻 Godot-läget körs på datorn'), h('p', { class: 'muted', style: 'margin:0' }, 'I webbläsaren bygger Astryx HTML5-spel. För Godot-spel med Python, långa arbetspass och hyperrealistiskt läge behövs Nexora för dator.'), h('a', { class: 'btn primary', href: '#ladda-ner', style: 'align-self:flex-start' }, 'Ladda ner Nexora'));
+        return;
+      }
+      const i = await DESK.call('info');
+      status.append(h('h3', null, '💻 Din dator'), h('table', { class: 't' },
+        h('tr', null, h('td', null, 'Python'), h('td', null, i.python ? '✅ ' + i.python.version : '❌ Saknas – installera Python 3 från python.org')),
+        h('tr', null, h('td', null, 'Godot ' + i.godot.version), h('td', null, i.godot.path ? '✅ Installerat' : h('button', { class: 'btn sm', onclick: async e => { e.target.disabled = true; e.target.textContent = 'Laddar ner…'; try { await DESK.call('installGodot'); } catch (x) { toast(x.message); } drawStatus(); } }, 'Installera (~80–170 MB)'))),
+        h('tr', null, h('td', null, 'Exportmallar'), h('td', null, i.godot.templates ? '✅ Installerade' : h('span', { class: 'muted' }, 'Hämtas vid första export (~1,3 GB)'))),
+        h('tr', null, h('td', null, 'AI'), h('td', null, S.settings.provider === 'anthropic' ? '✅ Claude – Astryx planerar, skriver och testar själv' : 'Nexora Local – snabb offlinebyggare. Lägg in en Anthropic-nyckel under ⚙️ för full agent.'))));
+    }
+    function jobCard(j) {
+      const running = j.status === 'running', el = h('div', { class: 'card col jobcard' + (running ? ' running' : '') });
+      const elapsed = (j.ended || Date.now()) - j.started, pct = Math.min(100, elapsed / (j.minutes * 60000) * 100);
+      add(el, [
+        h('div', { class: 'row', style: 'justify-content:space-between' }, h('h3', { style: 'margin:0' }, (j.training ? '🎓 ' : '🤖 ') + j.title),
+          h('span', { class: 'pill' }, { running: '⏳ arbetar', done: '✅ klar', failed: '❌ misslyckades', cancelled: '⏹ avbruten', interrupted: '⚠️ avbröts' }[j.status] || j.status)),
+        h('div', { class: 'small muted' }, (j.hyperreal ? '📸 Hyperrealistiskt · ' : '') + (j.provider === 'anthropic' ? 'Claude' : 'Nexora Local') + ' · ' + fmtDur(elapsed) + (running && j.provider === 'anthropic' ? ' av max ' + fmtDur(j.minutes * 60000) : '') + ' · ' + (j.runs || 0) + ' testkörningar' + (j.assets ? ' · ' + j.assets.length + ' assets' : '')),
+        running ? h('div', { class: 'meter' }, h('i', { style: 'width:' + (j.provider === 'anthropic' ? pct : 50) + '%' })) : null,
+        running ? h('div', { class: 'small', style: 'font-weight:700' }, j.phase || '') : null,
+        j.shots && j.shots.length ? h('div', { class: 'shots' }, j.shots.map(b => h('img', { src: 'data:image/jpeg;base64,' + b, alt: 'Skärmbild från testkörning' }))) : null,
+        j.summary ? h('p', { class: 'note small', style: 'margin:0' }, '🤖 ' + j.summary) : null,
+        j.error ? h('p', { class: 'small', style: 'color:#ff8aa8;margin:0' }, j.error) : null]);
+      const log = h('div', { class: 'log', style: 'max-height:' + (running ? 260 : 140) + 'px;width:100%' });
+      j.log.slice(-80).forEach(l => log.append(h('div', { class: l.kind === 'think' ? 'think' : l.kind === 'err' ? 'err' : l.kind === 'ok' ? 'okline' : '' }, l.text.length > 600 ? l.text.slice(0, 600) + '…' : l.text)));
+      el.append(h('details', running ? { open: true } : null, h('summary', { class: 'small muted' }, 'Arbetslogg (' + j.log.length + ' rader)'), log));
+      setTimeout(() => { log.scrollTop = log.scrollHeight; }, 0);
+      const row = h('div', { class: 'row' });
+      if (running) row.append(h('button', { class: 'btn sm danger', onclick: () => { if (confirm('Avbryt Astryx? Kostnaden återbetalas.')) liveCtl[j.id] && liveCtl[j.id].abort(); } }, '⏹ Avbryt'));
+      if (j.status === 'done' && DESK) row.append(
+        h('button', { class: 'btn sm primary', onclick: () => DESK.call('godotPlay', { project: j.project }).catch(e => toast(e.message)) }, '▶ Spela'),
+        h('button', { class: 'btn sm', onclick: () => godotExportModal({ project: j.project, title: j.title }) }, '📦 Exportera'),
+        h('button', { class: 'btn sm', onclick: () => DESK.call('godotEditor', { project: j.project }).catch(e => toast(e.message)) }, 'Öppna i Godot'),
+        h('button', { class: 'btn sm ghost', onclick: () => DESK.call('reveal', { project: j.project }) }, 'Visa mapp'));
+      if (!running) row.append(h('button', { class: 'btn sm ghost', onclick: () => { JOBS.splice(JOBS.indexOf(j), 1); saveJobs(); draw(); } }, 'Dölj'));
+      el.append(row);
+      return el;
+    }
+    let pending = false;
+    function draw() {
+      box.innerHTML = '';
+      if (!JOBS.length) box.append(h('div', { class: 'card' }, h('h3', null, 'Inga körningar än'), h('p', { class: 'muted' }, 'Välj Astryx 5 Pro i Studio, ställ motorn på Godot och tryck Skapa spel.'), h('a', { class: 'btn primary', href: '#studio' }, 'Till Studio')));
+      JOBS.forEach(j => box.append(jobCard(j)));
+    }
+    const onJob = () => { if (pending) return; pending = true; setTimeout(() => { pending = false; draw(); }, 400); };
+    jobListeners.add(onJob);
+    const tick = setInterval(() => { if (JOBS.some(j => j.status === 'running')) onJob(); }, 1000);
+    async function drawLessons() {
+      const ls = await getLessons();
+      lessonsEl.innerHTML = '';
+      add(lessonsEl, [h('p', { class: 'muted', style: 'margin:0' }, 'Astryx sparar en lärdom varje gång den hittar en fallgrop i Godot, och läser alla lärdomar innan nästa spel. Ju mer den används – och tränas – desto färre misstag gör den.'),
+        h('div', { class: 'row' }, h('b', null, ls.length + ' lärdomar'),
+          [3, 5, 8].map(n => h('button', { class: 'btn sm', onclick: () => runTraining(n) }, '🎓 Träna ' + n + ' spel'))),
+        ls.length ? h('details', null, h('summary', { class: 'small muted' }, 'Visa lärdomar'), h('ul', { class: 'small' }, ls.slice().reverse().slice(0, 60).map(l => h('li', null, l.text)))) : null,
+        h('p', { class: 'small muted', style: 'margin:0' }, 'Ett träningspass bygger spel från en varierad testsvit (plattform, racing, pussel, tower defense …) med 20 minuter per spel. Det kostar API-avgifter hos Anthropic men inga krediter.')]);
+    }
+    main.append(h('section', { class: 'wrap col' },
+      h('h1', null, '🤖 Astryx ', h('span', { class: 'grad' }, '5 Pro')),
+      h('p', { class: 'muted', style: 'margin:0' }, 'AI-agenten som bygger riktiga Godot-spel med Python – i upp till två timmar per spel, med testkörningar, skärmbilder och rättningar. Hyperrealistiskt läge (🪙 ' + COST.hyper + ') bygger världen av fotoskannade modeller.'),
+      h('div', { class: 'grid g2' }, status, h('div', { class: 'card col' }, h('h3', null, '🎓 Träning'), lessonsEl)),
+      h('h2', { style: 'margin-top:12px' }, 'Körningar'), box));
+    drawStatus(); drawLessons(); draw();
+    return { unmount() { jobListeners.delete(onJob); clearInterval(tick); } };
+  };
+
   VIEWS.spel = main => {
     const grid = h('div', { class: 'grid g3' }, h('p', { class: 'muted' }, 'Laddar…'));
     const fileIn = h('input', { type: 'file', accept: '.json,.nexora.json', style: 'display:none' });
@@ -809,6 +1207,7 @@
       grid.innerHTML = '';
       if (!all.length) { grid.append(h('div', { class: 'card' }, h('h3', null, 'Inga spel än'), h('p', { class: 'muted' }, 'Spel du skapar i Studio sparas här på enheten.'), h('a', { class: 'btn primary', href: '#studio' }, 'Skapa ditt första spel'))); return; }
       all.forEach(g => {
+        if (g.type === 'godot') { grid.append(godotCard(g, draw)); return; }
         const pal = (g.html.match(/"palette":\{"bg1":"(#[0-9a-f]{6})","bg2":"(#[0-9a-f]{6})"/i) || [0, '#4b2a8a', '#1b1740']);
         grid.append(h('div', { class: 'card gcard' },
           h('div', { class: 'thumb', style: 'background:linear-gradient(135deg,' + pal[1] + ',' + pal[2] + ')' }, g.title),
@@ -1087,5 +1486,5 @@
   }
 
   render();
-  window.Nexora = { S, PLANS, can, games, render, RT, testGame, released, COST };
+  window.Nexora = { S, PLANS, can, games, render, RT, testGame, released, COST, JOBS, startGodotJob, getLessons };
 })();

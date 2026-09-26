@@ -29,7 +29,7 @@ CACHE = os.environ.get("NEXORA_CACHE", os.path.join(HERE, ".cache"))
 WORK = os.path.join(CACHE, "work")
 TOOLS = os.path.join(CACHE, "tools")
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 NAME = "Nexora"
 APPID = "app.nexora.desktop"
 EV = "43.2.0"
@@ -41,47 +41,10 @@ LIBDMG = "https://github.com/mozilla/libdmg-hfsplus"
 KEEP_LOCALES = ("en-US.pak", "sv.pak")
 KEEP_LPROJ = ("en.lproj", "sv.lproj", "Base.lproj")
 
-MAIN_JS = r"""// Nexora desktop shell
-const { app, BrowserWindow, shell, Menu } = require('electron');
-const path = require('path');
-
-function create() {
-  const win = new BrowserWindow({
-    width: 1320, height: 860, minWidth: 420, minHeight: 600,
-    backgroundColor: '#07071a', title: 'Nexora', autoHideMenuBar: true,
-    icon: path.join(__dirname, 'icon.png'),
-    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
-  });
-  win.loadFile(path.join(__dirname, 'nexora.html'));
-  // Links (GitHub, Colab, the Anthropic console) open in the system browser.
-  win.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:/.test(url)) shell.openExternal(url);
-    return { action: 'deny' };
-  });
-  win.webContents.on('will-navigate', (e, url) => {
-    if (/^https?:/.test(url)) { e.preventDefault(); shell.openExternal(url); }
-  });
-  if (process.env.NEXORA_SMOKE) {
-    win.webContents.once('did-finish-load', async () => {
-      const r = await win.webContents.executeJavaScript(
-        "new Promise(res => setTimeout(() => res(JSON.stringify({ ok: !!(window.Nexora && window.NexoraLocal && window.NexoraAI && document.querySelector('header.top')), " +
-        "html: NexoraLocal.buildHtml(NexoraLocal.config('ett plattformsspel i lava', { dim: '2d' }), Nexora.RT).length })), 500))");
-      console.log('SMOKE_RESULT=' + r);
-      app.quit();
-    });
-  }
-}
-
-if (process.platform === 'darwin') {
-  Menu.setApplicationMenu(Menu.buildFromTemplate([
-    { role: 'appMenu' }, { role: 'editMenu' }, { role: 'viewMenu' }, { role: 'windowMenu' },
-  ]));
-} else {
-  Menu.setApplicationMenu(null);
-}
-app.whenReady().then(create);
-app.on('window-all-closed', () => app.quit());
-"""
+# The Electron main process, preload bridge and Godot/Python helpers live in nexora/desktop/.
+DESKTOP_SRC = os.path.join(ROOT, "desktop")
+DESKTOP_FILES = ["main.js", "preload.js", "unzip.js", "python_guard.py",
+                 "godot/probe.gd", "godot/probe_driver.gd", "godot/probe.tscn", "godot/nexora_godot_local.py"]
 
 
 def log(*a):
@@ -221,8 +184,10 @@ def payload(dirpath, icon512):
     with open(os.path.join(dirpath, "package.json"), "w") as f:
         json.dump({"name": "nexora", "productName": NAME, "version": VERSION, "main": "main.js",
                    "description": "Skapa spel med AI", "author": "Nexora", "license": "UNLICENSED"}, f, indent=2)
-    with open(os.path.join(dirpath, "main.js"), "w") as f:
-        f.write(MAIN_JS)
+    for rel in DESKTOP_FILES:
+        dst = os.path.join(dirpath, rel)
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        shutil.copy(os.path.join(DESKTOP_SRC, rel), dst)
     with open(os.path.join(dirpath, "icon.png"), "wb") as f:
         f.write(icon512)
     shutil.copy(os.path.join(DIST, "nexora-%s.html" % VERSION), os.path.join(dirpath, "nexora.html"))
@@ -428,8 +393,20 @@ def build_deb(icons):
     return out
 
 
+def build_dev(icons):
+    """Unpacked Linux app for tests: <cache>/work/dev/nexora (see verify_desktop.js)."""
+    root = os.path.join(WORK, "dev")
+    unzip(fetch(ELECTRON % "linux-x64"), root)
+    os.rename(os.path.join(root, "electron"), os.path.join(root, "nexora"))
+    payload(os.path.join(root, "resources", "app"), icons[512])
+    return os.path.join(root, "nexora")
+
+
 if __name__ == "__main__":
     os.makedirs(WORK, exist_ok=True)
+    if sys.argv[1:] == ["dev"]:
+        print(build_dev({512: icon_png(64)}))
+        sys.exit(0)
     if not os.path.exists(os.path.join(DIST, "nexora-%s.html" % VERSION)):
         sys.exit("run build.py first")
     want = sys.argv[1:] or ["deb", "win", "mac"]

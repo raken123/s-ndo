@@ -6,10 +6,10 @@ Windows-installation (EXE), macOS-skivavbild (DMG) och Linux-paket (DEB).
 | Fil | Plattform |
 |---|---|
 | `index.html` | Webbplatsen. En fristående fil som går att lägga på valfritt webbhotell. |
-| `dist/Nexora-Setup-1.1.0-x64.exe` | Windows 10/11, 64-bit |
-| `dist/Nexora-1.1.0-arm64.dmg` | macOS 12+ på Apple Silicon |
-| `dist/nexora_1.1.0_amd64.deb` | Debian, Ubuntu, Mint (x86-64) |
-| `dist/nexora-1.1.0.html` | Kopian som skrivbordsapparna laddar |
+| `dist/Nexora-Setup-1.2.0-x64.exe` | Windows 10/11, 64-bit |
+| `dist/Nexora-1.2.0-arm64.dmg` | macOS 12+ på Apple Silicon |
+| `dist/nexora_1.2.0_amd64.deb` | Debian, Ubuntu, Mint (x86-64) |
+| `dist/nexora-1.2.0.html` | Kopian som skrivbordsapparna laddar |
 | `colab/Nexora_Flash_1_Colab.ipynb` | Tränar en egen Nexora Flash-modell i Google Colab |
 | `marketing/nexora-short-9x16.mp4` | Kortreklam, 26 s, 1080×1920 (Shorts/Reels/TikTok) |
 
@@ -53,11 +53,74 @@ Lanseringen styrs av datum per plan (`ROLLOUT` i `src/ai.js`):
 
 Före datumet visas en dialog med lanseringsplanen och möjligheten att uppgradera.
 
+### Astryx 5 Pro i Godot-läge (datorappen)
+
+I Nexora för dator kan Astryx bygga riktiga **Godot 4.7-spel med Python**. En körning tar
+upp till två timmar. Tiden väljs i Studio (15 min – 2 h) och körningen fortsätter i
+bakgrunden, med en live-logg, skärmbilder och en avisering när spelet är klart.
+
+| Verktyg | Vad det gör |
+|---|---|
+| `run_python` | kör ett Python-skript i projektmappen, som skriver `project.godot`, scener, GDScript och data |
+| `write_file`, `read_file`, `list_files` | enskilda filer |
+| `godot_run` | importerar projektet och kör huvudscenen i ~9 s speltid. En testsond (`desktop/godot/probe*.gd`) trycker på alla InputMap-actions och tar tre skärmbilder, som agenten tittar på |
+| `search_assets`, `download_asset` | bara i hyperrealistiskt läge, se nedan |
+| `save_lesson` | sparar en lärdom till nästa körning |
+| `finish` | avslutar, bara efter minst en `godot_run` |
+
+- **Modell:** `claude-opus-5` med adaptivt tänkande på `xhigh`, fallbacks och
+  kontextrensning (`clear_tool_uses_20250919`), så att gamla skärmbilder inte fyller
+  kontexten under långa körningar.
+- **Tidsgräns:** vid 85 % av tiden får agenten beskedet att sluta lägga till funktioner, och
+  körningen avbryts hårt strax efter gränsen.
+- **Utan API-nyckel** bygger Nexora Local ett spelbart tredjepersonsspel i 3D med samma
+  kedja (Python → Godot → testkörning).
+- **Godot** 4.7.2 laddas ner automatiskt vid första körningen (80–170 MB beroende på
+  plattform). **Python 3.8+** måste finnas på datorn.
+- **Export:** Windows (.exe), Linux, macOS (.app i .zip) och webb, via Godots exportmallar
+  som hämtas vid första export (~1,3 GB). Projektet kan också laddas ner som .zip eller
+  öppnas direkt i Godot-editorn.
+
+**Säkerhet.** Koden som körs är skriven av AI, så Nexora frågar om lov första gången.
+Python körs genom `desktop/python_guard.py`, som nekar filåtkomst utanför projektmappen och
+blockerar processer, nätverk och `ctypes`. Det är ett skyddsräcke, inte en fullständig
+sandlåda.
+
+### Hyperrealistiskt läge (10 krediter)
+
+Hyperrealistiskt läge är ett tillval i Godot-läget. Astryx söker i Poly Havens bibliotek av
+fotoskannade CC0-assets, laddar ner dem och bygger världen med dem:
+
+- **Modeller:** glTF i verklig skala, 2k eller 4k.
+- **Himmel:** en HDRI-himmel.
+- **Mark:** PBR-texturer (albedo, normal, roughness).
+
+Renderingen använder Godots Forward+ med AgX-tonemapping, SDFGI, SSAO, SSIL, SSR,
+volymetrisk dimma och TAA. Varje asset listas i projektets `assets/polyhaven/CREDITS.md`.
+Läget kostar alltid 10 krediter, även inom planens kvot. En körning som misslyckas eller
+avbryts betalas tillbaka.
+
+### Träning
+
+Claude går inte att finjustera. Astryx tränas i stället på tre sätt:
+
+1. **Inbyggd Godot-kunskap.** Systemprompten `GODOT_GUIDE` i `src/ai.js` täcker Godot
+   4.7/GDScript 2: omdöpta API:er, `.tscn`-fallgropar, InputMap, UI, ljud utan filer och
+   en realism-guide för hyperrealistiskt läge.
+2. **Lärdomar.** Agenten sparar varje ny fallgrop med `save_lesson` (i `astryx-lessons.json`
+   i appdatan) och läser de 40 senaste före varje körning. Sidan 🤖 Astryx visar dem och kan
+   starta **träningspass**: 3, 5 eller 8 spel från en varierad testsvit, 20 min per spel.
+   Träningspassen kostar API-avgifter men inga krediter.
+3. **Egen modell i Colab.** `colab/nexora_godot_seed.jsonl` innehåller 120 Godot-byggskript
+   i Python, och varje exempel är verifierat i Godot. Notebooken tränar på HTML-, Godot- eller
+   båda dataseten (`DATASET`) och kan provköra Godot-läget: modellen skriver ett byggskript,
+   Godot kör projektet med testsonden och notebooken rapporterar fel.
+
 ### Krediter
 
 Är månadens spel slut kan man köpa krediter i stället för att byta till en dyrare plan.
 Krediterna är engångsköp och går aldrig ut: 25 för 49 kr, 100 för 149 kr eller 500 för 499 kr.
-Ett spel kostar 1 kredit och en Astryx-körning 3. Krediter dras bara när planens kvot är
+Ett spel kostar 1 kredit, en Astryx-körning 3 och hyperrealistiskt läge 10. Krediter dras bara när planens kvot är
 slut och låser inte upp funktioner från dyrare planer. Saldot visas i toppraden (🪙), och
 köp sker, precis som planerna, i demoläge utan betalning.
 
@@ -109,7 +172,7 @@ API-nycklar lämnar aldrig enheten, förutom till den leverantör de hör till.
 
 ## Installation
 
-**Windows:** kör `Nexora-Setup-1.1.0-x64.exe`. Nexora installeras för din användare i
+**Windows:** kör `Nexora-Setup-1.2.0-x64.exe`. Nexora installeras för din användare i
 `%LOCALAPPDATA%\Programs\Nexora`, utan administratörsrättigheter, med genvägar på
 skrivbordet och i Start-menyn. Avinstallera via *Inställningar → Appar*. Filen är inte
 kodsignerad, så SmartScreen varnar: välj *Mer info → Kör ändå*.
@@ -118,17 +181,21 @@ kodsignerad, så SmartScreen varnar: välj *Mer info → Kör ändå*.
 notariserad. Första gången: högerklicka på appen och välj *Öppna*. På macOS 15 och senare
 godkänner du den under *Systeminställningar → Integritet och säkerhet → Öppna ändå*.
 
-**Linux:** `sudo apt install ./nexora_1.1.0_amd64.deb` och starta sedan `nexora` eller
+**Linux:** `sudo apt install ./nexora_1.2.0_amd64.deb` och starta sedan `nexora` eller
 välj Nexora i programmenyn.
 
 ## Bygga
 
 ```sh
-python3 nexora/build/build.py      # src/ → index.html + dist/nexora-1.1.0.html
+python3 nexora/build/build.py      # src/ → index.html + dist/nexora-1.2.0.html
 python3 nexora/build/desktop.py    # → dist/*.exe, *.dmg, *.deb  (körs på Linux)
 python3 nexora/build/build.py      # lägger in storlekar och SHA-256 på nedladdningssidan
 node nexora/build/dataset.js       # → colab/nexora_seed.jsonl
 node nexora/build/verify.js        # testar appen i headless Chromium (Playwright)
+python3 nexora/build/desktop.py dev   # oinstallerad Linux-app för tester
+NEXORA_APP=… NEXORA_GODOT=… [NEXORA_TPZ=…] xvfb-run -a node nexora/build/verify_desktop.js
+node nexora/build/dataset_godot.js     # → colab/nexora_godot_seed.jsonl
+python3 nexora/build/make_notebook.py  # → colab/Nexora_Flash_1_Colab.ipynb
 FFMPEG=ffmpeg node nexora/build/ad.js   # renderar marketing/nexora-short-9x16.mp4
 ```
 
@@ -179,6 +246,22 @@ automatiskt till `build/.cache`:
     tillbaka oförändrade, att `run_game` returnerar en riktig skärmbild och mätvärden,
     att `eager_input_streaming` bara sitter på verktygen som bär kod, och att
     `fallbacks` och promptcache är påslagna.
+- **Skrivbordsappen, end-to-end** (`verify_desktop.js`, 30 kontroller): testet styr den riktiga
+  Electron-appen under Xvfb, med riktig Python, riktig Godot 4.7.2 och en lokal kopia av
+  Poly Havens API med genererade glTF-, HDR- och PNG-filer.
+  - **Hyperrealistiskt läge med Nexora Local:** körningen drar 10 krediter, laddar ner
+    tre modeller, en HDRI-himmel och en marktextur och skriver `CREDITS.md`. Den bygger ett
+    Godot-projekt som använder dem med AgX, testkör det med tre skärmbilder och sparar
+    spelet i biblioteket.
+  - **Claude-agenten mot ett simulerat API:** `run_python` skriver ett projekt och
+    `godot_run` kör det utan fel med tre bilder. Sökning och nedladdning fungerar, och
+    Python-skyddet blockerar läsning utanför projektet. Lärdomen sparas och finns med i
+    nästa körnings instruktioner. `finish` utan testkörning nekas, och kostnaden betalas
+    tillbaka.
+  - **Riktiga exporter med Godots exportmallar:** Linux (73,7 MB), Windows .exe (109,3 MB),
+    webb (40 MB) och macOS .zip (59,7 MB). Det exporterade Linux-spelet startar fristående.
+- **Träningsdatan för Godot:** exemplen körs med Python, och ett av de genererade projekten
+  körs i Godot med testsonden utan skriptfel.
 - Krediter: när kvoten är slut öppnas köpdialogen. Ett köp av 25 krediter och ett spel ger
   saldot 24 utan att månadskvoten ändras. Free-planen den 14 november drar 3 krediter för
   Astryx.
@@ -195,9 +278,15 @@ automatiskt till `build/.cache`:
   exekverbarhetsbitarna finns kvar och alla binärer är ad hoc-signerade arm64-filer.
 - EXE-filen: giltig PE-fil, SFX-konfigurationen och 7z-arkivet ligger på rätt plats,
   `7zz t` säger "Everything is Ok" och båda PowerShell-skripten parsas utan fel.
-- **Inte testat:** EXE-filen har inte körts på Windows och DMG-filen har inte öppnats på
-  en Mac, eftersom byggmiljön saknar båda. Colab-anteckningsboken är syntaxkontrollerad
-  men har inte körts, eftersom byggmiljön saknar GPU.
+- **Inte testat:**
+  - EXE-filen har inte körts på Windows och DMG-filen har inte öppnats på en Mac, eftersom
+    byggmiljön saknar båda.
+  - Colab-anteckningsboken har inte körts, eftersom byggmiljön saknar GPU.
+  - Poly Havens riktiga API är blockerat här, så sökning och nedladdning är testade mot en
+    kopia med samma svarsformat.
+  - Godot renderade i testerna med OpenGL-reserven (ingen GPU), så SDFGI, SSR och
+    volymetrisk dimma syns först på en riktig dator.
+  - Ingen verklig Claude-körning av Astryx har gjorts, eftersom ingen API-nyckel fanns.
 
 ## Källkod
 
@@ -209,6 +298,9 @@ src/ai.js        Nexora-modellerna → Anthropic / OpenAI-kompatibel endpoint
 src/app.js       gränssnitt, planer, Studio, verktyg, bibliotek, export
 src/app.css      stil
 src/shell.html   mall som build.py fyller i
+desktop/main.js  Electron-huvudprocessen: Godot, Python, projekt, testkörning, export, Poly Haven
+desktop/preload.js, unzip.js, python_guard.py
+desktop/godot/   testsonden (probe*.gd) och Nexora Locals Godot-generator i Python
 ```
 
 Funktionerna i `runtime.js` och `games.js` bäddas in i varje exporterat spel med

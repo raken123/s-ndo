@@ -17,7 +17,7 @@
     image: { name: 'Nexora Image 1', short: 'Image 1', tag: 'Bildmodell', kind: 'image', minTier: 1, desc: 'Sprites, bakgrunder och ikoner till dina spel.' },
     d3: { name: 'Nexora 3D 1', short: '3D 1', tag: '3D-generator', kind: 'mesh', minTier: 1, desc: 'Low-poly 3D-modeller som du kan rotera och exportera som .obj.' },
     astryx: { name: 'Nexora Astryx 5 Pro', short: 'Astryx 5 Pro', tag: 'AI-agent', kind: 'agent', minTier: 0, agent: true,
-      desc: 'Vår första AI-agent. Den planerar, skriver spelet, testkör det, tittar på resultatet, hittar buggar och rättar dem – helt själv – tills spelet fungerar.' },
+      desc: 'Vår första AI-agent. Den planerar, skriver spelet, testkör det, tittar på resultatet, hittar buggar och rättar dem – helt själv – tills spelet fungerar. På datorn bygger den riktiga Godot-spel med Python i upp till två timmar, och i hyperrealistiskt läge av fotoskannade modeller.' },
   };
   // Staged rollout of Astryx 5 Pro: plan index → first day it is available (local date, YYYY-MM-DD).
   const ROLLOUT = { astryx: ['2026-11-14', '2026-11-14', '2026-10-07', '2026-09-26', '2026-09-26'] };
@@ -30,6 +30,7 @@
     image: { model: 'claude-opus-5', max_tokens: 32000, output_config: { effort: 'medium' }, fallbacks: true },
     d3: { model: 'claude-opus-5', max_tokens: 32000, output_config: { effort: 'medium' }, fallbacks: true },
     astryx: { model: 'claude-opus-5', max_tokens: 64000, thinking: { type: 'adaptive', display: 'summarized' }, output_config: { effort: 'high' }, fallbacks: true },
+    astryxGodot: { model: 'claude-opus-5', max_tokens: 64000, thinking: { type: 'adaptive', display: 'summarized' }, output_config: { effort: 'xhigh' }, fallbacks: true },
   };
 
   const DEFAULT_SETTINGS = {
@@ -275,14 +276,16 @@ Always run the game at least once before finishing. Stay under about ten tool ca
   }
 
   // One streamed Messages API turn, reassembled into content blocks we can send back unchanged.
-  async function agentTurn(settings, messages, hooks, signal) {
-    const spec = ANTHROPIC.astryx;
-    const body = { model: spec.model, max_tokens: spec.max_tokens, stream: true, system: AGENT_SYSTEM, tools: AGENT_TOOLS,
-      thinking: spec.thinking, output_config: spec.output_config, cache_control: { type: 'ephemeral' }, fallbacks: 'default', messages };
+  // conf (optional): { system, tools, spec, betas: [], extra: {} } – defaults to the HTML agent.
+  async function agentTurn(settings, messages, hooks, signal, conf) {
+    conf = conf || {};
+    const spec = conf.spec || ANTHROPIC.astryx;
+    const body = Object.assign({ model: spec.model, max_tokens: spec.max_tokens, stream: true, system: conf.system || AGENT_SYSTEM, tools: conf.tools || AGENT_TOOLS,
+      thinking: spec.thinking, output_config: spec.output_config, cache_control: { type: 'ephemeral' }, fallbacks: 'default', messages }, conf.extra || {});
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST', signal, body: JSON.stringify(body),
       headers: { 'content-type': 'application/json', 'x-api-key': settings.anthropicKey, 'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true', 'anthropic-beta': 'server-side-fallback-2026-07-01' },
+        'anthropic-dangerous-direct-browser-access': 'true', 'anthropic-beta': ['server-side-fallback-2026-07-01'].concat(conf.betas || []).join(',') },
     });
     if (!res.ok) throw await httpError(res);
     const blocks = [];
@@ -390,5 +393,143 @@ Always run the game at least once before finishing. Stay under about ten tool ca
     return { html: state.html, title: tm ? tm[1].trim() : null, summary: 'Astryx skrev spelet, testkörde det ' + state.runs + ' gång' + (state.runs > 1 ? 'er' : '') + ' och rättade det som behövdes.', turns: state.runs, runs: state.runs, model: settings.openaiModels.astryx };
   }
 
-  window.NexoraAI = { MODELS, ROLLOUT, ANTHROPIC, DEFAULT_SETTINGS, GAME_SYSTEM, AGENT_TOOLS, gamePrompt, generateGame, fixGame, text, image, mesh, agent, extractHtml };
+  // ------------------------------------------------------------------ Astryx 5 Pro, Godot mode
+  // Everything Astryx knows about Godot beyond the base model lives here and in the
+  // lessons it saves after each run (see save_lesson) – that is how it is trained.
+  const GODOT_GUIDE = `You are Nexora Astryx 5 Pro in Godot mode: an autonomous game studio of one. You build a complete, polished game in Godot 4.7 (GDScript 2) inside a project folder on the user's computer, working for as long as the time budget allows (often an hour or more). Quality matters more than speed.
+
+# How you work
+- Python is your hands: run_python executes a Python 3 script with the project folder as working directory. Use it to write project.godot, scenes, GDScript, generated levels and data. write_file is fine for single files.
+- godot_run is your eyes: it imports the project, runs the main scene for ~9 s of game time while pressing every InputMap action, and returns errors plus three screenshots. Look at them critically, like a player would.
+- Loop: design → build the smallest playable core → godot_run → fix → add one feature → godot_run → … → polish → final godot_run → save_lesson (new pitfalls only) → finish.
+- Start with a short design.md (goal, controls, loop, win/lose, art direction, feature list). Tick features off as you go.
+- Never finish with errors in the last godot_run or with screenshots that show a blank or broken screen.
+
+# Project rules
+- project.godot: config_version=5; [application] config/name, run/main_scene="res://main.tscn", config/features=PackedStringArray("4.7", "Forward Plus"); [display] window/size/viewport_width=1280, viewport_height=720.
+- Keep .tscn files tiny (a root node + script). Build the rest in code – hand-written .tscn is the #1 source of load errors. If you write one: [gd_scene load_steps=N format=3], ext_resource ids are strings, load_steps = resources + 1.
+- Define input in code at startup (InputMap.add_action / action_add_event with InputEventKey.physical_keycode = KEY_W …). The tester presses every action in InputMap, so every action must do something sensible.
+- The game must start playing within ~2 s or on any action (no mouse-only menus). Restart with get_tree().reload_current_scene().
+- Never touch _nexora/ (Nexora's test probe) and don't delete project files you did not create.
+
+# GDScript 2 / Godot 4 (the classic mistakes)
+- Tabs for indentation, never mixed with spaces. Typed code: var speed := 5.0, func f(x: int) -> void.
+- @export, @onready, @tool; signals: button.pressed.connect(_on_pressed); await get_tree().create_timer(1.0).timeout (no yield).
+- Renamed APIs: Spatial→Node3D, KinematicBody→CharacterBody3D (velocity property, move_and_slide() without args, is_on_floor() after it), instance()→instantiate(), rand_range→randf_range, deg2rad→deg_to_rad, OS.get_ticks_msec→Time.get_ticks_msec, change_scene→change_scene_to_file, PoolStringArray→PackedStringArray, Engine.editor_hint→Engine.is_editor_hint(), get_world()→get_world_3d(), translation→position.
+- := cannot infer from a Variant (e.g. a Dictionary value) – write var x: float = d.value.
+- Colors: Color("#rrggbb"); vectors are value types; Array[Node3D] typed arrays.
+- UI: CanvasLayer → Control/Label; font size via add_theme_font_size_override("font_size", 28).
+- Sound without files: AudioStreamGenerator + push_frame, or build an AudioStreamWAV from a PackedByteArray.
+- Many identical objects: MultiMeshInstance3D. Physics: StaticBody3D/CharacterBody3D/Area3D + CollisionShape3D with a Shape3D resource.`;
+
+  const HYPERREAL_GUIDE = `
+
+# Hyperrealistic mode
+The user paid for photorealism. Build the world from real photoscanned CC0 assets from Poly Haven:
+- search_assets (English keywords, several searches: hero props, nature, architecture) → download_asset. type models → glTF (real-world scale in metres), hdris → .hdr sky, textures → PBR maps (albedo/normal/roughness/ao).
+- Use 2k resolution by default, 4k only for the hero asset; 4–10 models, 1 HDRI, 1–3 ground/surface textures.
+- Downloaded glTFs load as PackedScene after import: (load("res://assets/polyhaven/<id>/<file>.gltf") as PackedScene).instantiate(). Run godot_run once right after downloading so everything is imported.
+- Scatter vegetation/rocks with MultiMeshInstance3D using a mesh taken from the glTF (find_children("*", "MeshInstance3D")[0].mesh); vary scale and rotation; add collisions only where the player can reach.
+- WorldEnvironment: PanoramaSkyMaterial with the HDRI, background BG_SKY, ambient + reflections from sky, tonemap_mode = TONE_MAPPER_AGX, sdfgi_enabled, ssao_enabled, ssil_enabled, ssr_enabled, glow_enabled, volumetric_fog_enabled (low density). DirectionalLight3D matching the HDRI sun, shadows on, directional_shadow_max_distance ~120.
+- Materials: StandardMaterial3D with albedo_texture, normal_enabled + normal_texture, roughness_texture, ao; uv1_scale or uv1_triplanar for large surfaces.
+- project.godot [rendering]: anti_aliasing/quality/msaa_3d=2 and anti_aliasing/quality/use_taa=true. Camera: CameraAttributesPractical, subtle DOF.
+- Keep the gameplay first: realism must not make the game unplayable or slow. Credits for every asset are written to assets/polyhaven/CREDITS.md automatically.`;
+
+  const GODOT_TOOLS = [
+    { name: 'run_python', eager_input_streaming: true,
+      description: 'Run a Python 3 script (standard library only) with the project folder as working directory. Use it to create or change project files. No network, no subprocesses, no files outside the project. Returns exit code, stdout and stderr.',
+      input_schema: { type: 'object', properties: { purpose: { type: 'string', description: 'One short sentence in Swedish shown to the user' }, code: { type: 'string' } }, required: ['purpose', 'code'] } },
+    { name: 'write_file', eager_input_streaming: true,
+      description: 'Write one text file in the project (path relative to the project or res://...). Overwrites.',
+      input_schema: { type: 'object', properties: { path: { type: 'string' }, content: { type: 'string' } }, required: ['path', 'content'] } },
+    { name: 'read_file', description: 'Read a text file from the project.',
+      input_schema: { type: 'object', properties: { path: { type: 'string' } }, required: ['path'] } },
+    { name: 'list_files', description: 'List the project files with sizes.', input_schema: { type: 'object', properties: {}, required: [] } },
+    { name: 'godot_run',
+      description: 'Import the project and run the main scene for about 9 seconds of game time while pressing every InputMap action. Returns errors, whether the run completed, and up to three screenshots.',
+      input_schema: { type: 'object', properties: {}, required: [] } },
+    { name: 'search_assets', hyperreal: true,
+      description: 'Search Poly Haven (CC0, photoscanned, hyperrealistic). type: models, hdris or textures. Query with English keywords. Returns ids, names, tags and polycounts.',
+      input_schema: { type: 'object', properties: { query: { type: 'string' }, type: { type: 'string', enum: ['models', 'hdris', 'textures'] } }, required: ['query', 'type'] } },
+    { name: 'download_asset', hyperreal: true,
+      description: 'Download a Poly Haven asset into the project. Returns res:// paths (glTF for models, .hdr for hdris, map paths for textures).',
+      input_schema: { type: 'object', properties: { id: { type: 'string' }, type: { type: 'string', enum: ['models', 'hdris', 'textures'] }, resolution: { type: 'string', enum: ['1k', '2k', '4k'] } }, required: ['id', 'type'] } },
+    { name: 'save_lesson',
+      description: 'Save one short, general lesson for future Astryx runs: a Godot/GDScript pitfall you actually hit and how to avoid it. Not project-specific. Use sparingly.',
+      input_schema: { type: 'object', properties: { lesson: { type: 'string' } }, required: ['lesson'] } },
+    { name: 'finish',
+      description: 'Finish when the game is complete, the last godot_run had no errors and the screenshots look right. The summary (Swedish, 2–4 sentences) is shown to the player.',
+      input_schema: { type: 'object', properties: { summary: { type: 'string' } }, required: ['summary'] } },
+  ];
+
+  function godotValidate(name, i) {
+    if (!i || typeof i !== 'object') return 'input is not an object';
+    const need = { run_python: ['code'], write_file: ['path', 'content'], read_file: ['path'], search_assets: ['query', 'type'], download_asset: ['id', 'type'], save_lesson: ['lesson'], finish: ['summary'] }[name] || [];
+    for (const k of need) if (!isStr(i[k]) || (k !== 'content' && !i[k].length)) return name + ' needs a string `' + k + '`';
+    return null;
+  }
+
+  function godotPrompt(prompt, opts) {
+    return ['Game idea: ' + prompt, '',
+      'Engine: Godot 4.7 (GDScript). 3D unless the idea is clearly 2D. All player-facing text in Swedish.',
+      'Time budget: up to ' + opts.maxMinutes + ' minutes of work. Use it to build, test and improve – but finish before it runs out.',
+      opts.hyperreal ? 'HYPERREALISTIC MODE is on: build the world from photoscanned Poly Haven models, an HDRI sky and PBR textures that fit the idea.' : 'Art style: stylised and colourful, built from primitives and procedural materials.',
+    ].concat((opts.features || []).map(k => FEATURE_TEXT[k]).filter(Boolean).map(t => t.replace(/Web Audio/g, 'Godot audio'))).join('\n');
+  }
+
+  // exec(name, input) runs a tool on the desktop and returns tool_result content.
+  async function agentGodot(settings, prompt, opts, hooks, signal) {
+    if (!settings.anthropicKey) throw apiError('Godot-läget med Claude kräver en Anthropic API-nyckel. Utan nyckel bygger Nexora Local spelet offline.');
+    const started = Date.now(), limitMs = (opts.maxMinutes || 120) * 60000;
+    const tools = GODOT_TOOLS.filter(t => opts.hyperreal || !t.hyperreal).map(t => { const c = Object.assign({}, t); delete c.hyperreal; return c; });
+    const lessons = (opts.lessons || []).slice(-40);
+    const system = GODOT_GUIDE + (opts.hyperreal ? HYPERREAL_GUIDE : '') + (lessons.length ? '\n\n# Lessons from earlier Astryx runs\n' + lessons.map(l => '- ' + l).join('\n') : '');
+    const conf = { system, tools, spec: ANTHROPIC.astryxGodot, betas: ['context-management-2025-06-27'], extra: { context_management: { edits: [{ type: 'clear_tool_uses_20250919' }] } } };
+    const messages = [{ role: 'user', content: godotPrompt(prompt, opts) }];
+    const st = { runs: 0, cleanRuns: 0, turns: 0, summary: null, lastShots: [], lessons: [], warned: false, idle: 0 };
+    for (st.turns = 1; st.turns <= 400; st.turns++) {
+      const turn = await agentTurn(settings, messages, hooks, signal, conf);
+      messages.push({ role: 'assistant', content: turn.content });
+      const elapsed = Date.now() - started;
+      if (!turn.calls.length) {
+        if (st.summary || elapsed > limitMs || ++st.idle > 2) break;
+        messages.push({ role: 'user', content: 'Fortsätt med verktygen. Kör godot_run och avsluta med finish när spelet är klart och testat.' });
+        continue;
+      }
+      st.idle = 0;
+      const results = [];
+      let done = false;
+      for (const c of turn.calls) {
+        const r = { type: 'tool_result', tool_use_id: c.id };
+        const bad = c._bad != null ? JSON.stringify({ INVALID_JSON: c._bad.slice(0, 2000) }) : godotValidate(c.name, c.input);
+        if (bad) { r.is_error = true; r.content = bad; results.push(r); continue; }
+        if (c.name === 'finish') {
+          if (!st.runs) { r.is_error = true; r.content = 'Run godot_run before finishing.'; }
+          else { st.summary = c.input.summary; r.content = 'Done.'; done = true; }
+        } else if (c.name === 'save_lesson') {
+          st.lessons.push(c.input.lesson.slice(0, 300)); hooks.lesson && hooks.lesson(c.input.lesson.slice(0, 300)); r.content = 'Saved.';
+        } else {
+          try {
+            const out = await hooks.exec(c.name, c.input);
+            if (c.name === 'godot_run') { st.runs++; if (out.ok) st.cleanRuns++; st.lastShots = out.shots || []; }
+            r.content = out.content; if (out.is_error) r.is_error = true;
+          } catch (e) { r.is_error = true; r.content = String(e.message || e); }
+        }
+        results.push(r);
+      }
+      // Time: tell Astryx how much is left; stop hard at the limit.
+      const left = Math.round((limitMs - (Date.now() - started)) / 60000);
+      if (!done && left <= Math.max(3, (opts.maxMinutes || 120) * 0.15) && !st.warned) {
+        st.warned = true;
+        results.push({ type: 'text', text: '⏱ About ' + Math.max(0, left) + ' minutes of the time budget remain. Stop adding features: fix what is broken, run godot_run once more, save lessons and call finish.' });
+      }
+      messages.push({ role: 'user', content: results });
+      if (done) break;
+      if (Date.now() - started > limitMs + 5 * 60000) break;
+    }
+    if (!st.runs) throw apiError('Astryx hann inte testa något spel. Försök igen.');
+    return { summary: st.summary || 'Astryx arbetade tills tiden tog slut. Spelet testkördes ' + st.runs + ' gånger.', runs: st.runs, cleanRuns: st.cleanRuns, turns: st.turns, minutes: Math.round((Date.now() - started) / 60000), lessons: st.lessons, shots: st.lastShots, model: ANTHROPIC.astryxGodot.model };
+  }
+
+  window.NexoraAI = { MODELS, ROLLOUT, ANTHROPIC, DEFAULT_SETTINGS, GAME_SYSTEM, AGENT_TOOLS, GODOT_TOOLS, GODOT_GUIDE, gamePrompt, generateGame, fixGame, text, image, mesh, agent, agentGodot, extractHtml };
 })();

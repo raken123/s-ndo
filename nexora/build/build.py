@@ -14,7 +14,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 SRC = os.path.join(ROOT, "src")
 DIST = os.path.join(ROOT, "dist")
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 
 
 def read(name):
