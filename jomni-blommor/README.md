@@ -21,6 +21,7 @@ Webbutik + iPhone-app för Jomni Blommor.
 - **Jomni Plus** – 48 kr/mån, dubbla mynt. Webben: Stripe-prenumeration. Appen: App Store-prenumeration (StoreKit 2).
 - **Adminsida** – knappen ligger längst ner på sidan (och längst ner under *Konto* i appen). Se alla beställningar, ändra status, ring/karta.
 - **Stjärnor → rabatter** – kunden ger 1–5 stjärnor efter leverans. Stjärnorna hamnar hos admin och används för att skapa rabattkoder (1 ⭐ per %, 1 ⭐ per 10 kr, gratis leverans 5 ⭐). Oanvända koder som tas bort ger tillbaka stjärnorna.
+- **Radera konto** – kunder kan radera sitt konto på webben och i appen (krav från Apple).
 - **Tidskänsliga notiser i iPhone-appen** – "Ny beställning – du måste leverera" direkt när en beställning betalas, och "⏰ Dags att leverera" en timme före tidsfönstret. Notiserna bryter igenom Fokus-läge.
 
 ## Kom igång (lokalt, demoläge)
@@ -42,6 +43,8 @@ Admin: http://localhost:8080/admin (eller knappen längst ner). Lösenordet är 
 5. Kör `npm start` bakom HTTPS (t.ex. Caddy/Nginx, Render, Railway, Fly.io). Data sparas i `server/data/db.json` – ta backup.
 
 ## iPhone-appen (.ipa)
+
+Se **[APP-STORE.md](APP-STORE.md)** för steg-för-steg-instruktioner till Apple Developer Program, TestFlight och App Store.
 
 Varje push som ändrar `jomni-blommor/ios/` bygger appen i GitHub Actions → fliken *Actions* → *Jomni Blommor iOS (IPA)* → artefakten **JomniBlommor-ipa**. Kör workflowet manuellt för att ange serverns adress.
 

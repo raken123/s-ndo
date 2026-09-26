@@ -594,9 +594,20 @@ async function viewAccount() {
       <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
         <a class="btn" href="#/beloningar">Växla mynt & belöningar</a>
         <button class="btn ghost" id="logout">Logga ut</button>
+        <button class="btn ghost" id="delete-account" style="color:var(--danger)">Radera konto</button>
       </div>
     </div>`;
   $('#logout').onclick = async () => { await api('/auth/logout', { method: 'POST' }).catch(() => {}); setSession(null); route(); };
+  $('#delete-account').onclick = async () => {
+    const password = prompt('Radera ditt konto för alltid? Mynt, diamanter och belöningskoder försvinner. Skriv ditt lösenord för att bekräfta:');
+    if (!password) return;
+    try {
+      await api('/me', { method: 'DELETE', body: { password } });
+      setSession(null);
+      toast('Ditt konto är raderat.');
+      route();
+    } catch (e) { toast(e.message); }
+  };
   try {
     const { orders } = await api('/me/orders');
     $('#my-orders').innerHTML = orders.length ? orders.map((o) => `

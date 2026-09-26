@@ -382,6 +382,18 @@ export function createApp({ db, env = {}, stripe = null, apns = null, webRoot = 
 
   route('GET', '/api/me', ({ req }) => ({ user: publicUser(requireUser(req), db, now()) }));
 
+  // Radera konto (krav från App Store). Beställningar behålls för bokföring men kopplas bort.
+  route('DELETE', '/api/me', ({ req, body }) => {
+    const u = requireUser(req);
+    if (!verifyPassword(String(body.password || ''), u.passHash)) throw new HttpError(401, 'Fel lösenord.');
+    for (const o of data().orders) if (o.userId === u.id) o.userId = null;
+    for (const d of data().discounts) if (d.userId === u.id) d.disabled = true;
+    for (const [k, sess] of Object.entries(data().sessions)) if (sess.userId === u.id) delete data().sessions[k];
+    data().users = data().users.filter((x) => x.id !== u.id);
+    db.save();
+    return { ok: true, note: u.plus?.source === 'apple' ? 'Avsluta även prenumerationen i iPhone-inställningarna.' : null };
+  });
+
   route('GET', '/api/me/orders', ({ req }) => {
     const u = requireUser(req);
     return {

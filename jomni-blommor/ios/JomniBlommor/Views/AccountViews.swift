@@ -239,6 +239,8 @@ struct AccountView: View {
     @State private var error: String?
     @State private var orders: [Order] = []
     @State private var showAdmin = false
+    @State private var showDelete = false
+    @State private var deletePassword = ""
 
     var body: some View {
         NavigationStack {
@@ -273,7 +275,11 @@ struct AccountView: View {
                             }
                         }
                     }
-                    Section { Button("Logga ut", role: .destructive) { Task { await store.logout() } } }
+                    Section {
+                        Button("Logga ut") { Task { await store.logout() } }
+                        Button("Radera konto", role: .destructive) { showDelete = true }
+                        ErrorText(message: error)
+                    }
                 } else {
                     Section {
                         Picker("", selection: $registering) {
@@ -312,6 +318,18 @@ struct AccountView: View {
             .task(id: store.user?.id) { await loadOrders() }
             .refreshable { await store.refreshUser(); await loadOrders() }
             .sheet(isPresented: $showAdmin) { AdminRootView() }
+            .alert("Radera kontot?", isPresented: $showDelete) {
+                SecureField("Lösenord", text: $deletePassword)
+                Button("Radera", role: .destructive) {
+                    Task {
+                        do { try await store.deleteAccount(password: deletePassword); error = nil } catch { self.error = error.localizedDescription }
+                        deletePassword = ""
+                    }
+                }
+                Button("Avbryt", role: .cancel) { deletePassword = "" }
+            } message: {
+                Text("Kontot, mynten, diamanterna och belöningskoderna raderas för alltid. Har du Jomni Plus via App Store avslutar du den i Inställningar.")
+            }
         }
     }
 

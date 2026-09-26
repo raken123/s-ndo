@@ -1,0 +1,85 @@
+# Signerar Jomni Blommor-appen och laddar upp den till App Store Connect (TestFlight).
+# Körs manuellt: Actions → "Jomni Blommor → App Store Connect" → Run workflow.
+#
+# Kräver dessa repository secrets (Settings → Secrets and variables → Actions):
+#   APPLE_TEAM_ID        – 10 tecken, från developer.apple.com → Membership
+#   ASC_KEY_ID           – App Store Connect API-nyckelns Key ID
+#   ASC_ISSUER_ID        – Issuer ID (visas ovanför nyckellistan)
+#   ASC_KEY_P8           – innehållet i AuthKey_XXXX.p8 (hela texten)
+# Nyckeln skapas i App Store Connect → Användare och åtkomst → Integrationer → App Store Connect API
+# med rollen "Admin" (behövs för att Xcode ska kunna skapa certifikat och profiler automatiskt).
+name: Jomni Blommor → App Store Connect
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: 'Serverns adress som appen ska använda'
+        required: true
+        default: 'https://jomniblommor.se'
+      version:
+        description: 'Versionsnummer (t.ex. 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: jomni-blommor/ios
+    env:
+      ASC_KEY_PATH: ${{ github.workspace }}/asc_key.p8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kontrollera secrets
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+          KEY: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          for v in TEAM KEY_ID ISSUER KEY; do
+            if [ -z "${!v}" ]; then echo "::error::Saknar secret för $v – se kommentaren överst i workflowet."; exit 1; fi
+          done
+          printf '%s' "$KEY" > "$ASC_KEY_PATH"
+      - name: Installera XcodeGen och generera projekt
+        run: brew install xcodegen && xcodegen generate
+      - name: Arkivera (signerad)
+        run: |
+          xcodebuild archive -project JomniBlommor.xcodeproj -scheme JomniBlommor -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath build/JomniBlommor.xcarchive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}" \
+            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" CODE_SIGN_STYLE=Automatic \
+            JOMNI_API_BASE_URL="${{ inputs.api_url }}" \
+            MARKETING_VERSION="${{ inputs.version }}" CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            > archive.log 2>&1 || { grep -E "error:" archive.log | sort -u | head -60; tail -40 archive.log; exit 1; }
+      - name: Exportera och ladda upp till App Store Connect
+        run: |
+          cat > ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath build/JomniBlommor.xcarchive \
+            -exportOptionsPlist ExportOptions.plist -exportPath build/export \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}"
+          echo "✅ Uppladdad. Bygget dyker upp under TestFlight i App Store Connect om 10–30 minuter."
+      - name: Städa nyckel
+        if: always()
+        run: rm -f "$ASC_KEY_PATH"

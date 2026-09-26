@@ -196,6 +196,15 @@ test('påminnelse om leverans skickas som tidskänslig push', async () => {
   assert.match(sent[1].title, /Dags att leverera/);
 });
 
+test('kund kan radera sitt konto', async () => {
+  const reg = await api('POST', '/api/auth/register', { name: 'Cia', email: 'cia@example.se', password: 'hemligt123' });
+  const token = reg.body.token;
+  assert.equal((await api('DELETE', '/api/me', { password: 'fel' }, token)).status, 401);
+  assert.equal((await api('DELETE', '/api/me', { password: 'hemligt123' }, token)).status, 200);
+  assert.equal((await api('GET', '/api/me', null, token)).status, 401);
+  assert.equal((await api('POST', '/api/auth/login', { email: 'cia@example.se', password: 'hemligt123' })).status, 401);
+});
+
 test('stripe-webhook signatur', () => {
   const secret = 'whsec_test';
   const body = '{"id":"evt_1"}';

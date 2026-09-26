@@ -106,6 +106,12 @@ final class AppStore: ObservableObject {
         user = nil
     }
 
+    func deleteAccount(password: String) async throws {
+        let _: OKResponse = try await api.request("DELETE", "/me", body: ["password": password])
+        api.userToken = nil
+        user = nil
+    }
+
     func myOrders() async throws -> [Order] {
         let r: OrdersResponse = try await api.request("GET", "/me/orders")
         return r.orders
