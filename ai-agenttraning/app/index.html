@@ -1,0 +1,1641 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Raken Teknik Åk 4 2026/2027 AI Agentträning</title>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f3f5fa; --panel:#ffffff; --panel2:#f6f7fb; --ink:#1b2030; --muted:#5b6275; --line:#dfe3ee;
+  --accent:#2a78d6; --accent-ink:#ffffff; --accent-soft:#e3eefb; --orange:#eb6834;
+  --good:#17804a; --good-soft:#e2f5ea; --bad:#cc3434; --bad-soft:#fbe6e6;
+  --floor:#eef1f7; --grid:#dde2ec; --wall:#3d4459; --wall2:#59627c; --lava:#ff5a1f; --lava2:#ffb020;
+  --goal:#1baf7a; --coin:#eda100; --series-1:#2a78d6;
+  --shadow:0 1px 2px rgba(20,30,60,.06),0 6px 18px rgba(20,30,60,.07);
+  --r:14px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#11131a; --panel:#1b1e28; --panel2:#222633; --ink:#eef0f6; --muted:#a6acbd; --line:#2f3446;
+    --accent:#3987e5; --accent-soft:#1d2a40; --good:#3cc47f; --good-soft:#173326; --bad:#ef6a6a; --bad-soft:#3a1d1f;
+    --floor:#252a37; --grid:#2f3546; --wall:#8d96b0; --wall2:#b2b9cd; --series-1:#3987e5;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#11131a; --panel:#1b1e28; --panel2:#222633; --ink:#eef0f6; --muted:#a6acbd; --line:#2f3446;
+  --accent:#3987e5; --accent-soft:#1d2a40; --good:#3cc47f; --good-soft:#173326; --bad:#ef6a6a; --bad-soft:#3a1d1f;
+  --floor:#252a37; --grid:#2f3546; --wall:#8d96b0; --wall2:#b2b9cd; --series-1:#3987e5;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Noto Sans",sans-serif;min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}
+h2{font-size:1.35rem;margin:0 0 .6rem}
+h3{font-size:1.05rem;margin:0 0 .5rem}
+p{margin:.3rem 0 .6rem}
+.muted{color:var(--muted)}
+.small{font-size:.87rem}
+
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 18px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand .t1{font-size:.8rem;color:var(--muted);white-space:nowrap}
+.brand .t2{font-size:1.2rem;font-weight:750;letter-spacing:-.01em}
+.cur{display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border:1px solid var(--line);border-radius:999px;background:var(--panel2);cursor:pointer;max-width:50%}
+.cur span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.tabs{display:flex;gap:4px;padding:8px 14px 0;overflow-x:auto;background:var(--panel);border-bottom:1px solid var(--line)}
+.tabs button{border:0;background:none;padding:10px 14px;border-radius:10px 10px 0 0;cursor:pointer;font-weight:600;color:var(--muted);white-space:nowrap;border-bottom:3px solid transparent}
+.tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+.tabs button:hover{background:var(--panel2)}
+main{padding:18px;max-width:1280px;margin:0 auto}
+.view[hidden]{display:none}
+
+/* building blocks */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--shadow)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.stack{display:flex;flex-direction:column;gap:14px}
+.btn{border:1px solid var(--line);background:var(--panel);padding:9px 14px;border-radius:11px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:6px;line-height:1.2}
+.btn:hover{background:var(--panel2)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.good{background:var(--good-soft);border-color:transparent;color:var(--good)}
+.btn.bad{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+.btn.big{padding:12px 18px;font-size:1.02rem}
+.btn.sm{padding:6px 10px;font-size:.88rem;border-radius:9px}
+.btn.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+select,input[type=text],input[type=number],textarea{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+textarea{width:100%;resize:vertical}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.92rem;line-height:1.35}
+label.field{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:.92rem}
+.hint{font-size:.85rem;color:var(--muted);font-weight:400}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}
+@media (max-width:980px){.split{grid-template-columns:minmax(0,1fr)}}
+.boardwrap{width:100%;display:flex;justify-content:center;touch-action:none}
+canvas.board{border-radius:10px;display:block;box-shadow:0 0 0 1px var(--line)}
+.status{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--panel2);font-weight:600;min-height:2.6em}
+.status.good{background:var(--good-soft);color:var(--good)}
+.status.bad{background:var(--bad-soft);color:var(--bad)}
+.meter{height:12px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);overflow:hidden}
+.meter>i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .4s}
+.meter.orange>i{background:var(--orange)}
+.mrow{display:grid;grid-template-columns:92px 1fr 44px;gap:8px;align-items:center;font-size:.9rem}
+.mrow b{text-align:right;font-variant-numeric:tabular-nums}
+.badge{display:inline-block;padding:2px 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:.82rem}
+
+/* agents */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
+.card.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft),var(--shadow)}
+.card .head{display:flex;gap:12px;align-items:center}
+.card .name{font-weight:750;font-size:1.1rem;word-break:break-word}
+.card.new{align-items:center;justify-content:center;min-height:210px;border-style:dashed;cursor:pointer;color:var(--accent);font-weight:700;font-size:1.05rem;background:transparent;box-shadow:none}
+.card.new:hover{background:var(--accent-soft)}
+.card .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+.empty{padding:28px;text-align:center}
+
+/* build */
+.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tool{border:2px solid var(--line);background:var(--panel);border-radius:11px;padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:600;font-size:.86rem}
+.tool.on{border-color:var(--accent);background:var(--accent-soft)}
+.tool canvas{width:30px;height:30px}
+.sub-tabs{display:flex;gap:4px;margin-bottom:8px}
+.coord{font-variant-numeric:tabular-nums}
+.err{color:var(--bad);font-weight:600;white-space:pre-wrap;font-size:.9rem}
+.legend{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:.88rem}
+.legend code{font-weight:700}
+
+/* train */
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.slider{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center;font-size:.9rem}
+.slider span:first-child{font-weight:600}
+.slider b{font-variant-numeric:tabular-nums}
+.slider input{grid-column:1 / -1;width:100%;accent-color:var(--accent)}
+.slider .hint{grid-column:1 / -1}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.seg button{border:2px solid var(--line);border-radius:11px;background:var(--panel);padding:8px;cursor:pointer;text-align:left}
+.seg button.on{border-color:var(--accent);background:var(--accent-soft)}
+.seg b{display:block}
+.seg small{color:var(--muted);font-size:.8rem}
+.prog{height:8px;border-radius:99px;background:var(--panel2);overflow:hidden;margin-top:8px}
+.prog>i{display:block;height:100%;width:0;background:var(--accent)}
+.pad{display:none;grid-template-columns:repeat(3,48px);gap:4px;justify-content:center;margin-top:10px}
+.pad.on{display:grid}
+.pad button{height:44px;border-radius:10px;border:1px solid var(--line);background:var(--panel);font-size:1.2rem;cursor:pointer}
+.chartbox{position:relative}
+.chartbox canvas{width:100%;height:170px;display:block}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);padding:5px 8px;border-radius:8px;font-size:.8rem;white-space:nowrap;transform:translate(-50%,-110%);display:none}
+.statgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;font-size:.88rem}
+.statgrid div{background:var(--panel2);border-radius:9px;padding:6px 8px}
+.statgrid b{display:block;font-size:1.05rem;font-variant-numeric:tabular-nums}
+details summary{cursor:pointer;font-weight:700}
+
+/* talk */
+.chat{display:flex;flex-direction:column;height:min(640px,calc(100vh - 190px));min-height:420px}
+.log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 2px 10px}
+.msg{max-width:82%;display:flex;gap:8px;align-items:flex-end}
+.msg.me{align-self:flex-end;flex-direction:row-reverse}
+.bubble{padding:9px 13px;border-radius:16px;background:var(--panel2);border:1px solid var(--line);white-space:pre-wrap;word-break:break-word}
+.msg.me .bubble{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.msg .meta{font-size:.78rem;color:var(--muted);margin-top:3px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.msg .meta button{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:1px 7px;cursor:pointer;font-size:.8rem}
+.msg .meta button.done{background:var(--accent-soft);border-color:var(--accent)}
+.teach{display:flex;gap:6px;margin-top:6px}
+.teach input{flex:1;min-width:0}
+.sendrow{display:flex;gap:8px;border-top:1px solid var(--line);padding-top:10px}
+.sendrow input{flex:1;min-width:0;font-size:1.02rem;padding:11px 13px}
+.pairs{max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:5px}
+.pair{display:grid;grid-template-columns:1fr auto;gap:4px;background:var(--panel2);border-radius:9px;padding:6px 8px;font-size:.88rem}
+.pair .q{font-weight:650}
+.pair .a{color:var(--muted)}
+.pair button{border:0;background:none;cursor:pointer;color:var(--muted);font-size:1rem;grid-row:span 2}
+.help p,.help li{max-width:75ch}
+.help h3{margin-top:1.1rem}
+
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--ink);padding:20px;max-width:min(520px,94vw);width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(10,14,30,.45)}
+.styles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.styles button{border:2px solid var(--line);border-radius:12px;background:var(--panel2);padding:6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;font-size:.82rem}
+.styles button.on{border-color:var(--accent);background:var(--accent-soft)}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.swatches button{width:34px;height:34px;border-radius:50%;border:3px solid transparent;cursor:pointer}
+.swatches button.on{border-color:var(--ink)}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;z-index:50;box-shadow:0 8px 30px rgba(0,0,0,.25);max-width:90vw;text-align:center;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.show{opacity:1}
+.warn{background:var(--bad-soft);color:var(--bad);padding:8px 12px;border-radius:10px;margin-bottom:10px;font-weight:600}
+@media (max-width:620px){
+  main{padding:12px 16px}
+  .top{padding:8px 16px}
+  .brand .t1{display:none}
+  .cur{max-width:45%}
+  .msg{max-width:94%}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <canvas id="logo" style="width:44px;height:44px" aria-hidden="true"></canvas>
+    <div><div class="t1">Raken Teknik Åk 4 2026/2027</div><div class="t2">AI Agentträning</div></div>
+  </div>
+  <button class="cur" id="curAgent" title="Byt agent"></button>
+</header>
+<nav class="tabs" role="tablist">
+  <button role="tab" data-view="agents">🤖 Mina agenter</button>
+  <button role="tab" data-view="build">🧱 Bygg bana</button>
+  <button role="tab" data-view="train">🎓 Träna</button>
+  <button role="tab" data-view="talk">💬 Prata</button>
+  <button role="tab" data-view="help">❓ Så funkar det</button>
+</nav>
+<main>
+  <div class="warn" id="saveWarn" hidden>Kunde inte spara i webbläsaren. Använd "💾 Spara allt" så du inte tappar något.</div>
+
+  <!-- AGENTS -->
+  <section class="view" id="v-agents">
+    <div class="row" style="justify-content:space-between;margin-bottom:12px">
+      <h2 style="margin:0">Mina AI-agenter</h2>
+      <div class="row">
+        <button class="btn sm" id="btnImportAgent">📂 Öppna agent-fil</button>
+        <button class="btn sm" id="btnBackup">💾 Spara allt</button>
+        <button class="btn sm" id="btnRestore">📂 Öppna allt</button>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:0">En ny agent förstår <b>ingenting</b>. Den vet inte ens vad en vägg är. Du gör den smartare genom att träna den – utan kod.</p>
+    <div class="cards" id="agentGrid"></div>
+  </section>
+
+  <!-- BUILD -->
+  <section class="view" id="v-build" hidden>
+    <div class="split">
+      <div class="panel">
+        <div class="row" style="justify-content:space-between;margin-bottom:10px">
+          <div class="row">
+            <select id="bLevel" aria-label="Välj bana"></select>
+            <button class="btn sm" id="bNew">➕ Ny</button>
+            <button class="btn sm" id="bCopy">⧉ Kopiera</button>
+            <button class="btn sm" id="bRename">✏️ Döp om</button>
+            <button class="btn sm" id="bDelete">🗑 Radera</button>
+          </div>
+          <span class="muted small coord" id="bCoord">Ruta: –</span>
+        </div>
+        <div class="boardwrap" id="bWrap"><canvas class="board" id="bCanvas"></canvas></div>
+        <div class="status" id="bStatus"></div>
+      </div>
+      <div class="stack">
+        <div class="panel">
+          <h3>Rita</h3>
+          <div class="tools" id="tools"></div>
+          <p class="hint" style="margin:.6rem 0 .2rem">Klicka eller dra för att rita. Högerklick suddar.</p>
+          <div class="row" style="margin-top:8px">
+            <button class="btn sm" id="bFrame">🔲 Rama in</button>
+            <button class="btn sm" id="bRandom">🎲 Slumpa bana</button>
+            <button class="btn sm" id="bClear">🧽 Töm</button>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <label class="small">Bredd <input type="number" id="bW" min="5" max="30" style="width:64px"></label>
+            <label class="small">Höjd <input type="number" id="bH" min="5" max="20" style="width:64px"></label>
+            <button class="btn sm" id="bResize">Ändra storlek</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Koda banan</h3>
+          <div class="sub-tabs">
+            <button class="btn sm on" data-code="map">Kartkod</button>
+            <button class="btn sm" data-code="cmd">Kommandon</button>
+          </div>
+          <div id="codeMap">
+            <textarea id="mapCode" class="mono" rows="12" spellcheck="false" aria-label="Kartkod"></textarea>
+            <div class="legend" style="margin:6px 0">
+              <code>#</code><span>vägg</span><code>.</code><span>tomt</span><code>S</code><span>start</span><code>M</code><span>mål</span><code>L</code><span>lava</span><code>o</code><span>mynt</span>
+            </div>
+            <button class="btn sm primary" id="mapApply">▶ Använd kartkoden</button>
+            <div class="err" id="mapErr"></div>
+          </div>
+          <div id="codeCmd" hidden>
+            <textarea id="cmdCode" class="mono" rows="12" spellcheck="false" aria-label="Kommandon"></textarea>
+            <div class="row" style="margin:6px 0">
+              <button class="btn sm primary" id="cmdRun">▶ Kör koden</button>
+              <button class="btn sm" id="cmdExample">Visa exempel</button>
+            </div>
+            <div class="err" id="cmdErr"></div>
+            <details class="small"><summary>Alla kommandon</summary>
+              <div class="mono" style="white-space:pre-wrap;margin-top:6px">storlek B H
+rensa
+ram
+start X Y
+mål X Y
+vägg X Y
+vägg X Y till X2 Y2
+lava X Y till X2 Y2
+mynt X Y
+tom X Y till X2 Y2
+slumpa vägg 10
+slumpa lava 5
+slumpa mynt 3
+upprepa 4 {
+  vägg 2+i*3 5
+}
+// kommentar</div>
+              <p class="hint">X räknas från vänster (1, 2, 3 …) och Y uppifrån. Inne i <code>upprepa</code> är <code>i</code> varvets nummer (1, 2, 3 …). I en upprepa inuti en annan heter den yttre <code>j</code>.</p>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRAIN -->
+  <section class="view" id="v-train" hidden>
+    <div id="trainNoAgent" class="panel empty" hidden>
+      <h2>Ingen agent än</h2>
+      <p class="muted">Skapa en AI-agent först. Den kommer inte förstå någonting i början.</p>
+      <button class="btn primary big" data-goto-new>➕ Skapa agent</button>
+    </div>
+    <div class="split" id="trainMain">
+      <div class="panel">
+        <div class="row" style="justify-content:space-between;margin-bottom:10px">
+          <div class="row"><span class="small muted">Bana</span><select id="tLevel" aria-label="Välj bana"></select></div>
+          <label class="row small" style="gap:6px;cursor:pointer"><input type="checkbox" id="tBrain"> Visa hjärnan</label>
+        </div>
+        <div class="boardwrap" id="tWrap"><canvas class="board" id="tCanvas"></canvas></div>
+        <div class="status" id="tStatus">Tryck på ▶ Träna och titta för att börja.</div>
+        <div class="ctrl">
+          <button class="btn primary" id="tWatch">▶ Träna och titta</button>
+          <button class="btn" id="tStop">⏹ Stopp</button>
+          <button class="btn" id="tTest">🎯 Prov</button>
+          <button class="btn" id="tDrive">🕹 Visa vägen själv</button>
+        </div>
+        <div class="pad" id="tPad">
+          <span></span><button data-a="0" aria-label="Upp">▲</button><span></span>
+          <button data-a="3" aria-label="Vänster">◀</button><button data-a="2" aria-label="Ner">▼</button><button data-a="1" aria-label="Höger">▶</button>
+        </div>
+        <div class="ctrl">
+          <button class="btn good" id="tGood" title="Belöna det agenten nyss gjorde">👍 Bra gjort!</button>
+          <button class="btn bad" id="tBad" title="Säg till att det var dumt">👎 Dumt!</button>
+          <div class="slider" style="flex:1;min-width:190px">
+            <span>Fart</span><b id="tSpeedV"></b>
+            <input type="range" id="tSpeed" min="0" max="100" value="40" aria-label="Fart">
+          </div>
+        </div>
+        <div class="ctrl" style="align-items:center">
+          <span class="small muted">Snabbträna:</span>
+          <button class="btn sm" data-fast="10">10 rundor</button>
+          <button class="btn sm" data-fast="100">100 rundor</button>
+          <button class="btn sm" data-fast="1000">1000 rundor</button>
+          <button class="btn sm" data-fast="-1" title="Träna på alla banor">100 på alla banor</button>
+        </div>
+        <div class="prog" id="tProg"><i></i></div>
+      </div>
+      <div class="stack">
+        <div class="panel">
+          <div class="row" style="gap:12px;flex-wrap:nowrap">
+            <canvas id="tAvatar" width="56" height="56" style="width:56px;height:56px"></canvas>
+            <div style="min-width:0"><div style="font-weight:750;font-size:1.1rem" id="tName"></div><span class="badge" id="tTitle"></span></div>
+          </div>
+          <div style="display:grid;gap:6px;margin-top:10px">
+            <div class="mrow"><span>Hitta vägen</span><div class="meter"><i id="tNavM"></i></div><b id="tNavV"></b></div>
+            <div class="mrow"><span>Prata</span><div class="meter orange"><i id="tTalkM"></i></div><b id="tTalkV"></b></div>
+          </div>
+          <p class="small muted" id="tPass" style="margin-bottom:0"></p>
+        </div>
+        <div class="panel">
+          <h3>Hjärna</h3>
+          <div class="seg" id="tMode">
+            <button data-mode="plats"><b>🗺 Platsminne</b><small>Lär sig en bana utantill.</small></button>
+            <button data-mode="sinnen"><b>👀 Sinnen</b><small>Ser runt sig. Kan prova nya banor.</small></button>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Träningsinställningar</h3>
+          <div class="stack" id="tSliders" style="gap:10px"></div>
+          <details style="margin-top:10px"><summary>Belöningar och straff</summary>
+            <div class="stack" id="tRewards" style="gap:10px;margin-top:10px"></div>
+          </details>
+          <div class="row" style="margin-top:12px">
+            <button class="btn sm" id="tResetSet">↺ Standardinställningar</button>
+            <button class="btn sm bad" id="tResetBrain">🧠 Glöm allt om banor</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Hur ofta lyckas agenten?</h3>
+          <p class="hint" style="margin-top:0">Andel rundor där den hittade målet, räknat på de 20 senaste rundorna.</p>
+          <div class="chartbox"><canvas id="tChart" aria-label="Diagram över hur ofta agenten lyckas"></canvas><div class="tip" id="tTip"></div></div>
+          <div class="statgrid" style="margin-top:10px">
+            <div>Tränade rundor<b id="sEp">0</b></div>
+            <div>Lyckade<b id="sWin">0</b></div>
+            <div>Minnen i hjärnan<b id="sMem">0</b></div>
+            <div>Senaste 20<b id="sLast">–</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TALK -->
+  <section class="view" id="v-talk" hidden>
+    <div id="talkNoAgent" class="panel empty" hidden>
+      <h2>Ingen agent än</h2>
+      <p class="muted">Skapa en AI-agent först, sen kan du lära den att prata.</p>
+      <button class="btn primary big" data-goto-new>➕ Skapa agent</button>
+    </div>
+    <div class="split" id="talkMain">
+      <div class="panel chat">
+        <div class="row" style="justify-content:space-between;margin-bottom:8px">
+          <h3 style="margin:0" id="cTitle">Prata</h3>
+          <div class="row">
+            <label class="row small" style="gap:6px;cursor:pointer"><input type="checkbox" id="cSpeak"> 🔊 Läs upp</label>
+            <button class="btn sm" id="cClear">Rensa chatten</button>
+          </div>
+        </div>
+        <div class="log" id="cLog" aria-live="polite"></div>
+        <form class="sendrow" id="cForm">
+          <input id="cInput" type="text" autocomplete="off" placeholder="Skriv något till din agent …" aria-label="Meddelande">
+          <button class="btn primary" type="submit">Skicka</button>
+        </form>
+      </div>
+      <div class="stack">
+        <div class="panel">
+          <h3>Lär ut ett svar</h3>
+          <form id="pForm" class="stack" style="gap:8px">
+            <label class="field">När någon säger<input id="pQ" type="text" placeholder="t.ex. vad är din favoritfärg" autocomplete="off"></label>
+            <label class="field">ska agenten svara<input id="pA" type="text" placeholder="t.ex. Blå, som himlen!" autocomplete="off"></label>
+            <div class="row"><button class="btn primary sm" type="submit">➕ Lär ut</button><button class="btn sm" type="button" id="pStarter">👋 Hälsnings-paket</button></div>
+            <p class="hint" style="margin:0">Skriv <code>{namn}</code> i ett svar så säger agenten sitt eget namn.</p>
+          </form>
+          <h3 style="margin-top:14px">Svar den kan <span class="badge" id="pCount">0</span></h3>
+          <div class="pairs" id="pList"></div>
+        </div>
+        <div class="panel">
+          <h3>Läs en text</h3>
+          <p class="hint" style="margin-top:0">Agenten lär sig vilka ord som brukar komma efter varandra. Sen kan den hitta på egna meningar.</p>
+          <textarea id="rText" rows="5" placeholder="Klistra in eller skriv en text …"></textarea>
+          <div class="row" style="margin-top:6px">
+            <button class="btn primary sm" id="rRead">📖 Läs texten</button>
+            <button class="btn sm" data-sample="rymden">🚀 Rymden</button>
+            <button class="btn sm" data-sample="djur">🐾 Djur</button>
+            <button class="btn sm" data-sample="sverige">🇸🇪 Sverige</button>
+          </div>
+          <label class="row small" style="gap:6px;margin-top:10px;cursor:pointer"><input type="checkbox" id="cLearnChat"> Lär dig också av det jag skriver i chatten</label>
+          <div class="statgrid" style="margin-top:10px">
+            <div>Ord den kan<b id="tkVocab">0</b></div>
+            <div>👍 fått<b id="tkLikes">0</b></div>
+          </div>
+          <button class="btn sm bad" id="tkReset" style="margin-top:10px">🧠 Glöm allt om prat</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HELP -->
+  <section class="view help" id="v-help" hidden>
+    <div class="panel">
+      <h2>Så funkar AI-agentträning</h2>
+      <p>En <b>AI-agent</b> är ett program som själv väljer vad den ska göra. När du skapar en agent vet den <b>ingenting</b>. Den har aldrig sett en vägg, den vet inte vad lava är och den kan inte ett enda ord.</p>
+      <h3>1. Bygg en hinderbana 🧱</h3>
+      <p>Rita väggar, lava, mynt, en start och ett mål. Du kan också <b>koda</b> banan: antingen som en karta av tecken (Kartkod) eller med kommandon som <code>vägg 3 2 till 3 8</code> och <code>upprepa</code>.</p>
+      <h3>2. Träna agenten 🎓</h3>
+      <p>Agenten lär sig med <b>belöningar och straff</b>, precis som när man tränar en hund:</p>
+      <ul>
+        <li>Hittar den målet får den <b>+10 poäng</b>.</li>
+        <li>Går den i lavan får den <b>−10 poäng</b> och rundan tar slut.</li>
+        <li>Varje steg kostar lite, så den lär sig ta den <b>kortaste vägen</b>.</li>
+        <li>Mynt ger bonuspoäng.</li>
+      </ul>
+      <p>I början går agenten helt på måfå. Efter varje steg minns den om det gick bra eller dåligt. Efter många rundor har den lärt sig vilken väg som ger mest poäng. Det kallas <b>förstärkningsinlärning</b> (på engelska <i>reinforcement learning</i>).</p>
+      <ul>
+        <li><b>Nyfikenhet</b> – hur ofta agenten testar något nytt i stället för det den redan vet.</li>
+        <li><b>Inlärningstakt</b> – hur mycket den ändrar sig efter varje försök.</li>
+        <li><b>Framtidstänk</b> – hur mycket den bryr sig om belöningar som kommer senare.</li>
+        <li><b>👍 / 👎</b> – du kan själv belöna eller straffa det agenten nyss gjorde.</li>
+        <li><b>Visa vägen själv</b> – styr agenten med piltangenterna. Den lär sig av dig.</li>
+        <li><b>Visa hjärnan</b> – pilarna visar vad agenten tycker är bäst i varje ruta. Grönt betyder "här är det bra", rött betyder "här går det dåligt".</li>
+      </ul>
+      <h3>Platsminne eller sinnen?</h3>
+      <p><b>Platsminne</b> kommer ihåg varje ruta på banan. Den blir jättebra på en bana, men på en ny bana måste den börja om. <b>Sinnen</b> ser bara rutorna precis runt sig, vet åt vilket håll målet ligger och känner om det blir "varmare" (närmare målet) eller "kallare". Den kan klara banor den aldrig sett, men den kan gå vilse i en labyrint. Testa båda och jämför!</p>
+      <h3>3. Lär den att prata 💬</h3>
+      <p>Agenten kan inga ord från början – den säger bara "bip blopp". Du kan lära den svar på frågor, låta den läsa texter och ge 👍 när den svarar bra. När den inte vet svaret försöker den hitta på en mening av orden den läst. Det är samma idé som stora språkmodeller bygger på, fast i mycket mindre skala.</p>
+      <h3>Spara</h3>
+      <p>Allt sparas automatiskt på den här datorn. Med <b>💾 Spara som fil</b> kan du ta med en agent till en annan dator eller ge den till en kompis.</p>
+      <p class="muted small">Raken Teknik Åk 4 2026/2027 · AI Agentträning · version 1.0.0 · fungerar helt utan internet</p>
+    </div>
+  </section>
+</main>
+
+<dialog id="dlgNew">
+  <form method="dialog" class="stack" id="newForm">
+    <h2 style="margin:0">Ny AI-agent</h2>
+    <label class="field">Namn<input type="text" id="nName" maxlength="30" required autocomplete="off"></label>
+    <div><div style="font-weight:600;margin-bottom:6px">Utseende</div><div class="styles" id="nStyles"></div></div>
+    <div><div style="font-weight:600;margin-bottom:6px">Färg</div><div class="swatches" id="nColors"></div></div>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn" type="button" data-cancel>Avbryt</button>
+      <button class="btn primary" value="ok">Skapa</button>
+    </div>
+  </form>
+</dialog>
+<dialog id="dlgAsk">
+  <form method="dialog" class="stack">
+    <h3 id="askTitle" style="margin:0"></h3>
+    <p id="askText" class="muted" style="margin:0"></p>
+    <input type="text" id="askInput" autocomplete="off">
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn" type="button" data-cancel>Avbryt</button>
+      <button class="btn primary" value="ok" id="askOk">OK</button>
+    </div>
+  </form>
+</dialog>
+<input type="file" id="fileIn" accept=".json,application/json" hidden>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- small helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const el = (tag, attrs = {}, ...kids) => {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') e.className = v;
+    else if (k === 'text') e.textContent = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
+  }
+  for (const c of kids) if (c != null) e.append(c);
+  return e;
+};
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const rnd = n => Math.floor(Math.random() * n);
+const pick = arr => arr[rnd(arr.length)];
+const uid = () => Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
+const fmt = (v, d = 1) => (Math.round(v * 10 ** d) / 10 ** d).toLocaleString('sv-SE');
+
+let toastT = 0;
+function toast(msg, ms = 2600) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+// window.prompt/confirm are unreliable inside the desktop app, so use our own dialog
+function ask(title, text, value, withInput = true, okLabel = 'OK') {
+  return new Promise(res => {
+    const d = $('#dlgAsk');
+    $('#askTitle').textContent = title; $('#askText').textContent = text || '';
+    const inp = $('#askInput'); inp.hidden = !withInput; inp.value = value || '';
+    $('#askOk').textContent = okLabel;
+    d.returnValue = '';
+    d.onclose = () => res(d.returnValue === 'ok' ? (withInput ? inp.value.trim() : true) : null);
+    d.showModal(); if (withInput) inp.select();
+  });
+}
+const confirmAsk = (title, text, ok) => ask(title, text, '', false, ok || 'Ja');
+
+/* ---------- constants ---------- */
+const KEY = 'raken-ai-agenttraning-v1';
+const COLORS = ['#2a78d6', '#eb6834', '#1baf7a', '#e87ba4', '#7a5af5', '#eda100', '#e34948', '#0f8f8f'];
+const STYLES = ['Robot', 'Rund', 'Katt', 'Rymdis'];
+const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+const DIRNAME = ['upp', 'höger', 'ner', 'vänster'];
+const DEFAULTS = { eps: 0.2, alpha: 0.5, gamma: 0.95, rGoal: 10, rLava: -10, rStep: -0.1, rWall: -0.5, rCoin: 3 };
+const RANKS = [[0, 'Förstår ingenting'], [8, 'Nyfiken nybörjare'], [22, 'Lärling'], [40, 'Duktig'], [60, 'Smart'], [80, 'Supersmart'], [95, 'Mästare']];
+
+const PRESETS = [
+  { id: 'l1', name: '1. Första steget', rows: [
+    '################', '#..............#', '#..............#', '#..............#', '#..............#',
+    '#S............M#', '#..............#', '#..............#', '#..............#', '#..............#', '################'] },
+  { id: 'l2', name: '2. Muren', rows: [
+    '################', '#.......#......#', '#.......#......#', '#.......#......#', '#.......#......#',
+    '#S......#.....M#', '#.......#......#', '#..............#', '#.......#......#', '#.......#......#', '################'] },
+  { id: 'l3', name: '3. Lavasjön', rows: [
+    '################', '#..............#', '#.LLLLLLLLLLLL.#', '#.LLLLLLLLLLLL.#', '#.LL......LLLL.#',
+    '#S.....LL.....M#', '#.LLLL......LL.#', '#.LLLLLLLLLLLL.#', '#.LLLLLLLLLLLL.#', '#..............#', '################'] },
+  { id: 'l4', name: '4. Labyrinten', rows: [
+    '################', '#S.#.....#.....#', '#..#.###.#.###.#', '#..#.#...#...#.#', '#..#.#.#####.#.#',
+    '#....#.....#.#.#', '####.#####.#.#.#', '#....#.....#.#.#', '#.####.#####.#.#', '#............#M#', '################'] },
+  { id: 'l5', name: '5. Myntjakt', rows: [
+    '################', '#S.....o.......#', '#.#####.#####..#', '#.o...#.#...o..#', '#.....#...#....#',
+    '#..o..#####..o.#', '#..............#', '#.####...####..#', '#..o.....o.....#', '#.............M#', '################'] },
+];
+const presetLevels = () => PRESETS.map(p => ({ id: p.id, name: p.name, w: p.rows[0].length, h: p.rows.length, rows: [...p.rows] }));
+
+const SAMPLES = {
+  rymden: 'Solen är en stjärna. Jorden snurrar runt solen på ett år. Månen snurrar runt jorden. Mars kallas den röda planeten. Jupiter är den största planeten i vårt solsystem. Astronauter bor ibland på rymdstationen. I rymden finns ingen luft. En raket behöver mycket bränsle för att komma ut i rymden. Stjärnorna lyser på natten.',
+  djur: 'Hunden är människans bästa vän. Katten gillar att sova i solen. Elefanten är det största djuret på land. Blåvalen är det största djuret i havet. Ugglan jagar på natten. Björnen sover hela vintern. Myror är små men mycket starka. Hästen kan springa snabbt. Pingvinen kan inte flyga men den simmar bra.',
+  sverige: 'Sverige är ett land i norra Europa. Huvudstaden heter Stockholm. I Sverige finns många sjöar och skogar. Vänern är den största sjön i Sverige. På sommaren är det ljust nästan hela natten. På vintern kan det bli mycket snö. Midsommar firar man i juni. Älgen kallas skogens konung.',
+};
+const STARTER = [
+  ['hej', 'Hej! Vad kul att du pratar med mig.'],
+  ['hallå', 'Hallå där! Vad vill du prata om?'],
+  ['vad heter du', 'Jag heter {namn}!'],
+  ['hur mår du', 'Jag mår bra! Jag tränar hela tiden för att bli smartare.'],
+  ['vad kan du', 'Jag kan hitta vägen i hinderbanor och prata med dig.'],
+  ['hej då', 'Hej då! Kom tillbaka och träna mig snart.'],
+  ['tack', 'Varsågod!'],
+];
+
+/* ---------- state ---------- */
+let S = null;
+function newAgent(name, color, style) {
+  return {
+    id: uid(), name, color, style, created: Date.now(),
+    settings: { ...DEFAULTS },
+    brain: { mode: 'plats', q: {}, episodes: 0, wins: 0, steps: 0, hist: [], skill: {}, clicks: 0 },
+    talk: { pairs: [], c1: {}, c2: {}, vocab: {}, likes: 0, log: [], learnChat: true },
+  };
+}
+function fixAgent(a) {
+  const n = newAgent(a.name || 'Agent', a.color || COLORS[0], a.style || 0);
+  a.id = a.id || n.id;
+  a.settings = { ...DEFAULTS, ...(a.settings || {}) };
+  a.brain = { ...n.brain, ...(a.brain || {}) };
+  a.talk = { ...n.talk, ...(a.talk || {}) };
+  if (!Array.isArray(a.style) && typeof a.style !== 'number') a.style = 0;
+  return a;
+}
+function load() {
+  try { const raw = localStorage.getItem(KEY); if (raw) S = JSON.parse(raw); } catch (e) { S = null; }
+  if (!S || !Array.isArray(S.agents)) S = { agents: [], levels: presetLevels(), cur: null, lvl: 'l1', speak: false, view: 'agents' };
+  if (!Array.isArray(S.levels) || !S.levels.length) S.levels = presetLevels();
+  S.agents.forEach(fixAgent);
+  if (!S.agents.find(a => a.id === S.cur)) S.cur = S.agents[0] ? S.agents[0].id : null;
+  if (!S.levels.find(l => l.id === S.lvl)) S.lvl = S.levels[0].id;
+}
+let saveT = 0;
+function save() { clearTimeout(saveT); saveT = setTimeout(saveNow, 400); }
+function saveNow() {
+  clearTimeout(saveT);
+  try { localStorage.setItem(KEY, JSON.stringify(S)); $('#saveWarn').hidden = true; }
+  catch (e) { $('#saveWarn').hidden = false; }
+}
+const agent = () => S.agents.find(a => a.id === S.cur) || null;
+const levelById = id => S.levels.find(l => l.id === id);
+const level = () => levelById(S.lvl) || S.levels[0];
+
+/* ---------- levels ---------- */
+function getCell(lv, x, y) { return (x < 0 || y < 0 || x >= lv.w || y >= lv.h) ? '#' : lv.rows[y][x]; }
+function setCell(lv, x, y, ch) {
+  if (x < 0 || y < 0 || x >= lv.w || y >= lv.h) return;
+  if (ch === 'S') for (let yy = 0; yy < lv.h; yy++) lv.rows[yy] = lv.rows[yy].replace(/S/g, '.');
+  const r = lv.rows[y]; lv.rows[y] = r.slice(0, x) + ch + r.slice(x + 1);
+}
+function findAll(lv, ch) {
+  const out = [];
+  for (let y = 0; y < lv.h; y++) for (let x = 0; x < lv.w; x++) if (lv.rows[y][x] === ch) out.push({ x, y });
+  return out;
+}
+function shortest(lv) {
+  const s = findAll(lv, 'S')[0]; if (!s) return -1;
+  const seen = new Uint8Array(lv.w * lv.h); const q = [[s.x, s.y, 0]]; seen[s.y * lv.w + s.x] = 1;
+  for (let i = 0; i < q.length; i++) {
+    const [x, y, d] = q[i];
+    for (const [dx, dy] of DIRS) {
+      const nx = x + dx, ny = y + dy, c = getCell(lv, nx, ny);
+      if (c === '#' || c === 'L' || seen[ny * lv.w + nx]) continue;
+      if (c === 'M') return d + 1;
+      seen[ny * lv.w + nx] = 1; q.push([nx, ny, d + 1]);
+    }
+  }
+  return -1;
+}
+function levelProblem(lv) {
+  if (!findAll(lv, 'S').length) return 'Banan saknar start (S).';
+  if (!findAll(lv, 'M').length) return 'Banan saknar mål (M).';
+  if (shortest(lv) < 0) return 'Det finns ingen väg från start till mål!';
+  return '';
+}
+function resizeLevel(lv, w, h) {
+  const rows = [];
+  for (let y = 0; y < h; y++) {
+    let r = (lv.rows[y] || '').slice(0, w);
+    rows.push(r + '.'.repeat(w - r.length));
+  }
+  lv.w = w; lv.h = h; lv.rows = rows;
+}
+function randomLevel(lv) {
+  for (let tries = 0; tries < 80; tries++) {
+    const w = lv.w, h = lv.h; const rows = [];
+    for (let y = 0; y < h; y++) {
+      let r = '';
+      for (let x = 0; x < w; x++) {
+        if (x === 0 || y === 0 || x === w - 1 || y === h - 1) r += '#';
+        else { const p = Math.random(); r += p < 0.2 ? '#' : p < 0.26 ? 'L' : p < 0.28 ? 'o' : '.'; }
+      }
+      rows.push(r);
+    }
+    lv.rows = rows;
+    setCell(lv, 1, 1 + rnd(h - 2), 'S');
+    setCell(lv, w - 2, 1 + rnd(h - 2), 'M');
+    if (shortest(lv) > 0) return true;
+  }
+  return false;
+}
+
+/* ---------- the environment ---------- */
+class Run {
+  constructor(lv) {
+    this.lv = lv; this.taken = new Set();
+    const s = findAll(lv, 'S')[0] || { x: 1, y: 1 };
+    this.x = s.x; this.y = s.y; this.goals = findAll(lv, 'M');
+    this.steps = 0; this.total = 0; this.coins = 0; this.done = false; this.win = false;
+    this.lava = false; this.timeout = false; this.loop = false; this.bonk = false;
+    this.max = lv.w * lv.h * 2; this.trail = []; this.visits = new Map();
+  }
+  cell(x, y) { const c = getCell(this.lv, x, y); return (c === 'o' && this.taken.has(x + ',' + y)) ? '.' : c; }
+  step(a, st) {
+    const [dx, dy] = DIRS[a]; const nx = this.x + dx, ny = this.y + dy; const c = this.cell(nx, ny);
+    let r = st.rStep; this.bonk = false; this.steps++;
+    if (c === '#') { r = st.rWall; this.bonk = true; }
+    else {
+      this.trail.push([this.x, this.y]); if (this.trail.length > 30) this.trail.shift();
+      this.x = nx; this.y = ny;
+      if (c === 'L') { r = st.rLava; this.done = this.lava = true; }
+      else if (c === 'M') { r = st.rGoal; this.done = this.win = true; }
+      else if (c === 'o') { r = st.rCoin; this.taken.add(nx + ',' + ny); this.coins++; }
+    }
+    if (!this.done && this.steps >= this.max) this.done = this.timeout = true;
+    this.total += r;
+    return r;
+  }
+  goalDist() { let d = 1e9; for (const g of this.goals) d = Math.min(d, Math.abs(g.x - this.x) + Math.abs(g.y - this.y)); return this.goals.length ? d : 0; }
+  // used when the agent is not learning: stop if it keeps walking in circles
+  circling() {
+    const k = this.x + ',' + this.y + ',' + this.taken.size;
+    const n = (this.visits.get(k) || 0) + 1; this.visits.set(k, n);
+    return n > 3;
+  }
+}
+
+/* ---------- the brain: Q-learning ---------- */
+const SENSE = { '.': 0, 'S': 0, '#': 1, 'L': 2, 'M': 3, 'o': 4 };
+function stateKey(ag, run, x = run.x, y = run.y) {
+  if (ag.brain.mode === 'plats') return 'P' + run.lv.id + ':' + x + ',' + y;
+  let k = 'S';
+  for (const [dx, dy] of DIRS) k += SENSE[run.cell(x + dx, y + dy)];
+  let best = null, bd = 1e9;
+  for (const g of run.goals) { const d = Math.abs(g.x - x) + Math.abs(g.y - y); if (d < bd) { bd = d; best = g; } }
+  return k + (best ? (Math.sign(best.x - x) + 1) + '' + (Math.sign(best.y - y) + 1) : '11');
+}
+function Q(ag, s) { return ag.brain.q[s] || (ag.brain.q[s] = [0, 0, 0, 0]); }
+function peekQ(ag, s) { return ag.brain.q[s] || null; }
+function choose(ag, s, eps, randomTies = true) {
+  if (Math.random() < eps) return rnd(4);
+  const q = peekQ(ag, s); if (!q) return randomTies ? rnd(4) : 0;
+  let m = -Infinity, best = [];
+  for (let a = 0; a < 4; a++) { if (q[a] > m + 1e-9) { m = q[a]; best = [a]; } else if (Math.abs(q[a] - m) <= 1e-9) best.push(a); }
+  return randomTies ? pick(best) : best[0];
+}
+// The senses brain sees every open square the same way, so on its own it cannot
+// tell that walking right got it closer. It gets a "warmer / colder" feeling:
+// potential-based shaping on the distance to the goal, which keeps the best path
+// the same but tells it which way is closer.
+const WARM = 0.5;
+function shaping(ag, d0, d1) { return ag.brain.mode === 'sinnen' ? WARM * (d0 - ag.settings.gamma * d1) : 0; }
+function learn(ag, s, a, r, s2, terminal) {
+  const st = ag.settings; const q = Q(ag, s);
+  const next = terminal ? 0 : Math.max(...(peekQ(ag, s2) || [0, 0, 0, 0]));
+  q[a] += st.alpha * (r + st.gamma * next - q[a]);
+  q[a] = Math.round(q[a] * 1000) / 1000;
+}
+function agentStep(ag, run, eps, doLearn, forced) {
+  const s = stateKey(ag, run);
+  const a = forced != null ? forced : choose(ag, s, eps, doLearn);
+  const d0 = run.goalDist();
+  const r = run.step(a, ag.settings);
+  if (doLearn) learn(ag, s, a, r + shaping(ag, d0, run.goalDist()), stateKey(ag, run), run.done && !run.timeout);
+  ag.brain.steps++;
+  return { s, a, r };
+}
+function record(ag, run, kind) {
+  const b = ag.brain; b.episodes++; if (run.win) b.wins++;
+  b.hist.push({ w: run.win ? 1 : 0, s: run.steps, k: kind });
+  if (b.hist.length > 400) b.hist.splice(0, b.hist.length - 400);
+}
+// silent exam on every level: greedy, no learning, no randomness
+function evalLevel(ag, lv) {
+  const best = shortest(lv); if (best < 0) return null;
+  const run = new Run(lv);
+  while (!run.done) {
+    agentStep(ag, run, 0, false);
+    if (!run.done && run.circling()) { run.done = run.loop = true; }
+  }
+  return run.win ? Math.round(100 * Math.min(1, best / run.steps)) : 0;
+}
+function evalAll(ag) {
+  ag.brain.skill = {};
+  const steps = ag.brain.steps;
+  for (const lv of S.levels) { const v = evalLevel(ag, lv); if (v != null) ag.brain.skill[lv.id] = v; }
+  ag.brain.steps = steps; // the exam does not count as training
+}
+function navSmart(ag) {
+  const vals = S.levels.filter(l => !levelProblem(l)).map(l => ag.brain.skill[l.id] || 0);
+  return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+}
+function passed(ag) {
+  const ok = S.levels.filter(l => !levelProblem(l));
+  return [ok.filter(l => (ag.brain.skill[l.id] || 0) > 0).length, ok.length];
+}
+function talkSmart(ag) {
+  const t = ag.talk; const P = t.pairs.filter(p => p.score > -3).length; const V = Object.keys(t.vocab).length;
+  return Math.min(100, Math.round(P * 4 + Math.sqrt(V) * 2.5 + t.likes * 2));
+}
+function rank(ag) {
+  const v = Math.round((navSmart(ag) + talkSmart(ag)) / 2);
+  let r = RANKS[0][1]; for (const [min, name] of RANKS) if (v >= min) r = name;
+  return r;
+}
+
+/* ---------- drawing ---------- */
+let C = {};
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  for (const k of ['floor', 'grid', 'wall', 'wall2', 'lava', 'lava2', 'goal', 'coin', 'ink', 'muted', 'panel', 'panel2', 'line', 'series-1', 'good', 'bad'])
+    C[k] = cs.getPropertyValue('--' + k).trim();
+}
+function rr(g, x, y, w, h, r) {
+  g.beginPath();
+  if (g.roundRect) g.roundRect(x, y, w, h, r);
+  else { g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+}
+function drawBot(g, cx, cy, sz, color, style, mood) {
+  const r = sz * 0.4;
+  g.save(); g.translate(cx, cy);
+  g.fillStyle = color; g.strokeStyle = color; g.lineWidth = Math.max(1.5, sz * 0.06); g.lineCap = 'round';
+  if (style === 0) { g.beginPath(); g.moveTo(0, -r * 0.8); g.lineTo(0, -r * 1.25); g.stroke(); g.beginPath(); g.arc(0, -r * 1.3, sz * 0.08, 0, 7); g.fill(); }
+  if (style === 2) { for (const s of [-1, 1]) { g.beginPath(); g.moveTo(s * r * 0.95, -r * 0.2); g.lineTo(s * r * 0.75, -r * 1.2); g.lineTo(s * r * 0.15, -r * 0.75); g.closePath(); g.fill(); } }
+  if (style === 3) { for (const s of [-1, 1]) { g.beginPath(); g.moveTo(s * r * 0.35, -r * 0.7); g.lineTo(s * r * 0.75, -r * 1.25); g.stroke(); g.beginPath(); g.arc(s * r * 0.78, -r * 1.3, sz * 0.07, 0, 7); g.fill(); } }
+  if (style === 1 || style === 2) { g.beginPath(); g.arc(0, 0, r, 0, 7); g.fill(); }
+  else if (style === 3) { g.beginPath(); g.ellipse(0, 0, r * 1.05, r * 0.88, 0, 0, 7); g.fill(); }
+  else { rr(g, -r, -r * 0.85, 2 * r, 1.75 * r, r * 0.35); g.fill(); }
+  g.fillStyle = 'rgba(255,255,255,.93)'; rr(g, -r * 0.7, -r * 0.5, r * 1.4, r * 1.05, r * 0.32); g.fill();
+  g.fillStyle = '#1b2030'; g.strokeStyle = '#1b2030'; g.lineWidth = Math.max(1.2, sz * 0.05);
+  const ex = r * 0.33, ey = -r * 0.12, er = Math.max(1.3, sz * 0.065);
+  if (mood === 'bonk' || mood === 'sad') {
+    for (const s of [-1, 1]) { g.beginPath(); g.moveTo(s * ex - er, ey - er); g.lineTo(s * ex + er, ey + er); g.moveTo(s * ex + er, ey - er); g.lineTo(s * ex - er, ey + er); g.stroke(); }
+  } else if (mood === 'happy') {
+    for (const s of [-1, 1]) { g.beginPath(); g.arc(s * ex, ey + er * 0.6, er * 1.2, Math.PI * 1.15, Math.PI * 1.85); g.stroke(); }
+  } else { for (const s of [-1, 1]) { g.beginPath(); g.arc(s * ex, ey, er, 0, 7); g.fill(); } }
+  g.beginPath();
+  if (mood === 'happy') g.arc(0, r * 0.12, r * 0.28, 0.15 * Math.PI, 0.85 * Math.PI);
+  else if (mood === 'sad') g.arc(0, r * 0.42, r * 0.22, 1.15 * Math.PI, 1.85 * Math.PI);
+  else { g.moveTo(-r * 0.18, r * 0.25); g.lineTo(r * 0.18, r * 0.25); }
+  g.stroke();
+  g.restore();
+}
+function avatar(cv, ag, mood) {
+  const dpr = window.devicePixelRatio || 1; const w = cv.width = (parseInt(cv.style.width) || cv.clientWidth || 56) * dpr;
+  cv.height = w; const g = cv.getContext('2d');
+  g.clearRect(0, 0, w, w); drawBot(g, w / 2, w * 0.56, w * 0.82, ag.color, ag.style, mood);
+}
+function drawTile(g, c, x, y, cs, t) {
+  const px = x * cs, py = y * cs;
+  g.fillStyle = C.floor; g.fillRect(px, py, cs, cs);
+  if (c === '#') {
+    g.fillStyle = C.wall; g.fillRect(px, py, cs, cs);
+    g.strokeStyle = C.wall2; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(px, py + cs / 2 + .5); g.lineTo(px + cs, py + cs / 2 + .5);
+    const o = (y % 2) ? cs / 2 : 0; g.moveTo(px + o + .5, py); g.lineTo(px + o + .5, py + cs / 2); g.moveTo(px + ((o + cs / 2) % cs) + .5, py + cs / 2); g.lineTo(px + ((o + cs / 2) % cs) + .5, py + cs); g.stroke();
+    return;
+  }
+  g.strokeStyle = C.grid; g.lineWidth = 1; g.strokeRect(px + .5, py + .5, cs - 1, cs - 1);
+  if (c === 'L') {
+    g.fillStyle = C.lava; g.fillRect(px, py, cs, cs);
+    g.fillStyle = C.lava2;
+    const ph = (t || 0) / 500 + x * 1.7 + y * 2.3;
+    for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(px + cs * (0.25 + 0.25 * i), py + cs * (0.5 + 0.22 * Math.sin(ph + i * 2)), cs * 0.09, 0, 7); g.fill(); }
+  } else if (c === 'M') {
+    g.fillStyle = C.goal; g.globalAlpha = 0.22; g.fillRect(px, py, cs, cs); g.globalAlpha = 1;
+    g.strokeStyle = C.ink; g.lineWidth = Math.max(1.5, cs * 0.06);
+    g.beginPath(); g.moveTo(px + cs * 0.32, py + cs * 0.85); g.lineTo(px + cs * 0.32, py + cs * 0.15); g.stroke();
+    g.fillStyle = C.goal; g.beginPath(); g.moveTo(px + cs * 0.34, py + cs * 0.16); g.lineTo(px + cs * 0.8, py + cs * 0.3); g.lineTo(px + cs * 0.34, py + cs * 0.46); g.closePath(); g.fill();
+  } else if (c === 'o') {
+    g.fillStyle = C.coin; g.beginPath(); g.arc(px + cs / 2, py + cs / 2, cs * 0.26, 0, 7); g.fill();
+    g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = Math.max(1, cs * 0.05); g.beginPath(); g.arc(px + cs / 2, py + cs / 2, cs * 0.17, 0, 7); g.stroke();
+  } else if (c === 'S') {
+    g.strokeStyle = C.muted; g.setLineDash([3, 3]); g.lineWidth = 1.5;
+    g.beginPath(); g.arc(px + cs / 2, py + cs / 2, cs * 0.32, 0, 7); g.stroke(); g.setLineDash([]);
+    g.fillStyle = C.muted; g.font = `700 ${Math.round(cs * 0.36)}px system-ui,sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('S', px + cs / 2, py + cs / 2 + 1);
+  }
+}
+function fitCanvas(cv, lv, maxH) {
+  const wrap = cv.parentElement; const avail = Math.max(160, wrap.clientWidth);
+  const cs = clamp(Math.floor(Math.min(avail / lv.w, maxH / lv.h)), 12, 52);
+  const W = cs * lv.w, H = cs * lv.h, dpr = window.devicePixelRatio || 1;
+  if (cv.width !== W * dpr || cv.height !== H * dpr) { cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px'; }
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); cv._cs = cs;
+  return { g, cs };
+}
+function drawLevel(g, lv, cs, run, t) {
+  for (let y = 0; y < lv.h; y++) for (let x = 0; x < lv.w; x++) {
+    let c = lv.rows[y][x];
+    if (run && c === 'o' && run.taken.has(x + ',' + y)) c = '.';
+    drawTile(g, c, x, y, cs, t);
+  }
+}
+function drawBrain(g, ag, lv, cs) {
+  const run = new Run(lv); const scale = Math.max(1, Math.abs(ag.settings.rGoal), Math.abs(ag.settings.rLava));
+  for (let y = 0; y < lv.h; y++) for (let x = 0; x < lv.w; x++) {
+    const c = lv.rows[y][x]; if (c === '#' || c === 'L' || c === 'M') continue;
+    const q = peekQ(ag, stateKey(ag, run, x, y)); if (!q || q.every(v => v === 0)) continue;
+    let m = -Infinity, a = 0; for (let i = 0; i < 4; i++) if (q[i] > m) { m = q[i]; a = i; }
+    g.globalAlpha = clamp(Math.abs(m) / scale, 0.1, 0.5);
+    g.fillStyle = m >= 0 ? C.good : C.bad; g.fillRect(x * cs + 1, y * cs + 1, cs - 2, cs - 2); g.globalAlpha = 1;
+    const cx = x * cs + cs / 2, cy = y * cs + cs / 2, [dx, dy] = DIRS[a], L = cs * 0.3;
+    g.strokeStyle = C.ink; g.fillStyle = C.ink; g.lineWidth = Math.max(1.5, cs * 0.07); g.lineCap = 'round';
+    g.beginPath(); g.moveTo(cx - dx * L, cy - dy * L); g.lineTo(cx + dx * L * 0.5, cy + dy * L * 0.5); g.stroke();
+    g.beginPath(); g.moveTo(cx + dx * L, cy + dy * L);
+    g.lineTo(cx + dx * L * 0.35 - dy * L * 0.45, cy + dy * L * 0.35 + dx * L * 0.45);
+    g.lineTo(cx + dx * L * 0.35 + dy * L * 0.45, cy + dy * L * 0.35 - dx * L * 0.45); g.closePath(); g.fill();
+  }
+}
+
+/* ---------- navigation / tabs ---------- */
+function show(view) {
+  if (view !== 'train') stopTraining();
+  S.view = view;
+  for (const b of $$('.tabs button')) b.setAttribute('aria-selected', b.dataset.view === view);
+  for (const s of $$('.view')) s.hidden = s.id !== 'v-' + view;
+  ({ agents: renderAgents, build: renderBuild, train: renderTrain, talk: renderTalk, help: () => {} })[view]();
+  save();
+}
+function renderHeader() {
+  const ag = agent(); const b = $('#curAgent'); b.innerHTML = '';
+  if (!ag) { b.append(el('span', { text: '➕ Skapa en agent' })); return; }
+  const cv = el('canvas', { style: 'width:30px;height:30px' }); b.append(cv, el('span', { text: ag.name })); avatar(cv, ag);
+}
+
+/* ---------- agents view ---------- */
+function renderAgents() {
+  renderHeader();
+  const grid = $('#agentGrid'); grid.innerHTML = '';
+  for (const ag of S.agents) {
+    const nav = navSmart(ag), talk = talkSmart(ag), [p, n] = passed(ag);
+    const cv = el('canvas', { style: 'width:64px;height:64px' });
+    const card = el('div', { class: 'card' + (ag.id === S.cur ? ' sel' : '') },
+      el('div', { class: 'head' }, cv, el('div', {}, el('div', { class: 'name', text: ag.name }), el('span', { class: 'badge', text: rank(ag) }))),
+      el('div', { style: 'display:grid;gap:6px' },
+        el('div', { class: 'mrow' }, el('span', { text: 'Hitta vägen' }), el('div', { class: 'meter' }, el('i', { style: `width:${nav}%` })), el('b', { text: nav + '%' })),
+        el('div', { class: 'mrow' }, el('span', { text: 'Prata' }), el('div', { class: 'meter orange' }, el('i', { style: `width:${talk}%` })), el('b', { text: talk + '%' }))),
+      el('div', { class: 'small muted', text: `${ag.brain.episodes.toLocaleString('sv-SE')} tränade rundor · klarar ${p} av ${n} banor · ${ag.talk.pairs.length} svar` }),
+      el('div', { class: 'acts' },
+        ag.id === S.cur ? el('span', { class: 'badge', text: '✔ Vald' }) : el('button', { class: 'btn sm primary', text: 'Välj', onclick: () => { S.cur = ag.id; save(); renderAgents(); } }),
+        el('button', { class: 'btn sm', text: '🎓 Träna', onclick: () => { S.cur = ag.id; show('train'); } }),
+        el('button', { class: 'btn sm', text: '💬 Prata', onclick: () => { S.cur = ag.id; show('talk'); } }),
+        el('button', { class: 'btn sm', text: '✏️', title: 'Döp om', 'aria-label': 'Döp om', onclick: async () => {
+          const v = await ask('Döp om agenten', '', ag.name); if (v) { ag.name = v.slice(0, 30); save(); renderAgents(); } } }),
+        el('button', { class: 'btn sm', text: '⧉', title: 'Kopiera', 'aria-label': 'Kopiera', onclick: () => {
+          const c = JSON.parse(JSON.stringify(ag)); c.id = uid(); c.name = (ag.name + ' kopia').slice(0, 30); c.created = Date.now();
+          S.agents.push(c); save(); renderAgents(); toast('Kopia skapad – med samma hjärna!'); } }),
+        el('button', { class: 'btn sm', text: '💾', title: 'Spara som fil', 'aria-label': 'Spara som fil', onclick: () => {
+          download(safeName(ag.name) + '.aiagent.json', { type: 'raken-ai-agent', version: 1, agent: ag }); } }),
+        el('button', { class: 'btn sm bad', text: '🗑', title: 'Radera', 'aria-label': 'Radera', onclick: async () => {
+          if (!await confirmAsk('Radera ' + ag.name + '?', 'All träning försvinner. Spara den som fil först om du vill ha kvar den.', 'Radera')) return;
+          S.agents = S.agents.filter(a => a !== ag); if (S.cur === ag.id) S.cur = S.agents[0] ? S.agents[0].id : null;
+          save(); renderAgents(); } })));
+    grid.append(card); avatar(cv, ag);
+  }
+  grid.append(el('button', { class: 'card new', onclick: openNew }, '➕ Ny AI-agent'));
+}
+let newStyle = 0, newColor = COLORS[0];
+function openNew() {
+  const d = $('#dlgNew');
+  newStyle = rnd(4); newColor = COLORS[S.agents.length % COLORS.length];
+  $('#nName').value = 'Agent ' + (S.agents.length + 1);
+  const drawChoices = () => {
+    const st = $('#nStyles'); st.innerHTML = '';
+    STYLES.forEach((name, i) => {
+      const cv = el('canvas', { style: 'width:48px;height:48px' });
+      st.append(el('button', { type: 'button', class: i === newStyle ? 'on' : '', onclick: () => { newStyle = i; drawChoices(); } }, cv, name));
+      avatar(cv, { color: newColor, style: i });
+    });
+    const sw = $('#nColors'); sw.innerHTML = '';
+    COLORS.forEach(c => sw.append(el('button', { type: 'button', class: c === newColor ? 'on' : '', style: 'background:' + c, 'aria-label': 'Färg ' + c, onclick: () => { newColor = c; drawChoices(); } })));
+  };
+  drawChoices();
+  d.returnValue = '';
+  d.onclose = () => {
+    if (d.returnValue !== 'ok') return;
+    const ag = newAgent(($('#nName').value.trim() || 'Agent').slice(0, 30), newColor, newStyle);
+    evalAll(ag); S.agents.push(ag); S.cur = ag.id; saveNow();
+    toast(ag.name + ' är född! Den förstår ingenting än – dags att träna.', 3600);
+    show(S.view);
+  };
+  d.showModal(); $('#nName').select();
+}
+
+/* ---------- files ---------- */
+const safeName = s => (s || 'agent').replace(/[^\wåäöÅÄÖ-]+/g, '_').slice(0, 40);
+function download(name, obj) {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(obj)], { type: 'application/json' }));
+  const a = el('a', { href: url, download: name }); document.body.append(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
+  toast('Sparar ' + name);
+}
+let fileMode = 'agent';
+function openFile(mode) { fileMode = mode; const f = $('#fileIn'); f.value = ''; f.click(); }
+$('#fileIn').addEventListener('change', async e => {
+  const file = e.target.files[0]; if (!file) return;
+  let data; try { data = JSON.parse(await file.text()); } catch (err) { toast('Filen gick inte att läsa.'); return; }
+  if (fileMode === 'agent' && data && data.type === 'raken-ai-agent' && data.agent) {
+    const ag = fixAgent(data.agent); if (S.agents.find(a => a.id === ag.id)) ag.id = uid();
+    evalAll(ag); S.agents.push(ag); S.cur = ag.id; saveNow(); renderAgents(); toast(ag.name + ' är tillbaka!');
+  } else if (fileMode === 'all' && data && data.type === 'raken-ai-backup' && data.state) {
+    if (!await confirmAsk('Öppna allt?', 'Det som finns nu byts ut mot innehållet i filen.', 'Öppna')) return;
+    S = data.state; saveNow(); load(); show('agents'); toast('Allt är återställt.');
+  } else toast('Det där är ingen ' + (fileMode === 'agent' ? 'agent-fil.' : 'säkerhetskopia.'));
+});
+$('#btnImportAgent').onclick = () => openFile('agent');
+$('#btnRestore').onclick = () => openFile('all');
+$('#btnBackup').onclick = () => download('ai-agenttraning-allt.json', { type: 'raken-ai-backup', version: 1, state: S });
+
+/* ---------- build view ---------- */
+const TOOLS = [['.', 'Sudd'], ['#', 'Vägg'], ['S', 'Start'], ['M', 'Mål'], ['L', 'Lava'], ['o', 'Mynt']];
+let tool = '#', painting = null, codeTab = 'map';
+function fillLevelSelect(sel) {
+  sel.innerHTML = '';
+  for (const lv of S.levels) sel.append(el('option', { value: lv.id, text: lv.name }));
+  sel.value = level().id;
+}
+function renderTools() {
+  const box = $('#tools'); box.innerHTML = '';
+  for (const [ch, name] of TOOLS) {
+    const cv = el('canvas', { width: 60, height: 60 });
+    box.append(el('button', { class: 'tool' + (tool === ch ? ' on' : ''), onclick: () => { tool = ch; renderTools(); } }, cv, name));
+    const g = cv.getContext('2d'); drawTile(g, ch, 0, 0, 60, 0);
+    if (ch === '.') { g.strokeStyle = C.muted; g.lineWidth = 4; g.beginPath(); g.moveTo(16, 16); g.lineTo(44, 44); g.moveTo(44, 16); g.lineTo(16, 44); g.stroke(); }
+  }
+}
+function drawBuild() {
+  const lv = level(); const { g, cs } = fitCanvas($('#bCanvas'), lv, 560);
+  drawLevel(g, lv, cs, null, performance.now());
+  const p = levelProblem(lv); const st = $('#bStatus');
+  st.className = 'status ' + (p ? 'bad' : 'good');
+  st.textContent = p ? '⚠️ ' + p : `✅ Banan fungerar. Kortaste vägen är ${shortest(lv)} steg.`;
+}
+function syncCode() {
+  if (document.activeElement !== $('#mapCode')) $('#mapCode').value = level().rows.join('\n');
+  $('#bW').value = level().w; $('#bH').value = level().h;
+}
+function renderBuild() {
+  renderHeader(); fillLevelSelect($('#bLevel')); renderTools(); drawBuild(); syncCode();
+  if (!$('#cmdCode').value) $('#cmdCode').value = CMD_EXAMPLE;
+}
+function levelChanged() { save(); drawBuild(); syncCode(); }
+function cellAt(ev) {
+  const cv = $('#bCanvas'), r = cv.getBoundingClientRect(), cs = cv._cs;
+  return { x: Math.floor((ev.clientX - r.left) / cs), y: Math.floor((ev.clientY - r.top) / cs) };
+}
+$('#bCanvas').addEventListener('pointerdown', ev => {
+  ev.preventDefault(); $('#bCanvas').setPointerCapture(ev.pointerId);
+  painting = ev.button === 2 ? '.' : tool; paintAt(ev);
+});
+$('#bCanvas').addEventListener('pointermove', ev => {
+  const { x, y } = cellAt(ev); const lv = level();
+  $('#bCoord').textContent = (x >= 0 && y >= 0 && x < lv.w && y < lv.h) ? `Ruta: x ${x + 1}, y ${y + 1}` : 'Ruta: –';
+  if (painting) paintAt(ev);
+});
+$('#bCanvas').addEventListener('pointerup', () => { if (painting) { painting = null; levelChanged(); } });
+$('#bCanvas').addEventListener('pointercancel', () => { painting = null; });
+$('#bCanvas').addEventListener('contextmenu', e => e.preventDefault());
+function paintAt(ev) {
+  const { x, y } = cellAt(ev); const lv = level();
+  if (x < 0 || y < 0 || x >= lv.w || y >= lv.h || getCell(lv, x, y) === painting) return;
+  setCell(lv, x, y, painting); drawBuild();
+}
+$('#bLevel').onchange = e => { S.lvl = e.target.value; save(); renderBuild(); };
+$('#bNew').onclick = async () => {
+  const name = await ask('Ny bana', 'Vad ska banan heta?', 'Min bana ' + (S.levels.length + 1)); if (!name) return;
+  const lv = { id: uid(), name: name.slice(0, 40), w: 16, h: 11, rows: [] }; resizeLevel(lv, 16, 11);
+  frame(lv); setCell(lv, 1, 5, 'S'); setCell(lv, 14, 5, 'M');
+  S.levels.push(lv); S.lvl = lv.id; save(); renderBuild();
+};
+$('#bCopy').onclick = () => {
+  const src = level(); const lv = JSON.parse(JSON.stringify(src)); lv.id = uid(); lv.name = (src.name + ' kopia').slice(0, 40);
+  S.levels.push(lv); S.lvl = lv.id; save(); renderBuild(); toast('Banan är kopierad.');
+};
+$('#bRename').onclick = async () => { const lv = level(); const v = await ask('Döp om banan', '', lv.name); if (v) { lv.name = v.slice(0, 40); save(); renderBuild(); } };
+$('#bDelete').onclick = async () => {
+  if (S.levels.length <= 1) { toast('Det måste finnas minst en bana.'); return; }
+  const lv = level(); if (!await confirmAsk('Radera ' + lv.name + '?', '', 'Radera')) return;
+  S.levels = S.levels.filter(l => l !== lv); S.lvl = S.levels[0].id;
+  for (const a of S.agents) delete a.brain.skill[lv.id];
+  save(); renderBuild();
+};
+function frame(lv) { for (let x = 0; x < lv.w; x++) { setCell(lv, x, 0, '#'); setCell(lv, x, lv.h - 1, '#'); } for (let y = 0; y < lv.h; y++) { setCell(lv, 0, y, '#'); setCell(lv, lv.w - 1, y, '#'); } }
+$('#bFrame').onclick = () => { frame(level()); levelChanged(); };
+$('#bRandom').onclick = () => { if (!randomLevel(level())) toast('Hittade ingen bra slumpbana, försök igen.'); levelChanged(); };
+$('#bClear').onclick = () => { const lv = level(); lv.rows = lv.rows.map(r => '.'.repeat(r.length)); levelChanged(); };
+$('#bResize').onclick = () => {
+  const w = clamp(parseInt($('#bW').value) || 16, 5, 30), h = clamp(parseInt($('#bH').value) || 11, 5, 20);
+  resizeLevel(level(), w, h); levelChanged();
+};
+for (const b of $$('[data-code]')) b.onclick = () => {
+  codeTab = b.dataset.code; for (const o of $$('[data-code]')) o.classList.toggle('on', o === b);
+  $('#codeMap').hidden = codeTab !== 'map'; $('#codeCmd').hidden = codeTab !== 'cmd';
+};
+$('#mapApply').onclick = () => {
+  const lines = $('#mapCode').value.replace(/\r/g, '').split('\n').map(l => l.replace(/\s+$/, '')).filter((l, i, arr) => l.length || i < arr.length - 1);
+  while (lines.length && !lines[lines.length - 1]) lines.pop();
+  const h = lines.length, w = Math.max(0, ...lines.map(l => l.length));
+  if (w < 5 || h < 5 || w > 30 || h > 20) { $('#mapErr').textContent = `Banan måste vara 5–30 tecken bred och 5–20 rader hög (den är ${w}×${h}).`; return; }
+  const lv = level(); const bad = new Set();
+  lv.w = w; lv.h = h;
+  lv.rows = lines.map(l => [...l.padEnd(w, '.')].map(ch => { if ('#.SMLo'.includes(ch)) return ch; if (ch === ' ') return '.'; bad.add(ch); return '.'; }).join(''));
+  const starts = findAll(lv, 'S'); for (const s of starts.slice(1)) setCell(lv, s.x, s.y, '.');
+  $('#mapErr').textContent = bad.size ? 'Okända tecken blev tomma rutor: ' + [...bad].join(' ') : '';
+  if (starts.length > 1) $('#mapErr').textContent += (bad.size ? '\n' : '') + 'Bara en start (S) får finnas – de andra togs bort.';
+  levelChanged(); toast('Banan är uppdaterad från koden.');
+};
+
+/* ---- the command language ---- */
+const CMD_EXAMPLE = `// Min kodade hinderbana
+storlek 16 11
+rensa
+ram
+start 2 6
+mål 15 6
+vägg 6 2 till 6 8
+vägg 11 4 till 11 10
+upprepa 3 {
+  lava 7+i 9
+  mynt 2+i*3 3
+}`;
+function evalExpr(src, vars, line) {
+  let i = 0; const s = src.replace(/\s+/g, '');
+  const num = () => {
+    if (s[i] === '(') { i++; const v = sum(); if (s[i] !== ')') throw new Error(`Rad ${line}: en parentes saknas.`); i++; return v; }
+    if (s[i] === '-') { i++; return -num(); }
+    const m = /^[0-9]+/.exec(s.slice(i)); if (m) { i += m[0].length; return +m[0]; }
+    const v = /^[a-zåäö]+/i.exec(s.slice(i));
+    if (v && v[0] in vars) { i += v[0].length; return vars[v[0]]; }
+    throw new Error(`Rad ${line}: jag förstår inte talet "${src}".`);
+  };
+  const prod = () => { let v = num(); while (s[i] === '*' || s[i] === '/') { const o = s[i++]; const w = num(); v = o === '*' ? v * w : Math.floor(v / (w || 1)); } return v; };
+  const sum = () => { let v = prod(); while (s[i] === '+' || s[i] === '-') { const o = s[i++]; const w = prod(); v = o === '+' ? v + w : v - w; } return v; };
+  const v = sum(); if (i < s.length) throw new Error(`Rad ${line}: jag förstår inte "${src}".`);
+  return v;
+}
+function runCommands(code, lv) {
+  const lines = code.replace(/\r/g, '').split('\n').map((t, i) => ({ t: t.replace(/\/\/.*$/, '').trim(), n: i + 1 }));
+  let ops = 0;
+  const NAMES = { 'vägg': '#', 'lava': 'L', 'mynt': 'o', 'tom': '.', 'sudd': '.', 'start': 'S', 'mål': 'M', 'mal': 'M' };
+  const LOOPVARS = ['i', 'j', 'k'];
+  function block(from, to, vars, depth) {
+    for (let p = from; p < to; p++) {
+      const { t, n } = lines[p]; if (!t) continue;
+      if (++ops > 20000) throw new Error('Koden kör för länge. Har du för många upprepa?');
+      const w = t.toLowerCase().split(/\s+/);
+      if (w[0] === '}') throw new Error(`Rad ${n}: en } för mycket.`);
+      if (w[0] === 'upprepa') {
+        const m = /^upprepa\s+(.+?)\s*(gånger)?\s*\{$/i.exec(t);
+        if (!m) throw new Error(`Rad ${n}: skriv så här: upprepa 3 {`);
+        let depthB = 0, end = -1;
+        for (let q = p; q < to; q++) { for (const ch of lines[q].t) { if (ch === '{') depthB++; if (ch === '}') depthB--; } if (depthB === 0) { end = q; break; } }
+        if (end < 0) throw new Error(`Rad ${n}: upprepa saknar sin }.`);
+        const times = evalExpr(m[1], vars, n); if (times > 500) throw new Error(`Rad ${n}: högst 500 gånger.`);
+        // inner loops push the outer counter to j, k
+        for (let k = 1; k <= times; k++) {
+          const nv = { ...vars }; for (let d = depth; d >= 0; d--) if (vars[LOOPVARS[d]] != null) nv[LOOPVARS[d + 1]] = vars[LOOPVARS[d]];
+          nv.i = k; block(p + 1, end, nv, depth + 1);
+        }
+        p = end; continue;
+      }
+      if (w[0] === 'rensa') { lv.rows = lv.rows.map(r => '.'.repeat(r.length)); continue; }
+      if (w[0] === 'ram') { frame(lv); continue; }
+      if (w[0] === 'storlek') {
+        if (w.length !== 3) throw new Error(`Rad ${n}: skriv så här: storlek 16 11`);
+        const bw = evalExpr(w[1], vars, n), bh = evalExpr(w[2], vars, n);
+        if (bw < 5 || bw > 30 || bh < 5 || bh > 20) throw new Error(`Rad ${n}: bredd 5–30 och höjd 5–20.`);
+        resizeLevel(lv, bw, bh); continue;
+      }
+      if (w[0] === 'slumpa') {
+        const ch = NAMES[w[1]]; if (!ch || w.length !== 3 || ch === 'S' || ch === 'M') throw new Error(`Rad ${n}: skriv så här: slumpa vägg 10`);
+        const cnt = evalExpr(w[2], vars, n); const free = [];
+        for (let y = 0; y < lv.h; y++) for (let x = 0; x < lv.w; x++) if (lv.rows[y][x] === '.') free.push([x, y]);
+        for (let c = 0; c < cnt && free.length; c++) { const [x, y] = free.splice(rnd(free.length), 1)[0]; setCell(lv, x, y, ch); }
+        continue;
+      }
+      const ch = NAMES[w[0]];
+      if (!ch) throw new Error(`Rad ${n}: jag förstår inte "${w[0]}".`);
+      const args = w.slice(1);
+      let x1, y1, x2, y2;
+      if (args.length === 2) { x1 = x2 = evalExpr(args[0], vars, n); y1 = y2 = evalExpr(args[1], vars, n); }
+      else if (args.length === 5 && args[2] === 'till' && ch !== 'S') {
+        x1 = evalExpr(args[0], vars, n); y1 = evalExpr(args[1], vars, n); x2 = evalExpr(args[3], vars, n); y2 = evalExpr(args[4], vars, n);
+      } else throw new Error(`Rad ${n}: skriv så här: ${w[0]} 3 4` + (ch !== 'S' ? ` eller ${w[0]} 3 4 till 8 4` : ''));
+      const ok = (x, y) => x >= 1 && y >= 1 && x <= lv.w && y <= lv.h;
+      if (!ok(x1, y1) || !ok(x2, y2)) throw new Error(`Rad ${n}: rutan finns inte. x ska vara 1–${lv.w} och y 1–${lv.h}.`);
+      for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++) for (let x = Math.min(x1, x2); x <= Math.max(x1, x2); x++) setCell(lv, x - 1, y - 1, ch);
+    }
+  }
+  block(0, lines.length, {}, 0);
+}
+$('#cmdRun').onclick = () => {
+  const lv = level(); const backup = JSON.stringify(lv);
+  try { runCommands($('#cmdCode').value, lv); $('#cmdErr').textContent = ''; levelChanged(); toast('Koden kördes! 🎉'); }
+  catch (e) { Object.assign(lv, JSON.parse(backup)); $('#cmdErr').textContent = e.message; }
+};
+$('#cmdExample').onclick = () => { $('#cmdCode').value = CMD_EXAMPLE; $('#cmdErr').textContent = ''; };
+
+/* ---------- train view ---------- */
+const T = { mode: null, run: null, raf: 0, acc: 0, last: 0, pause: 0, lastSA: null, mood: null, fastToken: 0 };
+const SLIDERS = [
+  ['eps', 'Nyfikenhet', 0, 1, 0.01, v => Math.round(v * 100) + ' %', 'Hur ofta den testar något nytt.'],
+  ['alpha', 'Inlärningstakt', 0.05, 1, 0.01, v => Math.round(v * 100) + ' %', 'Hur mycket den ändrar sig efter varje steg.'],
+  ['gamma', 'Framtidstänk', 0.5, 0.99, 0.01, v => Math.round(v * 100) + ' %', 'Hur mycket den bryr sig om belöningar längre fram.'],
+];
+const REWARDS = [
+  ['rGoal', '🏁 Nå målet', 0, 50, 1], ['rLava', '🔥 Gå i lava', -50, 0, 1], ['rCoin', '🪙 Ta ett mynt', 0, 20, 0.5],
+  ['rStep', '👣 Varje steg', -2, 0, 0.05], ['rWall', '💥 Krocka i vägg', -5, 0, 0.1],
+];
+const sps = () => { const v = +$('#tSpeed').value; return v >= 100 ? 5000 : Math.round(1.5 * Math.pow(1.075, v)); };
+function speedLabel() { const v = sps(); $('#tSpeedV').textContent = v >= 5000 ? 'Turbo' : v + ' steg/s'; }
+function slider(host, [key, label, min, max, step, show, hint], ag) {
+  const val = el('b'); const inp = el('input', { type: 'range', min, max, step, 'aria-label': label });
+  inp.value = ag.settings[key];
+  const upd = () => { val.textContent = show ? show(+inp.value) : fmt(+inp.value, 2); };
+  inp.oninput = () => { ag.settings[key] = +inp.value; upd(); save(); };
+  upd();
+  host.append(el('div', { class: 'slider' }, el('span', { text: label }), val, inp, hint ? el('span', { class: 'hint', text: hint }) : null));
+}
+function renderTrain() {
+  renderHeader();
+  const ag = agent();
+  $('#trainNoAgent').hidden = !!ag; $('#trainMain').hidden = !ag;
+  if (!ag) return;
+  fillLevelSelect($('#tLevel'));
+  const sl = $('#tSliders'); sl.innerHTML = ''; for (const s of SLIDERS) slider(sl, s, ag);
+  const rw = $('#tRewards'); rw.innerHTML = ''; for (const s of REWARDS) slider(rw, [...s, null, null], ag);
+  for (const b of $$('#tMode button')) b.classList.toggle('on', b.dataset.mode === ag.brain.mode);
+  speedLabel(); updateTrainPanel(); drawTrain(); trainButtons();
+}
+function updateTrainPanel() {
+  const ag = agent(); if (!ag) return;
+  avatar($('#tAvatar'), ag, T.mood); $('#tName').textContent = ag.name; $('#tTitle').textContent = rank(ag);
+  const nav = navSmart(ag), talk = talkSmart(ag), [p, n] = passed(ag);
+  $('#tNavM').style.width = nav + '%'; $('#tNavV').textContent = nav + '%';
+  $('#tTalkM').style.width = talk + '%'; $('#tTalkV').textContent = talk + '%';
+  const here = ag.brain.skill[level().id];
+  $('#tPass').textContent = `Klarar ${p} av ${n} banor. ` + (here ? `På den här banan: ${here} % av perfekt.` : 'Den här banan klarar den inte än.');
+  const b = ag.brain; const last = b.hist.slice(-20);
+  $('#sEp').textContent = b.episodes.toLocaleString('sv-SE'); $('#sWin').textContent = b.wins.toLocaleString('sv-SE');
+  $('#sMem').textContent = Object.keys(b.q).length.toLocaleString('sv-SE');
+  $('#sLast').textContent = last.length ? Math.round(100 * last.reduce((a, h) => a + h.w, 0) / last.length) + ' %' : '–';
+  drawChart();
+}
+function drawTrain() {
+  const ag = agent(); if (!ag || $('#v-train').hidden) return;
+  const lv = level(); const { g, cs } = fitCanvas($('#tCanvas'), lv, Math.max(300, Math.min(560, window.innerHeight - 300)));
+  const run = T.run && T.run.lv === lv ? T.run : null;
+  drawLevel(g, lv, cs, run, performance.now());
+  if ($('#tBrain').checked) drawBrain(g, ag, lv, cs);
+  let x, y;
+  if (run) {
+    g.fillStyle = ag.color;
+    run.trail.forEach(([tx, ty], i) => { g.globalAlpha = 0.08 + 0.3 * i / run.trail.length; g.beginPath(); g.arc(tx * cs + cs / 2, ty * cs + cs / 2, cs * 0.14, 0, 7); g.fill(); });
+    g.globalAlpha = 1; x = run.x; y = run.y;
+  } else { const s = findAll(lv, 'S')[0]; if (!s) return; x = s.x; y = s.y; }
+  const mood = run ? (run.win ? 'happy' : run.lava ? 'sad' : run.bonk ? 'bonk' : null) : null;
+  drawBot(g, x * cs + cs / 2, y * cs + cs / 2 + cs * 0.06, cs * 0.95, ag.color, ag.style, mood);
+}
+function setStatus(msg, kind) { const s = $('#tStatus'); s.textContent = msg; s.className = 'status' + (kind ? ' ' + kind : ''); }
+function trainButtons() {
+  const m = T.mode;
+  $('#tWatch').classList.toggle('on', m === 'watch'); $('#tDrive').classList.toggle('on', m === 'drive');
+  $('#tTest').classList.toggle('on', m === 'test');
+  $('#tStop').disabled = !m;
+  $('#tPad').classList.toggle('on', m === 'drive');
+  $('#tGood').disabled = $('#tBad').disabled = !(m === 'watch' || m === 'test' || m === 'drive');
+  for (const b of $$('[data-fast]')) b.disabled = m === 'fast';
+}
+function ready() {
+  const ag = agent(); if (!ag) return false;
+  const p = levelProblem(level()); if (p) { setStatus('⚠️ ' + p + ' Fixa banan under 🧱 Bygg bana.', 'bad'); return false; }
+  return true;
+}
+function stopTraining() {
+  if (T.mode === 'fast') T.fastToken++;
+  T.mode = null; cancelAnimationFrame(T.raf); $('#tProg i').style.width = '0';
+  trainButtons();
+}
+function startLoop(mode) {
+  if (!ready()) return;
+  stopTraining(); T.mode = mode; T.run = new Run(level()); T.pause = 0; T.acc = 0; T.last = performance.now(); T.mood = null;
+  setStatus(mode === 'test' ? '🎯 Prov: agenten gör det den tror är bäst, utan att chansa.' : '▶ Agenten tränar …');
+  trainButtons(); T.raf = requestAnimationFrame(tick);
+}
+function endMessage(run, ag) {
+  if (run.win) return [`🎉 Hittade målet på ${run.steps} steg!` + (run.coins ? ` Tog ${run.coins} mynt.` : ''), 'good'];
+  if (run.lava) return ['🔥 Aj! Gick rakt ner i lavan.', 'bad'];
+  if (run.loop) return ['🔄 Agenten går runt i cirklar. Den behöver träna mer.', 'bad'];
+  return [`⏰ Hann inte fram på ${run.steps} steg.`, 'bad'];
+}
+function tick(now) {
+  if (T.mode !== 'watch' && T.mode !== 'test') return;
+  T.raf = requestAnimationFrame(tick);
+  const ag = agent(); const dt = Math.min(100, now - T.last); T.last = now;
+  if (T.pause > 0) {
+    T.pause -= dt;
+    if (T.pause <= 0) { if (T.mode === 'test') { stopTraining(); drawTrain(); return; } T.run = new Run(level()); T.mood = null; }
+    drawTrain(); return;
+  }
+  const speed = sps(); T.acc += dt * speed / 1000;
+  let n = Math.min(Math.floor(T.acc), 6000); T.acc -= Math.floor(T.acc);
+  const test = T.mode === 'test';
+  while (n-- > 0) {
+    T.lastSA = agentStep(ag, T.run, test ? 0 : ag.settings.eps, !test);
+    if (!T.run.done && test && T.run.circling()) T.run.done = T.run.loop = true;
+    if (T.run.done) {
+      const run = T.run; if (!test) record(ag, run, 'w');
+      evalAll(ag); save(); T.mood = run.win ? 'happy' : 'sad';
+      const [msg, kind] = endMessage(run, ag);
+      setStatus((test ? 'Prov: ' : `Runda ${ag.brain.episodes}: `) + msg, kind);
+      updateTrainPanel();
+      if (speed >= 400 && !test) { T.run = new Run(level()); T.mood = null; continue; }
+      T.pause = test ? 1800 : 700; break;
+    }
+  }
+  if (!T.run.done && speed < 400) setStatus(`${test ? 'Prov' : 'Runda ' + (ag.brain.episodes + 1)} · steg ${T.run.steps} · poäng ${fmt(T.run.total)}` + (T.run.bonk ? ' · 💥 krock!' : ''));
+  drawTrain();
+}
+function fastTrain(count, all) {
+  if (!agent()) return;
+  const levels = all ? S.levels.filter(l => !levelProblem(l)) : [level()];
+  if (!levels.length || (!all && !ready())) { if (all) toast('Det finns ingen bana som fungerar.'); return; }
+  stopTraining(); T.mode = 'fast'; trainButtons();
+  const ag = agent(); const total = count * levels.length; let done = 0; const token = ++T.fastToken;
+  let li = 0; let run = new Run(levels[0]); const w0 = ag.brain.wins;
+  setStatus(`⚡ Snabbtränar ${total} rundor …`);
+  const chunk = () => {
+    if (T.fastToken !== token) return;
+    const t0 = performance.now();
+    while (performance.now() - t0 < 16 && done < total) {
+      agentStep(ag, run, ag.settings.eps, true);
+      if (run.done) { record(ag, run, 'f'); done++; li = (li + 1) % levels.length; run = new Run(levels[li]); }
+    }
+    $('#tProg i').style.width = (100 * done / total) + '%';
+    if (done < total) { setTimeout(chunk, 0); return; }
+    evalAll(ag); saveNow(); T.mode = null; trainButtons(); $('#tProg i').style.width = '0';
+    setStatus(`✅ Klart! ${total} rundor, varav ${ag.brain.wins - w0} lyckade. Tryck 🎯 Prov för att se vad den kan.`, 'good');
+    T.run = null; updateTrainPanel(); drawTrain();
+  };
+  chunk();
+}
+function drive(a) {
+  const ag = agent(); if (T.mode !== 'drive' || !ag) return;
+  if (T.run.done) return;
+  T.lastSA = agentStep(ag, T.run, 0, true, a); T.traj.push(T.lastSA);
+  const run = T.run;
+  if (run.done) {
+    // replay the whole walk backwards a few times so the lesson sticks
+    if (run.win) for (let rep = 0; rep < 4; rep++) {
+      const r2 = new Run(run.lv); const seq = [];
+      for (const st of T.traj) {
+        const s = stateKey(ag, r2), d0 = r2.goalDist(); const r = r2.step(st.a, ag.settings);
+        seq.push([s, st.a, r + shaping(ag, d0, r2.goalDist()), stateKey(ag, r2), r2.done && !r2.timeout]);
+      }
+      for (let i = seq.length - 1; i >= 0; i--) learn(ag, ...seq[i]);
+    }
+    record(ag, run, 'd'); evalAll(ag); save(); T.mood = run.win ? 'happy' : 'sad';
+    const [msg, kind] = endMessage(run, ag);
+    setStatus(msg + (run.win ? ' Agenten har tittat på hur du gjorde.' : ''), kind);
+    updateTrainPanel(); drawTrain();
+    setTimeout(() => { if (T.mode === 'drive') { T.run = new Run(level()); T.traj = []; T.mood = null; drawTrain(); } }, 900);
+  } else setStatus(`🕹 Du styr · steg ${run.steps} · poäng ${fmt(run.total)}` + (run.bonk ? ' · 💥 krock!' : ''));
+  drawTrain();
+}
+function praise(sign) {
+  const ag = agent(); if (!ag || !T.lastSA) { toast('Agenten har inte gjort något än.'); return; }
+  const { s, a } = T.lastSA; const q = Q(ag, s);
+  q[a] = Math.round((q[a] + ag.settings.alpha * 3 * sign) * 1000) / 1000; ag.brain.clicks++;
+  save(); toast(sign > 0 ? `👍 Agenten minns att "${DIRNAME[a]}" var bra där.` : `👎 Agenten minns att "${DIRNAME[a]}" var dumt där.`);
+  drawTrain();
+}
+$('#tWatch').onclick = () => startLoop('watch');
+$('#tTest').onclick = () => startLoop('test');
+$('#tStop').onclick = () => { stopTraining(); setStatus('⏹ Stoppad.'); };
+$('#tDrive').onclick = () => {
+  if (!ready()) return;
+  stopTraining(); T.mode = 'drive'; T.run = new Run(level()); T.traj = []; T.mood = null; trainButtons(); drawTrain();
+  setStatus('🕹 Styr med piltangenterna (eller knapparna). Visa agenten vägen till målet!');
+};
+$('#tGood').onclick = () => praise(1);
+$('#tBad').onclick = () => praise(-1);
+$('#tSpeed').oninput = speedLabel;
+$('#tBrain').onchange = drawTrain;
+$('#tLevel').onchange = e => { S.lvl = e.target.value; stopTraining(); T.run = null; save(); updateTrainPanel(); drawTrain(); setStatus('Bytte bana.'); };
+for (const b of $$('#tMode button')) b.onclick = () => {
+  const ag = agent(); ag.brain.mode = b.dataset.mode; stopTraining(); evalAll(ag); save(); renderTrain();
+  setStatus(ag.brain.mode === 'plats' ? '🗺 Platsminne: agenten minns varje ruta.' : '👀 Sinnen: agenten ser rutorna runt sig och åt vilket håll målet är.');
+};
+for (const b of $$('[data-fast]')) b.onclick = () => { const n = +b.dataset.fast; fastTrain(n < 0 ? 100 : n, n < 0); };
+for (const b of $$('#tPad button')) b.onclick = () => drive(+b.dataset.a);
+$('#tResetSet').onclick = () => { const ag = agent(); ag.settings = { ...DEFAULTS }; save(); renderTrain(); toast('Standardinställningar.'); };
+$('#tResetBrain').onclick = async () => {
+  const ag = agent(); if (!await confirmAsk('Glömma allt om banor?', ag.name + ' blir som ny och förstår ingenting igen.', 'Glöm')) return;
+  stopTraining(); const mode = ag.brain.mode; ag.brain = newAgent('', '', 0).brain; ag.brain.mode = mode; evalAll(ag); T.run = null; save(); renderTrain();
+  setStatus('🧠 Hjärnan är tom. Agenten förstår ingenting.');
+};
+document.addEventListener('keydown', e => {
+  if (T.mode !== 'drive' || $('#v-train').hidden || /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+  const a = { ArrowUp: 0, KeyW: 0, ArrowRight: 1, KeyD: 1, ArrowDown: 2, KeyS: 2, ArrowLeft: 3, KeyA: 3 }[e.code];
+  if (a != null) { e.preventDefault(); drive(a); }
+});
+
+/* ---- chart: share of successful rounds, rolling 20 ---- */
+let chartPts = [];
+function drawChart(hover) {
+  const ag = agent(); const cv = $('#tChart'); if (!ag || !cv.clientWidth) return;
+  const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+  if (cv.width !== W * dpr) { cv.width = W * dpr; cv.height = H * dpr; }
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+  const L = 36, R = 8, Tp = 8, B = 22, pw = W - L - R, ph = H - Tp - B;
+  g.font = '11px system-ui,sans-serif'; g.fillStyle = C.muted; g.textAlign = 'right'; g.textBaseline = 'middle';
+  for (const v of [0, 50, 100]) {
+    const y = Tp + ph * (1 - v / 100);
+    g.strokeStyle = C.line; g.lineWidth = 1; g.beginPath(); g.moveTo(L, Math.round(y) + .5); g.lineTo(W - R, Math.round(y) + .5); g.stroke();
+    g.fillText(v + ' %', L - 6, y);
+  }
+  const h = ag.brain.hist; chartPts = [];
+  if (h.length < 2) {
+    g.textAlign = 'center'; g.fillText('Träna några rundor så syns kurvan här.', L + pw / 2, Tp + ph / 2 - 14); return;
+  }
+  const first = ag.brain.episodes - h.length + 1; let sum = 0;
+  for (let i = 0; i < h.length; i++) {
+    sum += h[i].w; if (i >= 20) sum -= h[i - 20].w;
+    const n = Math.min(i + 1, 20);
+    chartPts.push({ x: L + pw * i / (h.length - 1), y: Tp + ph * (1 - sum / n), v: Math.round(100 * sum / n), ep: first + i });
+  }
+  g.textAlign = 'left'; g.textBaseline = 'top'; g.fillText('runda ' + first.toLocaleString('sv-SE'), L, H - B + 6);
+  g.textAlign = 'right'; g.fillText('runda ' + ag.brain.episodes.toLocaleString('sv-SE'), W - R, H - B + 6);
+  g.strokeStyle = C['series-1']; g.lineWidth = 2; g.lineJoin = 'round'; g.beginPath();
+  chartPts.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)); g.stroke();
+  const tip = $('#tTip');
+  if (hover != null) {
+    const p = chartPts[hover];
+    g.strokeStyle = C.muted; g.lineWidth = 1; g.beginPath(); g.moveTo(Math.round(p.x) + .5, Tp); g.lineTo(Math.round(p.x) + .5, Tp + ph); g.stroke();
+    g.fillStyle = C['series-1']; g.strokeStyle = C.panel; g.lineWidth = 2; g.beginPath(); g.arc(p.x, p.y, 4.5, 0, 7); g.fill(); g.stroke();
+    tip.style.display = 'block'; tip.style.left = clamp(p.x, 70, W - 70) + 'px'; tip.style.top = p.y + 'px';
+    tip.textContent = `Runda ${p.ep.toLocaleString('sv-SE')}: ${p.v} % lyckade`;
+  } else tip.style.display = 'none';
+}
+$('#tChart').addEventListener('pointermove', e => {
+  if (!chartPts.length) return;
+  const x = e.clientX - $('#tChart').getBoundingClientRect().left; let bi = 0, bd = 1e9;
+  chartPts.forEach((p, i) => { const d = Math.abs(p.x - x); if (d < bd) { bd = d; bi = i; } });
+  drawChart(bi);
+});
+$('#tChart').addEventListener('pointerleave', () => drawChart());
+
+/* ---------- talk ---------- */
+const WORD = /[0-9A-Za-zÅÄÖåäöÉéÜü']+|[.!?]/g;
+const words = t => (t.toLowerCase().match(/[0-9a-zåäöéü']+/g) || []);
+const SUFFIX = ['arnas', 'ornas', 'ernas', 'arna', 'orna', 'erna', 'ande', 'ende', 'heten', 'het', 'ens', 'ets', 'en', 'et', 'na', 'ar', 'or', 'er', 'a', 'e', 'n', 't', 's'];
+function stem(w) { for (const s of SUFFIX) if (w.length - s.length >= 3 && w.endsWith(s)) return w.slice(0, -s.length); return w; }
+const stems = t => [...new Set(words(t).map(stem))];
+function learnText(ag, text) {
+  const t = ag.talk; const toks = String(text).slice(0, 20000).match(WORD) || [];
+  let p2 = '^', p1 = '^', fresh = 0;
+  const add = (map, k, nx) => { const m = map[k] || (map[k] = {}); m[nx] = (m[nx] || 0) + 1; };
+  for (const tok of toks) {
+    const lo = tok.toLowerCase();
+    if (!/[.!?]/.test(tok)) { if (!t.vocab[lo]) fresh++; t.vocab[lo] = (t.vocab[lo] || 0) + 1; }
+    add(t.c1, p1, tok); add(t.c2, p2 + ' ' + p1, tok);
+    if (/[.!?]/.test(tok)) { p2 = p1 = '^'; } else { p2 = p1; p1 = lo; }
+  }
+  if (p1 !== '^') { add(t.c1, p1, '.'); add(t.c2, p2 + ' ' + p1, '.'); }
+  return fresh;
+}
+function weighted(m) { let tot = 0; for (const k in m) tot += m[k]; let r = Math.random() * tot; for (const k in m) { r -= m[k]; if (r <= 0) return k; } return Object.keys(m)[0]; }
+function sentenceFrom(t, seed) {
+  let p2 = '^', p1 = '^'; const out = [];
+  if (seed) { out.push(seed); p1 = seed; p2 = '?'; }
+  for (let i = 0; i < 24; i++) {
+    const m = t.c2[p2 + ' ' + p1] || t.c1[p1]; if (!m) break;
+    const nx = weighted(m); out.push(nx);
+    if (/[.!?]/.test(nx)) break;
+    p2 = p1; p1 = nx.toLowerCase();
+  }
+  if (out.filter(w => !/[.!?]/.test(w)).length < 2) return null;
+  let s = out.join(' ').replace(/\s+([.!?])/g, '$1');
+  if (!/[.!?]$/.test(s)) s += ' …';
+  return s[0].toUpperCase() + s.slice(1);
+}
+// start from the rarest word of the question it knows; if that word always ends a
+// sentence, try the next one, and finally just start a fresh sentence
+function generate(ag, seedText) {
+  const t = ag.talk; const seeds = [...new Set(words(seedText))].filter(w => t.c1[w] && w.length > 2);
+  seeds.sort((a, b) => t.vocab[a] - t.vocab[b]);
+  for (const seed of [...seeds.slice(0, 3), null]) for (let k = 0; k < 4; k++) { const s = sentenceFrom(t, seed); if (s) return s; }
+  return null;
+}
+// little filler words ("du", "vad", "är" …) say less about what a question means
+const STOP = new Set(('jag du han hon den det vi ni de man en ett och i på av för med till om att som är var har hade kan ska vill ' +
+  'vad vilken vilket vilka hur när varför vem inte så din ditt dina min mitt mina sin sitt mig dig oss er här där nu också men eller').split(' ').map(stem));
+function bestMatch(ag, text) {
+  const pairs = ag.talk.pairs.filter(p => p.score > -3); if (!pairs.length) return null;
+  const norm = words(text).join(' ');
+  const df = {}; const ps = pairs.map(p => { const s = stems(p.q); s.forEach(w => df[w] = (df[w] || 0) + 1); return s; });
+  const N = pairs.length; const idf = w => (df[w] ? Math.log(1 + (N + 1) / (df[w] + 0.5)) : 1) * (STOP.has(w) ? 0.25 : 1);
+  const qs = stems(text); const qn = Math.sqrt(qs.reduce((a, w) => a + idf(w) ** 2, 0)) || 1;
+  let best = [], bestV = 0;
+  pairs.forEach((p, i) => {
+    let sim;
+    if (words(p.q).join(' ') === norm) sim = 1;
+    else {
+      const pn = Math.sqrt(ps[i].reduce((a, w) => a + idf(w) ** 2, 0)) || 1;
+      let dot = 0; for (const w of qs) if (ps[i].includes(w)) dot += idf(w) ** 2;
+      sim = dot / (qn * pn);
+    }
+    const v = sim + 0.04 * clamp(p.score, -3, 5);
+    if (sim > 0 && v > bestV + 0.02) { bestV = v; best = [{ p, sim }]; } else if (sim > 0 && Math.abs(v - bestV) <= 0.02) best.push({ p, sim });
+  });
+  return best.length ? pick(best) : null;
+}
+function babble() {
+  const syl = ['bip', 'blopp', 'piip', 'bzz', 'blipp', 'mek', 'dong', 'zzt'];
+  const n = 2 + rnd(3); const s = Array.from({ length: n }, () => pick(syl)).join(' ');
+  return s[0].toUpperCase() + s.slice(1) + pick(['?', '…', '!']);
+}
+function reply(ag, text) {
+  const t = ag.talk; const m = bestMatch(ag, text);
+  if (m && m.sim >= 0.34) return { text: m.p.a.replace(/\{namn\}/gi, ag.name), from: 'pair', pid: m.p.id };
+  if (Object.keys(t.vocab).length >= 6) { const g = generate(ag, text); if (g) return { text: g, from: 'gen' }; }
+  return { text: babble(), from: 'babble' };
+}
+function addPair(ag, q, a) {
+  q = q.trim(); a = a.trim(); if (!q || !a) return false;
+  ag.talk.pairs.push({ id: uid(), q, a, score: 0 }); learnText(ag, a); return true;
+}
+const NOTE = { gen: '🤔 hittade på', babble: '🤖 förstår inte än' };
+function renderTalk() {
+  renderHeader();
+  const ag = agent(); $('#talkNoAgent').hidden = !!ag; $('#talkMain').hidden = !ag;
+  if (!ag) return;
+  $('#cTitle').textContent = 'Prata med ' + ag.name;
+  $('#cSpeak').checked = !!S.speak; $('#cLearnChat').checked = !!ag.talk.learnChat;
+  renderLog(); renderPairs();
+}
+function renderLog() {
+  const ag = agent(); const log = $('#cLog'); log.innerHTML = '';
+  if (!ag.talk.log.length) {
+    log.append(el('div', { class: 'muted small', style: 'text-align:center;padding:20px', text: `${ag.name} kan inga ord än. Säg hej, lär den svar eller låt den läsa en text!` }));
+  }
+  ag.talk.log.forEach((m, idx) => {
+    if (m.who === 'me') { log.append(el('div', { class: 'msg me' }, el('div', { class: 'bubble', text: m.text }))); return; }
+    const cv = el('canvas', { style: 'width:30px;height:30px;flex:none' });
+    const meta = el('div', { class: 'meta' });
+    if (NOTE[m.from]) meta.append(el('span', { text: NOTE[m.from] }));
+    const up = el('button', { text: '👍', title: 'Bra svar', class: m.fb === 1 ? 'done' : '', onclick: () => feedback(idx, 1) });
+    const dn = el('button', { text: '👎', title: 'Dåligt svar', class: m.fb === -1 ? 'done' : '', onclick: () => feedback(idx, -1) });
+    const tb = el('button', { text: '✏️ Lär mig rätt svar', onclick: () => teachBox(wrap, m) });
+    if (m.q != null) meta.append(up, dn, tb);
+    const wrap = el('div', {}, el('div', { class: 'bubble', text: m.text }), meta);
+    log.append(el('div', { class: 'msg' }, cv, wrap)); avatar(cv, ag, m.fb === 1 ? 'happy' : null);
+  });
+  log.scrollTop = log.scrollHeight;
+}
+function teachBox(wrap, m) {
+  if (wrap.querySelector('.teach')) return;
+  const inp = el('input', { type: 'text', placeholder: 'Vad borde jag svara?', 'aria-label': 'Rätt svar' });
+  const f = el('form', { class: 'teach', onsubmit: e => {
+    e.preventDefault(); const ag = agent();
+    if (addPair(ag, m.q, inp.value)) { pushMsg(ag, { who: 'ai', text: 'Tack! Nu vet jag vad jag ska svara på "' + m.q + '".', from: 'info' }); save(); renderLog(); renderPairs(); }
+  } }, inp, el('button', { class: 'btn sm primary', text: 'Lär ut' }));
+  wrap.append(f); inp.focus();
+}
+function feedback(idx, v) {
+  const ag = agent(); const m = ag.talk.log[idx]; if (!m || m.fb === v) return;
+  const prev = m.fb || 0; m.fb = v;
+  if (m.from === 'pair') { const p = ag.talk.pairs.find(p => p.id === m.pid); if (p) p.score += v - prev; }
+  if (v === 1) {
+    ag.talk.likes++;
+    if (m.from === 'gen' && m.q) { addPair(ag, m.q, m.text); toast('👍 Den kommer ihåg det svaret!'); }
+  } else if (v === -1) { if (prev === 1) ag.talk.likes = Math.max(0, ag.talk.likes - 1); toast('👎 Okej. Tryck ✏️ och lär den ett bättre svar.'); }
+  save(); renderLog(); renderPairs();
+}
+function pushMsg(ag, m) { ag.talk.log.push(m); if (ag.talk.log.length > 60) ag.talk.log.splice(0, ag.talk.log.length - 60); }
+function speak(text) {
+  if (!S.speak || !('speechSynthesis' in window)) return;
+  try {
+    const u = new SpeechSynthesisUtterance(text); u.lang = 'sv-SE';
+    const v = speechSynthesis.getVoices().find(v => /^sv/i.test(v.lang)); if (v) u.voice = v;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  } catch (e) { /* no voice available */ }
+}
+function renderPairs() {
+  const ag = agent(); const box = $('#pList'); box.innerHTML = '';
+  $('#pCount').textContent = ag.talk.pairs.length;
+  if (!ag.talk.pairs.length) box.append(el('div', { class: 'muted small', text: 'Inga svar än.' }));
+  for (const p of [...ag.talk.pairs].reverse()) {
+    box.append(el('div', { class: 'pair' },
+      el('div', { class: 'q', text: '“' + p.q + '”' + (p.score ? `  ${p.score > 0 ? '👍' : '👎'}${Math.abs(p.score)}` : '') }),
+      el('button', { text: '✖', title: 'Ta bort', 'aria-label': 'Ta bort svar', onclick: () => { ag.talk.pairs = ag.talk.pairs.filter(x => x !== p); save(); renderPairs(); updateVocab(); } }),
+      el('div', { class: 'a', text: '→ ' + p.a })));
+  }
+  updateVocab();
+}
+function updateVocab() { const ag = agent(); $('#tkVocab').textContent = Object.keys(ag.talk.vocab).length.toLocaleString('sv-SE'); $('#tkLikes').textContent = ag.talk.likes; }
+$('#cForm').onsubmit = e => {
+  e.preventDefault(); const ag = agent(); const text = $('#cInput').value.trim(); if (!text) return;
+  $('#cInput').value = '';
+  pushMsg(ag, { who: 'me', text });
+  const r = reply(ag, text);
+  if (ag.talk.learnChat) learnText(ag, text);
+  pushMsg(ag, { who: 'ai', text: r.text, from: r.from, pid: r.pid, q: text });
+  save(); renderLog(); updateVocab(); speak(r.text);
+};
+$('#cClear').onclick = () => { agent().talk.log = []; save(); renderLog(); };
+$('#cSpeak').onchange = e => { S.speak = e.target.checked; save(); if (S.speak && !('speechSynthesis' in window)) toast('Uppläsning finns inte här.'); };
+$('#cLearnChat').onchange = e => { agent().talk.learnChat = e.target.checked; save(); };
+$('#pForm').onsubmit = e => {
+  e.preventDefault(); const ag = agent();
+  if (!addPair(ag, $('#pQ').value, $('#pA').value)) { toast('Fyll i båda rutorna.'); return; }
+  $('#pQ').value = $('#pA').value = ''; $('#pQ').focus(); save(); renderPairs(); toast('Inlärt! Testa att fråga i chatten.');
+};
+$('#pStarter').onclick = () => {
+  const ag = agent(); let n = 0;
+  for (const [q, a] of STARTER) if (!ag.talk.pairs.some(p => p.q.toLowerCase() === q)) { addPair(ag, q, a); n++; }
+  save(); renderPairs(); toast(n ? `${n} hälsningar inlärda!` : 'Den kan redan alla hälsningar.');
+};
+$('#rRead').onclick = () => {
+  const ag = agent(); const txt = $('#rText').value.trim(); if (!txt) { toast('Skriv eller klistra in en text först.'); return; }
+  const n = learnText(ag, txt); $('#rText').value = ''; save(); updateVocab();
+  pushMsg(ag, { who: 'ai', text: n ? `Jag läste texten och lärde mig ${n} nya ord! 📖` : 'Jag läste texten. Alla ord kunde jag redan!', from: 'info' });
+  renderLog();
+};
+for (const b of $$('[data-sample]')) b.onclick = () => { $('#rText').value = SAMPLES[b.dataset.sample]; };
+$('#tkReset').onclick = async () => {
+  const ag = agent(); if (!await confirmAsk('Glömma allt om prat?', ag.name + ' glömmer alla ord och svar.', 'Glöm')) return;
+  const lc = ag.talk.learnChat; ag.talk = newAgent('', '', 0).talk; ag.talk.learnChat = lc; save(); renderTalk();
+};
+
+/* ---------- boot ---------- */
+for (const b of $$('.tabs button')) b.onclick = () => show(b.dataset.view);
+for (const b of $$('[data-goto-new]')) b.onclick = openNew;
+for (const b of $$('dialog [data-cancel]')) b.onclick = () => b.closest('dialog').close('cancel');
+$('#curAgent').onclick = () => agent() ? show('agents') : openNew();
+let rsT = 0;
+window.addEventListener('resize', () => { clearTimeout(rsT); rsT = setTimeout(() => { if (S.view === 'build') drawBuild(); if (S.view === 'train') { drawTrain(); drawChart(); } }, 80); });
+window.addEventListener('beforeunload', saveNow);
+const mq = window.matchMedia('(prefers-color-scheme: dark)');
+(mq.addEventListener ? mq.addEventListener.bind(mq, 'change') : mq.addListener.bind(mq))(() => { readColors(); show(S.view); });
+// lava bubbles move gently on the build screen
+setInterval(() => { if (S && S.view === 'build' && !painting && !document.hidden) drawBuild(); }, 400);
+
+readColors(); load();
+avatar($('#logo'), { color: '#2a78d6', style: 0 }, 'happy');
+show(['agents', 'build', 'train', 'talk', 'help'].includes(S.view) ? S.view : 'agents');
+
+// small hook for automated tests
+window.RakenAI = { state: () => S, Run, stateKey, evalAll, navSmart, talkSmart, reply, learnText, runCommands, shortest, levelProblem, fastTrain, show };
+})();
+</script>
+</body>
+</html>
