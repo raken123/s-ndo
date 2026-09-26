@@ -1,0 +1,61 @@
+name: JomniBlommor
+options:
+  bundleIdPrefix: se.jomni
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+packages:
+  Stripe:
+    url: https://github.com/stripe/stripe-ios-spm
+    from: 24.0.0
+settings:
+  base:
+    MARKETING_VERSION: 1.0.0
+    CURRENT_PROJECT_VERSION: 1
+    SWIFT_VERSION: "5.0"
+    DEVELOPMENT_TEAM: ""
+targets:
+  JomniBlommor:
+    type: application
+    platform: iOS
+    scheme: {}
+    sources:
+      - JomniBlommor
+    dependencies:
+      - package: Stripe
+        product: StripeApplePay
+      - sdk: StoreKit.framework
+      - sdk: PassKit.framework
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: se.jomni.blommor
+        PRODUCT_NAME: JomniBlommor
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        # Adressen till servern (jomni-blommor/server). Ändra till er domän.
+        JOMNI_API_BASE_URL: https://jomniblommor.se
+      configs:
+        Debug:
+          JOMNI_API_BASE_URL: http://localhost:8080
+    info:
+      path: JomniBlommor/Info.plist
+      properties:
+        CFBundleDisplayName: Jomni Blommor
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        JomniAPIBaseURL: $(JOMNI_API_BASE_URL)
+        UILaunchScreen:
+          UIColorName: AccentColor
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIBackgroundModes: [fetch, remote-notification]
+        BGTaskSchedulerPermittedIdentifiers: [se.jomni.blommor.orders]
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        ITSAppUsesNonExemptEncryption: false
+    entitlements:
+      path: JomniBlommor/JomniBlommor.entitlements
+      properties:
+        aps-environment: development
+        com.apple.developer.usernotifications.time-sensitive: true
+        com.apple.developer.in-app-payments: [merchant.se.jomni.blommor]

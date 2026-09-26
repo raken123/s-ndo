@@ -1,0 +1,13 @@
+{
+  "name": "jomni-blommor-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Webbutik, API och admin för Jomni Blommor",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/index.js",
+    "demo": "DEMO_MODE=1 node src/index.js",
+    "test": "node --test test/*.test.js"
+  }
+}

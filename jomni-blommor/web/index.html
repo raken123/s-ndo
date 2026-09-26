@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Jomni Blommor – buketter med leverans</title>
+  <meta name="description" content="Beställ buketter från Jomni Blommor med budleverans samma dag. Betala med Apple Pay, Google Pay eller kort och samla mynt.">
+  <meta name="theme-color" content="#fbf7f2">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <a class="logo" href="#/"><span class="logo-mark">🌸</span>Jomni Blommor</a>
+      <nav class="nav" aria-label="Huvudmeny">
+        <a href="#/" data-nav="shop">Buketter</a>
+        <a href="#/beloningar" data-nav="beloningar">Belöningar</a>
+        <a href="#/konto" data-nav="konto">Konto</a>
+      </nav>
+      <div class="wallet-pill" id="wallet-pill"></div>
+      <button class="cart-btn" id="cart-btn" aria-label="Varukorg">🛒 <span class="cart-count" id="cart-count">0</span></button>
+    </div>
+  </header>
+
+  <main id="view" class="wrap"></main>
+
+  <footer class="foot">
+    <div class="wrap">
+      <div>🌸 <strong>Jomni Blommor</strong> · Handbundna buketter med budleverans samma dag</div>
+      <div class="small">Betala med Apple Pay, Google Pay eller kort · Samla mynt på varje köp</div>
+      <a class="admin-link" href="admin.html">🔒 Admin</a>
+    </div>
+  </footer>
+
+  <div id="drawer-root"></div>
+  <script src="https://js.stripe.com/v3/" async></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

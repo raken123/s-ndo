@@ -1,0 +1,54 @@
+# Bygger iPhone-appen för Jomni Blommor och laddar upp en .ipa som artefakt.
+# IPA:n är osignerad – signera den med ert Apple-konto (t.ex. Sideloadly/AltStore),
+# eller öppna projektet i Xcode och välj Product → Archive för TestFlight/App Store.
+name: Jomni Blommor iOS (IPA)
+
+on:
+  push:
+    paths:
+      - 'jomni-blommor/ios/**'
+      - '.github/workflows/jomni-ios.yml'
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: 'Serverns adress (t.ex. https://jomniblommor.se)'
+        required: false
+        default: 'https://jomniblommor.se'
+
+permissions:
+  contents: read
+
+jobs:
+  ipa:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: jomni-blommor/ios
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installera XcodeGen
+        run: brew install xcodegen
+      - name: Generera Xcode-projekt
+        run: xcodegen generate
+      - name: Bygg (osignerad)
+        run: |
+          xcodebuild -project JomniBlommor.xcodeproj -scheme JomniBlommor -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            JOMNI_API_BASE_URL="${{ inputs.api_url || 'https://jomniblommor.se' }}" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build > build.log 2>&1 || { grep -E "error:" build.log | sort -u | head -60; tail -30 build.log; exit 1; }
+          tail -3 build.log
+      - name: Paketera IPA
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/JomniBlommor.app Payload/
+          zip -qry JomniBlommor-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JomniBlommor-ipa
+          path: jomni-blommor/ios/JomniBlommor-unsigned.ipa
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: build-log
+          path: jomni-blommor/ios/build.log
