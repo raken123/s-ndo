@@ -1,7 +1,9 @@
-// Writes nexora/colab/nexora_prompts.json: the game requests the Colab notebook sends to a
-// teacher model (Claude) to create training data. Each request is formatted exactly like
-// the app's own (same system prompt, same "Game idea" message), and the ideas are spread
-// over as many kinds of game as possible – there are no templates or fixed genres.
+// Writes nexora/colab/nexora_prompts.json: every kind of request the Nexora models answer
+// (games, bug fixes, SVG sprites, 3D meshes, music, sound effects, text), built with the
+// app's own prompt builders (NexoraAI.PROMPTS), so a model trained on them sees exactly
+// what the app will ask. The PyTorch training kit (nexora/train) and the Colab notebook
+// read this file. The game ideas are spread over as many kinds of game as possible –
+// there are no templates or fixed genres.
 //   node nexora/build/prompts.js
 const fs = require('fs');
 const path = require('path');
@@ -11,7 +13,7 @@ const ctx = { console };
 ctx.window = ctx;
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'src', 'ai.js'), 'utf8'), ctx, { filename: 'ai.js' });
-const AI = ctx.NexoraAI;
+const AI = ctx.NexoraAI, P = AI.PROMPTS;
 
 const IDEAS = [
   'Laga pizzor åt otåliga kunder i en food truck', 'Fotboll med robotar på månen', 'Ett rytmspel där man trummar i takt med regnet',
@@ -48,11 +50,36 @@ const IDEAS = [
 ];
 const DIMS = i => (/3D/.test(IDEAS[i]) ? '3d' : '2d');
 const EXTRA = [[], ['sfx'], ['music', 'sfx'], ['story'], ['sfx', 'multiplayer'], ['npc', 'dialog'], ['quest', 'npc']];
+const req = (kind, idea, [system, user], extra) => Object.assign({ kind, idea, system, user }, extra || {});
 const requests = IDEAS.map((idea, i) => {
   const dim = DIMS(i);
   const features = EXTRA[i % EXTRA.length].filter(f => f !== 'multiplayer' || /två spelare/.test(idea)).concat(dim === '3d' ? ['threeD'] : []);
-  return { idea, dim, features, user: AI.gamePrompt(idea, { dim, features }) };
+  return req('game', idea, P.game(idea, { dim, features }), { dim, features });
 });
+
+const SPRITES = ['en drake', 'en robot', 'ett spöke', 'en riddare', 'en katt med hatt', 'en raket', 'en svamp med ansikte', 'en pirat', 'ett träd', 'en slime',
+  'en magisk kristall', 'en bil sedd från sidan', 'en uggla', 'ett skattkistemynt', 'en zombie', 'en astronaut', 'en fisk', 'ett hus', 'en ninja', 'en blomma'];
+const STYLES = ['pixel', 'platt', 'neon', 'retro'];
+SPRITES.forEach((p, i) => requests.push(req('svg', p, P.image(p, { style: STYLES[i % 4], frames: i % 3 === 0 ? 4 : 1 }), { style: STYLES[i % 4], frames: i % 3 === 0 ? 4 : 1 })));
+['ett svärd', 'en skattkista', 'en svamp', 'en planet med ring', 'ett träd', 'en stol', 'ett hus med skorsten', 'en raket', 'en tunna', 'en sten',
+  'en lykta', 'en båt', 'ett slott', 'en kaktus', 'en robot', 'en bil', 'en fisk', 'en kristall', 'en bro', 'en väderkvarn']
+  .forEach(p => requests.push(req('mesh', p, P.mesh(p))));
+['snabb boss-musik', 'lugn skogsmeny', 'glad pizzarestaurang', 'spöklik tunnelbana', 'episk rymdstrid', 'mysig vinterby', 'retro arkad-tema', 'segerfanfar',
+  'undervattensgrotta', 'actionfylld racing', 'sorgsen regnig kväll', 'magisk trädgård']
+  .forEach(p => requests.push(req('music', p, P.music(p))));
+['hopp', 'mynt', 'laser', 'explosion', 'powerup', 'träff', 'en slemmig dörr som öppnas', 'ett magiskt förtrollningsljud', 'fotsteg i snö', 'en robot som startar',
+  'ett glas som går sönder', 'en kassa som plingar', 'en drake som ryter', 'vatten som plaskar', 'en portal som öppnas', 'game over']
+  .forEach(p => requests.push(req('sfx', p, P.sfx(p))));
+[['story', 'ett vikingaäventyr i en frusen skog'], ['npc', 'en pizzeria i rymden'], ['quest', 'en magisk trädgård'], ['dialog', 'ett skräckspel i tunnelbanan'], ['line', 'robotfotboll på månen'],
+  ['story', 'en katt som stjäl fisk'], ['npc', 'ett ninjadojo'], ['quest', 'en piratö'], ['dialog', 'en detektiv i ett gammalt hus'], ['line', 'en food truck']]
+  .forEach(([task, p]) => requests.push(req('text', p, P.text(task, p), { task })));
+
+// Bug-fix requests are built during training from real errors; this is their exact shape.
+const [fixSystem, fixUser] = P.fix('@@HTML@@', ['@@ERRORS@@']);
+// The six example games the ad shows, with the ideas they were written for.
+const EXAMPLES = { pizza: 'Laga pizzor åt otåliga kunder i en food truck', football: 'Fotboll med robotar på månen', rhythm: 'Ett rytmspel där man trummar i takt med regnet',
+  cat: 'En katt som smyger förbi hundar för att stjäla fisk', garden: 'Odla magiska växter och sälj dem på marknaden', subway: 'Ett skräckspel i en övergiven tunnelbana med ficklampa' };
 const file = path.join(__dirname, '..', 'colab', 'nexora_prompts.json');
-fs.writeFileSync(file, JSON.stringify({ system: AI.GAME_SYSTEM, requests }, null, 1) + '\n');
-console.log('wrote', requests.length, 'game requests to', path.relative(process.cwd(), file));
+fs.writeFileSync(file, JSON.stringify({ version: 2, system: AI.GAME_SYSTEM, fix: { system: fixSystem, user: fixUser }, examples: EXAMPLES, requests }, null, 1) + '\n');
+const count = requests.reduce((o, r) => (o[r.kind] = (o[r.kind] || 0) + 1, o), {});
+console.log('wrote', requests.length, 'requests', JSON.stringify(count), 'to', path.relative(process.cwd(), file));

@@ -69,7 +69,8 @@ const today = () => new Date().toISOString().slice(0, 7);
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
-  page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+  // (Studio checks whether your own model is running; when it is not, the browser logs the refused connection)
+  page.on('console', m => { if (m.type() === 'error' && !/ERR_CONNECTION_REFUSED/.test(m.text())) errors.push('console: ' + m.text()); });
   await page.route('https://api.anthropic.com/v1/messages', async route => {
     const req = route.request(), body = JSON.parse(req.postData());
     sent.push({ headers: req.headers(), body });
@@ -98,15 +99,26 @@ const today = () => new Date().toISOString().slice(0, 7);
   const models = await page.locator('main').innerText();
   ok(models.includes('Nexora Flash 1.5') && models.includes('inga mallar') && !/offline|Local/.test(models), 'models page: 1.5 names, AI only');
 
-  // no AI connected yet: Studio asks for one instead of generating
-  await page.evaluate(() => { localStorage.setItem('nexora.settings', '{"provider":"local"}'); location.hash = 'studio'; location.reload(); });
+  // the default is your own model: Studio says when it is not running, and nothing goes to Claude
+  await page.evaluate(() => { localStorage.setItem('nexora.settings', '{"provider":"local","egenBase":"http://127.0.0.1:9/v1"}'); location.hash = 'studio'; location.reload(); });
   await page.waitForSelector('#prompt');
-  ok(await page.evaluate(() => Nexora.S.settings.provider) === 'anthropic', 'old offline setting migrates to Claude');
+  ok(await page.evaluate(() => Nexora.S.settings.provider) === 'egen', 'old offline setting migrates to your own model (no key needed)');
+  await page.waitForSelector('.egen-note:has-text("svarar inte")', { timeout: 5000 });
+  ok((await page.locator('.egen-note').innerText()).includes('python -m nexora_model serve'), 'Studio: own model not running → shows how to start it');
+  await page.fill('#prompt', 'Laga pizzor åt otåliga kunder');
+  await page.click('text=✨ Skapa spel');
+  await page.waitForSelector('text=Din egen modell svarar inte', { timeout: 10000 });
+  ok(sent.length === 0, 'own model offline: a clear error, and nothing is sent to Claude');
+  errors.length = 0; // the refused connection is logged as a console error
+
+  // Claude without a key: Studio asks for one instead of generating
+  await page.evaluate(() => { localStorage.setItem('nexora.settings', '{"provider":"anthropic"}'); location.reload(); });
+  await page.waitForSelector('#prompt');
   ok(await page.locator('.connect', { hasText: 'Koppla in en AI' }).isVisible(), 'Studio shows "connect an AI"');
   await page.fill('#prompt', 'Laga pizzor åt otåliga kunder');
   await page.click('text=✨ Skapa spel');
   ok(await page.locator('.modal', { hasText: 'Nexora skapar alla spel med AI' }).count() === 1 && sent.length === 0, 'without an AI the settings dialog opens and nothing is generated');
-  ok((await page.locator('.modal select option').allTextContents()).join('|') === 'Anthropic (Claude) – egen API-nyckel|Egen endpoint (OpenAI-kompatibel) – t.ex. din Colab-modell', 'settings offer only AI providers');
+  ok((await page.locator('.modal select option').allTextContents()).join('|') === 'Din egen modell – tränad med PyTorch, ingen nyckel|Anthropic (Claude) – egen API-nyckel|Egen endpoint (OpenAI-kompatibel) – t.ex. din Colab-modell', 'settings offer only AI providers, your own model first');
   await page.screenshot({ path: path.join(SHOTS, 'connect-ai.png') });
   await page.keyboard.press('Escape');
 
@@ -351,6 +363,42 @@ const today = () => new Date().toISOString().slice(0, 7);
   await page.waitForTimeout(300);
   await page.screenshot({ path: path.join(SHOTS, 'priser-credits.png'), fullPage: true });
   ok(errors.length === 0, 'no errors in the Astryx and credits flows ' + (errors.length ? JSON.stringify(errors) : ''));
+
+  // ---- your own model: the real server from nexora/train (python -m nexora_model serve --dummy)
+  const { spawn } = require('child_process');
+  const srv = spawn('python3', ['-m', 'nexora_model', 'serve', '--dummy', '--port', '8765'], { cwd: path.join(__dirname, '..', 'train'), stdio: 'ignore' });
+  for (let i = 0; i < 50; i++) { try { if ((await fetch('http://127.0.0.1:8765/v1/models')).ok) break; } catch (e) { await new Promise(r => setTimeout(r, 100)); } }
+  try {
+    const before = sent.length;
+    await page.evaluate(() => {
+      delete window.NEXORA_TODAY;
+      localStorage.setItem('nexora.plan', '"enterprise"'); localStorage.setItem('nexora.usage', '{}');
+      localStorage.setItem('nexora.settings', JSON.stringify({ provider: 'egen', egenBase: 'http://127.0.0.1:8765/v1' }));
+      localStorage.setItem('nexora.studio', JSON.stringify({ model: 'pro', dim: '2d', opts: {}, prompt: 'En pingvin som driver ett glasskafé' }));
+      location.hash = 'studio'; location.reload();
+    });
+    await page.waitForSelector('.egen-note:has-text("är igång")', { timeout: 5000 });
+    ok(true, 'own model: Studio sees the model server running');
+    await page.click('text=✨ Skapa spel');
+    await page.waitForFunction(() => { const n = document.querySelector('.stage .note'); return n && /Självtestad/.test(n.textContent); }, null, { timeout: 30000 });
+    ok(await page.locator('.bar .title').innerText() === 'Testspelet' && sent.length === before, 'own model: the game comes from the local server, is self-tested, and no key or cloud is used');
+    await page.evaluate(() => { location.hash = 'verktyg'; });
+    const d3o = page.locator('.tool', { hasText: '3D – Nexora' }).first();
+    await d3o.locator('input').fill('ett träd');
+    await d3o.locator('button', { hasText: 'Generera' }).click();
+    await page.waitForFunction(() => /Test · 5 ytor/.test(document.body.innerText), null, { timeout: 10000 });
+    const im = page.locator('.tool', { hasText: 'Grafik' }).first();
+    await im.locator('button', { hasText: 'Generera' }).click();
+    await page.waitForSelector('.tool .art svg circle', { timeout: 10000 });
+    ok(true, 'own model: 3D 1.5 and Image 1.5 answer through the local server (image API not used)');
+    await page.click('button[title=Inställningar]');
+    await page.click('text=Testa anslutningen');
+    await page.waitForSelector('text=Modellen svarar (nexora-egen)', { timeout: 5000 });
+    ok(true, 'settings: "Test the connection" finds the model');
+    await page.screenshot({ path: path.join(SHOTS, 'egen-settings.png') });
+    await page.keyboard.press('Escape');
+  } finally { srv.kill(); }
+  ok(errors.length === 0, 'no errors with your own model ' + (errors.length ? JSON.stringify(errors) : ''));
 
   // phone width
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });

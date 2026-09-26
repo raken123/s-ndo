@@ -1,20 +1,20 @@
 [
   {
     "id": "exe",
-    "file": "Nexora-Setup-1.5.1-x64.exe",
-    "size": 81641846,
-    "sha256": "47d8622cd18e03cb10b2a1a0bdfe60471209d150641c5f3c7ffc198197092faa"
+    "file": "Nexora-Setup-1.5.2-x64.exe",
+    "size": 81642725,
+    "sha256": "a1adfeb15ebc1d1ff42659f114cd98045ee92797e6c4f9b407b6d5920cd84751"
   },
   {
     "id": "dmg",
-    "file": "Nexora-1.5.1-arm64.dmg",
-    "size": 84956890,
-    "sha256": "dbf1018597bdd36aba3a1127a9cbc497df19adb9cb617403a61881802275bdf2"
+    "file": "Nexora-1.5.2-arm64.dmg",
+    "size": 84959910,
+    "sha256": "643be25ddb629ffe06eb4c063f04fea1da7eb610e877ddd1888ea89e2040f6fb"
   },
   {
     "id": "deb",
-    "file": "nexora_1.5.1_amd64.deb",
-    "size": 79656296,
-    "sha256": "b9244b654d77055dc713eb428769930b34863fcdece995543c6ac24b94ff2584"
+    "file": "nexora_1.5.2_amd64.deb",
+    "size": 79647900,
+    "sha256": "ea9389333bccbd48c7f277a43065ac2316c63c20cc70a552ffcad28ec615c8ff"
   }
 ]

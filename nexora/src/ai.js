@@ -2,6 +2,8 @@
  * makes – games, images, 3D models, text, music and sound effects – is generated
  * by one of these AI providers; there are no templates.
  *
+ *   egen      – your own model, trained with PyTorch in nexora/train and served on this
+ *               computer (python -m nexora_model serve). No API key, no cloud.
  *   anthropic – Claude via the Messages API, called straight from the app with the user's own key
  *   openai    – any OpenAI-compatible endpoint, e.g. the model trained in the Colab notebook
  *               and served with vLLM/Ollama, or a hosted GPT model
@@ -41,13 +43,18 @@
   };
 
   const DEFAULT_SETTINGS = {
-    provider: 'anthropic',
+    provider: 'egen',
     anthropicKey: '',
     openaiBase: 'https://api.openai.com/v1',
     openaiKey: '',
     openaiModels: { flash: 'gpt-5-fast', pro: 'gpt-6-astra', core: 'gpt-6-astra', image: 'gpt-images-2.5', d3: 'gpt-6-astra', astryx: 'gpt-6-astra' },
     openaiImageApi: true,
+    egenBase: 'http://127.0.0.1:8000/v1',
   };
+  // The own model is one fine-tuned model that answers every Nexora role, over the same
+  // OpenAI-compatible protocol as a custom endpoint, with no key and no image API.
+  const egen = s => Object.assign({}, s, { openaiBase: s.egenBase || DEFAULT_SETTINGS.egenBase, openaiKey: '', openaiImageApi: false,
+    openaiModels: Object.fromEntries(Object.keys(MODELS).concat(['astryxGodot']).map(k => [k, 'nexora-egen'])) });
 
   const GAME_SYSTEM = [
     'You are Nexora, an AI game studio. You write complete, polished, playable browser games.',
@@ -127,7 +134,7 @@
   function apiError(msg) { const e = new Error(msg); e.nexora = true; return e; }
   function noKey() { const e = apiError('Koppla in en AI först: lägg in din Anthropic API-nyckel under ⚙️ Inställningar.'); e.noKey = true; return e; }
   // Is an AI connected? Nexora generates everything with AI, so nothing works without one.
-  const configured = s => (s.provider === 'anthropic' ? !!s.anthropicKey : s.provider === 'openai' ? !!s.openaiBase : false);
+  const configured = s => (s.provider === 'anthropic' ? !!s.anthropicKey : s.provider === 'openai' ? !!s.openaiBase : s.provider === 'egen');
 
   async function httpError(res) {
     let detail = '';
@@ -205,6 +212,7 @@
       return anthropic(settings, modelKey, system, user, cb || {}, signal);
     }
     if (settings.provider === 'openai') return openai(settings, modelKey, system, user, cb || {}, signal);
+    if (settings.provider === 'egen') return openai(egen(settings), modelKey, system, user, cb || {}, signal).catch(e => { throw e.nexora || (e.name === 'AbortError') ? e : apiError('Din egen modell svarar inte på ' + (settings.egenBase || DEFAULT_SETTINGS.egenBase) + '. Starta den med: python -m nexora_model serve'); });
     throw noKey();
   }
 
@@ -215,9 +223,41 @@
     return { html, model: r.model, stop: r.stop };
   }
 
+  // Every request the Nexora models get, as [system, user]. The app and the PyTorch
+  // training kit (nexora/train, via colab/nexora_prompts.json) use exactly these, so a
+  // model you train yourself sees the same requests it will answer in the app.
+  const PROMPTS = {
+    game: (prompt, opts) => [GAME_SYSTEM, gamePrompt(prompt, opts || {})],
+    fix: (html, errors) => [GAME_SYSTEM + '\nYou are now fixing bugs in an existing game. Keep everything that works; change only what is needed.',
+      'These errors were captured while running the game:\n' + (errors.length ? errors.join('\n') : '(no runtime errors captured – review the code for logic bugs, broken controls or missing restart)') + '\n\nThe game:\n```html\n' + html + '\n```'],
+    text: (task, prompt) => ['You are Nexora, a creative writing assistant for game developers. Answer only with the requested content.', TEXT_TASKS[task] + '\n\nGame: ' + prompt],
+    image: (prompt, opts) => {
+      opts = opts || {};
+      const style = IMAGE_STYLES[opts.style] || IMAGE_STYLES.pixel;
+      const layout = opts.frames > 1
+        ? 'a sprite sheet: ' + opts.frames + ' animation frames side by side (viewBox 0 0 ' + 256 * opts.frames + ' 256, each frame 256x256, a smooth loop such as walking or flapping)'
+        : 'one sprite (viewBox 0 0 256 256)';
+      return ['You are Nexora Image 1.5, a game artist that draws with SVG code.',
+        'Draw a game asset as a single self-contained SVG: ' + layout + '. Style: ' + style + '. No external references, no text unless asked. Strong silhouette, transparent background unless the style needs one, game-ready. Return only the SVG.\n\nAsset: ' + prompt];
+    },
+    mesh: prompt => ['You are Nexora 3D 1.5, a low-poly 3D modeller.',
+      'Model this as a low-poly mesh (60-800 faces, consistent outward winding, closed where it should be solid), ground at y=0, about 2 units tall, centred on x/z, with a pleasing colour palette. ' +
+      'Return only JSON: {"name": string, "vertices": [[x,y,z],...], "faces": [[i,j,k,...],...] (0-based, counter-clockwise seen from outside), "colors": ["#rrggbb" per face]}.\n\nModel: ' + prompt],
+    music: prompt => ['You are Nexora\'s composer. You write original game music as note data.',
+      'Compose an original, loopable piece of game music for this description. It must loop seamlessly and suit the mood. ' +
+      'Use 8 to 16 bars in 4/4. Write 2 to 5 tracks (for example melody, harmony/pads, bass, arpeggio) with real musical structure: a memorable motif, a chord progression and variation. ' +
+      'Return only JSON: {"title": string (Swedish), "bpm": number, "bars": number, ' +
+      '"tracks": [{"name": string, "wave": "sine"|"square"|"triangle"|"sawtooth", "volume": 0-1, "notes": [[startBeat, midiNote, lengthInBeats, velocity0to1], ...]}], ' +
+      '"drums": [[beat, "kick"|"snare"|"hat", velocity0to1], ...]}. Beats count from 0; bar n starts at beat 4n.\n\nMusic: ' + prompt],
+    sfx: prompt => ['You are Nexora\'s sound designer. You design game sound effects as synthesizer layers.',
+      'Design this game sound effect. Combine 1 to 6 layers; each layer is an oscillator or noise with its own pitch movement, envelope and optional filter. Total length at most 2.5 s. ' +
+      'Return only JSON: {"name": string (Swedish), "layers": [{"wave": "sine"|"square"|"triangle"|"sawtooth"|"noise", "start": seconds, "duration": seconds, ' +
+      '"freq": [fromHz, toHz] or "steps": [hz, hz, ...] (an arpeggio over the duration), "volume": 0-1, "attack": seconds, ' +
+      '"filter": {"type": "lowpass"|"highpass"|"bandpass", "freq": [fromHz, toHz]} (optional)}]}.\n\nSound: ' + prompt],
+  };
+
   async function fixGame(settings, modelKey, html, errors, cb, signal) {
-    const sys = GAME_SYSTEM + '\nYou are now fixing bugs in an existing game. Keep everything that works; change only what is needed.';
-    const user = 'These errors were captured while running the game:\n' + (errors.length ? errors.join('\n') : '(no runtime errors captured – review the code for logic bugs, broken controls or missing restart)') + '\n\nThe game:\n```html\n' + html + '\n```';
+    const [sys, user] = PROMPTS.fix(html, errors);
     const r = await complete(settings, modelKey, sys, user, cb, signal);
     const out = extractHtml(r.text);
     if (!out) throw apiError('Buggfix-AI:n returnerade ingen HTML.');
@@ -232,7 +272,8 @@
     line: 'Write one short spoken line (one or two sentences) that a character in this game says out loud, in Swedish. Only the line itself: no name, no quotes, no stage directions.',
   };
   async function text(settings, modelKey, task, prompt, cb, signal) {
-    const r = await complete(settings, modelKey, 'You are Nexora, a creative writing assistant for game developers. Answer only with the requested content.', TEXT_TASKS[task] + '\n\nGame: ' + prompt, cb, signal);
+    const [sys, user] = PROMPTS.text(task, prompt);
+    const r = await complete(settings, modelKey, sys, user, cb, signal);
     return r.text.trim();
   }
 
@@ -241,20 +282,16 @@
     opts = opts || {};
     const style = IMAGE_STYLES[opts.style] || IMAGE_STYLES.pixel;
     if (settings.provider === 'openai' && settings.openaiImageApi) return { url: await openaiImage(settings, prompt + ' – ' + style + (opts.frames > 1 ? ', sprite sheet with ' + opts.frames + ' animation frames in a row' : ''), signal) };
-    const layout = opts.frames > 1
-      ? 'a sprite sheet: ' + opts.frames + ' animation frames side by side (viewBox 0 0 ' + 256 * opts.frames + ' 256, each frame 256x256, a smooth loop such as walking or flapping)'
-      : 'one sprite (viewBox 0 0 256 256)';
-    const r = await complete(settings, 'image', 'You are Nexora Image 1.5, a game artist that draws with SVG code.',
-      'Draw a game asset as a single self-contained SVG: ' + layout + '. Style: ' + style + '. No external references, no text unless asked. Strong silhouette, transparent background unless the style needs one, game-ready. Return only the SVG.\n\nAsset: ' + prompt, cb, signal);
+    const [sys, user] = PROMPTS.image(prompt, opts);
+    const r = await complete(settings, 'image', sys, user, cb, signal);
     const svg = extractSvg(r.text);
     if (!svg) throw apiError('Ingen SVG i svaret. Försök igen.');
     return { svg };
   }
 
   async function mesh(settings, prompt, cb, signal) {
-    const r = await complete(settings, 'd3', 'You are Nexora 3D 1.5, a low-poly 3D modeller.',
-      'Model this as a low-poly mesh (60-800 faces, consistent outward winding, closed where it should be solid), ground at y=0, about 2 units tall, centred on x/z, with a pleasing colour palette. ' +
-      'Return only JSON: {"name": string, "vertices": [[x,y,z],...], "faces": [[i,j,k,...],...] (0-based, counter-clockwise seen from outside), "colors": ["#rrggbb" per face]}.\n\nModel: ' + prompt, cb, signal);
+    const [sys, user] = PROMPTS.mesh(prompt);
+    const r = await complete(settings, 'd3', sys, user, cb, signal);
     const m = extractJson(r.text);
     if (!Array.isArray(m.vertices) || !Array.isArray(m.faces)) throw apiError('Ogiltig 3D-modell i svaret.');
     return m;
@@ -262,22 +299,15 @@
 
   // Music: the AI composes the score, NexoraMedia.renderMusic plays it.
   async function music(settings, prompt, cb, signal) {
-    const r = await complete(settings, 'pro', 'You are Nexora\'s composer. You write original game music as note data.',
-      'Compose an original, loopable piece of game music for this description. It must loop seamlessly and suit the mood. ' +
-      'Use 8 to 16 bars in 4/4. Write 2 to 5 tracks (for example melody, harmony/pads, bass, arpeggio) with real musical structure: a memorable motif, a chord progression and variation. ' +
-      'Return only JSON: {"title": string (Swedish), "bpm": number, "bars": number, ' +
-      '"tracks": [{"name": string, "wave": "sine"|"square"|"triangle"|"sawtooth", "volume": 0-1, "notes": [[startBeat, midiNote, lengthInBeats, velocity0to1], ...]}], ' +
-      '"drums": [[beat, "kick"|"snare"|"hat", velocity0to1], ...]}. Beats count from 0; bar n starts at beat 4n.\n\nMusic: ' + prompt, cb, signal);
+    const [sys, user] = PROMPTS.music(prompt);
+    const r = await complete(settings, 'pro', sys, user, cb, signal);
     return extractJson(r.text);
   }
 
   // Sound effects: the AI designs the sound as synth layers, NexoraMedia.renderSfx renders it.
   async function sfx(settings, prompt, cb, signal) {
-    const r = await complete(settings, 'flash', 'You are Nexora\'s sound designer. You design game sound effects as synthesizer layers.',
-      'Design this game sound effect. Combine 1 to 6 layers; each layer is an oscillator or noise with its own pitch movement, envelope and optional filter. Total length at most 2.5 s. ' +
-      'Return only JSON: {"name": string (Swedish), "layers": [{"wave": "sine"|"square"|"triangle"|"sawtooth"|"noise", "start": seconds, "duration": seconds, ' +
-      '"freq": [fromHz, toHz] or "steps": [hz, hz, ...] (an arpeggio over the duration), "volume": 0-1, "attack": seconds, ' +
-      '"filter": {"type": "lowpass"|"highpass"|"bandpass", "freq": [fromHz, toHz]} (optional)}]}.\n\nSound: ' + prompt, cb, signal);
+    const [sys, user] = PROMPTS.sfx(prompt);
+    const r = await complete(settings, 'flash', sys, user, cb, signal);
     return extractJson(r.text);
   }
 
@@ -431,7 +461,7 @@ Always run the game at least once before finishing. Stay under about ten tool ca
       state.html = await fixGame(settings, 'astryx', state.html, t.errors.length ? t.errors : ['The canvas did not change after pressing Space and arrow keys – the game may not start or render.'], { thinking: hooks.thinking }, signal);
     }
     const tm = state.html.match(/<title>([^<]{1,80})<\/title>/i);
-    return { html: state.html, title: tm ? tm[1].trim() : null, summary: 'Astryx skrev spelet, testkörde det ' + state.runs + ' gång' + (state.runs > 1 ? 'er' : '') + ' och rättade det som behövdes.', turns: state.runs, runs: state.runs, model: settings.openaiModels.astryx };
+    return { html: state.html, title: tm ? tm[1].trim() : null, summary: 'Astryx skrev spelet, testkörde det ' + state.runs + ' gång' + (state.runs > 1 ? 'er' : '') + ' och rättade det som behövdes.', turns: state.runs, runs: state.runs, model: settings.provider === 'egen' ? 'nexora-egen' : settings.openaiModels.astryx };
   }
 
   // ------------------------------------------------------------------ Astryx 5 Pro, Godot mode
@@ -572,5 +602,5 @@ The user paid for photorealism. Build the world from real photoscanned CC0 asset
     return { summary: st.summary || 'Astryx arbetade tills tiden tog slut. Spelet testkördes ' + st.runs + ' gånger.', runs: st.runs, cleanRuns: st.cleanRuns, turns: st.turns, minutes: Math.round((Date.now() - started) / 60000), lessons: st.lessons, shots: st.lastShots, model: ANTHROPIC.astryxGodot.model };
   }
 
-  window.NexoraAI = { MODELS, ROLLOUT, ANTHROPIC, DEFAULT_SETTINGS, GAME_SYSTEM, AGENT_TOOLS, GODOT_TOOLS, GODOT_GUIDE, configured, gamePrompt, generateGame, fixGame, text, image, mesh, music, sfx, agent, agentGodot, extractHtml };
+  window.NexoraAI = { MODELS, ROLLOUT, ANTHROPIC, DEFAULT_SETTINGS, GAME_SYSTEM, PROMPTS, AGENT_TOOLS, GODOT_TOOLS, GODOT_GUIDE, configured, gamePrompt, generateGame, fixGame, text, image, mesh, music, sfx, agent, agentGodot, extractHtml };
 })();

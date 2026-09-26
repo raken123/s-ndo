@@ -1,0 +1,11 @@
+# Nexora's own model: fine-tune an open code model with PyTorch, then serve it to the app.
+# No API key anywhere. Install PyTorch for your hardware first (https://pytorch.org), then:
+#   pip install -r requirements.txt
+#   python -m playwright install chromium     # the browser the games are tested in
+torch>=2.2
+transformers>=4.44
+peft>=0.12
+accelerate>=0.33
+safetensors>=0.4
+playwright>=1.45
+# optional, for 4-bit QLoRA on small GPUs (--4bit): bitsandbytes>=0.43

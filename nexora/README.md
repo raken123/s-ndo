@@ -8,15 +8,33 @@ macOS-skivavbild (DMG) och Linux-paket (DEB).
 | Fil | Plattform |
 |---|---|
 | `index.html` | Webbplatsen. En fristående fil som går att lägga på valfritt webbhotell. |
-| `dist/Nexora-Setup-1.5.1-x64.exe` | Windows 10/11, 64-bit |
-| `dist/Nexora-1.5.1-arm64.dmg` | macOS 12+ på Apple Silicon |
-| `dist/nexora_1.5.1_amd64.deb` | Debian, Ubuntu, Mint (x86-64) |
-| `dist/nexora-1.5.1.html` | Kopian som skrivbordsapparna laddar |
-| `colab/Nexora_Flash_1_Colab.ipynb` | Tränar en egen Nexora Flash-modell i Google Colab |
+| `dist/Nexora-Setup-1.5.2-x64.exe` | Windows 10/11, 64-bit |
+| `dist/Nexora-1.5.2-arm64.dmg` | macOS 12+ på Apple Silicon |
+| `dist/nexora_1.5.2_amd64.deb` | Debian, Ubuntu, Mint (x86-64) |
+| `dist/nexora-1.5.2.html` | Kopian som skrivbordsapparna laddar |
+| `train/` | Tränar **din egen modell** med PyTorch, utan API-nyckel (se `train/README.md`) |
+| `colab/Nexora_Flash_1_Colab.ipynb` | Samma träning i Google Colab, på gratis-GPU |
 | `marketing/examples/` | AI-exemplen som reklamfilmen visar: sex spel, fyra sprites, fyra 3D-modeller, musik och ljud |
 | `marketing/nexora-short-9x16.mp4` | Kortreklam, 26 s, 1080×1920 (Shorts/Reels/TikTok) |
 | `marketing/nexora-plans-9x16.mp4` | Kortreklam om alla fem planerna, 38 s, 1080×1920 |
 | `marketing/nexora-15-9x16.mp4` | Lanseringsreklam för Nexora 1.5, 32 s, 1080×1920 |
+
+## Nyheter i 1.5.2: din egen modell, tränad med PyTorch
+
+- **Ingen API-nyckel behövs.** `nexora/train` finjusterar en öppen kodmodell
+  (Qwen2.5-Coder) med PyTorch och LoRA, på din dator eller i Colab.
+- **Självspel.** Modellen tar fram sin egen träningsdata: den skriver spel, bilder,
+  3D-modeller, musik, ljud och text. Spelen spelas i en riktig webbläsare, och bara det som
+  klarar kontrollerna tränas på, varv efter varv. Misslyckade spel rättas med appens egen
+  buggfix-förfrågan.
+- **"Din egen modell"** är ny och standardleverantör i appen:
+  - `python -m nexora_model serve` startar modellen på `http://127.0.0.1:8000/v1`.
+  - Studio visar om den är igång, och Inställningar har "Testa anslutningen".
+  - Alla modeller och verktyg går via den, utom Astryx Godot-läge, som kräver Claude.
+- **Samma prompter överallt.** Alla förfrågningar byggs av `PROMPTS` i `src/ai.js` och
+  exporteras till `colab/nexora_prompts.json`, så modellen tränas på exakt det appen
+  frågar.
+- **Colab** kör samma kedja utan nyckel. Lärarmodellen, som krävde Claude, är borttagen.
 
 ## Nyheter i 1.5.1: bara AI
 
@@ -35,7 +53,7 @@ macOS-skivavbild (DMG) och Linux-paket (DEB).
   Inställningar i stället för att generera. Välj Anthropic (Claude) eller en egen
   OpenAI-kompatibel endpoint, till exempel modellen från Colab. Gamla inställningar som
   pekade på Nexora Local flyttas automatiskt till Claude.
-- **Colab:** träningsdatan skapas nu av AI. Se [Colab](#colab).
+- **Colab:** träningsdatan skapas nu av AI. I 1.5.2 gör modellen det själv, se [Colab](#colab).
 
 ## Nyheter i 1.5
 
@@ -65,14 +83,14 @@ macOS-skivavbild (DMG) och Linux-paket (DEB).
 Varje Nexora-modell är ett eget lager (prompt och inställningar) ovanpå en AI-basmodell.
 Leverantören väljs under **⚙️ Inställningar**:
 
-| Modell | Anthropic (egen API-nyckel, standard) | Egen endpoint |
-|---|---|---|
-| **Flash 1.5** – snabb + självtest | `claude-haiku-4-5` | valfritt modell-ID |
-| **Pro 1.5** – bättre resultat, testar själv | `claude-opus-5`, effort `high` | ″ |
-| **Core 1.5** – tänker, testar, förbättrar | `claude-opus-5`, adaptivt tänkande (visas live), effort `xhigh` | ″ |
-| **Image 1.5** – stilar, animation | `claude-opus-5` ritar SVG | `/images/generations` |
-| **3D 1.5** – 3D-modeller, GLB | `claude-opus-5` skriver mesh-JSON | ″ |
-| **Astryx 5 Pro** – AI-agent | `claude-opus-5` som agent med verktyg | skriv → testa → rätta, upp till 3 varv |
+| Modell | Din egen modell (standard, ingen nyckel) | Anthropic (egen API-nyckel) | Egen endpoint |
+|---|---|---|---|
+| **Flash 1.5** – snabb + självtest | `nexora-egen`: Qwen2.5-Coder + LoRA, tränad med PyTorch | `claude-haiku-4-5` | valfritt modell-ID |
+| **Pro 1.5** – bättre resultat, testar själv | ″ | `claude-opus-5`, effort `high` | ″ |
+| **Core 1.5** – tänker, testar, förbättrar | ″ | `claude-opus-5`, adaptivt tänkande (visas live), effort `xhigh` | ″ |
+| **Image 1.5** – stilar, animation | ″ (ritar SVG) | `claude-opus-5` ritar SVG | `/images/generations` |
+| **3D 1.5** – 3D-modeller, GLB | ″ (skriver mesh-JSON) | `claude-opus-5` skriver mesh-JSON | ″ |
+| **Astryx 5 Pro** – AI-agent | skriv → testa → rätta (HTML5) | `claude-opus-5` som agent med verktyg | skriv → testa → rätta, upp till 3 varv |
 
 Verktygen använder samma modeller: story, dialog, NPC:er, uppdrag, ljudeffekter och
 röstrepliker går till Flash, och musiken komponeras av Pro.
@@ -180,18 +198,12 @@ köp sker, precis som planerna, i demoläge utan betalning.
 ### Colab
 
 GPT-5 Fast, GPT-6 Astra, GPT Images 2.5 och Meshy 7 har inga öppna vikter, så de kan inte
-finjusteras i Colab. Anteckningsboken finjusterar i stället Qwen2.5-Coder med LoRA.
-
-Träningsdatan skapas av AI. `colab/nexora_prompts.json` innehåller 93 vitt skilda
-spelidéer, från matlagning och fotboll till rytmspel, skräck, simulatorer och ordspel. De
-är formaterade exakt som appens egna förfrågningar (`node nexora/build/prompts.js`).
-
-Steg 3 skickar idéerna till en lärarmodell, Claude, och sparar de färdiga spelen.
-Nyckeln läses från Colabs *Secrets* (`ANTHROPIC_API_KEY`), och spelen sparas löpande så
-att ett avbrutet steg kan fortsätta. Sedan tränas, provköras och serveras modellen med en
-OpenAI-kompatibel server och en publik tunnel. Den adressen anger du under
-*Egen endpoint*. Dina egna spel kan läggas till: *Mina spel → 🧠 Träningsdata* exporterar
-dem i samma format.
+finjusteras. Anteckningsboken kör i stället träningspaketet `nexora/train` på Colabs
+gratis-GPU. Den laddar ner Qwen2.5-Coder, kör självspel, tränar med PyTorch + LoRA i två
+varv och utvärderar på okända spelidéer. Sedan startar den modellen med en publik adress
+som du klistrar in under *Din egen modell*. Ingen API-nyckel behövs. Dina egna spel kan
+läggas till: *Mina spel → 🧠 Träningsdata* exporterar dem i samma format. Se
+`train/README.md`.
 
 ## Planerna
 
@@ -221,7 +233,7 @@ API-nycklar lämnar aldrig enheten, förutom till den leverantör de hör till.
 
 ## Installation
 
-**Windows:** kör `Nexora-Setup-1.5.1-x64.exe`. Nexora installeras för din användare i
+**Windows:** kör `Nexora-Setup-1.5.2-x64.exe`. Nexora installeras för din användare i
 `%LOCALAPPDATA%\Programs\Nexora`, utan administratörsrättigheter, med genvägar på
 skrivbordet och i Start-menyn. Avinstallera via *Inställningar → Appar*. Filen är inte
 kodsignerad, så SmartScreen varnar: välj *Mer info → Kör ändå*.
@@ -230,19 +242,21 @@ kodsignerad, så SmartScreen varnar: välj *Mer info → Kör ändå*.
 notariserad. Första gången: högerklicka på appen och välj *Öppna*. På macOS 15 och senare
 godkänner du den under *Systeminställningar → Integritet och säkerhet → Öppna ändå*.
 
-**Linux:** `sudo apt install ./nexora_1.5.1_amd64.deb` och starta sedan `nexora` eller
+**Linux:** `sudo apt install ./nexora_1.5.2_amd64.deb` och starta sedan `nexora` eller
 välj Nexora i programmenyn.
 
 ## Bygga
 
 ```sh
-python3 nexora/build/build.py      # src/ → index.html + dist/nexora-1.5.1.html
+python3 nexora/build/build.py      # src/ → index.html + dist/nexora-1.5.2.html
 python3 nexora/build/desktop.py    # → dist/*.exe, *.dmg, *.deb  (körs på Linux)
 python3 nexora/build/build.py      # lägger in storlekar och SHA-256 på nedladdningssidan
 node nexora/build/verify.js        # testar appen i headless Chromium (Playwright)
 python3 nexora/build/desktop.py dev   # oinstallerad Linux-app för tester
 NEXORA_APP=… NEXORA_GODOT=… [NEXORA_TPZ=…] xvfb-run -a node nexora/build/verify_desktop.js
-node nexora/build/prompts.js           # → colab/nexora_prompts.json
+node nexora/build/prompts.js           # → colab/nexora_prompts.json (alla förfrågningar, för träningen)
+(cd nexora/train && python -m unittest discover -s tests)   # träningspaketet, utan PyTorch
+(cd nexora/train && python -m nexora_model all)             # tränar din egen modell (PyTorch)
 python3 nexora/build/make_notebook.py  # → colab/Nexora_Flash_1_Colab.ipynb
 [NEXORA_ANTHROPIC_KEY=…] FFMPEG=ffmpeg node nexora/build/ad.js launch15.html   # renderar en kortreklam
 ```
@@ -332,8 +346,12 @@ automatiskt till `build/.cache`:
 ## Vad som är testat
 
 - `verify.js` kör webbappen i headless Chromium mot ett simulerat Claude-API som svarar
-  som modellerna: spel, SVG, mesh-JSON, noter, syntlager, text och agentturer. Totalt 68
+  som modellerna: spel, SVG, mesh-JSON, noter, syntlager, text och agentturer. Totalt 75
   kontroller:
+  - Din egen modell: testet startar den riktiga servern ur `nexora/train` (`serve --dummy`).
+    Studio ser att den är igång, och ett spel (självtestat), en 3D-modell och en bild kommer
+    från den utan nyckel och utan moln. "Testa anslutningen" hittar den. Om servern inte
+    är igång visas hur man startar den, och inget skickas till Claude.
   - Den byggda appen innehåller ingen offline-generator eller spelmall.
   - Utan nyckel genereras ingenting. Studio visar "Koppla in en AI", inställningarna
     erbjuder bara AI-leverantörer och gamla Local-inställningar flyttas till Claude.
@@ -385,7 +403,7 @@ automatiskt till `build/.cache`:
   förfrågningar och 401 blir begripliga felmeddelanden och att egen endpoint får en
   OpenAI-förfrågan. Inget anrop gjordes mot det riktiga API:t, eftersom ingen nyckel fanns.
 - DEB-paketet packades upp och startades under Xvfb på Ubuntu 24.04. Röktestet bekräftade
-  att appen laddar inuti Electron, att standardleverantören är Claude, att GLB-exporten
+  att appen laddar inuti Electron, att standardleverantören är din egen modell, att GLB-exporten
   fungerar och att paketet inte innehåller någon offline-generator. Fyra beroenden (libnotify4, libxss1, xdg-utils,
   libsecret-1-0) gick inte att installera i byggmiljön, så `dpkg` konfigurerade aldrig
   paketet klart, men appen startade ändå.
@@ -393,7 +411,15 @@ automatiskt till `build/.cache`:
   exekverbarhetsbitarna finns kvar och alla binärer är ad hoc-signerade arm64-filer.
 - EXE-filen: giltig PE-fil, SFX-konfigurationen och 7z-arkivet ligger på rätt plats,
   `7zz t` säger "Everything is Ok" och båda PowerShell-skripten parsas utan fel.
+- **Träningspaketet** (`nexora/train/tests`, 13 tester): kontrollerna av svaren,
+  datauppdelningen (okända idéer hålls utanför träningen), startdatan, buggfix-förfrågan
+  (ordagrant appens), servern (vanlig, strömmande, CORS, felaktig förfrågan) och
+  kommandoraden. `data` och `serve --dummy` har också körts för hand.
 - **Inte testat:**
+  - Själva PyTorch-träningen, självspelet och utvärderingen har inte kunnat köras här.
+    Byggmiljön blockerar pypi.org, download.pytorch.org och huggingface.co, så varken
+    PyTorch, transformers eller basmodellen gick att hämta, och det finns ingen GPU.
+    Koden är skriven för transformers ≥ 4.44, peft ≥ 0.12 och PyTorch ≥ 2.2.
   - EXE-filen har inte körts på Windows och DMG-filen har inte öppnats på en Mac, eftersom
     byggmiljön saknar båda.
   - Colab-anteckningsboken har inte körts, eftersom byggmiljön saknar GPU och API-nyckel.
@@ -408,7 +434,7 @@ automatiskt till `build/.cache`:
 ## Källkod
 
 ```
-src/ai.js        Nexora-modellerna → Anthropic / OpenAI-kompatibel endpoint (spel, bild, 3D, text, musik, ljud, agenter)
+src/ai.js        Nexora-modellerna → din egen modell / Anthropic / OpenAI-kompatibel endpoint; PROMPTS = alla förfrågningar
 src/media.js     kontrollerar och renderar AI-utdata: .glb/.obj, musik och ljudeffekter till WAV
 src/viewer3d.js  3D-visaren för 3D 1.5
 src/app.js       gränssnitt, planer, Studio, verktyg, bibliotek, export
@@ -417,6 +443,8 @@ src/shell.html   mall som build.py fyller i
 desktop/main.js  Electron-huvudprocessen: Godot, Python, projekt, testkörning, export, Poly Haven
 desktop/preload.js, unzip.js, python_guard.py
 desktop/godot/   testsonden (probe*.gd) som Astryx använder i godot_run
+train/nexora_model/   din egen modell: data, selfplay (självspel), selftest (spelar spelen),
+                      train (PyTorch + LoRA), evaluate, serve (OpenAI-kompatibel server)
 ```
 
 Varje spel som AI:n skriver är en fristående HTML-fil som inte behöver Nexora för att köras.
