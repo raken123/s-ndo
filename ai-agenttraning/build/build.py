@@ -21,7 +21,7 @@ matches its contents, and renaming Electron changes Info.plist.
 Tools: dpkg-deb, unzip, xorrisofs, dmg (libdmg-hfsplus), rcodesign, Pillow.
 Point DMG_TOOL / RCODESIGN at them if they are not on PATH.
 """
-import json, os, plistlib, shutil, subprocess, sys, urllib.request
+import json, os, plistlib, re, shutil, subprocess, sys, urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -32,7 +32,7 @@ DMG_TOOL = os.environ.get("DMG_TOOL", "dmg")
 RCODESIGN = os.environ.get("RCODESIGN", "rcodesign")
 
 EV = "43.2.0"
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 PKG = "raken-ai-agenttraning"
 TITLE = "Raken Teknik Åk 4 2026/2027 AI Agentträning"
 SHORT = "AI Agentträning"          # macOS menu bar name (CFBundleName, <= 15 chars)
@@ -112,7 +112,17 @@ def html_path():
 
 
 def build_html():
-    shutil.copy(os.path.join(ROOT, "app", "index.html"), html_path())
+    """app/index.html with every <script src> inlined: one file that works offline."""
+    app = os.path.join(ROOT, "app")
+    html = open(os.path.join(app, "index.html"), encoding="utf-8").read()
+
+    def inline(m):
+        js = open(os.path.join(app, m.group(1)), encoding="utf-8").read()
+        return "<script>\n" + js.replace("</script", "<\\/script") + "\n</script>"
+    html, n = re.subn(r'<script src="([^"]+)"></script>', inline, html)
+    with open(html_path(), "w", encoding="utf-8") as f:
+        f.write(html)
+    log("      inlined %d scripts" % n)
     return html_path()
 
 

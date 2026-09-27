@@ -168,8 +168,75 @@ dialog::backdrop{background:rgba(10,14,30,.45)}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;z-index:50;box-shadow:0 8px 30px rgba(0,0,0,.25);max-width:90vw;text-align:center;opacity:0;transition:opacity .25s;pointer-events:none}
 .toast.show{opacity:1}
 .warn{background:var(--bad-soft);color:var(--bad);padding:8px 12px;border-radius:10px;margin-bottom:10px;font-weight:600}
+/* code with blocks */
+#v-code{margin:-8px -8px 0}
+.code-top{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+.code-top .grow{flex:1}
+.runbtn{width:44px;height:40px;border-radius:11px;border:1px solid var(--line);background:var(--panel);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:1.1rem}
+.runbtn img{width:26px;height:26px}
+.runbtn.on{background:var(--accent-soft);border-color:var(--accent)}
+.code-grid{display:grid;grid-template-columns:minmax(0,1fr) 492px;gap:12px;align-items:start}
+.code-left{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;height:calc(100vh - 205px);min-height:480px;position:relative}
+.code-tabs{display:flex;gap:4px;padding:6px;border-bottom:1px solid var(--line);background:var(--panel2)}
+.code-tabs button{border:0;background:none;padding:7px 12px;border-radius:9px;font-weight:650;cursor:pointer;color:var(--muted)}
+.code-tabs button.on{background:var(--panel);color:var(--accent);box-shadow:0 0 0 1px var(--line)}
+#blocklyDiv{flex:1;position:relative;min-height:0;color-scheme:light}
+.pane{position:absolute;inset:46px 0 0;overflow:auto;padding:14px;background:var(--panel)}
+.asset-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;max-width:640px}
+.asset{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:2px solid var(--line);border-radius:12px;padding:6px 8px}
+.asset.on{border-color:var(--accent);background:var(--accent-soft)}
+.asset-pick{border:0;background:none;cursor:pointer;display:flex;align-items:center;gap:6px;padding:0}
+.asset-pick img{width:64px;height:48px;object-fit:contain;background:repeating-conic-gradient(#e9edf5 0 25%,#fff 0 50%) 0 0/12px 12px;border-radius:6px}
+.asset-n{font-weight:700;color:var(--muted);width:1.6em;text-align:right}
+.asset-acts{display:flex;gap:4px}
+.code-right{display:flex;flex-direction:column;gap:10px;min-width:0}
+.stagewrap{position:relative;width:100%;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;color-scheme:light}
+.stagewrap canvas{display:block;touch-action:none;cursor:default}
+#monitors{position:absolute;left:0;top:0;width:480px;height:360px;transform-origin:0 0;pointer-events:none}
+.mon{position:absolute;display:flex;align-items:center;gap:6px;background:#e6f0ff;border:1px solid #c3d4f0;border-radius:6px;padding:2px 6px;font:600 11px system-ui,sans-serif;color:#575e75;white-space:nowrap}
+.mon b{background:#ff8c1a;color:#fff;border-radius:5px;padding:1px 6px;min-width:34px;text-align:center}
+.mon.list{flex-direction:column;align-items:stretch;width:110px;max-height:140px;padding:4px}
+.mon.list ol{margin:0;padding:0 0 0 20px;overflow:auto;background:#fff;border-radius:4px;max-height:110px}
+.mon.list li{background:#fc662c;color:#fff;margin:1px 2px;border-radius:3px;padding:0 4px;font-weight:600}
+.mon.list li.empty{background:none;color:#8a8f9c;list-style:none;margin-left:-16px}
+#askBox{position:absolute;left:8px;right:8px;bottom:8px;background:#fff;border:2px solid #d9dce5;border-radius:12px;padding:6px 8px;display:flex;flex-direction:column;gap:4px;color:#575e75}
+#askBox[hidden]{display:none}
+#askBox .row{flex-wrap:nowrap}
+#askBox input{flex:1;min-width:0;border-radius:99px;background:#fff;color:#1b2030}
+.stagebar{display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted);padding:0 2px}
+.spriteinfo{display:grid;grid-template-columns:repeat(6,auto);gap:6px 8px;align-items:center;font-size:.85rem;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px}
+.spriteinfo input{width:100%;min-width:0;padding:5px 7px}
+.spriteinfo .nm{grid-column:span 5}
+.spritebox{display:grid;grid-template-columns:1fr 92px;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px}
+.sprite-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:6px;align-content:start;min-height:86px}
+.sprite-tile{border:2px solid var(--line);border-radius:11px;background:var(--panel);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 3px;font-size:.78rem;font-weight:600;min-width:0}
+.sprite-tile img{width:52px;height:40px;object-fit:contain}
+.sprite-tile span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sprite-tile.on{border-color:var(--accent);background:var(--accent-soft)}
+.stagecol{display:flex;flex-direction:column;gap:6px}
+.stagecol .sprite-tile img{width:72px;height:54px}
+.addrow{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.stagewrap.full{position:fixed;left:50%;top:56px;transform:translateX(-50%);z-index:40;width:auto;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+body.stage-full::after{content:"";position:fixed;inset:0;background:rgba(10,14,30,.75);z-index:39}
+body.stage-full .code-top{position:relative;z-index:41}
+.lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;max-height:60vh;overflow:auto;padding:2px}
+.lib-item{border:2px solid var(--line);border-radius:12px;background:var(--panel2);padding:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.85rem;font-weight:600}
+.lib-item img{width:90px;height:68px;object-fit:contain}
+.lib-item:hover{border-color:var(--accent)}
+.lib-snd{font-size:2rem;height:50px;display:flex;align-items:center}
+dialog.wide{max-width:min(860px,96vw)}
+#procWs{height:220px;border:1px solid var(--line);border-radius:10px;overflow:hidden;color-scheme:light}
+.ex-item{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;border:2px solid var(--line);border-radius:12px;background:var(--panel);padding:10px 12px;cursor:pointer;width:100%}
+.ex-item:hover{border-color:var(--accent)}
+.ex-item span{color:var(--muted);font-size:.9rem}
+#paintCv{width:100%;max-width:480px;aspect-ratio:4/3;border:1px solid var(--line);border-radius:8px;touch-action:none;background:repeating-conic-gradient(#eef1f6 0 25%,#fff 0 50%) 0 0/16px 16px;cursor:crosshair}
+.agent-img{width:64px;height:64px;object-fit:contain}
+@media (max-width:1100px){.code-grid{grid-template-columns:minmax(0,1fr)}.code-right{order:-1}.code-left{height:70vh}}
 @media (max-width:620px){
   main{padding:12px 16px}
+  .spriteinfo{grid-template-columns:auto 1fr auto 1fr}
+  .spriteinfo .nm{grid-column:span 3}
+  .spritebox{grid-template-columns:1fr}
   .top{padding:8px 16px}
   .brand .t1{display:none}
   .cur{max-width:45%}
@@ -190,6 +257,7 @@ dialog::backdrop{background:rgba(10,14,30,.45)}
   <button role="tab" data-view="build">🧱 Bygg bana</button>
   <button role="tab" data-view="train">🎓 Träna</button>
   <button role="tab" data-view="talk">💬 Prata</button>
+  <button role="tab" data-view="code">🧩 Koda med block</button>
   <button role="tab" data-view="help">❓ Så funkar det</button>
 </nav>
 <main>
@@ -431,6 +499,79 @@ upprepa 4 {
     </div>
   </section>
 
+  <!-- CODE WITH BLOCKS -->
+  <section class="view" id="v-code" hidden>
+    <div class="code-top">
+      <select id="pSel" aria-label="Välj projekt"></select>
+      <button class="btn sm" id="pNew">➕ Nytt</button>
+      <button class="btn sm primary" id="pExamples">⭐ Exempel</button>
+      <button class="btn sm" id="pRename" title="Döp om" aria-label="Döp om projektet">✏️</button>
+      <button class="btn sm" id="pDelete" title="Ta bort" aria-label="Ta bort projektet">🗑</button>
+      <button class="btn sm" id="pExport">💾 Spara som fil</button>
+      <button class="btn sm" id="pImport">📂 Öppna fil</button>
+      <span class="grow"></span>
+      <button class="runbtn" id="goFlag" title="Starta (grön flagga)" aria-label="Starta"><img id="flagImg" alt=""></button>
+      <button class="runbtn" id="goStop" title="Stoppa" aria-label="Stoppa"><svg width="20" height="20" viewBox="0 0 20 20"><path d="M6 2h8l4 4v8l-4 4H6l-4-4V6z" fill="#ec5959" stroke="#b84848"/></svg></button>
+      <button class="runbtn" id="goTurbo" title="Turboläge" aria-label="Turboläge">⚡</button>
+      <button class="runbtn" id="goFull" title="Helskärm" aria-label="Helskärm">⛶</button>
+    </div>
+    <div class="code-grid">
+      <div class="code-left">
+        <div class="code-tabs">
+          <button data-pane="blocks" class="on">🧩 Block</button>
+          <button data-pane="costumes" id="paneCostTab">🎭 Kostymer</button>
+          <button data-pane="sounds">🔊 Ljud</button>
+        </div>
+        <div id="blocklyDiv"></div>
+        <div class="pane" id="costumePane" hidden>
+          <div class="row">
+            <button class="btn sm primary" id="costUpload">⬆️ Ladda upp bild</button>
+            <button class="btn sm" id="costLib">📚 Välj kostym</button>
+            <button class="btn sm" id="costPaint">🖌 Rita ny</button>
+            <button class="btn sm" id="costAgent">🤖 Agentens bild</button>
+          </div>
+          <div class="asset-list" id="costList"></div>
+        </div>
+        <div class="pane" id="soundPane" hidden>
+          <div class="row">
+            <button class="btn sm primary" id="sndUpload">⬆️ Ladda upp ljud</button>
+            <button class="btn sm" id="sndLib">📚 Välj ljud</button>
+            <button class="btn sm" id="sndRec">🎙 Spela in</button>
+          </div>
+          <div class="asset-list" id="sndList"></div>
+        </div>
+      </div>
+      <div class="code-right">
+        <div class="stagewrap" id="stageWrap">
+          <canvas id="stage" aria-label="Scenen"></canvas>
+          <div id="monitors"></div>
+          <form id="askBox" hidden><span id="askQ"></span><div class="row"><input id="stageAsk" type="text" autocomplete="off" aria-label="Svar"><button class="btn sm primary" type="submit">✔</button></div></form>
+        </div>
+        <div class="stagebar"><span>Scen 480 × 360</span><span id="stageXY">x: 0  y: 0</span></div>
+        <div class="spriteinfo" id="spriteInfo">
+          <span>Sprajt</span><input id="siName" class="nm" type="text" aria-label="Sprajtens namn">
+          <span>x</span><input id="siX" type="number" aria-label="x"><span>y</span><input id="siY" type="number" aria-label="y">
+          <span>Storlek</span><input id="siSize" type="number" aria-label="Storlek">
+          <span>Visa</span><div class="row" style="gap:4px;flex-wrap:nowrap"><button class="btn sm" id="siShow" title="Visa">👁</button><button class="btn sm" id="siHide" title="Göm">🚫</button></div>
+          <span>Riktning</span><input id="siDir" type="number" aria-label="Riktning">
+          <span></span><div class="row" style="gap:4px;flex-wrap:nowrap"><button class="btn sm" id="spriteDup" title="Kopiera sprajten">⧉</button><button class="btn sm bad" id="spriteDel" title="Ta bort sprajten">🗑</button></div>
+        </div>
+        <div class="spritebox">
+          <div>
+            <div class="sprite-list" id="spriteList"></div>
+            <div class="addrow">
+              <button class="btn sm" id="addAgent">🤖 Agenten</button>
+              <button class="btn sm" id="addLib">📚 Bibliotek</button>
+              <button class="btn sm" id="addUpload">⬆️ Ladda upp</button>
+              <button class="btn sm" id="addPaint">🖌 Rita</button>
+            </div>
+          </div>
+          <div class="stagecol"><button class="sprite-tile" id="stageTile"></button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- HELP -->
   <section class="view help" id="v-help" hidden>
     <div class="panel">
@@ -459,9 +600,16 @@ upprepa 4 {
       <p><b>Platsminne</b> kommer ihåg varje ruta på banan. Den blir jättebra på en bana, men på en ny bana måste den börja om. <b>Sinnen</b> ser bara rutorna precis runt sig, vet åt vilket håll målet ligger och känner om det blir "varmare" (närmare målet) eller "kallare". Den kan klara banor den aldrig sett, men den kan gå vilse i en labyrint. Testa båda och jämför!</p>
       <h3>3. Lär den att prata 💬</h3>
       <p>Agenten kan inga ord från början – den säger bara "bip blopp". Du kan lära den svar på frågor, låta den läsa texter och ge 👍 när den svarar bra. När den inte vet svaret försöker den hitta på en mening av orden den läst. Det är samma idé som stora språkmodeller bygger på, fast i mycket mindre skala.</p>
+      <h3>4. Koda med block 🧩</h3>
+      <p>Här finns <b>alla Scratch-block</b>: Rörelse, Utseende, Ljud, Händelser, Kontroll, Känna av, Operatorer, Variabler, Mina block, Penna, Musik och Text till tal. Dessutom två egna kategorier:</p>
+      <ul>
+        <li><b>AI-agent</b> – fråga agenten, lär den svar, och låt den <b>välja</b> drag i ett spel. Belöna den när den gör bra så lär den sig.</li>
+        <li><b>Schack</b> – schackregler och en schack-AI. Öppna ⭐ Exempel → <i>Schack mot agenten</i> och spela!</li>
+      </ul>
+      <p>Du kan ladda upp egna bilder och ljud, rita kostymer, spela in ljud och ge agenten en egen bild (🖼 under Mina agenter).</p>
       <h3>Spara</h3>
       <p>Allt sparas automatiskt på den här datorn. Med <b>💾 Spara som fil</b> kan du ta med en agent till en annan dator eller ge den till en kompis.</p>
-      <p class="muted small">Raken Teknik Åk 4 2026/2027 · AI Agentträning · version 1.0.0 · fungerar helt utan internet</p>
+      <p class="muted small">Raken Teknik Åk 4 2026/2027 · AI Agentträning · version 1.1.0 · fungerar helt utan internet</p>
     </div>
   </section>
 </main>
@@ -489,9 +637,83 @@ upprepa 4 {
     </div>
   </form>
 </dialog>
+<dialog id="dlgBlk">
+  <form method="dialog" class="stack">
+    <h3 id="blkTitle" style="margin:0"></h3>
+    <p id="blkText" class="muted" style="margin:0"></p>
+    <input type="text" id="blkInput" autocomplete="off">
+    <div id="blkScope" class="row small" hidden>
+      <label class="row" style="gap:4px"><input type="radio" name="blkScope" id="blkScopeAll" checked> För alla sprajtar</label>
+      <label class="row" style="gap:4px"><input type="radio" name="blkScope" id="blkScopeOne"> Bara för den här sprajten</label>
+    </div>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn" type="button" id="blkCancel" data-cancel>Avbryt</button>
+      <button class="btn primary" value="ok">OK</button>
+    </div>
+  </form>
+</dialog>
+<dialog id="dlgProc" class="wide">
+  <form method="dialog" class="stack">
+    <h3 style="margin:0">Skapa ett block</h3>
+    <div id="procWs"></div>
+    <div class="row">
+      <button class="btn sm" type="button" id="procText">➕ Indata: tal eller text</button>
+      <button class="btn sm" type="button" id="procBool">➕ Indata: sant/falskt</button>
+      <button class="btn sm" type="button" id="procLabel">➕ Etikett</button>
+    </div>
+    <label class="row small" style="gap:6px"><input type="checkbox" id="procWarp"> Kör utan skärmuppdatering</label>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn" type="button" data-cancel>Avbryt</button>
+      <button class="btn primary" value="ok">OK</button>
+    </div>
+  </form>
+</dialog>
+<dialog id="dlgLib" class="wide">
+  <form method="dialog" class="stack">
+    <div class="row" style="justify-content:space-between"><h3 id="libTitle" style="margin:0"></h3><button class="btn sm" type="button" data-cancel>Stäng</button></div>
+    <div class="lib-grid" id="libGrid"></div>
+  </form>
+</dialog>
+<dialog id="dlgPaint" class="wide">
+  <form method="dialog" class="stack">
+    <h3 style="margin:0">Rita</h3>
+    <div class="row">
+      <button class="btn sm on" type="button" data-tool="pen">🖌 Pensel</button>
+      <button class="btn sm" type="button" data-tool="eraser">🧽 Sudd</button>
+      <label class="row small" style="gap:4px">Färg <input type="color" id="paintColor" value="#2a78d6"></label>
+      <label class="row small" style="gap:4px">Storlek <input type="range" id="paintSize" min="1" max="40" value="8"></label>
+      <button class="btn sm" type="button" id="paintClear">Töm</button>
+    </div>
+    <canvas id="paintCv" width="480" height="360"></canvas>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn" type="button" data-cancel>Avbryt</button>
+      <button class="btn primary" value="ok">Klar</button>
+    </div>
+  </form>
+</dialog>
+<dialog id="dlgEx">
+  <form method="dialog" class="stack">
+    <div class="row" style="justify-content:space-between"><h3 style="margin:0">Exempelprojekt</h3><button class="btn sm" type="button" data-cancel>Stäng</button></div>
+    <div class="stack" id="exList" style="gap:8px"></div>
+  </form>
+</dialog>
 <input type="file" id="fileIn" accept=".json,application/json" hidden>
+<input type="file" id="blkFile" multiple hidden>
+<input type="file" id="agentImgIn" accept="image/*" hidden>
 <div class="toast" id="toast" role="status"></div>
 
+<script src="vendor/scratch-blocks/media.js"></script>
+<script src="vendor/scratch-blocks/blockly_compressed_vertical.js"></script>
+<script src="vendor/scratch-blocks/blocks_compressed.js"></script>
+<script src="vendor/scratch-blocks/blocks_compressed_vertical.js"></script>
+<script src="vendor/scratch-blocks/messages.js"></script>
+<script src="vendor/scratch-blocks/scratch_msgs_sv.js"></script>
+<script src="blocks/chess.js"></script>
+<script src="blocks/vm.js"></script>
+<script src="blocks/assets.js"></script>
+<script src="blocks/toolbox.js"></script>
+<script src="blocks/editor.js"></script>
+<script src="blocks/examples.js"></script>
 <script>
 (() => {
 'use strict';
@@ -827,10 +1049,29 @@ function drawBot(g, cx, cy, sz, color, style, mood) {
   g.stroke();
   g.restore();
 }
+// an agent can have its own uploaded picture instead of the drawn robot
+const imgCache = new Map();
+function agentImg(ag) {
+  if (!ag || !ag.image) return null;
+  let im = imgCache.get(ag.image);
+  if (!im) { im = new Image(); im.onload = refreshPictures; im.src = ag.image; imgCache.set(ag.image, im); }
+  return im.complete && im.naturalWidth ? im : null;
+}
+function refreshPictures() {
+  renderHeader();
+  if (S.view === 'agents') renderAgents(); else if (S.view === 'train') { updateTrainPanel(); drawTrain(); } else if (S.view === 'talk') renderLog();
+}
+function drawAgent(g, cx, cy, sz, ag, mood) {
+  const im = agentImg(ag);
+  if (!im) return drawBot(g, cx, cy, sz, ag.color, ag.style, mood);
+  const s = sz / Math.max(im.naturalWidth, im.naturalHeight), w = im.naturalWidth * s, h = im.naturalHeight * s;
+  g.drawImage(im, cx - w / 2, cy - h / 2, w, h);
+}
 function avatar(cv, ag, mood) {
   const dpr = window.devicePixelRatio || 1; const w = cv.width = (parseInt(cv.style.width) || cv.clientWidth || 56) * dpr;
   cv.height = w; const g = cv.getContext('2d');
-  g.clearRect(0, 0, w, w); drawBot(g, w / 2, w * 0.56, w * 0.82, ag.color, ag.style, mood);
+  g.clearRect(0, 0, w, w);
+  if (agentImg(ag)) drawAgent(g, w / 2, w / 2, w * 0.96, ag, mood); else drawBot(g, w / 2, w * 0.56, w * 0.82, ag.color, ag.style, mood);
 }
 function drawTile(g, c, x, y, cs, t) {
   const px = x * cs, py = y * cs;
@@ -898,11 +1139,16 @@ function drawBrain(g, ag, lv, cs) {
 /* ---------- navigation / tabs ---------- */
 function show(view) {
   if (view !== 'train') stopTraining();
+  if (view !== 'code' && S.view === 'code' && window.RB) RB.hideEditor();
   S.view = view;
   for (const b of $$('.tabs button')) b.setAttribute('aria-selected', b.dataset.view === view);
   for (const s of $$('.view')) s.hidden = s.id !== 'v-' + view;
-  ({ agents: renderAgents, build: renderBuild, train: renderTrain, talk: renderTalk, help: () => {} })[view]();
+  ({ agents: renderAgents, build: renderBuild, train: renderTrain, talk: renderTalk, code: renderCode, help: () => {} })[view]();
   save();
+}
+function renderCode() {
+  renderHeader();
+  RB.showEditor().catch(e => { console.error(e); toast('Blockeditorn kunde inte starta: ' + e.message); });
 }
 function renderHeader() {
   const ag = agent(); const b = $('#curAgent'); b.innerHTML = '';
@@ -929,6 +1175,7 @@ function renderAgents() {
         el('button', { class: 'btn sm', text: '💬 Prata', onclick: () => { S.cur = ag.id; show('talk'); } }),
         el('button', { class: 'btn sm', text: '✏️', title: 'Döp om', 'aria-label': 'Döp om', onclick: async () => {
           const v = await ask('Döp om agenten', '', ag.name); if (v) { ag.name = v.slice(0, 30); save(); renderAgents(); } } }),
+        el('button', { class: 'btn sm', text: '🖼', title: ag.image ? 'Byt eller ta bort bild' : 'Ge agenten en egen bild', 'aria-label': 'Bild', onclick: () => pickAgentImage(ag) }),
         el('button', { class: 'btn sm', text: '⧉', title: 'Kopiera', 'aria-label': 'Kopiera', onclick: () => {
           const c = JSON.parse(JSON.stringify(ag)); c.id = uid(); c.name = (ag.name + ' kopia').slice(0, 30); c.created = Date.now();
           S.agents.push(c); save(); renderAgents(); toast('Kopia skapad – med samma hjärna!'); } }),
@@ -941,6 +1188,18 @@ function renderAgents() {
     grid.append(card); avatar(cv, ag);
   }
   grid.append(el('button', { class: 'card new', onclick: openNew }, '➕ Ny AI-agent'));
+}
+async function pickAgentImage(ag) {
+  if (ag.image && await confirmAsk('Agentens bild', 'Vill du ta bort bilden och använda roboten igen? Välj Nej för att byta bild.', 'Ta bort bilden')) {
+    delete ag.image; save(); renderAgents(); return;
+  }
+  const f = $('#agentImgIn'); f.value = '';
+  f.onchange = async () => {
+    if (!f.files[0]) return;
+    try { ag.image = await RB.agentImage(f.files[0]); saveNow(); renderAgents(); toast(ag.name + ' har en ny bild!'); }
+    catch (e) { toast('Bilden gick inte att läsa.'); }
+  };
+  f.click();
 }
 let newStyle = 0, newColor = COLORS[0];
 function openNew() {
@@ -987,12 +1246,20 @@ $('#fileIn').addEventListener('change', async e => {
     evalAll(ag); S.agents.push(ag); S.cur = ag.id; saveNow(); renderAgents(); toast(ag.name + ' är tillbaka!');
   } else if (fileMode === 'all' && data && data.type === 'raken-ai-backup' && data.state) {
     if (!await confirmAsk('Öppna allt?', 'Det som finns nu byts ut mot innehållet i filen.', 'Öppna')) return;
-    S = data.state; saveNow(); load(); show('agents'); toast('Allt är återställt.');
+    S = data.state; saveNow(); load();
+    for (const p of data.projects || []) await RB.store.set('project:' + p.id, p);
+    if (data.projects) await RB.store.set('projects', data.projects.map(p => ({ id: p.id, name: p.name, updated: p.updated })));
+    show('agents'); toast('Allt är återställt.');
   } else toast('Det där är ingen ' + (fileMode === 'agent' ? 'agent-fil.' : 'säkerhetskopia.'));
 });
 $('#btnImportAgent').onclick = () => openFile('agent');
 $('#btnRestore').onclick = () => openFile('all');
-$('#btnBackup').onclick = () => download('ai-agenttraning-allt.json', { type: 'raken-ai-backup', version: 1, state: S });
+$('#btnBackup').onclick = async () => {
+  if (S.view === 'code') await RB.persist(true);
+  const list = (await RB.store.get('projects')) || [];
+  const projects = (await Promise.all(list.map(p => RB.store.get('project:' + p.id)))).filter(Boolean);
+  download('ai-agenttraning-allt.json', { type: 'raken-ai-backup', version: 2, state: S, projects });
+};
 
 /* ---------- build view ---------- */
 const TOOLS = [['.', 'Sudd'], ['#', 'Vägg'], ['S', 'Start'], ['M', 'Mål'], ['L', 'Lava'], ['o', 'Mynt']];
@@ -1242,7 +1509,7 @@ function drawTrain() {
     g.globalAlpha = 1; x = run.x; y = run.y;
   } else { const s = findAll(lv, 'S')[0]; if (!s) return; x = s.x; y = s.y; }
   const mood = run ? (run.win ? 'happy' : run.lava ? 'sad' : run.bonk ? 'bonk' : null) : null;
-  drawBot(g, x * cs + cs / 2, y * cs + cs / 2 + cs * 0.06, cs * 0.95, ag.color, ag.style, mood);
+  drawAgent(g, x * cs + cs / 2, y * cs + cs / 2 + cs * 0.06, cs * 0.95, ag, mood);
 }
 function setStatus(msg, kind) { const s = $('#tStatus'); s.textContent = msg; s.className = 'status' + (kind ? ' ' + kind : ''); }
 function trainButtons() {
@@ -1629,12 +1896,35 @@ const mq = window.matchMedia('(prefers-color-scheme: dark)');
 // lava bubbles move gently on the build screen
 setInterval(() => { if (S && S.view === 'build' && !painting && !document.hidden) drawBuild(); }, 400);
 
+// what the block runtime may use from the app
+window.RB.host = {
+  agent, save: () => save(), toast, download,
+  ask: (title, text, value) => ask(title, text, value),
+  reply(text) {
+    const ag = agent(); if (!ag) return '';
+    const r = reply(ag, text); if (ag.talk.learnChat) learnText(ag, text); save(); return r.text;
+  },
+  teach(q, a) { const ag = agent(); if (ag && addPair(ag, String(q), String(a))) save(); },
+  read(text) { const ag = agent(); if (ag) { learnText(ag, String(text)); save(); } },
+  smart() { const ag = agent(); return ag ? Math.round((navSmart(ag) + talkSmart(ag)) / 2) : 0; },
+  username() { const ag = agent(); return ag ? ag.name : ''; },
+  levelBackdrops() {
+    return S.levels.filter(l => l.rows).map(lv => ['Bana: ' + lv.name, () => {
+      const c = document.createElement('canvas'); c.width = 960; c.height = 720; const g = c.getContext('2d');
+      g.fillStyle = C.floor; g.fillRect(0, 0, 960, 720);
+      const cs = Math.floor(Math.min(960 / lv.w, 720 / lv.h)); g.translate((960 - cs * lv.w) / 2, (720 - cs * lv.h) / 2);
+      drawLevel(g, lv, cs, null, 0);
+      return { id: uid(), name: lv.name.slice(0, 30), url: c.toDataURL('image/png'), cx: 480, cy: 360, res: 2 };
+    }]);
+  },
+};
+
 readColors(); load();
 avatar($('#logo'), { color: '#2a78d6', style: 0 }, 'happy');
-show(['agents', 'build', 'train', 'talk', 'help'].includes(S.view) ? S.view : 'agents');
+show(['agents', 'build', 'train', 'talk', 'code', 'help'].includes(S.view) ? S.view : 'agents');
 
 // small hook for automated tests
-window.RakenAI = { state: () => S, Run, stateKey, evalAll, navSmart, talkSmart, reply, learnText, runCommands, shortest, levelProblem, fastTrain, show };
+window.RakenAI = { state: () => S, Run, stateKey, evalAll, navSmart, talkSmart, reply, learnText, runCommands, shortest, levelProblem, fastTrain, show, drawBot, agent };
 })();
 </script>
 </body>
