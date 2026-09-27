@@ -1,0 +1,53 @@
+name: Bygg Panter-appen (APK)
+
+on:
+  push:
+    paths:
+      - 'panter-appen/**'
+      - '.github/workflows/panter-appen.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.3'
+
+      - name: Bygg APK
+        working-directory: panter-appen
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - name: Döp om APK
+        run: cp panter-appen/app/build/outputs/apk/release/app-release.apk Panter-appen.apk
+
+      - name: Ladda upp som artefakt
+        uses: actions/upload-artifact@v4
+        with:
+          name: Panter-appen
+          path: Panter-appen.apk
+
+      - name: Publicera release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: panter-appen-v1.0.${{ github.run_number }}
+          name: Panter-appen 1.0 (bygge ${{ github.run_number }})
+          target_commitish: ${{ github.sha }}
+          files: Panter-appen.apk
+          body: |
+            Ladda ner **Panter-appen.apk** nedan på din Android-telefon och öppna filen.
+            Du kan behöva tillåta "Installera okända appar" för webbläsaren eller filhanteraren.

@@ -1,0 +1,39 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'se.panter.appen'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'se.panter.appen'
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName '1.0'
+    }
+
+    signingConfigs {
+        release {
+            // Hobbynyckel som ligger i repot så att varje CI-bygge signeras likadant
+            // och nya versioner kan installeras ovanpå gamla.
+            storeFile file('panter.keystore')
+            storePassword 'panterappen'
+            keyAlias 'panter'
+            keyPassword 'panterappen'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

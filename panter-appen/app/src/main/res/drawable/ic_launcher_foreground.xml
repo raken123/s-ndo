@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- öron -->
+    <path android:fillColor="#15151F" android:pathData="M30,44 L34,26 L48,36 Z" />
+    <path android:fillColor="#15151F" android:pathData="M78,44 L74,26 L60,36 Z" />
+    <path android:fillColor="#7C3AED" android:pathData="M33,40 L35,31 L43,37 Z" />
+    <path android:fillColor="#7C3AED" android:pathData="M75,40 L73,31 L65,37 Z" />
+    <!-- huvud -->
+    <path android:fillColor="#15151F"
+        android:pathData="M54,32 C70,32 80,43 80,57 C80,72 68,82 54,82 C40,82 28,72 28,57 C28,43 38,32 54,32 Z" />
+    <!-- ögon -->
+    <path android:fillColor="#F5B83D" android:pathData="M38,54 C41,49 47,49 49,54 C46,58 41,58 38,54 Z" />
+    <path android:fillColor="#F5B83D" android:pathData="M70,54 C67,49 61,49 59,54 C62,58 67,58 70,54 Z" />
+    <path android:fillColor="#0B0B12" android:pathData="M43,50.5 L44.6,50.5 L44.6,57.5 L43,57.5 Z" />
+    <path android:fillColor="#0B0B12" android:pathData="M63.4,50.5 L65,50.5 L65,57.5 L63.4,57.5 Z" />
+    <!-- nos -->
+    <path android:fillColor="#7C3AED" android:pathData="M50,64 L58,64 L54,69 Z" />
+    <path android:strokeColor="#3A3A4A" android:strokeWidth="1.5"
+        android:pathData="M54,69 L54,72 M54,72 C52,74 49,74 47,72 M54,72 C56,74 59,74 61,72" />
+</vector>

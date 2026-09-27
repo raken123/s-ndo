@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b12">
+<title>Panter-appen</title>
+<style>
+  :root {
+    --bg: #0b0b12;
+    --panel: #151522;
+    --panel-2: #1d1d2e;
+    --ink: #f1f0f7;
+    --muted: #9a98ad;
+    --gold: #f5b83d;
+    --purple: #7c3aed;
+    --purple-soft: #2a1d4d;
+    --ok: #22c55e;
+    --bad: #ef4444;
+    --warn: #f97316;
+    --border: #2a2a3d;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: var(--bg); color: var(--ink); }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px; line-height: 1.45;
+    min-height: 100vh;
+    padding-bottom: 84px;
+    transition: filter .6s;
+  }
+  /* Ju sämre pantern mår, desto gråare blir appen. */
+  body.life-low { filter: saturate(.55); }
+  body.life-critical { filter: saturate(.2) brightness(.9); }
+  body.no-nav { padding-bottom: 24px; }
+
+  main { max-width: 560px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 26px; line-height: 1.15; }
+  h2 { font-size: 19px; margin: 22px 0 10px; }
+  h3 { font-size: 16px; }
+  p { margin: 6px 0; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  .gold { color: var(--gold); }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin: 12px 0;
+  }
+  .card.coach { background: linear-gradient(135deg, #1e1535, #151522); border-color: #3b2a66; }
+  .card.penalty { border-color: #6b2323; background: linear-gradient(135deg, #2a1414, #151522); }
+
+  button, .btn {
+    font: inherit; border: 0; cursor: pointer; border-radius: 12px;
+    padding: 13px 16px; font-weight: 600; width: 100%;
+    background: var(--gold); color: #1b1203;
+  }
+  button:disabled { opacity: .45; cursor: default; }
+  .btn-ghost { background: var(--panel-2); color: var(--ink); border: 1px solid var(--border); }
+  .btn-danger { background: transparent; color: #fca5a5; border: 1px solid #7f1d1d; }
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+
+  input[type=text], textarea {
+    width: 100%; font: inherit; color: var(--ink); background: var(--panel-2);
+    border: 1px solid var(--border); border-radius: 12px; padding: 12px;
+  }
+  textarea { min-height: 110px; resize: vertical; }
+  input:focus, textarea:focus { outline: 2px solid var(--purple); border-color: transparent; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    width: auto; padding: 9px 13px; border-radius: 999px; font-weight: 500;
+    background: var(--panel-2); color: var(--ink); border: 1px solid var(--border);
+  }
+  .chip.on { background: var(--purple-soft); border-color: var(--purple); }
+
+  /* Status */
+  .hero { display: flex; gap: 14px; align-items: center; }
+  .panther { width: 96px; height: 96px; flex: none; }
+  .meter { height: 10px; background: var(--panel-2); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+  .meter > div { height: 100%; border-radius: 99px; transition: width .6s; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  .stat { background: var(--panel-2); border-radius: 12px; padding: 10px; text-align: center; }
+  .stat b { display: block; font-size: 20px; }
+  .stat span { font-size: 12px; color: var(--muted); }
+
+  /* Uppdrag */
+  .mission { display: flex; gap: 12px; align-items: center; cursor: pointer; }
+  .mission .ico {
+    width: 44px; height: 44px; flex: none; border-radius: 12px; display: grid; place-items: center;
+    background: var(--panel-2); font-size: 22px;
+  }
+  .mission .body { flex: 1; min-width: 0; }
+  .mission .meta { font-size: 12px; color: var(--muted); }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+  .badge.done { background: #123d24; color: #86efac; }
+  .badge.failed { background: #3d1212; color: #fca5a5; }
+  .badge.open { background: var(--purple-soft); color: #c4b5fd; }
+  .tier { color: var(--gold); letter-spacing: 1px; }
+  .mission.is-done { opacity: .6; }
+
+  ul.tips { padding-left: 20px; margin: 6px 0; }
+  ul.tips li { margin: 4px 0; }
+  .safety { font-size: 13px; color: #a7f3d0; background: #0f2a20; border: 1px solid #14532d; border-radius: 12px; padding: 10px 12px; margin: 12px 0; }
+
+  .timer { text-align: center; padding: 8px 0; }
+  .timer .t { font-size: 44px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* Chatt */
+  .chat { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+  .msg { max-width: 86%; padding: 10px 13px; border-radius: 14px; white-space: pre-wrap; }
+  .msg.bot { background: var(--panel); border: 1px solid #3b2a66; align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg.me { background: var(--purple); align-self: flex-end; border-bottom-right-radius: 4px; }
+  .msg a { color: var(--gold); }
+  .chat-input { position: sticky; bottom: 84px; background: var(--bg); padding: 8px 0; display: flex; gap: 8px; }
+  .chat-input input { flex: 1; }
+  .chat-input button { width: auto; }
+  .suggest { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+  .suggest .chip { white-space: nowrap; flex: none; }
+
+  /* Navigering */
+  nav {
+    position: fixed; left: 0; right: 0; bottom: 0; background: #10101a; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-around; padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
+  }
+  nav a {
+    color: var(--muted); text-decoration: none; font-size: 11px; display: flex; flex-direction: column;
+    align-items: center; gap: 2px; padding: 4px 10px; border-radius: 10px;
+  }
+  nav a .i { font-size: 21px; }
+  nav a.on { color: var(--gold); }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 160px; transform: translateX(-50%) translateY(20px);
+    background: var(--panel-2); border: 1px solid var(--border); padding: 12px 16px; border-radius: 12px;
+    opacity: 0; transition: .3s; pointer-events: none; max-width: 90%; text-align: center; z-index: 10;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .bars { display: flex; flex-direction: column; gap: 8px; }
+  .bar-row { display: grid; grid-template-columns: 120px 1fr 44px; gap: 8px; align-items: center; font-size: 14px; }
+  .hist-item { border-top: 1px solid var(--border); padding: 10px 0; }
+  .hist-item:first-child { border-top: 0; }
+  .center { text-align: center; }
+  .spacer { height: 10px; }
+  a.link { color: var(--gold); }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<nav id="nav" hidden>
+  <a href="#/idag" data-r="idag"><span class="i">🐾</span>Idag</a>
+  <a href="#/coach" data-r="coach"><span class="i">💬</span>Coach</a>
+  <a href="#/framsteg" data-r="framsteg"><span class="i">📈</span>Framsteg</a>
+  <a href="#/installningar" data-r="installningar"><span class="i">⚙️</span>Inställningar</a>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+/* ================================================================
+   Panter-appen — en personlig coach som ger dig uppdrag i verkligheten.
+   Allt körs lokalt på telefonen; inget skickas någonstans.
+   ================================================================ */
+
+const CATS = {
+  kropp:       { name: 'Kropp',        icon: '💪' },
+  sinne:       { name: 'Sinne & fokus', icon: '🧠' },
+  mod:         { name: 'Mod & socialt', icon: '🦁' },
+  disciplin:   { name: 'Disciplin',    icon: '⏰' },
+  omtanke:     { name: 'Omtanke',      icon: '💛' },
+  ordning:     { name: 'Ordning',      icon: '🧹' },
+  larande:     { name: 'Lärande',      icon: '📚' },
+  kreativitet: { name: 'Kreativitet',  icon: '🎨' },
+};
+
+const SAFETY = {
+  kropp: 'Anpassa efter din kropp. Känner du smärta, yrsel eller andfåddhet som inte går över – sluta direkt. Det räknas ändå som att du försökte.',
+  default: 'Det här uppdraget är helt ofarligt. Känns något fel i stunden får du alltid avbryta – din säkerhet går före alla poäng.',
+};
+
+// tier: 1 = utmanande, 2 = svårt, 3 = riktigt svårt
+const MISSIONS = [
+  // Kropp
+  { id: 'k1', cat: 'kropp', tier: 1, title: 'Morgonrörlighet', timer: 10,
+    desc: 'Stretcha i 10 minuter inom en halvtimme efter att du vaknat.',
+    why: 'Kroppen som rör sig tidigt ger huvudet signalen att dagen har börjat på dina villkor.',
+    tips: ['Nacke, axlar, höfter, baksida lår – 1 minut var.', 'Andas lugnt och djupt, inget ska göra ont.'] },
+  { id: 'k2', cat: 'kropp', tier: 1, title: 'Promenad utan mobil', timer: 30,
+    desc: 'Gå en 30 minuters promenad. Mobilen på ljudlöst i fickan – ingen musik, inget scrollande.',
+    why: 'Tystnad plus rörelse är när hjärnan sorterar tankarna bäst.',
+    tips: ['Välj en väg du inte brukar gå.', 'Lägg märke till tre saker du aldrig sett förut.'] },
+  { id: 'k3', cat: 'kropp', tier: 2, title: '100 knäböj',
+    desc: 'Gör 100 knäböj under dagen, uppdelat i så många set du behöver.',
+    why: 'Stora muskler, stort resultat – och du bevisar att små insatser blir något stort.',
+    tips: ['T.ex. 10 set à 10 spridda över dagen.', 'Håll ryggen rak och hälarna i golvet.'] },
+  { id: 'k4', cat: 'kropp', tier: 2, title: '10 000 steg',
+    desc: 'Nå 10 000 steg idag. Räkna med mobilen eller klockan.',
+    why: 'Den enklaste vanan som gör mest för humöret, sömnen och energin.',
+    tips: ['Gå av bussen en hållplats tidigare.', 'Ta ett samtal gående.'] },
+  { id: 'k5', cat: 'kropp', tier: 2, title: 'Bara trappor',
+    desc: 'Ta trapporna istället för hiss och rulltrappa hela dagen.',
+    why: 'Varje trappa är ett litet val där du väljer det jobbigare. Det tränar mer än benen.',
+    tips: ['Håll i ledstången.', 'Gå i din egen takt – det är ingen tävling.'] },
+  { id: 'k6', cat: 'kropp', tier: 3, title: 'Armhävningsstegen',
+    desc: 'Gör en stege: 1 armhävning, vila, 2, vila, 3 … upp till 10. Totalt 55 armhävningar.',
+    why: 'Du kommer vilja sluta vid 6 eller 7. Det är där uppdraget egentligen börjar.',
+    tips: ['Knästående armhävningar räknas fullt ut.', 'Vila så länge du behöver mellan stegen.'] },
+  { id: 'k7', cat: 'kropp', tier: 3, title: '45 minuter i rörelse', timer: 45,
+    desc: 'Rör dig sammanhängande i 45 minuter: rask promenad, cykel, dans eller simning i bevakad simhall.',
+    why: 'Efter ungefär 20 minuter börjar kroppen belöna dig. Du ska känna det.',
+    tips: ['Drick vatten före och efter.', 'Lagom tempo: du ska kunna prata men inte sjunga.'] },
+  { id: 'k8', cat: 'kropp', tier: 2, title: 'Vattendagen',
+    desc: 'Drick 6–8 glas vatten under dagen och ingen läsk eller energidryck.',
+    why: 'Trötthet och huvudvärk är ofta bara törst i förklädnad.',
+    tips: ['Ett glas direkt när du vaknar.', 'Ha en flaska synlig hela dagen.'] },
+
+  // Sinne
+  { id: 's1', cat: 'sinne', tier: 1, title: 'Fem tysta minuter',
+    desc: 'Fem gånger idag: sitt helt still i en minut och bara andas. Inga skärmar.',
+    why: 'Små pauser tränar samma muskel som gör att du inte reagerar i affekt.',
+    tips: ['Koppla till vanor: efter frukost, före lunch osv.', 'Räkna andetag till tio och börja om.'] },
+  { id: 's2', cat: 'sinne', tier: 1, title: 'Tacksamhetslistan',
+    desc: 'Skriv ner fem saker du är tacksam för idag – konkreta, inte "familjen" rakt av.',
+    why: 'Hjärnan letar efter det den övas på. Öva på det bra.',
+    tips: ['"Att mamma skjutsade mig i regnet" slår "mamma".', 'Minst en sak du själv gjorde.'] },
+  { id: 's3', cat: 'sinne', tier: 2, title: 'Meditation 15 min', timer: 15,
+    desc: 'Sitt och meditera i 15 minuter. Fokus på andningen, varje gång tankarna vandrar – börja om.',
+    why: 'Att dra tillbaka uppmärksamheten gång på gång ÄR träningen. Du kan inte misslyckas.',
+    tips: ['Sitt bekvämt, rak rygg.', 'Sätt en timer och titta inte på den.'] },
+  { id: 's4', cat: 'sinne', tier: 2, title: 'Skriv av dig',
+    desc: 'Skriv en hel sida om hur du egentligen mår just nu. Ärligt, ingen annan ska läsa.',
+    why: 'Det som är tydligt på papper blir mindre stort i huvudet.',
+    tips: ['Börja med "Det jag inte säger högt är …"', 'Sluta inte förrän sidan är full.'] },
+  { id: 's5', cat: 'sinne', tier: 3, title: 'Djupt fokus 60 min', timer: 60,
+    desc: 'Jobba 60 minuter på EN uppgift. Rör inte mobilen, byt inte flik, res dig inte.',
+    why: 'Förmågan att fokusera djupt är sällsynt – och den som har den vinner.',
+    tips: ['Mobilen i ett annat rum.', 'Skriv upp störande tankar på en lapp och fortsätt.'] },
+  { id: 's6', cat: 'sinne', tier: 3, title: 'Brev till framtida jag',
+    desc: 'Skriv ett brev till dig själv om ett år. Minst 200 ord: vem vill du vara då och vad lovar du idag?',
+    why: 'Den som vet vart den ska tar andra beslut idag.',
+    tips: ['Var specifik: vad gör du en vanlig tisdag om ett år?', 'Spara brevet med ett datum.'] },
+
+  // Mod & socialt
+  { id: 'm1', cat: 'mod', tier: 1, title: 'Hälsa först',
+    desc: 'Säg hej först till tre personer du möter idag – i kassan, en granne, en klasskamrat eller kollega.',
+    why: 'Den som hälsar först bestämmer stämningen. Det är en superkraft.',
+    tips: ['Ögonkontakt och ett leende räcker långt.', 'Säg deras namn om du kan det.'] },
+  { id: 'm2', cat: 'mod', tier: 2, title: 'Komplimangen',
+    desc: 'Ge en ärlig komplimang till någon du inte brukar prata med.',
+    why: 'Det känns läskigt i två sekunder och bra i två dagar – för er båda.',
+    tips: ['Beröm något de valt: en idé, ett arbete, ett plagg.', 'Säg det och gå vidare, kräv inget tillbaka.'] },
+  { id: 'm3', cat: 'mod', tier: 2, title: 'Ring istället för att skriva',
+    desc: 'Ring en vän eller släkting du inte pratat med på länge. Minst fem minuter.',
+    why: 'En röst bygger mer relation än hundra meddelanden.',
+    tips: ['Ett bra första steg: "Jag kom att tänka på dig."', 'Fråga något du faktiskt undrar över.'] },
+  { id: 'm4', cat: 'mod', tier: 2, title: 'Be om hjälp',
+    desc: 'Be någon om hjälp med något du brukar kämpa med själv.',
+    why: 'Starka människor ber om hjälp. Det är ett tecken på att man vill framåt.',
+    tips: ['Var konkret om vad du behöver.', 'Tacka ordentligt efteråt.'] },
+  { id: 'm5', cat: 'mod', tier: 3, title: 'Säg vad du tycker',
+    desc: 'I ett samtal idag: säg din ärliga åsikt, vänligt, även om den skiljer sig från de andras.',
+    why: 'Varje gång du håller inne din röst blir den lite tystare. Idag tränar du den.',
+    tips: ['"Jag ser det lite annorlunda …" är en bra start.', 'Lyssna på svaret – målet är inte att vinna.'] },
+  { id: 'm6', cat: 'mod', tier: 3, title: 'Det obekväma samtalet',
+    desc: 'Ta upp något du länge undvikit att prata om med någon du litar på.',
+    why: 'Det du undviker växer. Det du tar upp krymper.',
+    tips: ['Välj en lugn stund.', 'Börja med hur DU känner, inte vad den andra gjort.'] },
+  { id: 'm7', cat: 'mod', tier: 3, title: 'Räck upp handen',
+    desc: 'Ställ en fråga högt: på lektionen, på ett möte eller till personal i en butik om något du undrar.',
+    why: 'Pinsamheten är alltid mindre än man tror. Kunskapen du får är större.',
+    tips: ['Skriv ner frågan först om du blir nervös.', 'Ingen fråga är dum om du verkligen undrar.'] },
+
+  // Disciplin
+  { id: 'd1', cat: 'disciplin', tier: 1, title: 'Bädda och klä på dig',
+    desc: 'Bädda sängen och klä på dig inom 10 minuter efter att du vaknat.',
+    why: 'Den första vinsten på dagen gör nästa lättare.',
+    tips: ['Lägg fram kläderna kvällen innan.', 'Inget mobil-snooze.'] },
+  { id: 'd2', cat: 'disciplin', tier: 2, title: 'Mobilfri morgon',
+    desc: 'Rör inte mobilen den första timmen efter att du vaknat.',
+    why: 'Den som börjar dagen med andras behov i flödet glömmer sina egna.',
+    tips: ['Använd en vanlig väckarklocka.', 'Ladda mobilen utanför sovrummet.'] },
+  { id: 'd3', cat: 'disciplin', tier: 2, title: 'Ingen sociala medier',
+    desc: 'Inga sociala medier alls idag. Inte ens "bara kolla".',
+    why: 'Se hur mycket tid och lugn du får tillbaka på en enda dag.',
+    tips: ['Logga ut eller flytta apparna till en undanskymd mapp.', 'Ha en bok eller poddlista redo.'] },
+  { id: 'd4', cat: 'disciplin', tier: 3, title: 'Skärmfri kväll',
+    desc: 'Inga skärmar efter kl. 21 och i säng före kl. 23.',
+    why: 'Sömnen är grunden som allt annat står på.',
+    tips: ['Planera något skärmfritt: bok, samtal, pussel.', 'Dämpa belysningen en timme innan.'] },
+  { id: 'd5', cat: 'disciplin', tier: 3, title: 'Det tråkigaste först',
+    desc: 'Gör klart den uppgift du skjutit upp längst – före lunch.',
+    why: 'Uppskjutna uppgifter tar energi varje gång du tänker på dem. Frigör den energin.',
+    tips: ['Börja med bara 5 minuter – sen fortsätter man oftast.', 'Dela upp i minsta möjliga första steg.'] },
+  { id: 'd6', cat: 'disciplin', tier: 2, title: 'Sockerfri dag',
+    desc: 'Inget godis, läsk, bakverk eller glass idag.',
+    why: 'Varje nej till suget är en rep för självkontrollen.',
+    tips: ['Ha frukt eller nötter redo när suget kommer.', 'Suget går över på ca 15 minuter.'] },
+  { id: 'd7', cat: 'disciplin', tier: 1, title: 'Planera morgondagen',
+    desc: 'Innan du lägger dig: skriv ner de tre viktigaste sakerna du ska göra imorgon.',
+    why: 'Den som vaknar med en plan slipper vakna med en känsla av kaos.',
+    tips: ['Den viktigaste först.', 'Gör dem konkreta: "Skicka mejlet till X", inte "jobba".'] },
+
+  // Omtanke
+  { id: 'o1', cat: 'omtanke', tier: 1, title: 'Hjälp utan att bli ombedd',
+    desc: 'Gör något hemma som ingen bett dig om: diska, vika tvätt, bära ut soporna.',
+    why: 'Ingen lägger märke till det. Det är just därför det bygger karaktär.',
+    tips: ['Säg inget om det – låt det bara vara gjort.'] },
+  { id: 'o2', cat: 'omtanke', tier: 2, title: 'Tack-meddelandet',
+    desc: 'Skicka ett ordentligt tackmeddelande (minst fem meningar) till någon som betytt mycket för dig.',
+    why: 'Folk går runt med tacksamhet de aldrig säger. Var den som säger det.',
+    tips: ['Nämn ett specifikt minne.', 'Berätta vad det betydde för dig.'] },
+  { id: 'o3', cat: 'omtanke', tier: 2, title: 'Lyssna fullt ut',
+    desc: 'I ett samtal idag: bara lyssna. Ställ följdfrågor, ingen egen historia, inga råd om de inte ber om det.',
+    why: 'Att bli lyssnad på är en av de största gåvorna man kan ge.',
+    tips: ['"Hur kändes det?" och "Berätta mer" är guld.', 'Lägg undan mobilen helt.'] },
+  { id: 'o4', cat: 'omtanke', tier: 3, title: 'Ge bort en halvtimme',
+    desc: 'Erbjud dig att hjälpa någon i familjen, en vän eller en granne du känner med något i minst 30 minuter.',
+    why: 'Tid är det enda man inte kan få tillbaka. Därför betyder den mest.',
+    tips: ['Fråga: "Finns det något jag kan hjälpa dig med idag?"', 'Gör det helhjärtat, inte halvt.'] },
+  { id: 'o5', cat: 'omtanke', tier: 2, title: 'Säg förlåt',
+    desc: 'Be om ursäkt för något – stort eller litet – som du vet att du borde ha bett om ursäkt för.',
+    why: 'En ärlig ursäkt kräver mer mod än att ha rätt.',
+    tips: ['Inget "men" efter förlåt.', 'Säg vad du gjorde och vad du gör annorlunda.'] },
+
+  // Ordning
+  { id: 'r1', cat: 'ordning', tier: 1, title: '15 minuters röj', timer: 15,
+    desc: 'Sätt en timer och röj så mycket du hinner på 15 minuter.',
+    why: 'Yttre ordning skapar inre lugn. Snabbare än man tror.',
+    tips: ['Börja med det som syns mest.', 'Allt som inte har en plats – ge det en eller släng det.'] },
+  { id: 'r2', cat: 'ordning', tier: 2, title: 'Rensa en låda',
+    desc: 'Töm en låda eller hylla helt. Lägg bara tillbaka det du faktiskt använder.',
+    why: 'Varje sak du äger kräver lite av din uppmärksamhet.',
+    tips: ['Tre högar: behåll, ge bort, släng.', 'Ta ut ge-bort-högen ur huset idag.'] },
+  { id: 'r3', cat: 'ordning', tier: 2, title: 'Digital städning',
+    desc: 'Radera 50 gamla bilder, appar eller mejl och sluta följa konton som får dig att må sämre.',
+    why: 'Ditt flöde formar dina tankar. Välj vad som får komma in.',
+    tips: ['Fråga: "Blir jag gladare eller smartare av det här?"'] },
+  { id: 'r4', cat: 'ordning', tier: 3, title: 'Hela rummet',
+    desc: 'Städa hela ditt rum: golv, alla ytor, under sängen och garderoben.',
+    why: 'Det här är tungt. Och när du är klar kommer du vilja sitta där och bara njuta.',
+    tips: ['Uppifrån och ner: ytor först, golv sist.', 'Musik på, mobil undan.'] },
+  { id: 'r5', cat: 'ordning', tier: 2, title: 'Pengakollen',
+    desc: 'Skriv ner allt du spenderat pengar på senaste veckan och ringa in det du ångrar.',
+    why: 'Den som vet vart pengarna går bestämmer över dem – inte tvärtom.',
+    tips: ['Kolla kontoutdraget eller appen.', 'Hitta ett köp du kan hoppa över nästa vecka.'] },
+
+  // Lärande
+  { id: 'l1', cat: 'larande', tier: 1, title: 'Fem nya ord',
+    desc: 'Lär dig fem nya ord på ett språk du vill bli bättre på – och använd dem i meningar.',
+    why: 'Lite varje dag slår mycket ibland.',
+    tips: ['Skriv dem på lappar där du ser dem.', 'Förhör dig själv innan du somnar.'] },
+  { id: 'l2', cat: 'larande', tier: 2, title: '30 sidor',
+    desc: 'Läs 30 sidor i en riktig bok (inte på mobilen).',
+    why: 'Böcker är ett sätt att låna andras livserfarenhet.',
+    tips: ['Dela upp: 10 sidor morgon, lunch, kväll.', 'Skriv ner en mening du vill minnas.'] },
+  { id: 'l3', cat: 'larande', tier: 2, title: 'Laga en ny rätt',
+    desc: 'Laga en måltid från grunden som du aldrig lagat förut.',
+    why: 'Att kunna ta hand om sig själv är en av de viktigaste färdigheterna som finns.',
+    tips: ['Välj ett recept med max 8 ingredienser.', 'Var försiktig vid spis och kniv, och be om hjälp om du är ovan.'] },
+  { id: 'l4', cat: 'larande', tier: 3, title: 'Förklara det',
+    desc: 'Lär dig något nytt i 45 minuter och förklara det sedan för någon annan (eller spela in dig själv).',
+    why: 'Man förstår något på riktigt först när man kan förklara det enkelt.',
+    tips: ['Välj något du länge undrat över.', 'Förklara som för en tolvåring.'] },
+  { id: 'l5', cat: 'larande', tier: 3, title: 'Utantill',
+    desc: 'Lär dig en dikt, sångtext eller text på minst 12 rader utantill.',
+    why: 'Minnet är en muskel. Den har nog inte tränats på länge.',
+    tips: ['Två rader i taget, bygg på.', 'Säg det högt när du går.'] },
+
+  // Kreativitet
+  { id: 'c1', cat: 'kreativitet', tier: 1, title: 'Rita det du ser', timer: 15,
+    desc: 'Rita något som står framför dig i 15 minuter. Resultatet spelar ingen roll.',
+    why: 'Att titta ordentligt är en förmåga som gör hela livet rikare.',
+    tips: ['Rita det du SER, inte det du tror att du ser.'] },
+  { id: 'c2', cat: 'kreativitet', tier: 1, title: 'Tio vackra bilder',
+    desc: 'Ta tio foton av vackra saker du hittar på en promenad.',
+    why: 'Den som letar efter skönhet hittar den överallt.',
+    tips: ['Gå nära: detaljer, ljus, skuggor.'] },
+  { id: 'c3', cat: 'kreativitet', tier: 2, title: 'Kort berättelse',
+    desc: 'Skriv en berättelse på minst 300 ord. Vilket ämne som helst.',
+    why: 'Att skapa något från ingenting är att bevisa att man kan.',
+    tips: ['Börja mitt i en händelse.', 'Redigera inte förrän du är klar.'] },
+  { id: 'c4', cat: 'kreativitet', tier: 3, title: 'Skapa och visa',
+    desc: 'Gör något kreativt – en teckning, låt, text, byggprojekt – och visa det för minst en person.',
+    why: 'Att visa sitt arbete är skrämmande. Det är därför det gör dig starkare.',
+    tips: ['Klart är bättre än perfekt.', 'Säg inte "det är dåligt" när du visar det.'] },
+  { id: 'c5', cat: 'kreativitet', tier: 2, title: 'Med händerna',
+    desc: 'Skapa eller laga något med händerna: sy i en knapp, bygg något, måla, baka.',
+    why: 'Händerna lugnar huvudet.',
+    tips: ['Använd det du redan har hemma.'] },
+];
+
+// Straffuppdrag: tråkiga men helt ofarliga. De dyker upp när du ger upp eller missar.
+const PENALTIES = [
+  { id: 'p1', title: 'Köket skinande', desc: 'Diska allt, torka av bänkarna och plocka undan i köket.' },
+  { id: 'p2', title: 'Tillbaka på banan', desc: 'Gå en 20 minuters promenad utan mobil och tänk igenom varför det blev som det blev.' },
+  { id: 'p3', title: 'Mobilen i skamvrån', desc: 'Lägg mobilen i ett annat rum i 2 timmar i sträck.' },
+  { id: 'p4', title: 'Ärlig analys', desc: 'Skriv minst 100 ord: varför gjordes inte uppdraget, och vad gör du annorlunda imorgon?' },
+  { id: 'p5', title: '20 minuters städning', desc: 'Städa ditt rum eller ett gemensamt utrymme i 20 minuter.' },
+  { id: 'p6', title: 'Kroppskontroll', desc: 'Gör 30 knäböj och 20 situps (i den takt du klarar).' },
+  { id: 'p7', title: 'Läsbot', desc: 'Läs 15 sidor i en bok innan du får öppna något socialt medium.' },
+  { id: 'p8', title: 'Tidig kväll', desc: 'Lägg dig 30 minuter tidigare än vanligt ikväll, utan skärm i sängen.' },
+];
+
+const RANKS = [
+  { xp: 0,    name: 'Kattunge' },
+  { xp: 150,  name: 'Ungpanter' },
+  { xp: 400,  name: 'Jägare' },
+  { xp: 800,  name: 'Skuggpanter' },
+  { xp: 1500, name: 'Alfapanter' },
+  { xp: 3000, name: 'Legendarisk panter' },
+];
+
+const XP_BY_TIER = { 1: 30, 2: 50, 3: 80 };
+const RULES = {
+  missionsPerDay: 3,
+  lifeStart: 70,
+  doneLife: 6,         // + livskraft per klarat uppdrag
+  giveUpLife: 8,       // - livskraft när du ger upp
+  missLife: 12,        // - livskraft per missat uppdrag vid midnatt
+  penaltyDailyLife: 4, // - livskraft per dag för varje olöst straffuppdrag
+  penaltyDoneLife: 3,
+  penaltyXp: 10,
+  collapseXpLoss: 0.2, // andel XP som försvinner när livskraften når 0
+  streakNeed: 2,       // klara minst så här många uppdrag för att dagen ska räknas
+  minReflection: 20,
+};
+
+const KEY = 'panter-appen-v1';
+let S = null;
+
+/* ---------- hjälpfunktioner ---------- */
+
+function todayStr(d = new Date()) {
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+function addDays(ds, n) {
+  const [y, m, d] = ds.split('-').map(Number);
+  return todayStr(new Date(y, m - 1, d + n));
+}
+function daysBetween(a, b) {
+  const [ay, am, ad] = a.split('-').map(Number);
+  const [by, bm, bd] = b.split('-').map(Number);
+  return Math.round((Date.UTC(by, bm - 1, bd) - Date.UTC(ay, am - 1, ad)) / 86400000);
+}
+function hash(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function rng(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function pick(arr, r = Math.random) { return arr[Math.floor(r() * arr.length)]; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+const byId = id => MISSIONS.find(m => m.id === id);
+const penById = id => PENALTIES.find(p => p.id === id);
+
+function rankFor(xp) {
+  let i = 0;
+  for (let k = 0; k < RANKS.length; k++) if (xp >= RANKS[k].xp) i = k;
+  return { ...RANKS[i], index: i, next: RANKS[i + 1] || null };
+}
+function mood(life) {
+  if (life >= 80) return { key: 'wild', label: 'Vild & stark', color: 'var(--ok)' };
+  if (life >= 50) return { key: 'ok', label: 'Stabil', color: 'var(--gold)' };
+  if (life >= 25) return { key: 'tired', label: 'Trött', color: 'var(--warn)' };
+  return { key: 'hurt', label: 'Sårad', color: 'var(--bad)' };
+}
+
+/* ---------- lagring ---------- */
+
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ingen lagring tillgänglig */ }
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) { /* trasig data – börja om */ }
+  return null;
+}
+function freshState(name, focus, maxTier) {
+  return {
+    v: 1, name, focus, maxTier,
+    seed: Math.floor(Math.random() * 1e9),
+    created: todayStr(),
+    xp: 0, life: RULES.lifeStart, streak: 0, bestStreak: 0,
+    collapses: 0,
+    day: null,            // { date, missions: [{ id, status, reflection }], rerolled }
+    penalties: [],        // [{ uid, id, date, status }]
+    history: [],          // [{ date, id, status, reflection }]
+    cat: {},              // { kropp: { done, failed } }
+    chat: [],
+    timers: {},           // { missionId: startedAtMs }
+    log: [],              // händelser som visas för användaren
+  };
+}
+
+/* ---------- coach-motorn ---------- */
+
+// Hur det har gått senaste tiden (0..1). Styr svårighetsgraden.
+function recentSuccess(n = 9) {
+  const recent = S.history.slice(-n);
+  if (recent.length < 3) return 0.6;
+  return recent.filter(h => h.status === 'done').length / recent.length;
+}
+function targetTier() {
+  const rate = recentSuccess();
+  const rank = rankFor(S.xp).index;
+  let t = 1 + (rank >= 1 ? 0.5 : 0) + (rank >= 3 ? 0.5 : 0);
+  if (rate > 0.8) t += 0.7;
+  if (rate < 0.4) t -= 0.7;
+  if (S.life < 30) t -= 0.5; // pantern är sårad – bygg upp igen
+  return clamp(t, 1, S.maxTier);
+}
+function catWeight(cat) {
+  const st = S.cat[cat] || { done: 0, failed: 0 };
+  let w = S.focus.includes(cat) ? 3 : 1;
+  // Kategorier du ofta ger upp i får lite extra vikt – coachen vill att du växer där.
+  if (st.failed > st.done && st.failed >= 2) w += 1.5;
+  return w;
+}
+function generateDay(date, extraSalt = '') {
+  const r = rng(hash(S.seed + ':' + date + extraSalt));
+  const want = targetTier();
+  const recentIds = new Set(S.history.slice(-12).map(h => h.id));
+  const chosen = [];
+  const usedCats = new Set();
+  let guard = 0;
+  while (chosen.length < RULES.missionsPerDay && guard++ < 500) {
+    const pool = MISSIONS.filter(m =>
+      m.tier <= S.maxTier && !chosen.includes(m) && !usedCats.has(m.cat) &&
+      (guard > 200 || !recentIds.has(m.id)));
+    if (!pool.length) { usedCats.clear(); continue; }
+    // Vikta på kategori och hur nära önskad svårighet uppdraget ligger.
+    const weights = pool.map(m => catWeight(m.cat) / (1 + 1.5 * Math.abs(m.tier - want)));
+    const total = weights.reduce((a, b) => a + b, 0);
+    let x = r() * total, m = pool[pool.length - 1];
+    for (let i = 0; i < pool.length; i++) { x -= weights[i]; if (x <= 0) { m = pool[i]; break; } }
+    chosen.push(m);
+    usedCats.add(m.cat);
+  }
+  return chosen.map(m => ({ id: m.id, status: 'open', reflection: '' }));
+}
+
+function addLog(text, kind = 'info') {
+  S.log.push({ t: Date.now(), text, kind });
+  if (S.log.length > 40) S.log = S.log.slice(-40);
+}
+function addPenalty(date, reasonTitle) {
+  const r = rng(hash(S.seed + ':pen:' + date + ':' + S.penalties.length));
+  const open = new Set(S.penalties.filter(p => p.status === 'open').map(p => p.id));
+  const pool = PENALTIES.filter(p => !open.has(p.id));
+  const p = pick(pool.length ? pool : PENALTIES, r);
+  S.penalties.push({ uid: Date.now() + '-' + S.penalties.length, id: p.id, date, status: 'open', reason: reasonTitle });
+  return p;
+}
+function changeLife(delta) {
+  S.life = clamp(S.life + delta, 0, 100);
+  if (S.life === 0) collapse();
+}
+function collapse() {
+  const lost = Math.round(S.xp * RULES.collapseXpLoss);
+  S.xp -= lost;
+  S.life = 30;
+  S.streak = 0;
+  S.collapses++;
+  addLog(`Pantern kollapsade. Du tappade ${lost} XP och din streak. Livskraften återställs till 30 – nu bygger vi upp igen.`, 'bad');
+}
+function markCat(cat, status) {
+  S.cat[cat] = S.cat[cat] || { done: 0, failed: 0 };
+  S.cat[cat][status === 'done' ? 'done' : 'failed']++;
+}
+
+// Stänger gamla dagar och delar ut konsekvenser. Körs vid start och när appen återupptas.
+function rollover() {
+  const today = todayStr();
+  if (!S.day) {
+    S.day = { date: today, missions: generateDay(today), rerolled: false };
+    save();
+    return;
+  }
+  if (S.day.date === today) return;
+
+  // Straffuppdrag som redan låg olösta när dygnet skiftade (inte de som skapas nu).
+  const carriedPen = S.penalties.filter(p => p.status === 'open' && p.date < today).length;
+
+  // 1) Avsluta den senaste dagen.
+  const d = S.day;
+  const done = d.missions.filter(m => m.status === 'done').length;
+  let missed = 0;
+  for (const m of d.missions) {
+    if (m.status === 'open') {
+      m.status = 'failed';
+      missed++;
+      const mis = byId(m.id);
+      S.history.push({ date: d.date, id: m.id, status: 'missed', reflection: '' });
+      markCat(mis.cat, 'failed');
+      changeLife(-RULES.missLife);
+      const p = addPenalty(d.date, mis.title);
+      addLog(`Du missade "${mis.title}". −${RULES.missLife} livskraft och ett straffuppdrag: ${p.title}.`, 'bad');
+    }
+  }
+  if (done >= RULES.streakNeed) {
+    S.streak++;
+    S.bestStreak = Math.max(S.bestStreak, S.streak);
+  } else {
+    if (S.streak > 0) addLog(`Din streak på ${S.streak} dagar bröts.`, 'bad');
+    S.streak = 0;
+  }
+
+  // 2) Hela dagar då appen inte ens öppnades räknas som missade.
+  const gap = daysBetween(d.date, today) - 1;
+  if (gap > 0) {
+    const n = Math.min(gap, 7);
+    const loss = n * RULES.missLife;
+    changeLife(-loss);
+    if (S.streak > 0) addLog(`Din streak på ${S.streak} dagar bröts.`, 'bad');
+    S.streak = 0;
+    addLog(`Du var borta i ${gap} ${gap === 1 ? 'dag' : 'dagar'}. Pantern tappade ${loss} livskraft.`, 'bad');
+    addPenalty(addDays(today, -1), 'Frånvaro');
+  }
+
+  // 3) Olösta straffuppdrag tär på pantern varje dag.
+  if (carriedPen > 0) {
+    changeLife(-RULES.penaltyDailyLife * carriedPen);
+    addLog(`${carriedPen} olösta straffuppdrag kostade ${RULES.penaltyDailyLife * carriedPen} livskraft.`, 'bad');
+  }
+
+  if (missed === 0 && done === d.missions.length) addLog('Alla uppdrag klara igår. Pantern är stolt över dig. 🐆', 'good');
+
+  S.day = { date: today, missions: generateDay(today), rerolled: false };
+  S.timers = {};
+  save();
+}
+
+function completeMission(id, reflection) {
+  const m = S.day.missions.find(x => x.id === id);
+  if (!m || m.status !== 'open') return;
+  const mis = byId(id);
+  m.status = 'done';
+  m.reflection = reflection;
+  const xp = XP_BY_TIER[mis.tier] + (S.streak >= 3 ? 10 : 0);
+  const beforeRank = rankFor(S.xp).index;
+  S.xp += xp;
+  changeLife(RULES.doneLife);
+  markCat(mis.cat, 'done');
+  S.history.push({ date: S.day.date, id, status: 'done', reflection });
+  delete S.timers[id];
+  const afterRank = rankFor(S.xp);
+  const msg = coachFeedback(mis, reflection, xp);
+  pushBot(msg);
+  if (afterRank.index > beforeRank) {
+    addLog(`Ny rang: ${afterRank.name}! 🎉`, 'good');
+    pushBot(`Du är nu ${afterRank.name}. Jag har märkt skillnaden, ${S.name}. Uppdragen kommer bli tuffare härifrån.`);
+  }
+  save();
+  return xp;
+}
+function giveUpMission(id) {
+  const m = S.day.missions.find(x => x.id === id);
+  if (!m || m.status !== 'open') return;
+  const mis = byId(id);
+  m.status = 'failed';
+  S.history.push({ date: S.day.date, id, status: 'gaveup', reflection: '' });
+  markCat(mis.cat, 'failed');
+  changeLife(-RULES.giveUpLife);
+  const p = addPenalty(S.day.date, mis.title);
+  delete S.timers[id];
+  addLog(`Du gav upp "${mis.title}". −${RULES.giveUpLife} livskraft och straffuppdraget "${p.title}".`, 'bad');
+  pushBot(pick([
+    `Okej. Att ge upp ärligt är bättre än att ljuga för mig. Men det kostar: gör "${p.title}" så är vi kvitt.`,
+    `Pantern blev lite svagare nu. Du får straffuppdraget "${p.title}". Imorgon är en ny jakt.`,
+    `Jag noterar det. Fundera på vad som stoppade dig – och gör "${p.title}" innan dagen är slut.`,
+  ]));
+  save();
+}
+function completePenalty(uid) {
+  const p = S.penalties.find(x => x.uid === uid);
+  if (!p || p.status !== 'open') return;
+  p.status = 'done';
+  S.xp += RULES.penaltyXp;
+  changeLife(RULES.penaltyDoneLife);
+  addLog(`Straffuppdraget "${penById(p.id).title}" avklarat. Skulden är betald.`, 'good');
+  save();
+}
+function rerollDay() {
+  if (S.day.rerolled) return false;
+  const kept = S.day.missions.filter(m => m.status !== 'open');
+  const fresh = generateDay(S.day.date, ':reroll')
+    .filter(m => !S.day.missions.some(x => x.id === m.id));
+  const need = RULES.missionsPerDay - kept.length;
+  S.day.missions = kept.concat(fresh.slice(0, need));
+  // Om slumpen gav för få nya: fyll på med vad som helst som inte redan finns.
+  for (const mis of MISSIONS) {
+    if (S.day.missions.length >= RULES.missionsPerDay) break;
+    if (mis.tier <= S.maxTier && !S.day.missions.some(x => x.id === mis.id)) {
+      S.day.missions.push({ id: mis.id, status: 'open', reflection: '' });
+    }
+  }
+  S.day.rerolled = true;
+  S.timers = {};
+  save();
+  return true;
+}
+
+/* ---------- coachens röst ---------- */
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 5) return 'Mitt i natten';
+  if (h < 10) return 'God morgon';
+  if (h < 17) return 'Hej';
+  if (h < 22) return 'God kväll';
+  return 'Sent ute';
+}
+function dailyBriefing() {
+  const mo = mood(S.life);
+  const open = S.day.missions.filter(m => m.status === 'open').length;
+  const done = S.day.missions.filter(m => m.status === 'done').length;
+  const pen = S.penalties.filter(p => p.status === 'open').length;
+  const r = rng(hash(S.seed + S.day.date + 'brief'));
+  const parts = [`${greeting()}, ${S.name}.`];
+
+  if (pen > 0) parts.push(`Du har ${pen} olöst${pen > 1 ? 'a' : ''} straffuppdrag. Varje natt det ligger kvar tappar pantern ${RULES.penaltyDailyLife} livskraft.`);
+
+  if (done === S.day.missions.length) {
+    parts.push(pick(['Alla dagens uppdrag är klara. Det här är vad förändring ser ut som.', 'Full pott idag. Vila med gott samvete.'], r));
+  } else if (mo.key === 'hurt') {
+    parts.push(pick(['Pantern är sårad. Det du gör idag avgör om den reser sig.', 'Det har gått tungt. Men ett enda klarat uppdrag vänder trenden.'], r));
+  } else if (mo.key === 'tired') {
+    parts.push(pick(['Pantern är trött. Ge den ett skäl att tro på dig igen.', 'Vi tappar fart. Idag tar vi tillbaka den.'], r));
+  } else if (S.streak >= 3) {
+    parts.push(pick([`${S.streak} dagar i rad. Bryt inte kedjan nu.`, `Din streak är ${S.streak} dagar. Du ger nu +10 XP extra per uppdrag.`], r));
+  } else {
+    parts.push(pick(['Tre uppdrag väntar. Inget av dem är lätt – det är poängen.', 'Idag ska du göra något du helst skulle slippa. Sen blir du lite starkare.', 'Livet blir inte bättre av att läsa om det. Det blir bättre av att göra.'], r));
+  }
+
+  if (open > 0 && done === 0 && new Date().getHours() >= 18) {
+    parts.push('Klockan tickar – uppdrag som inte är gjorda vid midnatt räknas som missade.');
+  }
+  return parts.join(' ');
+}
+function coachFeedback(mis, reflection, xp) {
+  const r = Math.random;
+  const words = reflection.trim().split(/\s+/).length;
+  const low = reflection.toLowerCase();
+  const out = [];
+  if (/(svårt|jobbigt|tungt|läskigt|nervös|pinsamt|obekvämt|ville inte|orkade inte)/.test(low)) {
+    out.push(pick(['Du skriver att det var jobbigt – och du gjorde det ändå. Det är exakt så mod ser ut.', 'Att det kändes tungt betyder att det räknades. Lätta saker förändrar ingen.'], r));
+  } else if (/(bra|kul|skönt|glad|stolt|lätt|nöjd|härligt|roligt)/.test(low)) {
+    out.push(pick(['Kom ihåg den känslan. Nästa gång det tar emot kan du plocka fram den.', 'Så ska det kännas. Du har bevisat för dig själv att du kan.'], r));
+  } else {
+    out.push(pick(['Snyggt jobbat.', 'Uppdrag slutfört.', 'Pantern såg det där.'], r));
+  }
+  if (words >= 40) out.push('Tack för en ärlig reflektion – det är i efterhand man lär sig mest.');
+  const st = S.cat[mis.cat];
+  if (st && st.done === 5) out.push(`Det är ditt 5:e ${CATS[mis.cat].name.toLowerCase()}-uppdrag. Det börjar bli en del av vem du är.`);
+  out.push(`+${xp} XP · +${RULES.doneLife} livskraft.`);
+  return out.join(' ');
+}
+
+const CRISIS = /(självmord|ta livet av mig|vill dö|vill inte leva|skada mig själv|skär mig|döda mig)/;
+
+function coachReply(text) {
+  const t = text.toLowerCase();
+  const n = S.name;
+  const r = Math.random;
+  const weak = Object.entries(S.cat).sort((a, b) => (b[1].failed - b[1].done) - (a[1].failed - a[1].done))[0];
+
+  if (CRISIS.test(t)) {
+    return `${n}, det du skriver är viktigt och jag vill att du pratar med en människa om det nu. Det är inte ett uppdrag – det är det viktigaste du kan göra.\n\n` +
+      '• Akut fara: ring <a href="tel:112">112</a>\n' +
+      '• Mind Självmordslinjen: ring <a href="tel:90101">90101</a> (dygnet runt) eller chatta på mind.se\n' +
+      '• Vårdguiden: ring <a href="tel:1177">1177</a>\n' +
+      '• Under 18? BRIS: ring <a href="tel:116111">116 111</a>\n\n' +
+      'Du behöver inte klara det här själv. Säg till någon du litar på idag.';
+  }
+  const rules = [
+    [/(orkar inte|ingen motivation|omotiverad|lat|lathet|gitter inte|pallar inte)/, () => pick([
+      'Motivation kommer EFTER att man börjar, inte före. Välj det minsta uppdraget idag och gör bara de första två minuterna. Det brukar räcka för att komma igång.',
+      `Ärligt, ${n}: ingen känner sig motiverad jämt. Skillnaden är att vissa gör det ändå. Vilket av dagens uppdrag kan du göra på under 20 minuter?`,
+      'Prova "5-sekundersregeln": räkna 5-4-3-2-1 och rör dig innan hjärnan hinner säga nej.'], r)],
+    [/(sömn|sova|trött|somna|vaken på natten)/, () => pick([
+      'Sömn slår allt. Tre saker: samma sovtid varje dag, ingen skärm sista timmen, och svalt mörkt rum. Välj en av dem ikväll.',
+      'Är du trött hela tiden? Kolla koffein efter kl 14, skärmtid i sängen och om du rör dig tillräckligt dagtid. Kvarstår tröttheten länge – prata med vårdcentralen eller 1177.'], r)],
+    [/(stress|stressad|ångest|orolig|oro|panik)/, () => pick([
+      'När stressen tar över: andas in 4 sekunder, håll 4, ut 6. Gör det fem gånger. Skriv sedan ner allt som snurrar – och välj EN sak att göra först.',
+      'Stress krymper när man delar upp. Vad är det minsta steg du kan ta på det som stressar dig? Gör bara det idag.\n\nOm oron är stark eller håller i sig länge är det klokt att prata med någon – en vuxen du litar på, skolkurator eller 1177.'], r)],
+    [/(ensam|inga vänner|utanför|ingen bryr)/, () => pick([
+      'Ensamhet är vanligare än man tror, och den bryts sällan av sig själv. Ett litet steg: skriv till en person idag och föreslå något konkret, som en promenad.',
+      'Mod-uppdragen är gjorda för det här. Börja med att hälsa först på tre personer – kontakt byggs av små ögonblick.'], r)],
+    [/(mål|målsättning|vision|vad ska jag göra med mitt liv|framtid)/, () =>
+      'Ett bra mål är konkret och mätbart. Byt "komma i form" mot "gå 8 000 steg om dagen i en månad". Skriv ner ETT mål för de kommande 30 dagarna – och berätta för någon om det.'],
+    [/(träna|träning|gym|springa|form|vikt)/, () =>
+      'Den bästa träningen är den du faktiskt gör. Börja med 20 minuter rörelse varje dag hellre än två timmar en gång i veckan. Och lyssna alltid på kroppen – smärta är en stoppsignal.'],
+    [/(plugga|skola|läxa|prov|studier|studera)/, () =>
+      'Pluggtips: 25 minuter fokus, 5 minuter paus (Pomodoro). Mobilen i ett annat rum. Förhör dig själv istället för att läsa om – det är dubbelt så effektivt.'],
+    [/(mobil|skärm|tiktok|instagram|youtube|scroll|sociala medier|spel)/, () =>
+      'Mobilen är byggd för att hålla kvar dig. Tre trick: gråskala-läge, stäng av alla notiser utom samtal, och ladda den utanför sovrummet. Testa ett i en vecka.'],
+    [/(pengar|ekonomi|spara|budget)/, () =>
+      'Enkel start: spara en fast summa direkt när pengarna kommer in, innan du hinner spendera dem. Och gör Pengakoll-uppdraget – det ger ofta en aha-upplevelse.'],
+    [/(farligt|säkert|säkerhet|risk)/, () =>
+      'Alla uppdrag i Panter-appen är gjorda för att vara svåra men helt ofarliga. Om något ändå känns fel eller osäkert i stunden – avbryt. Säkerhet slår poäng, alltid.'],
+    [/(straff|varför blir det sämre|livskraft|dör pantern|kollaps)/, () =>
+      `Så funkar det: klarade uppdrag ger +${RULES.doneLife} livskraft. Ge upp: −${RULES.giveUpLife}. Missa vid midnatt: −${RULES.missLife}. Olösta straffuppdrag: −${RULES.penaltyDailyLife} per natt. Når livskraften 0 kollapsar pantern och du tappar ${Math.round(RULES.collapseXpLoss * 100)} % av din XP och din streak. Appen blir också gråare ju sämre pantern mår.`],
+    [/(uppdrag|vad ska jag göra idag|tips|hjälp)/, () => {
+      const open = S.day.missions.filter(m => m.status === 'open').map(m => byId(m.id));
+      if (!open.length) return 'Du har klarat allt för idag! Vila, eller hjälp någon annan med deras mål.';
+      const m = open.sort((a, b) => a.tier - b.tier)[0];
+      return `Börja med "${m.title}". ${m.why} Tips: ${m.tips[0]}`;
+    }],
+    [/(hur går det|statistik|hur gör jag|hur ligger jag till)/, () => {
+      const rk = rankFor(S.xp);
+      const rate = Math.round(recentSuccess() * 100);
+      let s = `Du är ${rk.name} med ${S.xp} XP. Livskraft ${S.life}/100, streak ${S.streak} dagar. Du har klarat ${rate} % av dina senaste uppdrag.`;
+      if (weak && weak[1].failed > weak[1].done) s += ` Din svagaste kategori är ${CATS[weak[0]].name.toLowerCase()} – där växer du mest just nu.`;
+      return s;
+    }],
+    [/(^|[^a-zåäö])(hej|tja|hallå|tjena|hejsan)/, () => pick([`Hej ${n}! Vad vill du prata om? Motivation, sömn, stress, mål – eller ett uppdrag?`, `Tjena ${n}. Pantern lyssnar.`], r)],
+    [/(tack|tackar)/, () => pick(['Tacka dig själv. Det är du som gör jobbet.', 'Alltid. Nu – ut och jaga.'], r)],
+  ];
+  for (const [re, fn] of rules) if (re.test(t)) return fn();
+  return pick([
+    'Berätta mer. Vad är det som känns svårast just nu?',
+    `Jag förstår, ${n}. Om du fick ändra EN sak i ditt liv den här veckan – vad skulle det vara?`,
+    'Det bästa svaret på det är nog ett uppdrag. Vilket av dagens tre känns mest relevant?',
+    'Fråga mig gärna om motivation, sömn, stress, mål, träning, plugg, mobilen eller pengar.',
+  ], r);
+}
+function pushBot(html) {
+  S.chat.push({ from: 'bot', html, t: Date.now() });
+  if (S.chat.length > 120) S.chat = S.chat.slice(-120);
+}
+
+/* ---------- panter-grafik ---------- */
+
+function pantherSVG(life) {
+  const mo = mood(life).key;
+  const eye = { wild: '#f5b83d', ok: '#f5b83d', tired: '#c9a24a', hurt: '#8a7a5a' }[mo];
+  // ögonlockens höjd och munnens form beror på humöret
+  const lid = { wild: 0, ok: 2, tired: 5, hurt: 6 }[mo];
+  const mouth = {
+    wild: 'M47 71 Q54 77 61 71',
+    ok: 'M48 72 Q54 75 60 72',
+    tired: 'M48 73 L60 73',
+    hurt: 'M48 75 Q54 70 60 75',
+  }[mo];
+  const earDrop = mo === 'hurt' ? 6 : mo === 'tired' ? 3 : 0;
+  return `<svg class="panther" viewBox="0 0 108 108" aria-label="Pantern mår: ${mood(life).label}">
+    <circle cx="54" cy="54" r="52" fill="#1a1030"/>
+    <path d="M30 ${44 + earDrop} L34 ${26 + earDrop} L48 36 Z" fill="#15151f"/>
+    <path d="M78 ${44 + earDrop} L74 ${26 + earDrop} L60 36 Z" fill="#15151f"/>
+    <path d="M33 ${40 + earDrop} L35 ${31 + earDrop} L43 37 Z" fill="#7c3aed"/>
+    <path d="M75 ${40 + earDrop} L73 ${31 + earDrop} L65 37 Z" fill="#7c3aed"/>
+    <path d="M54 32 C70 32 80 43 80 57 C80 72 68 82 54 82 C40 82 28 72 28 57 C28 43 38 32 54 32 Z" fill="#15151f"/>
+    <path d="M38 54 C41 49 47 49 49 54 C46 58 41 58 38 54 Z" fill="${eye}"/>
+    <path d="M70 54 C67 49 61 49 59 54 C62 58 67 58 70 54 Z" fill="${eye}"/>
+    <rect x="43" y="50.5" width="1.6" height="7" fill="#0b0b12"/>
+    <rect x="63.4" y="50.5" width="1.6" height="7" fill="#0b0b12"/>
+    ${lid ? `<rect x="37" y="48" width="13" height="${lid}" fill="#15151f"/><rect x="58" y="48" width="13" height="${lid}" fill="#15151f"/>` : ''}
+    <path d="M50 64 L58 64 L54 69 Z" fill="#7c3aed"/>
+    <path d="M54 69 L54 71 ${mouth}" stroke="#4a4a5e" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+    ${mo === 'hurt' ? '<path d="M66 60 q2 5 0 8" stroke="#60a5fa" stroke-width="2" fill="none" stroke-linecap="round"/>' : ''}
+    ${mo === 'wild' ? '<path d="M20 30 l4 4 M88 30 l-4 4 M16 54 h5 M92 54 h-5" stroke="#f5b83d" stroke-width="2" stroke-linecap="round"/>' : ''}
+  </svg>`;
+}
+
+/* ---------- vyer ---------- */
+
+const $app = document.getElementById('app');
+const $nav = document.getElementById('nav');
+
+function tierStars(t) { return '★'.repeat(t) + '☆'.repeat(3 - t); }
+function tierName(t) { return { 1: 'Utmanande', 2: 'Svårt', 3: 'Riktigt svårt' }[t]; }
+function statusBadge(s) {
+  if (s === 'done') return '<span class="badge done">Klart</span>';
+  if (s === 'failed') return '<span class="badge failed">Misslyckat</span>';
+  return '<span class="badge open">Pågår</span>';
+}
+
+function viewOnboard() {
+  let focus = [];
+  let maxTier = 3;
+  let step = 0;
+  let name = '';
+  const draw = () => {
+    if (step === 0) {
+      $app.innerHTML = `
+        <div class="center" style="margin-top:28px">${pantherSVG(90).replace('class="panther"', 'class="panther" style="width:140px;height:140px"')}</div>
+        <h1 class="center" style="margin-top:12px">Panter-appen</h1>
+        <p class="center muted">En coach som visar dig hur du blir bättre på ditt liv.</p>
+        <div class="card">
+          <p><b>Så funkar det</b></p>
+          <ul class="tips">
+            <li>Varje dag får du <b>3 uppdrag i verkligheten</b>. De är svåra – men alltid 0 % farliga.</li>
+            <li>Klarar du dem blir pantern starkare och du går upp i rang.</li>
+            <li>Ger du upp eller missar blir det <b>sämre</b>: pantern tappar livskraft, du får straffuppdrag, streaken bryts och appen blir grå.</li>
+            <li>Allt sparas bara på din telefon.</li>
+          </ul>
+        </div>
+        <button id="go">Jag är redo</button>`;
+      document.getElementById('go').onclick = () => { step = 1; draw(); };
+    } else if (step === 1) {
+      $app.innerHTML = `
+        <h1 style="margin-top:20px">Vad heter du?</h1>
+        <p class="muted">Pantern vill veta vem den coachar.</p>
+        <div class="spacer"></div>
+        <input type="text" id="name" maxlength="24" placeholder="Ditt namn" value="${esc(name)}" autocomplete="off">
+        <div class="spacer"></div>
+        <button id="next" ${name.trim() ? '' : 'disabled'}>Nästa</button>`;
+      const inp = document.getElementById('name');
+      const btn = document.getElementById('next');
+      inp.oninput = () => { name = inp.value; btn.disabled = !name.trim(); };
+      inp.onkeydown = e => { if (e.key === 'Enter' && name.trim()) btn.click(); };
+      btn.onclick = () => { step = 2; draw(); };
+      inp.focus();
+    } else if (step === 2) {
+      $app.innerHTML = `
+        <h1 style="margin-top:20px">Vad vill du bli bättre på?</h1>
+        <p class="muted">Välj 1–3 områden. Coachen fokuserar på dem men ger dig ibland annat också.</p>
+        <div class="spacer"></div>
+        <div class="chips" id="cats">${Object.entries(CATS).map(([k, c]) =>
+          `<button class="chip ${focus.includes(k) ? 'on' : ''}" data-k="${k}">${c.icon} ${c.name}</button>`).join('')}</div>
+        <div class="spacer"></div><div class="spacer"></div>
+        <button id="next" ${focus.length ? '' : 'disabled'}>Nästa</button>`;
+      document.querySelectorAll('#cats .chip').forEach(b => b.onclick = () => {
+        const k = b.dataset.k;
+        if (focus.includes(k)) focus = focus.filter(x => x !== k);
+        else if (focus.length < 3) focus.push(k);
+        draw();
+      });
+      document.getElementById('next').onclick = () => { step = 3; draw(); };
+    } else {
+      const opts = [
+        [1, 'Utmanande', 'Jag vill komma igång.'],
+        [2, 'Svårt', 'Jag vill bli pushad.'],
+        [3, 'Riktigt svårt', 'Ge mig allt. (Rekommenderas)'],
+      ];
+      $app.innerHTML = `
+        <h1 style="margin-top:20px">Hur hårt ska pantern pusha dig?</h1>
+        <p class="muted">Det här är taket. Coachen anpassar svårigheten efter hur det går för dig.</p>
+        ${opts.map(([t, n, d]) => `
+          <div class="card mission" data-t="${t}" style="${maxTier === t ? 'border-color:var(--purple)' : ''}">
+            <div class="ico">${'🐾'.repeat(t)}</div>
+            <div class="body"><h3>${n} <span class="tier">${tierStars(t)}</span></h3><div class="meta">${d}</div></div>
+          </div>`).join('')}
+        <button id="start">Starta jakten</button>`;
+      document.querySelectorAll('.mission[data-t]').forEach(el => el.onclick = () => { maxTier = Number(el.dataset.t); draw(); });
+      document.getElementById('start').onclick = () => {
+        S = freshState(name.trim(), focus, maxTier);
+        rollover();
+        pushBot(`Välkommen, ${S.name}. Jag är din panter. Jag kommer ge dig uppdrag som är obekväma, men aldrig farliga. Gör dem – så blir vi båda starkare. Skippa dem – så märks det. Deal?`);
+        save();
+        location.replace('#/idag');
+      };
+    }
+  };
+  draw();
+}
+
+function viewToday() {
+  const mo = mood(S.life);
+  const rk = rankFor(S.xp);
+  const prog = rk.next ? Math.round((S.xp - rk.xp) / (rk.next.xp - rk.xp) * 100) : 100;
+  const openPen = S.penalties.filter(p => p.status === 'open');
+  const recentLog = S.log.filter(l => Date.now() - l.t < 36 * 3600 * 1000).slice(-4).reverse();
+  const allDone = S.day.missions.every(m => m.status !== 'open');
+
+  $app.innerHTML = `
+    <div class="card">
+      <div class="hero">
+        ${pantherSVG(S.life)}
+        <div style="flex:1;min-width:0">
+          <h3>${esc(/[sxz]$/i.test(S.name) ? S.name : S.name + 's')} panter</h3>
+          <div class="small" style="color:${mo.color}">${mo.label}</div>
+          <div class="small muted" style="margin-top:6px">Livskraft ${S.life}/100</div>
+          <div class="meter"><div style="width:${S.life}%;background:${mo.color}"></div></div>
+          <div class="small muted" style="margin-top:6px">${rk.name}${rk.next ? ` · ${rk.next.xp - S.xp} XP till ${rk.next.name}` : ''}</div>
+          <div class="meter"><div style="width:${prog}%;background:var(--purple)"></div></div>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><b>${S.xp}</b><span>XP</span></div>
+        <div class="stat"><b>${S.streak}🔥</b><span>Streak</span></div>
+        <div class="stat"><b>${S.day.missions.filter(m => m.status === 'done').length}/${S.day.missions.length}</b><span>Idag</span></div>
+      </div>
+    </div>
+
+    <div class="card coach"><p>🐆 ${esc(dailyBriefing())}</p></div>
+
+    ${recentLog.length ? `<div class="card small">${recentLog.map(l =>
+      `<p style="color:${l.kind === 'bad' ? '#fca5a5' : l.kind === 'good' ? '#86efac' : 'var(--muted)'}">${esc(l.text)}</p>`).join('')}</div>` : ''}
+
+    ${openPen.length ? `<h2>Straffuppdrag</h2>${openPen.map(p => {
+      const pp = penById(p.id);
+      return `<div class="card penalty">
+        <h3>⚠️ ${esc(pp.title)}</h3>
+        <p class="small muted">För: ${esc(p.reason || '')}</p>
+        <p>${esc(pp.desc)}</p>
+        <div class="spacer"></div>
+        <button class="btn-ghost" data-pen="${p.uid}">Jag har gjort det</button>
+      </div>`;
+    }).join('')}` : ''}
+
+    <h2>Dagens uppdrag</h2>
+    ${S.day.missions.map(m => {
+      const mis = byId(m.id);
+      return `<div class="card mission ${m.status !== 'open' ? 'is-done' : ''}" data-m="${m.id}">
+        <div class="ico">${CATS[mis.cat].icon}</div>
+        <div class="body">
+          <h3>${esc(mis.title)}</h3>
+          <div class="meta"><span class="tier">${tierStars(mis.tier)}</span> ${CATS[mis.cat].name} · ${XP_BY_TIER[mis.tier]} XP</div>
+        </div>
+        ${statusBadge(m.status)}
+      </div>`;
+    }).join('')}
+    ${!S.day.rerolled && !allDone ? `<button class="btn-ghost" id="reroll">🎲 Byt ut dagens öppna uppdrag (1 gång/dag)</button>` : ''}
+    <p class="small muted center" style="margin-top:12px">Uppdrag som inte är klara vid midnatt räknas som missade.</p>
+  `;
+  document.querySelectorAll('[data-m]').forEach(el => el.onclick = () => { location.hash = '#/uppdrag/' + el.dataset.m; });
+  document.querySelectorAll('[data-pen]').forEach(el => el.onclick = () => {
+    if (confirm('Har du verkligen gjort straffuppdraget? Var ärlig – pantern litar på dig.')) {
+      completePenalty(el.dataset.pen);
+      toast(`Skulden är betald. +${RULES.penaltyXp} XP`);
+      render();
+    }
+  });
+  const rr = document.getElementById('reroll');
+  if (rr) rr.onclick = () => {
+    if (confirm('Byta ut alla öppna uppdrag? Du kan bara göra det en gång per dag.')) {
+      rerollDay();
+      toast('Nya uppdrag! Inga fler byten idag.');
+      render();
+    }
+  };
+}
+
+let timerInterval = null;
+function viewMission(id) {
+  const m = S.day.missions.find(x => x.id === id);
+  const mis = byId(id);
+  if (!m || !mis) { location.replace('#/idag'); return; }
+  const safety = SAFETY[mis.cat] || SAFETY.default;
+  const started = S.timers[id];
+
+  $app.innerHTML = `
+    <p><a class="link" href="#/idag">← Tillbaka</a></p>
+    <div class="card">
+      <div class="small muted">${CATS[mis.cat].icon} ${CATS[mis.cat].name} · <span class="tier">${tierStars(mis.tier)}</span> ${tierName(mis.tier)} · ${XP_BY_TIER[mis.tier]} XP</div>
+      <h1 style="margin-top:6px">${esc(mis.title)}</h1>
+      <p style="margin-top:10px">${esc(mis.desc)}</p>
+    </div>
+    <div class="card coach"><p>🐆 <b>Varför:</b> ${esc(mis.why)}</p></div>
+    <div class="card">
+      <h3>Tips från pantern</h3>
+      <ul class="tips">${mis.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
+    </div>
+    <div class="safety">🛡️ ${esc(safety)}</div>
+
+    ${m.status === 'open' ? `
+      ${mis.timer ? `<div class="card timer">
+        <div class="t" id="tval">${mis.timer}:00</div>
+        <div class="small muted" id="tlabel">${started ? 'Timern går – du kan lämna appen.' : `${mis.timer} minuter`}</div>
+        <div class="spacer"></div>
+        <button class="btn-ghost" id="tbtn">${started ? 'Starta om timern' : 'Starta timer'}</button>
+      </div>` : ''}
+      <h2>Rapportera</h2>
+      <p class="small muted">Beskriv vad du gjorde och hur det kändes (minst ${RULES.minReflection} tecken). Pantern kan inte se dig – den litar på din ärlighet.</p>
+      <div class="spacer"></div>
+      <textarea id="refl" placeholder="Jag gjorde … och det kändes …"></textarea>
+      <div class="spacer"></div>
+      <button id="done" disabled>✅ Uppdrag klart</button>
+      <div class="spacer"></div>
+      <button class="btn-danger" id="giveup">Ge upp (−${RULES.giveUpLife} livskraft + straffuppdrag)</button>
+    ` : `
+      <div class="card">
+        <h3>${m.status === 'done' ? '✅ Klart' : '❌ Misslyckat'}</h3>
+        ${m.reflection ? `<p class="muted" style="margin-top:6px">"${esc(m.reflection)}"</p>` : ''}
+      </div>
+    `}
+  `;
+  if (m.status !== 'open') return;
+
+  const refl = document.getElementById('refl');
+  const done = document.getElementById('done');
+  const draftKey = 'draft:' + S.day.date + ':' + id;
+  try { refl.value = sessionStorage.getItem(draftKey) || ''; } catch (e) { /* ignoreras */ }
+  const check = () => { done.disabled = refl.value.trim().length < RULES.minReflection; };
+  refl.oninput = () => {
+    check();
+    try { sessionStorage.setItem(draftKey, refl.value); } catch (e) { /* ignoreras */ }
+  };
+  check();
+  done.onclick = () => {
+    if (mis.timer && S.timers[id] && Date.now() - S.timers[id] < mis.timer * 60000 * 0.9) {
+      if (!confirm('Timern är inte klar än. Har du verkligen gjort hela uppdraget?')) return;
+    }
+    const xp = completeMission(id, refl.value.trim());
+    try { sessionStorage.removeItem(draftKey); } catch (e) { /* ignoreras */ }
+    toast(`Uppdrag klart! +${xp} XP 🐆`);
+    location.hash = '#/coach';
+  };
+  document.getElementById('giveup').onclick = () => {
+    if (confirm('Säker? Pantern tappar livskraft och du får ett straffuppdrag.')) {
+      giveUpMission(id);
+      toast('Pantern blev svagare…');
+      location.hash = '#/idag';
+    }
+  };
+
+  if (mis.timer) {
+    const tval = document.getElementById('tval');
+    const tlabel = document.getElementById('tlabel');
+    const tick = () => {
+      const st = S.timers[id];
+      if (!st) return;
+      const left = Math.max(0, mis.timer * 60 - Math.floor((Date.now() - st) / 1000));
+      tval.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+      if (left === 0) {
+        tlabel.textContent = 'Tiden är ute! Skriv din rapport nedan.';
+        clearInterval(timerInterval);
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      }
+    };
+    document.getElementById('tbtn').onclick = () => {
+      S.timers[id] = Date.now();
+      save();
+      tlabel.textContent = 'Timern går – du kan lämna appen.';
+      document.getElementById('tbtn').textContent = 'Starta om timern';
+      clearInterval(timerInterval);
+      timerInterval = setInterval(tick, 1000);
+      tick();
+    };
+    if (S.timers[id]) { timerInterval = setInterval(tick, 1000); tick(); }
+  }
+}
+
+function viewCoach() {
+  const sugg = ['Jag orkar inte', 'Vad ska jag göra idag?', 'Hur går det för mig?', 'Jag är stressad', 'Tips för sömn', 'Hur funkar straffen?'];
+  $app.innerHTML = `
+    <h1>Coachen</h1>
+    <p class="muted small">Din panter svarar direkt på telefonen – inget skickas iväg.</p>
+    <div class="spacer"></div>
+    <div class="chat" id="chat">${S.chat.map(c =>
+      `<div class="msg ${c.from === 'bot' ? 'bot' : 'me'}">${c.from === 'bot' ? c.html : esc(c.html)}</div>`).join('')}</div>
+    <div class="suggest">${sugg.map(s => `<button class="chip" data-s="${esc(s)}">${esc(s)}</button>`).join('')}</div>
+    <div class="chat-input">
+      <input type="text" id="msg" placeholder="Skriv till pantern…" autocomplete="off">
+      <button id="send">Skicka</button>
+    </div>`;
+  const input = document.getElementById('msg');
+  const send = text => {
+    text = text.trim();
+    if (!text) return;
+    S.chat.push({ from: 'me', html: text, t: Date.now() });
+    pushBot(coachReply(text));
+    save();
+    viewCoach();
+    document.getElementById('msg').focus();
+  };
+  document.getElementById('send').onclick = () => send(input.value);
+  input.onkeydown = e => { if (e.key === 'Enter') send(input.value); };
+  document.querySelectorAll('[data-s]').forEach(b => b.onclick = () => send(b.dataset.s));
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+function viewProgress() {
+  const rk = rankFor(S.xp);
+  const doneTotal = S.history.filter(h => h.status === 'done').length;
+  const failTotal = S.history.length - doneTotal;
+  const penDone = S.penalties.filter(p => p.status === 'done').length;
+  const rows = Object.entries(CATS).map(([k, c]) => {
+    const st = S.cat[k] || { done: 0, failed: 0 };
+    const tot = st.done + st.failed;
+    const pct = tot ? Math.round(st.done / tot * 100) : 0;
+    return `<div class="bar-row"><span>${c.icon} ${c.name}</span>
+      <div class="meter" style="margin:0"><div style="width:${pct}%;background:var(--purple)"></div></div>
+      <span class="small muted">${st.done}/${tot}</span></div>`;
+  }).join('');
+  const hist = S.history.slice(-30).reverse();
+  const label = { done: '✅', gaveup: '🏳️', missed: '⏰' };
+
+  $app.innerHTML = `
+    <h1>Framsteg</h1>
+    <div class="card">
+      <div class="stats">
+        <div class="stat"><b>${doneTotal}</b><span>Klarade</span></div>
+        <div class="stat"><b>${failTotal}</b><span>Missade</span></div>
+        <div class="stat"><b>${S.bestStreak}</b><span>Bästa streak</span></div>
+      </div>
+      <p class="small muted" style="margin-top:10px">Rang: <b class="gold">${rk.name}</b> · ${S.xp} XP · ${penDone} straffuppdrag betalda · ${S.collapses} kollaps${S.collapses === 1 ? '' : 'er'}</p>
+    </div>
+    <h2>Rangstegen</h2>
+    <div class="card small">${RANKS.map((r, i) =>
+      `<p style="${i === rk.index ? 'color:var(--gold);font-weight:700' : i < rk.index ? '' : 'color:var(--muted)'}">${i <= rk.index ? '🐾' : '·'} ${r.name} <span class="muted">– ${r.xp} XP</span></p>`).join('')}</div>
+    <h2>Områden</h2>
+    <div class="card bars">${rows}</div>
+    <h2>Senaste uppdragen</h2>
+    <div class="card">${hist.length ? hist.map(h => {
+      const mis = byId(h.id);
+      return `<div class="hist-item">
+        <div>${label[h.status] || ''} <b>${esc(mis ? mis.title : h.id)}</b> <span class="small muted">${h.date}</span></div>
+        ${h.reflection ? `<div class="small muted">"${esc(h.reflection)}"</div>` : ''}
+      </div>`;
+    }).join('') : '<p class="muted">Inga uppdrag än. Dags att börja jaga!</p>'}</div>`;
+}
+
+function viewSettings() {
+  $app.innerHTML = `
+    <h1>Inställningar</h1>
+    <div class="card">
+      <h3>Namn</h3>
+      <div class="spacer"></div>
+      <input type="text" id="name" maxlength="24" value="${esc(S.name)}">
+    </div>
+    <div class="card">
+      <h3>Fokusområden</h3>
+      <p class="small muted">Välj 1–3. Gäller från nästa dags uppdrag.</p>
+      <div class="spacer"></div>
+      <div class="chips" id="cats">${Object.entries(CATS).map(([k, c]) =>
+        `<button class="chip ${S.focus.includes(k) ? 'on' : ''}" data-k="${k}">${c.icon} ${c.name}</button>`).join('')}</div>
+    </div>
+    <div class="card">
+      <h3>Maxsvårighet</h3>
+      <div class="spacer"></div>
+      <div class="chips" id="tiers">${[1, 2, 3].map(t =>
+        `<button class="chip ${S.maxTier === t ? 'on' : ''}" data-t="${t}">${tierStars(t)} ${tierName(t)}</button>`).join('')}</div>
+    </div>
+    <div class="card">
+      <h3>Reglerna</h3>
+      <ul class="tips small">
+        <li>Klarat uppdrag: +XP och +${RULES.doneLife} livskraft.</li>
+        <li>Ge upp: −${RULES.giveUpLife} livskraft och ett straffuppdrag.</li>
+        <li>Missat vid midnatt: −${RULES.missLife} livskraft och ett straffuppdrag.</li>
+        <li>Olöst straffuppdrag: −${RULES.penaltyDailyLife} livskraft per natt.</li>
+        <li>Klara minst ${RULES.streakNeed} av 3 per dag för att hålla streaken. Streak ≥ 3 ger +10 XP per uppdrag.</li>
+        <li>Livskraft 0 = kollaps: −${Math.round(RULES.collapseXpLoss * 100)} % XP och streaken nollas.</li>
+        <li>Alla uppdrag är designade för att vara 0 % farliga. Känns något fel – avbryt alltid.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Behöver du prata med någon?</h3>
+      <p class="small">Akut: <a class="link" href="tel:112">112</a> · Mind Självmordslinjen: <a class="link" href="tel:90101">90101</a> · Vårdguiden: <a class="link" href="tel:1177">1177</a> · BRIS (under 18): <a class="link" href="tel:116111">116 111</a></p>
+    </div>
+    <button class="btn-danger" id="reset">Börja om från noll</button>
+    <p class="small muted center" style="margin-top:14px">Panter-appen 1.0 · All data sparas bara på den här telefonen.</p>
+  `;
+  const nameInp = document.getElementById('name');
+  nameInp.onchange = () => { if (nameInp.value.trim()) { S.name = nameInp.value.trim(); save(); toast('Namn sparat'); } };
+  document.querySelectorAll('#cats .chip').forEach(b => b.onclick = () => {
+    const k = b.dataset.k;
+    if (S.focus.includes(k)) { if (S.focus.length > 1) S.focus = S.focus.filter(x => x !== k); }
+    else if (S.focus.length < 3) S.focus.push(k);
+    save(); viewSettings();
+  });
+  document.querySelectorAll('#tiers .chip').forEach(b => b.onclick = () => {
+    S.maxTier = Number(b.dataset.t); save(); viewSettings();
+  });
+  document.getElementById('reset').onclick = () => {
+    if (confirm('All din framgång, XP och historik försvinner. Är du säker?')) {
+      try { localStorage.removeItem(KEY); } catch (e) { /* ignoreras */ }
+      S = null;
+      location.replace('#/start');
+      render();
+    }
+  };
+}
+
+/* ---------- routing ---------- */
+
+let toastTimer = null;
+function toast(text) {
+  const el = document.getElementById('toast');
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+function render() {
+  clearInterval(timerInterval);
+  const route = (location.hash || '#/idag').slice(2).split('/');
+  if (!S) {
+    $nav.hidden = true;
+    document.body.classList.add('no-nav');
+    document.body.classList.remove('life-low', 'life-critical');
+    viewOnboard();
+    return;
+  }
+  rollover();
+  $nav.hidden = false;
+  document.body.classList.remove('no-nav');
+  document.body.classList.toggle('life-low', S.life < 40 && S.life >= 20);
+  document.body.classList.toggle('life-critical', S.life < 20);
+  const r = route[0] || 'idag';
+  document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.dataset.r === (r === 'uppdrag' ? 'idag' : r)));
+  window.scrollTo(0, 0);
+  if (r === 'uppdrag') viewMission(route[1]);
+  else if (r === 'coach') viewCoach();
+  else if (r === 'framsteg') viewProgress();
+  else if (r === 'installningar') viewSettings();
+  else viewToday();
+}
+
+window.addEventListener('hashchange', render);
+// Anropas från Android när appen kommer tillbaka i förgrunden.
+window.panterResume = () => {
+  if (S && S.day && S.day.date !== todayStr()) render();
+};
+// Kolla dygnsskiftet även om appen står öppen över midnatt.
+setInterval(() => window.panterResume(), 60000);
+
+S = load();
+render();
+</script>
+</body>
+</html>
