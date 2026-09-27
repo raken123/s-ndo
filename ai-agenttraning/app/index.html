@@ -11,7 +11,7 @@
   --accent:#2a78d6; --accent-ink:#ffffff; --accent-soft:#e3eefb; --orange:#eb6834;
   --good:#17804a; --good-soft:#e2f5ea; --bad:#cc3434; --bad-soft:#fbe6e6;
   --floor:#eef1f7; --grid:#dde2ec; --wall:#3d4459; --wall2:#59627c; --lava:#ff5a1f; --lava2:#ffb020;
-  --goal:#1baf7a; --coin:#eda100; --series-1:#2a78d6;
+  --goal:#1baf7a; --coin:#eda100; --series-1:#2a78d6; --sky:#dcefff; --grass:#43a047;
   --shadow:0 1px 2px rgba(20,30,60,.06),0 6px 18px rgba(20,30,60,.07);
   --r:14px;
 }
@@ -20,7 +20,7 @@
     color-scheme:dark;
     --bg:#11131a; --panel:#1b1e28; --panel2:#222633; --ink:#eef0f6; --muted:#a6acbd; --line:#2f3446;
     --accent:#3987e5; --accent-soft:#1d2a40; --good:#3cc47f; --good-soft:#173326; --bad:#ef6a6a; --bad-soft:#3a1d1f;
-    --floor:#252a37; --grid:#2f3546; --wall:#8d96b0; --wall2:#b2b9cd; --series-1:#3987e5;
+    --floor:#252a37; --grid:#2f3546; --wall:#8d96b0; --wall2:#b2b9cd; --series-1:#3987e5; --sky:#1b2a40;
     --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25);
   }
 }
@@ -28,7 +28,7 @@
   color-scheme:dark;
   --bg:#11131a; --panel:#1b1e28; --panel2:#222633; --ink:#eef0f6; --muted:#a6acbd; --line:#2f3446;
   --accent:#3987e5; --accent-soft:#1d2a40; --good:#3cc47f; --good-soft:#173326; --bad:#ef6a6a; --bad-soft:#3a1d1f;
-  --floor:#252a37; --grid:#2f3546; --wall:#8d96b0; --wall2:#b2b9cd; --series-1:#3987e5;
+  --floor:#252a37; --grid:#2f3546; --wall:#8d96b0; --wall2:#b2b9cd; --series-1:#3987e5; --sky:#1b2a40;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25);
 }
 *{box-sizing:border-box}
@@ -100,8 +100,8 @@ canvas.board{border-radius:10px;display:block;box-shadow:0 0 0 1px var(--line)}
 .empty{padding:28px;text-align:center}
 
 /* build */
-.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.tool{border:2px solid var(--line);background:var(--panel);border-radius:11px;padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:600;font-size:.86rem}
+.tools{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tool{border:2px solid var(--line);background:var(--panel);border-radius:11px;padding:6px 2px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-weight:600;font-size:.78rem;line-height:1.15;text-align:center}
 .tool.on{border-color:var(--accent);background:var(--accent-soft)}
 .tool canvas{width:30px;height:30px}
 .sub-tabs{display:flex;gap:4px;margin-bottom:8px}
@@ -298,7 +298,9 @@ dialog.wide{max-width:min(860px,96vw)}
         <div class="panel">
           <h3>Rita</h3>
           <div class="tools" id="tools"></div>
-          <p class="hint" style="margin:.6rem 0 .2rem">Klicka eller dra för att rita. Högerklick suddar.</p>
+          <p class="hint" style="margin:.6rem 0 .2rem">Klicka eller dra för att rita. Högerklick suddar. Teleporter med samma siffra hör ihop.</p>
+          <label class="row small" style="gap:6px;margin-top:8px;cursor:pointer;font-weight:600;flex-wrap:nowrap;align-items:flex-start"><input type="checkbox" id="bPlat" style="margin-top:3px"> 🏃 Plattformsläge – sidovy med tyngdkraft och hopp</label>
+          <label class="field" style="margin-top:8px">📺 TV:n visar<input type="text" id="bTv" maxlength="80" placeholder="Hej från TV:n!"></label>
           <div class="row" style="margin-top:8px">
             <button class="btn sm" id="bFrame">🔲 Rama in</button>
             <button class="btn sm" id="bRandom">🎲 Slumpa bana</button>
@@ -320,6 +322,7 @@ dialog.wide{max-width:min(860px,96vw)}
             <textarea id="mapCode" class="mono" rows="12" spellcheck="false" aria-label="Kartkod"></textarea>
             <div class="legend" style="margin:6px 0">
               <code>#</code><span>vägg</span><code>.</code><span>tomt</span><code>S</code><span>start</span><code>M</code><span>mål</span><code>L</code><span>lava</span><code>o</code><span>mynt</span>
+              <code>1 2 3</code><span>teleporter (samma siffra hör ihop)</span><code>C</code><span>checkpoint</span><code>E</code><span>fiende som går åt sidan</span><code>F</code><span>fiende som går upp och ner</span><code>T</code><span>TV</span><code>X</code><span>TNT</span>
             </div>
             <button class="btn sm primary" id="mapApply">▶ Använd kartkoden</button>
             <div class="err" id="mapErr"></div>
@@ -342,6 +345,14 @@ vägg X Y till X2 Y2
 lava X Y till X2 Y2
 mynt X Y
 tom X Y till X2 Y2
+teleport1 X Y   (och teleport2, teleport3)
+checkpoint X Y
+fiende X Y      (går åt sidan)
+fiendeupp X Y   (går upp och ner)
+tv X Y
+tnt X Y
+tvtext Hej från TV:n!
+plattform på    (eller: plattform av)
 slumpa vägg 10
 slumpa lava 5
 slumpa mynt 3
@@ -586,6 +597,10 @@ upprepa 4 {
         <li>Går den i lavan får den <b>−10 poäng</b> och rundan tar slut.</li>
         <li>Varje steg kostar lite, så den lär sig ta den <b>kortaste vägen</b>.</li>
         <li>Mynt ger bonuspoäng.</li>
+        <li><b>Teleporter</b> med samma siffra skickar agenten mellan sig. En <b>checkpoint</b> ger bonus, och dör agenten efteråt börjar den om där i stället för att förlora rundan.</li>
+        <li><b>Fiender</b> går fram och tillbaka – åt sidan eller upp och ner. Möter agenten en fiende är det som lava.</li>
+        <li><b>TNT</b> exploderar när agenten går in i den och spränger bort väggar (och fiender) runt omkring. Agenten får ett litet aj. <b>TV:n</b> visar ett meddelande som du skriver.</li>
+        <li><b>Plattformsläge</b> gör banan till en sidovy med tyngdkraft: pil upp hoppar (tre rutor högt), vänster och höger går, pil ner väntar.</li>
       </ul>
       <p>I början går agenten helt på måfå. Efter varje steg minns den om det gick bra eller dåligt. Efter många rundor har den lärt sig vilken väg som ger mest poäng. Det kallas <b>förstärkningsinlärning</b> (på engelska <i>reinforcement learning</i>).</p>
       <ul>
@@ -609,7 +624,7 @@ upprepa 4 {
       <p>Du kan ladda upp egna bilder och ljud, rita kostymer, spela in ljud och ge agenten en egen bild (🖼 under Mina agenter).</p>
       <h3>Spara</h3>
       <p>Allt sparas automatiskt på den här datorn. Med <b>💾 Spara som fil</b> kan du ta med en agent till en annan dator eller ge den till en kompis.</p>
-      <p class="muted small">Raken Teknik Åk 4 2026/2027 · AI Agentträning · version 1.1.0 · fungerar helt utan internet</p>
+      <p class="muted small">Raken Teknik Åk 4 2026/2027 · AI Agentträning · version 1.2.0 · fungerar helt utan internet</p>
     </div>
   </section>
 </main>
@@ -764,9 +779,12 @@ const COLORS = ['#2a78d6', '#eb6834', '#1baf7a', '#e87ba4', '#7a5af5', '#eda100'
 const STYLES = ['Robot', 'Rund', 'Katt', 'Rymdis'];
 const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 const DIRNAME = ['upp', 'höger', 'ner', 'vänster'];
-const DEFAULTS = { eps: 0.2, alpha: 0.5, gamma: 0.95, rGoal: 10, rLava: -10, rStep: -0.1, rWall: -0.5, rCoin: 3 };
+const DEFAULTS = { eps: 0.2, alpha: 0.5, gamma: 0.95, rGoal: 10, rLava: -10, rStep: -0.1, rWall: -0.5, rCoin: 3, rCheck: 2, rEnemy: -10, rTnt: -1 };
 const RANKS = [[0, 'Förstår ingenting'], [8, 'Nyfiken nybörjare'], [22, 'Lärling'], [40, 'Duktig'], [60, 'Smart'], [80, 'Supersmart'], [95, 'Mästare']];
 
+const PLATFORM_ROWS = [
+  '################', '#..............#', '#.............M#', '#..........#####', '#..............#',
+  '#......###.....#', '#..o...........#', '#...###....E...#', '#S....T....#####', '###LL###########', '################'];
 const PRESETS = [
   { id: 'l1', name: '1. Första steget', rows: [
     '################', '#..............#', '#..............#', '#..............#', '#..............#',
@@ -783,8 +801,17 @@ const PRESETS = [
   { id: 'l5', name: '5. Myntjakt', rows: [
     '################', '#S.....o.......#', '#.#####.#####..#', '#.o...#.#...o..#', '#.....#...#....#',
     '#..o..#####..o.#', '#..............#', '#.####...####..#', '#..o.....o.....#', '#.............M#', '################'] },
+  { id: 'l6', name: '6. Portaler och fiender', tv: 'Tips: portal 1 tar dig till andra sidan!', rows: [
+    '################', '#S..T..#......M#', '#......#.......#', '#..1...X...E...#', '#......#....C..#',
+    '#......#.......#', '####.#######.###', '#...o...#..1...#', '#..E....#......#', '#.......L......#', '################'] },
+  { id: 'l7', name: '7. Plattformar', platform: true, tv: 'Hoppa med pil upp!', rows: PLATFORM_ROWS },
 ];
-const presetLevels = () => PRESETS.map(p => ({ id: p.id, name: p.name, w: p.rows[0].length, h: p.rows.length, rows: [...p.rows] }));
+const presetLevels = () => PRESETS.map(presetLevel);
+function presetLevel(p) {
+  const lv = { id: p.id, name: p.name, w: p.rows[0].length, h: p.rows.length, rows: [...p.rows] };
+  if (p.platform) lv.platform = true; if (p.tv) lv.tv = p.tv;
+  return lv;
+}
 
 const SAMPLES = {
   rymden: 'Solen är en stjärna. Jorden snurrar runt solen på ett år. Månen snurrar runt jorden. Mars kallas den röda planeten. Jupiter är den största planeten i vårt solsystem. Astronauter bor ibland på rymdstationen. I rymden finns ingen luft. En raket behöver mycket bränsle för att komma ut i rymden. Stjärnorna lyser på natten.',
@@ -824,6 +851,7 @@ function load() {
   try { const raw = localStorage.getItem(KEY); if (raw) S = JSON.parse(raw); } catch (e) { S = null; }
   if (!S || !Array.isArray(S.agents)) S = { agents: [], levels: presetLevels(), cur: null, lvl: 'l1', speak: false, view: 'agents' };
   if (!Array.isArray(S.levels) || !S.levels.length) S.levels = presetLevels();
+  if ((S.presetV || 1) < 2) { for (const p of PRESETS.slice(5)) if (!levelById(p.id)) S.levels.push(presetLevel(p)); S.presetV = 2; }
   S.agents.forEach(fixAgent);
   if (!S.agents.find(a => a.id === S.cur)) S.cur = S.agents[0] ? S.agents[0].id : null;
   if (!S.levels.find(l => l.id === S.lvl)) S.lvl = S.levels[0].id;
@@ -851,19 +879,31 @@ function findAll(lv, ch) {
   for (let y = 0; y < lv.h; y++) for (let x = 0; x < lv.w; x++) if (lv.rows[y][x] === ch) out.push({ x, y });
   return out;
 }
+// Shortest way to the goal under the real rules (teleports, TNT, gravity in
+// platform mode), found by trying every move from every reachable situation.
+// Enemies, coins and checkpoints are left out. Cached per course layout.
+const pathCache = new Map();
+const GHOST = { rStep: 0, rWall: 0, rLava: 0, rGoal: 0, rCoin: 0, rCheck: 0, rEnemy: 0, rTnt: 0 };
 function shortest(lv) {
-  const s = findAll(lv, 'S')[0]; if (!s) return -1;
-  const seen = new Uint8Array(lv.w * lv.h); const q = [[s.x, s.y, 0]]; seen[s.y * lv.w + s.x] = 1;
-  for (let i = 0; i < q.length; i++) {
-    const [x, y, d] = q[i];
-    for (const [dx, dy] of DIRS) {
-      const nx = x + dx, ny = y + dy, c = getCell(lv, nx, ny);
-      if (c === '#' || c === 'L' || seen[ny * lv.w + nx]) continue;
-      if (c === 'M') return d + 1;
-      seen[ny * lv.w + nx] = 1; q.push([nx, ny, d + 1]);
+  const key = lv.id + (lv.platform ? 'P' : '') + lv.rows.join('');
+  if (pathCache.has(key)) return pathCache.get(key);
+  let res = -1;
+  if (findAll(lv, 'S').length && findAll(lv, 'M').length) {
+    const run = new Run(lv, { ghost: true });
+    const q = [[run.snap(), 0]]; const seen = new Set([run.where()]);
+    search: for (let i = 0; i < q.length && q.length < 80000; i++) {
+      const [node, d] = q[i];
+      for (let a = 0; a < 4; a++) {
+        run.restore(node); run.step(a, GHOST);
+        if (run.win) { res = d + 1; break search; }
+        if (run.done) continue;
+        const k = run.where(); if (seen.has(k)) continue;
+        seen.add(k); q.push([run.snap(), d + 1]);
+      }
     }
   }
-  return -1;
+  if (pathCache.size > 300) pathCache.clear();
+  pathCache.set(key, res); return res;
 }
 function levelProblem(lv) {
   if (!findAll(lv, 'S').length) return 'Banan saknar start (S).';
@@ -899,49 +939,159 @@ function randomLevel(lv) {
 }
 
 /* ---------- the environment ---------- */
+// Tiles: # wall  . floor  S start  M goal  L lava  o coin  1 2 3 teleports
+//        C checkpoint  E enemy ↔  F enemy ↕  T TV  X TNT
+const SOLID = '#X';
+const ENEMY_OK = '.oCST'; // enemies walk on these
+const JUMP = 3;           // platform mode: a jump rises three squares
 class Run {
-  constructor(lv) {
-    this.lv = lv; this.taken = new Set();
-    const s = findAll(lv, 'S')[0] || { x: 1, y: 1 };
-    this.x = s.x; this.y = s.y; this.goals = findAll(lv, 'M');
-    this.steps = 0; this.total = 0; this.coins = 0; this.done = false; this.win = false;
-    this.lava = false; this.timeout = false; this.loop = false; this.bonk = false;
-    this.max = lv.w * lv.h * 2; this.trail = []; this.visits = new Map();
-  }
-  cell(x, y) { const c = getCell(this.lv, x, y); return (c === 'o' && this.taken.has(x + ',' + y)) ? '.' : c; }
-  step(a, st) {
-    const [dx, dy] = DIRS[a]; const nx = this.x + dx, ny = this.y + dy; const c = this.cell(nx, ny);
-    let r = st.rStep; this.bonk = false; this.steps++;
-    if (c === '#') { r = st.rWall; this.bonk = true; }
-    else {
-      this.trail.push([this.x, this.y]); if (this.trail.length > 30) this.trail.shift();
-      this.x = nx; this.y = ny;
-      if (c === 'L') { r = st.rLava; this.done = this.lava = true; }
-      else if (c === 'M') { r = st.rGoal; this.done = this.win = true; }
-      else if (c === 'o') { r = st.rCoin; this.taken.add(nx + ',' + ny); this.coins++; }
+  constructor(lv, opt = {}) {
+    this.lv = lv; this.plat = !!lv.platform; this.ghost = !!opt.ghost;
+    this.grid = lv.rows.map(r => r.split(''));
+    this.enemies = [];
+    for (let y = 0; y < lv.h; y++) for (let x = 0; x < lv.w; x++) {
+      const c = this.grid[y][x];
+      if (c === 'E' || c === 'F') {
+        this.grid[y][x] = '.';
+        if (!this.ghost) this.enemies.push({ x, y, dx: c === 'E' ? 1 : 0, dy: c === 'F' ? 1 : 0, alive: true });
+      }
     }
+    this.portals = {};
+    for (const d of '123') this.portals[d] = findAll(lv, d);
+    const s = findAll(lv, 'S')[0] || { x: 1, y: 1 };
+    this.x = s.x; this.y = s.y; this.vy = 0; this.goals = findAll(lv, 'M');
+    this.taken = new Set(); this.cps = new Set(); this.cp = null; this.mask = '';
+    this.steps = 0; this.total = 0; this.coins = 0; this.deaths = 0; this.done = false; this.win = false;
+    this.lava = false; this.eaten = false; this.timeout = false; this.loop = false; this.bonk = false;
+    this.max = lv.w * lv.h * (this.plat ? 3 : 2); this.trail = []; this.visits = new Map();
+    this.event = null; this.tv = null; this.mem = [];
+  }
+  cell(x, y) {
+    if (x < 0 || y < 0 || x >= this.lv.w || y >= this.lv.h) return '#';
+    const c = this.grid[y][x];
+    return (c === 'o' && this.taken.has(x + ',' + y)) ? '.' : c;
+  }
+  solid(x, y) { return SOLID.includes(this.cell(x, y)); }
+  enemyAt(x, y) { return this.enemies.some(e => e.alive && e.x === x && e.y === y); }
+  grounded() { return this.solid(this.x, this.y + 1); }
+  // for the path search
+  where() { return this.x + ',' + this.y + ',' + this.vy + ',' + this.mask; }
+  snap() { return { x: this.x, y: this.y, vy: this.vy, mask: this.mask, grid: this.grid }; }
+  restore(n) {
+    this.x = n.x; this.y = n.y; this.vy = n.vy; this.mask = n.mask; this.grid = n.grid.map(r => r.slice());
+    this.done = this.win = false; this.steps = 0;
+  }
+  explode(x, y) {
+    const q = [[x, y]];
+    while (q.length) {
+      const [bx, by] = q.pop(); if (this.cell(bx, by) !== 'X') continue;
+      this.grid[by][bx] = '.'; this.mask += bx + '.' + by + ';';
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const nx = bx + dx, ny = by + dy;
+        if (nx < 0 || ny < 0 || nx >= this.lv.w || ny >= this.lv.h) continue;
+        const c = this.grid[ny][nx];
+        if (c === '#') this.grid[ny][nx] = '.';
+        else if (c === 'X') q.push([nx, ny]);
+        for (const e of this.enemies) if (e.alive && e.x === nx && e.y === ny) e.alive = false;
+      }
+    }
+    this.event = 'tnt'; this.boom = { x, y, at: this.steps };
+  }
+  // move one square; false if something is in the way
+  tryMove(nx, ny, st) {
+    const c = this.cell(nx, ny);
+    if (c === 'X') { this.explode(nx, ny); this.r += st.rTnt; return false; }
+    if (c === '#') return false;
+    this.trail.push([this.x, this.y]); if (this.trail.length > 30) this.trail.shift();
+    this.x = nx; this.y = ny; this.onTile(st);
+    return true;
+  }
+  onTile(st) {
+    const c = this.cell(this.x, this.y), k = this.x + ',' + this.y;
+    if (c === 'L') this.die(st.rLava, 'lava');
+    else if (c === 'M') { this.r += st.rGoal; this.done = this.win = true; }
+    else if (c === 'o') { this.r += st.rCoin; this.taken.add(k); this.coins++; this.event = 'coin'; }
+    else if (c === 'C') { if (!this.cps.has(k)) { this.cps.add(k); this.r += st.rCheck; this.event = 'checkpoint'; } this.cp = { x: this.x, y: this.y }; }
+    else if (c === 'T') { this.tv = this.lv.tv || 'Hej från TV:n!'; this.tvAt = this.steps; this.event = 'tv'; }
+    else if ('123'.includes(c) && !this.teleported) {
+      const list = this.portals[c];
+      if (list.length > 1) {
+        const i = list.findIndex(p => p.x === this.x && p.y === this.y), d = list[(i + 1) % list.length];
+        this.x = d.x; this.y = d.y; this.vy = 0; this.teleported = true; this.event = 'teleport';
+      }
+    }
+  }
+  die(r, why) {
+    this.r += r; this.deaths++;
+    if (this.ghost || !this.cp || this.deaths >= 5) {
+      this.done = true; if (why === 'lava') this.lava = true; else this.eaten = true;
+    } else { this.x = this.cp.x; this.y = this.cp.y; this.vy = 0; this.event = why === 'lava' ? 'respawn-lava' : 'respawn-enemy'; }
+  }
+  step(a, st) {
+    this.r = st.rStep; this.bonk = false; this.teleported = false; this.event = null; this.steps++;
+    const px = this.x, py = this.y;
+    if (!this.plat) {
+      const [dx, dy] = DIRS[a];
+      if (!this.tryMove(this.x + dx, this.y + dy, st) && this.event !== 'tnt') { this.bonk = true; this.r += st.rWall - st.rStep; }
+    } else {
+      // platform mode: up jumps, left/right walk, down waits; gravity pulls down
+      if (a === 0 && this.grounded()) this.vy = JUMP;
+      const dx = a === 1 ? 1 : a === 3 ? -1 : 0;
+      if (dx && !this.tryMove(this.x + dx, this.y, st) && this.event !== 'tnt') { this.bonk = true; this.r += st.rWall - st.rStep; }
+      if (!this.done && !this.teleported) {
+        if (this.vy > 0) { if (this.tryMove(this.x, this.y - 1, st)) this.vy--; else this.vy = 0; }
+        else if (!this.grounded()) this.tryMove(this.x, this.y + 1, st);
+      }
+      // standing still counts as a bump, like walking into a wall: otherwise
+      // waiting looks as good as moving and the agent can get stuck waiting
+      if (!this.bonk && this.event !== 'tnt' && this.x === px && this.y === py && this.vy === 0 && !this.done) { this.bonk = true; this.r += st.rWall - st.rStep; }
+    }
+    if (!this.done) this.moveEnemies(st, px, py);
     if (!this.done && this.steps >= this.max) this.done = this.timeout = true;
-    this.total += r;
-    return r;
+    this.total += this.r;
+    return this.r;
+  }
+  moveEnemies(st, px, py) {
+    const blocked = (x, y, e) => !ENEMY_OK.includes(this.cell(x, y)) || (this.plat && e.dy === 0 && !this.solid(x, y + 1));
+    for (const e of this.enemies) {
+      if (!e.alive) continue;
+      const ox = e.x, oy = e.y;
+      if (blocked(e.x + e.dx, e.y + e.dy, e)) { e.dx = -e.dx; e.dy = -e.dy; }
+      if (!blocked(e.x + e.dx, e.y + e.dy, e)) { e.x += e.dx; e.y += e.dy; }
+      const hit = (e.x === this.x && e.y === this.y) || (ox === this.x && oy === this.y && e.x === px && e.y === py);
+      if (hit) { this.die(st.rEnemy, 'enemy'); return; }
+    }
   }
   goalDist() { let d = 1e9; for (const g of this.goals) d = Math.min(d, Math.abs(g.x - this.x) + Math.abs(g.y - this.y)); return this.goals.length ? d : 0; }
-  // used when the agent is not learning: stop if it keeps walking in circles
+  // everything that decides what happens next; a greedy agent that sees the
+  // same situation again will go round in circles for ever
+  full() { return this.where() + '|' + this.taken.size + '|' + this.cps.size + '|' + this.deaths + '|' + this.enemies.map(e => e.alive ? e.x + ',' + e.y + ',' + e.dx + e.dy : 'x').join(';'); }
   circling() {
-    const k = this.x + ',' + this.y + ',' + this.taken.size;
+    const k = this.full();
     const n = (this.visits.get(k) || 0) + 1; this.visits.set(k, n);
-    return n > 3;
+    return n > 2;
   }
 }
 
 /* ---------- the brain: Q-learning ---------- */
-const SENSE = { '.': 0, 'S': 0, '#': 1, 'L': 2, 'M': 3, 'o': 4 };
+const SENSE = { '.': 0, 'S': 0, 'T': 0, '#': 1, 'L': 2, 'M': 3, 'o': 4, '1': 6, '2': 6, '3': 6, 'X': 7, 'C': 8 };
+// enemies close to the agent, relative to it: far away ones do not matter yet
+function nearEnemies(run, x, y) {
+  let k = '';
+  for (const e of run.enemies) if (e.alive && Math.abs(e.x - x) + Math.abs(e.y - y) <= 3) k += (e.x - x) + ',' + (e.y - y) + (e.dx + 2 * e.dy) + ';';
+  return k;
+}
 function stateKey(ag, run, x = run.x, y = run.y) {
-  if (ag.brain.mode === 'plats') return 'P' + run.lv.id + ':' + x + ',' + y;
+  const extra = (run.plat ? ':' + run.vy : '') + (run.mask ? '|' + run.mask : '') + (run.cps.size ? '|c' + run.cps.size : '');
+  const en = nearEnemies(run, x, y);
+  if (ag.brain.mode === 'plats') return 'P' + run.lv.id + ':' + x + ',' + y + extra + (en ? '|e' + en : '');
   let k = 'S';
-  for (const [dx, dy] of DIRS) k += SENSE[run.cell(x + dx, y + dy)];
+  const sense = (sx, sy) => run.enemyAt(sx, sy) ? 5 : (SENSE[run.cell(sx, sy)] || 0);
+  for (const [dx, dy] of DIRS) k += sense(x + dx, y + dy);
+  if (run.plat) k += 'p' + sense(x - 1, y + 1) + sense(x + 1, y + 1) + (run.solid(x, y + 1) ? 'g' : 'a') + run.vy;
   let best = null, bd = 1e9;
   for (const g of run.goals) { const d = Math.abs(g.x - x) + Math.abs(g.y - y); if (d < bd) { bd = d; best = g; } }
-  return k + (best ? (Math.sign(best.x - x) + 1) + '' + (Math.sign(best.y - y) + 1) : '11');
+  return k + (best ? (Math.sign(best.x - x) + 1) + '' + (Math.sign(best.y - y) + 1) : '11') + (en ? 'e' + en : '');
 }
 function Q(ag, s) { return ag.brain.q[s] || (ag.brain.q[s] = [0, 0, 0, 0]); }
 function peekQ(ag, s) { return ag.brain.q[s] || null; }
@@ -969,11 +1119,23 @@ function agentStep(ag, run, eps, doLearn, forced) {
   const a = forced != null ? forced : choose(ag, s, eps, doLearn);
   const d0 = run.goalDist();
   const r = run.step(a, ag.settings);
-  if (doLearn) learn(ag, s, a, r + shaping(ag, d0, run.goalDist()), stateKey(ag, run), run.done && !run.timeout);
+  if (doLearn) {
+    const t = [s, a, r + shaping(ag, d0, run.goalDist()), stateKey(ag, run), run.done && !run.timeout];
+    learn(ag, ...t);
+    if (run.mem.length < 3000) run.mem.push(t);
+  }
   ag.brain.steps++;
   return { s, a, r };
 }
+// After a round, go through it once more from the end: what happened at the
+// goal (or in the lava) reaches the first steps straight away, instead of
+// creeping back one square per round. Learning gets much steadier.
+function replay(ag, run) {
+  for (let i = run.mem.length - 1; i >= 0; i--) learn(ag, ...run.mem[i]);
+  run.mem = [];
+}
 function record(ag, run, kind) {
+  replay(ag, run);
   const b = ag.brain; b.episodes++; if (run.win) b.wins++;
   b.hist.push({ w: run.win ? 1 : 0, s: run.steps, k: kind });
   if (b.hist.length > 400) b.hist.splice(0, b.hist.length - 400);
@@ -1016,7 +1178,7 @@ function rank(ag) {
 let C = {};
 function readColors() {
   const cs = getComputedStyle(document.documentElement);
-  for (const k of ['floor', 'grid', 'wall', 'wall2', 'lava', 'lava2', 'goal', 'coin', 'ink', 'muted', 'panel', 'panel2', 'line', 'series-1', 'good', 'bad'])
+  for (const k of ['floor', 'grid', 'wall', 'wall2', 'lava', 'lava2', 'goal', 'coin', 'sky', 'grass', 'ink', 'muted', 'panel', 'panel2', 'line', 'series-1', 'good', 'bad'])
     C[k] = cs.getPropertyValue('--' + k).trim();
 }
 function rr(g, x, y, w, h, r) {
@@ -1073,35 +1235,82 @@ function avatar(cv, ag, mood) {
   g.clearRect(0, 0, w, w);
   if (agentImg(ag)) drawAgent(g, w / 2, w / 2, w * 0.96, ag, mood); else drawBot(g, w / 2, w * 0.56, w * 0.82, ag.color, ag.style, mood);
 }
-function drawTile(g, c, x, y, cs, t) {
+const PORTAL_COL = { 1: '#2a78d6', 2: '#9b59d6', 3: '#eb6834' };
+// o: { plat: platform look, above: tile above (for grass), lit: checkpoint reached / TV on }
+function drawTile(g, c, x, y, cs, t, o = {}) {
   const px = x * cs, py = y * cs;
-  g.fillStyle = C.floor; g.fillRect(px, py, cs, cs);
+  g.fillStyle = o.plat ? C.sky : C.floor; g.fillRect(px, py, cs, cs);
   if (c === '#') {
     g.fillStyle = C.wall; g.fillRect(px, py, cs, cs);
     g.strokeStyle = C.wall2; g.lineWidth = 1;
     g.beginPath(); g.moveTo(px, py + cs / 2 + .5); g.lineTo(px + cs, py + cs / 2 + .5);
-    const o = (y % 2) ? cs / 2 : 0; g.moveTo(px + o + .5, py); g.lineTo(px + o + .5, py + cs / 2); g.moveTo(px + ((o + cs / 2) % cs) + .5, py + cs / 2); g.lineTo(px + ((o + cs / 2) % cs) + .5, py + cs); g.stroke();
+    const off = (y % 2) ? cs / 2 : 0; g.moveTo(px + off + .5, py); g.lineTo(px + off + .5, py + cs / 2); g.moveTo(px + ((off + cs / 2) % cs) + .5, py + cs / 2); g.lineTo(px + ((off + cs / 2) % cs) + .5, py + cs); g.stroke();
+    if (o.plat && o.above && !'#X'.includes(o.above)) { g.fillStyle = C.grass; g.fillRect(px, py, cs, Math.max(2, cs * 0.2)); }
     return;
   }
-  g.strokeStyle = C.grid; g.lineWidth = 1; g.strokeRect(px + .5, py + .5, cs - 1, cs - 1);
+  if (!o.plat) { g.strokeStyle = C.grid; g.lineWidth = 1; g.strokeRect(px + .5, py + .5, cs - 1, cs - 1); }
+  const cx = px + cs / 2, cy = py + cs / 2;
   if (c === 'L') {
     g.fillStyle = C.lava; g.fillRect(px, py, cs, cs);
     g.fillStyle = C.lava2;
     const ph = (t || 0) / 500 + x * 1.7 + y * 2.3;
     for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(px + cs * (0.25 + 0.25 * i), py + cs * (0.5 + 0.22 * Math.sin(ph + i * 2)), cs * 0.09, 0, 7); g.fill(); }
-  } else if (c === 'M') {
-    g.fillStyle = C.goal; g.globalAlpha = 0.22; g.fillRect(px, py, cs, cs); g.globalAlpha = 1;
+  } else if (c === 'M' || c === 'C') {
+    const col = c === 'M' ? C.goal : (o.lit ? '#eb6834' : '#2a78d6');
+    if (c === 'M') { g.fillStyle = C.goal; g.globalAlpha = 0.22; g.fillRect(px, py, cs, cs); g.globalAlpha = 1; }
     g.strokeStyle = C.ink; g.lineWidth = Math.max(1.5, cs * 0.06);
     g.beginPath(); g.moveTo(px + cs * 0.32, py + cs * 0.85); g.lineTo(px + cs * 0.32, py + cs * 0.15); g.stroke();
-    g.fillStyle = C.goal; g.beginPath(); g.moveTo(px + cs * 0.34, py + cs * 0.16); g.lineTo(px + cs * 0.8, py + cs * 0.3); g.lineTo(px + cs * 0.34, py + cs * 0.46); g.closePath(); g.fill();
+    g.fillStyle = col; g.beginPath(); g.moveTo(px + cs * 0.34, py + cs * 0.16); g.lineTo(px + cs * 0.8, py + cs * 0.3); g.lineTo(px + cs * 0.34, py + cs * 0.46); g.closePath(); g.fill();
+    if (c === 'C') { g.fillStyle = C.ink; g.beginPath(); g.ellipse(px + cs * 0.32, py + cs * 0.86, cs * 0.18, cs * 0.06, 0, 0, 7); g.fill(); }
   } else if (c === 'o') {
-    g.fillStyle = C.coin; g.beginPath(); g.arc(px + cs / 2, py + cs / 2, cs * 0.26, 0, 7); g.fill();
-    g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = Math.max(1, cs * 0.05); g.beginPath(); g.arc(px + cs / 2, py + cs / 2, cs * 0.17, 0, 7); g.stroke();
+    g.fillStyle = C.coin; g.beginPath(); g.arc(cx, cy, cs * 0.26, 0, 7); g.fill();
+    g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = Math.max(1, cs * 0.05); g.beginPath(); g.arc(cx, cy, cs * 0.17, 0, 7); g.stroke();
   } else if (c === 'S') {
     g.strokeStyle = C.muted; g.setLineDash([3, 3]); g.lineWidth = 1.5;
-    g.beginPath(); g.arc(px + cs / 2, py + cs / 2, cs * 0.32, 0, 7); g.stroke(); g.setLineDash([]);
+    g.beginPath(); g.arc(cx, cy, cs * 0.32, 0, 7); g.stroke(); g.setLineDash([]);
     g.fillStyle = C.muted; g.font = `700 ${Math.round(cs * 0.36)}px system-ui,sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText('S', px + cs / 2, py + cs / 2 + 1);
+    g.fillText('S', cx, cy + 1);
+  } else if (PORTAL_COL[c]) {
+    const col = PORTAL_COL[c], spin = (t || 0) / 400;
+    g.fillStyle = col; g.globalAlpha = 0.18; g.beginPath(); g.arc(cx, cy, cs * 0.42, 0, 7); g.fill(); g.globalAlpha = 1;
+    g.strokeStyle = col; g.lineWidth = Math.max(2, cs * 0.08);
+    for (let i = 0; i < 2; i++) { g.beginPath(); g.arc(cx, cy, cs * (0.36 - i * 0.13), spin * (i ? -1.4 : 1) + i, spin * (i ? -1.4 : 1) + i + 4.6); g.stroke(); }
+    g.fillStyle = col; g.font = `800 ${Math.round(cs * 0.3)}px system-ui,sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(c, cx, cy + 1);
+  } else if (c === 'E' || c === 'F') {
+    drawEnemy(g, cx, cy, cs, c === 'E' ? 0 : 1, true);
+  } else if (c === 'T') {
+    g.strokeStyle = C.ink; g.lineWidth = Math.max(1, cs * 0.05); g.lineCap = 'round';
+    g.beginPath(); g.moveTo(cx, py + cs * 0.3); g.lineTo(cx - cs * 0.14, py + cs * 0.1); g.moveTo(cx, py + cs * 0.3); g.lineTo(cx + cs * 0.16, py + cs * 0.12); g.stroke();
+    g.fillStyle = '#3d4459'; rr(g, px + cs * 0.12, py + cs * 0.3, cs * 0.76, cs * 0.56, cs * 0.1); g.fill();
+    g.fillStyle = o.lit ? '#8fe3ff' : '#5c6b8a'; rr(g, px + cs * 0.19, py + cs * 0.36, cs * 0.62, cs * 0.44, cs * 0.06); g.fill();
+    if (o.lit) { g.fillStyle = 'rgba(255,255,255,.7)'; for (let i = 0; i < 3; i++) g.fillRect(px + cs * 0.25, py + cs * (0.44 + i * 0.11), cs * (0.5 - i * 0.12), Math.max(1, cs * 0.04)); }
+  } else if (c === 'X') {
+    g.fillStyle = '#d23b3b'; g.fillRect(px + cs * 0.14, py + cs * 0.22, cs * 0.72, cs * 0.66);
+    g.fillStyle = '#f6f1e6'; g.fillRect(px + cs * 0.14, py + cs * 0.44, cs * 0.72, cs * 0.22);
+    g.fillStyle = '#1b2030'; g.font = `800 ${Math.round(cs * 0.2)}px system-ui,sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('TNT', cx, py + cs * 0.56);
+    g.strokeStyle = '#1b2030'; g.lineWidth = Math.max(1, cs * 0.05); g.beginPath(); g.moveTo(cx, py + cs * 0.22); g.quadraticCurveTo(cx + cs * 0.12, py + cs * 0.08, cx + cs * 0.22, py + cs * 0.12); g.stroke();
+    g.fillStyle = '#ffb020'; g.beginPath(); g.arc(cx + cs * 0.24, py + cs * 0.11, cs * 0.06, 0, 7); g.fill();
+  }
+}
+// a patrolling enemy; axis 0 = side to side, 1 = up and down
+function drawEnemy(g, cx, cy, cs, axis, arrows) {
+  const r = cs * 0.32;
+  g.fillStyle = '#c0392b';
+  g.beginPath();
+  for (let i = 0; i < 16; i++) { const a = Math.PI * i / 8, rr2 = i % 2 ? r : r * 1.18; g.lineTo(cx + rr2 * Math.cos(a), cy + rr2 * Math.sin(a)); }
+  g.closePath(); g.fill();
+  g.fillStyle = '#fff'; for (const s of [-1, 1]) { g.beginPath(); g.arc(cx + s * r * 0.38, cy - r * 0.1, r * 0.24, 0, 7); g.fill(); }
+  g.fillStyle = '#1b2030'; for (const s of [-1, 1]) { g.beginPath(); g.arc(cx + s * r * 0.34, cy - r * 0.04, r * 0.12, 0, 7); g.fill(); }
+  g.strokeStyle = '#1b2030'; g.lineWidth = Math.max(1.2, cs * 0.05); g.lineCap = 'round';
+  g.beginPath(); for (const s of [-1, 1]) { g.moveTo(cx + s * r * 0.65, cy - r * 0.45); g.lineTo(cx + s * r * 0.15, cy - r * 0.3); } g.stroke();
+  if (!arrows) return;
+  g.fillStyle = C.ink;
+  for (const s of [-1, 1]) {
+    const ax = axis ? cx : cx + s * cs * 0.47, ay = axis ? cy + s * cs * 0.47 : cy, L = cs * 0.08;
+    g.beginPath();
+    if (axis) { g.moveTo(ax, ay); g.lineTo(ax - L, ay - s * L); g.lineTo(ax + L, ay - s * L); }
+    else { g.moveTo(ax, ay); g.lineTo(ax - s * L, ay - L); g.lineTo(ax - s * L, ay + L); }
+    g.closePath(); g.fill();
   }
 }
 function fitCanvas(cv, lv, maxH) {
@@ -1113,16 +1322,25 @@ function fitCanvas(cv, lv, maxH) {
   return { g, cs };
 }
 function drawLevel(g, lv, cs, run, t) {
+  const at = (x, y) => run ? run.cell(x, y) : getCell(lv, x, y);
   for (let y = 0; y < lv.h; y++) for (let x = 0; x < lv.w; x++) {
-    let c = lv.rows[y][x];
-    if (run && c === 'o' && run.taken.has(x + ',' + y)) c = '.';
-    drawTile(g, c, x, y, cs, t);
+    const c = at(x, y);
+    const lit = !!run && ((c === 'C' && run.cps.has(x + ',' + y)) || (c === 'T' && run.tv && run.x === x && run.y === y));
+    drawTile(g, c, x, y, cs, t, { plat: lv.platform, above: at(x, y - 1), lit });
+  }
+  if (run) {
+    for (const e of run.enemies) if (e.alive) drawEnemy(g, e.x * cs + cs / 2, e.y * cs + cs / 2, cs, e.dy ? 1 : 0, false);
+    if (run.boom && run.steps - run.boom.at < 3) {
+      const bx = run.boom.x * cs + cs / 2, by = run.boom.y * cs + cs / 2;
+      g.fillStyle = 'rgba(255,176,32,.55)'; g.beginPath(); g.arc(bx, by, cs * 1.6, 0, 7); g.fill();
+      g.fillStyle = 'rgba(255,90,31,.7)'; g.beginPath(); g.arc(bx, by, cs * 0.9, 0, 7); g.fill();
+    }
   }
 }
 function drawBrain(g, ag, lv, cs) {
   const run = new Run(lv); const scale = Math.max(1, Math.abs(ag.settings.rGoal), Math.abs(ag.settings.rLava));
   for (let y = 0; y < lv.h; y++) for (let x = 0; x < lv.w; x++) {
-    const c = lv.rows[y][x]; if (c === '#' || c === 'L' || c === 'M') continue;
+    const c = lv.rows[y][x]; if ('#LMX'.includes(c)) continue;
     const q = peekQ(ag, stateKey(ag, run, x, y)); if (!q || q.every(v => v === 0)) continue;
     let m = -Infinity, a = 0; for (let i = 0; i < 4; i++) if (q[i] > m) { m = q[i]; a = i; }
     g.globalAlpha = clamp(Math.abs(m) / scale, 0.1, 0.5);
@@ -1262,7 +1480,9 @@ $('#btnBackup').onclick = async () => {
 };
 
 /* ---------- build view ---------- */
-const TOOLS = [['.', 'Sudd'], ['#', 'Vägg'], ['S', 'Start'], ['M', 'Mål'], ['L', 'Lava'], ['o', 'Mynt']];
+const TILE_CHARS = '#.SMLo123CEFTX';
+const TOOLS = [['.', 'Sudd'], ['#', 'Vägg'], ['S', 'Start'], ['M', 'Mål'], ['L', 'Lava'], ['o', 'Mynt'], ['C', 'Check\u00adpoint'],
+  ['1', 'Teleport 1'], ['2', 'Teleport 2'], ['3', 'Teleport 3'], ['E', 'Fiende ↔'], ['F', 'Fiende ↕'], ['T', 'TV'], ['X', 'TNT']];
 let tool = '#', painting = null, codeTab = 'map';
 function fillLevelSelect(sel) {
   sel.innerHTML = '';
@@ -1291,6 +1511,7 @@ function syncCode() {
 }
 function renderBuild() {
   renderHeader(); fillLevelSelect($('#bLevel')); renderTools(); drawBuild(); syncCode();
+  $('#bPlat').checked = !!level().platform; $('#bTv').value = level().tv || '';
   if (!$('#cmdCode').value) $('#cmdCode').value = CMD_EXAMPLE;
 }
 function levelChanged() { save(); drawBuild(); syncCode(); }
@@ -1316,6 +1537,11 @@ function paintAt(ev) {
   setCell(lv, x, y, painting); drawBuild();
 }
 $('#bLevel').onchange = e => { S.lvl = e.target.value; save(); renderBuild(); };
+$('#bPlat').onchange = e => {
+  const lv = level(); if (e.target.checked) lv.platform = true; else delete lv.platform;
+  levelChanged(); toast(e.target.checked ? '🏃 Plattformsläge: pil upp hoppar, tyngdkraften drar nedåt.' : 'Vanligt läge: agenten går åt alla håll.');
+};
+$('#bTv').oninput = e => { const lv = level(); const v = e.target.value.trim(); if (v) lv.tv = v.slice(0, 80); else delete lv.tv; save(); };
 $('#bNew').onclick = async () => {
   const name = await ask('Ny bana', 'Vad ska banan heta?', 'Min bana ' + (S.levels.length + 1)); if (!name) return;
   const lv = { id: uid(), name: name.slice(0, 40), w: 16, h: 11, rows: [] }; resizeLevel(lv, 16, 11);
@@ -1353,7 +1579,7 @@ $('#mapApply').onclick = () => {
   if (w < 5 || h < 5 || w > 30 || h > 20) { $('#mapErr').textContent = `Banan måste vara 5–30 tecken bred och 5–20 rader hög (den är ${w}×${h}).`; return; }
   const lv = level(); const bad = new Set();
   lv.w = w; lv.h = h;
-  lv.rows = lines.map(l => [...l.padEnd(w, '.')].map(ch => { if ('#.SMLo'.includes(ch)) return ch; if (ch === ' ') return '.'; bad.add(ch); return '.'; }).join(''));
+  lv.rows = lines.map(l => [...l.padEnd(w, '.')].map(ch => { if (TILE_CHARS.includes(ch)) return ch; if (ch === ' ') return '.'; bad.add(ch); return '.'; }).join(''));
   const starts = findAll(lv, 'S'); for (const s of starts.slice(1)) setCell(lv, s.x, s.y, '.');
   $('#mapErr').textContent = bad.size ? 'Okända tecken blev tomma rutor: ' + [...bad].join(' ') : '';
   if (starts.length > 1) $('#mapErr').textContent += (bad.size ? '\n' : '') + 'Bara en start (S) får finnas – de andra togs bort.';
@@ -1391,7 +1617,8 @@ function evalExpr(src, vars, line) {
 function runCommands(code, lv) {
   const lines = code.replace(/\r/g, '').split('\n').map((t, i) => ({ t: t.replace(/\/\/.*$/, '').trim(), n: i + 1 }));
   let ops = 0;
-  const NAMES = { 'vägg': '#', 'lava': 'L', 'mynt': 'o', 'tom': '.', 'sudd': '.', 'start': 'S', 'mål': 'M', 'mal': 'M' };
+  const NAMES = { 'vägg': '#', 'lava': 'L', 'mynt': 'o', 'tom': '.', 'sudd': '.', 'start': 'S', 'mål': 'M', 'mal': 'M',
+    'teleport1': '1', 'teleport2': '2', 'teleport3': '3', 'checkpoint': 'C', 'fiende': 'E', 'fiendeupp': 'F', 'tv': 'T', 'tnt': 'X' };
   const LOOPVARS = ['i', 'j', 'k'];
   function block(from, to, vars, depth) {
     for (let p = from; p < to; p++) {
@@ -1413,6 +1640,11 @@ function runCommands(code, lv) {
         }
         p = end; continue;
       }
+      if (w[0] === 'plattform') {
+        if (w[1] !== 'på' && w[1] !== 'av') throw new Error(`Rad ${n}: skriv plattform på eller plattform av`);
+        if (w[1] === 'på') lv.platform = true; else delete lv.platform; continue;
+      }
+      if (w[0] === 'tvtext') { const tx = t.replace(/^tvtext\s*/i, '').slice(0, 80); if (tx) lv.tv = tx; else delete lv.tv; continue; }
       if (w[0] === 'rensa') { lv.rows = lv.rows.map(r => '.'.repeat(r.length)); continue; }
       if (w[0] === 'ram') { frame(lv); continue; }
       if (w[0] === 'storlek') {
@@ -1460,6 +1692,7 @@ const SLIDERS = [
 const REWARDS = [
   ['rGoal', '🏁 Nå målet', 0, 50, 1], ['rLava', '🔥 Gå i lava', -50, 0, 1], ['rCoin', '🪙 Ta ett mynt', 0, 20, 0.5],
   ['rStep', '👣 Varje steg', -2, 0, 0.05], ['rWall', '💥 Krocka i vägg', -5, 0, 0.1],
+  ['rCheck', '🚩 Nå en checkpoint', 0, 20, 0.5], ['rEnemy', '👾 Tas av en fiende', -50, 0, 1], ['rTnt', '🧨 Spränga TNT', -5, 0, 0.1],
 ];
 const sps = () => { const v = +$('#tSpeed').value; return v >= 100 ? 5000 : Math.round(1.5 * Math.pow(1.075, v)); };
 function speedLabel() { const v = sps(); $('#tSpeedV').textContent = v >= 5000 ? 'Turbo' : v + ' steg/s'; }
@@ -1508,8 +1741,15 @@ function drawTrain() {
     run.trail.forEach(([tx, ty], i) => { g.globalAlpha = 0.08 + 0.3 * i / run.trail.length; g.beginPath(); g.arc(tx * cs + cs / 2, ty * cs + cs / 2, cs * 0.14, 0, 7); g.fill(); });
     g.globalAlpha = 1; x = run.x; y = run.y;
   } else { const s = findAll(lv, 'S')[0]; if (!s) return; x = s.x; y = s.y; }
-  const mood = run ? (run.win ? 'happy' : run.lava ? 'sad' : run.bonk ? 'bonk' : null) : null;
+  const mood = run ? (run.win ? 'happy' : run.lava || run.eaten ? 'sad' : run.bonk || (run.event || '').startsWith('respawn') ? 'bonk' : null) : null;
   drawAgent(g, x * cs + cs / 2, y * cs + cs / 2 + cs * 0.06, cs * 0.95, ag, mood);
+  // what the TV says, for a moment after the agent walked over it
+  if (run && run.tv && run.steps - run.tvAt < 12) {
+    g.font = `700 ${Math.max(12, Math.round(cs * 0.4))}px system-ui,sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    const text = 'TV: ' + run.tv, w = Math.min(lv.w * cs - 16, g.measureText(text).width + 24), h = Math.max(24, cs * 0.8);
+    g.fillStyle = 'rgba(27,32,48,.88)'; rr(g, (lv.w * cs - w) / 2, 8, w, h, 10); g.fill();
+    g.fillStyle = '#8fe3ff'; g.fillText(text, lv.w * cs / 2, 8 + h / 2, w - 16);
+  }
 }
 function setStatus(msg, kind) { const s = $('#tStatus'); s.textContent = msg; s.className = 'status' + (kind ? ' ' + kind : ''); }
 function trainButtons() {
@@ -1537,9 +1777,15 @@ function startLoop(mode) {
   setStatus(mode === 'test' ? '🎯 Prov: agenten gör det den tror är bäst, utan att chansa.' : '▶ Agenten tränar …');
   trainButtons(); T.raf = requestAnimationFrame(tick);
 }
+const EVENT_TEXT = {
+  tnt: '💥 Pang! TNT:n sprängde bort väggarna runt sig.', teleport: '🌀 Teleporterad!', checkpoint: '🚩 Checkpoint!',
+  'respawn-lava': '↩️ Aj, lava! Tillbaka till checkpointen.', 'respawn-enemy': '↩️ En fiende! Tillbaka till checkpointen.', coin: '🪙 Mynt!',
+};
+function eventText(run) { return run.event === 'tv' ? '📺 TV:n säger: ' + run.tv : EVENT_TEXT[run.event] || ''; }
 function endMessage(run, ag) {
   if (run.win) return [`🎉 Hittade målet på ${run.steps} steg!` + (run.coins ? ` Tog ${run.coins} mynt.` : ''), 'good'];
   if (run.lava) return ['🔥 Aj! Gick rakt ner i lavan.', 'bad'];
+  if (run.eaten) return ['👾 En fiende tog agenten.', 'bad'];
   if (run.loop) return ['🔄 Agenten går runt i cirklar. Den behöver träna mer.', 'bad'];
   return [`⏰ Hann inte fram på ${run.steps} steg.`, 'bad'];
 }
@@ -1568,7 +1814,11 @@ function tick(now) {
       T.pause = test ? 1800 : 700; break;
     }
   }
-  if (!T.run.done && speed < 400) setStatus(`${test ? 'Prov' : 'Runda ' + (ag.brain.episodes + 1)} · steg ${T.run.steps} · poäng ${fmt(T.run.total)}` + (T.run.bonk ? ' · 💥 krock!' : ''));
+  if (!T.run.done && speed < 400) {
+    if (T.run.event) T.note = { text: eventText(T.run), until: performance.now() + 1500 };
+    const note = T.note && performance.now() < T.note.until ? ' · ' + T.note.text : '';
+    setStatus(`${test ? 'Prov' : 'Runda ' + (ag.brain.episodes + 1)} · steg ${T.run.steps} · poäng ${fmt(T.run.total)}` + (T.run.bonk ? ' · 💥 krock!' : '') + note);
+  }
   drawTrain();
 }
 function fastTrain(count, all) {
@@ -1614,7 +1864,7 @@ function drive(a) {
     setStatus(msg + (run.win ? ' Agenten har tittat på hur du gjorde.' : ''), kind);
     updateTrainPanel(); drawTrain();
     setTimeout(() => { if (T.mode === 'drive') { T.run = new Run(level()); T.traj = []; T.mood = null; drawTrain(); } }, 900);
-  } else setStatus(`🕹 Du styr · steg ${run.steps} · poäng ${fmt(run.total)}` + (run.bonk ? ' · 💥 krock!' : ''));
+  } else setStatus(`🕹 Du styr · steg ${run.steps} · poäng ${fmt(run.total)}` + (run.bonk ? ' · 💥 krock!' : '') + (run.event ? ' · ' + eventText(run) : ''));
   drawTrain();
 }
 function praise(sign) {
@@ -1924,7 +2174,7 @@ avatar($('#logo'), { color: '#2a78d6', style: 0 }, 'happy');
 show(['agents', 'build', 'train', 'talk', 'code', 'help'].includes(S.view) ? S.view : 'agents');
 
 // small hook for automated tests
-window.RakenAI = { state: () => S, Run, stateKey, evalAll, navSmart, talkSmart, reply, learnText, runCommands, shortest, levelProblem, fastTrain, show, drawBot, agent };
+window.RakenAI = { state: () => S, Run, stateKey, agentStep, record, evalAll, navSmart, talkSmart, reply, learnText, runCommands, shortest, levelProblem, fastTrain, show, drawBot, agent };
 })();
 </script>
 </body>

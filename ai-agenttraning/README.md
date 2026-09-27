@@ -3,7 +3,11 @@
 Skapa egna AI-agenter som från början **inte förstår någonting**, och träna dem
 tills de blir smarta – utan att skriva kod.
 
-- **🧱 Bygg bana** – rita 2D-hinderbanor med väggar, lava, mynt, start och mål.
+- **🧱 Bygg bana** – rita 2D-hinderbanor med väggar, lava, mynt, start och mål,
+  **teleporter** (1, 2, 3 – samma siffra hör ihop), **checkpoints**, **fiender**
+  som patrullerar (åt sidan eller upp och ner), en **TV** som visar ett meddelande
+  du skriver och **TNT** som spränger bort väggar. Slå på **plattformsläge** för
+  en sidovy med tyngdkraft där agenten hoppar.
   Du kan också *koda* banan, antingen som en karta av tecken eller med kommandon
   som `vägg 3 2 till 3 8` och `upprepa 4 { … }`.
 - **🎓 Träna** – agenten lär sig hitta vägen med belöningar och straff
@@ -29,10 +33,10 @@ Allt fungerar utan internet och sparas automatiskt på datorn.
 
 | Fil | För | Storlek |
 |---|---|---|
-| [`dist/raken-ai-agenttraning-1.1.0.html`](dist/raken-ai-agenttraning-1.1.0.html) | alla webbläsare | 1,5 MB |
-| [`dist/raken-ai-agenttraning_1.1.0_amd64.deb`](dist/raken-ai-agenttraning_1.1.0_amd64.deb) | Debian / Ubuntu (x86-64) | 79,9 MB |
-| [`dist/Raken-AI-Agenttraning-1.1.0-arm64.dmg`](dist/Raken-AI-Agenttraning-1.1.0-arm64.dmg) | Mac med Apple-chip (M1–M4) | 98,7 MB |
-| [`dist/Raken-AI-Agenttraning-1.1.0-x64.dmg`](dist/Raken-AI-Agenttraning-1.1.0-x64.dmg) | Mac med Intel-processor | 101,4 MB |
+| [`dist/raken-ai-agenttraning-1.2.0.html`](dist/raken-ai-agenttraning-1.2.0.html) | alla webbläsare | 1,5 MB |
+| [`dist/raken-ai-agenttraning_1.2.0_amd64.deb`](dist/raken-ai-agenttraning_1.2.0_amd64.deb) | Debian / Ubuntu (x86-64) | 79,9 MB |
+| [`dist/Raken-AI-Agenttraning-1.2.0-arm64.dmg`](dist/Raken-AI-Agenttraning-1.2.0-arm64.dmg) | Mac med Apple-chip (M1–M4) | 98,7 MB |
+| [`dist/Raken-AI-Agenttraning-1.2.0-x64.dmg`](dist/Raken-AI-Agenttraning-1.2.0-x64.dmg) | Mac med Intel-processor | 101,4 MB |
 
 ### HTML
 
@@ -42,7 +46,7 @@ från ett USB-minne. Det du tränar sparas i just den webbläsaren.
 ### Linux (.deb)
 
 ```sh
-sudo apt install ./raken-ai-agenttraning_1.1.0_amd64.deb
+sudo apt install ./raken-ai-agenttraning_1.2.0_amd64.deb
 raken-ai-agenttraning
 ```
 
@@ -86,6 +90,24 @@ om böjningar som *hund/hunden* och med mindre vikt på småord som *du* och
 komma efter varandra, och ur den hittar agenten på meningar – samma grundidé
 som stora språkmodeller, i mycket liten skala.
 
+**Hinderbanans rutor.** En teleport skickar agenten till nästa teleport med
+samma siffra. En checkpoint ger bonus första gången, och dör agenten efteråt
+(lava eller fiende) börjar den om vid checkpointen i stället för att förlora
+rundan – högst fem gånger. Fiender går ett steg för varje steg agenten tar och
+vänder vid väggar (och vid kanten av en avsats i plattformsläge). TNT exploderar
+när agenten går in i den: väggar och fiender i rutorna runt omkring försvinner,
+och agenten får ett litet aj (−1). I **plattformsläge** betyder pil upp hopp
+(tre rutor högt), vänster och höger går, pil ner väntar, och tyngdkraften drar
+agenten nedåt. Att stå still kostar lika mycket som att krocka i en vägg, så
+agenten fastnar inte i att vänta. Kortaste vägen räknas med samma regler
+(teleporter, TNT, hopp), så *Bygg bana* säger till om målet inte går att nå.
+
+Efter varje runda går agenten igenom rundan en gång till baklänges, så att
+belöningen vid målet snabbt når de första stegen. Labyrinten lärs nu in på
+omkring 300 rundor i stället för 1000. Inlärningen svänger ändå lite: på
+plattformsbanan klarade agenten med Platsminne banan efter 1000 rundor i 11 av
+12 försök; ibland sjunker resultatet en stund och kommer sedan tillbaka.
+
 **Block som lär sig.** Blocket *agenten väljer bland (sten sax påse) i läget
 (…)* väljer ett alternativ. I början är valet slumpat; *belöna agenten med (1)*
 ger poäng till valen i rundan, mest till det senaste, så nästa gång väljer
@@ -111,11 +133,19 @@ antal ord och antal 👍.
 - **Prata med agenten** – klicka och skriv; tryck **L** för att lära den något.
 - **Min första sprajt** och **Rita med pennan** – att börja med.
 
+Nya exempelbanor under *Bygg bana*: **6. Portaler och fiender** och
+**7. Plattformar**.
+
 ## Vad som är testat
 
 **Webbläsaren** (single-file HTML från `file://` i Chromium), tre testfiler:
 
 - `build/verify.cjs` – agenter, banor, träning och prat. 30 kontroller, alla godkända.
+- `build/verify-tiles.cjs` – de nya rutorna: teleporter (även tre i rad),
+  checkpoint och omstart, fiender åt sidan och upp/ner, TV, TNT med
+  kedjereaktion, plattformsläge (tyngdkraft, hopp, fiender som vänder vid
+  kanten), kortaste vägen med alla regler, alla 14 verktyg, kartkod och
+  kommandon, och att agenten lär sig båda exempelbanorna. 36 kontroller, alla godkända.
 - `build/verify-blocks.cjs` – blockmotorn. Kontrollerar först att **alla 195
   block i paletten** (för sprajt och scen) har en körbar implementation, och
   kör sedan små program av riktiga block för varje kategori: rörelse, glid,
@@ -181,8 +211,8 @@ format som `hdiutil -format UDBZ`, så att filerna blir under GitHubs gräns på
 ## Kontrollsummor (SHA-256)
 
 ```
-2bf574ccf600133c98cd38cfbee9f7c4312757a262f80efb4cb4922e6d6313e0  raken-ai-agenttraning-1.1.0.html
-4d1fc08545e954e52a9c30b91d83eaedb342b8e64fec8a16a6ebb5a288a0fc42  raken-ai-agenttraning_1.1.0_amd64.deb
-00ebfe0a8ce20f0ac757403343893f9fdf3d3dbefbe9e61cc89971033274ef32  Raken-AI-Agenttraning-1.1.0-arm64.dmg
-8bfc317185e863d18ce629135f4b4b8ed4a16b084396c2016e734fc13b6e71de  Raken-AI-Agenttraning-1.1.0-x64.dmg
+ac401e23bbd387ab8c5f375d52ed371462376a314e3fa62e6b2321b041f63037  raken-ai-agenttraning-1.2.0.html
+592062722c0215fec90829836ac4db98c5ff5f5ab154e57d9b6bf324d664f64a  raken-ai-agenttraning_1.2.0_amd64.deb
+acba296b437d886f272f06edd9468061d7ad12600b8286abbf11377dbcb4857e  Raken-AI-Agenttraning-1.2.0-arm64.dmg
+17d21785a839c8e8b8471dcdffafd13184606bea80a2767c4c1fc096dc510f83  Raken-AI-Agenttraning-1.2.0-x64.dmg
 ```

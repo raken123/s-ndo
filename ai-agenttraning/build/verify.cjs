@@ -26,7 +26,7 @@ function check(name, ok, extra) {
 
   check('title', (await page.title()) === 'Raken Teknik Åk 4 2026/2027 AI Agentträning');
   const lv = await page.evaluate(() => RakenAI.state().levels.map(l => [l.id, RakenAI.shortest(l)]));
-  check('all 5 preset courses are solvable', lv.length === 5 && lv.every(([, d]) => d > 0), JSON.stringify(lv));
+  check('all 7 preset courses are solvable', lv.length === 7 && lv.every(([, d]) => d > 0), JSON.stringify(lv));
 
   // create an agent through the dialog, confirming with Enter
   await page.click('.card.new');
@@ -154,7 +154,7 @@ function check(name, ok, extra) {
   await page.waitForTimeout(600);
   await page.reload();
   const q2 = await page.evaluate(() => { const a = RakenAI.state().agents[0]; return [Object.keys(a.brain.q).length, a.talk.pairs.length, RakenAI.state().levels.length]; });
-  check('brain, answers and courses survive a restart', q2[0] === q1 && q2[1] === 9 && q2[2] === 6, JSON.stringify([q1, ...q2]));
+  check('brain, answers and courses survive a restart', q2[0] === q1 && q2[1] === 9 && q2[2] === 8, JSON.stringify([q1, ...q2]));
 
   // export the agent to a file and import it back
   await page.click('.tabs [data-view=agents]');

@@ -32,7 +32,7 @@ DMG_TOOL = os.environ.get("DMG_TOOL", "dmg")
 RCODESIGN = os.environ.get("RCODESIGN", "rcodesign")
 
 EV = "43.2.0"
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 PKG = "raken-ai-agenttraning"
 TITLE = "Raken Teknik Åk 4 2026/2027 AI Agentträning"
 SHORT = "AI Agentträning"          # macOS menu bar name (CFBundleName, <= 15 chars)
