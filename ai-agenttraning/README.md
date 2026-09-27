@@ -13,8 +13,15 @@ tills de blir smarta – utan att skriva kod.
 - **💬 Prata** – agenten kan inga ord från början och säger bara "bip blopp".
   Lär den svar på frågor, låt den läsa texter och ge 👍 på bra svar. När den
   inte vet svaret hittar den på en mening av orden den har läst.
+- **🧩 Koda med block** – alla Scratch-block, på svenska: Rörelse, Utseende, Ljud,
+  Händelser, Kontroll, Känna av, Operatorer, Variabler, Mina block, Penna, Musik
+  och Text till tal. Dessutom kategorierna **AI-agent** (fråga agenten, lär den
+  svar, låt den välja drag och belöna den) och **Schack** (regler och en
+  schack-AI). Bygg spel med sprajter, kostymer, bakgrunder och ljud – ladda upp
+  egna bilder och ljud, rita, spela in, eller välj ur biblioteket.
 - **🤖 Mina agenter** – hur många agenter som helst, var och en med sin egen
-  hjärna. Spara en agent som fil och öppna den på en annan dator.
+  hjärna och gärna en egen bild (🖼). Spara en agent som fil och öppna den på en
+  annan dator.
 
 Allt fungerar utan internet och sparas automatiskt på datorn.
 
@@ -22,10 +29,10 @@ Allt fungerar utan internet och sparas automatiskt på datorn.
 
 | Fil | För | Storlek |
 |---|---|---|
-| [`dist/raken-ai-agenttraning-1.0.0.html`](dist/raken-ai-agenttraning-1.0.0.html) | alla webbläsare | 0,1 MB |
-| [`dist/raken-ai-agenttraning_1.0.0_amd64.deb`](dist/raken-ai-agenttraning_1.0.0_amd64.deb) | Debian / Ubuntu (x86-64) | 79,7 MB |
-| [`dist/Raken-AI-Agenttraning-1.0.0-arm64.dmg`](dist/Raken-AI-Agenttraning-1.0.0-arm64.dmg) | Mac med Apple-chip (M1–M4) | 98,4 MB |
-| [`dist/Raken-AI-Agenttraning-1.0.0-x64.dmg`](dist/Raken-AI-Agenttraning-1.0.0-x64.dmg) | Mac med Intel-processor | 101,1 MB |
+| [`dist/raken-ai-agenttraning-1.1.0.html`](dist/raken-ai-agenttraning-1.1.0.html) | alla webbläsare | 1,5 MB |
+| [`dist/raken-ai-agenttraning_1.1.0_amd64.deb`](dist/raken-ai-agenttraning_1.1.0_amd64.deb) | Debian / Ubuntu (x86-64) | 79,9 MB |
+| [`dist/Raken-AI-Agenttraning-1.1.0-arm64.dmg`](dist/Raken-AI-Agenttraning-1.1.0-arm64.dmg) | Mac med Apple-chip (M1–M4) | 98,7 MB |
+| [`dist/Raken-AI-Agenttraning-1.1.0-x64.dmg`](dist/Raken-AI-Agenttraning-1.1.0-x64.dmg) | Mac med Intel-processor | 101,4 MB |
 
 ### HTML
 
@@ -35,7 +42,7 @@ från ett USB-minne. Det du tränar sparas i just den webbläsaren.
 ### Linux (.deb)
 
 ```sh
-sudo apt install ./raken-ai-agenttraning_1.0.0_amd64.deb
+sudo apt install ./raken-ai-agenttraning_1.1.0_amd64.deb
 raken-ai-agenttraning
 ```
 
@@ -79,24 +86,64 @@ om böjningar som *hund/hunden* och med mindre vikt på småord som *du* och
 komma efter varandra, och ur den hittar agenten på meningar – samma grundidé
 som stora språkmodeller, i mycket liten skala.
 
+**Block som lär sig.** Blocket *agenten väljer bland (sten sax påse) i läget
+(…)* väljer ett alternativ. I början är valet slumpat; *belöna agenten med (1)*
+ger poäng till valen i rundan, mest till det senaste, så nästa gång väljer
+agenten oftare det som gav belöning i samma läge. Agentens *nyfikenhet* styr
+hur ofta den ändå testar något nytt. Varje projekt har ett eget minne i agenten.
+
+**Schack.** Blocken kan alla regler (rockad, en passant, bondeförvandling,
+schack, matt, patt, remi). *Agenten gör ett drag och tänker (2) drag framåt*
+letar bland dragen (alfa-beta-sökning). När ett parti är slut minns agenten
+vilka av sina drag som ledde till vinst eller förlust och väljer hellre de
+vinnande när flera drag är ungefär lika bra.
+
 **Smarthet.** *Hitta vägen* räknas som ett prov på alla banor: hur nära den
 kortaste vägen agenten kommer utan att chansa. *Prata* växer med antal svar,
 antal ord och antal 👍.
 
+## Exempel under ⭐ Exempel
+
+- **Schack mot agenten** – ett helt schackspel byggt med block. Pjäserna ritas
+  som kloner, du klickar på en pjäs och sedan på en ruta, agenten svarar.
+- **Luffarschack som lär sig** – tryck **T** så spelar agenten 300 omgångar mot
+  slumpen och lär sig med belöningar. Blir den svårare att slå?
+- **Prata med agenten** – klicka och skriv; tryck **L** för att lära den något.
+- **Min första sprajt** och **Rita med pennan** – att börja med.
+
 ## Vad som är testat
 
-`build/verify.cjs` kör appen i Chromium från `file://` och klickar sig igenom
-den som en elev skulle – 30 kontroller, alla godkända: agenten skapas och kan
-ingenting, lär sig bana 1 efter 300 rundor och klarar provet, lär sig
-labyrinten, lär sig när du styr med piltangenterna, kommandokod och kartkod
-bygger rätt bana, felmeddelanden på svenska, chatten svarar på inlärda och
-omformulerade frågor, hittar på meningar och lär sig rätt svar. Allt finns kvar
-efter omstart, agentfiler kan sparas och öppnas, inga sidfel, och ingen
-sidledsscroll i mobilbredd.
+**Webbläsaren** (single-file HTML från `file://` i Chromium), tre testfiler:
 
-`.deb`-paketet installerades med `apt` på Ubuntu 24.04 och startades i ett
-riktigt fönster (under `xvfb`). `build/verify-desktop.cjs` skapade och tränade
-en agent i skrivbordsappen, stängde den och startade igen – träningen fanns kvar.
+- `build/verify.cjs` – agenter, banor, träning och prat. 30 kontroller, alla godkända.
+- `build/verify-blocks.cjs` – blockmotorn. Kontrollerar först att **alla 195
+  block i paletten** (för sprajt och scen) har en körbar implementation, och
+  kör sedan små program av riktiga block för varje kategori: rörelse, glid,
+  studs, utseende och alla grafiska effekter, lager, ljud, meddelanden (och
+  vänta), tangenter, klick, timer-hatt, loopar, stopp, kloner, att röra
+  kant/sprajt/mus/färg, fråga/svar, operatorer med Scratchs regler för
+  jämförelser, variabler, listor, egna block med indata, rekursion och "kör
+  utan skärmuppdatering", penna, musik, röst, AI-blocken (agenten lär sig vilket
+  val som ger belöning) och schackblocken (drag, otillåtna drag, schackmatt).
+  94 kontroller, alla godkända.
+- `build/verify-editor.cjs` – blockeditorn som en elev använder den: gröna
+  flaggan, stopp, klick på skript, skapa variabel/lista (bara för sprajten eller
+  för alla) och eget block via de riktiga dialogerna, visa variabel på scenen,
+  ladda upp bild och ljud, välja ur biblioteket, rita en kostym, en hinderbana
+  som bakgrund, sprajter in och ut, dra sprajten på scenen, projekt kvar efter
+  omstart, spara/öppna projektfil, alla fyra exemplen (i schack: 32 pjäser, ditt
+  drag, agentens svar, otillåtna drag stoppas, agenten minns ett förlorat parti;
+  i luffarschack: 300 övningsomgångar), "Spara allt" tar med projekten, ingen
+  sidledsscroll i mobilbredd. 34 kontroller, alla godkända.
+
+Schackreglerna är dessutom kontrollerade mot de vedertagna *perft*-talen (antal
+möjliga ställningar några drag framåt) för fem standardställningar – 17 av 17
+stämmer exakt.
+
+**Linux:** `.deb`-paketet installerades med `apt` på Ubuntu 24.04 och kördes i
+ett riktigt Electron-fönster (under `xvfb`). `build/verify-desktop.cjs` tränade
+en agent, öppnade blockeditorn, startade schackexemplet (32 pjäser), stängde
+appen och startade igen – träningen och projekten fanns kvar.
 
 **Mac-filerna är inte körda på en Mac**, eftersom det inte finns någon Mac i
 byggmiljön. Det som är kontrollerat: båda `.dmg` packas upp av två oberoende
@@ -106,12 +153,23 @@ läs-mig-fil; ramverkets symlänkar och körbarhetsbitar finns kvar; och appen,
 dess hjälpprogram och ramverk har en ad-hoc-signatur. Appen bygger på den
 officiella Electron-körningen med samma innehåll som testades på Linux.
 
+Det som inte finns med från Scratch: tilläggen som kräver internet eller extra
+hårdvara (Översätt, Videoavkänning, LEGO, micro:bit m.fl.) och Scratchs
+målarprogram (här finns ett enklare). Det går inte heller att öppna
+Scratch-filer (`.sb3`) – projekt sparas som `.rakenprojekt.json`.
+
 ## Bygga själv
 
 ```sh
-python3 build/build.py                         # html, deb, arm64- och x64-dmg
-NODE_PATH=$(npm root -g) node build/verify.cjs  # webbläsartestet
+python3 build/vendor.py                              # hämtar Scratchs blockeditor (scratch-blocks)
+python3 build/build.py                               # html, deb, arm64- och x64-dmg
+NODE_PATH=$(npm root -g) node build/verify.cjs       # och verify-blocks.cjs, verify-editor.cjs
 ```
+
+Blockeditorn är [scratch-blocks](https://github.com/scratchfoundation/scratch-blocks)
+1.3.0 från Scratch Foundation (Apache-2.0), med dess svenska översättning.
+Licensen ligger i `app/vendor/scratch-blocks/LICENSE`. Motorn som kör blocken,
+AI-blocken, schack och resten är skrivna för den här appen (`app/blocks/`).
 
 Byggskriptet behöver `dpkg-deb`, `unzip`, `xorrisofs`, Pillow,
 [`rcodesign`](https://github.com/indygreg/apple-platform-rs) och `dmg` från
@@ -123,8 +181,8 @@ format som `hdiutil -format UDBZ`, så att filerna blir under GitHubs gräns på
 ## Kontrollsummor (SHA-256)
 
 ```
-710ca12a6c35daeea5116b17238e0efd539e48f0a35fee1edd83728e6aea851e  raken-ai-agenttraning-1.0.0.html
-cb4c0e4943974d1f85878fa56f9957cce24a2a3f48f9ba2c09580c3d2158e3d3  raken-ai-agenttraning_1.0.0_amd64.deb
-220d5460deacce5f82d2ba1820cb361eb9ffcfb3e6fab51f7e49ed0ca3331c1a  Raken-AI-Agenttraning-1.0.0-arm64.dmg
-464b9f121f32c2953f1ddef0a7417034647276ec5d6987fdc3cc115301df5708  Raken-AI-Agenttraning-1.0.0-x64.dmg
+2bf574ccf600133c98cd38cfbee9f7c4312757a262f80efb4cb4922e6d6313e0  raken-ai-agenttraning-1.1.0.html
+4d1fc08545e954e52a9c30b91d83eaedb342b8e64fec8a16a6ebb5a288a0fc42  raken-ai-agenttraning_1.1.0_amd64.deb
+00ebfe0a8ce20f0ac757403343893f9fdf3d3dbefbe9e61cc89971033274ef32  Raken-AI-Agenttraning-1.1.0-arm64.dmg
+8bfc317185e863d18ce629135f4b4b8ed4a16b084396c2016e734fc13b6e71de  Raken-AI-Agenttraning-1.1.0-x64.dmg
 ```

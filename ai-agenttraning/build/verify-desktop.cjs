@@ -9,7 +9,11 @@ const shot = process.argv[3];
   let app = await launch();
   let win = await app.firstWindow();
   await win.waitForLoadState('domcontentloaded');
-  await win.evaluate(() => localStorage.clear());
+  // start empty: stop the app's save-on-close from writing its state back during the reload
+  await win.evaluate(() => new Promise(r => {
+    Storage.prototype.setItem = () => {}; localStorage.clear();
+    const q = indexedDB.deleteDatabase('raken-ai-agenttraning'); q.onsuccess = q.onerror = q.onblocked = () => r();
+  }));
   await win.reload();
   await win.click('.card.new');
   await win.fill('#nName', 'Desktopia');
