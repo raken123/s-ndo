@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RakenOS — 30 second spot</title>
+<style>
+  @font-face { font-family: 'Raken Sans'; src: url('../../design-system/fonts/inter-latin-wght-normal.woff2') format('woff2'); font-weight: 100 900; }
+  @font-face { font-family: 'Raken Sans'; src: url('../../design-system/fonts/inter-latin-ext-wght-normal.woff2') format('woff2'); font-weight: 100 900; unicode-range: U+0100-024F, U+1E00-1EFF; }
+  @font-face { font-family: 'Noto JP'; src: url('fonts/NotoSansJP.woff2') format('woff2'); font-weight: 600; }
+  @font-face { font-family: 'Noto KR'; src: url('fonts/NotoSansKR.woff2') format('woff2'); font-weight: 600; }
+  @font-face { font-family: 'Noto SC'; src: url('fonts/NotoSansSC.woff2') format('woff2'); font-weight: 600; }
+  @font-face { font-family: 'Noto AR'; src: url('fonts/NotoSansArabic.woff2') format('woff2'); font-weight: 600; }
+  @font-face { font-family: 'Noto HI'; src: url('fonts/NotoSansDevanagari.woff2') format('woff2'); font-weight: 600; }
+  @font-face { font-family: 'Noto CY'; src: url('fonts/NotoSans.woff2') format('woff2'); font-weight: 600; }
+  :root { --ink: #07080a; --paper: #eef1f5; --blue: #2f5ae0; --coral: #e1574c; --amber: #d99a1e; --green: #16945a; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #000; }
+  #stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #eef1f5; font-family: 'Raken Sans', system-ui, sans-serif; color: #101217; -webkit-font-smoothing: antialiased; }
+  .scene { position: absolute; inset: 0; overflow: hidden; will-change: transform, clip-path, opacity; }
+  .abs { position: absolute; }
+  .center-x { left: 0; right: 0; text-align: center; }
+  .phone { position: absolute; width: 640px; height: 1368px; left: 220px; border-radius: 92px; background: #14161a; padding: 16px;
+    box-shadow: 0 0 0 3px #2a2d33 inset, 0 60px 120px rgba(10, 14, 30, 0.35), 0 12px 30px rgba(10, 14, 30, 0.25); transform-style: preserve-3d; }
+  .phone .screen { position: relative; width: 100%; height: 100%; border-radius: 76px; overflow: hidden; background: #000; }
+  .phone .screen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .phone::after { content: ''; position: absolute; top: 34px; left: 50%; width: 30px; height: 30px; margin-left: -15px; border-radius: 50%; background: #0a0b0d; box-shadow: 0 0 0 2px #1d2025; }
+  .headline { font-weight: 720; font-size: 108px; line-height: 1.02; letter-spacing: -0.045em; }
+  .line { display: block; overflow: hidden; padding-bottom: 8px; }
+  .line > span { display: inline-block; will-change: transform; }
+  .sub { font-weight: 480; font-size: 38px; letter-spacing: -0.01em; color: #5a6170; }
+  .accent { color: var(--blue); }
+  .chip { display: inline-flex; align-items: center; gap: 12px; height: 64px; padding: 0 26px; border-radius: 999px; font-weight: 620; font-size: 28px; background: #e2e6ee; color: #7a8190; }
+  .chip i { width: 18px; height: 18px; border-radius: 50%; background: currentColor; opacity: 0.5; }
+  .chip.on { background: var(--blue); color: #fff; }
+  .chip.done { background: #dce9e1; color: var(--green); }
+  .bar { position: absolute; left: 90px; right: 90px; height: 96px; border-radius: 28px; background: #1b1e24; overflow: hidden; }
+  .bar b { position: absolute; inset: 0; width: 0; background: var(--blue); border-radius: 28px; }
+  .bar span { position: absolute; left: 32px; top: 0; bottom: 0; display: flex; align-items: center; gap: 22px; font-weight: 650; font-size: 34px; color: #fff; }
+  .bar em { font-style: normal; font-weight: 500; color: #a3a9b3; }
+  .lang { position: absolute; left: 60px; right: 60px; height: 190px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; will-change: transform, opacity; }
+  .lang .t { font-weight: 700; font-size: 84px; line-height: 1.12; letter-spacing: -0.03em; color: #fff; white-space: nowrap; }
+  .lang .l { margin-top: 12px; font-weight: 600; font-size: 26px; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,0.55); }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+// ------------------------------------------------------------ helpers --
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const mix = (a, b, p) => a + (b - a) * p;
+const outExpo = (p) => (p >= 1 ? 1 : 1 - Math.pow(2, -10 * p));
+const inExpo = (p) => (p <= 0 ? 0 : Math.pow(2, 10 * p - 10));
+const inOut = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+const outBack = (p) => { const c = 1.5; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };
+const spring = (p) => (p >= 1 ? 1 : 1 - Math.exp(-6 * p) * Math.cos(9 * p));
+const lerpColor = (a, b, p) => { const ha = a.match(/\w\w/g).map((x) => parseInt(x, 16)); const hb = b.match(/\w\w/g).map((x) => parseInt(x, 16)); return `rgb(${ha.map((v, i) => Math.round(mix(v, hb[i], p))).join(',')})`; };
+const el = (tag, cls, html, parent) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; if (parent) parent.appendChild(e); return e; };
+const S = document.getElementById('stage');
+const set = (e, s) => Object.assign(e.style, s);
+
+// Wallpaper ridges (same generator as RakenOS)
+function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function ridges(colors, sky) {
+  const r = rng(90210); const w = 400; const hh = 900;
+  const paths = colors.map((c, i) => { const y = 430 + i * 95; const amp = 42 - i * 4; const f1 = 1 + r() * 2, f2 = 3 + r() * 4, p1 = r() * 6, p2 = r() * 6; const pts = []; for (let x = 0; x <= w; x += 10) pts.push(`${x},${(y + Math.sin((x / w) * Math.PI * f1 + p1) * amp + Math.sin((x / w) * Math.PI * f2 + p2) * amp * 0.35).toFixed(1)}`); return `<path d="M0,${hh} L${pts.join(' L')} L${w},${hh} Z" fill="${c}"/>`; }).join('');
+  return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 900" preserveAspectRatio="xMidYMid slice"><rect width="400" height="900" fill="${sky}"/>${paths}</svg>`)}")`;
+}
+const WP_LIGHT = ridges(['#d3dde8', '#bccbdb', '#a2b5ca', '#879fb9', '#6d88a6'], '#eef1f5');
+const WP_DARK = ridges(['#131a24', '#172130', '#1b283a', '#1f2f44', '#101722'], '#0a0e14');
+
+function phone(parent, srcs) {
+  const p = el('div', 'phone', null, parent);
+  const scr = el('div', 'screen', null, p);
+  p.imgs = srcs.map((s) => { const i = el('img', null, null, scr); i.src = `screens/${s}.png`; return i; });
+  return p;
+}
+function lines(parent, arr, cls = 'headline') {
+  const box = el('div', `abs center-x ${cls}`, null, parent);
+  box.spans = arr.map((txt) => { const l = el('span', 'line', null, box); const s = el('span', null, txt, l); return s; });
+  return box;
+}
+// Masked line reveal: each line rises from below its own mask.
+function reveal(box, t, t0, stagger = 0.12, dur = 0.6, out0 = null, outDur = 0.45) {
+  box.spans.forEach((s, i) => {
+    const pin = outExpo(prog(t, t0 + i * stagger, t0 + i * stagger + dur));
+    let y = mix(110, 0, pin);
+    if (out0 != null) y -= 115 * inExpo(prog(t, out0 + i * 0.06, out0 + i * 0.06 + outDur));
+    s.style.transform = `translateY(${y}%)`;
+  });
+}
+
+// ------------------------------------------------------------- scenes --
+const sc = {};
+const scene = (name, bg) => { const s = el('div', 'scene', null, S); s.style.background = bg; sc[name] = s; return s; };
+
+// 1 · Intro
+const s1 = scene('intro', '#07080a');
+const mark = el('div', 'abs', `<svg id="mark" viewBox="0 0 64 64" width="100%" height="100%"><rect x="14" y="10" width="9" height="44" rx="4.5" fill="#f4f5f7"/><path id="markPath" d="M23 14.5h11.5a12.5 12.5 0 0 1 0 25H26l17 14.5" fill="none" stroke="#f4f5f7" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg>`, s1);
+set(mark, { width: '300px', height: '300px', left: '390px', top: '640px' });
+const word = el('div', 'abs center-x', 'RakenOS'.split('').map((c) => `<span style="display:inline-block">${c}</span>`).join(''), s1);
+set(word, { top: '990px', fontWeight: 650, fontSize: '112px', letterSpacing: '-0.03em', color: '#f4f5f7' });
+const tag1 = el('div', 'abs center-x', 'One OS. Every device.', s1);
+set(tag1, { top: '1160px', fontWeight: 500, fontSize: '44px', color: '#9aa1ad' });
+
+// 2 · Lock → Home
+const s2 = scene('lock', '#eef1f5');
+const wp2 = el('div', 'abs', null, s2); set(wp2, { inset: '0', backgroundImage: WP_LIGHT, backgroundSize: 'cover', opacity: 0.55 });
+const h2a = lines(s2, ['Every device.', '<span class="accent">One RakenOS.</span>']); set(h2a, { top: '150px' });
+const h2b = lines(s2, ['Feels like home.']); set(h2b, { top: '150px' });
+const sub2 = el('div', 'abs center-x sub', 'Widgets, a real dock and gestures that just work.', s2); set(sub2, { top: '290px' });
+const p2 = phone(s2, ['home', 'lock']);
+
+// 3 · Control Center (iris)
+const s3 = scene('cc', '#dfe6f7');
+const h3 = lines(s3, ['Everything,', 'one swipe away.']); set(h3, { top: '150px' });
+const p3 = phone(s3, ['cc']);
+
+// 4 · Carousel
+const s4 = scene('apps', '#eef1f5');
+const wp4 = el('div', 'abs', null, s4); set(wp4, { inset: '0', backgroundImage: WP_LIGHT, backgroundSize: 'cover', opacity: 0.35 });
+const h4 = lines(s4, ['Every app,', '<span class="accent">built right in.</span>']); set(h4, { top: '150px' });
+const sub4 = el('div', 'abs center-x sub', 'Settings · Raken Store · Camera · Files · Notes · Clock', s4); set(sub4, { top: '1810px', fontSize: '32px' });
+const ring = el('div', 'abs', null, s4); set(ring, { inset: '0', perspective: '2200px' });
+const carousel = [phone(ring, ['settings']), phone(ring, ['store-detail']), phone(ring, ['calc-dark'])];
+
+// 5 · Updates
+const s5 = scene('updates', '#f3f4f6');
+const vLabel = el('div', 'abs center-x', 'RakenOS', s5); set(vLabel, { top: '120px', fontWeight: 600, fontSize: '44px', color: '#5a6170' });
+const vNum = el('div', 'abs center-x', '1.0.0', s5); set(vNum, { top: '170px', fontWeight: 760, fontSize: '230px', letterSpacing: '-0.05em', fontVariantNumeric: 'tabular-nums', lineHeight: '1' });
+const vMeta = el('div', 'abs center-x', '', s5); set(vMeta, { top: '420px', fontWeight: 520, fontSize: '38px', color: '#2f5ae0' });
+const sub5 = el('div', 'abs center-x', '177 releases. Every one in spring.', s5); set(sub5, { top: '490px', fontWeight: 700, fontSize: '54px', letterSpacing: '-0.02em' });
+const chipsBox = el('div', 'abs', null, s5); set(chipsBox, { left: '60px', right: '60px', top: '600px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '14px' });
+const CHIPS = ['Checking', 'Available', 'Downloading', 'Verifying', 'Preparing', 'Ready', 'Updated'];
+const chips = CHIPS.map((c) => el('div', 'chip', `<i></i>${c}`, chipsBox));
+const p5 = phone(s5, ['update']);
+
+// 6 · Staged rollout (dark)
+const s6 = scene('rollout', '#0a0c10');
+const wp6 = el('div', 'abs', null, s6); set(wp6, { inset: '0', backgroundImage: WP_DARK, backgroundSize: 'cover', opacity: 0.8 });
+const h6 = lines(s6, ['<span style="color:#fff">Staged rollouts.</span>', '<span style="color:#6d8bff">Same update, your day.</span>']); set(h6, { top: '140px', fontSize: '96px' });
+const barData = [['A', '10% · release day'], ['B', '25% · day 2'], ['C', '30% · day 3'], ['D', '35% · day 4']];
+const bars = barData.map(([g, d], i) => { const b = el('div', 'bar', `<b></b><span>Group ${g}<em>${d}</em></span>`, s6); set(b, { top: `${420 + i * 118}px` }); return b; });
+const p6 = phone(s6, ['rollout-dark']);
+
+// 7 · Languages
+const s7 = scene('langs', '#1a2a6c');
+const LANGS = [
+  ['One OS for every device.', 'English'],
+  ['Ett OS för alla enheter.', 'Svenska'],
+  ['Ein OS für jedes Gerät.', 'Deutsch'],
+  ['Un seul OS pour tous vos appareils.', 'Français'],
+  ['Un solo sistema para todo.', 'Español'],
+  ['Un unico OS per ogni dispositivo.', 'Italiano'],
+  ['Um só sistema para tudo.', 'Português'],
+  ['Jeden system na każde urządzenie.', 'Polski'],
+  ['Yksi järjestelmä, kaikki laitteet.', 'Suomi'],
+  ['Her cihaz için tek sistem.', 'Türkçe'],
+  ['Одна система для любого устройства.', 'Русский', 'Noto CY'],
+  ['نظام واحد لكل جهاز.', 'العربية', 'Noto AR'],
+  ['हर डिवाइस के लिए एक OS.', 'हिन्दी', 'Noto HI'],
+  ['一个系统，适配每一台设备。', '中文', 'Noto SC'],
+  ['모든 기기를 위한 하나의 OS.', '한국어', 'Noto KR'],
+  ['すべてのデバイスに、ひとつのOS。', '日本語', 'Noto JP'],
+  ['One OS for every device.', 'Every language'],
+];
+const LANG_BG = ['#1a2a6c', '#2f5ae0', '#0e7c86', '#6b55d6', '#d23a3a', '#b86e00', '#16945a', '#2f5ae0', '#0e7c86', '#c9406f', '#3a58d0', '#16945a', '#e1574c', '#6b55d6', '#0e8fb0', '#d23a3a', '#07080a'];
+const langEls = LANGS.map(([t, l, f]) => { const e = el('div', 'lang', `<div class="t">${t}</div><div class="l">${l}</div>`, s7); if (f) e.querySelector('.t').style.fontFamily = `'${f}', 'Raken Sans', sans-serif`; if (f) e.querySelector('.l').style.fontFamily = `'${f}', 'Raken Sans', sans-serif`; return e; });
+
+// 8 · End card
+const s8 = scene('end', '#07080a');
+const mark8 = el('div', 'abs', mark.innerHTML.replace('id="mark"', '').replace('id="markPath"', 'class="mp8"'), s8); set(mark8, { width: '220px', height: '220px', left: '430px', top: '620px' });
+const word8 = el('div', 'abs center-x', 'RakenOS', s8); set(word8, { top: '880px', fontWeight: 680, fontSize: '150px', letterSpacing: '-0.04em', color: '#f4f5f7' });
+const tag8 = el('div', 'abs center-x', 'One OS for every device.', s8); set(tag8, { top: '1070px', fontWeight: 520, fontSize: '50px', color: '#c3c8d1' });
+const cta8 = el('div', 'abs', 'Update to RakenOS 59.0.2', s8); set(cta8, { left: '50%', top: '1210px', height: '96px', padding: '0 48px', borderRadius: '999px', background: '#2f5ae0', color: '#fff', fontWeight: 650, fontSize: '38px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', transform: 'translateX(-50%)' });
+const fine8 = el('div', 'abs center-x', 'Available on every compatible device.', s8); set(fine8, { top: '1360px', fontWeight: 500, fontSize: '30px', color: '#6d737d' });
+
+const flash = el('div', 'abs', null, S); set(flash, { inset: '0', background: '#fff', opacity: 0, pointerEvents: 'none' });
+
+let RELEASES = [];
+
+// ------------------------------------------------------------- render --
+function show(s, on) { s.style.visibility = on ? 'visible' : 'hidden'; }
+function renderAt(t) {
+  // ---------- 1 intro 0–3.0
+  show(s1, t < 3.05);
+  if (t < 3.05) {
+    const draw = inOut(prog(t, 0.15, 1.2));
+    const mp = document.getElementById('markPath'); mp.style.strokeDasharray = '80'; mp.style.strokeDashoffset = String(80 * (1 - draw));
+    const stem = mark.querySelector('rect'); stem.style.transform = `scaleY(${outExpo(prog(t, 0.05, 0.7))})`; stem.style.transformOrigin = '50% 90%';
+    const zoom = inExpo(prog(t, 2.35, 3.0));
+    const sc0 = mix(0.82, 1, outExpo(prog(t, 0, 1.3))) * mix(1, 34, zoom);
+    set(mark, { transform: `translate(${mix(0, 80, zoom)}px, ${mix(0, 250, zoom)}px) scale(${sc0})`, filter: `blur(${mix(14, 0, outExpo(prog(t, 0, 0.8)))}px)` });
+    [...word.children].forEach((c, i) => { const p = outExpo(prog(t, 0.95 + i * 0.06, 1.55 + i * 0.06)); c.style.transform = `translateY(${mix(70, 0, p)}px)`; c.style.opacity = String(p * (1 - prog(t, 2.3, 2.6))); });
+    tag1.style.opacity = String(outExpo(prog(t, 1.6, 2.1)) * (1 - prog(t, 2.25, 2.5)));
+    tag1.style.transform = `translateY(${mix(20, 0, outExpo(prog(t, 1.6, 2.1)))}px)`;
+  }
+
+  // ---------- 2 lock → home 2.75–9.3
+  show(s2, t > 2.75 && t < 9.35);
+  if (t > 2.75 && t < 9.35) {
+    s2.style.opacity = String(prog(t, 2.75, 2.95));
+    s2.style.transform = `scale(${mix(1.12, 1, outExpo(prog(t, 2.75, 3.4)))})`;
+    const enter = outExpo(prog(t, 2.85, 3.8));
+    const push = inOut(prog(t, 6.2, 9.2));
+    set(p2, { top: `${mix(1500, 470, enter)}px`, transform: `rotateX(${mix(38, 0, enter)}deg) rotateY(${mix(-5, 6, push)}deg) scale(${mix(0.9, 1, enter) * mix(1, 1.04, push)})` });
+    // unlock: lock screen slides up and away, home settles
+    const u = inOut(prog(t, 5.35, 6.05));
+    set(p2.imgs[1], { transform: `translateY(${-105 * u}%) scale(${mix(1, 0.94, u)})`, opacity: String(1 - u * 0.4), borderRadius: '60px' });
+    set(p2.imgs[0], { transform: `scale(${mix(1.08, 1, u)})`, filter: `blur(${mix(8, 0, u)}px)` });
+    reveal(h2a, t, 2.95, 0.14, 0.7, 5.45);
+    reveal(h2b, t, 5.9, 0.1, 0.7, 8.7);
+    sub2.style.opacity = String(outExpo(prog(t, 6.2, 6.7)) * (1 - prog(t, 8.6, 8.9)));
+    sub2.style.transform = `translateY(${mix(26, 0, outExpo(prog(t, 6.2, 6.7)))}px)`;
+  }
+
+  // ---------- 3 control center (iris) 8.65–12.6
+  show(s3, t > 8.65 && t < 12.6);
+  if (t > 8.65 && t < 12.6) {
+    const iris = inOut(prog(t, 8.65, 9.35));
+    s3.style.clipPath = `circle(${mix(0, 150, iris)}% at 78% 32%)`;
+    const fl = inOut(prog(t, 11.85, 12.55));
+    set(p3, { top: '470px', transform: `translateX(${mix(0, -1250, fl)}px) rotateY(${mix(-2, -55, fl)}deg) scale(${mix(1.04, 1, iris) * mix(1, 0.8, fl)}) translateY(${Math.sin(t * 2) * 8}px)` });
+    reveal(h3, t, 9.05, 0.13, 0.7, 11.8);
+  }
+
+  // ---------- 4 carousel 11.9–16.1
+  show(s4, t > 11.9 && t < 16.1);
+  if (t > 11.9 && t < 16.1) {
+    const inP = outExpo(prog(t, 11.9, 12.8));
+    const push = inOut(prog(t, 15.4, 16.05));
+    s4.style.transform = `translateX(${mix(100, 0, inP) - 100 * push}%) skewX(${mix(-6, 0, inP) - 6 * push}deg)`;
+    const base = mix(70, -130, inOut(prog(t, 12.0, 15.6)));
+    carousel.forEach((p, i) => {
+      const th = ((base + i * 120) * Math.PI) / 180;
+      const x = Math.sin(th) * 470; const z = Math.cos(th) * 470 - 470;
+      set(p, { top: '440px', transform: `translateX(${x}px) translateZ(${z}px) rotateY(${(th * 180) / Math.PI}deg) scale(0.86)`, zIndex: String(Math.round(1000 + z)), filter: `brightness(${mix(0.55, 1, clamp((z + 940) / 940))})` });
+    });
+    reveal(h4, t, 12.5, 0.13, 0.7, 15.2);
+    sub4.style.opacity = String(outExpo(prog(t, 12.9, 13.4)));
+  }
+
+  // ---------- 5 updates 15.4–20.2
+  show(s5, t > 15.4 && t < 20.25);
+  if (t > 15.4 && t < 20.25) {
+    const inP = inOut(prog(t, 15.4, 16.05));
+    s5.style.transform = `translateX(${mix(100, 0, inP)}%) skewX(${mix(-6, 0, inP)}deg)`;
+    const vp = inOut(prog(t, 16.2, 19.0));
+    const idx = Math.min(RELEASES.length - 1, Math.floor(vp * (RELEASES.length - 1) + 0.0001));
+    const r = RELEASES[idx] || { version: '1.0.0', releaseDate: 'March 22', title: 'Initial Release' };
+    vNum.textContent = r.version;
+    const g = RELEASES.find((x) => x.major === r.major && x.patch === 0);
+    vMeta.textContent = `${r.releaseDate} · ${g ? g.title : r.title}`;
+    vNum.style.transform = `scale(${1 + 0.04 * Math.sin(vp * Math.PI)})`;
+    sub5.style.opacity = String(outExpo(prog(t, 16.4, 16.9)));
+    chips.forEach((c, i) => { const a = 16.6 + i * 0.4; c.className = `chip ${t >= a + 0.4 ? 'done' : t >= a ? 'on' : ''}`; c.style.transform = `scale(${t >= a && t < a + 0.4 ? mix(1.12, 1, outBack(prog(t, a, a + 0.3))) : 1})`; });
+    set(p5, { top: `${mix(1900, 760, outExpo(prog(t, 15.7, 16.7)))}px`, transform: `scale(0.86) rotate(${mix(4, 0, outExpo(prog(t, 15.7, 16.7)))}deg)` });
+  }
+
+  // ---------- 6 rollout (diagonal wipe) 19.5–23.6
+  show(s6, t > 19.5 && t < 23.65);
+  if (t > 19.5 && t < 23.65) {
+    const w = inOut(prog(t, 19.5, 20.2));
+    const d = mix(-60, 160, w);
+    s6.style.clipPath = `polygon(0% 100%, ${d}% 100%, ${d - 60}% 0%, 0% 0%)`;
+    const outP = inExpo(prog(t, 22.95, 23.6));
+    s6.style.transform = `scale(${mix(1, 0.86, outP)})`; s6.style.filter = `blur(${mix(0, 18, outP)}px)`; s6.style.opacity = String(1 - outP);
+    reveal(h6, t, 20.0, 0.14, 0.7);
+    bars.forEach((b, i) => { const a = 20.6 + i * 0.45; b.firstChild.style.width = `${100 * outExpo(prog(t, a, a + 0.55))}%`; b.style.transform = `translateX(${mix(-60, 0, outExpo(prog(t, a - 0.25, a + 0.2)))}px)`; b.style.opacity = String(prog(t, a - 0.25, a)); });
+    set(p6, { top: `${mix(1950, 920, outExpo(prog(t, 20.2, 21.2)))}px`, transform: 'scale(0.78)', transformOrigin: '50% 0' });
+  }
+
+  // ---------- 7 languages 23.1–27.4
+  show(s7, t > 23.1 && t < 27.45);
+  if (t > 23.1 && t < 27.45) {
+    const inP = outExpo(prog(t, 23.1, 23.7));
+    s7.style.transform = `scale(${mix(1.35, 1, inP)})`; s7.style.filter = `blur(${mix(20, 0, inP)}px)`; s7.style.opacity = String(prog(t, 23.1, 23.4));
+    const n = LANGS.length - 1;
+    const pos = n * inOut(prog(t, 23.35, 26.6)); // continuous index
+    const ci = Math.round(pos);
+    s7.style.background = lerpColor(LANG_BG[Math.floor(pos)].slice(1), LANG_BG[Math.min(n, Math.floor(pos) + 1)].slice(1), pos - Math.floor(pos));
+    langEls.forEach((e, i) => {
+      const off = i - pos; const a = Math.abs(off);
+      const y = 865 + off * 230;
+      const s = i === ci ? mix(1, 1.0, 0) : 0.62;
+      set(e, { top: `${y}px`, transform: `scale(${(e.fit || 1) * mix(1, 0.6, clamp(a))}) rotateX(${off * -18}deg)`, opacity: String(clamp(1 - a * 0.42, 0, 1)), filter: `blur(${clamp(a - 0.3, 0, 3) * 3}px)` });
+      void s;
+    });
+    const exit = inOut(prog(t, 26.85, 27.45));
+    s7.style.clipPath = `circle(${mix(150, 0, exit)}% at 50% 50%)`;
+  }
+
+  // ---------- 8 end card 26.85–30
+  show(s8, t > 26.85);
+  if (t > 26.85) {
+    const mp = mark8.querySelector('.mp8'); const draw = inOut(prog(t, 27.1, 27.9));
+    mp.style.strokeDasharray = '80'; mp.style.strokeDashoffset = String(80 * (1 - draw));
+    set(mark8, { transform: `scale(${mix(0.7, 1, outBack(prog(t, 27.0, 27.7)))})`, opacity: String(prog(t, 27.0, 27.3)) });
+    word8.style.transform = `translateY(${mix(60, 0, outExpo(prog(t, 27.45, 28.1)))}px)`; word8.style.opacity = String(prog(t, 27.45, 27.8));
+    tag8.style.opacity = String(outExpo(prog(t, 27.8, 28.3)));
+    cta8.style.transform = `translateX(-50%) scale(${mix(0.6, 1, outBack(prog(t, 28.1, 28.6)))})`; cta8.style.opacity = String(prog(t, 28.1, 28.3));
+    fine8.style.opacity = String(prog(t, 28.5, 28.9));
+  }
+
+  // flashes on the two hardest cuts
+  flash.style.opacity = String(Math.max(0.9 * (1 - prog(t, 2.95, 3.35)) * prog(t, 2.75, 2.95), 0.6 * (1 - prog(t, 26.95, 27.35)) * prog(t, 26.85, 26.95)));
+}
+
+window.__ready = (async () => {
+  RELEASES = (await (await fetch('../../data/rakenos-updates.json')).json()).releases;
+  await document.fonts.ready;
+  await Promise.all([...document.images].map((i) => i.decode().catch(() => {})));
+  for (const f of ['Noto JP', 'Noto KR', 'Noto SC', 'Noto AR', 'Noto HI', 'Noto CY']) await document.fonts.load(`600 40px '${f}'`);
+  await document.fonts.load("700 40px 'Raken Sans'");
+  // Fit every translation to the frame width at full size.
+  langEls.forEach((e) => { const w = e.querySelector('.t').scrollWidth; e.fit = Math.min(1, 940 / w); });
+  renderAt(0);
+  return true;
+})();
+window.renderAt = renderAt;
+
+// Live preview when opened in a browser: ?play
+if (location.search.includes('play')) window.__ready.then(() => { const t0 = performance.now(); const loop = () => { renderAt(((performance.now() - t0) / 1000) % 30); requestAnimationFrame(loop); }; loop(); });
+</script>
+</body>
+</html>

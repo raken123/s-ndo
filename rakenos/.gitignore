@@ -5,3 +5,4 @@ app/plugins/
 app/www/lib/
 .studio-*/
 tests/e2e/output/
+marketing/ad/output/
