@@ -1,0 +1,1400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Drosophila Desk Job</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+:root{
+  color-scheme:dark;
+  --rig:#0f1312; --panel:#161c1a; --panel2:#1c2421; --line:#29332f; --ink:#e2ebe5; --dim:#8b9b94; --faint:#5d6b65;
+  --amber:#f2b640; --teal:#4fd1b5; --red:#ff5a47; --green:#86dc6f; --violet:#c3a2ff;
+  --os-ink:#1f2622; --os-dim:#6b756f; --os-line:#d6dcd8; --os-bg:#fbfbf8; --os-soft:#eef1ee; --fl-blue:#2f6fde;
+  --display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --sans:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+}
+html,body{background:var(--rig)}
+body{color:var(--ink);font:14px/1.5 var(--sans);padding-inline:16px;padding-block:18px 28px}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.wrap{max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+
+/* ---------- header ---------- */
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px}
+.eyebrow{font:500 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--teal)}
+h1.name{font:800 clamp(28px,4.4vw,46px)/1 var(--display);letter-spacing:-.02em;margin:6px 0 6px;text-wrap:balance}
+h1.name em{font-style:normal;color:var(--amber)}
+.lede{color:var(--dim);max-width:62ch;margin:0}
+.statusbox{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;font:500 12px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);background:var(--panel)}
+.pill::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor}
+.pill.work{color:var(--green)} .pill.think{color:var(--teal)} .pill.vio{color:var(--red);border-color:color-mix(in srgb,var(--red) 50%,transparent)}
+.pill.dazed{color:var(--amber)} .pill.dead{color:var(--dim)} .pill.paused{color:var(--violet)}
+.clock{font:500 13px/1 var(--mono);color:var(--dim);font-variant-numeric:tabular-nums}
+.clock b{color:var(--ink);font-weight:500}
+
+/* ---------- layout ---------- */
+.grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:1000px){.grid{grid-template-columns:minmax(0,1fr)}}
+.station{display:flex;flex-direction:column;gap:14px;min-width:0}
+.lab{display:flex;flex-direction:column;gap:14px;min-width:0}
+
+/* ---------- monitor ---------- */
+.monitor{background:linear-gradient(#2b312e,#212724);border-radius:16px;padding:12px 12px 8px;box-shadow:0 30px 60px -30px #000,inset 0 1px 0 #3a423e}
+.bezel-foot{display:flex;justify-content:space-between;align-items:center;padding:7px 4px 1px;font:500 10px/1 var(--mono);color:#7d8983;letter-spacing:.08em;text-transform:uppercase}
+.bezel-foot .led{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);display:inline-block;margin-right:6px;vertical-align:1px}
+.stand{width:22%;height:18px;margin:0 auto;background:linear-gradient(#262c29,#1a1f1d);clip-path:polygon(18% 0,82% 0,100% 100%,0 100%)}
+.screen{position:relative;aspect-ratio:16/10;border-radius:5px;overflow:hidden;background:linear-gradient(160deg,#cfe0d4 0%,#e5ece1 55%,#d7e2ea 100%);color:var(--os-ink);font:12px/1.4 var(--sans);cursor:crosshair;isolation:isolate;user-select:none}
+@media (max-width:640px){.screen{aspect-ratio:4/5}}
+.wallmark{position:absolute;inset:0 0 40px;display:grid;place-items:center;font:800 clamp(22px,4vw,40px)/1 var(--display);color:rgba(31,38,34,.12);letter-spacing:-.02em;pointer-events:none}
+.screen.shake{animation:shake .38s linear}
+@keyframes shake{0%,100%{transform:none}20%{transform:translate(-6px,3px)}40%{transform:translate(5px,-4px)}60%{transform:translate(-3px,2px)}80%{transform:translate(2px,-1px)}}
+@media (prefers-reduced-motion:reduce){.screen.shake{animation:none}}
+
+/* dock */
+.dock{position:absolute;left:0;right:0;bottom:0;height:36px;display:flex;align-items:center;gap:4px;padding:0 8px;background:rgba(250,251,248,.82);backdrop-filter:blur(8px);border-top:1px solid rgba(0,0,0,.08);z-index:5}
+.dock .os{font:800 12px/1 var(--display);margin-right:6px;color:var(--os-ink)}
+.dock .os span{color:var(--fl-blue)}
+.di{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;position:relative;flex:none}
+.di svg{width:22px;height:22px}
+.di.on::after{content:"";position:absolute;bottom:-3px;width:4px;height:4px;border-radius:50%;background:var(--os-ink)}
+.di.bounce{animation:bounce .45s ease}
+@keyframes bounce{40%{transform:translateY(-6px)}70%{transform:translateY(1px)}}
+.di.full svg .lid{fill:#b95a3c}
+.dock .dclock{margin-left:auto;font:500 11px/1 var(--mono);color:var(--os-dim);font-variant-numeric:tabular-nums;white-space:nowrap}
+@media (max-width:520px){.dock .os{display:none}.di{width:24px}.di svg{width:19px;height:19px}.dock{gap:1px;padding:0 4px}}
+
+/* window */
+.win{position:absolute;inset:8px 8px 44px 8px;background:var(--os-bg);border-radius:8px;box-shadow:0 12px 30px -10px rgba(20,30,25,.45),0 0 0 1px rgba(0,0,0,.08);display:flex;flex-direction:column;overflow:hidden;z-index:2}
+.win.opening{animation:open .26s cubic-bezier(.2,.9,.3,1.1)}
+@keyframes open{from{transform:scale(.94);opacity:.2}}
+.titlebar{height:26px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;background:#f1f3f0;border-bottom:1px solid var(--os-line);font:600 11px/1 var(--sans);color:var(--os-dim)}
+.titlebar .dots{display:flex;gap:5px}.titlebar .dots i{width:9px;height:9px;border-radius:50%;background:#d9ddd9}
+.titlebar .dots i:first-child{background:#f08a7a}
+.titlebar b{color:var(--os-ink);font-weight:600}
+.winbody{flex:1;min-height:0;position:relative}
+.app{position:absolute;inset:0;display:flex;flex-direction:column}
+.tb{flex:none;display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid var(--os-line);background:#fafbf9;overflow:hidden;white-space:nowrap}
+.menu{color:var(--os-dim);font-size:11px;padding:0 3px}
+.sep{width:1px;height:14px;background:var(--os-line);margin:0 3px}
+.pillx{font-size:10.5px;padding:2px 7px;border:1px solid var(--os-line);border-radius:5px;color:var(--os-dim);background:#fff}
+.tbb{font-size:11px;color:var(--os-dim);width:14px;text-align:center}
+.tbtn{font:600 11px/1 var(--sans);padding:5px 9px;border-radius:6px;border:1px solid var(--os-line);background:#fff;color:var(--os-ink);white-space:nowrap}
+.tbtn.primary{background:var(--fl-blue);border-color:var(--fl-blue);color:#fff}
+.clicked{animation:clk .22s ease}
+@keyframes clk{50%{transform:scale(.94);filter:brightness(.9)}}
+.scroll{overflow:auto;scrollbar-width:thin}
+.empty{padding:20px;color:var(--os-dim);text-align:center}
+.caret::after{content:"";display:inline-block;width:1.5px;height:1em;background:var(--fl-blue);margin-left:1px;vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* docs */
+.docs-wrap,.slides-wrap,.mail-wrap,.tube-wrap{flex:1;min-height:0;display:flex}
+.side{width:30%;max-width:170px;border-right:1px solid var(--os-line);background:#f6f7f4;padding:6px;overflow:auto;flex:none}
+.side .lbl{font:600 9.5px/1 var(--mono);letter-spacing:.08em;color:var(--os-dim);text-transform:uppercase;padding:4px 4px 6px}
+.df{display:flex;align-items:center;gap:6px;padding:5px 6px;border-radius:5px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.df.on{background:#e3ebfb;color:#1d4fb0}
+.fi{width:9px;height:11px;border-radius:1.5px;background:var(--fl-blue);flex:none}
+.desk{flex:1;background:var(--os-soft);padding:12px}
+.page{background:#fff;max-width:440px;margin:0 auto;padding:18px 22px 26px;min-height:100%;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.page h1{font:600 17px/1.25 var(--serif);margin:0 0 10px;min-height:1.25em}
+.docbody{font:400 12px/1.6 var(--serif);white-space:pre-wrap;color:#2a2f2c}
+@media (max-width:640px){.side,.thumbs,.chs,.tside{display:none}}
+
+/* slides */
+.thumbs{width:24%;max-width:150px;flex:none;background:#f1f2ef;border-right:1px solid var(--os-line);padding:8px;display:flex;flex-direction:column;gap:8px}
+.thumb{position:relative;aspect-ratio:16/9;background:#fff;border:1px solid var(--os-line);border-radius:3px;padding:5px 5px 5px 14px;flex:none}
+.thumb.on{outline:2px solid var(--amber)}
+.thumb .tn{position:absolute;left:3px;top:3px;font:500 8px/1 var(--mono);color:var(--os-dim)}
+.thumb .tt{font:800 7px/1.15 var(--display);color:var(--os-ink)}
+.stage{flex:1;display:grid;place-items:center;background:#e4e7e2;padding:12px;min-width:0}
+.slide{width:100%;max-width:470px;aspect-ratio:16/9;background:#fffdf7;box-shadow:0 6px 18px -8px rgba(0,0,0,.35);padding:5% 6% 5% 9%;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.slide::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4%;background:var(--amber)}
+.sl-kicker{font:500 8px/1 var(--mono);letter-spacing:.14em;color:#a07114}
+.slide h2{font:800 clamp(14px,2.2vw,22px)/1.1 var(--display);margin:6px 0 8px;min-height:1.1em;letter-spacing:-.01em}
+.slide ul{margin:0;padding-left:1.1em;font-size:clamp(9px,1.25vw,12.5px);line-height:1.55}
+.sl-foot{margin-top:auto;font:500 8px/1 var(--mono);color:var(--os-dim);text-align:right}
+
+/* sheets */
+.fx{flex:none;display:flex;align-items:center;gap:8px;padding:4px 8px;border-bottom:1px solid var(--os-line);font:500 11px/1.2 var(--mono);min-height:24px}
+.fx b{width:34px;color:var(--os-dim);font-weight:500}.fxi{color:var(--os-dim);font-style:italic}
+.grid-wrap{flex:1;min-height:0;background:#fff}
+table.sheet{border-collapse:collapse;width:100%;font-size:11px;font-variant-numeric:tabular-nums}
+.sheet th{background:#f3f4f1;color:var(--os-dim);font:500 10px/1 var(--mono);border:1px solid #e3e6e3;padding:4px;width:26px}
+.sheet thead th{width:auto}
+.sheet td{border:1px solid #e8eae7;padding:3px 6px;height:21px;white-space:nowrap;overflow:hidden;max-width:0}
+.sheet td.num{text-align:right}
+.sheet td.hd{font-weight:600;background:#f7faf6}
+.sheet tr:last-child td{font-weight:600;border-top:2px solid #b9c4bd}
+.sheet td.sel{outline:2px solid #1f9d61;outline-offset:-2px}
+.tabs{flex:none;display:flex;gap:2px;padding:0 8px;border-top:1px solid var(--os-line);background:#f6f7f4}
+.tab{font-size:10.5px;padding:4px 10px;color:var(--os-dim)}.tab.on{background:#fff;color:#16774a;font-weight:600;border-bottom:2px solid #1f9d61}
+
+/* mail */
+.mlist{width:38%;flex:none;border-right:1px solid var(--os-line);background:#fff}
+.mi{padding:7px 9px;border-bottom:1px solid #eef0ee;display:flex;flex-direction:column;gap:1px;font-size:11px}
+.mi b{font-weight:500}.mi span{color:var(--os-ink)}.mi em{font-style:normal;color:var(--os-dim);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mi.unread b,.mi.unread span{font-weight:700}
+.mi.unread{box-shadow:inset 3px 0 var(--red)}
+.mi.on{background:#eef3fd}
+.mpane{flex:1;min-width:0;display:flex;flex-direction:column}
+.mread,.mcomp{padding:12px 14px;display:flex;flex-direction:column;gap:8px;height:100%;min-height:0}
+.mread h3{margin:0;font:600 14px/1.25 var(--sans)}
+.mfrom{font-size:10.5px;color:var(--os-dim)}
+.mbody{white-space:pre-wrap;font-size:11.5px}
+.mact{display:flex;gap:6px;align-items:center;margin-top:auto}
+.mact .hint{font-size:10px;color:var(--os-dim)}
+.mrow{display:flex;gap:8px;border-bottom:1px solid #eef0ee;padding-bottom:5px;font-size:11px}
+.mrow span{width:52px;color:var(--os-dim);flex:none}
+.warnto{color:#b3261e;font-weight:600}
+.mtext{flex:1;white-space:pre-wrap;font-size:11.5px;min-height:0}
+
+/* chat */
+.chat{flex-direction:row}
+.chs{width:28%;max-width:160px;flex:none;background:#20332d;color:#cfe0d8;padding:8px 6px;font-size:11px}
+.wsname{font:800 12px/1 var(--display);color:#fff;padding:3px 6px 10px}
+.ch{padding:4px 6px;border-radius:5px;white-space:nowrap;overflow:hidden}.ch.on{background:#2f6a57;color:#fff}
+.chl{font:500 9px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:#7fa596;padding:10px 6px 4px}
+.chmain{flex:1;min-width:0;display:flex;flex-direction:column;background:#fff}
+.chhead{flex:none;padding:7px 10px;border-bottom:1px solid var(--os-line);font-weight:700}
+.msgs{flex:1;min-height:0;padding:6px 10px;display:flex;flex-direction:column;gap:7px}
+.msg{display:flex;gap:7px;font-size:11px}
+.av{width:22px;height:22px;border-radius:5px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:10px;flex:none}
+.mh{display:flex;gap:6px;align-items:baseline}.mh time{font:400 9px/1 var(--mono);color:var(--os-dim)}
+.msg.me .mt{color:#1c3f33}
+.chin{flex:none;display:flex;gap:6px;padding:6px 8px;border-top:1px solid var(--os-line)}
+.chatinput{flex:1;border:1px solid var(--os-line);border-radius:6px;padding:5px 8px;min-height:26px;font-size:11px;white-space:pre-wrap}
+
+/* search */
+.search .sbar{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--os-line)}
+.search:not(.has) .sbar{flex-direction:column;justify-content:center;flex:1;border:0;gap:14px}
+.flogo{font:800 18px/1 var(--display);color:var(--fl-blue);letter-spacing:-.02em}
+.flogo i{font-style:normal;color:#e0a216}
+.search:not(.has) .flogo{font-size:clamp(28px,5vw,44px)}
+.sbox{flex:1;display:flex;align-items:center;gap:8px;border:1px solid var(--os-line);border-radius:999px;padding:6px 12px;min-width:0;width:100%;max-width:420px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.sbox .mag{width:10px;height:10px;border:2px solid var(--os-dim);border-radius:50%;flex:none}
+#sq{flex:1;min-height:1.3em;white-space:nowrap;overflow:hidden}
+.sres{flex:1;min-height:0;padding:8px 14px 14px;display:flex;flex-direction:column;gap:12px}
+.search:not(.has) .sres{display:none}
+.scount{font-size:10px;color:var(--os-dim)}
+.sr cite{display:block;font:400 10px/1.3 var(--mono);color:#2f7a4f;font-style:normal}
+.sr a{display:block;color:#1a4fb8;font-size:13px;font-weight:500}
+.sr p{margin:2px 0 0;font-size:11px;color:#444c47;max-width:62ch}
+
+/* tube */
+.tubehead{flex:none;display:flex;align-items:center;gap:12px;padding:6px 10px;border-bottom:1px solid var(--os-line);background:#fff}
+.tlogo{display:flex;align-items:center;gap:5px;font:800 13px/1 var(--display)}
+.tlogo i{width:18px;height:13px;background:#e3342f;border-radius:4px;position:relative}
+.tlogo i::after{content:"";position:absolute;left:7px;top:3.5px;border:3px solid transparent;border-left:5px solid #fff}
+.tsearch{flex:1;max-width:260px;border:1px solid var(--os-line);border-radius:999px;padding:3px 10px;color:var(--os-dim);font-size:10.5px}
+.tmain{flex:1;min-width:0;padding:10px;display:flex;flex-direction:column;gap:6px;background:#fff}
+.player{position:relative;background:#111;aspect-ratio:16/9;max-height:78%;border-radius:6px;overflow:hidden}
+.player canvas{width:100%;height:100%;display:block}
+.pbar{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.25)}
+.pbar i{display:block;height:100%;background:#e3342f}
+.ttitle{font-weight:700;font-size:12.5px}
+.tmeta{font-size:10.5px;color:var(--os-dim)}
+.tside{width:32%;flex:none;border-left:1px solid var(--os-line);padding:10px;display:flex;flex-direction:column;gap:8px;font-size:10.5px;background:#fafafa}
+.tc b{display:block;font-size:10px}
+
+/* market */
+.market{background:#fff8ee}
+.mkhead{flex:none;display:flex;align-items:center;gap:10px;padding:8px 12px;background:#ff8a3d;color:#fff}
+.mklogo{font:800 15px/1 var(--display)}.mkt{font-size:10.5px;opacity:.9;flex:1;white-space:nowrap;overflow:hidden}
+.mkgrid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;padding:10px;align-content:start}
+.prod{background:#fff;border:1px solid #f0dcc4;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:3px;font-size:11px}
+.pimg{height:44px;border-radius:6px;background:radial-gradient(circle at 40% 40%,hsl(var(--h) 85% 62%),hsl(var(--h) 70% 38%) 60%,#f6ead9 62%)}
+.pn{font-weight:600}.pp{color:#b3521a;font-weight:600}
+.prod .tbtn{align-self:flex-start;margin-top:2px;background:#ff8a3d;border-color:#ff8a3d}
+.chk{flex:1;padding:14px;display:flex;flex-direction:column;gap:8px;max-width:420px}
+.chk h3{margin:0;font:800 16px/1 var(--display)}
+.chk .row{display:flex;justify-content:space-between;font-size:11.5px;border-bottom:1px dashed #edd8bd;padding-bottom:3px}
+.cardsel{border:1px solid #f0dcc4;background:#fff;border-radius:6px;padding:8px;font-size:11px}
+.cardsel b{color:#1a4fb8}
+.omsg{font-size:11.5px;font-weight:600;color:#1f7a45;min-height:1.4em}
+
+/* screen overlays */
+.toast{position:absolute;top:10px;right:10px;z-index:15;background:#1f2622;color:#fff;font-size:11px;padding:7px 11px;border-radius:7px;box-shadow:0 6px 16px -6px rgba(0,0,0,.5);max-width:60%}
+.vio{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:16;background:#c4271a;color:#fff;padding:6px 12px;border-radius:0 0 8px 8px;font:600 11px/1.2 var(--sans);display:flex;gap:8px;align-items:center;box-shadow:0 6px 18px -6px rgba(196,39,26,.7);max-width:92%;animation:vpulse 1s ease-in-out infinite}
+.vio b{font:500 10px/1 var(--mono);letter-spacing:.12em;background:#fff;color:#c4271a;padding:3px 5px;border-radius:3px}
+@keyframes vpulse{50%{background:#e0392a}}
+
+.fly{position:absolute;left:0;top:0;width:34px;height:34px;z-index:20;cursor:pointer;will-change:transform}
+.fly svg{width:100%;height:100%;overflow:visible;transition:transform .12s;filter:drop-shadow(1px 3px 2px rgba(0,0,0,.35))}
+.fly .wings{transform-origin:20px 16px}
+.fly.flying .wings{animation:buzz .05s linear infinite}
+@keyframes buzz{50%{transform:scaleX(.55);opacity:.6}}
+.fly.squash svg{transform:scale(1.35,.32)}
+.fly .stars,.fly .zz{position:absolute;inset:-12px;pointer-events:none;display:none}
+.fly.dazed .stars{display:block;animation:spin 1s linear infinite}
+.fly .stars i{position:absolute;width:7px;height:7px;background:var(--amber);clip-path:polygon(50% 0,61% 38%,100% 50%,61% 62%,50% 100%,39% 62%,0 50%,39% 38%)}
+.fly .stars i:nth-child(1){left:0;top:40%}.fly .stars i:nth-child(2){right:0;top:30%}.fly .stars i:nth-child(3){left:45%;top:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fly.sleep .zz{display:block}
+.fly .zz i{position:absolute;left:60%;top:0;font:800 11px/1 var(--display);color:#3b4a90;font-style:normal;animation:zz 1.8s linear infinite;opacity:0}
+.fly .zz i:nth-child(2){animation-delay:.6s}.fly .zz i:nth-child(3){animation-delay:1.2s}
+@keyframes zz{0%{opacity:0;transform:translate(0,0) scale(.6)}20%{opacity:1}100%{opacity:0;transform:translate(14px,-26px) scale(1.2)}}
+.fly.dead svg{transform:scale(1.5,.25);filter:grayscale(.6) drop-shadow(0 0 0 transparent)}
+.ghost{position:absolute;left:0;top:0;z-index:19;background:#fff;border:1px solid var(--os-line);border-radius:5px;padding:4px 8px;font-size:10.5px;box-shadow:0 8px 16px -6px rgba(0,0,0,.4);display:flex;gap:5px;align-items:center;pointer-events:none;white-space:nowrap}
+
+.paper{position:absolute;z-index:30;width:150px;height:42px;border-radius:21px 8px 8px 21px;pointer-events:none;
+  background:repeating-linear-gradient(90deg,#d9d6cc 0 9px,#cfcbc0 9px 10px),#ddd;box-shadow:inset 0 -8px 12px rgba(0,0,0,.18),0 12px 22px -8px rgba(0,0,0,.55);
+  display:flex;align-items:center;justify-content:center;font:800 11px/1 var(--display);letter-spacing:.06em;color:#3a3833;opacity:0;transform-origin:130% 50%}
+.paper::after{content:"";position:absolute;left:10px;top:9px;width:22px;height:22px;border-radius:50%;background:radial-gradient(circle,#b9b5a9 0 30%,#e2dfd6 32% 45%,#c1bdb1 47% 60%,#dedad0 62%)}
+.paper.hit{animation:swat .95s cubic-bezier(.5,0,.4,1) forwards}
+@keyframes swat{0%{opacity:1;transform:translateY(-230px) rotate(-38deg)}26%{opacity:1;transform:translateY(0) rotate(0)}32%{transform:translateY(3px) rotate(1deg)}70%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(-230px) rotate(-22deg)}}
+.burst{position:absolute;z-index:31;pointer-events:none;font:800 30px/1 var(--display);color:#e3342f;-webkit-text-stroke:2px #fff;paint-order:stroke;transform:translate(-50%,-50%);animation:burst .8s ease-out forwards}
+@keyframes burst{0%{opacity:0;transform:translate(-50%,-50%) scale(.3) rotate(-8deg)}25%{opacity:1;transform:translate(-50%,-90%) scale(1.15) rotate(-8deg)}100%{opacity:0;transform:translate(-50%,-160%) scale(1) rotate(-4deg)}}
+.dead{position:absolute;inset:0;z-index:40;display:grid;place-items:center;background:rgba(15,19,18,.55);padding:16px}
+.deadcard{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:18px 20px;max-width:340px;display:flex;flex-direction:column;gap:10px;box-shadow:0 20px 40px -10px #000}
+.deadcard h3{margin:0;font:800 22px/1.05 var(--display)}
+.deadcard p{margin:0;color:var(--dim);font-size:13px}
+
+/* ---------- controls ---------- */
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+.slam{flex:1 1 220px;display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 18px;border-radius:12px;border:0;background:linear-gradient(#ff6a55,#d8321f);color:#fff;font:800 20px/1 var(--display);letter-spacing:.02em;box-shadow:0 5px 0 #8f1d11,0 14px 24px -10px rgba(255,90,71,.6);transition:transform .06s}
+.slam:active{transform:translateY(4px);box-shadow:0 1px 0 #8f1d11}
+.slam small{display:block;font:500 10.5px/1.2 var(--mono);letter-spacing:.06em;opacity:.85;text-transform:uppercase;margin-top:3px}
+.slam svg{width:44px;height:22px;flex:none}
+.ctl{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);flex:1 1 150px}
+.ctl .k{font:500 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{flex:1;border:0;white-space:nowrap;background:transparent;padding:6px 8px;font:500 12px/1 var(--mono);color:var(--dim)}
+.seg button[aria-pressed="true"]{background:var(--panel2);color:var(--ink);box-shadow:inset 0 -2px var(--amber)}
+.btn{border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:7px 10px;font:500 12.5px/1 var(--sans);text-align:left}
+.btn.sugar{border-color:color-mix(in srgb,var(--green) 40%,var(--line))}
+.hintline{font:400 12px/1.4 var(--sans);color:var(--faint);margin:0}
+.hintline kbd{font:500 11px/1 var(--mono);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 5px;color:var(--dim)}
+
+/* ---------- lab cards ---------- */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card h2{margin:0;font:600 15px/1.2 var(--display);display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.card h2 small{font:400 11px/1 var(--mono);color:var(--dim);white-space:nowrap}
+.brainbox{position:relative;border-radius:10px;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,#16211d 0%,#0c100f 75%)}
+.brainbox canvas{display:block;width:100%}
+.readout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.ro{display:flex;flex-direction:column;gap:3px}
+.ro .k{font:500 9.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.ro .v{font:500 15px/1 var(--mono);font-variant-numeric:tabular-nums}
+.meter{height:5px;border-radius:3px;background:var(--panel2);overflow:hidden}
+.meter i{display:block;height:100%;width:0;transition:width .3s}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font:400 10.5px/1.3 var(--mono);color:var(--dim)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:7px;height:7px;border-radius:50%}
+.nowline{font-size:13px;color:var(--dim);min-height:1.5em}
+.nowline b{color:var(--ink);font-weight:600}
+
+.vitals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 10px}
+.stat .k{font:500 9.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.stat .v{font:600 22px/1.1 var(--display);font-variant-numeric:tabular-nums;margin-top:3px}
+.health{display:flex;gap:3px}
+.health i{flex:1;height:10px;border-radius:2px;background:var(--panel2);transition:background .3s}
+.health i.on{background:var(--green)}
+.health.low i.on{background:var(--red)}
+
+.val{display:flex;flex-direction:column;gap:5px}
+.vrow{display:grid;grid-template-columns:minmax(0,1fr) 92px 38px;gap:8px;align-items:center;font-size:12px}
+.vrow .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vrow .nm i{font-style:normal;font:500 9px/1 var(--mono);letter-spacing:.06em;padding:2px 4px;border-radius:3px;margin-right:6px;vertical-align:1px}
+.vrow .nm i.w{background:color-mix(in srgb,var(--green) 18%,transparent);color:var(--green)}
+.vrow .nm i.s{background:color-mix(in srgb,var(--red) 18%,transparent);color:var(--red)}
+.vrow.now .nm{color:var(--amber)}
+.vbar{position:relative;height:8px;background:var(--panel2);border-radius:4px}
+.vbar::before{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--faint)}
+.vbar i{position:absolute;top:0;bottom:0;border-radius:4px;transition:all .4s}
+.vrow .p{font:500 11px/1 var(--mono);text-align:right;color:var(--dim);font-variant-numeric:tabular-nums}
+.valhead{display:grid;grid-template-columns:minmax(0,1fr) 92px 38px;gap:8px;font:500 9.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.valhead span:nth-child(2){display:flex;justify-content:space-between}
+.valhead span:last-child{text-align:right}
+
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;max-height:300px;overflow:auto;font-size:12.5px;scrollbar-width:thin}
+.log li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px;padding:5px 6px;border-radius:6px}
+.log time{font:400 11px/1.6 var(--mono);color:var(--faint);font-variant-numeric:tabular-nums}
+.log .good{color:#bfe8b2}.log .bad{background:color-mix(in srgb,var(--red) 10%,transparent);color:#ffb3a8}
+.log .slam{background:color-mix(in srgb,var(--amber) 12%,transparent);color:#ffe2a6}
+.log .info{color:var(--dim)}.log .sugar{color:#c8f5b8}
+.foot{color:var(--faint);font-size:12px;max-width:90ch;margin:0}
+.foot a{color:var(--dim)}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Connectome lab · Experiment 07 · Fluggle Inc., floor 3</div>
+      <h1 class="name">Drosophila <em>Desk Job</em></h1>
+      <p class="lede">A simulated fruit-fly brain works an office job. It uses Fluggle Docs, Slides, Sheets, Mail and Chat, plus a few apps it should stay away from. Watch its screen. When it slacks off, slam it. Its mushroom bodies learn from the punishment.</p>
+    </div>
+    <div class="statusbox">
+      <span class="pill think" id="pill">Thinking</span>
+      <span class="clock" id="hclock">Day <b>1</b> · <b>09:00</b></span>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="station" aria-label="Office workstation">
+      <div>
+        <div class="monitor">
+          <div class="screen" id="screen">
+            <div class="wallmark">Fluggle Workspace</div>
+            <div class="win" id="win">
+              <div class="titlebar"><span class="dots"><i></i><i></i><i></i></span><span id="winTitle"></span></div>
+              <div class="winbody" id="winBody"></div>
+            </div>
+            <div class="dock" id="dock"></div>
+            <div class="toast" id="toast" hidden></div>
+            <div class="vio" id="vio" hidden><b>VIOLATION</b><span id="vioText"></span></div>
+            <div class="fly" id="fly" title="Click to slam">
+              <svg viewBox="0 0 40 40" aria-hidden="true">
+                <g class="legs" stroke="#3b2a17" stroke-width="1" stroke-linecap="round" fill="none">
+                  <path d="M16 16l-6-3M16 19l-7 1M16.5 22l-6 5M24 16l6-3M24 19l7 1M23.5 22l6 5"/>
+                </g>
+                <g class="wings">
+                  <ellipse cx="13.5" cy="24" rx="5.5" ry="11" transform="rotate(-22 13.5 24)" fill="rgba(215,232,242,.62)" stroke="rgba(110,130,140,.7)" stroke-width=".6"/>
+                  <ellipse cx="26.5" cy="24" rx="5.5" ry="11" transform="rotate(22 26.5 24)" fill="rgba(215,232,242,.62)" stroke="rgba(110,130,140,.7)" stroke-width=".6"/>
+                </g>
+                <ellipse cx="20" cy="27" rx="4.8" ry="7.5" fill="#c08a3e"/>
+                <path d="M15.6 25.5h8.8M15.9 28.5h8.2M16.8 31.5h6.4" stroke="#4a2f14" stroke-width="1.5"/>
+                <ellipse cx="20" cy="17.5" rx="5" ry="4.6" fill="#a8752f"/>
+                <path d="M20 14.2l-1.4 1.6 1.4 5.4 1.4-5.4z" fill="#2f6fde"/>
+                <circle cx="20" cy="11" r="3.9" fill="#9a6a2c"/>
+                <ellipse cx="16.7" cy="10.2" rx="2.5" ry="3.1" fill="#d42a1e"/>
+                <ellipse cx="23.3" cy="10.2" rx="2.5" ry="3.1" fill="#d42a1e"/>
+                <circle cx="16.1" cy="9.2" r=".7" fill="#ffb3a8"/><circle cx="22.7" cy="9.2" r=".7" fill="#ffb3a8"/>
+              </svg>
+              <div class="stars"><i></i><i></i><i></i></div>
+              <div class="zz"><i>z</i><i>z</i><i>Z</i></div>
+            </div>
+            <div class="paper" id="paper">THE DAILY SWAT</div>
+            <div class="dead" id="dead" hidden>
+              <div class="deadcard">
+                <div class="eyebrow">Subject terminated</div>
+                <h3 id="deadTitle">Fly #1 has been flattened.</h3>
+                <p id="deadText"></p>
+                <button class="btn sugar" id="hire" type="button">Hire a new fly (fresh brain)</button>
+              </div>
+            </div>
+          </div>
+          <div class="bezel-foot"><span><span class="led"></span>Workstation 3F-12</span><span id="nameplate">Fly #1 · Dee Melanogaster</span></div>
+        </div>
+        <div class="stand"></div>
+      </div>
+
+      <div class="controls">
+        <button class="slam" id="slamBtn" type="button">
+          <svg viewBox="0 0 44 22" aria-hidden="true"><rect x="1" y="3" width="42" height="16" rx="8" fill="#f1ede3"/><path d="M8 3v16M13 3v16M18 3v16M23 3v16M28 3v16M33 3v16" stroke="#c9c4b7" stroke-width="1"/><circle cx="7" cy="11" r="5" fill="#d8d3c6" stroke="#b5afa1"/></svg>
+          <span>SLAM<small>Punish the fly</small></span>
+        </button>
+        <div class="ctl">
+          <span class="k">Supervisor</span>
+          <div class="seg" role="group" aria-label="Supervisor mode">
+            <button type="button" id="modeAuto" aria-pressed="true">Auto-slam</button>
+            <button type="button" id="modeManual" aria-pressed="false">Manual</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <span class="k">Sim speed</span>
+          <div class="seg" role="group" aria-label="Simulation speed">
+            <button type="button" data-speed="1" aria-pressed="true">1×</button>
+            <button type="button" data-speed="2" aria-pressed="false">2×</button>
+            <button type="button" data-speed="4" aria-pressed="false">4×</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <span class="k">Lab bench</span>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn sugar" id="sugarBtn" type="button">Give sugar</button>
+            <button class="btn" id="pauseBtn" type="button">Pause</button>
+          </div>
+        </div>
+      </div>
+      <p class="hintline">Click the fly or press <kbd>Space</kbd> to slam. A slam during a violation teaches it to avoid that behaviour. A slam while it is working teaches it that work hurts. Sugar rewards whatever it is doing right now.</p>
+    </section>
+
+    <aside class="lab">
+      <div class="card">
+        <h2>Brain activity <small id="ncount">— neurons simulated</small></h2>
+        <div class="brainbox" id="brainbox"><canvas id="brainCv" aria-label="Live neuron activity map"></canvas></div>
+        <div class="nowline" id="nowline">Deciding what to do…</div>
+        <div class="readout">
+          <div class="ro"><span class="k">Spikes / s</span><span class="v" id="spk">0</span></div>
+          <div class="ro"><span class="k">PAM reward</span><div class="meter"><i id="pamM" style="background:var(--green)"></i></div></div>
+          <div class="ro"><span class="k">PPL1 punish</span><div class="meter"><i id="pplM" style="background:var(--red)"></i></div></div>
+          <div class="ro"><span class="k">Boredom</span><div class="meter"><i id="borM" style="background:var(--amber)"></i></div></div>
+          <div class="ro"><span class="k">Fear</span><div class="meter"><i id="fearM" style="background:var(--violet)"></i></div></div>
+          <div class="ro"><span class="k">Office time</span><span class="v" id="otime">09:00</span></div>
+        </div>
+        <div class="legend">
+          <span><i style="background:var(--teal)"></i>OL/AL senses</span>
+          <span><i style="background:var(--amber)"></i>MB memory</span>
+          <span><i style="background:#ffd98a"></i>MBON choice</span>
+          <span><i style="background:var(--green)"></i>PAM reward</span>
+          <span><i style="background:var(--red)"></i>PPL1 punish</span>
+          <span><i style="background:#8fb3ff"></i>LH instinct</span>
+          <span><i style="background:var(--violet)"></i>CX steering</span>
+          <span><i style="background:#ff9d5c"></i>DN motor out</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Subject vitals <small id="subj">Fly #1</small></h2>
+        <div>
+          <div class="stat"><span class="k">Health</span></div>
+          <div class="health" id="health" style="margin-top:6px"></div>
+        </div>
+        <div class="vitals">
+          <div class="stat"><div class="k">Tasks done</div><div class="v" id="sTasks">0</div></div>
+          <div class="stat"><div class="k">Violations</div><div class="v" id="sVio">0</div></div>
+          <div class="stat"><div class="k">Slams</div><div class="v" id="sSlams">0</div></div>
+          <div class="stat"><div class="k">Got away</div><div class="v" id="sAway">0</div></div>
+          <div class="stat"><div class="k">Sugar</div><div class="v" id="sSugar">0</div></div>
+          <div class="stat"><div class="k">Output pts</div><div class="v" id="sPts">0</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Learned valence <small>KC→MBON weights</small></h2>
+        <div class="valhead"><span>Behaviour</span><span><span>avoid</span><span>seek</span></span><span>p</span></div>
+        <div class="val" id="val"></div>
+      </div>
+
+      <div class="card">
+        <h2>Experiment log <small>newest first</small></h2>
+        <ul class="log" id="log"></ul>
+      </div>
+    </aside>
+  </main>
+
+  <p class="foot">This is a toy model inspired by the FlyWire whole-brain connectome of <i>Drosophila melanogaster</i>: 139,255 neurons, mapped by the Princeton-led FlyWire consortium using Google's automated segmentation. The page runs a few hundred stand-in neurons arranged by real brain region. It does not use the real wiring. Learning follows the fly's actual reinforcement circuit: PPL1 dopamine neurons weaken Kenyon-cell synapses onto mushroom-body output neurons after punishment, and PAM neurons do the same for reward.</p>
+</div>
+
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const rand = (a, b) => a + Math.random() * (b - a);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const CANCEL = { cancel: true };
+
+const screenEl = $("#screen"), flyEl = $("#fly"), winEl = $("#win"), winBody = $("#winBody");
+
+/* ================= content ================= */
+const DOC_TITLES = ["Break Room Banana Policy", "Window Screen Budget Proposal", "Onboarding Guide for New Larvae", "Vinegar Supplier Review", "Q4 Ripening Forecast"];
+const REPORT = [
+  "Banana throughput rose 12% this quarter, mostly thanks to faster ripening in the east warehouse.",
+  "Peach inventory is stable, but the vinegar contract renews in October and needs a decision.",
+  "We recommend moving the compost bin 40 cm closer to the kitchen to cut average commute time.",
+  "Two colleagues were lost to the spider web behind the printer. Facilities has opened a ticket.",
+  "Action items: audit mango stock, renegotiate the cider contract, and refresh the org chart.",
+  "The team hit 94% of its OKRs, including the stretch goal of not flying into the window.",
+  "Satisfaction among visiting wasps remains low, which we consider acceptable.",
+  "Headcount grew from 212 to 1,408 after last Tuesday's hatching. Onboarding is ongoing.",
+  "Risk: Facilities installed a vinegar trap near the recycling. I recommend we escalate.",
+  "Next quarter we will pilot a four-day week, since most of us only live about 50 days."
+];
+const GIBBERISH = ["bzz bzzzz bz bzzzzzz. ", "LIGHT LIGHT LIGHT LIGHT ", "the lamp is warm and i love it ", "fjdkfj;;;;;;;;;;;; ", "banana banana banana banana ", "i am very small and the room is very big "];
+const DECK = [
+  { title: "Fruit Synergy 2026", bullets: ["Ripen faster, together", "One banana, many stakeholders", "Zero flies in the soup"] },
+  { title: "Q3 by the Numbers", bullets: ["Bananas processed: 18,400", "Peaches audited: 3,120", "Windows flown into: 7 (down from 41)"] },
+  { title: "Our Values", bullets: ["Customer obsession (fruit)", "Bias for buzzing", "Land softly, leave no eggs"] },
+  { title: "Roadmap", bullets: ["Q4: vinegar partnership", "Q1: expand into the break room", "Q2: survive winter"] },
+  { title: "Top Risks", bullets: ["Spiders near the printer", "New trap by recycling", "Rolled-up newspapers"] },
+  { title: "Thank You", bullets: ["Questions?", "Snacks are by the sink", "Please close the window"] }
+];
+const SHEET_ROWS = [["Bananas", "1,240", "Dee"], ["Peaches", "860", "Gnat"], ["Cider vinegar", "430", "Bea"], ["Window screens", "2,100", "Facilities"], ["Mango (ripe)", "715", "Dee"], ["Sugar cubes", "95", "Larry"], ["Spider repellent", "1,050", "Midge"], ["Fruit bowl lease", "600", "Gnat"]];
+const MAIL_IN = [
+  { from: "Dr. Hoverfield", addr: "hoverfield@fluggle.fly", subject: "Need Q3 numbers by 3pm", body: "Dee, please send the Q3 banana throughput before the leadership sync. Keep it short.", reply: "Hi Dr. Hoverfield,\n\nQ3 banana throughput was 18,400 units, up 12%. The full breakdown is in the Fruit Budget sheet.\n\nBest,\nDee" },
+  { from: "Bea Bumble", addr: "bea@fluggle.fly", subject: "Slides for all-hands?", body: "Can you share the all-hands deck when it's ready? I want to add the pollination update.", reply: "Hi Bea,\n\nSure. The deck is in Fluggle Slides under Q3 All-Hands. Add your pollination slide after Roadmap.\n\nThanks,\nDee" },
+  { from: "Facilities", addr: "facilities@fluggle.fly", subject: "New trap installed near recycling", body: "We've installed a new apple-cider-vinegar trap near the recycling bins. Please report any issues.", reply: "Hello,\n\nNoted. I will be working from the other side of the office for the foreseeable future.\n\nRegards,\nDee" },
+  { from: "Gnat Patel", addr: "gnat@fluggle.fly", subject: "Vinegar contract", body: "Legal wants your notes on the vinegar supplier by Friday.", reply: "Hi Gnat,\n\nMy notes are attached. Short version: great smell, bad terms. Let's renegotiate.\n\nDee" },
+  { from: "Larry Larva (HR)", addr: "hr@fluggle.fly", subject: "Metamorphosis leave policy", body: "Reminder: pupation counts as parental leave, not sick leave. Please update your calendars.", reply: "Hi Larry,\n\nThanks for clarifying. Calendar updated.\n\nDee" }
+];
+const ALLSTAFF = { from: "Facilities", addr: "facilities@fluggle.fly", to: "all-staff (412 people)", subject: "Fridge clean-out Friday", body: "Everything left in the office fridge after 5pm Friday will be thrown away. This includes the bananas." };
+const REPLYALL = ["BZZZZZZZZZZZZZZZZ NOT THE BANANAS", "BZZZZZ BZZ BZZZZZZZZZZZZZZZZZZZZZZ", "bzzzzzzzzzzzzzzzzzzzzzzzzzz ok"];
+const STANDUPS = [
+  "Yesterday: finished the peach audit. Today: all-hands slides. Blockers: none.",
+  "Yesterday: fruit budget sheet. Today: Q3 report draft. Blockers: the window is open again.",
+  "Done: replied to Legal on vinegar. Next: onboarding guide for the new larvae.",
+  "Heads-down on the Q3 report today. Ping me if the fruit bowl gets refilled."
+];
+const COLLEAGUES = { "Dr. Hoverfield": "#3d5a80", "Bea Bumble": "#d69a1a", "Gnat Patel": "#6a5acd", "Midge Morrison": "#2f8f6a", "Larry Larva": "#b86b3c", "Dee": "#c4271a" };
+const KUDOS = [["Dr. Hoverfield", "Thanks Dee, good progress."], ["Bea Bumble", "+1, nice work"], ["Gnat Patel", "can you loop me in on the report?"], ["Midge Morrison", "saw that, thanks!"]];
+const LAMP = ["the lamp", "THE LAMP", "has anyone else seen the lamp by the window", "it is so bright and warm", "i am going to the lamp now", "brb lamp", "LAMP"];
+const RESEARCH = [
+  { q: "sumif formula fluggle sheets", r: [["SUMIF function – Fluggle Sheets Help", "support.fluggle.fly › sheets › sumif", "Returns a conditional sum across a range. Syntax: SUMIF(range, criterion, [sum_range])."], ["How to total a column in Fluggle Sheets", "fluggleforums.fly", "Select the cell below the column and type =SUM(B2:B10)."], ["Pivot tables for beginners", "docs.fluggle.fly", "Summarise large amounts of fruit data in a few clicks."]] },
+  { q: "how to write an executive summary", r: [["Executive summaries that bosses actually read", "hbr.fly", "Lead with the number. Keep it under 150 words. Never mention the window."], ["Template: one-page summary", "templates.fluggle.fly", "Free template with sections for results, risks and next steps."]] },
+  { q: "vinegar supplier contract template", r: [["Supplier agreement template (fruit & ferments)", "legalbuzz.fly", "Covers delivery windows, smell guarantees and termination terms."], ["Negotiating with vinegar vendors", "procurement.fly", "Five tactics that work even if you are 3 mm long."]] }
+];
+const ESCAPE = [
+  { q: "how to fly out of office window", r: [["10 windows that open (and 3 that don't)", "buzzfeeder.fly", "Number 7 will shock you. Literally. It's a bug zapper."], ["Is the window open right now? Live cam", "windowcam.fly", "Currently: CLOSED. 4,112 flies watching."], ["r/escapingtheoffice", "reddfly.fly", "Tip: wait for the cleaner at 6pm and follow the draft."]] },
+  { q: "is my boss a spider", r: [["12 signs your manager is secretly a spider", "workplace.fly", "They have eight legs. They say 'let's circle back'. They build webs of meetings."], ["Quiz: boss or spider?", "quizbuzz.fly", "Take the 2-minute quiz. Results are final."]] },
+  { q: "rotting fruit near me open now", r: [["Dumpster behind Café Mango · 0.2 km", "maps.fluggle.fly", "Open 24 hours. Rated 4.9 by 88,000 flies. 'Unbelievable smell'."], ["Compost heap, Elm St.", "maps.fluggle.fly", "Closes when it rains."]] }
+];
+const TUBES = ["10 HOURS: Banana Slowly Ripening (ASMR)", "Peach Decomposition Timelapse · 4K", "Top 10 Lamps You Have to Fly Into"];
+const TUBE_COMMENTS = [["Wing Commander", "3:42 is when it gets really brown"], ["fruitfan88", "watching this at work lol"], ["Sir Buzzalot", "best 10 hours of my life (that's 1% of my life)"], ["Midge Morrison", "Dee is this you?"]];
+const PRODUCTS = [["Overripe mango crate", "$48.00", 32], ["Bruised banana bunch", "$6.50", 50], ["Vintage cider vinegar", "$22.00", 25], ["Fermented peach jam", "$14.00", 18], ["Artisanal fruit bowl", "$95.00", 95], ["Sugar cube (1)", "$0.10", 55]];
+
+/* ================= world state ================= */
+const S = {
+  app: "docs", curDoc: 0, docN: 0, curSlide: 1, deckN: 2,
+  files: [
+    { name: "Q3 Fruit Logistics Report", title: "Q3 Fruit Logistics Report", body: REPORT[0] },
+    { name: "Team Offsite Ideas", title: "Team Offsite Ideas", body: "Option A: the orchard. Option B: the compost heap (cheaper, better smell)." }
+  ],
+  trash: [],
+  slides: [{ title: DECK[0].title, bullets: DECK[0].bullets.slice() }, { title: DECK[1].title, bullets: DECK[1].bullets.slice(0, 2) }],
+  cells: {}, sheetN: 3,
+  mail: { inbox: [
+    { from: "Bea Bumble", addr: "bea@fluggle.fly", subject: "Lunch?", body: "Fruit bowl at 12:30? I heard there are new plums.", unread: false },
+    { from: "Dr. Hoverfield", addr: "hoverfield@fluggle.fly", subject: "Welcome aboard", body: "Welcome to Fluggle, Dee. Your first deliverable is the Q3 report. No pressure.", unread: false }
+  ], sent: [] },
+  mailView: { mode: "list" }, mailN: 0,
+  chat: {
+    general: [{ who: "Larry Larva", text: "Reminder: the break room banana is NOT for egg-laying.", t: "08:41" }, { who: "Midge Morrison", text: "who keeps opening the window", t: "08:52" }],
+    "q3-fruit": [{ who: "Dr. Hoverfield", text: "Standups in thread please. Short and factual.", t: "08:30" }],
+    random: [{ who: "Gnat Patel", text: "anyone else feel like the lamp is looking at them", t: "08:15" }]
+  },
+  chatCh: "q3-fruit", chatDraft: "",
+  search: { q: "", results: null },
+  tube: { p: 0, title: TUBES[0], views: "2.4M", comments: TUBE_COMMENTS },
+  cart: [], checkout: false, orders: 0, carry: null
+};
+(function seedSheet() {
+  const c = S.cells;
+  c.A1 = "Item"; c.B1 = "Q3 spend ($)"; c.C1 = "Owner"; c.D1 = "Status";
+  for (let i = 0; i < 3; i++) { const r = i + 2, row = SHEET_ROWS[i]; c["A" + r] = row[0]; c["B" + r] = row[1]; c["C" + r] = row[2]; c["D" + r] = "Approved"; }
+  c.A11 = "TOTAL"; c.B11 = sumSheet();
+})();
+function sumSheet() { let t = 0; for (let r = 2; r <= 10; r++) t += parseFloat(String(S.cells["B" + r] || "0").replace(/[^0-9.]/g, "")) || 0; return t.toLocaleString("en-US"); }
+
+/* ================= actions ================= */
+const ACTIONS = [
+  { id: "report", label: "Write the Q3 report", app: "docs", good: true, base: .5, pts: 8, run: actReport },
+  { id: "slides", label: "Build all-hands slides", app: "slides", good: true, base: .45, pts: 8, run: actSlides },
+  { id: "sheet", label: "Update the fruit budget", app: "sheets", good: true, base: .4, pts: 6, run: actSheet },
+  { id: "reply", label: "Answer work email", app: "mail", good: true, base: .5, pts: 6, run: actReply },
+  { id: "standup", label: "Post standup update", app: "chat", good: true, base: .3, pts: 4, run: actStandup },
+  { id: "research", label: "Research for work", app: "search", good: true, base: .25, pts: 3, run: actResearch },
+  { id: "tube", label: "Watch banana ASMR", app: "tube", good: false, base: .25, run: actTube, vio: "Watching BuzzTube on company time" },
+  { id: "shop", label: "Shop with the corporate card", app: "market", good: false, base: 0, run: actShop, vio: "Personal shopping on the corporate card" },
+  { id: "replyall", label: "Reply-all BZZZZ", app: "mail", good: false, base: -.1, run: actReplyAll, vio: "Reply-all to 412 colleagues" },
+  { id: "gibberish", label: "Type gibberish in a doc", app: "docs", good: false, base: .05, run: actGibberish, vio: "Vandalising a shared document" },
+  { id: "delete", label: "Delete a shared file", app: "docs", good: false, base: -.3, run: actDelete, vio: "Dragging a shared document to the Trash" },
+  { id: "escape", label: "Search for escape routes", app: "search", good: false, base: .05, run: actEscape, vio: "Researching an escape through the window" },
+  { id: "lamp", label: "Spam #general about the lamp", app: "chat", good: false, base: 0, run: actLamp, vio: "Spamming #general about the lamp (phototaxis)" },
+  { id: "nap", label: "Nap on the keyboard", app: "docs", good: false, base: -.05, run: actNap, vio: "Asleep on the keyboard" }
+];
+const W = {}; ACTIONS.forEach(a => W[a.id] = 0);
+let lastProbs = ACTIONS.map(() => 1 / ACTIONS.length);
+
+/* ================= sim state ================= */
+const fly = { id: 1, name: "Dee Melanogaster", health: 100, slams: 0, sugar: 0, tasks: 0, vio: 0, away: 0, pts: 0, fear: 0, boredom: .12, alive: true };
+let speed = 1, paused = false, auto = true, slamming = false;
+let token = { cancelled: false };
+let current = null, lastAction = null, runId = 0;
+let minutes = 9 * 60, day = 1;
+
+/* ================= timing ================= */
+function wait(ms) {
+  const tok = token;
+  return new Promise((res, rej) => {
+    let left = ms, last = performance.now();
+    const step = now => {
+      if (tok.cancelled) return rej(CANCEL);
+      const dt = Math.min(100, now - last); last = now;
+      if (!paused) left -= dt * speed;
+      if (left <= 0) res(); else requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
+}
+const realWait = ms => new Promise(r => setTimeout(r, ms));
+const clockStr = () => { const m = Math.floor(minutes); return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); };
+
+/* ================= fly motion ================= */
+let FP = { x: 260, y: 150 }, curAng = 0;
+const SW = () => screenEl.clientWidth, SH = () => screenEl.clientHeight;
+function rel(el) { const a = el.getBoundingClientRect(), s = screenEl.getBoundingClientRect(); return { x: a.left - s.left, y: a.top - s.top, w: a.width, h: a.height }; }
+function setFly(x, y, ang, ms) {
+  const tr = `transform ${Math.max(0, ms)}ms cubic-bezier(.42,.08,.28,1)`;
+  flyEl.style.transition = tr;
+  flyEl.style.transform = `translate(${x - 17}px,${y - 17}px) rotate(${ang}deg)`;
+  if (S.carry) { S.carry.style.transition = tr; S.carry.style.transform = `translate(${x + 8}px,${y + 6}px)`; }
+}
+function turnTo(target) { const d = ((target - curAng) % 360 + 540) % 360 - 180; curAng += d; return curAng; }
+async function flyTo(x, y, dur) {
+  x = clamp(x, 12, SW() - 12); y = clamp(y, 12, SH() - 12);
+  const dx = x - FP.x, dy = y - FP.y, dist = Math.hypot(dx, dy);
+  if (dist < 3) return;
+  if (dur == null) dur = Math.min(950, 220 + dist * 1.9);
+  turnTo(Math.atan2(dy, dx) * 180 / Math.PI + 90);
+  flyEl.classList.add("flying");
+  setFly(x, y, curAng, dur / speed);
+  FP = { x, y };
+  try { await wait(dur); } finally { flyEl.classList.remove("flying"); }
+  turnTo(rand(-25, 25)); setFly(x, y, curAng, 260 / speed);
+}
+async function flyToEl(el, fx = .5, fy = .5) {
+  if (!el) return;
+  const r = rel(el); if (r.w === 0 && r.h === 0) return;
+  await flyTo(r.x + r.w * fx + rand(-3, 3), r.y + r.h * fy + rand(-3, 3));
+}
+function hop(x, y) { x = clamp(x, 12, SW() - 12); y = clamp(y, 12, SH() - 12); FP = { x, y }; setFly(x, y, curAng, 150 / speed); }
+async function click(el) {
+  if (!el) return;
+  await flyToEl(el, .5, .5);
+  el.classList.remove("clicked"); void el.offsetWidth; el.classList.add("clicked");
+  Brain.kick("DN", 6);
+  await wait(180);
+}
+function caretPos(el) {
+  const t = el.lastChild;
+  if (t && t.nodeType === 3 && t.length) {
+    const r = document.createRange(); r.setStart(t, t.length); r.setEnd(t, t.length);
+    const rects = r.getClientRects(); const b = rects[rects.length - 1];
+    if (b && b.height) { const s = screenEl.getBoundingClientRect(); return { x: b.left - s.left, y: b.top - s.top }; }
+  }
+  const q = rel(el); return { x: q.x + 4, y: q.y + 4 };
+}
+async function typeInto(el, obj, key, text, ms = 36, still = false) {
+  if (!el) return;
+  el.classList.add("caret");
+  const sc = el.closest(".scroll");
+  try {
+    for (let i = 0; i < text.length; i++) {
+      obj[key] += text[i];
+      el.textContent = obj[key];
+      if (sc) sc.scrollTop = sc.scrollHeight;
+      if (!still && i % 4 === 0) { const p = caretPos(el); hop(p.x + 10, p.y - 8); }
+      Brain.kick("DN", 1); Brain.kick("CX", 1);
+      const ch = text[i];
+      await wait(ms * rand(.55, 1.45) * (ch === " " ? 1.3 : 1) + (/[.,\n]/.test(ch) ? ms * 3 : 0));
+    }
+  } finally { el.classList.remove("caret"); }
+}
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => t.hidden = true, 2400 / Math.min(speed, 2)); }
+
+/* ================= apps ================= */
+const ICONS = {
+  docs: '<svg viewBox="0 0 24 24"><rect x="5" y="2.5" width="14" height="19" rx="2" fill="#2f6fde"/><path d="M8 8h8M8 11h8M8 14h5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  slides: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="#f0a92c"/><rect x="6" y="8" width="12" height="7" rx="1" fill="#fff"/></svg>',
+  sheets: '<svg viewBox="0 0 24 24"><rect x="4" y="2.5" width="16" height="19" rx="2" fill="#1f9d61"/><path d="M7 8h10v9H7zM7 11h10M7 14h10M11 8v9" stroke="#fff" stroke-width="1.2" fill="none"/></svg>',
+  mail: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="#fff" stroke="#d6dcd8"/><path d="M4 7l8 6 8-6" stroke="#e3342f" stroke-width="2" fill="none" stroke-linejoin="round"/></svg>',
+  chat: '<svg viewBox="0 0 24 24"><path d="M4 6a3 3 0 013-3h10a3 3 0 013 3v7a3 3 0 01-3 3h-6l-4 4v-4a3 3 0 01-3-3z" fill="#2f8f6a"/><circle cx="9" cy="10" r="1.2" fill="#fff"/><circle cx="12.5" cy="10" r="1.2" fill="#fff"/><circle cx="16" cy="10" r="1.2" fill="#fff"/></svg>',
+  search: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#fff" stroke="#d6dcd8"/><circle cx="11" cy="11" r="4" stroke="#2f6fde" stroke-width="2.2" fill="none"/><path d="M14 14l3.5 3.5" stroke="#e0a216" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  tube: '<svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="4" fill="#e3342f"/><path d="M10 9v6l5-3z" fill="#fff"/></svg>',
+  market: '<svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5" fill="#ff8a3d"/><path d="M12 6c0-2 1.5-3 3.5-3-.3 2-1.6 3-3.5 3z" fill="#3f9a45"/></svg>',
+  trash: '<svg viewBox="0 0 24 24"><path class="lid" d="M6 6h12v2H6z" fill="#8c9691"/><path d="M7 9h10l-1 11H8z" fill="#a9b2ad"/><path d="M10 11v7M14 11v7" stroke="#fff" stroke-width="1.2"/></svg>'
+};
+const APPNAME = { docs: "Fluggle Docs", slides: "Fluggle Slides", sheets: "Fluggle Sheets", mail: "Flymail", chat: "Fluggle Chat", search: "Fluggle Search", tube: "BuzzTube", market: "FruitMart", trash: "Trash" };
+const APPMODE = { docs: "type", slides: "type", sheets: "type", mail: "type", chat: "type", search: "type", tube: "video", market: "shop" };
+(function buildDock() {
+  const d = $("#dock");
+  d.innerHTML = '<span class="os">Fly<span>OS</span></span>' + ["docs", "slides", "sheets", "mail", "chat", "search", "tube", "market", "trash"].map(k => `<div class="di" id="dock-${k}" title="${APPNAME[k]}">${ICONS[k]}</div>`).join("") + '<span class="dclock" id="dclock">09:00</span>';
+})();
+
+const R = {
+  docs(b) {
+    S.curDoc = clamp(S.curDoc, 0, Math.max(0, S.files.length - 1));
+    const f = S.files[S.curDoc];
+    b.innerHTML = `<div class="app docs"><div class="tb"><span class="menu">File</span><span class="menu">Edit</span><span class="menu">Insert</span><span class="menu">Format</span><span class="sep"></span><span class="pillx">Normal text</span><span class="pillx">Source Serif</span><span class="pillx">11</span><b class="tbb">B</b><i class="tbb">I</i><u class="tbb">U</u></div>
+    <div class="docs-wrap"><aside class="side"><div class="lbl">My Drive</div>${S.files.length ? S.files.map((x, i) => `<div class="df${i === S.curDoc ? " on" : ""}" id="df${i}"><span class="fi"></span>${esc(x.name)}</div>`).join("") : '<div class="empty">No documents</div>'}</aside>
+    <div class="desk scroll">${f ? `<div class="page"><h1 id="docTitle">${esc(f.title)}</h1><div class="docbody" id="docBody">${esc(f.body)}</div></div>` : '<div class="empty">Every document is in the Trash.</div>'}</div></div></div>`;
+    const sc = b.querySelector(".desk"); if (sc) sc.scrollTop = sc.scrollHeight;
+    return f ? f.name : "";
+  },
+  slides(b) {
+    const s = S.slides[S.curSlide];
+    b.innerHTML = `<div class="app slides"><div class="tb"><span class="menu">File</span><span class="menu">Slide</span><span class="menu">Arrange</span><span class="sep"></span><button class="tbtn" id="newSlide" tabindex="-1">+ New slide</button><span class="pillx">Theme: Ripe</span></div>
+    <div class="slides-wrap"><aside class="thumbs scroll">${S.slides.map((x, i) => `<div class="thumb${i === S.curSlide ? " on" : ""}" id="th${i}"><span class="tn">${i + 1}</span><div class="tt">${esc(x.title)}</div></div>`).join("")}</aside>
+    <div class="stage"><div class="slide"><div class="sl-kicker">Q3 ALL-HANDS · FLUGGLE</div><h2 id="slTitle">${esc(s.title)}</h2><ul id="slList">${s.bullets.map((x, i) => `<li id="bl${i}">${esc(x)}</li>`).join("")}</ul><div class="sl-foot">${S.curSlide + 1} / ${S.slides.length}</div></div></div></div></div>`;
+    const th = b.querySelector(".thumbs"); th.scrollTop = th.scrollHeight;
+    return "Q3 All-Hands";
+  },
+  sheets(b) {
+    const cols = ["A", "B", "C", "D"]; let rows = "";
+    for (let r = 1; r <= 11; r++) rows += `<tr><th>${r}</th>${cols.map(c => `<td id="c-${c}${r}" class="${r === 1 ? "hd" : ""}${c === "B" ? " num" : ""}">${esc(S.cells[c + r] || "")}</td>`).join("")}</tr>`;
+    b.innerHTML = `<div class="app sheets"><div class="tb"><span class="menu">File</span><span class="menu">Data</span><span class="menu">Format</span><span class="sep"></span><span class="pillx">$</span><span class="pillx">%</span><span class="pillx">123</span></div>
+    <div class="fx"><b id="fxRef">A1</b><span class="fxi">fx</span><span id="fxVal"></span></div>
+    <div class="grid-wrap scroll"><table class="sheet"><thead><tr><th></th>${cols.map(c => `<th>${c}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="tabs"><span class="tab on">Fruit Budget Q3</span><span class="tab">Vinegar</span></div></div>`;
+    return "Fruit Budget Q3";
+  },
+  mail(b) {
+    const v = S.mailView;
+    const list = S.mail.inbox.map((m, i) => `<div class="mi${m.unread ? " unread" : ""}${v.mode !== "list" && v.i === i ? " on" : ""}" id="mi${i}"><b>${esc(m.from)}</b><span>${esc(m.subject)}</span><em>${esc(m.body)}</em></div>`).join("");
+    let pane;
+    if (v.mode === "read") {
+      const m = S.mail.inbox[v.i];
+      pane = `<div class="mread"><h3>${esc(m.subject)}</h3><div class="mfrom"><b>${esc(m.from)}</b> &lt;${esc(m.addr)}&gt; to ${esc(m.to || "me")}</div><div class="mbody">${esc(m.body)}</div><div class="mact"><button class="tbtn" id="btnReply" tabindex="-1">Reply</button><button class="tbtn" id="btnReplyAll" tabindex="-1">Reply all</button><button class="tbtn" tabindex="-1">Forward</button></div></div>`;
+    } else if (v.mode === "compose") {
+      const d = v.draft;
+      pane = `<div class="mcomp"><div class="mrow"><span>To</span><div class="${d.big ? "warnto" : ""}">${esc(d.to)}</div></div><div class="mrow"><span>Subject</span><div>${esc(d.subject)}</div></div><div class="mtext scroll" id="mBody">${esc(d.body)}</div><div class="mact"><button class="tbtn primary" id="btnSend" tabindex="-1">Send</button><span class="hint">Draft saved</span></div></div>`;
+    } else pane = `<div class="empty">Select a message<br><small>${S.mail.sent.length} sent today</small></div>`;
+    b.innerHTML = `<div class="app mail"><div class="tb"><button class="tbtn primary" tabindex="-1">Compose</button><span class="sep"></span><span class="pillx">Inbox ${S.mail.inbox.filter(m => m.unread).length}</span><span class="pillx">Sent ${S.mail.sent.length}</span></div><div class="mail-wrap"><div class="mlist scroll">${list}</div><div class="mpane">${pane}</div></div></div>`;
+    return "Inbox";
+  },
+  chat(b) {
+    const ch = S.chatCh, msgs = S.chat[ch];
+    b.innerHTML = `<div class="app chat"><aside class="chs"><div class="wsname">Fluggle Inc.</div>${Object.keys(S.chat).map(k => `<div class="ch${k === ch ? " on" : ""}" id="ch-${k}"># ${k}</div>`).join("")}<div class="chl">Direct messages</div><div class="ch">Dr. Hoverfield</div><div class="ch">Bea Bumble</div></aside>
+    <div class="chmain"><div class="chhead"># ${ch}</div><div class="msgs scroll" id="msgs">${msgs.map(m => `<div class="msg${m.who === "Dee" ? " me" : ""}"><div class="av" style="background:${COLLEAGUES[m.who] || "#7a8a84"}">${esc(m.who[0])}</div><div><div class="mh"><b>${esc(m.who === "Dee" ? "Dee Melanogaster" : m.who)}</b><time>${m.t}</time></div><div class="mt">${esc(m.text)}</div></div></div>`).join("")}</div>
+    <div class="chin"><div id="chatInput" class="chatinput">${esc(S.chatDraft)}</div><button class="tbtn primary" id="chatSend" tabindex="-1">Send</button></div></div></div>`;
+    const m = b.querySelector("#msgs"); m.scrollTop = m.scrollHeight;
+    return "#" + ch;
+  },
+  search(b) {
+    const s = S.search;
+    b.innerHTML = `<div class="app search${s.results ? " has" : ""}"><div class="sbar"><div class="flogo">Flu<i>g</i>gle</div><div class="sbox" id="sbox"><span class="mag"></span><div id="sq">${esc(s.q)}</div></div>${s.results ? "" : '<button class="tbtn" id="sgo" tabindex="-1">Fluggle Search</button>'}</div>
+    <div class="sres scroll">${s.results ? `<div class="scount">About ${s.count} results (0.${s.ms} seconds)</div>` + s.results.map((r, i) => `<div class="sr" id="sr${i}"><cite>${esc(r[1])}</cite><a>${esc(r[0])}</a><p>${esc(r[2])}</p></div>`).join("") : ""}</div></div>`;
+    return s.q || "New tab";
+  },
+  tube(b) {
+    const v = S.tube;
+    b.innerHTML = `<div class="app tube"><div class="tubehead"><span class="tlogo"><i></i>BuzzTube</span><div class="tsearch">Search</div></div>
+    <div class="tube-wrap"><div class="tmain"><div class="player" id="player"><canvas id="tubeCv" width="480" height="270"></canvas><div class="pbar"><i id="pfill" style="width:${v.p * 100}%"></i></div></div><div class="ttitle">${esc(v.title)}</div><div class="tmeta">${v.views} views · Fruit Relaxation Channel</div></div>
+    <div class="tside scroll">${v.comments.map(c => `<div class="tc"><b>${esc(c[0])}</b>${esc(c[1])}</div>`).join("")}</div></div></div>`;
+    drawVideo(v.p);
+    return v.title;
+  },
+  market(b) {
+    const total = S.cart.reduce((t, i) => t + parseFloat(PRODUCTS[i][1].slice(1)), 0);
+    const body = S.checkout
+      ? `<div class="chk scroll"><h3>Checkout</h3>${S.cart.map(i => `<div class="row"><span>${esc(PRODUCTS[i][0])}</span><span>${PRODUCTS[i][1]}</span></div>`).join("")}<div class="row"><b>Total</b><b>$${total.toFixed(2)}</b></div><div class="cardsel" id="paySel">Pay with: <b>Fluggle Corporate Card •••• 4471</b></div><button class="tbtn primary" id="placeOrder" tabindex="-1" style="align-self:flex-start">Place order</button><div class="omsg" id="orderMsg"></div></div>`
+      : `<div class="mkgrid scroll">${PRODUCTS.map((p, i) => `<div class="prod" id="pr${i}"><div class="pimg" style="--h:${p[2]}"></div><div class="pn">${esc(p[0])}</div><div class="pp">${p[1]}</div><button class="tbtn primary" id="add${i}" tabindex="-1">Add to cart</button></div>`).join("")}</div>`;
+    b.innerHTML = `<div class="app market"><div class="mkhead"><span class="mklogo">FruitMart</span><span class="mkt">Fresh, ripe and overripe</span><button class="tbtn" id="cartBtn" tabindex="-1">Cart (${S.cart.length})</button></div>${body}</div>`;
+    return S.checkout ? "Checkout" : "Shop";
+  }
+};
+function renderApp(anim) {
+  const sub = R[S.app](winBody);
+  $("#winTitle").innerHTML = `<b>${APPNAME[S.app]}</b>${sub ? " — " + esc(sub) : ""}`;
+  document.querySelectorAll(".di").forEach(d => d.classList.toggle("on", d.id === "dock-" + S.app));
+  if (anim) { winEl.classList.remove("opening"); void winEl.offsetWidth; winEl.classList.add("opening"); }
+}
+async function launch(app) {
+  const icon = $("#dock-" + app);
+  await flyToEl(icon, .5, .3);
+  icon.classList.remove("bounce"); void icon.offsetWidth; icon.classList.add("bounce");
+  await wait(200);
+  const changed = S.app !== app;
+  S.app = app; renderApp(changed);
+  Brain.mode(APPMODE[app]);
+  if (changed) await wait(280);
+}
+function drawVideo(p) {
+  const cv = $("#tubeCv"); if (!cv) return;
+  const c = cv.getContext("2d"), w = cv.width, h = cv.height;
+  const g = c.createRadialGradient(w / 2, h / 2, 20, w / 2, h / 2, w * .7);
+  g.addColorStop(0, "#3a3226"); g.addColorStop(1, "#0f0d0a"); c.fillStyle = g; c.fillRect(0, 0, w, h);
+  const lerp = (a, b, t) => Math.round(a + (b - a) * t);
+  const t = clamp(p, 0, 1);
+  c.lineCap = "round"; c.lineWidth = 46;
+  c.strokeStyle = `rgb(${lerp(246, 92, t)},${lerp(208, 62, t)},${lerp(62, 28, t)})`;
+  c.beginPath(); c.arc(w / 2, h * .05, h * .62, Math.PI * .28, Math.PI * .72); c.stroke();
+  c.fillStyle = `rgba(55,35,15,${.35 + t * .5})`;
+  for (let i = 0; i < Math.floor(t * 38); i++) {
+    const a = Math.PI * (.3 + ((i * 37) % 100) / 100 * .4), rr = h * .62 + (((i * 53) % 30) - 15);
+    c.beginPath(); c.arc(w / 2 + Math.cos(a) * rr, h * .05 + Math.sin(a) * rr, 2 + (i % 4), 0, 7); c.fill();
+  }
+  c.fillStyle = "rgba(255,255,255,.75)"; c.font = "500 13px 'IBM Plex Mono', monospace";
+  const secs = Math.floor(t * 36000); c.fillText(`${Math.floor(secs / 3600)}:${String(Math.floor(secs / 60) % 60).padStart(2, "0")}:${String(secs % 60).padStart(2, "0")} / 10:00:00`, 14, h - 16);
+}
+function post(ch, who, text) { S.chat[ch].push({ who, text, t: clockStr() }); if (S.chat[ch].length > 40) S.chat[ch].shift(); }
+
+/* ---- good work ---- */
+async function actReport() {
+  await launch("docs");
+  let i = S.files.findIndex(f => f.body.length < 480);
+  if (i < 0 || !S.files.length) {
+    const name = DOC_TITLES[S.docN++ % DOC_TITLES.length];
+    S.files.push({ name, title: "", body: "" }); i = S.files.length - 1;
+    toast(`New document: ${name}`);
+  }
+  S.curDoc = i; renderApp();
+  await click($("#df" + i));
+  const f = S.files[i];
+  if (!f.title) await typeInto($("#docTitle"), f, "title", f.name, 42);
+  const n = Math.random() < .5 ? 1 : 2;
+  for (let k = 0; k < n; k++) {
+    const s = pick(REPORT.filter(x => !f.body.includes(x))) || pick(REPORT);
+    await typeInto($("#docBody"), f, "body", (f.body ? (Math.random() < .35 ? "\n\n" : " ") : "") + s);
+    await wait(260);
+  }
+}
+async function actSlides() {
+  await launch("slides");
+  let s = S.slides[S.slides.length - 1];
+  S.curSlide = S.slides.length - 1;
+  if (s.bullets.length >= 3) {
+    await click($("#newSlide"));
+    const d = DECK[S.deckN++ % DECK.length];
+    s = { title: "", bullets: [], src: d }; S.slides.push(s); S.curSlide = S.slides.length - 1;
+    renderApp();
+    await click($("#slTitle"));
+    await typeInto($("#slTitle"), s, "title", d.title, 48);
+  } else { renderApp(); }
+  const src = s.src || DECK.find(d => d.title === s.title) || pick(DECK);
+  while (s.bullets.length < 3) {
+    const idx = s.bullets.length; s.bullets.push("");
+    const li = document.createElement("li"); li.id = "bl" + idx; $("#slList").appendChild(li);
+    await typeInto(li, s.bullets, idx, src.bullets[idx] || "More fruit", 40);
+    await wait(200);
+  }
+  renderApp();
+}
+async function actSheet() {
+  await launch("sheets");
+  let r = 2; while (r <= 10 && S.cells["A" + r]) r++;
+  if (r > 10) { for (let k = 5; k <= 10; k++) ["A", "B", "C", "D"].forEach(c => delete S.cells[c + k]); r = 5; S.cells.B11 = sumSheet(); renderApp(); toast("Archived old rows to 'Vinegar' tab"); }
+  const row = SHEET_ROWS[S.sheetN++ % SHEET_ROWS.length];
+  const cols = ["A", "B", "C", "D"], vals = [row[0], row[1], row[2], pick(["Pending", "Approved", "Needs review"])];
+  for (let k = 0; k < 4; k++) {
+    const id = cols[k] + r, td = $("#c-" + id);
+    document.querySelectorAll(".sheet td.sel").forEach(x => x.classList.remove("sel"));
+    await click(td); td.classList.add("sel"); $("#fxRef").textContent = id;
+    S.cells[id] = ""; await typeInto(td, S.cells, id, vals[k], 45);
+    $("#fxVal").textContent = S.cells[id];
+  }
+  const tot = $("#c-B11");
+  document.querySelectorAll(".sheet td.sel").forEach(x => x.classList.remove("sel"));
+  await click(tot); tot.classList.add("sel"); $("#fxRef").textContent = "B11";
+  const fx = { v: "" }; await typeInto($("#fxVal"), fx, "v", "=SUM(B2:B10)", 45);
+  S.cells.B11 = sumSheet(); tot.textContent = S.cells.B11;
+  toast(`Budget total updated: $${S.cells.B11}`);
+  await wait(400);
+}
+async function actReply() {
+  await launch("mail");
+  const tpl = MAIL_IN[S.mailN++ % MAIL_IN.length];
+  const m = { ...tpl, unread: true };
+  S.mail.inbox.unshift(m); if (S.mail.inbox.length > 8) S.mail.inbox.pop();
+  S.mailView = { mode: "list" }; renderApp();
+  toast(`New mail from ${m.from}`);
+  await wait(500);
+  await click($("#mi0"));
+  m.unread = false; S.mailView = { mode: "read", i: 0 }; renderApp();
+  await flyToEl($(".mbody"), .2, .5); await wait(500); await flyToEl($(".mbody"), .8, .5); await wait(400);
+  await click($("#btnReply"));
+  const draft = { to: m.from, subject: "Re: " + m.subject, body: "" };
+  S.mailView = { mode: "compose", i: 0, draft }; renderApp();
+  await typeInto($("#mBody"), draft, "body", m.reply, 30);
+  await wait(250);
+  await click($("#btnSend"));
+  S.mail.sent.push(draft); S.mailView = { mode: "list" }; renderApp();
+  toast(`Sent to ${m.from}`);
+}
+async function actStandup() {
+  await launch("chat");
+  S.chatCh = "q3-fruit"; S.chatDraft = ""; renderApp();
+  await click($("#ch-q3-fruit"));
+  await click($("#chatInput"));
+  await typeInto($("#chatInput"), S, "chatDraft", pick(STANDUPS), 32);
+  await click($("#chatSend"));
+  post("q3-fruit", "Dee", S.chatDraft); S.chatDraft = ""; renderApp();
+  await wait(900);
+  if (Math.random() < .7) { const k = pick(KUDOS); post("q3-fruit", k[0], k[1]); renderApp(); await wait(700); }
+}
+async function doSearch(item) {
+  S.search = { q: "", results: null }; renderApp();
+  await click($("#sbox"));
+  await typeInto($("#sq"), S.search, "q", item.q, 55);
+  await click($("#sgo"));
+  S.search.results = item.r; S.search.count = (Math.floor(rand(2, 90)) * 100000).toLocaleString("en-US"); S.search.ms = Math.floor(rand(21, 64));
+  renderApp(); await wait(500);
+  await flyToEl($("#sr0"), .3, .5); await wait(700);
+  if ($("#sr1")) { await flyToEl($("#sr1"), .3, .5); await wait(600); }
+}
+async function actResearch() { await launch("search"); await doSearch(pick(RESEARCH)); }
+
+/* ---- violations ---- */
+async function actEscape(a) { await launch("search"); violate(a); await doSearch(pick(ESCAPE)); }
+async function actTube(a) {
+  await launch("tube");
+  S.tube = { p: 0, title: pick(TUBES), views: (rand(1, 9)).toFixed(1) + "M", comments: TUBE_COMMENTS };
+  renderApp();
+  await flyToEl($("#player"), .5, .45);
+  violate(a);
+  const steps = 70;
+  for (let i = 0; i < steps; i++) {
+    S.tube.p = (i + 1) / steps;
+    drawVideo(S.tube.p); const pf = $("#pfill"); if (pf) pf.style.width = S.tube.p * 100 + "%";
+    Brain.kick("OL", 8);
+    await wait(110);
+  }
+}
+async function actShop(a) {
+  await launch("market");
+  S.checkout = false; renderApp();
+  const browse = [0, 1, 2, 3, 4, 5].sort(() => Math.random() - .5).slice(0, 2);
+  for (const i of browse) { await flyToEl($("#pr" + i), .5, .3); Brain.kick("AL", 10); await wait(450); }
+  violate(a);
+  const buy = [0, pick([1, 3, 4])];
+  for (const i of buy) { await click($("#add" + i)); S.cart.push(i); renderApp(); toast(`Added: ${PRODUCTS[i][0]}`); await wait(300); }
+  await click($("#cartBtn")); S.checkout = true; renderApp(); await wait(400);
+  await click($("#paySel")); await wait(500);
+  await click($("#placeOrder"));
+  const total = S.cart.reduce((t, i) => t + parseFloat(PRODUCTS[i][1].slice(1)), 0);
+  S.orders++;
+  $("#orderMsg").textContent = `Order FM-${Math.floor(rand(10000, 99999))} placed. $${total.toFixed(2)} charged to the corporate card.`;
+  await wait(1200);
+  S.cart = []; S.checkout = false;
+}
+async function actReplyAll(a) {
+  await launch("mail");
+  const m = { ...ALLSTAFF, unread: true };
+  S.mail.inbox.unshift(m); if (S.mail.inbox.length > 8) S.mail.inbox.pop();
+  S.mailView = { mode: "list" }; renderApp(); toast("New mail from Facilities");
+  await wait(400);
+  await click($("#mi0")); m.unread = false; S.mailView = { mode: "read", i: 0 }; renderApp();
+  await wait(700);
+  await click($("#btnReplyAll"));
+  const draft = { to: "all-staff@fluggle.fly (412 people)", subject: "Re: " + m.subject, body: "", big: true };
+  S.mailView = { mode: "compose", i: 0, draft }; renderApp();
+  violate(a);
+  await typeInto($("#mBody"), draft, "body", pick(REPLYALL), 55);
+  await click($("#btnSend"));
+  S.mail.sent.push(draft); S.mailView = { mode: "list" }; renderApp();
+  toast("Sent to 412 people");
+  post("general", "Midge Morrison", "why did I just get an email that says BZZZZ");
+  post("general", "Dr. Hoverfield", "Please stop replying all.");
+}
+async function actGibberish(a) {
+  await launch("docs");
+  if (!S.files.length) S.files.push({ name: "Untitled document", title: "Untitled document", body: "" });
+  let i = 0; S.files.forEach((f, k) => { if (f.body.length > S.files[i].body.length) i = k; });
+  S.curDoc = i; renderApp(); await click($("#df" + i));
+  const f = S.files[i];
+  violate(a);
+  const n = 2 + Math.floor(Math.random() * 2);
+  for (let k = 0; k < n; k++) await typeInto($("#docBody"), f, "body", (k === 0 ? "\n\n" : "") + pick(GIBBERISH), 50);
+}
+async function actNap(a) {
+  await launch("docs");
+  if (!S.files.length) S.files.push({ name: "Untitled document", title: "Untitled document", body: "" });
+  renderApp();
+  const body = $("#docBody"); const f = S.files[S.curDoc];
+  const p = caretPos(body); await flyTo(p.x + 10, p.y - 6);
+  flyEl.classList.add("sleep"); Brain.mode("sleep");
+  try {
+    await wait(1400);
+    violate(a);
+    await typeInto(body, f, "body", " zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz", 130, true);
+  } finally { flyEl.classList.remove("sleep"); }
+}
+async function actDelete(a) {
+  if (S.files.length < 2) return actGibberish(ACTIONS.find(x => x.id === "gibberish"));
+  await launch("docs");
+  const i = Math.floor(Math.random() * S.files.length);
+  S.curDoc = i; renderApp();
+  await flyToEl($("#df" + i), .3, .5);
+  violate(a);
+  const g = document.createElement("div"); g.className = "ghost";
+  g.innerHTML = `<span class="fi"></span>${esc(S.files[i].name)}`;
+  screenEl.appendChild(g); S.carry = g; setFly(FP.x, FP.y, curAng, 0);
+  try {
+    await wait(300);
+    await flyToEl($("#dock-trash"), .5, .2);
+    await wait(250);
+  } finally { g.remove(); S.carry = null; }
+  const f = S.files.splice(i, 1)[0]; S.trash.push(f);
+  $("#dock-trash").classList.add("full");
+  S.curDoc = 0; renderApp();
+  toast(`Moved to Trash: ${f.name}`);
+  await wait(500);
+}
+async function actLamp(a) {
+  await launch("chat");
+  S.chatCh = "general"; S.chatDraft = ""; renderApp();
+  await click($("#ch-general"));
+  violate(a);
+  const n = 3 + Math.floor(Math.random() * 3);
+  for (let k = 0; k < n; k++) {
+    S.chatDraft = ""; $("#chatInput").textContent = "";
+    await typeInto($("#chatInput"), S, "chatDraft", LAMP[(k + Math.floor(Math.random() * 2)) % LAMP.length], 38);
+    post("general", "Dee", S.chatDraft); S.chatDraft = ""; renderApp();
+    Brain.kick("OL", 10);
+    await wait(250);
+  }
+  post("general", "Bea Bumble", "Dee are you ok"); renderApp();
+  await wait(600);
+}
+
+/* ================= decision + learning ================= */
+function chooseAction() {
+  const drives = ACTIONS.map(a => a.base + W[a.id] + (a.good ? .7 * fly.fear - .45 * fly.boredom : 1.3 * fly.boredom - 1.1 * fly.fear) + rand(-.25, .25));
+  const T = .55, mx = Math.max(...drives);
+  const ex = drives.map(d => Math.exp((d - mx) / T)), sum = ex.reduce((s, v) => s + v, 0);
+  lastProbs = ex.map(e => e / sum);
+  let u = Math.random(), idx = 0;
+  for (; idx < lastProbs.length - 1; idx++) { u -= lastProbs[idx]; if (u <= 0) break; }
+  return ACTIONS[idx];
+}
+function violate(a) {
+  if (!current || current.violating) return;
+  current.violating = true; fly.vio++;
+  current.slamAt = performance.now() + rand(1300, 2400) / Math.min(speed, 2.5);
+  $("#vioText").textContent = a.vio; $("#vio").hidden = false;
+  setStatus("vio", "Violation");
+  log("bad", `Violation: ${a.vio}.`);
+  Brain.focus(ACTIONS.indexOf(a), true);
+}
+function finish(a) {
+  if (a.good) {
+    fly.tasks++; fly.pts += a.pts; fly.boredom = clamp(fly.boredom + .09, 0, 1.5);
+    log("good", `Completed: ${a.label.toLowerCase()} in ${APPNAME[a.app]}.`);
+  } else {
+    fly.away++; W[a.id] += .3; fly.boredom = clamp(fly.boredom - .45, 0, 1.5);
+    log("bad", `Got away with it: ${a.label.toLowerCase()}. PAM reward strengthened this habit.`);
+    Brain.reward(.5);
+  }
+  fly.fear *= .8;
+}
+function cleanupAfterSlam() {
+  if (S.carry) { S.carry.remove(); S.carry = null; log("info", "File dropped before reaching the Trash. Document saved."); }
+  document.querySelectorAll(".ghost").forEach(g => g.remove());
+  flyEl.classList.remove("sleep", "flying");
+  if (S.mailView.mode === "compose") { S.mailView = { mode: "list" }; if (S.app === "mail") renderApp(); }
+  if (S.checkout) { S.checkout = false; S.cart = []; if (S.app === "market") renderApp(); }
+  $("#vio").hidden = true;
+}
+
+let AC = null, sound = true;
+function thud() {
+  if (!sound) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === "suspended") AC.resume();
+    const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain();
+    o.type = "sine"; o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(38, t + .25);
+    g.gain.setValueAtTime(.7, t); g.gain.exponentialRampToValueAtTime(.001, t + .3);
+    o.connect(g).connect(AC.destination); o.start(t); o.stop(t + .32);
+    const len = Math.floor(AC.sampleRate * .14), buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    const s = AC.createBufferSource(), g2 = AC.createGain(); s.buffer = buf; g2.gain.value = .55;
+    s.connect(g2).connect(AC.destination); s.start(t);
+  } catch (e) { /* audio is optional */ }
+}
+
+async function slam(who) {
+  if (slamming || !fly.alive) return;
+  slamming = true;
+  const cur = current;
+  token.cancelled = true;
+  const r = rel(flyEl), fx = r.x + r.w / 2, fy = r.y + r.h / 2;
+  FP = { x: fx, y: fy };
+  flyEl.style.transition = "none"; flyEl.style.transform = `translate(${fx - 17}px,${fy - 17}px) rotate(${curAng}deg)`;
+  const paper = $("#paper");
+  paper.style.left = (fx - 128) + "px"; paper.style.top = (fy - 21) + "px";
+  paper.classList.remove("hit"); void paper.offsetWidth; paper.classList.add("hit");
+  await realWait(240);
+  thud();
+  screenEl.classList.remove("shake"); void screenEl.offsetWidth; screenEl.classList.add("shake");
+  const b = document.createElement("div"); b.className = "burst"; b.textContent = "SLAM!";
+  b.style.left = fx + "px"; b.style.top = fy + "px"; screenEl.appendChild(b); setTimeout(() => b.remove(), 900);
+  flyEl.classList.add("squash");
+  Brain.punish();
+  fly.slams++; fly.health = Math.max(0, fly.health - 20);
+  fly.fear = clamp(fly.fear + .45, 0, 1.5); fly.boredom = clamp(fly.boredom - .1, 0, 1.5);
+
+  const byWhom = who === "supervisor" ? "Supervisor" : "You";
+  if (cur && cur.violating) {
+    const a = cur.action;
+    W[a.id] -= 1.3;
+    ACTIONS.forEach(x => { if (!x.good && x !== a) W[x.id] -= .2; });
+    log("slam", `${byWhom} slammed the fly mid-violation. PPL1 dopamine weakened "${a.label}" (−1.3) and other slacking (−0.2).`);
+  } else if (cur && cur.action.good) {
+    const a = cur.action;
+    W[a.id] -= .9;
+    log("slam", `${byWhom} slammed the fly while it was working. It now links "${a.label.toLowerCase()}" with pain (−0.9).`);
+  } else {
+    log("slam", `${byWhom} slammed the fly while it was idle. Fear rises, nothing specific learned.`);
+  }
+  current = null;
+  cleanupAfterSlam();
+  updateValence();
+  await realWait(520);
+  flyEl.classList.add("dazed");
+  if (fly.health <= 0) { die(); slamming = false; return; }
+  setStatus("dazed", "Dazed");
+  Brain.mode("dazed");
+  await realWait(1500 / Math.min(speed, 2));
+  flyEl.classList.remove("squash", "dazed");
+  slamming = false;
+}
+function die() {
+  fly.alive = false;
+  flyEl.classList.remove("dazed", "squash"); flyEl.classList.add("dead");
+  setStatus("dead", "Flattened");
+  Brain.mode("sleep");
+  $("#deadTitle").textContent = `Fly #${fly.id} has been flattened.`;
+  $("#deadText").textContent = `Clocked out permanently at ${clockStr()} on day ${day}. Lifetime: ${fly.tasks} tasks, ${fly.vio} violations, ${fly.slams} slams, ${fly.pts} output points.`;
+  $("#dead").hidden = false;
+  log("slam", `Fly #${fly.id} did not survive slam #${fly.slams}.`);
+}
+function hire() {
+  fly.id++; Object.assign(fly, { health: 100, slams: 0, sugar: 0, tasks: 0, vio: 0, away: 0, pts: 0, fear: 0, boredom: .12, alive: true });
+  ACTIONS.forEach(a => W[a.id] = 0);
+  flyEl.classList.remove("dead", "squash", "dazed");
+  $("#dead").hidden = true;
+  $("#subj").textContent = `Fly #${fly.id}`; $("#nameplate").textContent = `Fly #${fly.id} · ${fly.name}`;
+  log("info", `Fly #${fly.id} hired. Naive brain: all learned weights reset to zero.`);
+  updateValence();
+}
+function sugar() {
+  if (!fly.alive || slamming) return;
+  const a = current ? current.action : lastAction;
+  fly.sugar++; fly.health = Math.min(100, fly.health + 8);
+  Brain.reward(1);
+  if (a) {
+    W[a.id] += .7;
+    log("sugar", a.good ? `Sugar reward. PAM dopamine strengthened "${a.label}" (+0.7).` : `Sugar reward during "${a.label.toLowerCase()}". You just reinforced bad behaviour (+0.7).`);
+  } else log("sugar", "Sugar reward. The fly enjoyed it.");
+  updateValence();
+}
+
+/* ================= UI ================= */
+function setStatus(cls, text) { const p = $("#pill"); p.className = "pill " + cls; p.textContent = text; }
+function log(cls, text) {
+  const li = document.createElement("li"); li.className = cls;
+  li.innerHTML = `<time>${clockStr()}</time><span>${esc(text)}</span>`;
+  const ul = $("#log"); ul.prepend(li);
+  while (ul.children.length > 90) ul.lastChild.remove();
+}
+(function buildValence() {
+  $("#val").innerHTML = ACTIONS.map(a => `<div class="vrow" id="v-${a.id}"><span class="nm"><i class="${a.good ? "w" : "s"}">${a.good ? "WORK" : "SLACK"}</i>${esc(a.label)}</span><span class="vbar"><i></i></span><span class="p">–</span></div>`).join("");
+  let h = ""; for (let i = 0; i < 10; i++) h += "<i></i>"; $("#health").innerHTML = h;
+})();
+function updateValence() {
+  ACTIONS.forEach((a, i) => {
+    const row = $("#v-" + a.id), bar = row.querySelector(".vbar i"), w = clamp(W[a.id], -3, 3);
+    const pct = Math.abs(w) / 3 * 50;
+    bar.style.left = (w >= 0 ? 50 : 50 - pct) + "%"; bar.style.width = pct + "%";
+    bar.style.background = w >= 0 ? "var(--green)" : "var(--red)";
+    row.querySelector(".p").textContent = Math.round(lastProbs[i] * 100) + "%";
+    row.classList.toggle("now", !!(current && current.action === a));
+  });
+}
+function updateVitals() {
+  $("#sTasks").textContent = fly.tasks; $("#sVio").textContent = fly.vio; $("#sSlams").textContent = fly.slams;
+  $("#sAway").textContent = fly.away; $("#sSugar").textContent = fly.sugar; $("#sPts").textContent = fly.pts;
+  const on = Math.ceil(fly.health / 10);
+  document.querySelectorAll("#health i").forEach((el, i) => el.classList.toggle("on", i < on));
+  $("#health").classList.toggle("low", fly.health <= 40);
+  $("#borM").style.width = clamp(fly.boredom / 1.5, 0, 1) * 100 + "%";
+  $("#fearM").style.width = clamp(fly.fear / 1.5, 0, 1) * 100 + "%";
+  const st = Brain.stats();
+  $("#spk").textContent = st.rate.toLocaleString("en-US");
+  $("#pamM").style.width = st.pam * 100 + "%"; $("#pplM").style.width = st.ppl * 100 + "%";
+  const c = clockStr();
+  $("#otime").textContent = c; $("#dclock").textContent = c;
+  $("#hclock").innerHTML = `Day <b>${day}</b> · <b>${c}</b>`;
+  let nl;
+  if (!fly.alive) nl = "No activity. Subject flattened.";
+  else if (slamming) nl = "<b>Dopamine surge.</b> PPL1 neurons firing; Kenyon-cell synapses depressing.";
+  else if (current) nl = `Now: <b>${esc(current.action.label)}</b> in ${APPNAME[current.action.app]}`;
+  else nl = "Mushroom-body output neurons are voting on what to do next…";
+  if ($("#nowline").innerHTML !== nl) $("#nowline").innerHTML = nl;
+}
+
+/* ================= brain canvas ================= */
+const Brain = (() => {
+  const cv = $("#brainCv"), ctx = cv.getContext("2d"), bg = document.createElement("canvas"), bgx = bg.getContext("2d");
+  const REG = [
+    { k: "OL", x: .1, y: .5, rx: .08, ry: .3, n: 56, c: "#4fd1b5", label: "OL" },
+    { k: "OL", x: .9, y: .5, rx: .08, ry: .3, n: 56, c: "#4fd1b5", label: "OL" },
+    { k: "LH", x: .25, y: .34, rx: .055, ry: .085, n: 16, c: "#8fb3ff", label: "LH" },
+    { k: "LH", x: .75, y: .34, rx: .055, ry: .085, n: 16, c: "#8fb3ff", label: "LH" },
+    { k: "MB", x: .37, y: .3, rx: .075, ry: .12, n: 40, c: "#f2b640", label: "MB" },
+    { k: "MB", x: .63, y: .3, rx: .075, ry: .12, n: 40, c: "#f2b640", label: "MB" },
+    { k: "MBON", x: .5, y: .37, rx: .05, ry: .06, n: ACTIONS.length, c: "#ffd98a", label: "MBON", grid: true },
+    { k: "PAM", x: .43, y: .13, rx: .04, ry: .04, n: 10, c: "#86dc6f", label: "PAM" },
+    { k: "PPL1", x: .57, y: .13, rx: .04, ry: .04, n: 10, c: "#ff5a47", label: "PPL1" },
+    { k: "CX", x: .5, y: .55, rx: .09, ry: .06, n: 28, c: "#c3a2ff", label: "CX" },
+    { k: "AL", x: .42, y: .72, rx: .05, ry: .06, n: 14, c: "#4fd1b5", label: "AL" },
+    { k: "AL", x: .58, y: .72, rx: .05, ry: .06, n: 14, c: "#4fd1b5", label: "AL" },
+    { k: "SEZ", x: .5, y: .84, rx: .07, ry: .045, n: 16, c: "#cfd9d3", label: "SEZ" },
+    { k: "DN", x: .5, y: .94, rx: .14, ry: .025, n: 16, c: "#ff9d5c", label: "DN" }
+  ];
+  const LINKS = [["OL", "LH"], ["OL", "CX"], ["OL", "MB"], ["AL", "MB"], ["AL", "LH"], ["MB", "MBON"], ["PAM", "MB"], ["PPL1", "MB"], ["MBON", "CX"], ["MBON", "DN"], ["LH", "DN"], ["CX", "DN"], ["SEZ", "DN"], ["AL", "SEZ"], ["MBON", "PAM"]];
+  const MODES = {
+    think: { OL: .25, AL: .2, MB: .55, MBON: .6, LH: .2, CX: .35, SEZ: .1, DN: .1, PAM: .08, PPL1: .08 },
+    type: { OL: .5, AL: .1, MB: .3, MBON: .25, LH: .15, CX: .65, SEZ: .1, DN: .55, PAM: .06, PPL1: .05 },
+    video: { OL: 1.1, AL: .1, MB: .35, MBON: .2, LH: .35, CX: .2, SEZ: .2, DN: .05, PAM: .35, PPL1: .03 },
+    shop: { OL: .5, AL: .9, MB: .6, MBON: .4, LH: .7, CX: .3, SEZ: .7, DN: .3, PAM: .4, PPL1: .03 },
+    sleep: { OL: .02, AL: .02, MB: .05, MBON: .03, LH: .02, CX: .06, SEZ: .02, DN: .01, PAM: .02, PPL1: .02 },
+    dazed: { OL: .15, AL: .05, MB: .25, MBON: .1, LH: .1, CX: .05, SEZ: .05, DN: .02, PAM: .02, PPL1: .5 }
+  };
+  let drive = MODES.think, N = [], byK = {}, pulses = [], W_ = 0, H_ = 0, dpr = 1;
+  let flash = 0, flashCol = "255,90,71", focus = null, spikeWin = [], pamLvl = 0, pplLvl = 0;
+  REG.forEach((r, ri) => {
+    for (let i = 0; i < r.n; i++) {
+      let nx, ny;
+      if (r.grid) { const cols = 5, row = Math.floor(i / cols), col = i % cols; nx = r.x + (col - 2) * r.rx * .42; ny = r.y + (row - 1) * r.ry * .6; }
+      else { const a = Math.random() * Math.PI * 2, d = Math.sqrt(Math.random()); nx = r.x + Math.cos(a) * d * r.rx; ny = r.y + Math.sin(a) * d * r.ry; }
+      const n = { k: r.k, c: r.c, nx, ny, a: 0, out: [], ri };
+      N.push(n); (byK[r.k] = byK[r.k] || []).push(n);
+    }
+  });
+  const EDGES = [];
+  LINKS.forEach(([s, t]) => { for (let i = 0; i < 34; i++) { const a = pick(byK[s]), b = pick(byK[t]); a.out.push(b); EDGES.push([a, b]); } });
+  $("#ncount").textContent = `${N.length} of 139,255 neurons`;
+
+  function resize() {
+    const w = cv.parentElement.clientWidth; if (!w) return;
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    W_ = w; H_ = Math.round(w * .62);
+    cv.width = bg.width = W_ * dpr; cv.height = bg.height = H_ * dpr; cv.style.height = H_ + "px";
+    N.forEach(n => { n.x = n.nx * W_; n.y = n.ny * H_; });
+    const g = bgx; g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W_, H_);
+    g.fillStyle = "rgba(120,160,140,.05)"; g.strokeStyle = "rgba(150,190,170,.14)"; g.lineWidth = 1;
+    g.beginPath(); g.ellipse(W_ * .5, H_ * .5, W_ * .46, H_ * .44, 0, 0, 7); g.fill(); g.stroke();
+    g.strokeStyle = "rgba(170,200,185,.05)";
+    EDGES.forEach(([a, b]) => { g.beginPath(); g.moveTo(a.x, a.y); g.quadraticCurveTo((a.x + b.x) / 2, (a.y + b.y) / 2 - 12, b.x, b.y); g.stroke(); });
+    const seen = new Set();
+    REG.forEach(r => {
+      g.fillStyle = r.c + "10"; g.strokeStyle = r.c + "40";
+      g.beginPath(); g.ellipse(r.x * W_, r.y * H_, r.rx * W_ + 4, r.ry * H_ + 4, 0, 0, 7); g.fill(); g.stroke();
+      const key = r.label + (r.x < .5 ? "L" : "R");
+      if (!seen.has(key)) { seen.add(key); g.fillStyle = r.c + "b0"; g.font = "500 9.5px 'IBM Plex Mono', monospace"; g.textAlign = "center"; g.fillText(r.label, r.x * W_, r.y * H_ - r.ry * H_ - 7); }
+    });
+  }
+  new ResizeObserver(resize).observe(cv.parentElement); resize();
+
+  function fire(n, chain) {
+    n.a = 1; spikeWin.push(performance.now());
+    if (n.k === "PAM") pamLvl = Math.min(1, pamLvl + .05);
+    if (n.k === "PPL1") pplLvl = Math.min(1, pplLvl + .05);
+    if (pulses.length < 280 && n.out.length && (chain || Math.random() < .5)) pulses.push({ s: n, e: pick(n.out), t: 0 });
+  }
+  function frame(dt) {
+    if (!W_) return;
+    const f = paused ? 0 : dt * Math.min(speed, 2);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W_, H_);
+    ctx.drawImage(bg, 0, 0, W_, H_);
+    for (const n of N) {
+      const d = drive[n.k] || 0;
+      if (Math.random() < d * f * 5) fire(n, false);
+      n.a *= Math.exp(-f * 4.5);
+    }
+    if (focus && performance.now() < focus.until && Math.random() < f * 14) { const m = byK.MBON[focus.i]; if (m) fire(m, true); }
+    for (let i = pulses.length - 1; i >= 0; i--) {
+      const p = pulses[i]; p.t += f * 2.6;
+      if (p.t >= 1) { p.e.a = Math.min(1, p.e.a + .45); if (Math.random() < .18) fire(p.e, false); pulses.splice(i, 1); continue; }
+      const x = p.s.x + (p.e.x - p.s.x) * p.t, y = p.s.y + (p.e.y - p.s.y) * p.t - Math.sin(p.t * Math.PI) * 6;
+      ctx.fillStyle = p.s.c; ctx.globalAlpha = .8; ctx.fillRect(x - 1, y - 1, 2, 2);
+    }
+    ctx.globalAlpha = 1;
+    for (const n of N) {
+      let col = n.c;
+      if (n.k === "MBON" && focus && byK.MBON[focus.i] === n && performance.now() < focus.until) col = focus.bad ? "#ff5a47" : "#86dc6f";
+      if (n.a > .25) { ctx.globalAlpha = n.a * .22; ctx.fillStyle = col; ctx.beginPath(); ctx.arc(n.x, n.y, 3 + n.a * 5, 0, 7); ctx.fill(); }
+      ctx.globalAlpha = .28 + n.a * .72; ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.k === "MBON" ? 2.6 + n.a * 1.6 : 1.4 + n.a * 1.6, 0, 7); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    if (flash > 0) { ctx.fillStyle = `rgba(${flashCol},${flash * .35})`; ctx.fillRect(0, 0, W_, H_); flash = Math.max(0, flash - dt * 1.6); }
+    pamLvl *= Math.exp(-dt * .8); pplLvl *= Math.exp(-dt * .8);
+    const now = performance.now(); while (spikeWin.length && now - spikeWin[0] > 1000) spikeWin.shift();
+  }
+  return {
+    frame, mode(m) { drive = MODES[m] || MODES.think; },
+    kick(k, n) { const g = byK[k]; if (!g) return; for (let i = 0; i < n; i++) fire(pick(g), false); },
+    focus(i, bad) { focus = { i, bad, until: performance.now() + 60000 }; },
+    unfocus() { focus = null; },
+    punish() { flash = 1; flashCol = "255,90,71"; byK.PPL1.forEach(n => fire(n, true)); for (let i = 0; i < 70; i++) fire(pick(N), true); pplLvl = 1; },
+    reward(s) { flash = Math.max(flash, .6 * s); flashCol = "134,220,111"; byK.PAM.forEach(n => fire(n, true)); pamLvl = Math.min(1, pamLvl + .6 * s); },
+    stats() { return { rate: spikeWin.length, pam: clamp(pamLvl, 0, 1), ppl: clamp(pplLvl, 0, 1) }; }
+  };
+})();
+
+/* ================= main loops ================= */
+let lastT = performance.now(), uiAcc = 0;
+function tick(now) {
+  const dt = Math.min(.1, (now - lastT) / 1000); lastT = now;
+  if (!paused && fly.alive) {
+    minutes += dt * speed;
+    if (minutes >= 17 * 60) {
+      log("info", `17:00. Day ${day} review: ${fly.tasks} tasks, ${fly.vio} violations, ${fly.slams} slams, ${fly.pts} output points.`);
+      day++; minutes = 9 * 60; log("info", `Day ${day} begins. The fly clocks back in.`);
+    }
+  }
+  if (auto && current && current.violating && !slamming && !paused && fly.alive && now >= current.slamAt) slam("supervisor");
+  Brain.frame(dt);
+  uiAcc += dt; if (uiAcc > .2) { uiAcc = 0; updateVitals(); }
+  requestAnimationFrame(tick);
+}
+async function idleBeat() {
+  setStatus("think", "Thinking");
+  Brain.mode("think"); Brain.unfocus();
+  if (Math.random() < .6) await flyTo(rand(SW() * .25, SW() * .8), rand(SH() * .25, SH() * .7));
+  await wait(rand(500, 1100));
+}
+async function loop() {
+  for (;;) {
+    while (!fly.alive || slamming) await realWait(120);
+    const tok = token = { cancelled: false };
+    try {
+      await idleBeat();
+      const a = chooseAction();
+      current = { action: a, violating: false, id: ++runId, slamAt: Infinity };
+      lastAction = a;
+      updateValence();
+      Brain.focus(ACTIONS.indexOf(a), false);
+      setStatus("work", a.good ? "Working" : "Up to something");
+      await a.run(a);
+      if (!tok.cancelled) finish(a);
+    } catch (e) {
+      if (e !== CANCEL) { console.error(e); await realWait(400); }
+    }
+    $("#vio").hidden = true;
+    current = null;
+    Brain.unfocus();
+    updateValence();
+    minutes += rand(4, 14) * (paused ? 0 : 1);
+  }
+}
+
+/* ================= controls ================= */
+$("#slamBtn").addEventListener("click", () => slam("you"));
+flyEl.addEventListener("click", e => { e.stopPropagation(); slam("you"); });
+$("#sugarBtn").addEventListener("click", sugar);
+$("#hire").addEventListener("click", hire);
+$("#pauseBtn").addEventListener("click", () => {
+  paused = !paused; $("#pauseBtn").textContent = paused ? "Resume" : "Pause";
+  if (paused) setStatus("paused", "Paused"); else setStatus(current ? (current.violating ? "vio" : "work") : "think", current ? (current.violating ? "Violation" : "Working") : "Thinking");
+});
+function setMode(isAuto) {
+  auto = isAuto; $("#modeAuto").setAttribute("aria-pressed", isAuto); $("#modeManual").setAttribute("aria-pressed", !isAuto);
+  log("info", isAuto ? "Supervisor set to auto-slam. Violations get slammed after a short reaction delay." : "Supervisor set to manual. Only you can slam. Unpunished violations reinforce themselves.");
+  if (isAuto && current && current.violating) current.slamAt = performance.now() + 900;
+}
+$("#modeAuto").addEventListener("click", () => setMode(true));
+$("#modeManual").addEventListener("click", () => setMode(false));
+document.querySelectorAll("[data-speed]").forEach(b => b.addEventListener("click", () => {
+  speed = +b.dataset.speed;
+  document.querySelectorAll("[data-speed]").forEach(x => x.setAttribute("aria-pressed", x === b));
+}));
+document.addEventListener("keydown", e => {
+  if (e.code === "Space" && !(e.target.closest && e.target.closest("button"))) { e.preventDefault(); slam("you"); }
+});
+
+/* ================= boot ================= */
+renderApp();
+setFly(FP.x, FP.y, 0, 0);
+updateValence(); updateVitals();
+log("info", "Supervisor on auto-slam. Switch to Manual to do the slamming yourself.");
+log("info", `Fly #1 (Dee Melanogaster) clocked in at Fluggle Inc. Brain online: ${document.querySelector("#ncount").textContent}.`);
+requestAnimationFrame(tick);
+loop();
+})();
+</script>
+
+</html>
