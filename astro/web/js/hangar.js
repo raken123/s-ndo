@@ -76,9 +76,13 @@ export class Hangar {
     }
     const sg = new THREE.BufferGeometry();
     sg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
-    this.starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 2, sizeAttenuation: false, transparent: true, opacity: 0 });
+    this.starMat = new THREE.PointsMaterial({
+      color: 0xffffff, size: 2, sizeAttenuation: false, transparent: true, opacity: 0,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    });
     this.stars = new THREE.Points(sg, this.starMat);
     this.stars.visible = false;
+    this.stars.renderOrder = 1; // efter himlen, annars blir stjärnorna mörka prickar
     s.add(this.stars);
 
     this.hemi = new THREE.HemisphereLight(0xcfe6ff, 0x6a6258, 1.4);
@@ -242,8 +246,8 @@ export class Hangar {
       parts.engineGlow.forEach((g) => g.scale.setScalar(5 + Math.sin(t * 40) * 0.3));
       const dark = Math.min(1, Math.max(0, (t - 3) / 6));
       this.skyMat.opacity = 1 - dark;
-      this.starMat.opacity = dark;
-      this.stars.visible = dark > 0.01;
+      this.starMat.opacity = Math.max(0, (dark - 0.4) / 0.6);
+      this.stars.visible = dark > 0.4;
       this.hemi.intensity = 1.4 * (1 - dark) + 0.2;
       if (t > 10) { this.phase = 'done'; ev.push('done'); }
     }
