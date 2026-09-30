@@ -20,6 +20,12 @@ cd "$(dirname "$0")"
 JAVA17="${JAVA_HOME_17_X64:-${JAVA_HOME:?JAVA_HOME saknas}}"
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:?ANDROID_HOME saknas}}"
 
+# Bubblewrap kräver <sdk>/bin eller <sdk>/tools; nya SDK:er har bara cmdline-tools/<version>/bin.
+if [[ ! -d "$SDK/tools" && ! -e "$SDK/bin" ]]; then
+  CT=$(ls -d "$SDK"/cmdline-tools/latest/bin "$SDK"/cmdline-tools/*/bin 2>/dev/null | head -1)
+  [[ -n "$CT" ]] && { ln -s "$CT" "$SDK/bin" 2>/dev/null || sudo -n ln -s "$CT" "$SDK/bin"; }
+fi
+
 mkdir -p build
 KEYSTORE="$(pwd)/build/astro-quest.keystore"
 if [[ -n "${QUEST_KEYSTORE:-}" ]]; then
