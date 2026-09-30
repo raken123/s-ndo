@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#050b18">
+<meta name="description" content="Astro – ett 3D-rymdspel för Tekniska museet. Flyg till månen och lås upp planeterna.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob: mediastream:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'">
+<title>Astro</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app"></div>
+
+  <!-- Startskärm -->
+  <section id="attract" hidden>
+    <div class="attract-inner">
+      <div class="logo">ASTRO</div>
+      <div class="tagline" data-t="subtitle"></div>
+      <div class="presence-hint" id="presenceHint" data-t="stepCloser"></div>
+      <button id="startBtn" class="big" data-t="start"></button>
+      <button id="vrBtn" class="vr" hidden data-t="enterVR"></button>
+      <div class="lang">
+        <button data-lang="sv">Svenska</button>
+        <button data-lang="en">English</button>
+      </div>
+      <p class="privacy" data-t="cameraNotice"></p>
+    </div>
+  </section>
+
+  <!-- Laddning -->
+  <section id="loading">
+    <div class="logo small">ASTRO</div>
+    <div class="spinner"></div>
+    <div data-t="loading">Förbereder rymdskeppet…</div>
+  </section>
+
+  <!-- HUD i platt läge -->
+  <section id="hud" hidden>
+    <div id="statusPanel" class="panel">
+      <div class="ptitle" data-t="status"></div>
+      <div class="row"><span data-t="speed"></span><b id="hSpeed">0</b></div>
+      <div class="row"><span data-t="fuel"></span><b id="hFuelTxt"></b></div>
+      <div class="meter"><i id="hFuel" class="fuel"></i></div>
+      <div class="row"><span data-t="oxygen"></span><b id="hO2Txt"></b></div>
+      <div class="meter"><i id="hO2" class="o2"></i></div>
+      <div class="row"><span data-t="hull"></span><b id="hHullTxt"></b></div>
+      <div class="meter"><i id="hHull" class="hull"></i></div>
+      <div class="row"><span data-t="temp"></span><b id="hTemp"></b></div>
+      <div class="row"><span data-t="near"></span><b id="hNear"></b></div>
+    </div>
+    <div id="navPanel" class="panel">
+      <div class="row"><span data-t="target"></span><b id="hTarget">–</b></div>
+      <div class="row"><span data-t="distance"></span><b id="hDist">–</b></div>
+      <div class="row"><span data-t="eta"></span><b id="hEta">–</b></div>
+      <div class="chips">
+        <span id="chipAuto" class="chip"></span>
+        <span id="chipWarp" class="chip"></span>
+      </div>
+    </div>
+    <div id="topCenter">
+      <div id="mission"></div>
+      <div id="timer">20:00</div>
+    </div>
+    <div id="topRight" class="panel">
+      <div class="row"><span data-t="stars"></span><b id="hStars">0</b></div>
+      <div class="row"><span data-t="visited"></span><b id="hVisited">0</b></div>
+      <div id="camIndicator" class="cam"></div>
+    </div>
+    <div id="marker"><div class="ring"></div><div class="label"></div></div>
+    <div id="tip"></div>
+    <div id="hint"></div>
+    <div id="touch" hidden>
+      <div id="stick"><div id="knob"></div></div>
+      <div id="tbtns">
+        <button id="tGas" class="t gas" data-t="gas"></button>
+        <button id="tBrake" class="t" data-t="brake"></button>
+        <button id="tAuto" class="t small" data-t="autopilot"></button>
+        <button id="tWarp" class="t small" data-t="warp"></button>
+        <button id="tMap" class="t small" data-t="map"></button>
+        <button id="tView" class="t small" data-t="view"></button>
+      </div>
+    </div>
+    <button id="skipBtn" hidden data-t="skip"></button>
+    <div id="bigText"></div>
+  </section>
+
+  <div id="toast"></div>
+  <div id="dialog" hidden></div>
+  <div id="fade"></div>
+  <div id="cornerTap" aria-hidden="true"></div>
+
+  <!-- Administratörspanel (Ctrl+Shift+A eller tryck 5 gånger i övre vänstra hörnet) -->
+  <section id="admin" hidden>
+    <div class="dlg">
+      <h2 data-t="admin"></h2>
+      <label><span data-t="adminLang"></span>
+        <select id="aLang"><option value="sv">Svenska</option><option value="en">English</option></select></label>
+      <label class="cb"><input type="checkbox" id="aCamera"> <span data-t="adminCamera"></span></label>
+      <label class="cb"><input type="checkbox" id="aPreview"> <span data-t="adminPreview"></span></label>
+      <canvas id="aCanvas" width="64" height="48"></canvas>
+      <div id="aScore"></div>
+      <label><span data-t="adminSens"></span> <input type="range" id="aSens" min="0" max="1" step="0.05"></label>
+      <label><span data-t="adminAbsent"></span> <input type="number" id="aAbsent" min="10" max="600"></label>
+      <label><span data-t="adminMinutes"></span> <input type="number" id="aMinutes" min="1" max="120"></label>
+      <div class="btns">
+        <button id="aCalibrate" data-t="adminCalibrate"></button>
+        <button id="aFullscreen" data-t="adminFullscreen"></button>
+        <button id="aReset" data-t="adminReset"></button>
+        <button id="aSave" class="primary" data-t="adminSave"></button>
+      </div>
+      <p class="sources" id="aSources"></p>
+    </div>
+  </section>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

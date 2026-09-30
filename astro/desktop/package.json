@@ -1,0 +1,77 @@
+{
+  "name": "astro",
+  "productName": "Astro",
+  "version": "1.0.0",
+  "description": "Astro – ett 3D-rymdspel för Tekniska museet",
+  "main": "main.js",
+  "author": "Astro / Tekniska museet",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "start:kiosk": "electron . --kiosk",
+    "dist:win": "electron-builder --win --publish never",
+    "dist:mac": "electron-builder --mac --publish never",
+    "dist:linux": "electron-builder --linux --publish never"
+  },
+  "devDependencies": {
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "se.tekniskamuseet.astro",
+    "productName": "Astro",
+    "copyright": "Astro – Tekniska museet",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../web",
+        "to": "web"
+      }
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Astro",
+      "artifactName": "Astro-Setup-${version}.exe"
+    },
+    "portable": {
+      "artifactName": "Astro-${version}-portable.exe"
+    },
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["universal"] }
+      ],
+      "category": "public.app-category.education",
+      "identity": null,
+      "hardenedRuntime": false,
+      "extendInfo": {
+        "NSCameraUsageDescription": "Astro använder kameran bara för att känna av om någon står vid spelet. Inga bilder sparas och ingen identifieras."
+      }
+    },
+    "dmg": {
+      "artifactName": "Astro-${version}.dmg",
+      "title": "Astro"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "category": "Education",
+      "artifactName": "Astro-${version}.AppImage"
+    }
+  }
+}

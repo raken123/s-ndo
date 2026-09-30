@@ -1,0 +1,11 @@
+{
+  "appId": "se.tekniskamuseet.astro",
+  "appName": "Astro",
+  "webDir": "www",
+  "backgroundColor": "#050b18",
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  }
+}

@@ -1,0 +1,182 @@
+# Bygger spelet Astro för alla plattformar:
+#   Windows (.exe), macOS (.dmg), Android (.apk) och Meta Quest (.apk).
+# Filerna hamnar som "artifacts" på körningen i fliken Actions.
+# Kör manuellt med "Run workflow" och kryssa i "release" för att skapa en GitHub Release med alla filer.
+name: Astro – bygg EXE, DMG, APK och Quest-APK
+
+on:
+  push:
+    branches: ['main', 'claude/astro-space-game-sp9pyb']
+    paths: ['astro/**', '.github/workflows/astro-build.yml']
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Skapa en GitHub Release med alla byggda filer'
+        type: boolean
+        default: false
+      quest_app_mode:
+        description: 'Meta Quest-läge: immersive (startar direkt i VR) eller 2D (panel)'
+        type: choice
+        options: ['immersive', '2D']
+        default: 'immersive'
+      astro_host:
+        description: 'Webbvärd där spelet ligger (tomt = <ägare>.github.io)'
+        type: string
+        default: ''
+      astro_path:
+        description: 'Sökväg till spelet på värden (tomt = /<repo>/astro/web/)'
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+
+env:
+  ASTRO_VERSION: '1.0.${{ github.run_number }}'
+
+jobs:
+  web:
+    name: Webb (zip)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Packa webbversionen
+        run: cd astro/web && zip -r ../../Astro-Web.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Astro-Web
+          path: Astro-Web.zip
+
+  windows:
+    name: Windows (.exe)
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: astro/desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm version ${{ env.ASTRO_VERSION }} --no-git-tag-version --allow-same-version
+      - run: npm run dist:win
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Astro-Windows
+          path: astro/desktop/dist/*.exe
+
+  macos:
+    name: macOS (.dmg)
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: astro/desktop
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm version ${{ env.ASTRO_VERSION }} --no-git-tag-version --allow-same-version
+      - run: npm run dist:mac
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Astro-macOS
+          path: astro/desktop/dist/*.dmg
+
+  android:
+    name: Android (.apk)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: astro/android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - run: npm install --no-audit --no-fund
+      - run: npm run build:debug
+      - name: Döp om APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk ../../Astro-Android.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Astro-Android
+          path: Astro-Android.apk
+
+  quest:
+    name: Meta Quest (.apk)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'build-tools;34.0.0 platforms;android-32 platforms;android-36'
+      - name: Installera Metas Bubblewrap
+        run: npm install -g @meta-quest/bubblewrap-cli
+      - name: Servera ikoner lokalt (Bubblewrap hämtar dem via HTTP)
+        run: |
+          cd astro/web
+          nohup python3 -m http.server 8080 > /tmp/http.log 2>&1 &
+          sleep 2
+          curl -sfI http://localhost:8080/icons/icon-512.png
+      - name: Bygg Quest-APK
+        env:
+          ASTRO_HOST: ${{ inputs.astro_host || format('{0}.github.io', github.repository_owner) }}
+          ASTRO_PATH: ${{ inputs.astro_path || format('/{0}/astro/web/', github.event.repository.name) }}
+          QUEST_APP_MODE: ${{ inputs.quest_app_mode || 'immersive' }}
+          ICON_BASE: 'http://localhost:8080/'
+          VERSION_NAME: ${{ env.ASTRO_VERSION }}
+          VERSION_CODE: ${{ github.run_number }}
+          QUEST_KEYSTORE_B64: ${{ secrets.QUEST_KEYSTORE_B64 }}
+          QUEST_KEYSTORE_PASSWORD: ${{ secrets.QUEST_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$QUEST_KEYSTORE_B64" ]; then
+            echo "$QUEST_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/quest.keystore"
+            export QUEST_KEYSTORE="$RUNNER_TEMP/quest.keystore"
+          else
+            unset QUEST_KEYSTORE_PASSWORD
+          fi
+          astro/quest/build-quest.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Astro-Quest
+          path: |
+            astro/quest/Astro-Quest.apk
+            astro/quest/assetlinks.json
+
+  release:
+    name: GitHub Release
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.release }}
+    needs: [web, windows, macos, android, quest]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: astro-v${{ env.ASTRO_VERSION }}
+          name: Astro ${{ env.ASTRO_VERSION }}
+          body: |
+            Astro – 3D-rymdspel för Tekniska museet.
+            * Windows: Astro-Setup-*.exe (installation) eller Astro-*-portable.exe
+            * macOS: Astro-*.dmg
+            * Android: Astro-Android.apk
+            * Meta Quest: Astro-Quest.apk (installeras med SideQuest/Meta Quest Developer Hub)
+          files: out/**/*
