@@ -17,7 +17,7 @@
   "startUrl": "__START_PATH__?platform=quest",
   "iconUrl": "__ICON_URL__",
   "maskableIconUrl": "__MASKABLE_ICON_URL__",
-  "webManifestUrl": "https://__HOST____START_PATH__manifest.webmanifest",
+  "webManifestUrl": "__MANIFEST_URL__",
   "signingKey": { "path": "__KEYSTORE__", "alias": "astro" },
   "appVersion": "__VERSION_NAME__",
   "appVersionCode": __VERSION_CODE__,

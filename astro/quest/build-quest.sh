@@ -45,6 +45,7 @@ sed -e "s#__HOST__#${ASTRO_HOST}#g" \
     -e "s#__START_PATH__#${ASTRO_PATH}#g" \
     -e "s#__ICON_URL__#${ICON_BASE}icons/icon-512.png#g" \
     -e "s#__MASKABLE_ICON_URL__#${ICON_BASE}icons/icon-512-maskable.png#g" \
+    -e "s#__MANIFEST_URL__#${ICON_BASE}manifest.webmanifest#g" \
     -e "s#__KEYSTORE__#${KEYSTORE}#g" \
     -e "s#__APP_MODE__#${QUEST_APP_MODE}#g" \
     -e "s#__VERSION_NAME__#${VERSION_NAME}#g" \

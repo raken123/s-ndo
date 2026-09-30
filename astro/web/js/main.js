@@ -169,7 +169,16 @@ async function boot() {
   if (await xr.check()) $('vrBtn').hidden = false;
   xr.addEventListener('start', onXRStart);
   xr.addEventListener('end', onXREnd);
-  xr.addEventListener('visibility', (e) => { G.xrVisible = e.detail === 'visible'; });
+  // Headsetet av = besökaren har gått. Quest pausar då renderingen, så vi mäter tiden själva.
+  xr.addEventListener('visibility', (e) => {
+    G.xrVisible = e.detail === 'visible';
+    if (!G.xrVisible) G.hiddenAt = performance.now();
+    else resumeAfterHidden(15);
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) G.hiddenAt = performance.now();
+    else resumeAfterHidden(settings.absentSec);
+  });
 
   presence.addEventListener('arrive', onArrive);
   presence.addEventListener('leave', onLeave);
@@ -217,6 +226,12 @@ function onLeave() {
     $('startBtn').classList.remove('pulse');
   }
   if (G.state === 'end') G.leftAt = performance.now();
+}
+
+function resumeAfterHidden(limitSec) {
+  const away = G.hiddenAt ? (performance.now() - G.hiddenAt) / 1000 : 0;
+  G.hiddenAt = 0;
+  if (G.session && away > limitSec) endSession('absent');
 }
 
 function someoneHere() {
