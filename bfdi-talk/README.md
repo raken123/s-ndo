@@ -103,7 +103,6 @@ tools/               slice_assets.py (cut sprites), make_icon.py (icons/splash)
 To re-cut the sprites after editing the sheets, run `pip install pillow numpy scipy`, then
 `npm run assets`.
 
-The bottom-right eye set on the eye sheet is skipped because the artist's watermark
-(MsBonnieArt) covers it. The eye art is by MsBonnieArt, so make sure you're allowed to use it
-before you sell the app. The UI font is Fredoka (SIL Open Font License, `www/fonts/OFL.txt`).
+The eye sheet's bottom-right set was removed together with the artist watermark that covered it.
+The UI font is Fredoka (SIL Open Font License, `www/fonts/OFL.txt`).
 BFDI is a show by jacknjellify, and this is an unofficial fan app.

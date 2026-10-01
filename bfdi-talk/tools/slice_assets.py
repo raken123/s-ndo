@@ -75,7 +75,7 @@ def slice_mouths():
 
 EYE_COLS = [(0, 80), (80, 230), (230, 335), (335, 433)]
 EYE_ROWS = [(65, 150), (150, 240), (240, 316), (316, 415), (415, 465), (465, 510)]
-SKIP = {(5, 3)}  # bottom-right set is covered by the artist watermark
+SKIP = {(5, 3)}  # bottom-right cell is blank (that set was removed along with the watermark)
 
 
 def slice_eyes():
