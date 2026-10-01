@@ -26,6 +26,7 @@
       "output": "dist",
       "buildResources": "build"
     },
+    "publish": [],
     "files": [
       "electron/**",
       "www/**",
