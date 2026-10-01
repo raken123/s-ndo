@@ -22,7 +22,7 @@ function createWindow() {
     minHeight: 600,
     backgroundColor: '#0b1d55',
     title: 'BFDI Talk',
-    icon: path.join(__dirname, '..', 'build', 'icon.png'),
+    icon: path.join(WWW, 'assets', 'icon.png'),
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -44,7 +44,7 @@ function createWindow() {
   win.loadURL('app://bfdi/index.html');
 }
 
-app.whenReady().then(async () => {
+app.whenReady().then(() => {
   protocol.handle('app', (req) => {
     const { pathname } = new URL(req.url);
     const file = path.normalize(path.join(WWW, decodeURIComponent(pathname)));
@@ -58,15 +58,16 @@ app.whenReady().then(async () => {
   });
   session.defaultSession.setPermissionCheckHandler((_wc, permission) => permission === 'media');
 
-  if (process.platform === 'darwin') {
-    try { await systemPreferences.askForMediaAccess('microphone'); } catch { /* user can allow later */ }
-  }
-
   ipcMain.handle('open-external', (_e, url) => {
     if (isExternal(url)) return shell.openExternal(url);
   });
 
   createWindow();
+  // Ask for the mic after the window is up: if macOS never shows the prompt (common for apps that
+  // aren't notarized), awaiting it first would leave the app running with no window at all.
+  if (process.platform === 'darwin') {
+    systemPreferences.askForMediaAccess('microphone').catch(() => { /* allowed later in Settings */ });
+  }
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 
