@@ -1,9 +1,10 @@
 // Enkel offline-cache för Astro (PWA / Meta Quest).
-const CACHE = 'astro-v1';
+const CACHE = 'astro-v2';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css', 'vendor/three.module.min.js',
   'js/main.js', 'js/data.js', 'js/i18n.js', 'js/textures.js', 'js/ship.js', 'js/world.js', 'js/hangar.js',
   'js/flight.js', 'js/input.js', 'js/ui.js', 'js/presence.js', 'js/audio.js', 'js/xr.js',
+  'js/recorder.js', 'js/mailform.js',
   'icons/icon-192.png', 'icons/icon-512.png',
 ];
 self.addEventListener('install', (e) => {

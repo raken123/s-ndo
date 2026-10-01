@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#050b18">
 <meta name="description" content="Astro – ett 3D-rymdspel för Tekniska museet. Flyg till månen och lås upp planeterna.">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob: mediastream:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob: mediastream:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https: http:">
 <title>Astro</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
@@ -28,6 +28,7 @@
         <button data-lang="en">English</button>
       </div>
       <p class="privacy" data-t="cameraNotice"></p>
+      <p class="privacy" id="recNotice" hidden data-t="recNotice"></p>
     </div>
   </section>
 
@@ -69,6 +70,7 @@
       <div class="row"><span data-t="stars"></span><b id="hStars">0</b></div>
       <div class="row"><span data-t="visited"></span><b id="hVisited">0</b></div>
       <div id="camIndicator" class="cam"></div>
+      <div id="recDot" hidden>● REC</div>
     </div>
     <div id="marker"><div class="ring"></div><div class="label"></div></div>
     <div id="tip"></div>
@@ -106,6 +108,9 @@
       <label><span data-t="adminSens"></span> <input type="range" id="aSens" min="0" max="1" step="0.05"></label>
       <label><span data-t="adminAbsent"></span> <input type="number" id="aAbsent" min="10" max="600"></label>
       <label><span data-t="adminMinutes"></span> <input type="number" id="aMinutes" min="1" max="120"></label>
+      <label><span data-t="adminMailServer"></span> <input type="url" id="aMailServer" placeholder="https://astro.example.se"></label>
+      <label><span data-t="adminMailKey"></span> <input type="password" id="aMailKey" autocomplete="off"></label>
+      <label><span data-t="adminMailDays"></span> <input type="number" id="aMailDays" min="1" max="365"></label>
       <div class="btns">
         <button id="aCalibrate" data-t="adminCalibrate"></button>
         <button id="aFullscreen" data-t="adminFullscreen"></button>

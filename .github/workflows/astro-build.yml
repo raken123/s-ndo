@@ -47,6 +47,19 @@ jobs:
           name: Astro-Web
           path: Astro-Web.zip
 
+  server:
+    name: Astro-server (test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: sudo apt-get install -y ffmpeg
+      - name: Testvideo
+        run: ffmpeg -loglevel error -f lavfi -i testsrc=duration=3:size=320x240:rate=24 -f lavfi -i sine=duration=3 -c:v libvpx-vp9 -c:a libopus /tmp/test.webm
+      - run: cd astro/server && FFMPEG=ffmpeg TEST_VIDEO=/tmp/test.webm node test/run-tests.mjs
+
   windows:
     name: Windows (.exe)
     runs-on: windows-latest

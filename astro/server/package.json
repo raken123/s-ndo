@@ -1,0 +1,13 @@
+{
+  "name": "astro-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tar emot inspelningar från Astro och mejlar en länk från astro@tekniskamuseet.se",
+  "type": "module",
+  "main": "server.mjs",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node test/run-tests.mjs"
+  }
+}

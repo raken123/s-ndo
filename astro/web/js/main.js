@@ -12,13 +12,15 @@ import { UI, esc } from './ui.js';
 import { PresenceDetector } from './presence.js';
 import { Sound } from './audio.js';
 import { XR } from './xr.js';
+import { GameRecorder, uploadRecording } from './recorder.js';
+import { MailForm } from './mailform.js';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const PLATFORM = params.get('platform') || (window.Capacitor ? 'android' : 'web');
 
 // ---------- Inställningar (sparas lokalt på maskinen) ----------
-const DEFAULTS = { lang: 'sv', camera: true, preview: false, sensitivity: 0.5, absentSec: 45, minutes: 20 };
+const DEFAULTS = { lang: 'sv', camera: true, preview: false, sensitivity: 0.5, absentSec: 45, minutes: 20, mailServer: '', mailKey: '', mailDays: 30 };
 function loadSettings() {
   let s = {};
   try { s = JSON.parse(localStorage.getItem('astro.settings') || '{}'); } catch { /* tomt */ }
@@ -27,6 +29,8 @@ function loadSettings() {
   if (params.has('lang')) o.lang = params.get('lang');
   if (params.get('camera') === '0') o.camera = false;
   if (params.has('absent')) o.absentSec = parseFloat(params.get('absent')) || o.absentSec;
+  if (params.has('mailServer')) o.mailServer = params.get('mailServer');
+  if (params.has('mailKey')) o.mailKey = params.get('mailKey');
   return o;
 }
 const settings = loadSettings();
@@ -51,6 +55,12 @@ const ui = new UI(sound);
 const input = new Input();
 const xr = new XR(renderer, ui);
 const presence = new PresenceDetector({ sensitivity: settings.sensitivity });
+const recorder = new GameRecorder(sound);
+const mail = new MailForm({
+  onSubmit: (email) => sendRecording(email),
+  onCancel: (finished) => { if (finished) toAttract(); else showEndDialog(); },
+});
+const mailEnabled = () => !!settings.mailServer && recorder.supported;
 
 let world, flight, hangar, parts;
 
@@ -294,6 +304,11 @@ function toAttract() {
   G.session = null;
   G.stillThere = null;
   ui.close();
+  mail.close();
+  recorder.discard();
+  G.recording = null;
+  $('recDot').hidden = true;
+  $('recNotice').hidden = !mailEnabled();
   fade(false);
   sound.silence();
   $('hud').hidden = true;
@@ -366,6 +381,8 @@ function startSession() {
   scene.remove(camera);
   hangar.enter(parts, camera, inXR());
   showMsg(t('boarding'), '', 4000);
+  // Spela in resan (inte i VR – där finns ingen skärmbild att spela in)
+  if (mailEnabled() && !inXR() && recorder.start()) $('recDot').hidden = false;
 }
 
 $('skipBtn').addEventListener('click', () => hangar.skip());
@@ -754,16 +771,66 @@ function endSession(reason) {
     return;
   }
   G.state = 'end';
-  const visited = S.visited.size - 1;
-  const dist = fmtKm(flight.distanceTravelled / 1000);
+  G.endAt = performance.now();
+  G.summary = {
+    visited: [...S.visited].filter((id) => id !== 'earth').map((id) => L(BODY[id].name)),
+    stars: S.stars,
+    distance: fmtKm(flight.distanceTravelled / 1000),
+    minutes: Math.round(S.limit / 60),
+  };
   sound.chord([784, 659, 523, 392], 0.8);
   sound.say(t('timeUp'), getLang());
+  $('recDot').hidden = true;
+  if (recorder.recording) {
+    G.recording = 'pending';
+    recorder.stop().then((blob) => {
+      if (G.state !== 'end' || G.recording !== 'pending') return;
+      G.recording = blob;
+      if (!mail.isOpen && ui.current?.endDialog) showEndDialog();
+    });
+  }
+  showEndDialog();
+}
+
+function showEndDialog() {
+  const s = G.summary;
+  const buttons = [];
+  if (mailEnabled() && G.recording instanceof Blob) {
+    buttons.push({ label: t('sendRecording'), primary: true, onClick: () => { mail.open(settings.mailDays); } });
+  }
+  buttons.push({ label: t('playAgain'), primary: !buttons.length, onClick: () => toAttract() });
   ui.dialog({
-    kicker: t('timeUp'), title: t('summary'),
-    body: [t('summaryText', visited, S.stars, dist), t('thanks')],
-    buttons: [{ label: t('playAgain'), primary: true, onClick: () => toAttract() }],
+    kicker: t('timeUp'), title: t('summary'), endDialog: true,
+    body: [t('summaryText', s.visited.length, s.stars, s.distance), t('thanks')],
+    buttons,
   });
-  later(30000, () => { if (G.state === 'end') toAttract(); });
+}
+
+async function sendRecording(email) {
+  if (!(G.recording instanceof Blob)) { mail.setStatus(t('mailNoRecording'), 'error'); return; }
+  mail.setBusy(true);
+  mail.setStatus(t('mailSending', 0));
+  try {
+    await uploadRecording({
+      server: settings.mailServer, key: settings.mailKey, blob: G.recording, email, lang: getLang(),
+      summary: G.summary, onProgress: (p) => { input.activity(); mail.setStatus(t('mailSending', Math.round(p * 100))); },
+    });
+    sound.success();
+    mail.done(t('mailSent', email));
+    G.recording = null; // skickad – släpp minnet
+  } catch (e) {
+    console.warn('[astro] kunde inte skicka inspelningen:', e.message);
+    sound.fail();
+    mail.setBusy(false);
+    mail.setStatus(t('mailFailed'), 'error');
+  }
+}
+
+// Efter resan: tillbaka till startskärmen när ingen rör spelet (längre tid om e-postformuläret är öppet).
+function checkEndIdle() {
+  if (G.state !== 'end' || mail.busy) return;
+  const idle = performance.now() - Math.max(G.endAt || 0, input.lastActivity);
+  if (idle > (mail.isOpen ? 120000 : 30000)) toAttract();
 }
 
 function checkTimer() {
@@ -908,6 +975,9 @@ function setupAdmin() {
     $('aSens').value = settings.sensitivity;
     $('aAbsent').value = settings.absentSec;
     $('aMinutes').value = settings.minutes;
+    $('aMailServer').value = settings.mailServer;
+    $('aMailKey').value = settings.mailKey;
+    $('aMailDays').value = settings.mailDays;
     presence.setPreview(settings.preview ? $('aCanvas') : null);
     G.adminTimer = setInterval(() => {
       $('aScore').textContent = presence.available
@@ -939,6 +1009,10 @@ function setupAdmin() {
     settings.sensitivity = parseFloat($('aSens').value);
     settings.absentSec = Math.max(10, parseFloat($('aAbsent').value) || 45);
     settings.minutes = Math.max(1, parseFloat($('aMinutes').value) || 20);
+    settings.mailServer = $('aMailServer').value.trim();
+    settings.mailKey = $('aMailKey').value.trim();
+    settings.mailDays = Math.max(1, parseInt($('aMailDays').value, 10) || 30);
+    $('recNotice').hidden = !mailEnabled();
     saveSettings();
     setLang(settings.lang);
     translateDom();
@@ -954,6 +1028,10 @@ let last = performance.now();
 const ZERO = { steerX: 0, steerY: 0, roll: 0, thrust: 0, brake: 0 };
 
 function handleActions() {
+  if (mail.isOpen) {
+    input.clearActions();
+    return;
+  }
   if (ui.open) {
     for (const a of ['navUp', 'navDown', 'navLeft', 'navRight', 'navNext', 'confirm', 'back']) if (input.take(a)) ui.nav(a);
   } else if (G.state === 'attract') {
@@ -968,6 +1046,20 @@ function handleActions() {
   }
   if (input.take('view') && G.state !== 'attract') toggleView();
   input.clearActions();
+}
+
+function recordingOverlay() {
+  const S = G.session;
+  const left = S ? Math.max(0, S.limit - (performance.now() - S.start) / 1000) : 0;
+  const tgt = flight.target;
+  const line = G.state === 'boarding' ? t('boarding')
+    : `${tgt ? `${t('target')}: ${name(tgt)} · ${fmtKm(world.realDistanceKm(flight.pos, tgt))} · ` : ''}${flight.speedText(t)} · ★ ${S ? S.stars : 0}`;
+  return {
+    time: fmtClock(left), line,
+    dialog: ui.current && !G.stillThere ? ui.current : null,
+    toast: performance.now() < G.msgUntil ? G.msg : '',
+    big: $('bigText').textContent,
+  };
 }
 
 function frame() {
@@ -1009,12 +1101,14 @@ function frame() {
 
   checkTimer();
   checkPresence(dt);
+  checkEndIdle();
 
   G.hudTimer -= dt;
   if (G.hudTimer <= 0 && G.session) { G.hudTimer = 0.2; updateHUD(); }
   updateMarker();
 
   renderer.render(activeScene, camera);
+  if (recorder.recording && !inXR()) recorder.draw(renderer.domElement, recordingOverlay());
 }
 
 // Offline-stöd (PWA) när spelet körs från en webbserver, t.ex. i Meta Quest.

@@ -17,6 +17,20 @@ Saturnus, Uranus, Neptunus och dvärgplaneten Pluto.
 * Svenska och engelska. Fakta från NASA, ESA m.fl. (se [Källor](#källor)).
 * Fungerar helt offline – inga externa filer, all grafik och allt ljud skapas i koden.
 
+## Rymdresan på mejlen
+
+När tiden är slut kan besökaren trycka **📧 Skicka min rymdresa till min e-post**,
+skriva in sin adress (på skärmtangentbordet eller ett vanligt tangentbord) och
+godkänna. Ett mejl från **astro@tekniskamuseet.se** skickas då med en länk till
+inspelningen av hela resan.
+
+* Bara spelets bild och ljud spelas in (960×540) – aldrig kamerabilden.
+* Filmen laddas upp till museets **Astro-server** (`astro/server`), som skickar mejlet
+  och visar filmen i 30 dagar. Därefter raderas den. E-postadressen sparas inte.
+* Funktionen slås på i administratörspanelen genom att fylla i serveradressen och
+  API-nyckeln. Se [`server/README.md`](server/README.md).
+* Spelas på dator och Android. I VR går det inte att spela in.
+
 ## Plattformar
 
 | Plattform | Fil | Hur den byggs |
@@ -112,7 +126,7 @@ tid innan omstart vid frånvaro, kamerans känslighet, kalibrering av tom bild
 en förgrundsmask, aldrig kamerabilden.
 
 URL-parametrar för webbversionen: `?minutes=20`, `?lang=en`, `?camera=0`,
-`?absent=45`.
+`?absent=45`, `?mailServer=https://…&mailKey=…`.
 
 Skrivbordsversionen kan startas i museiläge med `Astro.exe --kiosk`
 (avsluta med **Ctrl + Shift + Q**).

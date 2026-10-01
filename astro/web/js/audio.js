@@ -39,6 +39,16 @@ export class Sound {
     hum.start();
   }
 
+  // Ljudström till inspelningen av resan (samma ljud som hörs i högtalarna).
+  recordingStream() {
+    if (!this.ctx || !this.ctx.createMediaStreamDestination) return null;
+    if (!this.recDest) {
+      this.recDest = this.ctx.createMediaStreamDestination();
+      this.master.connect(this.recDest);
+    }
+    return this.recDest.stream;
+  }
+
   engine(thrust, warp) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
