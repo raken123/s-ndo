@@ -13,7 +13,7 @@
     "start": "npm run config && electron .",
     "serve": "npm run config && node scripts/serve.mjs",
     "dist:win": "npm run config && electron-builder --win nsis --x64 --publish never",
-    "dist:mac": "npm run config && electron-builder --mac dmg --universal --publish never",
+    "dist:mac": "npm run config && electron-builder --mac dmg --arm64 --x64 --publish never",
     "dist:linux": "npm run config && electron-builder --linux AppImage --publish never",
     "android:sync": "npm run config && cap sync android",
     "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug"
@@ -22,6 +22,11 @@
     "appId": "io.itch.jooykoll.bfditalk",
     "productName": "BFDI Talk",
     "artifactName": "BFDI-Talk-${version}-${os}-${arch}.${ext}",
+    "compression": "maximum",
+    "electronLanguages": [
+      "en-US"
+    ],
+    "afterPack": "build/after-pack.cjs",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -45,7 +50,8 @@
       }
     },
     "dmg": {
-      "title": "BFDI Talk"
+      "title": "BFDI Talk",
+      "format": "UDBZ"
     },
     "win": {
       "icon": "build/icon.png"
