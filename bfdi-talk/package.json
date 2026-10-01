@@ -13,7 +13,7 @@
     "start": "npm run config && electron .",
     "serve": "npm run config && node scripts/serve.mjs",
     "dist:win": "npm run config && electron-builder --win nsis --x64 --publish never",
-    "dist:mac": "npm run config && electron-builder --mac dmg --arm64 --x64 --publish never",
+    "dist:mac": "npm run config && electron-builder --mac dmg --arm64 --publish never",
     "dist:linux": "npm run config && electron-builder --linux AppImage --publish never",
     "android:sync": "npm run config && cap sync android",
     "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug"
