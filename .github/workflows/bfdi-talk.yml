@@ -53,6 +53,43 @@ jobs:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.files }}
           if-no-files-found: error
+      - name: Smoke-test the Mac app (install from DMG, verify signature, launch)
+        if: runner.os == 'macOS'
+        run: |
+          set -x
+          sw_vers
+          DMG=$(ls dist/*.dmg | head -1)
+          hdiutil attach "$DMG" -nobrowse -mountpoint /tmp/bfdi-dmg
+          ls -la /tmp/bfdi-dmg
+          ditto "/tmp/bfdi-dmg/BFDI Talk.app" "/tmp/BFDI Talk.app"
+          hdiutil detach /tmp/bfdi-dmg
+          APP="/tmp/BFDI Talk.app"
+          codesign --verify --deep --strict --verbose=2 "$APP" || echo "::warning::codesign verify failed"
+          codesign -dvv "$APP" 2>&1 | head -20 || true
+          codesign -d --entitlements - "$APP" || true
+          spctl --assess --type execute -vv "$APP" || true
+          "$APP/Contents/MacOS/BFDI Talk" --enable-logging=stderr --v=0 > /tmp/bfdi-run.log 2>&1 &
+          PID=$!
+          sleep 25
+          if kill -0 $PID 2>/dev/null; then
+            echo "APP STILL RUNNING AFTER 25s"
+            screencapture -x /tmp/bfdi-screen.png || true
+            kill $PID; RESULT=ok
+          else
+            wait $PID; echo "APP EXITED with code $?"; RESULT=crashed
+          fi
+          tail -150 /tmp/bfdi-run.log
+          for f in $(ls -t ~/Library/Logs/DiagnosticReports/*BFDI* 2>/dev/null | head -2); do echo "== $f"; head -120 "$f"; done
+          mkdir -p smoke && cp /tmp/bfdi-run.log smoke/ && cp /tmp/bfdi-screen.png smoke/ 2>/dev/null || true
+          cp ~/Library/Logs/DiagnosticReports/*BFDI* smoke/ 2>/dev/null || true
+          [ "$RESULT" = ok ]
+      - name: Upload Mac smoke-test logs
+        if: always() && runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: BFDI-Talk-macOS-smoke-test
+          path: bfdi-talk/smoke/
+          if-no-files-found: ignore
 
   android:
     name: Android APK
