@@ -1,0 +1,72 @@
+{
+  "name": "bfdi-talk",
+  "productName": "BFDI Talk",
+  "version": "1.0.0",
+  "description": "Talk out loud with a BFDI-style object character, powered by Gemini 3.8 Live.",
+  "main": "electron/main.js",
+  "author": "jooykoll",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "config": "node scripts/write-config.mjs",
+    "assets": "python3 tools/slice_assets.py",
+    "start": "npm run config && electron .",
+    "serve": "npm run config && node scripts/serve.mjs",
+    "dist:win": "npm run config && electron-builder --win nsis --x64 --publish never",
+    "dist:mac": "npm run config && electron-builder --mac dmg --universal --publish never",
+    "dist:linux": "npm run config && electron-builder --linux AppImage --publish never",
+    "android:sync": "npm run config && cap sync android",
+    "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug"
+  },
+  "build": {
+    "appId": "io.itch.jooykoll.bfditalk",
+    "productName": "BFDI Talk",
+    "artifactName": "BFDI-Talk-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**",
+      "www/**",
+      "package.json",
+      "!node_modules/@capacitor/**"
+    ],
+    "mac": {
+      "identity": "-",
+      "category": "public.app-category.entertainment",
+      "icon": "build/icon.png",
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "BFDI Talk uses your microphone so you can talk to your character."
+      }
+    },
+    "dmg": {
+      "title": "BFDI Talk"
+    },
+    "win": {
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "BFDI Talk"
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "category": "Game"
+    }
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/browser": "^8.0.4",
+    "@capacitor/core": "^8.5.2"
+  }
+}

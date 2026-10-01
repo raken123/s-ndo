@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BFDI Talk</string>
+    <string name="title_activity_main">BFDI Talk</string>
+    <string name="package_name">io.itch.jooykoll.bfditalk</string>
+    <string name="custom_url_scheme">io.itch.jooykoll.bfditalk</string>
+</resources>

@@ -1,0 +1,8 @@
+{
+  "appId": "io.itch.jooykoll.bfditalk",
+  "appName": "BFDI Talk",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#0b1d55"
+  }
+}
