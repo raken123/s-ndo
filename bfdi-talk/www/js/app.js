@@ -1,8 +1,11 @@
 import { Face, preloadSprites, AI_EMOTIONS, EXPRESSIONS } from './face.js';
 import { BODIES, COLORS, drawCharacter } from './character.js';
 import { LiveSocket, AudioEngine, MODELS, VOICES } from './live.js';
-import { Usage, USAGE, formatDuration } from './usage.js';
+import { Usage, formatDuration } from './usage.js';
 import { verifyScreenshot, STORE_URL } from './purchase.js';
+import { Account } from './account.js';
+import { PLANS, DEC23, formatCredits, formatCountdown } from './plans.js';
+import { VisionFeed, canShareScreen } from './media.js';
 import { openExternal, loadBuildConfig, isCapacitor } from './platform.js';
 
 const $ = id => document.getElementById(id);
@@ -40,7 +43,9 @@ function saveSettings() {
 
 const settings = loadSettings();
 const usage = new Usage();
+const account = new Account();
 const audio = new AudioEngine();
+let vision;
 let buildConfig = {};
 let sprites, face, parts;
 
@@ -64,9 +69,23 @@ function setStatus(html, cls = '') {
   s.className = 'status ' + cls;
 }
 
+function say(text, emotion) {
+  $('bubble').hidden = false;
+  $('bubbleText').textContent = text;
+  if (emotion) session.pendingEmotion = { emotion, at: 0 };
+}
+
+function showMsg(el, ok, text) {
+  el.hidden = false;
+  el.className = 'verify-result ' + (ok ? 'ok' : 'bad');
+  el.textContent = text;
+}
+
 function apiKey() { return (settings.apiKey || buildConfig.GEMINI_API_KEY || '').trim(); }
 
 function escapeHtml(s) { return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+const refillText = () => (PLANS[usage.plan] || PLANS.free).refillMinutes === 30 ? '30 minutes' : 'an hour';
 
 // ------------------------------------------------------------------ character
 
@@ -85,6 +104,7 @@ function systemPrompt() {
     `Your personality: ${settings.persona}`,
     'You are on a live voice call with a BFDI fan. Talk like a lively cartoon character: short, punchy replies (usually 1-3 sentences) unless they ask for more. Stay kid-friendly and kind.',
     'You know a lot about BFDI, BFDIA, IDFB, BFB, TPOT, jacknjellify and object shows in general, and love chatting about contestants, eliminations, recommended characters and fan theories. If you are unsure about a fact, say so in character instead of making it up.',
+    'Sometimes the user turns on their camera or shares their screen, and you receive a picture every second. When you can see something, react to it naturally and in character. Never pretend to see something when no picture is coming in.',
     `IMPORTANT: Your face is animated. Right before you start speaking each reply, call set_expression with the emotion that fits what you are about to say (${AI_EMOTIONS.join(', ')}). If your feeling changes mid-reply, call it again. Never say the function name or emotion label out loud.`,
   ].join('\n');
 }
@@ -260,7 +280,8 @@ async function startSession() {
       showLocked();
       return;
     }
-    if (Date.now() - session.lastActivity > IDLE_HANGUP_MS && !audio.speaking) {
+    // Video/screen counts as activity: the character can always comment on what it sees.
+    if (Date.now() - session.lastActivity > IDLE_HANGUP_MS && !audio.speaking && !vision.active) {
       endSession('Hung up after a quiet minute to save your usage.');
     }
   }, 1000);
@@ -276,6 +297,8 @@ function endSession(message) {
   sock?.close();
   audio.interrupt();
   audio.stopMic();
+  vision.stop();
+  account.flush();
   session.state = 'idle';
   session.pttHeld = false;
   renderControls();
@@ -288,10 +311,57 @@ function endSession(message) {
 
 function showLocked() {
   face?.setEmotion('knockedOut');
-  $('bubble').hidden = false;
-  $('bubbleText').textContent = "I'm all tuckered out! Give me an hour to recharge… or grab some Usage Credits!";
+  say(`I'm all tuckered out! Give me ${refillText()} to recharge… or grab some Usage Credits!`);
   renderControls();
   renderUsage();
+}
+
+// ------------------------------------------------------------------ video & screen live (Pro)
+
+async function toggleVision(kind) {
+  if (!account.isPro) {
+    toast(`${kind === 'camera' ? 'Video' : 'Screen'} live is a Pro feature — try Pro free for 7 days!`, 4500);
+    openPlans();
+    return;
+  }
+  if (vision.kind === kind) {
+    vision.stop();
+    session.sock?.sendText(`(The user turned off their ${kind === 'camera' ? 'camera' : 'screen share'}.)`);
+    return;
+  }
+  if (session.state === 'idle') {
+    const greet = settings.greet;
+    settings.greet = false; // the "I can see you" line is the opener
+    await startSession();
+    settings.greet = greet;
+  }
+  if (session.state !== 'live') return;
+  try {
+    await vision.start(kind);
+  } catch (err) {
+    toast(err.name === 'NotAllowedError'
+      ? `${kind === 'camera' ? 'Camera' : 'Screen sharing'} was blocked. Allow it in your system settings and try again.`
+      : err.message, 5000);
+    return;
+  }
+  session.lastActivity = Date.now();
+  // Give it a moment so the first frames arrive before asking for a reaction.
+  setTimeout(() => {
+    if (vision.kind === kind) {
+      session.sock?.sendText(kind === 'camera'
+        ? '(The user just turned on their camera so you can see them. Say hi and react to what you see in one short sentence.)'
+        : '(The user just started sharing their screen with you. React to what is on it in one short sentence.)');
+    }
+  }, 1500);
+}
+
+function renderVision() {
+  const kind = vision.kind;
+  $('camBtn').setAttribute('aria-pressed', String(kind === 'camera'));
+  $('screenBtn').setAttribute('aria-pressed', String(kind === 'screen'));
+  $('camPreview').hidden = !kind;
+  $('camPreview').classList.toggle('mirror', kind === 'camera');
+  $('camTag').textContent = kind === 'screen' ? 'SCREEN LIVE' : 'VIDEO LIVE';
 }
 
 // ------------------------------------------------------------------ UI rendering
@@ -299,18 +369,21 @@ function showLocked() {
 function renderUsage() {
   usage.tick();
   const p = usage.percent;
-  const base = Math.min(p, 100);
   const fill = $('usageFill');
-  fill.style.width = `${base}%`;
-  fill.className = 'usage-fill' + (base < 15 ? ' low' : base < 40 ? ' mid' : '');
-  $('usageBonus').style.width = p > 100 ? `${Math.min(100, p - 100)}%` : '0';
+  fill.style.width = `${Math.min(p, 100)}%`;
+  fill.className = 'usage-fill' + (p < 15 ? ' low' : p < 40 ? ' mid' : '');
+  $('usageBonus').style.width = '0';
   $('usagePct').textContent = `${p >= 10 ? Math.floor(p) : p.toFixed(1)}%`;
+  $('creditsLabel').textContent = formatCredits(usage.credits);
   const model = MODELS[settings.model];
   if (usage.locked) {
     $('usageSub').textContent = `Recharging — back in ${formatDuration(usage.msLeft)}`;
+  } else if (usage.meterEmpty) {
+    $('usageSub').textContent = `Using credits · meter refills in ${formatDuration(usage.msLeft)}`;
   } else {
     const mins = usage.minutesLeft(model.cost);
-    $('usageSub').textContent = `≈ ${mins >= 10 ? Math.round(mins) : mins.toFixed(1)} min on ${model.short}${p > 100 ? ' · bonus credits!' : ''}`;
+    const m = mins >= 1e6 ? formatCredits(mins) : mins >= 10 ? Math.round(mins).toLocaleString('en-US') : mins.toFixed(1);
+    $('usageSub').textContent = `≈ ${m} min on ${model.short}`;
   }
 }
 
@@ -339,6 +412,52 @@ function renderControls() {
   });
   $('voiceChipName').textContent = settings.voice;
   if (locked && session.state === 'idle') setStatus(`Out of usage — recharging for <b>${formatDuration(usage.msLeft)}</b>`, 'locked');
+}
+
+function renderAccount() {
+  const plan = account.plan;
+  document.body.classList.toggle('is-pro', plan === 'pro');
+  const av = $('avatar');
+  av.classList.toggle('signed-in', account.signedIn);
+  av.classList.toggle('pro', plan === 'pro');
+  if (account.signedIn) av.textContent = account.displayName.charAt(0).toUpperCase();
+  $('proLabel').textContent = plan === 'pro' ? (account.onTrial ? 'PRO trial' : 'PRO') : plan === 'lite' ? 'Lite' : 'Get Pro';
+  $('proBtn').classList.toggle('is-pro', plan === 'pro');
+
+  // profile dialog
+  $('authView').hidden = account.signedIn;
+  $('profileView').hidden = !account.signedIn;
+  $('accountTitle').textContent = account.signedIn ? 'Your account' : 'Account';
+  if (account.signedIn) {
+    const p = account.profile || {};
+    $('profileAvatar').textContent = account.displayName.charAt(0).toUpperCase();
+    $('profileAvatar').classList.toggle('pro', plan === 'pro');
+    $('profileAvatar').classList.add('signed-in');
+    $('profileName').textContent = account.displayName;
+    $('profileEmail').textContent = account.user.email || '';
+    const badge = $('profilePlan');
+    badge.textContent = plan.toUpperCase();
+    badge.className = 'plan-badge ' + plan;
+    $('profileCredits').textContent = formatCredits(account.credits);
+    $('profileRefill').textContent = PLANS[plan].refillMinutes === 30 ? '30 min' : '1 hour';
+    if (document.activeElement !== $('profileUsername')) $('profileUsername').value = p.username || '';
+    let info = 'Free plan: 20 minutes of talk, refills every hour.';
+    if (plan !== 'free') {
+      const end = p.current_period_end ? new Date(p.current_period_end).toLocaleDateString() : '';
+      info = account.onTrial && p.trial_ends_at
+        ? `Pro free trial — ends ${new Date(p.trial_ends_at).toLocaleDateString()}. Your 5,000 monthly credits arrive with your first payment.`
+        : `${PLANS[plan].name}: ${PLANS[plan].monthlyCredits.toLocaleString('en-US')} credits every month${end ? ` · renews ${end}` : ''}.`;
+      if (p.plan_status === 'past_due') info += ' ⚠️ Your last payment failed — update your card in Manage subscription.';
+    }
+    $('profilePlanInfo').textContent = info;
+    $('profileUpgrade').hidden = plan === 'pro';
+    $('profileUpgrade').textContent = plan === 'lite' ? 'Upgrade to Pro' : 'Get Pro';
+    $('manageSub').hidden = !p.stripe_customer_id;
+  }
+  $('buyAccountNote').textContent = account.signedIn
+    ? `Credits go to your account (${account.displayName}).`
+    : account.enabled ? 'Tip: sign in first so your credits are saved to your account.' : '';
+  renderUsage();
 }
 
 // Animation loop: lip-sync, emotion timing, body squash and arm waving.
@@ -442,12 +561,194 @@ function wireSettings() {
   });
 }
 
+// ------------------------------------------------------------------ account dialog
+
+let authMode = 'signin';
+
+function openAccount(blurb) {
+  $('authMsg').hidden = true;
+  $('profileMsg').hidden = true;
+  if (!account.enabled) {
+    $('authBlurb').textContent = "Accounts aren't switched on in this copy of BFDI Talk yet.";
+    $('authSubmit').disabled = true;
+  } else if (blurb) {
+    $('authBlurb').textContent = blurb;
+  }
+  renderAccount();
+  $('accountDlg').showModal();
+}
+
+function setAuthMode(mode) {
+  authMode = mode;
+  document.querySelectorAll('#accountDlg .tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === mode)));
+  document.querySelectorAll('.signup-only').forEach(el => { el.hidden = mode !== 'signup'; });
+  $('authSubmit').textContent = mode === 'signup' ? 'Create account' : 'Sign in';
+  $('authPass').autocomplete = mode === 'signup' ? 'new-password' : 'current-password';
+  $('authForgot').hidden = mode === 'signup';
+  $('authMsg').hidden = true;
+}
+
+function wireAccount() {
+  $('accountBtn').onclick = () => openAccount();
+  document.querySelectorAll('#accountDlg .tab').forEach(t => { t.onclick = () => setAuthMode(t.dataset.tab); });
+
+  const submit = async () => {
+    const email = $('authEmail').value.trim();
+    const pass = $('authPass').value;
+    const btn = $('authSubmit');
+    if (!email || pass.length < 8) { showMsg($('authMsg'), false, 'Enter your email and a password of at least 8 characters.'); return; }
+    btn.disabled = true;
+    try {
+      if (authMode === 'signup') {
+        const { needsConfirm } = await account.signUp(email, pass, $('authUser').value);
+        if (needsConfirm) { showMsg($('authMsg'), true, 'Almost done! Check your email and tap the link, then sign in here.'); setAuthMode('signin'); return; }
+        toast(`Welcome to BFDI Talk, ${$('authUser').value.trim() || account.displayName}! 🎉`);
+      } else {
+        await account.signIn(email, pass);
+        await account.refresh(); // load the username before greeting
+        toast(`Welcome back, ${account.displayName}!`);
+      }
+      $('authPass').value = '';
+      await account.refresh();
+      say(`Hey ${account.displayName}! Now I'll remember your credits everywhere!`, 'excited');
+      $('accountDlg').close();
+    } catch (err) {
+      showMsg($('authMsg'), false, err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  };
+  $('authSubmit').onclick = submit;
+  $('accountCard').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !$('authView').hidden && e.target.tagName === 'INPUT') { e.preventDefault(); submit(); }
+  });
+  $('authForgot').onclick = async () => {
+    const email = $('authEmail').value.trim();
+    if (!email) { showMsg($('authMsg'), false, 'Type your email above first.'); return; }
+    try {
+      await account.resetPassword(email);
+      showMsg($('authMsg'), true, 'Password reset email sent — check your inbox.');
+    } catch (err) { showMsg($('authMsg'), false, err.message); }
+  };
+  $('saveUsername').onclick = async () => {
+    try {
+      await account.setUsername($('profileUsername').value);
+      showMsg($('profileMsg'), true, 'Name saved!');
+    } catch (err) { showMsg($('profileMsg'), false, err.message); }
+  };
+  $('signOutBtn').onclick = async () => {
+    if (vision.active) vision.stop();
+    await account.signOut();
+    $('accountDlg').close();
+    toast('Signed out.');
+  };
+  $('profileUpgrade').onclick = () => { $('accountDlg').close(); openPlans(); };
+  $('manageSub').onclick = async () => {
+    try {
+      openExternal(await account.portalUrl());
+      watchForPlanChange();
+    } catch (err) { showMsg($('profileMsg'), false, err.message); }
+  };
+}
+
+// ------------------------------------------------------------------ plans dialog
+
+function renderPlans() {
+  $('litePerks').innerHTML = PLANS.lite.perks.map(p => `<li>${p}</li>`).join('');
+  $('proPerks').innerHTML = PLANS.pro.perks.map(p => `<li>${p}</li>`).join('');
+  const trialUsed = !!account.profile?.pro_trial_used;
+  const introUsed = !!account.profile?.lite_intro_used;
+  $('proTrialNote').textContent = trialUsed ? 'Free trial already used' : 'Try it 7 days free';
+  $('proCta').textContent = trialUsed ? 'Get Pro' : 'Start free trial';
+  document.querySelector('.plan-card.lite .plan-price').innerHTML = introUsed ? '<b>$6</b>/month' : '<b>$1</b>/month <small>for 5 months</small>';
+  document.querySelector('.plan-card.lite .plan-after').textContent = introUsed ? '1,500 credits every month' : 'then $6/month';
+  const plan = account.plan;
+  document.querySelectorAll('[data-plan]').forEach(b => {
+    const own = plan === b.dataset.plan;
+    b.disabled = own;
+    if (own) b.textContent = 'Your plan ✓';
+  });
+  renderOffer();
+}
+
+function renderOffer() {
+  const left = DEC23 - Date.now();
+  $('offerBanner').hidden = left <= 0;
+  if (left > 0) $('offerCountdown').textContent = formatCountdown(left);
+}
+
+function openPlans() {
+  $('plansMsg').hidden = true;
+  renderPlans();
+  if (!$('plansDlg').open) $('plansDlg').showModal();
+}
+
+let planWatch = null;
+/** After opening Stripe in the browser, keep checking for the new plan for a few minutes. */
+function watchForPlanChange() {
+  const before = `${account.plan}/${account.profile?.plan_status}`;
+  const until = Date.now() + 10 * 60 * 1000;
+  clearInterval(planWatch);
+  planWatch = setInterval(async () => {
+    await account.refresh();
+    const now = `${account.plan}/${account.profile?.plan_status}`;
+    if (now !== before || Date.now() > until) {
+      clearInterval(planWatch);
+      if (now !== before && account.plan !== 'free') {
+        toast(`You're on ${PLANS[account.plan].name}! 🎉`, 5000);
+        say(account.isPro ? "PRO MODE ACTIVATED! Now I can even see you — turn on Video!" : "Lite unlocked! Let's talk more!", 'excited');
+        if ($('plansDlg').open) $('plansDlg').close();
+      }
+    }
+  }, 5000);
+}
+
+function wirePlans() {
+  $('proBtn').onclick = () => openPlans();
+  $('buyToPlans').onclick = () => { $('buyDlg').close(); openPlans(); };
+  document.querySelectorAll('[data-plan]').forEach(btn => {
+    btn.onclick = async () => {
+      const plan = btn.dataset.plan;
+      if (!account.enabled) { showMsg($('plansMsg'), false, "Subscriptions aren't switched on in this copy of BFDI Talk yet."); return; }
+      if (!account.signedIn) {
+        $('plansDlg').close();
+        setAuthMode('signup');
+        openAccount(`Create a free account first, then you can get ${PLANS[plan].name}.`);
+        return;
+      }
+      btn.disabled = true;
+      const label = btn.textContent;
+      btn.textContent = 'Opening checkout…';
+      try {
+        openExternal(await account.checkoutUrl(plan));
+        showMsg($('plansMsg'), true, 'Checkout opened in your browser. Finish paying there — BFDI Talk updates by itself when you come back.');
+        watchForPlanChange();
+      } catch (err) {
+        showMsg($('plansMsg'), false, err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = label;
+      }
+    };
+  });
+}
+
+async function claimDec23() {
+  if (Date.now() < DEC23 || !account.signedIn) return;
+  const amount = await account.claimDec23Bonus();
+  if (amount > 0) {
+    toast(`🎁 December 23 drop: +${formatCredits(amount)} Usage Credits!`, 8000);
+    say(`WHOA! ${formatCredits(amount)} CREDITS?! We can talk FOREVER!`, 'excited');
+  }
+}
+
 // ------------------------------------------------------------------ buy dialog
 
 function wireBuy() {
   let file = null;
   $('buyBtn').onclick = () => {
     $('verifyResult').hidden = true;
+    renderAccount();
     $('buyDlg').showModal();
   };
   $('openStore').onclick = () => openExternal(STORE_URL);
@@ -464,31 +765,29 @@ function wireBuy() {
   };
   $('verifyBtn').onclick = async () => {
     if (!file) return;
-    if (!apiKey()) { toast('Add a Gemini API key in Settings first.'); return; }
     const btn = $('verifyBtn');
     btn.disabled = true;
     btn.textContent = 'Checking…';
     const out = $('verifyResult');
     try {
-      const r = await verifyScreenshot(file, apiKey(), usage);
-      out.hidden = false;
+      let r;
+      if (account.signedIn) {
+        r = await account.verifyReceipt(file); // checked + credited on the server
+      } else {
+        if (!apiKey()) { toast('Add a Gemini API key in Settings first.'); return; }
+        r = await verifyScreenshot(file, apiKey(), usage);
+        if (r.ok) usage.addLocalCredits(r.credits, r.ids);
+      }
       if (r.ok) {
-        const pct = usage.addCredits(r.usd, r.ids);
-        out.className = 'verify-result ok';
-        out.textContent = `Payment of $${r.usd.toFixed(2)} confirmed — +${pct}% usage added. Thank you!`;
-        session.pendingEmotion = { emotion: 'excited', at: 0 };
-        $('bubble').hidden = false;
-        $('bubbleText').textContent = "WOOHOO! I'm all charged up! Let's talk!";
+        showMsg(out, true, `Payment of $${r.usd.toFixed(2)} confirmed — +${r.credits.toLocaleString('en-US')} Usage Credits. Thank you!`);
+        say("WOOHOO! I'm all charged up! Let's talk!", 'excited');
         renderControls();
         renderUsage();
       } else {
-        out.className = 'verify-result bad';
-        out.textContent = r.message;
+        showMsg(out, false, r.message);
       }
     } catch (err) {
-      out.hidden = false;
-      out.className = 'verify-result bad';
-      out.textContent = `Could not check the screenshot: ${err.message}`;
+      showMsg(out, false, `Could not check the screenshot: ${err.message}`);
     } finally {
       btn.disabled = false;
       btn.textContent = 'Check screenshot';
@@ -540,6 +839,10 @@ function wireControls() {
     renderControls();
   };
 
+  $('camBtn').onclick = () => toggleVision('camera');
+  $('screenBtn').onclick = () => toggleVision('screen');
+  $('screenBtn').hidden = !canShareScreen(); // phones can't share the screen from a web view
+
   document.querySelector('.model-switch').onclick = e => {
     const seg = e.target.closest('[data-model]');
     if (!seg || session.state !== 'idle') return;
@@ -587,28 +890,55 @@ function wireControls() {
 async function boot() {
   buildConfig = await loadBuildConfig();
   sprites = await preloadSprites();
+  vision = new VisionFeed($('camVideo'));
+  vision.onFrame = b64 => { if (session.state === 'live') session.sock?.sendVideo(b64); };
+  vision.addEventListener('change', renderVision);
   buildCharacter();
   wireSettings();
+  wireAccount();
+  wirePlans();
   wireBuy();
   wireControls();
 
   usage.addEventListener('change', renderUsage);
-  usage.addEventListener('empty', () => toast("You're out of usage! It refills in 1 hour — or buy Usage Credits.", 6000));
-  let wasLocked = usage.locked;
+  usage.addEventListener('empty', () => {
+    if (usage.credits > 0) toast(`Meter empty — now using your Usage Credits. It refills in ${refillText()}.`, 6000);
+    else toast(`You're out of usage! It refills in ${refillText()} — or get Usage Credits.`, 6000);
+  });
+  usage.addEventListener('refilled', () => {
+    face.setEmotion('excited');
+    say("I'm back and fully recharged! Let's talk!");
+    toast('Usage refilled to 100%!');
+  });
+
+  account.addEventListener('change', () => {
+    usage.plan = account.plan;
+    usage.cloud = account.signedIn ? account : null;
+    if (!account.isPro && vision.active) vision.stop();
+    renderAccount();
+    renderControls();
+    if ($('plansDlg').open) renderPlans();
+  });
+  let claimedFor = null;
+  account.addEventListener('change', () => {
+    if (account.signedIn && account.profile && claimedFor !== account.user.id) {
+      claimedFor = account.user.id;
+      claimDec23();
+    }
+  });
+  await account.init({ url: buildConfig.SUPABASE_URL, key: buildConfig.SUPABASE_ANON_KEY }).catch(() => false);
+  // Coming back from the Stripe checkout page / another device: pick up plan and credit changes.
+  window.addEventListener('focus', () => account.refresh());
+
   setInterval(() => {
     renderUsage();
-    const locked = usage.locked;
-    if (wasLocked && !locked) {
-      face.setEmotion('excited');
-      $('bubbleText').textContent = "I'm back and fully recharged! Let's talk!";
-      toast('Usage refilled to 100%!');
-    }
-    wasLocked = locked;
+    if ($('plansDlg').open) renderOffer();
     if (session.state === 'idle') renderControls();
   }, 1000);
 
-  renderUsage();
+  renderAccount();
   renderControls();
+  renderVision();
   if (usage.locked) showLocked();
   else if (!apiKey()) setStatus('Open <b>Settings</b> and add a Gemini API key to start.');
 

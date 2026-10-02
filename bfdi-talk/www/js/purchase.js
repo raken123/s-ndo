@@ -1,6 +1,6 @@
 // Usage Credits: the user pays on itch.io, then uploads a screenshot of the payment.
 // Gemini 3.8 Flash reads the screenshot and reports what it shows; we accept it when it is an
-// itch.io payment for BFDI Talk of at least $5. $1 = 5% usage.
+// itch.io payment for BFDI Talk of at least $5. $1 = 60 Usage Credits (1 minute of Flash Live).
 
 import { USAGE } from './usage.js';
 
@@ -53,8 +53,8 @@ async function sha256(buf) {
 }
 
 /**
- * Returns { ok: true, usd, percent, ids, report } or { ok: false, message, report }.
- * Does not add credits itself — the caller does that via Usage.addCredits.
+ * Guest purchases (no account). Returns { ok: true, usd, credits, ids, report } or { ok: false, message, report }.
+ * Does not add credits itself — the caller does that via Usage.addLocalCredits.
  */
 export async function verifyScreenshot(file, apiKey, usage) {
   if (!file || !/^image\//.test(file.type)) return { ok: false, message: 'Please choose an image (PNG or JPG screenshot).' };
@@ -100,5 +100,5 @@ export async function verifyScreenshot(file, apiKey, usage) {
   if (orderId && usage.hasReceipt(orderId)) return { ok: false, report, message: 'This order was already used to add credits.' };
 
   const rounded = Math.round(usd * 100) / 100;
-  return { ok: true, usd: rounded, percent: rounded * USAGE.PERCENT_PER_DOLLAR, ids: [hash, orderId], report };
+  return { ok: true, usd: rounded, credits: Math.round(rounded * USAGE.CREDITS_PER_USD), ids: [hash, orderId], report };
 }

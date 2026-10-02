@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://generativelanguage.googleapis.com wss://generativelanguage.googleapis.com; media-src 'self' blob:; worker-src 'self' blob:">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://generativelanguage.googleapis.com wss://generativelanguage.googleapis.com https://*.supabase.co wss://*.supabase.co http://127.0.0.1:54321; media-src 'self' blob:; worker-src 'self' blob:">
 <meta name="theme-color" content="#0b1d55">
 <title>BFDI Talk</title>
 <link rel="icon" href="assets/icon.png">
@@ -27,9 +27,18 @@
   </div>
 
   <div class="top-actions">
-    <button class="btn btn-yellow" id="buyBtn">
+    <button class="btn btn-yellow credits-pill" id="buyBtn" title="Usage Credits">
       <svg viewBox="0 0 24 24" class="ico"><path d="M12 2l2.9 6.9L22 9.6l-5.4 4.9L18.2 22 12 18.3 5.8 22l1.6-7.5L2 9.6l7.1-.7z"/></svg>
-      <span>Buy Credits</span>
+      <span id="creditsLabel">0</span>
+    </button>
+    <button class="btn btn-pro" id="proBtn">
+      <svg viewBox="0 0 24 24" class="ico"><path d="M3 18h18l-1.5-10-4.5 4-3-7-3 7-4.5-4z"/></svg>
+      <span id="proLabel">Get Pro</span>
+    </button>
+    <button class="btn btn-white btn-square avatar-btn" id="accountBtn" aria-label="Account">
+      <span class="avatar" id="avatar">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M12 12a4.5 4.5 0 100-9 4.5 4.5 0 000 9zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5z"/></svg>
+      </span>
     </button>
     <button class="btn btn-white btn-square" id="settingsBtn" aria-label="Settings">
       <svg viewBox="0 0 24 24" class="ico"><path d="M19.4 13a7.6 7.6 0 000-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 00-1.7-1L15 3h-4l-.4 2.9a7.4 7.4 0 00-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 000 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 001.7 1L11 21h4l.4-2.9a7.4 7.4 0 001.7-1l2.5 1 2-3.5zM13 15.5A3.5 3.5 0 1113 8.5a3.5 3.5 0 010 7z"/></svg>
@@ -46,6 +55,10 @@
     <svg id="character" role="img" aria-label="Your talking character"></svg>
   </div>
   <div class="you-said" id="youSaid" hidden></div>
+  <div class="cam-preview" id="camPreview" hidden>
+    <video id="camVideo" muted playsinline></video>
+    <span class="cam-tag" id="camTag">LIVE</span>
+  </div>
   <div class="status" id="status">Tap <b>Talk</b> to start!</div>
 </main>
 
@@ -58,6 +71,17 @@
     <button role="radio" class="seg" data-model="thinking" aria-checked="false">
       <svg viewBox="0 0 24 24" class="ico"><path d="M12 3a6 6 0 00-6 6c0 2.2 1.2 3.7 2.3 4.8.6.6.7 1.2.7 2.2h6c0-1 .1-1.6.7-2.2C16.8 12.7 18 11.2 18 9a6 6 0 00-6-6zM9 18h6v1.5a2.5 2.5 0 01-2.5 2.5h-1A2.5 2.5 0 019 19.5z"/></svg>
       <span>Extended Thinking</span><small>2.5× usage</small>
+    </button>
+  </div>
+
+  <div class="media-row">
+    <button class="btn btn-white chip media-btn" id="camBtn" aria-pressed="false">
+      <svg viewBox="0 0 24 24" class="ico"><path d="M15 8V6a2 2 0 00-2-2H4a2 2 0 00-2 2v12a2 2 0 002 2h9a2 2 0 002-2v-2l5 4V4z"/></svg>
+      <span>Video</span><b class="pro-tag">PRO</b>
+    </button>
+    <button class="btn btn-white chip media-btn" id="screenBtn" aria-pressed="false">
+      <svg viewBox="0 0 24 24" class="ico"><path d="M3 4h18a1 1 0 011 1v11a1 1 0 01-1 1h-7v2h3v2H7v-2h3v-2H3a1 1 0 01-1-1V5a1 1 0 011-1zm1 2v9h16V6z"/></svg>
+      <span>Screen</span><b class="pro-tag">PRO</b>
     </button>
   </div>
 
@@ -123,6 +147,85 @@
   </form>
 </dialog>
 
+<!-- ============ Account ============ -->
+<dialog id="accountDlg" class="dlg">
+  <form method="dialog" class="dlg-card" id="accountCard">
+    <div class="dlg-head"><h2 id="accountTitle">Account</h2><button class="x" value="close" aria-label="Close">✕</button></div>
+
+    <section id="authView">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" class="tab" data-tab="signin" aria-selected="true">Sign in</button>
+        <button type="button" role="tab" class="tab" data-tab="signup" aria-selected="false">Create account</button>
+      </div>
+      <p class="hint" id="authBlurb">Save your Usage Credits, get subscriptions and keep everything when you switch devices.</p>
+      <label class="field signup-only" hidden><span>Username</span><input id="authUser" maxlength="24" autocomplete="nickname"></label>
+      <label class="field"><span>Email</span><input id="authEmail" type="email" autocomplete="email"></label>
+      <label class="field"><span>Password</span><input id="authPass" type="password" minlength="8" autocomplete="current-password"></label>
+      <div class="auth-actions">
+        <button type="button" class="btn btn-yellow" id="authSubmit">Sign in</button>
+        <button type="button" class="linkish" id="authForgot">Forgot password?</button>
+      </div>
+      <div class="verify-result" id="authMsg" hidden></div>
+    </section>
+
+    <section id="profileView" hidden>
+      <div class="profile-head">
+        <span class="avatar big" id="profileAvatar"></span>
+        <div>
+          <div class="profile-name"><span id="profileName"></span> <b class="plan-badge" id="profilePlan">FREE</b></div>
+          <div class="hint" id="profileEmail"></div>
+        </div>
+      </div>
+      <div class="stat-row">
+        <div class="stat"><b id="profileCredits">0</b><span>Usage Credits</span></div>
+        <div class="stat"><b id="profileRefill">1 hour</b><span>Meter refill</span></div>
+      </div>
+      <p class="hint" id="profilePlanInfo"></p>
+      <label class="field"><span>Name</span><input id="profileUsername" maxlength="24"><button type="button" class="btn btn-white small" id="saveUsername">Save</button></label>
+      <div class="auth-actions">
+        <button type="button" class="btn btn-pro" id="profileUpgrade">Get Pro</button>
+        <button type="button" class="btn btn-white" id="manageSub" hidden>Manage subscription</button>
+        <button type="button" class="btn btn-white" id="signOutBtn">Sign out</button>
+      </div>
+      <div class="verify-result" id="profileMsg" hidden></div>
+    </section>
+  </form>
+</dialog>
+
+<!-- ============ Plans ============ -->
+<dialog id="plansDlg" class="dlg dlg-wide">
+  <form method="dialog" class="dlg-card">
+    <div class="dlg-head"><h2>BFDI Talk Plans</h2><button class="x" value="close" aria-label="Close">✕</button></div>
+
+    <div class="offer" id="offerBanner" hidden>
+      <div class="offer-tag">ULTRA RARE OFFER</div>
+      <div class="offer-text">Subscribe before <b>December 23</b> and get a giant credit drop on December 23:<br>
+        <b>Pro: 500,000,000 credits</b> · <b>Lite: 100,000 credits</b></div>
+      <div class="offer-count">Ends in <b id="offerCountdown"></b></div>
+    </div>
+
+    <div class="plan-grid">
+      <div class="plan-card lite">
+        <div class="plan-name">Lite</div>
+        <div class="plan-price"><b>$1</b>/month <small>for 5 months</small></div>
+        <div class="plan-after">then $6/month</div>
+        <ul id="litePerks"></ul>
+        <button type="button" class="btn btn-blue" data-plan="lite">Get Lite</button>
+      </div>
+      <div class="plan-card pro">
+        <div class="plan-ribbon">BEST</div>
+        <div class="plan-name">Pro 👑</div>
+        <div class="plan-price"><b>$10</b>/month</div>
+        <div class="plan-after" id="proTrialNote">Try it 7 days free</div>
+        <ul id="proPerks"></ul>
+        <button type="button" class="btn btn-pro" data-plan="pro" id="proCta">Start free trial</button>
+      </div>
+    </div>
+    <p class="hint" id="plansNote">Payments are handled by Stripe. Cancel any time from <b>Account → Manage subscription</b>. Credits you get stay yours even after you cancel.</p>
+    <div class="verify-result" id="plansMsg" hidden></div>
+  </form>
+</dialog>
+
 <!-- ============ Buy credits ============ -->
 <dialog id="buyDlg" class="dlg">
   <form method="dialog" class="dlg-card">
@@ -132,12 +235,13 @@
       <div class="step-num">1</div>
       <div>
         <h3>Pay on itch.io</h3>
-        <p><b>$1 = 5% usage.</b> Minimum $5.</p>
+        <p><b>$1 = 60 Usage Credits</b> (1 credit = 1 second of talk). Minimum $5. Credits are separate from the free meter and never run out on their own.</p>
         <div class="price-row">
-          <div class="price"><b>$5</b><span>+25%</span></div>
-          <div class="price"><b>$10</b><span>+50%</span></div>
-          <div class="price"><b>$20</b><span>+100%</span></div>
+          <div class="price"><b>$5</b><span>300</span></div>
+          <div class="price"><b>$10</b><span>600</span></div>
+          <div class="price"><b>$20</b><span>1,200</span></div>
         </div>
+        <p class="hint">Want way more? <button type="button" class="linkish" id="buyToPlans">Subscriptions</button> give 1,500–5,000 credits every month.</p>
         <button type="button" class="btn btn-yellow" id="openStore">Buy on itch.io</button>
       </div>
     </section>
@@ -147,6 +251,7 @@
       <div>
         <h3>Upload your payment screenshot</h3>
         <p>Take a screenshot of the receipt that shows <b>BFDI Talk</b> and the <b>amount you paid</b>.</p>
+        <p class="hint" id="buyAccountNote"></p>
         <label class="drop" id="drop">
           <input type="file" id="receiptFile" accept="image/*" hidden>
           <img id="receiptPreview" alt="" hidden>
@@ -161,6 +266,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<script src="vendor/supabase.js"></script>
 <script type="module" src="js/app.js"></script>
 </body>
 </html>

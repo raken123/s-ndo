@@ -26,6 +26,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { height: 100%; margin: 0; }
 body {
   font-family: var(--font);
@@ -262,14 +263,94 @@ button, input, textarea { font: inherit; color: inherit; }
 }
 .toast.show { transform: translate(-50%, 0); opacity: 1; visibility: visible; }
 
+/* ---------------- accounts, credits, plans ---------------- */
+:root { --gold: linear-gradient(180deg, #ffe680 0%, #ffc61a 55%, #f29d00 100%); }
+.credits-pill { padding: .5em .95em; font-variant-numeric: tabular-nums; }
+.btn-pro { background: var(--gold); }
+.btn-pro.is-pro { background: var(--gold); box-shadow: var(--pop), 0 0 14px rgba(255, 200, 40, .75); }
+.avatar-btn { padding: 4px; }
+.avatar {
+  width: 1.9em; height: 1.9em; border-radius: 50%; display: grid; place-items: center; font-weight: 700;
+  background: var(--blue); color: var(--ink); font-size: 1rem; position: relative;
+}
+.avatar .ico { width: 1.25em; height: 1.25em; }
+.avatar.signed-in { background: var(--yellow); }
+.avatar.pro::after { content: '👑'; position: absolute; top: -.85em; right: -.45em; font-size: .9em; transform: rotate(18deg); }
+.avatar.big { width: 3.2em; height: 3.2em; font-size: 1.2rem; border: var(--line) solid var(--ink); }
+.btn.small { padding: .3em .8em; font-size: .9rem; box-shadow: 0 3px 0 var(--ink); }
+.linkish { border: 0; background: none; padding: 0; color: #1d4fd8; text-decoration: underline; cursor: pointer; font-weight: 600; }
+
+.tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+.tab { flex: 1; border: var(--line) solid var(--ink); background: #fff; border-radius: 14px; padding: .45em; font-weight: 700; cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--yellow); box-shadow: 0 3px 0 var(--ink); }
+.auth-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; }
+.field .btn { flex: none; }
+
+.profile-head { display: flex; align-items: center; gap: 14px; }
+.profile-name { font-size: 1.3rem; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.plan-badge { font-size: .75rem; padding: 2px 9px; border-radius: 999px; border: 2px solid var(--ink); background: #e9e6da; }
+.plan-badge.lite { background: var(--blue); }
+.plan-badge.pro { background: var(--gold); }
+.stat-row { display: flex; gap: 10px; margin: 12px 0 4px; }
+.stat { flex: 1; border: var(--line) solid var(--ink); border-radius: 16px; background: #fff; padding: 8px 12px; }
+.stat b { display: block; font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.stat span { font-size: .8rem; color: var(--muted); font-weight: 600; }
+
+.dlg-wide { max-width: min(760px, 96vw); }
+.offer {
+  margin-top: 12px; border: var(--line) solid var(--ink); border-radius: 20px; padding: 12px 16px; color: #fff; text-align: center;
+  background: linear-gradient(120deg, #6a11cb, #ff3cac 50%, #ffb800); box-shadow: var(--pop); position: relative; overflow: hidden;
+}
+.offer::before {
+  content: ''; position: absolute; inset: -50%; background: linear-gradient(100deg, transparent 40%, rgba(255,255,255,.35) 50%, transparent 60%);
+  animation: shine 3.2s linear infinite;
+}
+@keyframes shine { from { transform: translateX(-60%); } to { transform: translateX(60%); } }
+.offer > * { position: relative; }
+.offer-tag { display: inline-block; background: var(--ink); color: var(--yellow); font-weight: 700; letter-spacing: 1.5px; border-radius: 999px; padding: 2px 12px; font-size: .8rem; }
+.offer-text { margin: 6px 0 4px; font-size: 1.05rem; text-shadow: 0 2px 0 rgba(0,0,0,.35); }
+.offer-count { font-size: .9rem; opacity: .95; }
+
+.plan-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+.plan-card {
+  position: relative; border: 4px solid var(--ink); border-radius: 22px; background: #fff; padding: 14px 16px 16px;
+  display: flex; flex-direction: column; box-shadow: 0 6px 0 var(--ink);
+}
+.plan-card.pro { background: #fff8dc; }
+.plan-card ul { margin: 10px 0 14px; padding-left: 1.1em; flex: 1; font-size: .92rem; }
+.plan-card li { margin: 4px 0; }
+.plan-card .btn { width: 100%; }
+.plan-name { font-size: 1.5rem; font-weight: 700; }
+.plan-price b { font-size: 2rem; }
+.plan-price small { color: var(--muted); font-weight: 600; }
+.plan-after { font-weight: 700; color: #1b8a2f; font-size: .9rem; }
+.plan-ribbon { position: absolute; top: -12px; right: 14px; background: var(--red); color: #fff; border: 2px solid var(--ink); border-radius: 999px; padding: 1px 10px; font-weight: 700; font-size: .75rem; }
+.plan-card .current { text-align: center; font-weight: 700; padding: .55em; border: 3px dashed var(--ink); border-radius: 999px; }
+
+/* ---------------- video & screen live ---------------- */
+.media-row { display: flex; gap: 10px; }
+.media-btn { min-width: 0; padding: .4em .9em; font-size: .92rem; }
+.media-btn[aria-pressed="true"] { background: var(--red); color: #fff; }
+.pro-tag { font-size: .6rem; background: var(--gold); color: var(--ink); border: 1.5px solid var(--ink); border-radius: 999px; padding: 0 5px; }
+body.is-pro .pro-tag { display: none; }
+.cam-preview {
+  position: absolute; right: 16px; bottom: 12px; z-index: 4; width: min(220px, 34vw); aspect-ratio: 4 / 3;
+  border: var(--line) solid var(--ink); border-radius: 16px; overflow: hidden; background: #000; box-shadow: var(--pop);
+}
+.cam-preview video { width: 100%; height: 100%; object-fit: cover; }
+.cam-preview.mirror video { transform: scaleX(-1); }
+.cam-tag { position: absolute; top: 6px; left: 6px; background: var(--red); color: #fff; font-weight: 700; font-size: .7rem; padding: 1px 7px; border-radius: 999px; border: 2px solid var(--ink); }
+
 /* ---------------- small screens (phones) ---------------- */
 @media (max-width: 720px) {
   .topbar { flex-wrap: wrap; gap: 10px; padding-left: 14px; padding-right: 14px; }
   .logo-bfdi { font-size: 1.7rem; } .logo-talk { font-size: 1.35rem; }
   .top-actions { margin-left: auto; }
-  .top-actions .btn-yellow span { display: none; }
-  .top-actions .btn-yellow { padding: .55em; border-radius: 16px; }
-  .top-actions .btn-yellow .ico { width: 1.4em; height: 1.4em; }
+  .top-actions { gap: 6px; }
+  #proBtn span { display: none; }
+  #proBtn { padding: .55em; border-radius: 16px; }
+  .plan-grid { grid-template-columns: 1fr; }
+  .cam-preview { bottom: auto; top: 6px; right: 10px; width: 30vw; }
   .usage { order: 3; max-width: none; flex-basis: 100%; margin-left: 0; }
   .bubble-text { font-size: 1.05rem; }
   .controls { gap: 12px; }

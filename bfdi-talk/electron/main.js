@@ -1,6 +1,6 @@
 // Desktop shell (Windows .exe / macOS .dmg). Serves www/ from a private app:// origin so
 // ES modules, AudioWorklet and the microphone all behave like on a normal https site.
-const { app, BrowserWindow, protocol, net, session, shell, ipcMain, systemPreferences } = require('electron');
+const { app, BrowserWindow, protocol, net, session, shell, ipcMain, systemPreferences, desktopCapturer } = require('electron');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
@@ -52,11 +52,18 @@ app.whenReady().then(() => {
     return net.fetch(pathToFileURL(file).toString());
   });
 
-  // Only the microphone (and clipboard-free basics) are ever granted.
+  // Only the microphone and camera (Pro: video live) and screen capture (Pro: screen live) are granted.
   session.defaultSession.setPermissionRequestHandler((_wc, permission, cb, details) => {
-    cb(permission === 'media' && (details.mediaTypes || []).every(t => t === 'audio'));
+    if (permission === 'media') return cb((details.mediaTypes || []).every(t => t === 'audio' || t === 'video'));
+    cb(permission === 'display-capture');
   });
-  session.defaultSession.setPermissionCheckHandler((_wc, permission) => permission === 'media');
+  session.defaultSession.setPermissionCheckHandler((_wc, permission) => permission === 'media' || permission === 'display-capture');
+  // Screen live: use the system picker where there is one (macOS 15+), otherwise share the main screen.
+  session.defaultSession.setDisplayMediaRequestHandler((_request, callback) => {
+    desktopCapturer.getSources({ types: ['screen'] })
+      .then(sources => callback(sources.length ? { video: sources[0] } : {}))
+      .catch(() => callback({}));
+  }, { useSystemPicker: true });
 
   ipcMain.handle('open-external', (_e, url) => {
     if (isExternal(url)) return shell.openExternal(url);

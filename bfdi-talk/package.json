@@ -1,7 +1,7 @@
 {
   "name": "bfdi-talk",
   "productName": "BFDI Talk",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Talk out loud with a BFDI-style object character, powered by Gemini 3.8 Live.",
   "main": "electron/main.js",
   "author": "jooykoll",
@@ -16,7 +16,9 @@
     "dist:mac": "npm run config && electron-builder --mac dmg --arm64 --publish never",
     "dist:linux": "npm run config && electron-builder --linux AppImage --publish never",
     "android:sync": "npm run config && cap sync android",
-    "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug"
+    "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug",
+    "test": "node --test tests/usage.test.mjs && node --experimental-strip-types --no-warnings --test tests/billing.test.mjs",
+    "test:backend": "node --test tests/db.test.mjs tests/webhook.test.mjs"
   },
   "build": {
     "appId": "io.itch.jooykoll.bfditalk",
@@ -46,7 +48,8 @@
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
       "extendInfo": {
-        "NSMicrophoneUsageDescription": "BFDI Talk uses your microphone so you can talk to your character."
+        "NSMicrophoneUsageDescription": "BFDI Talk uses your microphone so you can talk to your character.",
+        "NSCameraUsageDescription": "BFDI Talk Pro uses your camera for video live, so your character can see you."
       }
     },
     "dmg": {
@@ -74,6 +77,7 @@
   "dependencies": {
     "@capacitor/android": "^8.5.2",
     "@capacitor/browser": "^8.0.4",
-    "@capacitor/core": "^8.5.2"
+    "@capacitor/core": "^8.5.2",
+    "@supabase/supabase-js": "^2.117.2"
   }
 }

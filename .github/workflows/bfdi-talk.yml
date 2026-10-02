@@ -47,6 +47,8 @@ jobs:
       - run: npm run ${{ matrix.script }}
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@v4
         with:
@@ -109,6 +111,8 @@ jobs:
       - run: npm run android:sync
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
       - name: Build APK
         working-directory: bfdi-talk/android
         run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon

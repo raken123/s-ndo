@@ -127,6 +127,7 @@ export class LiveSocket extends EventTarget {
   sendAudio(base64) { this.send({ realtimeInput: { audio: { data: base64, mimeType: 'audio/pcm;rate=16000' } } }); }
   endAudio() { this.send({ realtimeInput: { audioStreamEnd: true } }); }
   sendText(text) { this.send({ realtimeInput: { text } }); }
+  sendVideo(base64Jpeg) { this.send({ realtimeInput: { video: { data: base64Jpeg, mimeType: 'image/jpeg' } } }); }
 
   close() {
     this.closedByUs = true;
