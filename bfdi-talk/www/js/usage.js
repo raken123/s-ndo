@@ -4,15 +4,13 @@
 // When it hits 0% it refills to 100% after an hour (30 minutes on Pro).
 // Usage Credits are separate and have no limit: 1 credit = 1 second of Flash Live talk. They are
 // spent only while the meter is empty, so you can keep talking during the refill wait.
-// Credits come from the account (subscriptions, purchases) or, for guests, are kept on this device.
+// Credits come from the account (plans, bonuses) or, for guests, are kept on this device.
 
-import { PLANS, CREDITS_PER_USD } from './plans.js';
+import { PLANS } from './plans.js';
 
 export const USAGE = {
   FULL: 100,
   SECONDS_PER_FULL: 20 * 60,
-  CREDITS_PER_USD,
-  MIN_PURCHASE_USD: 5,
 };
 
 const KEY = 'bfdi.usage.v2';
@@ -115,7 +113,7 @@ export class Usage extends EventTarget {
 
   hasReceipt(id) { return this.state.receipts.includes(id); }
 
-  /** Guest purchases (no account): credits kept on this device. */
+  /** Guest credits (no account): kept on this device. */
   addLocalCredits(credits, ids = []) {
     this.state.localCredits += credits;
     this.state.receipts.push(...ids.filter(Boolean));

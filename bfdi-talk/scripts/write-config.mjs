@@ -17,7 +17,7 @@ if (existsSync(envFile)) {
 }
 const config = {
   GEMINI_API_KEY: env.GEMINI_API_KEY || '',
-  // Accounts + subscriptions. The anon/publishable key is meant to be public (row-level security protects the data).
+  // Accounts + plans. The anon/publishable key is meant to be public (row-level security protects the data).
   SUPABASE_URL: env.SUPABASE_URL || '',
   SUPABASE_ANON_KEY: env.SUPABASE_ANON_KEY || '',
 };

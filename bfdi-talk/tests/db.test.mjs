@@ -38,7 +38,7 @@ test('taken username still creates the account (without a name)', async () => {
   assert.equal(free, false);
 });
 
-test('users cannot give themselves credits or Pro', async () => {
+test('users cannot give themselves credits or change their row directly', async () => {
   const { c, id } = await newUser(null);
   await c.from('profiles').update({ credits: 999999, plan: 'pro' }).eq('id', id);
   const { error: rpcErr } = await c.rpc('grant_credits', { p_user: id, p_delta: 1000, p_reason: 'hack', p_ref: null });
@@ -69,7 +69,7 @@ test('grants are idempotent per ref and spending never goes below 0', async () =
   assert.equal((await c.rpc('spend_credits', { p_amount: 25 })).data, 0);
 });
 
-test('December 23 bonus: only paid subscribers who started before the cutoff, once', async () => {
+test('December 23 bonus: only Lite/Pro accounts that switched before the cutoff, once', async () => {
   const pro = await newUser(null);
   const lite = await newUser(null);
   const trial = await newUser(null);
@@ -97,14 +97,51 @@ test('December 23 bonus: only paid subscribers who started before the cutoff, on
     assert.equal((await pro.c.rpc('claim_dec23_bonus')).data, 500000000);
     assert.equal((await pro.c.rpc('claim_dec23_bonus')).data, 0, 'only once');
     assert.equal((await lite.c.rpc('claim_dec23_bonus')).data, 100000);
-    assert.equal((await trial.c.rpc('claim_dec23_bonus')).data, 0, 'trial-only accounts wait for a payment');
+    assert.equal((await trial.c.rpc('claim_dec23_bonus')).data, 0, 'inactive plans do not count');
     assert.equal((await late.c.rpc('claim_dec23_bonus')).data, 0, 'subscribed after the cutoff');
     const { data } = await pro.c.from('profiles').select('credits, dec23_bonus_claimed').single();
     assert.deepEqual(data, { credits: 500000000, dec23_bonus_claimed: true });
-    // trial converts to paid later -> can claim then
+    // becomes active later -> can claim then
     await admin.from('profiles').update({ plan_status: 'active' }).eq('id', trial.id);
     assert.equal((await trial.c.rpc('claim_dec23_bonus')).data, 500000000);
   } finally {
     setCutoff('2026-12-23 00:00:00+00');
   }
+});
+
+test('switching plans is instant and free, with monthly credits once per period', async () => {
+  const { c, id } = await newUser(null);
+  const profile = async () => (await c.from('profiles').select('plan, plan_status, credits, subscribed_at').single()).data;
+
+  assert.equal((await c.rpc('switch_plan', { p_plan: 'lite' })).data, 1500);
+  let p = await profile();
+  assert.equal(p.plan, 'lite');
+  assert.equal(p.plan_status, 'active');
+  assert.equal(p.credits, 1500);
+  assert.ok(p.subscribed_at);
+  const since = p.subscribed_at;
+
+  // upgrading tops up to Pro's 5,000; switching around never pays the period twice
+  assert.equal((await c.rpc('switch_plan', { p_plan: 'pro' })).data, 3500);
+  assert.equal((await c.rpc('switch_plan', { p_plan: 'lite' })).data, 0);
+  assert.equal((await c.rpc('switch_plan', { p_plan: 'pro' })).data, 0);
+  assert.equal((await c.rpc('claim_monthly_credits')).data, 0);
+  p = await profile();
+  assert.equal(p.credits, 5000);
+  assert.equal(p.subscribed_at, since, 'moving between paid plans keeps the start date');
+
+  // a new 30-day period pays again
+  await admin.from('profiles').update({ monthly_period_start: new Date(Date.now() - 31 * 86400e3).toISOString() }).eq('id', id);
+  assert.equal((await c.rpc('claim_monthly_credits')).data, 5000);
+  assert.equal((await profile()).credits, 10000);
+
+  // back to Free: no monthly credits, credits stay
+  assert.equal((await c.rpc('switch_plan', { p_plan: 'free' })).data, 0);
+  p = await profile();
+  assert.deepEqual([p.plan, p.plan_status, p.credits, p.subscribed_at], ['free', 'none', 10000, null]);
+
+  const { error } = await c.rpc('switch_plan', { p_plan: 'ultra' });
+  assert.ok(error, 'unknown plans are refused');
+  const anon = createClient(URL, ANON, opts);
+  assert.ok((await anon.rpc('switch_plan', { p_plan: 'pro' })).error, 'needs a signed-in user');
 });

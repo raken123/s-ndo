@@ -1,7 +1,7 @@
-# Builds BFDI Talk for Windows (.exe installer), macOS (.dmg) and Android (.apk).
+# Builds BFDI Talk for Windows (.exe installer), macOS (.dmg), Android (.apk) and the web (one .html file).
 # Add a repository secret named GEMINI_API_KEY to bake the Gemini key into the builds;
 # without it the apps ask for a key in Settings.
-# Push a tag like bfdi-talk-v1.0.0 to also publish a GitHub Release with all three files.
+# Push a tag like bfdi-talk-v1.0.0 to also publish a GitHub Release with all the files.
 name: BFDI Talk builds
 
 on:
@@ -127,10 +127,36 @@ jobs:
           path: bfdi-talk/dist/*.apk
           if-no-files-found: error
 
+  web:
+    name: Web (one HTML file)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: bfdi-talk/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - name: Build BFDI-Talk.html (website + the whole app)
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          node tools/make_site.mjs --with-key --with-accounts --out "dist/BFDI-Talk-${VERSION}.html"
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BFDI-Talk-Web
+          path: bfdi-talk/dist/*.html
+          if-no-files-found: error
+
   release:
     name: GitHub Release
     if: startsWith(github.ref, 'refs/tags/bfdi-talk-v')
-    needs: [desktop, android]
+    needs: [desktop, android, web]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4

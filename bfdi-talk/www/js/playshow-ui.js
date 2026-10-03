@@ -1,5 +1,6 @@
 // Playshow Mode screens: the studio (show name, cast, premise, saved episodes) and the theater.
 
+import { eyeSrc, mouthSrc } from './face.js';
 import { BODIES, COLORS, drawCharacter } from './character.js';
 import { VOICES } from './live.js';
 import { PS_LIMITS, activeCast, canEliminate, writeEpisode, hostTurn, pcmChunksToWav, HOST_NAME } from './playshow-script.js';
@@ -32,8 +33,9 @@ const PERSONA_CHIPS = {
 };
 
 export function initPlayshow(ctx) {
-  // ctx: { settings, account, usage, audio, sprites(), apiKey(), toast, openPlans, stopTalking }
+  // ctx: { settings, account, usage, audio, sprites(), apiKey(), toast, openPlans, stopTalking, web, fetchImpl }
   let state = load();
+  if (ctx.web) state.hostMe = false; // hosting needs the mic (full app only)
   let live = null; // the episode being hosted by the user right now
   let player = null;
   let editing = null;
@@ -72,11 +74,11 @@ export function initPlayshow(ctx) {
     const parts = drawCharacter(svg, c.body, c.color, prefix);
     const sprites = ctx.sprites();
     if (sprites) {
-      parts.eyesEl.setAttribute('href', 'assets/eyes/eyes_15.png');
+      parts.eyesEl.setAttribute('href', eyeSrc(15));
       const e = sprites.eyes[15], m = sprites.mouths[1];
       Object.entries({ width: e.w * 1.9, height: e.h * 1.9, x: parts.eyeAnchor.x - e.w * 0.95, y: parts.eyeAnchor.y - e.h * 1.9 * (92 / 110) })
         .forEach(([k, v]) => parts.eyesEl.setAttribute(k, v));
-      parts.mouthEl.setAttribute('href', 'assets/mouths/mouth_01.png');
+      parts.mouthEl.setAttribute('href', mouthSrc(1));
       Object.entries({ width: m.w * 0.95, height: m.h * 0.95, x: parts.mouthAnchor.x - m.w * 0.475, y: parts.mouthAnchor.y - m.h * 0.475 })
         .forEach(([k, v]) => parts.mouthEl.setAttribute(k, v));
     }
@@ -273,7 +275,7 @@ export function initPlayshow(ctx) {
       script = await writeEpisode({
         showName: state.showName, cast, premise: $('psPremise').value, limits: L, season,
         shapeLabel: b => (BODIES[b]?.label || 'object').toLowerCase(),
-      }, ctx.apiKey());
+      }, ctx.apiKey(), ctx.fetchImpl);
     } catch (err) {
       clearInterval(ticker);
       ctx.toast(err.message, 6000);
@@ -500,8 +502,18 @@ export function initPlayshow(ctx) {
     if (e.code === 'Space' && !e.repeat && live && !/INPUT|TEXTAREA/.test(document.activeElement?.tagName)) { e.preventDefault(); e.stopPropagation(); micDown(e); }
   }, true);
   window.addEventListener('keyup', e => { if (e.code === 'Space' && live) { e.stopPropagation(); micUp(); } }, true);
+  let seasonArmed = 0;
   $('psNewSeason').onclick = () => {
-    if (!confirm('Start a new season? Everyone comes back and the episode count starts again.')) return;
+    // Tap twice to confirm (no confirm() dialog: it doesn't work inside every web view).
+    const btn = $('psNewSeason');
+    if (Date.now() - seasonArmed > 4000) {
+      seasonArmed = Date.now();
+      btn.textContent = 'Tap again: everyone comes back and the count restarts';
+      setTimeout(() => { if (Date.now() - seasonArmed >= 4000) btn.textContent = 'Start a new season'; }, 4100);
+      return;
+    }
+    seasonArmed = 0;
+    btn.textContent = 'Start a new season';
     state.season = { id: state.season.id + 1, eliminated: [] };
     save();
     renderStudio();

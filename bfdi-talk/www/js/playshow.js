@@ -132,7 +132,10 @@ export class VoicePool {
 }
 
 const PREFETCH = 6;
-const pcmSeconds = chunks => chunks.reduce((n, b64) => n + Math.floor(b64.length * 3 / 4), 0) / 48000;
+// Chunks are base64 PCM (24 kHz) or, in the web version, { say } lines spoken by the browser.
+const pcmSeconds = chunks => chunks.reduce((n, c) => n + (typeof c === 'string'
+  ? Math.floor(c.length * 3 / 4) / 48000
+  : Math.max(1.2, c.say.split(/\s+/).length * 0.36 + 0.3)), 0);
 
 /** Little "ta-da" for title cards (oscillators, nothing to download). */
 function jingle(ctx) {
@@ -161,7 +164,7 @@ export class EpisodePlayer extends EventTarget {
   constructor({ els, audio, sprites, cast, episode, number, showName, apiKey, spend, stageCast = null }) {
     super();
     Object.assign(this, { els, audio, sprites, cast, episode, number, showName, spend, stageCast });
-    this.pool = new VoicePool(apiKey);
+    this.pool = audio.makeVoicePool?.() || new VoicePool(apiKey); // web lite: browser voices
     this.lines = episode.scenes.flatMap((s, si) => s.lines.map((l, li) => ({ ...l, scene: si, first: li === 0 })));
     this.audioFor = [];
     this.slots = new Map();
@@ -384,6 +387,7 @@ export class EpisodePlayer extends EventTarget {
   pause() {
     this.paused = !this.paused;
     if (this.paused) this.audio.ctx?.suspend(); else this.audio.ctx?.resume();
+    this.audio.pauseSpeech?.(this.paused);
     return this.paused;
   }
 

@@ -1,21 +1,19 @@
-// Subscription plans as shown in the app. Prices/credits must match
-// supabase/functions/_shared/plans.ts and scripts/stripe-setup.mjs.
+// Plans as shown in the app. Switching is free and instant for now (no payments).
+// Monthly credits must match public.plan_monthly_credits() in supabase/migrations.
 
 export const PLANS = {
   free: { name: 'Free', refillMinutes: 60 },
   lite: {
     name: 'Lite',
-    price: '$1/month for 5 months',
-    after: 'then $6/month',
+    price: '$1/month for 5 months, then $6/month',
     monthlyCredits: 1500,
     refillMinutes: 60,
     dec23Credits: 100000,
-    perks: ['1,500 Usage Credits every month', 'Credits never expire', 'Cancel any time'],
+    perks: ['1,500 Usage Credits every month', 'Credits never expire', 'Bigger Playshow episodes with eliminations'],
   },
   pro: {
     name: 'Pro',
     price: '$10/month',
-    after: '7-day free trial',
     monthlyCredits: 5000,
     refillMinutes: 30,
     dec23Credits: 500000000,
@@ -29,11 +27,24 @@ export const PLANS = {
   },
 };
 
-// "Subscribe before December 23" offer (midnight UTC).
+// "Be on Lite/Pro before December 23" offer (midnight UTC).
 export const DEC23 = Date.parse('2026-12-23T00:00:00Z');
 
-// 1 Usage Credit = 1 second of Flash Live talk. Extended Thinking spends 2.5 per second.
-export const CREDITS_PER_USD = 60;
+const PERIOD_MS = 30 * 86400e3;
+
+/**
+ * Monthly credits for a plan, once per 30-day period. Switching up mid-period tops up the
+ * difference; switching back and forth never pays a period twice. (Same rules as the server.)
+ * state: { periodStart, granted, ... } -> { state, owed }
+ */
+export function monthlyTopUp(state, plan, now = Date.now()) {
+  const monthly = PLANS[plan]?.monthlyCredits || 0;
+  if (!monthly) return { state, owed: 0 };
+  let { periodStart = 0, granted = 0 } = state;
+  if (!periodStart || now >= periodStart + PERIOD_MS) { periodStart = now; granted = 0; }
+  const owed = Math.max(0, monthly - granted);
+  return { state: { ...state, periodStart, granted: granted + owed }, owed };
+}
 
 export function formatCredits(n) {
   n = Math.floor(n);

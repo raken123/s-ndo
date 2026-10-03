@@ -8,6 +8,7 @@ import { VisionFeed, canShareScreen } from './media.js';
 import { initPlayshow } from './playshow-ui.js';
 import { openExternal, loadBuildConfig, isCapacitor, copyText, notify } from './platform.js';
 import { AgentKit, AGENT_TOOLS, agentPrompt, fmtSecs } from './agent.js';
+import { ClaudeSocket, SpeechAudio, claudeFetch, WEB_TOOLS } from './web-engine.js';
 
 const $ = id => document.getElementById(id);
 
@@ -51,7 +52,10 @@ let agentTab = 'tasks';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const usage = new Usage();
 const account = new Account();
-const audio = new AudioEngine();
+let audio = new AudioEngine();
+// Web lite: the copy inside the website page (Claude replies, browser voices, typing only).
+let WEB = false;
+const Socket = (...a) => WEB ? new ClaudeSocket(...a) : new LiveSocket(...a);
 let vision;
 let buildConfig = {};
 let sprites, face, parts;
@@ -88,7 +92,7 @@ function showMsg(el, ok, text) {
   el.textContent = text;
 }
 
-function apiKey() { return (settings.apiKey || buildConfig.GEMINI_API_KEY || '').trim(); }
+function apiKey() { return WEB ? 'web' : (settings.apiKey || buildConfig.GEMINI_API_KEY || '').trim(); }
 
 function escapeHtml(s) { return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
@@ -185,6 +189,7 @@ function wireSocket(sock) {
     $('youSaid').hidden = false;
     $('youSaid').textContent = session.userText.trim();
   });
+  sock.addEventListener('error', e => { if (sock === session.sock) toast(e.detail.message, 5000); });
   sock.addEventListener('interrupted', () => { if (sock === session.sock) audio.interrupt(); });
   sock.addEventListener('turnComplete', () => { if (sock === session.sock) session.newTurn = true; });
   sock.addEventListener('goAway', () => { if (sock === session.sock) reconnect(); });
@@ -205,7 +210,7 @@ async function reconnect() {
   if (session.reconnecting || !session.sock) return;
   session.reconnecting = true;
   const old = session.sock;
-  const sock = new LiveSocket({ apiKey: apiKey(), model: session.model, voice: settings.voice, systemPrompt: systemPrompt(), emotions: AI_EMOTIONS, ...agentTools() });
+  const sock = Socket({ apiKey: apiKey(), model: session.model, voice: settings.voice, systemPrompt: systemPrompt(), emotions: AI_EMOTIONS, ...agentTools() });
   sock.handle = old.handle;
   wireSocket(sock);
   try {
@@ -244,7 +249,7 @@ async function startSession() {
     return;
   }
 
-  const sock = new LiveSocket({ apiKey: apiKey(), model, voice: settings.voice, systemPrompt: systemPrompt(), emotions: AI_EMOTIONS, ...agentTools() });
+  const sock = Socket({ apiKey: apiKey(), model, voice: settings.voice, systemPrompt: systemPrompt(), emotions: AI_EMOTIONS, ...agentTools() });
   session.sock = sock;
   session.model = model;
   wireSocket(sock);
@@ -255,7 +260,7 @@ async function startSession() {
     session.sock = null;
     session.state = 'idle';
     renderControls();
-    setStatus('Could not connect. Tap <b>Talk</b> to try again.');
+    setStatus(`Could not connect. Tap <b>${WEB ? 'Chat' : 'Talk'}</b> to try again.`);
     toast(err.message, 5000);
     return;
   }
@@ -266,7 +271,7 @@ async function startSession() {
     await audio.startMic();
   } catch {
     micOk = false;
-    toast('Microphone is blocked — you can still type to chat.', 5000);
+    if (!WEB) toast('Microphone is blocked — you can still type to chat.', 5000);
   }
   audio.onMicChunk = b64 => session.sock?.sendAudio(b64);
   audio.micEnabled = micOk && (!settings.pushToTalk || session.pttHeld);
@@ -276,7 +281,7 @@ async function startSession() {
   session.newTurn = true;
   $('muteBtn').setAttribute('aria-pressed', 'false');
   renderControls();
-  setStatus(settings.pushToTalk ? 'Hold the button and talk' : `Listening… say hi to ${escapeHtml(settings.name)}!`);
+  setStatus(WEB ? `Type a message to ${escapeHtml(settings.name)}!` : settings.pushToTalk ? 'Hold the button and talk' : `Listening… say hi to ${escapeHtml(settings.name)}!`);
 
   let last = performance.now();
   session.timer = setInterval(() => {
@@ -312,7 +317,7 @@ function endSession(message) {
   session.pttHeld = false;
   renderControls();
   if (!usage.locked) {
-    setStatus('Tap <b>Talk</b> to start!');
+    setStatus(WEB ? 'Type a message to start!' : 'Tap <b>Talk</b> to start!');
     session.pendingEmotion = { emotion: 'neutral', at: 0 };
   }
   if (message) toast(message, 5000);
@@ -403,10 +408,10 @@ function renderControls() {
   btn.classList.toggle('ptt-live', session.state === 'live' && settings.pushToTalk);
   btn.classList.toggle('connecting', session.state === 'connecting');
   btn.disabled = locked && session.state === 'idle';
-  let label = 'Talk';
+  let label = WEB ? 'Chat' : 'Talk';
   if (locked && session.state === 'idle') label = formatDuration(usage.msLeft);
   else if (session.state === 'connecting') label = '…';
-  else if (session.state === 'live') label = settings.pushToTalk ? 'Hold' : 'Hang up';
+  else if (session.state === 'live') label = WEB ? 'End' : settings.pushToTalk ? 'Hold' : 'Hang up';
   $('talkLabel').textContent = label;
   $('muteBtn').disabled = session.state !== 'live' || settings.pushToTalk;
   if (settings.pushToTalk && session.state === 'live') {
@@ -431,7 +436,7 @@ function renderAccount() {
   av.classList.toggle('signed-in', account.signedIn);
   av.classList.toggle('pro', plan === 'pro');
   if (account.signedIn) av.textContent = account.displayName.charAt(0).toUpperCase();
-  $('proLabel').textContent = plan === 'pro' ? (account.onTrial ? 'PRO trial' : 'PRO') : plan === 'lite' ? 'Lite' : 'Get Pro';
+  $('proLabel').textContent = plan === 'pro' ? 'PRO' : plan === 'lite' ? 'Lite' : 'Get Pro';
   $('proBtn').classList.toggle('is-pro', plan === 'pro');
 
   // profile dialog
@@ -453,20 +458,18 @@ function renderAccount() {
     if (document.activeElement !== $('profileUsername')) $('profileUsername').value = p.username || '';
     let info = 'Free plan: 20 minutes of talk, refills every hour.';
     if (plan !== 'free') {
-      const end = p.current_period_end ? new Date(p.current_period_end).toLocaleDateString() : '';
-      info = account.onTrial && p.trial_ends_at
-        ? `Pro free trial — ends ${new Date(p.trial_ends_at).toLocaleDateString()}. Your 5,000 monthly credits arrive with your first payment.`
-        : `${PLANS[plan].name}: ${PLANS[plan].monthlyCredits.toLocaleString('en-US')} credits every month${end ? ` · renews ${end}` : ''}.`;
-      if (p.plan_status === 'past_due') info += ' ⚠️ Your last payment failed — update your card in Manage subscription.';
+      const next = p.monthly_period_start ? new Date(Date.parse(p.monthly_period_start) + 30 * 86400e3).toLocaleDateString() : '';
+      info = `${PLANS[plan].name} (free right now): ${PLANS[plan].monthlyCredits.toLocaleString('en-US')} credits every month${next ? ` · next ones ${next}` : ''}.`;
     }
     $('profilePlanInfo').textContent = info;
     $('profileUpgrade').hidden = plan === 'pro';
-    $('profileUpgrade').textContent = plan === 'lite' ? 'Upgrade to Pro' : 'Get Pro';
-    $('manageSub').hidden = !p.stripe_customer_id;
+    $('profileUpgrade').textContent = plan === 'lite' ? 'Switch to Pro' : 'Get Pro (free)';
+    $('toFree').hidden = plan === 'free';
   }
+  $('buyCredits').textContent = formatCredits(usage.credits);
   $('buyAccountNote').textContent = account.signedIn
-    ? `Credits go to your account (${account.displayName}).`
-    : account.enabled ? 'You need a free account to buy credits — tap a pack to create one.' : '';
+    ? `Credits are saved to your account (${account.displayName}).`
+    : account.enabled ? 'Guest: credits are kept on this device. Sign in to keep them everywhere.' : '';
   renderUsage();
 }
 
@@ -496,6 +499,7 @@ function frame(now) {
       if (audio.speaking) setStatus(`<b>${escapeHtml(settings.name)}</b> is talking…`);
       else if (session.userTurnOpen && Date.now() - session.lastActivity > 700) setStatus(session.model.thinkingLevel ? 'Thinking really hard…' : 'Thinking…');
       else if (settings.pushToTalk) setStatus(session.pttHeld ? 'Listening… let go when you\'re done' : 'Hold the button and talk');
+      else if (WEB) setStatus('Your turn — type a message');
       else setStatus($('muteBtn').getAttribute('aria-pressed') === 'true' ? 'Muted — tap Unmute to talk' : 'Listening…');
     }
   }
@@ -655,12 +659,7 @@ function wireAccount() {
     toast('Signed out.');
   };
   $('profileUpgrade').onclick = () => { $('accountDlg').close(); openPlans(); };
-  $('manageSub').onclick = async () => {
-    try {
-      openExternal(await account.portalUrl());
-      watchForPlanChange();
-    } catch (err) { showMsg($('profileMsg'), false, err.message); }
-  };
+  $('toFree').onclick = () => switchPlan('free', $('profileMsg'));
 }
 
 // ------------------------------------------------------------------ plans dialog
@@ -668,17 +667,11 @@ function wireAccount() {
 function renderPlans() {
   $('litePerks').innerHTML = PLANS.lite.perks.map(p => `<li>${p}</li>`).join('');
   $('proPerks').innerHTML = PLANS.pro.perks.map(p => `<li>${p}</li>`).join('');
-  const trialUsed = !!account.profile?.pro_trial_used;
-  const introUsed = !!account.profile?.lite_intro_used;
-  $('proTrialNote').textContent = trialUsed ? 'Free trial already used' : 'Try it 7 days free';
-  $('proCta').textContent = trialUsed ? 'Get Pro' : 'Start free trial';
-  document.querySelector('.plan-card.lite .plan-price').innerHTML = introUsed ? '<b>$6</b>/month' : '<b>$1</b>/month <small>for 5 months</small>';
-  document.querySelector('.plan-card.lite .plan-after').textContent = introUsed ? '1,500 credits every month' : 'then $6/month';
   const plan = account.plan;
-  document.querySelectorAll('[data-plan]').forEach(b => {
+  document.querySelectorAll('.plan-card [data-plan]').forEach(b => {
     const own = plan === b.dataset.plan;
     b.disabled = own;
-    if (own) b.textContent = 'Your plan ✓';
+    b.textContent = own ? 'Your plan ✓' : `Switch to ${PLANS[b.dataset.plan].name}`;
   });
   renderOffer();
 }
@@ -696,116 +689,69 @@ function openPlans() {
   if (!$('plansDlg').open) $('plansDlg').showModal();
 }
 
-let planWatch = null;
-/** After opening Stripe in the browser, keep checking for the new plan for a few minutes. */
-function watchForPlanChange() {
-  const before = `${account.plan}/${account.profile?.plan_status}`;
-  const until = Date.now() + 10 * 60 * 1000;
-  clearInterval(planWatch);
-  planWatch = setInterval(async () => {
-    await account.refresh();
-    const now = `${account.plan}/${account.profile?.plan_status}`;
-    if (now !== before || Date.now() > until) {
-      clearInterval(planWatch);
-      if (now !== before && account.plan !== 'free') {
-        toast(`You're on ${PLANS[account.plan].name}! 🎉`, 5000);
-        say(account.isPro ? "PRO MODE ACTIVATED! Now I can even see you — turn on Video!" : "Lite unlocked! Let's talk more!", 'excited');
-        if ($('plansDlg').open) $('plansDlg').close();
-      }
+/** Credits that come with a plan go to the account, or to this device for guests. */
+function receiveCredits(n) {
+  if (n > 0 && account.creditsGoTo === 'device') usage.addLocalCredits(n);
+  renderAccount();
+}
+
+let switching = false;
+async function switchPlan(plan, msgEl = $('plansMsg')) {
+  if (switching || plan === account.plan) return;
+  switching = true;
+  try {
+    const credits = await account.switchPlan(plan);
+    receiveCredits(credits);
+    const extra = credits > 0 ? ` +${formatCredits(credits)} credits!` : '';
+    if (plan === 'free') {
+      toast('Switched to Free. Your credits stay yours.');
+    } else {
+      toast(`You're on ${PLANS[plan].name}! 🎉${extra}`, 5000);
+      say(plan === 'pro' ? 'PRO MODE ACTIVATED! Now I can even see you — turn on Video!' : "Lite unlocked! Let's talk more!", 'excited');
+      if ($('plansDlg').open) $('plansDlg').close();
     }
-  }, 5000);
+  } catch (err) {
+    showMsg(msgEl, false, err.message);
+  } finally {
+    switching = false;
+  }
 }
 
 function wirePlans() {
   $('proBtn').onclick = () => openPlans();
   $('buyToPlans').onclick = () => { $('buyDlg').close(); openPlans(); };
-  document.querySelectorAll('[data-plan]').forEach(btn => {
-    btn.onclick = async () => {
-      const plan = btn.dataset.plan;
-      if (!account.enabled) { showMsg($('plansMsg'), false, "Subscriptions aren't switched on in this copy of BFDI Talk yet."); return; }
-      if (!account.signedIn) {
-        $('plansDlg').close();
-        setAuthMode('signup');
-        openAccount(`Create a free account first, then you can get ${PLANS[plan].name}.`);
-        return;
-      }
-      btn.disabled = true;
-      const label = btn.textContent;
-      btn.textContent = 'Opening checkout…';
-      try {
-        openExternal(await account.checkoutUrl({ plan }));
-        showMsg($('plansMsg'), true, 'Checkout opened in your browser. Finish paying there — BFDI Talk updates by itself when you come back.');
-        watchForPlanChange();
-      } catch (err) {
-        showMsg($('plansMsg'), false, err.message);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = label;
-      }
-    };
+  document.querySelectorAll('#plansDlg [data-plan]').forEach(btn => {
+    btn.onclick = () => switchPlan(btn.dataset.plan);
   });
 }
 
+/** Monthly plan credits and the December 23 drop (account or device). */
+async function claimPlanCredits() {
+  const monthly = await account.claimMonthly();
+  if (monthly > 0) {
+    receiveCredits(monthly);
+    toast(`📅 Your monthly ${PLANS[account.plan].name} credits are here: +${formatCredits(monthly)}!`, 6000);
+  }
+  await claimDec23();
+}
+
 async function claimDec23() {
-  if (Date.now() < DEC23 || !account.signedIn) return;
+  if (Date.now() < DEC23) return;
   const amount = await account.claimDec23Bonus();
   if (amount > 0) {
+    if (!account.signedIn) receiveCredits(amount);
     toast(`🎁 December 23 drop: +${formatCredits(amount)} Usage Credits!`, 8000);
     say(`WHOA! ${formatCredits(amount)} CREDITS?! We can talk FOREVER!`, 'excited');
   }
 }
 
-// ------------------------------------------------------------------ buy dialog
+// ------------------------------------------------------------------ credits dialog
 
 function wireBuy() {
   $('buyBtn').onclick = () => {
-    $('verifyResult').hidden = true;
     renderAccount();
     $('buyDlg').showModal();
   };
-  document.querySelectorAll('[data-pack]').forEach(btn => {
-    btn.onclick = async () => {
-      const out = $('verifyResult');
-      if (!account.enabled) { showMsg(out, false, "Buying credits isn't switched on in this copy of BFDI Talk yet."); return; }
-      if (!account.signedIn) {
-        $('buyDlg').close();
-        setAuthMode('signup');
-        openAccount('Create a free account first — your credits are saved to it.');
-        return;
-      }
-      document.querySelectorAll('[data-pack]').forEach(b => { b.disabled = true; });
-      try {
-        openExternal(await account.checkoutUrl({ pack: btn.dataset.pack }));
-        showMsg(out, true, 'Checkout opened in your browser. Pay there — your credits show up here by themselves.');
-        watchForCredits();
-      } catch (err) {
-        showMsg(out, false, err.message);
-      } finally {
-        document.querySelectorAll('[data-pack]').forEach(b => { b.disabled = false; });
-      }
-    };
-  });
-}
-
-let creditWatch = null;
-/** After opening a credit-pack checkout, keep checking for the new credits for a few minutes. */
-function watchForCredits() {
-  const before = account.profile?.credits ?? 0;
-  const until = Date.now() + 10 * 60 * 1000;
-  clearInterval(creditWatch);
-  creditWatch = setInterval(async () => {
-    await account.refresh();
-    const now = account.profile?.credits ?? 0;
-    if (now > before || Date.now() > until) {
-      clearInterval(creditWatch);
-      if (now > before) {
-        toast(`+${formatCredits(now - before)} Usage Credits — thank you! 🎉`, 5000);
-        say("WOOHOO! I'm all charged up! Let's talk!", 'excited');
-        if ($('buyDlg').open) $('buyDlg').close();
-        renderUsage();
-      }
-    }
-  }, 5000);
 }
 
 // ------------------------------------------------------------------ talk controls
@@ -888,7 +834,7 @@ function wireControls() {
 
   // Spacebar = push-to-talk / toggle on desktop when not typing.
   window.addEventListener('keydown', e => {
-    if (e.code !== 'Space' || e.repeat || /INPUT|TEXTAREA/.test(document.activeElement?.tagName) || document.querySelector('dialog[open]') || !$('playshow').hidden) return;
+    if (e.code !== 'Space' || e.repeat || /INPUT|TEXTAREA/.test(document.activeElement?.tagName) || document.querySelector('dialog[open]') || !$('playshow').hidden || document.body.classList.contains('site-open')) return;
     e.preventDefault();
     if (settings.pushToTalk) down(e);
     else btn.click();
@@ -904,7 +850,8 @@ function wireControls() {
 // ------------------------------------------------------------------ Agent Mode
 
 function agentTools() {
-  return agentOn ? { tools: AGENT_TOOLS, onTool: (name, args) => agentKit.run(name, args) } : {};
+  const tools = WEB ? AGENT_TOOLS.filter(t => WEB_TOOLS.has(t.name)) : AGENT_TOOLS;
+  return agentOn ? { tools, onTool: (name, args) => agentKit.run(name, args) } : {};
 }
 
 function chime() {
@@ -1058,8 +1005,25 @@ function setupBuddy() {
   $('buddyBack').onclick = () => { endSession(null); say('Coming back!', 'happy'); d?.agentStop(); };
 }
 
+/** Switches to the web lite engine (see web-engine.js). */
+function enableWeb() {
+  WEB = true;
+  audio = new SpeechAudio();
+  document.body.classList.add('web-lite');
+  MODELS.live.label = 'Quick replies';
+  MODELS.live.short = 'Quick';
+  MODELS.thinking.label = 'Extended Thinking';
+  settings.pushToTalk = false;
+  $('webNote').hidden = false;
+  document.querySelector('[data-model="live"] span').textContent = 'Quick';
+  $('textInput').placeholder = 'Type a message…';
+  setStatus('Type a message to start!');
+}
+
 async function boot() {
   buildConfig = await loadBuildConfig();
+  // 'auto' (single-file builds): web lite inside Claude, where Gemini can't be reached.
+  if (buildConfig.ENGINE === 'web' || (buildConfig.ENGINE === 'auto' && window.claude?.use)) enableWeb();
   sprites = await preloadSprites();
   vision = new VisionFeed($('camVideo'));
   vision.onFrame = b64 => { if (session.state === 'live') session.sock?.sendVideo(b64); };
@@ -1119,7 +1083,8 @@ async function boot() {
   });
 
   const playshow = initPlayshow({
-    settings, account, usage, audio, toast, openPlans,
+    settings, account, usage, audio, toast, openPlans, web: WEB,
+    fetchImpl: WEB ? claudeFetch : undefined,
     sprites: () => sprites,
     apiKey,
     stopTalking: () => { if (session.state !== 'idle') endSession(null); },
@@ -1138,11 +1103,12 @@ async function boot() {
   account.addEventListener('change', () => {
     if (account.signedIn && account.profile && claimedFor !== account.user.id) {
       claimedFor = account.user.id;
-      claimDec23();
+      claimPlanCredits();
     }
   });
   await account.init({ url: buildConfig.SUPABASE_URL, key: buildConfig.SUPABASE_ANON_KEY }).catch(() => false);
-  // Coming back from the Stripe checkout page / another device: pick up plan and credit changes.
+  if (!account.signedIn) claimPlanCredits();
+  // Changes made on another device: pick up plan and credits.
   window.addEventListener('focus', () => account.refresh());
 
   setInterval(() => {

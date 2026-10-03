@@ -1,12 +1,19 @@
-// BFDI Talk accounts (Supabase): sign in, profile, credits, subscriptions, Dec 23 bonus.
+// BFDI Talk accounts (Supabase): sign in, profile, credits, plans, Dec 23 bonus.
 // Uses the supabase-js UMD build in www/vendor/supabase.js (copied there by scripts/write-config.mjs).
+//
+// Plans are free to switch. Signed in, the plan lives on the server; as a guest (or when accounts
+// aren't switched on) it is kept on this device and its credits go to the device's wallet.
 
-const ENTITLED = new Set(['trialing', 'active', 'past_due']);
+import { PLANS, DEC23, monthlyTopUp } from './plans.js';
+
 const SPEND_FLUSH_MS = 10000;
+const LOCAL_KEY = 'bfdi.plan.v1';
 
 export class Account extends EventTarget {
-  constructor() {
+  constructor(storage = globalThis.localStorage) {
     super();
+    this.storage = storage;
+    this.local = this.loadLocal();
     this.client = null;
     this.user = null;
     this.profile = null;
@@ -20,14 +27,16 @@ export class Account extends EventTarget {
   get enabled() { return !!this.client; }
   get signedIn() { return !!this.user; }
 
-  /** Entitled plan: 'free' | 'lite' | 'pro'. */
+  /** Current plan: 'free' | 'lite' | 'pro'. */
   get plan() {
-    const p = this.profile;
-    return p && ENTITLED.has(p.plan_status) ? p.plan : 'free';
+    if (this.user) {
+      const p = this.profile;
+      return p && p.plan_status === 'active' ? p.plan : 'free';
+    }
+    return this.local.plan;
   }
 
   get isPro() { return this.plan === 'pro'; }
-  get onTrial() { return this.profile?.plan_status === 'trialing'; }
   get credits() { return Math.max(0, (this.profile?.credits || 0) - this.pendingSpend - this.inFlight); }
   get displayName() { return this.profile?.username || this.user?.email?.split('@')[0] || 'Player'; }
 
@@ -41,6 +50,7 @@ export class Account extends EventTarget {
       this.user = session?.user || null;
       if (this.user && this.user.id !== was) this.refresh();
       if (!this.user) { this.profile = null; this.pendingSpend = this.inFlight = 0; }
+      this.dispatchEvent(new Event('auth'));
       this.emit();
     });
     const { data } = await this.client.auth.getSession();
@@ -119,32 +129,71 @@ export class Account extends EventTarget {
   }
 
   async claimDec23Bonus() {
-    if (!this.user) return 0;
+    if (!this.user) {
+      const l = this.local;
+      const amount = PLANS[l.plan]?.dec23Credits || 0;
+      if (Date.now() < DEC23 || l.dec23Claimed || !amount || !l.since || l.since >= DEC23) return 0;
+      l.dec23Claimed = true;
+      this.saveLocal();
+      return amount;
+    }
     const { data, error } = await this.client.rpc('claim_dec23_bonus');
     if (error || !data) return 0;
     await this.refresh();
     return Number(data);
   }
 
-  // ----- server functions
+  // ----- plans (free to switch)
 
-  async call(name, body = {}) {
-    const { data, error } = await this.client.functions.invoke(name, { body });
-    if (error) {
-      let msg = error.message;
-      try {
-        const body = await error.context.json();
-        msg = body.error || body.message || msg;
-      } catch { /* keep the generic message */ }
-      if (error.context?.status === 404 && /not found/i.test(msg)) msg = 'This feature is not set up on the server yet.';
-      throw new Error(msg);
-    }
-    return data;
+  loadLocal() {
+    try {
+      const s = JSON.parse(this.storage?.getItem(LOCAL_KEY));
+      if (s && PLANS[s.plan]) return s;
+    } catch { /* fresh start */ }
+    return { plan: 'free', since: 0, periodStart: 0, granted: 0, dec23Claimed: false };
   }
 
-  /** { plan: 'pro' | 'lite' } or { pack: 'credits_5' | 'credits_10' | 'credits_20' } */
-  async checkoutUrl(what) { return (await this.call('create-checkout', what)).url; }
-  async portalUrl() { return (await this.call('billing-portal')).url; }
+  saveLocal() {
+    try { this.storage?.setItem(LOCAL_KEY, JSON.stringify(this.local)); } catch { /* storage blocked */ }
+  }
+
+  /** Where new credits from a plan land: 'account' (signed in) or 'device' (the caller adds them). */
+  get creditsGoTo() { return this.user ? 'account' : 'device'; }
+
+  /** Switches plan right away. Returns the monthly credits that came with it. */
+  async switchPlan(plan) {
+    if (!PLANS[plan]) throw new Error('Unknown plan');
+    if (this.user) {
+      const { data, error } = await this.client.rpc('switch_plan', { p_plan: plan });
+      if (error) throw new Error(error.message);
+      await this.refresh();
+      return Number(data) || 0;
+    }
+    const was = this.local.plan;
+    this.local.plan = plan;
+    this.local.since = plan === 'free' ? 0 : (was === 'free' || !this.local.since ? Date.now() : this.local.since);
+    const owed = this.topUpLocal();
+    this.emit();
+    return owed;
+  }
+
+  /** This period's monthly credits that haven't been given yet (call on start-up). */
+  async claimMonthly() {
+    if (this.user) {
+      const { data, error } = await this.client.rpc('claim_monthly_credits');
+      if (error || !data) return 0;
+      await this.refresh();
+      return Number(data);
+    }
+    return this.topUpLocal();
+  }
+
+  topUpLocal() {
+    const { state, owed } = monthlyTopUp(this.local, this.local.plan);
+    this.local = state;
+    this.saveLocal();
+    return owed;
+  }
 }
 
 function friendlyAuthError(error) {

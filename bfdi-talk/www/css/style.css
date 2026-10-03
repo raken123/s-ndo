@@ -327,14 +327,10 @@ button, input, textarea { font: inherit; color: inherit; }
 .plan-ribbon { position: absolute; top: -12px; right: 14px; background: var(--red); color: #fff; border: 2px solid var(--ink); border-radius: 999px; padding: 1px 10px; font-weight: 700; font-size: .75rem; }
 .plan-card .current { text-align: center; font-weight: 700; padding: .55em; border: 3px dashed var(--ink); border-radius: 999px; }
 
-.pack-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0; }
-.pack { border: var(--line) solid var(--ink); border-radius: 18px; background: #fff; padding: 12px 6px; cursor: pointer; box-shadow: var(--pop); display: flex; flex-direction: column; align-items: center; transition: transform .08s; }
-.pack:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
-.pack b { font-size: 1.5rem; }
-.pack span { font-size: .8rem; color: var(--muted); font-weight: 600; }
-.pack i { font-style: normal; font-weight: 700; margin-top: 6px; background: var(--yellow); border: 2px solid var(--ink); border-radius: 999px; padding: 0 12px; }
-.pack.best { background: #fff8dc; }
-.pack:disabled { opacity: .6; cursor: default; }
+.credit-now { display: flex; align-items: baseline; justify-content: center; gap: 8px; margin: 8px 0 12px; }
+.credit-now b { font-size: 2.4rem; }
+.credit-now span { color: var(--muted); font-weight: 700; }
+.plan-price s { color: var(--muted); font-weight: 600; }
 
 /* ---------------- video & screen live ---------------- */
 .media-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
@@ -541,3 +537,7 @@ body.buddy .cam-preview { width: 120px; right: 6px; bottom: 50px; }
 @media (prefers-reduced-motion: reduce) {
   .character-wrap, .cloud, .star { animation: none; }
 }
+
+/* ---------- Web lite (the copy inside the website page) */
+.web-lite .no-web, .web-lite #camBtn, .web-lite #screenBtn, .web-lite #muteBtn { display: none !important; }
+.web-note { max-width: 520px; margin: 6px auto 0; padding: 6px 12px; border-radius: 12px; background: rgba(255, 255, 255, .85); color: #10265a; font-size: .8rem; text-align: center; border: 2px solid #10265a; }

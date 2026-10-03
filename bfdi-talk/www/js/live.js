@@ -245,6 +245,9 @@ export class AudioEngine {
     const url = URL.createObjectURL(new Blob([MIC_WORKLET], { type: 'application/javascript' }));
     try {
       await this.ctx.audioWorklet.addModule(url);
+    } catch (err) {
+      // Pages opened from a file (file://) can't load blob: modules; a data: URL works there.
+      await this.ctx.audioWorklet.addModule(`data:text/javascript;base64,${btoa(MIC_WORKLET)}`).catch(() => { throw err; });
     } finally {
       URL.revokeObjectURL(url);
     }

@@ -5,8 +5,9 @@ lip-syncs to the speech, and its eyes and mouth change with its mood. It runs on
 **Gemini 3.8 Flash Live** (`gemini-3.8-live`) or **Gemini 3.8 Live Extended Thinking**
 (`gemini-3.8-live-extended-thinking`).
 
-Builds: **Windows `.exe`**, **macOS `.dmg`** and **Android `.apk`**. All three use the same web
-app in `www/`. Electron wraps it for desktop and Capacitor wraps it for Android.
+Builds: **Windows `.exe`**, **macOS `.dmg`**, **Android `.apk`** and **one `.html` file** (the website
+with the whole app inside). All of them use the same web app in `www/`. Electron wraps it for desktop,
+Capacitor for Android, and `tools/make_site.mjs` packs it into a single HTML file.
 
 ## Features
 
@@ -29,28 +30,26 @@ app in `www/`. Electron wraps it for desktop and Capacitor wraps it for Android.
 - **Usage Credits.** A wallet separate from the meter, with no upper limit.
   **1 credit = 1 second of Flash Live** (Extended Thinking spends 2.5 per second). Credits
   are only used while the meter is empty, and they never expire.
-  - *Buy Credits* sells three packs through **Stripe Checkout**: **$5 = 300**, **$10 = 600**,
-    **$20 = 1,200** credits. Stripe's signed webhook adds them to the account, so a payment can't
-    be faked and each payment counts once. Buying needs an account; the app picks up the new
-    credits by itself after paying. (The old itch.io screenshot check is gone.)
-- **Accounts** (Supabase). Email + password sign-up with a username. Credits, plan and
-  subscription follow you to every device.
-- **Subscriptions** (Stripe), managed from the app:
+  - Credits come with the plans (below) and the December 23 drop. There is nothing to buy right
+    now.
+- **Accounts** (Supabase). Email + password sign-up with a username. Credits and plan
+  follow you to every device.
+- **Plans: free to switch, no payment.** Tap a plan in the app and you're on it straight away.
+  Stripe is gone; nothing ever asks for a card.
 
-  | Plan | Price | Every month | Extras |
-  |---|---|---|---|
-  | **Lite** | **$1/month for 5 months**, then $6/month | 1,500 credits | |
-  | **Pro** | **$10/month**, **7-day free trial** | 5,000 credits | 📷 video live, 🖥️ screen live, meter refills in 30 min, 👑 PRO crown |
+  | Plan | Every month | Extras |
+  |---|---|---|
+  | **Lite** | 1,500 credits | bigger Playshow episodes, eliminations, seasons |
+  | **Pro** | 5,000 credits | 📷 video live, 🖥️ screen live, meter refills in 30 min, 👑 PRO crown |
 
-  - The trial and the Lite intro price are once per account.
-  - Monthly credits arrive with each *paid* invoice, so a free trial gives Pro features but no
-    credits until the first payment.
-  - Cancel, switch plan, update card and see invoices in **Account → Manage subscription**
-    (Stripe's customer portal). Credits stay after cancelling.
-- **🎁 December 23 offer.** Subscribe before **23 December 2026 (00:00 UTC)**. On or after
-  that day, the app claims a one-time drop: **Pro 500,000,000 credits**, **Lite 100,000
-  credits**. The subscription must have started before the cutoff and be paid
-  (`active`). Trial-only accounts get it once their first payment goes through.
+  - Monthly credits arrive the moment you switch, then every 30 days (claimed when the app
+    opens). Switching up mid-month tops up the difference; switching back and forth never pays a
+    month twice. Credits stay when you go back to Free.
+  - Signed in, the plan is saved on the server (`switch_plan` / `claim_monthly_credits`). Guests
+    can switch too; their plan and credits are kept on the device.
+- **🎁 December 23 offer.** Be on Lite or Pro before **23 December 2026 (00:00 UTC)**. On or
+  after that day, the app claims a one-time drop: **Pro 500,000,000 credits**, **Lite 100,000
+  credits**.
 - **🎬 Playshow Mode.** Make your own object show and watch it like a real episode:
   - Build a cast (shape, colour, voice, personality, optional host) and name your show.
   - Type an idea (optional) and press *Make episode*. A Gemini text model writes the script as
@@ -86,6 +85,13 @@ app in `www/`. Electron wraps it for desktop and Capacitor wraps it for Android.
     Wikipedia or the BFDI wiki, open a search or website in your browser, copy text, tell the time,
     and (Pro) look at your screen. Tasks, notes and timers are saved on the device.
   - It uses the same meter/credits as talking.
+- **🌐 The one-file web version** (`npm run site` → `site/index.html`). It's the BFDI Talk website
+  with the whole app inside. *Play it right here* opens the app; 🏠 goes back to the site.
+  - Opened in a browser (or uploaded to itch.io as an HTML5 game), it's the normal Gemini Live app.
+  - Published on claude.ai as an artifact, it can't reach Gemini or the microphone, so it switches
+    to the **web lite** engine (`www/js/web-engine.js`). You type, Claude writes the replies (with
+    emotion tags), and the browser's own voices read them out while the mouth moves. Playshow scripts
+    are written by Claude too. Agent Mode keeps timers, tasks and notes.
 - **Video & screen live (Pro).** The camera or a shared screen is sent to Gemini Live at
   1 frame per second, and the character reacts to what it sees. A preview shows in the corner.
   Screen sharing works on Windows/macOS. Android web views can't share the screen, so that
@@ -102,10 +108,11 @@ machines:
    add:
    - `GEMINI_API_KEY`: your Gemini key
    - `SUPABASE_URL` and `SUPABASE_ANON_KEY`: from your Supabase project (see *Switch on
-     accounts & subscriptions* below). Without them the app runs in guest mode: no accounts or
-     subscriptions, everything else works.
+     accounts* below). Without them the app runs in guest mode: no accounts, everything else
+     (plans included) works.
 2. Push to `main` (or run the workflow by hand from the **Actions** tab). Download
-   `BFDI-Talk-Windows`, `BFDI-Talk-macOS` and `BFDI-Talk-Android` from the run's **Artifacts**.
+   `BFDI-Talk-Windows`, `BFDI-Talk-macOS`, `BFDI-Talk-Android` and `BFDI-Talk-Web` from the run's
+   **Artifacts**.
 3. To make a public download page, push a tag such as `bfdi-talk-v2.0.0`. The workflow then
    attaches all three files to a GitHub Release.
 
@@ -121,51 +128,38 @@ npm run serve          # or try it in a browser at http://localhost:5173
 npm run dist:win       # .exe  (on Windows)
 npm run dist:mac       # .dmg  (on a Mac)
 npm run android:apk    # .apk  (needs Android Studio / SDK + JDK 21)
-npm test               # meter/credits, Playshow, Agent + billing unit tests
-npm run site           # rebuild site/index.html (the landing page)
+npm test               # meter/plans, Playshow, Agent and web-engine unit tests
+npm run site           # site/index.html: the website with the whole app inside (no key built in)
 ```
 
-## Switch on accounts & subscriptions
+## Switch on accounts
 
-Accounts live on **Supabase** (free tier is enough) and payments go through **Stripe**.
-Stripe needs an adult (18+) with a bank account to open the account. Do everything in **test
-mode** first (`sk_test_...` keys and Stripe's test card `4242 4242 4242 4242`), then repeat with
-live keys.
+Accounts live on **Supabase** (the free tier is enough). There are no payments, so there is
+nothing else to set up.
 
 1. **Create a Supabase project** at supabase.com. Under *Project Settings → API*, copy the
    **Project URL** and the **anon / publishable key**.
-2. **Upload the database and server code** (from `bfdi-talk/`):
+2. **Upload the database** (from `bfdi-talk/`):
    ```bash
    npx supabase login
    npx supabase link --project-ref <your-project-ref>
-   npx supabase db push                 # tables, rules, credit functions
-   npx supabase functions deploy        # create-checkout, billing-portal, stripe-webhook
+   npx supabase db push                 # tables, rules, plan + credit functions
    ```
-3. **Set up Stripe** (makes the Pro/Lite prices, the $1-for-5-months coupon, the customer portal
-   and the webhook; credit packs need no setup):
-   ```bash
-   STRIPE_SECRET_KEY=sk_test_... SUPABASE_URL=https://<ref>.supabase.co node scripts/stripe-setup.mjs
-   ```
-   It prints a webhook signing secret (`whsec_...`). Save it for the next step.
-4. **Give the server its secrets:**
-   ```bash
-   npx supabase secrets set STRIPE_SECRET_KEY=sk_test_... STRIPE_WEBHOOK_SECRET=whsec_...
-   ```
-5. **Sign-up emails.** By default Supabase asks new users to confirm their email. Either keep
+   If you deployed the old Stripe functions before, remove them:
+   `npx supabase functions delete stripe-webhook create-checkout billing-portal verify-receipt`.
+3. **Sign-up emails.** By default Supabase asks new users to confirm their email. Either keep
    that (the app tells people to check their inbox), or turn it off under *Authentication →
    Sign In / Providers → Email → Confirm email*.
-6. Add `SUPABASE_URL` and `SUPABASE_ANON_KEY` as GitHub secrets (see *Build*) and rebuild.
+4. Add `SUPABASE_URL` and `SUPABASE_ANON_KEY` as GitHub secrets (see *Build*) and rebuild.
 
 ### Testing the backend locally
 
 ```bash
 npx supabase start                       # needs Docker
-npx supabase functions serve --env-file <file with STRIPE_WEBHOOK_SECRET=whsec_test_local123>
 SUPABASE_ANON_KEY=... SUPABASE_SERVICE_ROLE_KEY=... npm run test:backend
 ```
-`tests/db.test.mjs` checks the security rules (users can't give themselves credits or Pro) and
-the December 23 rules. `tests/webhook.test.mjs` sends signed fake Stripe events: trial, paid
-months, the Lite intro, credit packs, retries, out-of-order events and cancelling.
+`tests/db.test.mjs` checks the security rules (users can't edit their credits directly), free
+plan switching with monthly credits once per period, and the December 23 rules.
 
 ## Install notes
 
@@ -184,38 +178,39 @@ months, the Lite intro, credit packs, retries, out-of-order events and cancellin
 - Anything shipped inside an app can be pulled back out of it. Anyone who downloads the
   EXE/DMG/APK could extract the Gemini key and use your quota. A sturdier setup would have a
   Supabase function hand out short-lived Gemini Live *ephemeral tokens* instead.
-- **Credits, plans and subscriptions are server-side.** Users can't give themselves credits or
-  Pro (row-level security, tested). Credit *spending* is reported by the app, so a modified app
-  could skip reporting it. The free meter is stored on the device.
-- Credit packs are only granted from Stripe's signed webhook, with the amount taken from the
-  server's pack table (not from anything the app sends).
+- **Credits are server-side for accounts.** Users can't edit their credits directly
+  (row-level security, tested); they only change through the plan, monthly and December 23
+  functions. Credit *spending* is reported by the app, so a modified app could skip reporting it.
+  The free meter and guest plans are stored on the device.
+- The one-file web build made with `--with-key` contains the key like the other builds. The
+  version published on claude.ai is built without it.
 
 ## Project layout
 
 ```
 www/                 the app (HTML/CSS/JS, no bundler)
-  js/app.js          UI, session flow, account/plans/purchase wiring
+  js/app.js          UI, session flow, account/plans wiring
   js/live.js         Gemini Live WebSocket client, mic capture, playback, lip-sync analyser
   js/face.js         emotion → eyes/mouth table, blinking, mouth picking
   js/character.js    SVG bodies
   js/usage.js        free meter, refill timer, credits wallet
-  js/account.js      Supabase accounts, credits sync, subscriptions, Dec 23 claim
-  js/plans.js        plan prices/perks shown in the app
+  js/account.js      Supabase accounts, credits sync, plans (account or device), Dec 23 claim
+  js/plans.js        plan perks, monthly credit rules
   js/media.js        Pro video & screen live (1 fps JPEG frames)
   js/playshow-script.js  Playshow: plan limits, episode prompt + schema, script repair
   js/playshow.js     Playshow: voice-actor pool (Gemini Live) + episode player
   js/playshow-ui.js  Playshow: studio, cast editor, seasons, theater, live hosting
   js/agent.js        Agent Mode: tools, tasks/timers/notes, Wikipedia + BFDI wiki look-up
+  js/web-engine.js   web lite engine (Claude replies, browser voices) for the claude.ai page
   assets/            sliced sprites (generated)
 electron/            desktop shell (app://bfdi, permissions, Agent Mode buddy window)
-supabase/migrations/ database: profiles, credit ledger, credit/bonus functions, security rules
-supabase/functions/  create-checkout, billing-portal, stripe-webhook
-scripts/             write-config, stripe-setup, serve
+supabase/migrations/ database: profiles, credit ledger, plan/credit/bonus functions, security rules
+scripts/             write-config, serve
 tests/               unit + local-backend tests
 android/             Capacitor Android project
 assets-src/          the original mouth + eye sprite sheets
-site/                landing page (index.html is generated from page.template.html)
-tools/               slice_assets.py (cut sprites), make_icon.py (icons/splash), make_site.py
+site/                website (page.template.html; index.html is generated with the app inside)
+tools/               slice_assets.py (cut sprites), make_icon.py (icons/splash), make_site.mjs (one-file build)
 ```
 
 To re-cut the sprites after editing the sheets, run `pip install pillow numpy scipy`, then

@@ -67,3 +67,19 @@ test('version 1 data: bought % above 100 becomes credits', () => {
   assert.equal(u.localCredits, 300);       // 25% of 20 min = 5 min = 300 s
   assert.equal(u.hasReceipt('img:abc'), true);
 });
+
+test('monthly plan credits: once per 30 days, upgrades top up the difference', async () => {
+  const { monthlyTopUp } = await import('../www/js/plans.js');
+  const day = 86400e3;
+  let r = monthlyTopUp({ periodStart: 0, granted: 0 }, 'lite', 1000);
+  assert.equal(r.owed, 1500);
+  r = monthlyTopUp(r.state, 'pro', 2000);
+  assert.equal(r.owed, 3500);
+  r = monthlyTopUp(r.state, 'lite', 3000);
+  assert.equal(r.owed, 0);
+  r = monthlyTopUp(r.state, 'pro', 4000);
+  assert.equal(r.owed, 0, 'switching back and forth pays nothing extra');
+  assert.equal(monthlyTopUp(r.state, 'free', 1000 + 40 * day).owed, 0, 'Free has no monthly credits');
+  r = monthlyTopUp(r.state, 'pro', 1000 + 30 * day);
+  assert.equal(r.owed, 5000, 'new period');
+});

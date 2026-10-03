@@ -127,17 +127,14 @@ section { padding-block: 34px; }
 .plan.pro { background: #fff8dc; }
 .plan .name { font: 700 1.6rem var(--display); }
 .plan .price { font: 700 2.3rem var(--display); line-height: 1; }
+.plan .price s { color: var(--muted); }
 .plan .price small { font: 500 .95rem var(--body); color: var(--muted); }
 .plan .note { font-weight: 600; color: #1b7a2d; font-size: .92rem; }
 .plan ul { margin: 6px 0 0; padding-left: 1.1em; flex: 1; }
 .plan li { margin: 3px 0; }
 .ribbon { position: absolute; top: -13px; right: 16px; background: var(--red); color: #fff; border: 2px solid var(--ink); border-radius: 999px; padding: 0 10px; font: 700 .78rem var(--display); }
-.packs { margin-top: 18px; padding: 18px 20px; display: grid; grid-template-columns: 1.2fr repeat(3, 1fr); gap: 14px; align-items: center; }
-.packs p { margin: 0; min-width: 0; }
-.pack { text-align: center; border: var(--line) solid var(--ink); border-radius: 18px; background: #fff; padding: 10px 6px; }
-.pack b { display: block; font: 700 1.5rem var(--display); }
-.pack span { font-size: .82rem; color: var(--muted); }
-.pack i { display: inline-block; font: 700 .95rem var(--display); font-style: normal; background: var(--yellow); border: 2px solid var(--ink); border-radius: 999px; padding: 0 12px; margin-top: 4px; }
+.packs { margin-top: 18px; padding: 18px 20px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between; }
+.packs p { margin: 0; min-width: 0; flex: 1 1 320px; }
 
 /* usage meter strip */
 .meter-strip { padding: 18px 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
@@ -177,8 +174,6 @@ footer p { margin: 0; }
   .features { grid-template-columns: 1fr 1fr; }
   .feat, .feat.wide { grid-column: span 1; }
   .plans, .install, .meter-strip { grid-template-columns: 1fr; }
-  .packs { grid-template-columns: repeat(3, 1fr); }
-  .packs p { grid-column: 1 / -1; }
   .offer { grid-template-columns: 1fr; }
 }
 @media (max-width: 560px) {
@@ -214,8 +209,8 @@ footer p { margin: 0; }
         <h1 class="ink-type">Talk out loud with <em>your own</em> object-show character.</h1>
         <p class="lead">Build a cartoon object, press one big yellow button and just talk. It answers in a real voice, lip-syncs every word, and its face changes with how it feels.</p>
         <div class="cta-row">
-          <a class="btn yellow big" href="https://jooykoll.itch.io/bfdi-talk-ai" target="_blank" rel="noopener">Get BFDI Talk</a>
-          <a class="btn" href="#features">See what it does</a>
+          <button type="button" class="btn yellow big" data-open-app>▶ Play it right here</button>
+          <a class="btn" href="https://jooykoll.itch.io/bfdi-talk-ai" target="_blank" rel="noopener">Get the app</a>
         </div>
         <ul class="platforms" aria-label="Platforms">
           <li>Windows 10/11</li><li>macOS · Apple Silicon</li><li>Android 7+</li>
@@ -300,21 +295,21 @@ footer p { margin: 0; }
         <article class="feat paper wide">
           <span class="tag">Account</span>
           <h3>Your credits on every device</h3>
-          <p>Sign in once and your Usage Credits, plan and subscription follow you to your computer, Mac and phone.</p>
+          <p>Sign in once and your Usage Credits and plan follow you to your computer, Mac and phone.</p>
         </article>
       </div>
     </section>
 
     <section id="plans">
       <div class="sec-head">
-        <h2 class="ink-type">Free to start. Way more with a plan.</h2>
-        <p>Everyone gets a free usage meter. Usage Credits keep you talking while it refills: 1 credit = 1 second of talk.</p>
+        <h2 class="ink-type">Every plan is free right now.</h2>
+        <p>Tap a plan in the app and you're on it straight away. No card, no payment, nothing to cancel. Usage Credits keep you talking while the meter refills: 1 credit = 1 second of talk.</p>
       </div>
 
       <div class="offer" id="offer">
         <div>
           <h3>Ultra rare offer: the December 23 credit drop</h3>
-          <p>Subscribe before December 23 and get <b>500,000,000 credits</b> on Pro or <b>100,000 credits</b> on Lite, once your subscription is paid.</p>
+          <p>Be on Pro or Lite before December 23 and get <b>500,000,000 credits</b> on Pro or <b>100,000 credits</b> on Lite on the day.</p>
         </div>
         <div class="count"><small>Ends in</small><span id="countdown">—</span></div>
       </div>
@@ -333,8 +328,8 @@ footer p { margin: 0; }
         </div>
         <div class="plan paper">
           <div class="name">Lite</div>
-          <div class="price">$1<small> / month for 5 months</small></div>
-          <div class="note">Then $6 / month</div>
+          <div class="price">Free <small><s>$1 / month</s></small></div>
+          <div class="note">Free right now, no payment</div>
           <ul>
             <li>1,500 Usage Credits every month</li>
             <li>Playshow: 5 objects, ~24-line episodes</li>
@@ -342,10 +337,10 @@ footer p { margin: 0; }
           </ul>
         </div>
         <div class="plan paper pro">
-          <span class="ribbon">7 days free</span>
+          <span class="ribbon">Free now</span>
           <div class="name">Pro</div>
-          <div class="price">$10<small> / month</small></div>
-          <div class="note">Try it free for 7 days</div>
+          <div class="price">Free <small><s>$10 / month</s></small></div>
+          <div class="note">Free right now, no payment</div>
           <ul>
             <li>5,000 Usage Credits every month</li>
             <li>Video live and screen live</li>
@@ -357,10 +352,8 @@ footer p { margin: 0; }
       </div>
 
       <div class="packs paper">
-        <p><b>Credit packs.</b> One-time, paid securely with Stripe inside the app. Credits never expire.</p>
-        <div class="pack"><b>300</b><span>credits</span><br><i>$5</i></div>
-        <div class="pack"><b>600</b><span>credits</span><br><i>$10</i></div>
-        <div class="pack"><b>1,200</b><span>credits</span><br><i>$20</i></div>
+        <p><b>Monthly credits.</b> Lite gives 1,500 and Pro 5,000 the moment you switch, then again every 30 days. Credits never expire, even if you go back to Free.</p>
+        <button type="button" class="btn yellow" data-open-app>▶ Try it here</button>
       </div>
 
       <div class="meter-strip paper" style="margin-top: 18px">
@@ -424,11 +417,15 @@ footer p { margin: 0; }
         </details>
         <details>
           <summary>Do I need an account?</summary>
-          <p>No, you can talk for free as a guest. An account saves your credits and lets you subscribe or buy credit packs.</p>
+          <p>No. You can talk and even switch plans as a guest; your credits are kept on that device. An account keeps your credits and plan on every device.</p>
         </details>
         <details>
           <summary>How do I pay?</summary>
-          <p>Subscriptions and credit packs are paid through Stripe's secure checkout in your browser. Stripe checks and charges your card; BFDI Talk never sees your card number.</p>
+          <p>You don't, right now. Lite and Pro are free: tap a plan and you're on it. BFDI Talk never asks for a card.</p>
+        </details>
+        <details>
+          <summary>What's different when I play it on this page?</summary>
+          <p>This page runs inside Claude, which can't use your microphone or reach Gemini. So here you type, <b>Claude</b> writes your character's replies, and your browser reads them out loud while the mouth moves. Playshow episodes are written by Claude too. The full app talks out loud with Gemini Live, sees you on video and walks out of the window in Agent Mode.</p>
         </details>
         <details>
           <summary>Where do my voice and video go?</summary>
@@ -448,7 +445,7 @@ footer p { margin: 0; }
 
   <footer>
     <div class="paper">
-      <p><b>BFDI Talk</b> by jooykoll · Eye art by MsBonnieArt · Voices and brains by Google Gemini · Font: Fredoka</p>
+      <p><b>BFDI Talk</b> by jooykoll · Eye art by MsBonnieArt · Voices and brains by Google Gemini (on this page: Claude and your browser's voice) · Font: Fredoka</p>
       <p>Unofficial fan app, inspired by Battle for Dream Island by jacknjellify.</p>
     </div>
   </footer>
@@ -456,6 +453,7 @@ footer p { margin: 0; }
 
 <script>
 (() => {
+  const R = window.SITE_ROOT || document;
   const S = /*SPRITES*/{};
   const MOODS = {
     happy:     { eyes: 'e2',  mouths: ['m1', 'm7', 'm4', 'm5'], line: "Yay! This is the best day ever! Want to make a show together?" },
@@ -465,10 +463,10 @@ footer p { margin: 0; }
     sad:       { eyes: 'e14', mouths: ['m11', 'm27', 'm24', 'm23'], line: "Drip got eliminated... I'm gonna miss that little drop." },
     out:       { eyes: 'e13', mouths: ['m12', 'm12', 'm12', 'm12'], line: "I'm all tuckered out! The meter refills in an hour... zzz." },
   };
-  const eyes = document.getElementById('eyes');
-  const mouth = document.getElementById('mouth');
-  const text = document.getElementById('btext');
-  const armL = document.getElementById('armL'), armR = document.getElementById('armR');
+  const eyes = R.getElementById('eyes');
+  const mouth = R.getElementById('mouth');
+  const text = R.getElementById('btext');
+  const armL = R.getElementById('armL'), armR = R.getElementById('armR');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let mood = 'happy', talking = false, blinkUntil = 0, nextBlink = performance.now() + 2500, slot = 0, typer = null;
 
@@ -506,9 +504,9 @@ footer p { margin: 0; }
     render(now);
     requestAnimationFrame(frame);
   }
-  document.querySelectorAll('[data-mood]').forEach(b => b.addEventListener('click', () => {
+  R.querySelectorAll('[data-mood]').forEach(b => b.addEventListener('click', () => {
     mood = b.dataset.mood;
-    document.querySelectorAll('[data-mood]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    R.querySelectorAll('[data-mood]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
     say(MOODS[mood].line);
   }));
   render(performance.now());
@@ -517,18 +515,31 @@ footer p { margin: 0; }
 
   // December 23 countdown (midnight UTC); the banner disappears once it has passed.
   const end = Date.parse('2026-12-23T00:00:00Z');
-  const cd = document.getElementById('countdown');
+  const cd = R.getElementById('countdown');
   function tick() {
     const ms = end - Date.now();
-    if (ms <= 0) { document.getElementById('offer').hidden = true; return; }
+    if (ms <= 0) { R.getElementById('offer').hidden = true; return; }
     const d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5), m = Math.floor(ms % 36e5 / 6e4), s = Math.floor(ms % 6e4 / 1e3);
     cd.textContent = `${d}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
   }
   tick();
   setInterval(tick, 1000);
 
-  document.getElementById('copycmd').addEventListener('click', e => {
-    const code = document.getElementById('maccmd');
+  // "Play it right here": the page's host opens the app (SITE_OPEN_APP), else link to the download.
+  R.querySelectorAll('[data-open-app]').forEach(b => b.addEventListener('click', () => {
+    if (window.SITE_OPEN_APP) window.SITE_OPEN_APP();
+    else window.open('https://jooykoll.itch.io/bfdi-talk-ai', '_blank', 'noopener');
+  }));
+  // In-page links also work when the site lives in a shadow root.
+  R.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
+    const el = R.getElementById(a.getAttribute('href').slice(1));
+    if (!el) return;
+    e.preventDefault();
+    el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  }));
+
+  R.getElementById('copycmd').addEventListener('click', e => {
+    const code = R.getElementById('maccmd');
     navigator.clipboard.writeText(code.textContent).then(() => { e.target.textContent = 'Copied'; }, () => {
       const r = document.createRange(); r.selectNodeContents(code);
       const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);

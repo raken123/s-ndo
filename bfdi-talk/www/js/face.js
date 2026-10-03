@@ -41,8 +41,10 @@ const MOUTH_COUNT = 31;
 const SPRITE_SCALE = 3; // sprites were exported at 3x sheet size
 
 const pad = n => String(n).padStart(2, '0');
-export const eyeSrc = i => `assets/eyes/eyes_${pad(i)}.png`;
-export const mouthSrc = i => `assets/mouths/mouth_${pad(i)}.png`;
+// Single-file builds put the sprites in BFDI_ASSETS (path -> data: URL).
+export const asset = path => globalThis.BFDI_ASSETS?.[path] || path;
+export const eyeSrc = i => asset(`assets/eyes/eyes_${pad(i)}.png`);
+export const mouthSrc = i => asset(`assets/mouths/mouth_${pad(i)}.png`);
 
 /** Loads every sprite once so swaps never flicker, and records natural sizes. */
 export async function preloadSprites() {

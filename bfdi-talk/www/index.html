@@ -60,6 +60,7 @@
     <span class="cam-tag" id="camTag">LIVE</span>
   </div>
   <div class="status" id="status">Tap <b>Talk</b> to start!</div>
+  <p class="web-note" id="webNote" hidden>🌐 Web version: type to chat. <b>Claude</b> writes the replies and your browser does the voice. The full app talks out loud with Gemini Live.</p>
 
   <!-- Agent Mode: helper panel (to-do, timers, notes) -->
   <div class="agent-panel" id="agentPanel" hidden>
@@ -165,11 +166,11 @@
 
     <section>
       <h3>Talking</h3>
-      <label class="toggle"><input type="checkbox" id="setPtt"><span>Push-to-talk (hold the button while you speak)</span></label>
+      <label class="toggle no-web"><input type="checkbox" id="setPtt"><span>Push-to-talk (hold the button while you speak)</span></label>
       <label class="toggle"><input type="checkbox" id="setGreet"><span>Character says hi when you start</span></label>
     </section>
 
-    <section>
+    <section class="no-web">
       <h3>Gemini API key</h3>
       <label class="field"><span>Key</span><input id="setKey" type="password" placeholder="Uses the built-in key when empty" autocomplete="off"></label>
       <p class="hint" id="keyHint"></p>
@@ -198,7 +199,7 @@
     <div class="ps-panel">
       <h3>✨ New episode</h3>
       <textarea id="psPremise" rows="3" maxlength="500" placeholder="What happens? e.g. &quot;The challenge is to bake the biggest cake, but Drip keeps melting the frosting.&quot; (optional)"></textarea>
-      <label class="toggle ps-hostme"><input type="checkbox" id="psHostMe"><span>🎤 <b>I'm the host!</b> I talk into the mic and the cast reacts live. (Leave off and the AI writes the whole episode.)</span></label>
+      <label class="toggle ps-hostme no-web"><input type="checkbox" id="psHostMe"><span>🎤 <b>I'm the host!</b> I talk into the mic and the cast reacts live. (Leave off and the AI writes the whole episode.)</span></label>
       <div class="ps-limits" id="psLimits"></div>
       <button type="button" class="btn btn-yellow ps-make" id="psMake">🎬 Make episode</button>
       <button type="button" class="linkish" id="psNewSeason" hidden>Start a new season</button>
@@ -272,7 +273,7 @@
         <button type="button" role="tab" class="tab" data-tab="signin" aria-selected="true">Sign in</button>
         <button type="button" role="tab" class="tab" data-tab="signup" aria-selected="false">Create account</button>
       </div>
-      <p class="hint" id="authBlurb">Save your Usage Credits, get subscriptions and keep everything when you switch devices.</p>
+      <p class="hint" id="authBlurb">Save your Usage Credits and plan, and keep everything when you switch devices.</p>
       <label class="field signup-only" hidden><span>Username</span><input id="authUser" maxlength="24" autocomplete="nickname"></label>
       <label class="field"><span>Email</span><input id="authEmail" type="email" autocomplete="email"></label>
       <label class="field"><span>Password</span><input id="authPass" type="password" minlength="8" autocomplete="current-password"></label>
@@ -299,7 +300,7 @@
       <label class="field"><span>Name</span><input id="profileUsername" maxlength="24"><button type="button" class="btn btn-white small" id="saveUsername">Save</button></label>
       <div class="auth-actions">
         <button type="button" class="btn btn-pro" id="profileUpgrade">Get Pro</button>
-        <button type="button" class="btn btn-white" id="manageSub" hidden>Manage subscription</button>
+        <button type="button" class="btn btn-white" id="toFree" hidden>Switch to Free</button>
         <button type="button" class="btn btn-white" id="signOutBtn">Sign out</button>
       </div>
       <div class="verify-result" id="profileMsg" hidden></div>
@@ -314,7 +315,7 @@
 
     <div class="offer" id="offerBanner" hidden>
       <div class="offer-tag">ULTRA RARE OFFER</div>
-      <div class="offer-text">Subscribe before <b>December 23</b> and get a giant credit drop on December 23:<br>
+      <div class="offer-text">Be on a plan before <b>December 23</b> and get a giant credit drop on December 23:<br>
         <b>Pro: 500,000,000 credits</b> · <b>Lite: 100,000 credits</b></div>
       <div class="offer-count">Ends in <b id="offerCountdown"></b></div>
     </div>
@@ -322,21 +323,21 @@
     <div class="plan-grid">
       <div class="plan-card lite">
         <div class="plan-name">Lite</div>
-        <div class="plan-price"><b>$1</b>/month <small>for 5 months</small></div>
-        <div class="plan-after">then $6/month</div>
+        <div class="plan-price"><s>$1/month</s> <b>FREE</b></div>
+        <div class="plan-after">Free right now — no payment</div>
         <ul id="litePerks"></ul>
-        <button type="button" class="btn btn-blue" data-plan="lite">Get Lite</button>
+        <button type="button" class="btn btn-blue" data-plan="lite">Switch to Lite</button>
       </div>
       <div class="plan-card pro">
         <div class="plan-ribbon">BEST</div>
         <div class="plan-name">Pro 👑</div>
-        <div class="plan-price"><b>$10</b>/month</div>
-        <div class="plan-after" id="proTrialNote">Try it 7 days free</div>
+        <div class="plan-price"><s>$10/month</s> <b>FREE</b></div>
+        <div class="plan-after">Free right now — no payment</div>
         <ul id="proPerks"></ul>
-        <button type="button" class="btn btn-pro" data-plan="pro" id="proCta">Start free trial</button>
+        <button type="button" class="btn btn-pro" data-plan="pro">Switch to Pro</button>
       </div>
     </div>
-    <p class="hint" id="plansNote">Payments are handled by Stripe. Cancel any time from <b>Account → Manage subscription</b>. Credits you get stay yours even after you cancel.</p>
+    <p class="hint" id="plansNote">Tap a plan and you're on it straight away — no card, no payment, nothing to cancel. Monthly credits arrive right away and again every 30 days. Credits stay yours if you switch back to <button type="button" class="linkish" data-plan="free">Free</button>.</p>
     <div class="verify-result" id="plansMsg" hidden></div>
   </form>
 </dialog>
@@ -347,15 +348,10 @@
     <div class="dlg-head"><h2>Usage Credits</h2><button class="x" value="close" aria-label="Close">✕</button></div>
     <section>
       <p><b>1 credit = 1 second of talk</b> (or of a Playshow episode). Credits are separate from the free meter, have no limit and never expire.</p>
-      <div class="pack-row">
-        <button type="button" class="pack" data-pack="credits_5"><b>300</b><span>credits</span><i>$5</i></button>
-        <button type="button" class="pack" data-pack="credits_10"><b>600</b><span>credits</span><i>$10</i></button>
-        <button type="button" class="pack best" data-pack="credits_20"><b>1,200</b><span>credits</span><i>$20</i></button>
-      </div>
+      <div class="credit-now"><b id="buyCredits">0</b><span>credits</span></div>
+      <p>Get credits for free: <b>Lite</b> gives 1,500 and <b>Pro</b> 5,000 every month, straight away. No payment needed.</p>
       <p class="hint" id="buyAccountNote"></p>
-      <p class="hint">Payments are handled securely by Stripe: your card is checked and charged there, and BFDI Talk never sees it. Credits appear automatically when the payment goes through.</p>
-      <p class="hint">Want way more? <button type="button" class="linkish" id="buyToPlans">Subscriptions</button> give 1,500–5,000 credits every month.</p>
-      <div class="verify-result" id="verifyResult" hidden></div>
+      <button type="button" class="btn btn-pro" id="buyToPlans">See plans</button>
     </section>
   </form>
 </dialog>

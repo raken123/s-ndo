@@ -1,7 +1,7 @@
 {
   "name": "bfdi-talk",
   "productName": "BFDI Talk",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Talk out loud with a BFDI-style object character, powered by Gemini 3.8 Live.",
   "main": "electron/main.js",
   "author": "jooykoll",
@@ -17,9 +17,9 @@
     "dist:linux": "npm run config && electron-builder --linux AppImage --publish never",
     "android:sync": "npm run config && cap sync android",
     "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug",
-    "test": "node --test tests/usage.test.mjs tests/playshow.test.mjs tests/agent.test.mjs && node --experimental-strip-types --no-warnings --test tests/billing.test.mjs",
-    "test:backend": "node --test tests/db.test.mjs tests/webhook.test.mjs",
-    "site": "python3 tools/make_site.py"
+    "test": "node --test tests/usage.test.mjs tests/playshow.test.mjs tests/agent.test.mjs tests/web-engine.test.mjs",
+    "test:backend": "node --test tests/db.test.mjs",
+    "site": "node tools/make_site.mjs"
   },
   "build": {
     "appId": "io.itch.jooykoll.bfditalk",
@@ -73,7 +73,8 @@
   "devDependencies": {
     "@capacitor/cli": "^8.5.2",
     "electron": "^44.5.1",
-    "electron-builder": "^26.15.3"
+    "electron-builder": "^26.15.3",
+    "esbuild": "^0.25.12"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",
