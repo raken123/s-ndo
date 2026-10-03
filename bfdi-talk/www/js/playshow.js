@@ -8,6 +8,7 @@
 
 import { Face } from './face.js';
 import { drawCharacter } from './character.js';
+import { HOST_NAME } from './playshow-script.js';
 
 const WS_URL = 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
 const ACTOR_PROMPT = 'You are a voice actor in a cartoon object show. The user sends one line of dialogue at a time, with the emotion in square brackets. Perform ONLY that line, exactly word for word, in a lively cartoon voice that matches the emotion. Never add, remove or change words, never reply to the line, never say the emotion out loud.';
@@ -156,9 +157,10 @@ export class EpisodePlayer extends EventTarget {
    * els: { row, sub, card, loading, progress }
    * spend(seconds) -> false when usage ran out
    */
-  constructor({ els, audio, sprites, cast, episode, number, showName, apiKey, spend }) {
+  /** stageCast: who stands on stage (default: everyone with a line). Hosted episodes get a mic podium. */
+  constructor({ els, audio, sprites, cast, episode, number, showName, apiKey, spend, stageCast = null }) {
     super();
-    Object.assign(this, { els, audio, sprites, cast, episode, number, showName, spend });
+    Object.assign(this, { els, audio, sprites, cast, episode, number, showName, spend, stageCast });
     this.pool = new VoicePool(apiKey);
     this.lines = episode.scenes.flatMap((s, si) => s.lines.map((l, li) => ({ ...l, scene: si, first: li === 0 })));
     this.audioFor = [];
@@ -176,7 +178,15 @@ export class EpisodePlayer extends EventTarget {
     const row = this.els.row;
     row.innerHTML = '';
     const speakers = new Set(this.lines.map(l => l.speaker));
-    const onStage = this.cast.filter(c => speakers.has(c.name));
+    const onStage = this.stageCast ? [...this.stageCast] : this.cast.filter(c => speakers.has(c.name));
+    this.podium = null;
+    if (this.episode.hosted) {
+      const pod = document.createElement('div');
+      pod.className = 'ps-podium';
+      pod.innerHTML = '<div class="ps-mic">🎤</div><div class="ps-podium-box">HOST</div><div class="ps-name">You</div>';
+      row.appendChild(pod);
+      this.podium = pod;
+    }
     // Host stands on the left, like the announcer's spot.
     onStage.sort((a, b) => (b.host ? 1 : 0) - (a.host ? 1 : 0));
     row.style.setProperty('--n', onStage.length);
@@ -202,7 +212,7 @@ export class EpisodePlayer extends EventTarget {
     for (let i = 0; i <= Math.min(upTo, this.lines.length - 1); i++) {
       if (this.audioFor[i]) continue;
       const l = this.lines[i];
-      const voice = this.slots.get(l.speaker)?.cast.voice || 'Puck';
+      const voice = this.slots.get(l.speaker)?.cast.voice || (l.speaker === HOST_NAME ? this.episode.hostVoice : null) || 'Puck';
       this.audioFor[i] = this.pool.perform(voice, l.text, l.emotion).catch(err => {
         console.warn('line', i, err);
         return []; // play it as a silent subtitle instead of stopping the show
@@ -259,6 +269,7 @@ export class EpisodePlayer extends EventTarget {
     while (this.paused) await this.wait(50);
 
     for (const other of this.slots.values()) other.slot.classList.toggle('speaking', other === s);
+    this.podium?.classList.toggle('speaking', l.speaker === HOST_NAME);
     if (s) {
       s.slot.classList.remove('act-faint'); // getting back up to talk
       s.face.setEmotion(l.emotion);
@@ -271,6 +282,7 @@ export class EpisodePlayer extends EventTarget {
     this.act(l.speaker, l.action === 'eliminated' ? 'none' : l.action);
 
     const secs = chunks.length ? pcmSeconds(chunks) : Math.max(2, l.text.split(' ').length * 0.33);
+    if (l.live) return; // the host's own words during a live episode: just shown
     if (chunks.length) for (const c of chunks) this.audio.playChunk(c);
     const end = performance.now() + secs * 1000 + 200;
     while (this.audio.queued() > 0.02 || this.audio.speaking || (!chunks.length && performance.now() < end)) {
@@ -313,6 +325,44 @@ export class EpisodePlayer extends EventTarget {
       if (err.message !== 'stopped') this.emit('error', { message: err.message });
     } finally {
       this.cleanup();
+    }
+  }
+
+  // ---- live hosting: the stage is up while the user talks; lines arrive turn by turn
+
+  /** Builds the stage and starts animating without playing a script. */
+  openStage() {
+    this.build();
+    this.raf = requestAnimationFrame(t => this.frame(t));
+  }
+
+  /** Shows what the host just said (it isn't voiced again live — they said it themselves). */
+  showHost(text) {
+    this.lines.push({ speaker: HOST_NAME, text, emotion: 'neutral', action: 'none', scene: 0, first: false, live: true });
+    this.audioFor[this.lines.length - 1] = Promise.resolve([]);
+    for (const other of this.slots.values()) other.slot.classList.remove('speaking');
+    this.podium?.classList.add('speaking');
+    this.els.sub.innerHTML = '<b></b> <span></span>';
+    this.els.sub.firstChild.textContent = 'You:';
+    this.els.sub.lastChild.textContent = text;
+    this.els.sub.hidden = false;
+  }
+
+  /** Adds cast lines and plays them; resolves when they've all been performed. */
+  async playMore(lines) {
+    const start = this.lines.length;
+    for (const l of lines) this.lines.push({ ...l, scene: 0, first: false });
+    this.prefetch(start + PREFETCH);
+    try {
+      for (let i = start; i < this.lines.length; i++) {
+        this.index = i;
+        await this.playLine(i);
+      }
+      this.podium?.classList.remove('speaking');
+      return true;
+    } catch (err) {
+      if (err.message !== 'stopped') this.emit('error', { message: err.message });
+      return false;
     }
   }
 

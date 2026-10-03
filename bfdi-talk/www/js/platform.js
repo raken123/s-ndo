@@ -19,3 +19,16 @@ export async function loadBuildConfig() {
     return {};
   }
 }
+
+export async function copyText(text) {
+  if (isElectron) return window.bfdiDesktop.copy(text);
+  return navigator.clipboard.writeText(text);
+}
+
+/** System notification (desktop) or a browser notification when allowed. */
+export function notify(title, body) {
+  if (isElectron) { window.bfdiDesktop.notify(title, body); return; }
+  try {
+    if ('Notification' in window && Notification.permission === 'granted') new Notification(title, { body });
+  } catch { /* not available (Android web view) */ }
+}

@@ -29,11 +29,10 @@ app in `www/`. Electron wraps it for desktop and Capacitor wraps it for Android.
 - **Usage Credits.** A wallet separate from the meter, with no upper limit.
   **1 credit = 1 second of Flash Live** (Extended Thinking spends 2.5 per second). Credits
   are only used while the meter is empty, and they never expire.
-  - *Buy Credits* opens https://jooykoll.itch.io/bfdi-talk-ai. After paying, the user uploads a
-    screenshot of the payment. **$1 = 60 credits**, minimum $5. Gemini checks it's an itch.io
-    payment for BFDI Talk, and each screenshot or order number only works once.
-  - Signed in: the screenshot is checked on the server and credits go to the account.
-    Guests: checked in the app and kept on the device.
+  - *Buy Credits* sells three packs through **Stripe Checkout**: **$5 = 300**, **$10 = 600**,
+    **$20 = 1,200** credits. Stripe's signed webhook adds them to the account, so a payment can't
+    be faked and each payment counts once. Buying needs an account; the app picks up the new
+    credits by itself after paying. (The old itch.io screenshot check is gone.)
 - **Accounts** (Supabase). Email + password sign-up with a username. Credits, plan and
   subscription follow you to every device.
 - **Subscriptions** (Stripe), managed from the app:
@@ -74,6 +73,19 @@ app in `www/`. Electron wraps it for desktop and Capacitor wraps it for Android.
   | Seasons (recaps, eliminated objects stay out) | — | ✓ | ✓ |
   | Script writer | standard | standard | extended thinking |
   | Saved episodes | 3 | 10 | 30 |
+  - **🎤 Host it yourself (optional).** Turn on *I'm the host* and the episode goes live: hold the
+    mic button (or Space), say something, and the cast answers you in character. Gemini hears the
+    recording and writes the next 1–4 lines (and, on Lite/Pro, may eliminate someone once).
+    Press *End episode* to save it. Without the toggle, episodes are written and hosted for you.
+- **🚶 Agent Mode.** Press *Agent* and your character walks out of the window and helps with tasks:
+  - **Windows/macOS:** a see-through, always-on-top buddy window walks to the corner of the screen.
+    Clicks pass through everywhere except the character and its little toolbar. Drag it around,
+    send it for a stroll, or press *Back* and it walks home into the app.
+  - **Android / browser:** the same helper runs inside the app.
+  - Tools it can use: timers (with a chime + notification), a task list, notes, look things up on
+    Wikipedia or the BFDI wiki, open a search or website in your browser, copy text, tell the time,
+    and (Pro) look at your screen. Tasks, notes and timers are saved on the device.
+  - It uses the same meter/credits as talking.
 - **Video & screen live (Pro).** The camera or a shared screen is sent to Gemini Live at
   1 frame per second, and the character reacts to what it sees. A preview shows in the corner.
   Screen sharing works on Windows/macOS. Android web views can't share the screen, so that
@@ -109,7 +121,8 @@ npm run serve          # or try it in a browser at http://localhost:5173
 npm run dist:win       # .exe  (on Windows)
 npm run dist:mac       # .dmg  (on a Mac)
 npm run android:apk    # .apk  (needs Android Studio / SDK + JDK 21)
-npm test               # meter/credits + billing unit tests
+npm test               # meter/credits, Playshow, Agent + billing unit tests
+npm run site           # rebuild site/index.html (the landing page)
 ```
 
 ## Switch on accounts & subscriptions
@@ -126,17 +139,17 @@ live keys.
    npx supabase login
    npx supabase link --project-ref <your-project-ref>
    npx supabase db push                 # tables, rules, credit functions
-   npx supabase functions deploy        # create-checkout, billing-portal, stripe-webhook, verify-receipt
+   npx supabase functions deploy        # create-checkout, billing-portal, stripe-webhook
    ```
 3. **Set up Stripe** (makes the Pro/Lite prices, the $1-for-5-months coupon, the customer portal
-   and the webhook):
+   and the webhook; credit packs need no setup):
    ```bash
    STRIPE_SECRET_KEY=sk_test_... SUPABASE_URL=https://<ref>.supabase.co node scripts/stripe-setup.mjs
    ```
    It prints a webhook signing secret (`whsec_...`). Save it for the next step.
 4. **Give the server its secrets:**
    ```bash
-   npx supabase secrets set STRIPE_SECRET_KEY=sk_test_... STRIPE_WEBHOOK_SECRET=whsec_... GEMINI_API_KEY=...
+   npx supabase secrets set STRIPE_SECRET_KEY=sk_test_... STRIPE_WEBHOOK_SECRET=whsec_...
    ```
 5. **Sign-up emails.** By default Supabase asks new users to confirm their email. Either keep
    that (the app tells people to check their inbox), or turn it off under *Authentication →
@@ -152,7 +165,7 @@ SUPABASE_ANON_KEY=... SUPABASE_SERVICE_ROLE_KEY=... npm run test:backend
 ```
 `tests/db.test.mjs` checks the security rules (users can't give themselves credits or Pro) and
 the December 23 rules. `tests/webhook.test.mjs` sends signed fake Stripe events: trial, paid
-months, the Lite intro, retries, out-of-order events and cancelling.
+months, the Lite intro, credit packs, retries, out-of-order events and cancelling.
 
 ## Install notes
 
@@ -174,8 +187,8 @@ months, the Lite intro, retries, out-of-order events and cancelling.
 - **Credits, plans and subscriptions are server-side.** Users can't give themselves credits or
   Pro (row-level security, tested). Credit *spending* is reported by the app, so a modified app
   could skip reporting it. The free meter is stored on the device.
-- Screenshot checking is a light check, and a skilled fake could get past it. For airtight
-  one-time credits, check purchases on a server with the itch.io API (`/purchases` endpoint).
+- Credit packs are only granted from Stripe's signed webhook, with the amount taken from the
+  server's pack table (not from anything the app sends).
 
 ## Project layout
 
@@ -191,17 +204,18 @@ www/                 the app (HTML/CSS/JS, no bundler)
   js/media.js        Pro video & screen live (1 fps JPEG frames)
   js/playshow-script.js  Playshow: plan limits, episode prompt + schema, script repair
   js/playshow.js     Playshow: voice-actor pool (Gemini Live) + episode player
-  js/playshow-ui.js  Playshow: studio, cast editor, seasons, theater
-  js/purchase.js     guest screenshot verification with Gemini
+  js/playshow-ui.js  Playshow: studio, cast editor, seasons, theater, live hosting
+  js/agent.js        Agent Mode: tools, tasks/timers/notes, Wikipedia + BFDI wiki look-up
   assets/            sliced sprites (generated)
-electron/            desktop shell (serves www/ from app://bfdi; mic/camera/screen permissions)
+electron/            desktop shell (app://bfdi, permissions, Agent Mode buddy window)
 supabase/migrations/ database: profiles, credit ledger, credit/bonus functions, security rules
-supabase/functions/  create-checkout, billing-portal, stripe-webhook, verify-receipt
+supabase/functions/  create-checkout, billing-portal, stripe-webhook
 scripts/             write-config, stripe-setup, serve
 tests/               unit + local-backend tests
 android/             Capacitor Android project
 assets-src/          the original mouth + eye sprite sheets
-tools/               slice_assets.py (cut sprites), make_icon.py (icons/splash)
+site/                landing page (index.html is generated from page.template.html)
+tools/               slice_assets.py (cut sprites), make_icon.py (icons/splash), make_site.py
 ```
 
 To re-cut the sprites after editing the sheets, run `pip install pillow numpy scipy`, then

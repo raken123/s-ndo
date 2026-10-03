@@ -113,9 +113,8 @@ async function callFn(name, body, token) {
   return { status: res.status, body: await res.json().catch(() => null) };
 }
 
-test('checkout and receipt functions need a signed-in user; checkout refuses a second plan', async () => {
+test('checkout needs a signed-in user and refuses a second plan', async () => {
   assert.equal((await callFn('create-checkout', { plan: 'pro' })).status, 401);
-  assert.equal((await callFn('verify-receipt', { image: 'x', mimeType: 'image/png' })).status, 401);
   const { c, id } = await newUser();
   const token = (await c.auth.getSession()).data.session.access_token;
   assert.equal((await callFn('create-checkout', { plan: 'gold' }, token)).status, 400);
@@ -124,4 +123,17 @@ test('checkout and receipt functions need a signed-in user; checkout refuses a s
   assert.equal(r.status, 409);
   assert.match(r.body.error, /Manage subscription/);
   assert.equal((await callFn('billing-portal', {}, token)).status, 404, 'no Stripe customer yet');
+});
+
+test('credit packs: a paid checkout adds the pack once; unpaid adds nothing', async () => {
+  const { c, id } = await newUser();
+  const session = (o = {}) => ({ id: 'cs_' + id, object: 'checkout.session', mode: 'payment', payment_status: 'paid', amount_total: 2000,
+    client_reference_id: id, customer: 'cus_p' + id.slice(0, 8), metadata: { user_id: id, pack: 'credits_20', credits: '1200' }, ...o });
+  await send('checkout.session.completed', session({ id: 'cs_unpaid' + id, payment_status: 'unpaid' }));
+  assert.equal((await profile(c)).credits, 0);
+  await send('checkout.session.completed', session());
+  await send('checkout.session.completed', session()); // Stripe retry
+  const p = await profile(c);
+  assert.equal(p.credits, 1200);
+  assert.equal(p.stripe_customer_id, 'cus_p' + id.slice(0, 8));
 });

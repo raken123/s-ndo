@@ -1,8 +1,8 @@
 // Stripe -> database. Keeps plans in sync and grants monthly credits on every paid invoice.
-// Events: checkout.session.completed, customer.subscription.created/updated/deleted, invoice.paid
+// Events: checkout.session.completed / async_payment_succeeded, customer.subscription.created/updated/deleted, invoice.paid
 import { Db, env, json } from '../_shared/http.ts';
 import { verifyStripeSignature } from '../_shared/stripe.ts';
-import { invoiceGrant, subscriptionPatch } from '../_shared/billing.ts';
+import { checkoutCredits, invoiceGrant, subscriptionPatch } from '../_shared/billing.ts';
 
 Deno.serve(async (req) => {
   const body = await req.text();
@@ -19,9 +19,15 @@ Deno.serve(async (req) => {
 
   try {
     switch (event.type) {
-      case 'checkout.session.completed': {
+      case 'checkout.session.completed':
+      case 'checkout.session.async_payment_succeeded': {
         if (obj.client_reference_id && obj.customer) {
           await db.update('profiles', { id: `eq.${obj.client_reference_id}` }, { stripe_customer_id: obj.customer });
+        }
+        // Credit packs: paid one-time checkouts add credits (once per checkout session).
+        const grant = checkoutCredits(obj);
+        if (grant) {
+          await db.rpc('grant_credits', { p_user: grant.userId, p_delta: grant.credits, p_reason: 'credit_pack', p_ref: grant.ref });
         }
         break;
       }

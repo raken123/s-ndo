@@ -63,7 +63,7 @@ export function drawCharacter(svg, bodyKey, color, idPrefix = 'main') {
   b.legs.forEach(([x, y], i) => {
     const dir = i ? 1 : -1;
     legs.insertAdjacentHTML('beforeend',
-      `<path class="limb" d="M${x} ${y - 10} L${x + dir * 6} 470 L${x + dir * 26} 474"/>`);
+      `<path class="limb leg" style="transform-origin:${x}px ${y - 10}px" d="M${x} ${y - 10} L${x + dir * 6} 470 L${x + dir * 26} 474"/>`);
   });
   rig.appendChild(legs);
 

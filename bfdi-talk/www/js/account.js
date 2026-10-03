@@ -142,20 +142,9 @@ export class Account extends EventTarget {
     return data;
   }
 
-  async checkoutUrl(plan) { return (await this.call('create-checkout', { plan })).url; }
+  /** { plan: 'pro' | 'lite' } or { pack: 'credits_5' | 'credits_10' | 'credits_20' } */
+  async checkoutUrl(what) { return (await this.call('create-checkout', what)).url; }
   async portalUrl() { return (await this.call('billing-portal')).url; }
-
-  async verifyReceipt(file) {
-    const buf = new Uint8Array(await file.arrayBuffer());
-    let bin = '';
-    for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
-    const { data, error } = await this.client.functions.invoke('verify-receipt', { body: { image: btoa(bin), mimeType: file.type } });
-    if (error) {
-      try { return await error.context.json(); } catch { return { ok: false, message: error.message }; }
-    }
-    if (data?.ok) await this.refresh();
-    return data;
-  }
 }
 
 function friendlyAuthError(error) {

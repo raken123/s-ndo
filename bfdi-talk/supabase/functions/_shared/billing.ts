@@ -1,5 +1,5 @@
 // Pure helpers that turn Stripe objects into database changes (unit-tested in billing_test.ts).
-import { PLANS, type PlanId, planFromLookupKey } from './plans.ts';
+import { CREDIT_PACKS, PLANS, type PackId, type PlanId, planFromLookupKey } from './plans.ts';
 
 // deno-lint-ignore no-explicit-any
 type Obj = Record<string, any>;
@@ -76,4 +76,44 @@ export function checkoutParams(opts: {
   if (p.introCoupon && !opts.introUsed) params.discounts = [{ coupon: p.introCoupon }];
   else params.allow_promotion_codes = true;
   return params;
+}
+
+/** Parameters for a one-time Checkout Session that buys a credit pack. */
+export function packCheckoutParams(opts: {
+  pack: PackId; userId: string; email?: string; customerId?: string | null; returnUrl: string;
+}): Obj {
+  const p = CREDIT_PACKS[opts.pack];
+  const meta = { user_id: opts.userId, pack: opts.pack, credits: String(p.credits) };
+  const params: Obj = {
+    mode: 'payment',
+    line_items: [{
+      quantity: 1,
+      price_data: {
+        currency: 'usd', unit_amount: p.usd * 100,
+        product_data: { name: `BFDI Talk — ${p.credits.toLocaleString('en-US')} Usage Credits` },
+      },
+    }],
+    client_reference_id: opts.userId,
+    success_url: `${opts.returnUrl}?bfdi=credits`,
+    cancel_url: `${opts.returnUrl}?bfdi=canceled`,
+    metadata: meta,
+    payment_intent_data: { metadata: meta },
+  };
+  if (opts.customerId) params.customer = opts.customerId;
+  else {
+    if (opts.email) params.customer_email = opts.email;
+    params.customer_creation = 'always'; // so receipts and the portal work later
+  }
+  return params;
+}
+
+/** Credits to add for a completed one-time Checkout, or null (unpaid, subscription, unknown pack). */
+export function checkoutCredits(session: Obj): { userId: string; credits: number; ref: string } | null {
+  if (session.mode !== 'payment' || session.payment_status !== 'paid') return null;
+  const userId = session.metadata?.user_id || session.client_reference_id;
+  const pack = CREDIT_PACKS[session.metadata?.pack as PackId];
+  if (!userId || !pack) return null;
+  // Trust the pack's price list, not a number in metadata, and check Stripe charged the full price.
+  if (typeof session.amount_total === 'number' && session.amount_total < pack.usd * 100) return null;
+  return { userId, credits: pack.credits, ref: `checkout:${session.id}` };
 }

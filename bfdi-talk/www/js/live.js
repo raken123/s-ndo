@@ -38,9 +38,13 @@ export function expressionTool(emotions) {
  * inText {text}, turnComplete, interrupted, usage {usageMetadata}, close {code, reason}, error {message}
  */
 export class LiveSocket extends EventTarget {
-  constructor({ apiKey, model, voice, systemPrompt, emotions }) {
+  /**
+   * tools: extra function declarations (Agent Mode); onTool(name, args) -> Promise<result object>
+   * runs them. set_expression is always handled here.
+   */
+  constructor({ apiKey, model, voice, systemPrompt, emotions, tools = [], onTool = null }) {
     super();
-    Object.assign(this, { apiKey, model, voice, systemPrompt, emotions });
+    Object.assign(this, { apiKey, model, voice, systemPrompt, emotions, tools, onTool });
     this.handle = null;
     this.ws = null;
     this.closedByUs = false;
@@ -85,7 +89,7 @@ export class LiveSocket extends EventTarget {
       model: `models/${m.id}`,
       generationConfig,
       systemInstruction: { parts: [{ text: this.systemPrompt }] },
-      tools: [expressionTool(this.emotions)],
+      tools: [{ functionDeclarations: [...expressionTool(this.emotions).functionDeclarations, ...this.tools] }],
       inputAudioTranscription: {},
       outputAudioTranscription: {},
       sessionResumption: this.handle ? { handle: this.handle } : {},
@@ -100,14 +104,7 @@ export class LiveSocket extends EventTarget {
     if (msg.goAway) this.emit('goAway', msg.goAway);
     if (msg.usageMetadata) this.emit('usage', msg.usageMetadata);
 
-    if (msg.toolCall?.functionCalls) {
-      const responses = [];
-      for (const fc of msg.toolCall.functionCalls) {
-        if (fc.name === 'set_expression' && fc.args?.emotion) this.emit('emotion', { emotion: fc.args.emotion });
-        responses.push({ id: fc.id, name: fc.name, response: { result: 'ok' } });
-      }
-      this.send({ toolResponse: { functionResponses: responses } });
-    }
+    if (msg.toolCall?.functionCalls) this.runTools(msg.toolCall.functionCalls);
 
     const sc = msg.serverContent;
     if (!sc) return;
@@ -118,6 +115,25 @@ export class LiveSocket extends EventTarget {
     if (sc.outputTranscription?.text) this.emit('outText', { text: sc.outputTranscription.text });
     if (sc.inputTranscription?.text) this.emit('inText', { text: sc.inputTranscription.text });
     if (sc.turnComplete) this.emit('turnComplete');
+  }
+
+  async runTools(calls) {
+    const responses = await Promise.all(calls.map(async fc => {
+      let response = { result: 'ok' };
+      if (fc.name === 'set_expression') {
+        if (fc.args?.emotion) this.emit('emotion', { emotion: fc.args.emotion });
+      } else if (this.onTool) {
+        try {
+          response = await this.onTool(fc.name, fc.args || {});
+        } catch (err) {
+          response = { error: err.message || String(err) };
+        }
+      } else {
+        response = { error: `Unknown tool ${fc.name}` };
+      }
+      return { id: fc.id, name: fc.name, response };
+    }));
+    this.send({ toolResponse: { functionResponses: responses } });
   }
 
   send(obj) {

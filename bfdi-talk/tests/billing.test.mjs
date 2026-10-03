@@ -2,9 +2,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
-import { checkoutParams, invoiceGrant, subscriptionPatch } from '../supabase/functions/_shared/billing.ts';
+import { checkoutCredits, checkoutParams, invoiceGrant, packCheckoutParams, subscriptionPatch } from '../supabase/functions/_shared/billing.ts';
 import { formEncode, verifyStripeSignature } from '../supabase/functions/_shared/stripe.ts';
-import { judge } from '../supabase/functions/_shared/receipt.ts';
 
 const base = { priceId: 'price_1', userId: 'u1', email: 'a@b.c', customerId: null, returnUrl: 'https://x.io/p' };
 
@@ -55,19 +54,20 @@ test('$0 invoices (free trial) grant nothing', () => {
   assert.equal(invoiceGrant({ id: 'i', amount_paid: 0, parent: { subscription_details: { metadata: { user_id: 'u', plan: 'pro' } } } }, 'pro'), null);
 });
 
-const report = (o = {}) => ({
-  is_payment_confirmation: true, is_itch_io: true, product_matches: true, seller_matches: true,
-  amount_paid: 10, currency: 'USD', order_id: 'ABC123', looks_edited: false, reason: 'ok', ...o,
+test('credit pack checkout: one-time payment priced from the pack list', () => {
+  const p = packCheckoutParams({ pack: 'credits_10', userId: 'u1', email: 'a@b.c', returnUrl: 'https://x.io/p' });
+  assert.equal(p.mode, 'payment');
+  assert.equal(p.line_items[0].price_data.unit_amount, 1000);
+  assert.match(p.line_items[0].price_data.product_data.name, /600 Usage Credits/);
+  assert.deepEqual(p.metadata, { user_id: 'u1', pack: 'credits_10', credits: '600' });
+  assert.equal(p.customer_creation, 'always');
 });
 
-test('receipt: $10 on itch.io = 600 credits, order id becomes a one-time ref', () => {
-  assert.deepEqual(judge(report()), { ok: true, usd: 10, credits: 600, orderRef: 'order:abc123' });
-});
-
-test('receipt rejections', () => {
-  assert.equal(judge(report({ amount_paid: 3 })).ok, false);
-  assert.equal(judge(report({ currency: 'EUR' })).ok, false);
-  assert.equal(judge(report({ looks_edited: true })).ok, false);
-  assert.equal(judge(report({ is_itch_io: false })).ok, false);
-  assert.equal(judge(report({ is_payment_confirmation: false })).ok, false);
+test('credit pack webhook: only paid, full-price, known packs; one ref per session', () => {
+  const s = (o = {}) => ({ id: 'cs_1', mode: 'payment', payment_status: 'paid', amount_total: 500, metadata: { user_id: 'u1', pack: 'credits_5', credits: '999999' }, ...o });
+  assert.deepEqual(checkoutCredits(s()), { userId: 'u1', credits: 300, ref: 'checkout:cs_1' }, 'credits come from the pack, not metadata');
+  assert.equal(checkoutCredits(s({ payment_status: 'unpaid' })), null);
+  assert.equal(checkoutCredits(s({ mode: 'subscription' })), null);
+  assert.equal(checkoutCredits(s({ amount_total: 100 })), null, 'discounted below the pack price');
+  assert.equal(checkoutCredits(s({ metadata: { user_id: 'u1', pack: 'credits_1000' } })), null);
 });

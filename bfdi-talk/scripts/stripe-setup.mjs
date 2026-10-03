@@ -8,6 +8,7 @@
 //   - coupon BFDI_LITE_INTRO: $5 off for 5 months  ->  Lite is $1/month for 5 months, then $6
 //   - a customer portal (cancel, switch Lite <-> Pro, update card, invoices)
 //   - the webhook to your Supabase stripe-webhook function (prints its signing secret)
+// Credit packs ($5/$10/$20) need nothing here: create-checkout sends their price each time.
 // The Pro 7-day free trial is added per checkout by the create-checkout function.
 
 const KEY = process.env.STRIPE_SECRET_KEY;
@@ -105,7 +106,7 @@ if (hooks.data.some((h) => h.url === hookUrl)) {
 } else {
   const hook = await stripe('POST', 'webhook_endpoints', {
     url: hookUrl,
-    enabled_events: ['checkout.session.completed', 'customer.subscription.created', 'customer.subscription.updated', 'customer.subscription.deleted', 'invoice.paid'],
+    enabled_events: ['checkout.session.completed', 'checkout.session.async_payment_succeeded', 'customer.subscription.created', 'customer.subscription.updated', 'customer.subscription.deleted', 'invoice.paid'],
   });
   console.log(`✔ Webhook: created. Signing secret (save it as STRIPE_WEBHOOK_SECRET):\n\n    ${hook.secret}\n`);
 }

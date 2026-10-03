@@ -12,9 +12,13 @@ export const PLANS: Record<PlanId, {
   lite: { lookupKey: 'bfdi_lite_monthly', monthlyCredits: 1500, introCoupon: 'BFDI_LITE_INTRO' },
 };
 
-// One-time Usage Credits bought on itch.io: $1 = 60 credits (= 1 minute of Flash Live).
-export const CREDITS_PER_USD = 60;
-export const MIN_PURCHASE_USD = 5;
+// One-time Usage Credit packs, paid through Stripe Checkout: $1 = 60 credits (1 minute of Flash Live).
+export type PackId = 'credits_5' | 'credits_10' | 'credits_20';
+export const CREDIT_PACKS: Record<PackId, { usd: number; credits: number }> = {
+  credits_5: { usd: 5, credits: 300 },
+  credits_10: { usd: 10, credits: 600 },
+  credits_20: { usd: 20, credits: 1200 },
+};
 
 export const STORE_URL = 'https://jooykoll.itch.io/bfdi-talk-ai';
 

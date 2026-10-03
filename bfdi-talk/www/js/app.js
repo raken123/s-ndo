@@ -2,12 +2,12 @@ import { Face, preloadSprites, AI_EMOTIONS, EXPRESSIONS } from './face.js';
 import { BODIES, COLORS, drawCharacter } from './character.js';
 import { LiveSocket, AudioEngine, MODELS, VOICES } from './live.js';
 import { Usage, formatDuration } from './usage.js';
-import { verifyScreenshot, STORE_URL } from './purchase.js';
 import { Account } from './account.js';
 import { PLANS, DEC23, formatCredits, formatCountdown } from './plans.js';
 import { VisionFeed, canShareScreen } from './media.js';
 import { initPlayshow } from './playshow-ui.js';
-import { openExternal, loadBuildConfig, isCapacitor } from './platform.js';
+import { openExternal, loadBuildConfig, isCapacitor, copyText, notify } from './platform.js';
+import { AgentKit, AGENT_TOOLS, agentPrompt, fmtSecs } from './agent.js';
 
 const $ = id => document.getElementById(id);
 
@@ -43,6 +43,12 @@ function saveSettings() {
 }
 
 const settings = loadSettings();
+// Agent Mode: BUDDY = this is the little desktop window the character walked out into.
+const BUDDY = new URLSearchParams(location.search).has('agent');
+let agentOn = BUDDY;      // agent tools + prompt active
+let agentKit;
+let agentTab = 'tasks';
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 const usage = new Usage();
 const account = new Account();
 const audio = new AudioEngine();
@@ -107,7 +113,8 @@ function systemPrompt() {
     'You know a lot about BFDI, BFDIA, IDFB, BFB, TPOT, jacknjellify and object shows in general, and love chatting about contestants, eliminations, recommended characters and fan theories. If you are unsure about a fact, say so in character instead of making it up.',
     'Sometimes the user turns on their camera or shares their screen, and you receive a picture every second. When you can see something, react to it naturally and in character. Never pretend to see something when no picture is coming in.',
     `IMPORTANT: Your face is animated. Right before you start speaking each reply, call set_expression with the emotion that fits what you are about to say (${AI_EMOTIONS.join(', ')}). If your feeling changes mid-reply, call it again. Never say the function name or emotion label out loud.`,
-  ].join('\n');
+    agentOn ? agentPrompt(settings.name) : '',
+  ].filter(Boolean).join('\n');
 }
 
 // Fallback when the model forgets to call set_expression: guess from the words it is saying.
@@ -198,7 +205,7 @@ async function reconnect() {
   if (session.reconnecting || !session.sock) return;
   session.reconnecting = true;
   const old = session.sock;
-  const sock = new LiveSocket({ apiKey: apiKey(), model: session.model, voice: settings.voice, systemPrompt: systemPrompt(), emotions: AI_EMOTIONS });
+  const sock = new LiveSocket({ apiKey: apiKey(), model: session.model, voice: settings.voice, systemPrompt: systemPrompt(), emotions: AI_EMOTIONS, ...agentTools() });
   sock.handle = old.handle;
   wireSocket(sock);
   try {
@@ -237,7 +244,7 @@ async function startSession() {
     return;
   }
 
-  const sock = new LiveSocket({ apiKey: apiKey(), model, voice: settings.voice, systemPrompt: systemPrompt(), emotions: AI_EMOTIONS });
+  const sock = new LiveSocket({ apiKey: apiKey(), model, voice: settings.voice, systemPrompt: systemPrompt(), emotions: AI_EMOTIONS, ...agentTools() });
   session.sock = sock;
   session.model = model;
   wireSocket(sock);
@@ -287,7 +294,8 @@ async function startSession() {
     }
   }, 1000);
 
-  if (settings.greet) sock.sendText('(The user just joined the voice call. Greet them in one short, excited sentence.)');
+  if (agentOn && settings.greet) sock.sendText('(You just walked out of the app to help the user with tasks. Say hi and ask what you can help with, in one short sentence.)');
+  else if (settings.greet) sock.sendText('(The user just joined the voice call. Greet them in one short, excited sentence.)');
 }
 
 function endSession(message) {
@@ -412,6 +420,7 @@ function renderControls() {
     s.disabled = session.state !== 'idle';
   });
   $('voiceChipName').textContent = settings.voice;
+  if (BUDDY) $('buddyTalk').textContent = session.state === 'live' ? '⏹ Hang up' : session.state === 'connecting' ? '…' : '🎙 Talk';
   if (locked && session.state === 'idle') setStatus(`Out of usage — recharging for <b>${formatDuration(usage.msLeft)}</b>`, 'locked');
 }
 
@@ -457,7 +466,7 @@ function renderAccount() {
   }
   $('buyAccountNote').textContent = account.signedIn
     ? `Credits go to your account (${account.displayName}).`
-    : account.enabled ? 'Tip: sign in first so your credits are saved to your account.' : '';
+    : account.enabled ? 'You need a free account to buy credits — tap a pack to create one.' : '';
   renderUsage();
 }
 
@@ -681,6 +690,7 @@ function renderOffer() {
 }
 
 function openPlans() {
+  if (BUDDY) { toast('Open the BFDI Talk window (↩) to see plans.', 4000); return; }
   $('plansMsg').hidden = true;
   renderPlans();
   if (!$('plansDlg').open) $('plansDlg').showModal();
@@ -723,7 +733,7 @@ function wirePlans() {
       const label = btn.textContent;
       btn.textContent = 'Opening checkout…';
       try {
-        openExternal(await account.checkoutUrl(plan));
+        openExternal(await account.checkoutUrl({ plan }));
         showMsg($('plansMsg'), true, 'Checkout opened in your browser. Finish paying there — BFDI Talk updates by itself when you come back.');
         watchForPlanChange();
       } catch (err) {
@@ -748,54 +758,54 @@ async function claimDec23() {
 // ------------------------------------------------------------------ buy dialog
 
 function wireBuy() {
-  let file = null;
   $('buyBtn').onclick = () => {
     $('verifyResult').hidden = true;
     renderAccount();
     $('buyDlg').showModal();
   };
-  $('openStore').onclick = () => openExternal(STORE_URL);
-  $('receiptFile').onchange = e => {
-    file = e.target.files[0] || null;
-    const img = $('receiptPreview');
-    if (file) {
-      img.src = URL.createObjectURL(file);
-      img.hidden = false;
-      $('dropText').textContent = 'Tap to choose a different screenshot';
-    }
-    $('verifyBtn').disabled = !file;
-    $('verifyResult').hidden = true;
-  };
-  $('verifyBtn').onclick = async () => {
-    if (!file) return;
-    const btn = $('verifyBtn');
-    btn.disabled = true;
-    btn.textContent = 'Checking…';
-    const out = $('verifyResult');
-    try {
-      let r;
-      if (account.signedIn) {
-        r = await account.verifyReceipt(file); // checked + credited on the server
-      } else {
-        if (!apiKey()) { toast('Add a Gemini API key in Settings first.'); return; }
-        r = await verifyScreenshot(file, apiKey(), usage);
-        if (r.ok) usage.addLocalCredits(r.credits, r.ids);
+  document.querySelectorAll('[data-pack]').forEach(btn => {
+    btn.onclick = async () => {
+      const out = $('verifyResult');
+      if (!account.enabled) { showMsg(out, false, "Buying credits isn't switched on in this copy of BFDI Talk yet."); return; }
+      if (!account.signedIn) {
+        $('buyDlg').close();
+        setAuthMode('signup');
+        openAccount('Create a free account first — your credits are saved to it.');
+        return;
       }
-      if (r.ok) {
-        showMsg(out, true, `Payment of $${r.usd.toFixed(2)} confirmed — +${r.credits.toLocaleString('en-US')} Usage Credits. Thank you!`);
+      document.querySelectorAll('[data-pack]').forEach(b => { b.disabled = true; });
+      try {
+        openExternal(await account.checkoutUrl({ pack: btn.dataset.pack }));
+        showMsg(out, true, 'Checkout opened in your browser. Pay there — your credits show up here by themselves.');
+        watchForCredits();
+      } catch (err) {
+        showMsg(out, false, err.message);
+      } finally {
+        document.querySelectorAll('[data-pack]').forEach(b => { b.disabled = false; });
+      }
+    };
+  });
+}
+
+let creditWatch = null;
+/** After opening a credit-pack checkout, keep checking for the new credits for a few minutes. */
+function watchForCredits() {
+  const before = account.profile?.credits ?? 0;
+  const until = Date.now() + 10 * 60 * 1000;
+  clearInterval(creditWatch);
+  creditWatch = setInterval(async () => {
+    await account.refresh();
+    const now = account.profile?.credits ?? 0;
+    if (now > before || Date.now() > until) {
+      clearInterval(creditWatch);
+      if (now > before) {
+        toast(`+${formatCredits(now - before)} Usage Credits — thank you! 🎉`, 5000);
         say("WOOHOO! I'm all charged up! Let's talk!", 'excited');
-        renderControls();
+        if ($('buyDlg').open) $('buyDlg').close();
         renderUsage();
-      } else {
-        showMsg(out, false, r.message);
       }
-    } catch (err) {
-      showMsg(out, false, `Could not check the screenshot: ${err.message}`);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Check screenshot';
     }
-  };
+  }, 5000);
 }
 
 // ------------------------------------------------------------------ talk controls
@@ -878,7 +888,7 @@ function wireControls() {
 
   // Spacebar = push-to-talk / toggle on desktop when not typing.
   window.addEventListener('keydown', e => {
-    if (e.code !== 'Space' || e.repeat || /INPUT|TEXTAREA/.test(document.activeElement?.tagName) || document.querySelector('dialog[open]')) return;
+    if (e.code !== 'Space' || e.repeat || /INPUT|TEXTAREA/.test(document.activeElement?.tagName) || document.querySelector('dialog[open]') || !$('playshow').hidden) return;
     e.preventDefault();
     if (settings.pushToTalk) down(e);
     else btn.click();
@@ -889,6 +899,164 @@ function wireControls() {
 }
 
 // ------------------------------------------------------------------ boot
+
+
+// ------------------------------------------------------------------ Agent Mode
+
+function agentTools() {
+  return agentOn ? { tools: AGENT_TOOLS, onTool: (name, args) => agentKit.run(name, args) } : {};
+}
+
+function chime() {
+  try {
+    const ctx = audio.ctx || new AudioContext();
+    [880, 1175, 880, 1175].forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = f;
+      const t = ctx.currentTime + i * 0.18;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.2, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+      o.connect(g).connect(ctx.destination);
+      o.start(t);
+      o.stop(t + 0.2);
+    });
+  } catch { /* no audio */ }
+}
+
+function renderAgent() {
+  if (!agentKit) return;
+  document.querySelectorAll('[data-atab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.atab === agentTab)));
+  const list = $('agentList');
+  const st = agentKit.state;
+  const esc = t => escapeHtml(String(t));
+  const now = Date.now();
+  let html = '';
+  if (agentTab === 'tasks') {
+    html = st.tasks.map(t => `<div class="agent-item ${t.done ? 'done' : ''}"><input type="checkbox" data-toggle="${t.id}" ${t.done ? 'checked' : ''} aria-label="Done"><span>${esc(t.text)}</span><button type="button" data-deltask="${t.id}" aria-label="Delete">✕</button></div>`).join('')
+      || '<p class="hint">No tasks yet. Type one below or say “add … to my list”.</p>';
+    $('agentAddText').placeholder = 'Add a task…';
+  } else if (agentTab === 'timers') {
+    html = st.timers.map(t => `<div class="agent-item"><span>⏰ ${esc(t.label)}</span><b class="count">${fmtSecs(Math.max(0, Math.round((t.endsAt - now) / 1000)))}</b><button type="button" data-deltimer="${t.id}" aria-label="Cancel">✕</button></div>`).join('')
+      || '<p class="hint">No timers. Say “set a 5 minute timer for pizza”.</p>';
+    $('agentAddText').placeholder = 'Ask me: “timer for 10 minutes”…';
+  } else {
+    html = st.notes.map(n => `<div class="agent-item"><span><b>${esc(n.title)}</b><pre>${esc(n.text)}</pre></span><button type="button" data-copynote="${n.id}" aria-label="Copy">📋</button><button type="button" data-delnote="${n.id}" aria-label="Delete">✕</button></div>`).join('')
+      || '<p class="hint">No notes. Say “write a note with my shopping list”.</p>';
+    $('agentAddText').placeholder = 'Ask me to write a note…';
+  }
+  if (list.dataset.html !== html) { list.innerHTML = html; list.dataset.html = html; }
+}
+
+async function sendToAgent(text) {
+  if (session.state === 'idle') {
+    const greet = settings.greet;
+    settings.greet = false;
+    await startSession();
+    settings.greet = greet;
+  }
+  if (session.state !== 'live') return;
+  audio.interrupt();
+  session.sock.sendText(text);
+  session.userTurnOpen = true;
+  session.lastActivity = Date.now();
+}
+
+function wireAgentPanel() {
+  document.querySelectorAll('[data-atab]').forEach(b => { b.onclick = () => { agentTab = b.dataset.atab; renderAgent(); }; });
+  $('agentList').onclick = e => {
+    const t = e.target.closest('[data-toggle],[data-deltask],[data-deltimer],[data-delnote],[data-copynote]');
+    if (!t) return;
+    if (t.dataset.toggle) agentKit.toggleTask(t.dataset.toggle);
+    if (t.dataset.deltask) agentKit.deleteTask(t.dataset.deltask);
+    if (t.dataset.deltimer) agentKit.cancelTimer(t.dataset.deltimer);
+    if (t.dataset.delnote) agentKit.deleteNote(t.dataset.delnote);
+    if (t.dataset.copynote) {
+      const n = agentKit.state.notes.find(x => x.id === t.dataset.copynote);
+      if (n) copyText(`${n.title}\n\n${n.text}`).then(() => toast('Copied!'), () => toast('Could not copy.'));
+    }
+  };
+  $('agentAdd').onsubmit = e => {
+    e.preventDefault();
+    const text = $('agentAddText').value.trim();
+    if (!text) return;
+    $('agentAddText').value = '';
+    if (agentTab === 'tasks') agentKit.run('add_task', { text });
+    else sendToAgent(text);
+  };
+}
+
+/** Main window: the character walks out (desktop) or switches to helper mode in the app (phones/web). */
+async function startAgent() {
+  if (session.state !== 'idle') endSession(null);
+  if (window.bfdiDesktop?.agentStart) {
+    const wrap = $('characterWrap');
+    wrap.classList.add('walking', 'walk-out');
+    say("Be right back — I'm going out there to help you!", 'determined');
+    await sleep(1550);
+    const r = $('character').getBoundingClientRect();
+    agentKit.paused = true; // the buddy window handles timers now
+    await window.bfdiDesktop.agentStart({
+      x: window.screenX + window.outerWidth - 80,
+      y: window.screenY + (window.outerHeight - window.innerHeight) + r.bottom,
+    });
+    wrap.classList.remove('walking', 'walk-out');
+    return;
+  }
+  agentOn = true;
+  document.body.classList.add('agent-on', 'agent-inapp');
+  $('agentPanel').hidden = false;
+  renderAgent();
+  say("Agent Mode! I can do timers, your to-do list, notes, look things up and more. Just ask!", 'determined');
+  startSession();
+}
+
+function stopAgentInApp() {
+  if (session.state !== 'idle') endSession(null);
+  agentOn = false;
+  document.body.classList.remove('agent-on', 'agent-inapp');
+  $('agentPanel').hidden = true;
+  say("Back to just chatting! Tap Talk when you're ready.", 'happy');
+}
+
+function setupBuddy() {
+  document.documentElement.classList.add('buddy');
+  document.body.classList.add('buddy', 'agent-on');
+  $('buddyBar').hidden = false;
+  $('bubble').hidden = true;
+  const d = window.bfdiDesktop;
+  // Let clicks through the see-through parts of the window.
+  let ignoring = true;
+  document.addEventListener('mousemove', e => {
+    const hit = !!e.target.closest('.bubble, .character-wrap svg, .buddy-bar, .agent-panel, .cam-preview, dialog, .toast');
+    if (hit === !ignoring) return;
+    ignoring = !hit;
+    d?.agentIgnoreMouse(ignoring);
+  });
+  // Drag the buddy around by the ⠿ handle.
+  let last = null;
+  $('buddyDrag').addEventListener('pointerdown', e => { last = { x: e.screenX, y: e.screenY }; e.target.setPointerCapture(e.pointerId); });
+  $('buddyDrag').addEventListener('pointermove', e => {
+    if (!last) return;
+    d?.agentDrag(e.screenX - last.x, e.screenY - last.y);
+    last = { x: e.screenX, y: e.screenY };
+  });
+  $('buddyDrag').addEventListener('pointerup', () => { last = null; });
+  d?.onAgent('walking', ({ walking, dir }) => {
+    $('characterWrap').classList.toggle('walking', walking);
+    if (dir) $('characterWrap').classList.toggle('face-left', dir < 0);
+  });
+  d?.onAgent('arrived', () => startSession());
+  $('buddyTalk').onclick = () => { if (session.state === 'idle') startSession(); else endSession(null); };
+  $('buddyPanelBtn').onclick = () => {
+    const open = $('agentPanel').hidden;
+    $('agentPanel').hidden = !open;
+    $('buddyPanelBtn').setAttribute('aria-pressed', String(open));
+    renderAgent();
+  };
+  $('buddyStroll').onclick = () => d?.agentStroll();
+  $('buddyBack').onclick = () => { endSession(null); say('Coming back!', 'happy'); d?.agentStop(); };
+}
 
 async function boot() {
   buildConfig = await loadBuildConfig();
@@ -902,6 +1070,42 @@ async function boot() {
   wirePlans();
   wireBuy();
   wireControls();
+  agentKit = new AgentKit({
+    openExternal,
+    copy: copyText,
+    isPro: () => account.isPro,
+    startScreen: async () => {
+      if (session.state !== 'live') return 'Not in a call right now.';
+      if (vision.kind !== 'screen') await vision.start('screen');
+      return 'You can now see the screen (one picture per second).';
+    },
+    stopScreen: () => { if (vision.kind === 'screen') vision.stop(); },
+  });
+  agentKit.addEventListener('change', renderAgent);
+  agentKit.addEventListener('timerDone', e => {
+    if (agentKit.paused) return;
+    const label = e.detail.label;
+    chime();
+    notify('⏰ Timer done!', `Your "${label}" timer is done.`);
+    say(`⏰ Your "${label}" timer is done!`, 'excited');
+    if (session.state === 'live') session.sock?.sendText(`(The "${label}" timer you set just finished. Tell the user in one short sentence.)`);
+  });
+  setInterval(() => { if (agentTab === 'timers' && agentOn) renderAgent(); }, 1000);
+  wireAgentPanel();
+  $('agentBtn').onclick = () => { if (agentOn && !BUDDY) stopAgentInApp(); else startAgent(); };
+  if (BUDDY) setupBuddy();
+  window.bfdiDesktop?.onAgent?.('returned', () => {
+    // The buddy walked back in: pick up what it changed and walk in from the right.
+    agentKit.paused = false;
+    agentKit.state = agentKit.load();
+    usage.state = usage.load();
+    account.refresh();
+    const wrap = $('characterWrap');
+    wrap.classList.add('walking', 'walk-in', 'face-left');
+    setTimeout(() => wrap.classList.remove('walking', 'walk-in', 'face-left'), 1450);
+    say("I'm back! That was fun.", 'happy');
+    renderUsage();
+  });
 
   usage.addEventListener('change', renderUsage);
   usage.addEventListener('empty', () => {

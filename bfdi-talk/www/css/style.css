@@ -327,6 +327,15 @@ button, input, textarea { font: inherit; color: inherit; }
 .plan-ribbon { position: absolute; top: -12px; right: 14px; background: var(--red); color: #fff; border: 2px solid var(--ink); border-radius: 999px; padding: 1px 10px; font-weight: 700; font-size: .75rem; }
 .plan-card .current { text-align: center; font-weight: 700; padding: .55em; border: 3px dashed var(--ink); border-radius: 999px; }
 
+.pack-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0; }
+.pack { border: var(--line) solid var(--ink); border-radius: 18px; background: #fff; padding: 12px 6px; cursor: pointer; box-shadow: var(--pop); display: flex; flex-direction: column; align-items: center; transition: transform .08s; }
+.pack:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.pack b { font-size: 1.5rem; }
+.pack span { font-size: .8rem; color: var(--muted); font-weight: 600; }
+.pack i { font-style: normal; font-weight: 700; margin-top: 6px; background: var(--yellow); border: 2px solid var(--ink); border-radius: 999px; padding: 0 12px; }
+.pack.best { background: #fff8dc; }
+.pack:disabled { opacity: .6; cursor: default; }
+
 /* ---------------- video & screen live ---------------- */
 .media-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 .media-btn { min-width: 0; padding: .4em .9em; font-size: .92rem; }
@@ -436,6 +445,69 @@ body.is-pro .pro-tag { display: none; }
 .ps-progress { flex: 1; height: 14px; border: 3px solid var(--ink); border-radius: 999px; background: #fff; overflow: hidden; }
 .ps-progress div { height: 100%; width: 0; background: var(--yellow); transition: width .4s; }
 
+/* Playshow: the user as host */
+.ps-hostme { background: #fff; border: 2px solid var(--ink); border-radius: 14px; padding: 8px 10px; margin: 10px 0 0; font-size: .92rem; }
+.ps-podium { flex: 0 0 auto; width: clamp(70px, 10vw, 120px); height: 62%; align-self: flex-end; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; margin-right: 1%; transition: transform .25s; transform-origin: 50% 100%; }
+.ps-podium .ps-mic { font-size: clamp(1.6rem, 3.4vw, 2.6rem); transform: rotate(-18deg); margin-bottom: -6px; }
+.ps-podium-box { width: 100%; height: 45%; background: linear-gradient(180deg, #ff6b6b, #c92a2a); border: 4px solid var(--ink); border-radius: 12px 12px 4px 4px; color: #fff; font-weight: 700; display: grid; place-items: center; -webkit-text-stroke: 1px var(--ink); font-size: clamp(.8rem, 1.8vw, 1.2rem); }
+.ps-podium.speaking { transform: scale(1.08); }
+.ps-podium.speaking .ps-name { background: var(--yellow); }
+.ps-hostbar { display: flex; align-items: center; gap: 10px; }
+.ps-mic-btn { width: 84px; height: 84px; font-size: .8rem; }
+.ps-mic-btn .ps-mic-ico { font-size: 1.6rem; line-height: 1; }
+.ps-mic-btn.rec { background: var(--red); color: #fff; animation: spin-pulse .8s ease-in-out infinite; }
+.ps-theater.hosted #psPause, .ps-theater.hosted #psSkip { display: none; }
+
+/* ---------------- Agent Mode ---------------- */
+@keyframes leg-a { from { transform: rotate(-22deg); } to { transform: rotate(22deg); } }
+.walking .leg:nth-child(1) { animation: leg-a .32s ease-in-out infinite alternate; }
+.walking .leg:nth-child(2) { animation: leg-a .32s ease-in-out infinite alternate-reverse; }
+.leg { transform-box: view-box; }
+.walking .rig { animation: walk-bob .32s ease-in-out infinite alternate; }
+@keyframes walk-bob { to { translate: 0 -10px; } }
+.character-wrap.face-left #character { transform: scaleX(-1); }
+@keyframes walk-out { 0% { transform: translateX(0); } 100% { transform: translateX(65vw); opacity: .2; } }
+@keyframes walk-in { 0% { transform: translateX(65vw); opacity: .2; } 100% { transform: translateX(0); opacity: 1; } }
+.character-wrap.walk-out { animation: walk-out 1.6s ease-in forwards; }
+.character-wrap.walk-in { animation: walk-in 1.4s ease-out; }
+
+.agent-panel {
+  position: absolute; z-index: 4; right: 16px; top: 8px; width: min(340px, 44vw); max-height: calc(100% - 16px);
+  display: flex; flex-direction: column; gap: 8px; background: var(--paper); border: 4px solid var(--ink); border-radius: 22px;
+  box-shadow: 0 6px 0 var(--ink); padding: 10px 12px 12px;
+}
+.agent-tabs { display: flex; gap: 4px; }
+.agent-tabs button { flex: 1; border: 2px solid var(--ink); background: #fff; border-radius: 12px; font-weight: 700; padding: 4px 2px; cursor: pointer; font-size: .85rem; }
+.agent-tabs button[aria-selected="true"] { background: var(--yellow); }
+.agent-list { flex: 1; min-height: 60px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.agent-item { display: flex; align-items: flex-start; gap: 8px; background: #fff; border: 2px solid var(--ink); border-radius: 12px; padding: 6px 8px; font-size: .92rem; user-select: text; }
+.agent-item.done span { text-decoration: line-through; opacity: .55; }
+.agent-item span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.agent-item pre { margin: 4px 0 0; white-space: pre-wrap; font: inherit; font-size: .85rem; color: var(--muted); max-height: 120px; overflow-y: auto; }
+.agent-item button { border: 0; background: none; cursor: pointer; font-size: 1rem; padding: 0 2px; }
+.agent-item input { width: 18px; height: 18px; accent-color: var(--ink); margin-top: 2px; }
+.agent-item b.count { font-variant-numeric: tabular-nums; }
+.agent-add { display: flex; gap: 6px; }
+.agent-add input { flex: 1; min-width: 0; border: var(--line) solid var(--ink); border-radius: 999px; padding: .4em .9em; outline: none; user-select: text; }
+.agent-hint { margin: 0; font-size: .75rem; }
+body.agent-on #agentBtn { background: var(--red); color: #fff; }
+body.agent-inapp .character-wrap { max-width: 300px; margin-right: auto; }
+body.agent-inapp .bubble { margin-right: auto; max-width: min(380px, 52vw); }
+
+/* the desktop buddy window: transparent, only the character + controls are solid */
+html.buddy, html.buddy body { background: transparent !important; }
+body.buddy { overflow: hidden; }
+body.buddy .sky, body.buddy .topbar, body.buddy .dock, body.buddy .status, body.buddy .you-said, body.buddy #playshow { display: none !important; }
+body.buddy .stage { padding: 0 8px 4px; justify-content: flex-end; }
+body.buddy .character-wrap { flex: 0 0 230px; max-width: 220px; animation: none; }
+body.buddy .bubble { font-size: .9rem; max-width: 340px; margin-bottom: 0; }
+body.buddy .bubble-text { font-size: 1rem; max-height: 6.5em; }
+body.buddy .agent-panel { position: absolute; left: 8px; right: 8px; top: 6px; width: auto; max-height: 300px; }
+body.buddy .agent-hint { display: none; }
+body.buddy .cam-preview { width: 120px; right: 6px; bottom: 50px; }
+.buddy-bar { display: flex; align-items: center; gap: 6px; padding: 4px 8px; background: var(--paper); border: 3px solid var(--ink); border-radius: 999px; box-shadow: 0 4px 0 var(--ink); }
+.buddy-drag { cursor: grab; font-weight: 700; padding: 0 4px; user-select: none; }
+
 /* ---------------- small screens (phones) ---------------- */
 @media (max-width: 720px) {
   .topbar { flex-wrap: wrap; gap: 10px; padding-left: 14px; padding-right: 14px; }
@@ -448,6 +520,8 @@ body.is-pro .pro-tag { display: none; }
   .ps-studio { grid-template-columns: 1fr; }
   .media-row { gap: 6px; }
   .media-btn { padding: .35em .65em; font-size: .85rem; }
+  body.agent-inapp .agent-panel { left: 10px; right: 10px; width: auto; top: auto; bottom: 4px; max-height: 46%; }
+  body.agent-inapp .character-wrap { max-width: 180px; margin: 0 auto 0 0; }
   .ps-logo span { font-size: 1.4rem; }
   .ps-sub { font-size: .95rem; }
   .ps-sun { width: 44px; height: 44px; }

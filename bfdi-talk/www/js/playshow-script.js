@@ -171,3 +171,107 @@ export async function writeEpisode(opts, apiKey, fetchImpl = fetch) {
   }
   throw new Error(`Couldn't write the episode (${lastError}). Try again in a minute.`);
 }
+
+// ---------------------------------------------------------------- live hosting (the user is the host)
+
+export const HOST_NAME = 'You (host)';
+
+export function hostTurnSchema(names) {
+  const s = episodeSchema(names);
+  return {
+    type: 'OBJECT',
+    properties: {
+      heard: { type: 'STRING' },
+      lines: s.properties.scenes.items.properties.lines,
+      eliminated: { type: 'STRING' },
+    },
+    required: ['heard', 'lines', 'eliminated'],
+  };
+}
+
+export function hostTurnPrompt({ showName, cast, limits, transcript, remaining, final, eliminatedSoFar = '' }) {
+  const elim = canEliminate(cast, limits) && !eliminatedSoFar;
+  const who = cast.map(c => `- ${c.name}: a ${c.body}. Personality: ${c.persona}`).join('\n');
+  const story = transcript.length
+    ? transcript.slice(-24).map(l => `${l.speaker}: ${l.text}`).join('\n')
+    : '(the episode is just starting)';
+  return `This is a LIVE episode of "${showName}", a funny, kid-friendly cartoon object show in the style of Battle for Dream Island. The real person using the app is the HOST. They just spoke into their microphone (the attached audio).
+
+Contestants (only these may speak):
+${who}
+
+Episode so far:
+${story}
+
+Do this:
+1. "heard": write exactly what the host said (empty string if the audio has no speech).
+2. "lines": the contestants' reactions, ${Math.min(4, remaining)} lines at most (fewer is fine). They answer the host directly and in character: if the host announces a challenge, they react and try it; if the host asks someone something, that contestant answers; keep personalities, jokes and rivalries going. Never write lines for the host. Max 25 words per line, dialogue only.
+3. Each line gets the speaker's emotion and a stage action (jump, shake, spin, faint, cheer; mostly "none").
+${elim
+    ? '4. If the host clearly eliminates a contestant (or announces who is voted off), that contestant says a goodbye line with the action "eliminated" and their name goes in "eliminated". Otherwise "eliminated" is "".'
+    : '4. Nobody can be eliminated in this episode: "eliminated" is "".'}
+${final ? 'This is the LAST turn of the episode: wrap it up with a funny final reaction.' : ''}
+If "heard" is empty, return no lines.`;
+}
+
+/**
+ * One hosting turn: the host's recorded speech (WAV, base64) -> { heard, lines, eliminated }.
+ * Lines are sanitized like normal episode lines.
+ */
+export async function hostTurn(opts, wavB64, apiKey, fetchImpl = fetch) {
+  const { cast, limits } = opts;
+  const body = JSON.stringify({
+    contents: [{ role: 'user', parts: [{ inlineData: { mimeType: 'audio/wav', data: wavB64 } }, { text: hostTurnPrompt(opts) }] }],
+    generationConfig: {
+      temperature: 1,
+      responseMimeType: 'application/json',
+      responseSchema: hostTurnSchema(cast.map(c => c.name)),
+      thinkingConfig: { thinkingLevel: 'low' },
+    },
+  });
+  let lastError = '';
+  for (const model of SCRIPT_MODELS) {
+    let res;
+    try {
+      res = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey }, body,
+      });
+    } catch (err) { lastError = err.message; continue; }
+    if (res.ok) {
+      const data = await res.json();
+      let raw;
+      try { raw = JSON.parse(data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '{}'); } catch { lastError = 'bad reply'; continue; }
+      const heard = String(raw.heard || '').trim().slice(0, 400);
+      if (!heard) return { heard: '', lines: [], eliminated: '' };
+      // One elimination per episode: once someone is out, nobody else gets the goodbye action.
+      const turnLimits = { ...limits, scenes: 1, lines: Math.max(1, Math.min(4, opts.remaining)), eliminations: limits.eliminations && !opts.eliminatedSoFar };
+      let ep;
+      try {
+        ep = sanitizeEpisode({ title: 'x', summary: '', eliminated: opts.eliminatedSoFar ? '' : raw.eliminated, scenes: [{ card: '', setting: '', lines: raw.lines }] }, cast, turnLimits);
+      } catch {
+        return { heard, lines: [], eliminated: '' };
+      }
+      return { heard, lines: ep.scenes[0].lines, eliminated: opts.eliminatedSoFar ? '' : ep.eliminated };
+    }
+    lastError = (await res.json().catch(() => ({})))?.error?.message || String(res.status);
+    if (![429, 500, 503].includes(res.status)) break;
+  }
+  throw new Error(`Couldn't hear the cast's answer (${lastError}). Try again.`);
+}
+
+/** 16 kHz mono 16-bit PCM chunks (base64) -> WAV file (base64). */
+export function pcmChunksToWav(chunksB64, rate = 16000) {
+  const parts = chunksB64.map(b64 => Uint8Array.from(atob(b64), c => c.charCodeAt(0)));
+  const len = parts.reduce((n, p) => n + p.length, 0);
+  const buf = new Uint8Array(44 + len);
+  const v = new DataView(buf.buffer);
+  const str = (o, s) => [...s].forEach((ch, i) => { buf[o + i] = ch.charCodeAt(0); });
+  str(0, 'RIFF'); v.setUint32(4, 36 + len, true); str(8, 'WAVEfmt '); v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true);
+  v.setUint16(32, 2, true); v.setUint16(34, 16, true); str(36, 'data'); v.setUint32(40, len, true);
+  let o = 44;
+  for (const p of parts) { buf.set(p, o); o += p.length; }
+  let bin = '';
+  for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+  return btoa(bin);
+}

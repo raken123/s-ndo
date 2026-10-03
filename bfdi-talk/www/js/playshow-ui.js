@@ -2,7 +2,7 @@
 
 import { BODIES, COLORS, drawCharacter } from './character.js';
 import { VOICES } from './live.js';
-import { PS_LIMITS, activeCast, canEliminate, writeEpisode } from './playshow-script.js';
+import { PS_LIMITS, activeCast, canEliminate, writeEpisode, hostTurn, pcmChunksToWav, HOST_NAME } from './playshow-script.js';
 import { EpisodePlayer } from './playshow.js';
 
 const $ = id => document.getElementById(id);
@@ -34,6 +34,7 @@ const PERSONA_CHIPS = {
 export function initPlayshow(ctx) {
   // ctx: { settings, account, usage, audio, sprites(), apiKey(), toast, openPlans, stopTalking }
   let state = load();
+  let live = null; // the episode being hosted by the user right now
   let player = null;
   let editing = null;
   let lastEpisode = null;
@@ -56,6 +57,7 @@ export function initPlayshow(ctx) {
     };
   }
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* full */ } };
+  const save_ = save;
 
   const plan = () => ctx.account.plan || 'free';
   const limits = () => PS_LIMITS[plan()];
@@ -87,6 +89,7 @@ export function initPlayshow(ctx) {
     $('psPlanBadge').textContent = L.label.toUpperCase();
     $('psPlanBadge').className = `plan-badge ${p}`;
     if (document.activeElement !== $('psShowName')) $('psShowName').value = state.showName;
+    $('psHostMe').checked = !!state.hostMe;
     const out = new Set(L.seasons ? state.season.eliminated.map(n => n.toLowerCase()) : []);
     $('psCastCount').textContent = `(${Math.min(state.cast.length, L.cast)}/${L.cast} on ${L.label})`;
 
@@ -126,7 +129,13 @@ export function initPlayshow(ctx) {
       + (p === 'pro' ? ' · smartest scripts ✔' : ` <button type="button" class="linkish" id="psUpgrade">${p === 'free' ? 'Get Lite or Pro for full episodes' : 'Go Pro for 8 objects & 40-line episodes'}</button>`);
     $('psUpgrade')?.addEventListener('click', ctx.openPlans);
     $('psMake').disabled = cast.length < 2;
-    $('psMake').textContent = cast.length < 2 ? 'Add at least 2 objects' : `🎬 Make episode ${L.seasons ? eps.length + 1 : ''}`.trim();
+    $('psMake').textContent = cast.length < 2 ? 'Add at least 2 objects'
+      : state.hostMe ? `🎤 Start hosting episode ${L.seasons ? eps.length + 1 : ''}`.trim()
+      : `🎬 Make episode ${L.seasons ? eps.length + 1 : ''}`.trim();
+    $('psPremise').disabled = !!state.hostMe;
+    $('psPremise').placeholder = state.hostMe
+      ? "You're the host — you'll tell everyone the challenge with your mic!"
+      : 'What happens? e.g. "The challenge is to bake the biggest cake, but Drip keeps melting the frosting." (optional)';
 
     const list = $('psEpisodes');
     list.innerHTML = state.episodes.length ? '' : '<p class="hint">Your episodes show up here.</p>';
@@ -226,6 +235,9 @@ export function initPlayshow(ctx) {
   // ------------------------------------------------------------ theater
 
   function showTheater(on) {
+    if (!on) endLive(false);
+    $('psTheater').classList.remove('hosted');
+    $('psHostBar').hidden = true;
     $('psStudio').hidden = on;
     $('psTheater').hidden = !on;
     $('psEnd').hidden = true;
@@ -239,6 +251,7 @@ export function initPlayshow(ctx) {
   const WRITING = ['Writing the episode…', 'Building the set…', 'Teaching everyone their lines…', 'Inventing a challenge…', 'Hiding the snacks…', 'Warming up the voices…'];
 
   async function makeEpisode() {
+    if (state.hostMe) return hostEpisode();
     if (!ctx.apiKey()) { ctx.toast('Add a Gemini API key in Settings first.'); return; }
     if (ctx.usage.locked) { ctx.toast('Out of usage — wait for the refill or get Usage Credits.', 4500); return; }
     const L = limits();
@@ -322,6 +335,150 @@ export function initPlayshow(ctx) {
     me.play();
   }
 
+
+  // ------------------------------------------------------------ live hosting
+
+  async function hostEpisode() {
+    if (!ctx.apiKey()) { ctx.toast('Add a Gemini API key in Settings first.'); return; }
+    if (ctx.usage.locked) { ctx.toast('Out of usage — wait for the refill or get Usage Credits.', 4500); return; }
+    const L = limits();
+    // Everyone competes when you're the host.
+    const cast = usableCast().map(c => ({ ...c, host: false }));
+    if (cast.length < 2) return;
+    ctx.stopTalking();
+    try {
+      await ctx.audio.init();
+      await ctx.audio.startMic();
+    } catch {
+      ctx.toast('Your microphone is blocked, so hosting won’t work. Allow the mic, or turn off “I’m the host”.', 6000);
+      return;
+    }
+    ctx.audio.micEnabled = false;
+    showTheater(true);
+    $('psTheater').classList.add('hosted');
+    $('psHostBar').hidden = false;
+    $('psRow').innerHTML = '';
+    $('psProgress').style.width = '0';
+
+    const number = L.seasons ? seasonEpisodes().length + 1 : state.episodes.length + 1;
+    const episode = { title: 'Live with the host!', summary: '', eliminated: '', scenes: [{ card: '', setting: '', lines: [] }], hosted: true, hostVoice: ctx.settings.voice };
+    player?.stop();
+    player = new EpisodePlayer({
+      els: { row: $('psRow'), sub: $('psSub'), card: $('psCard'), loading: $('psLoading'), progress: $('psProgress') },
+      audio: ctx.audio, sprites: ctx.sprites(), cast, episode, number, showName: state.showName, apiKey: ctx.apiKey(),
+      spend: secs => ctx.usage.consume(secs, 1), stageCast: cast,
+    });
+    const me = player;
+    me.addEventListener('outOfUsage', () => { if (player === me) { ctx.toast('Out of usage! Wrapping up the show.', 5000); endLive(true); } });
+    live = { player: me, cast, L, number, episode, transcript: [], castLines: 0, busy: true, chunks: [], recording: false, eliminated: '' };
+    renderMic(); // disabled until the intro cards are done
+    me.openStage();
+    try {
+      await me.card(state.showName, `Episode ${number} — hosted by YOU!`, 3000, true);
+      await me.card("You're the host! 🎤", 'Hold the mic button (or Space) and welcome everyone', 2600);
+    } catch { return; }
+    if (live?.player !== me) return;
+    live.busy = false;
+    renderMic();
+  }
+
+  function renderMic() {
+    const btn = $('psMicBtn');
+    if (!live) return;
+    btn.disabled = live.busy;
+    btn.classList.toggle('rec', live.recording);
+    $('psMicLabel').textContent = live.recording ? 'Listening…' : live.busy ? 'Wait…' : 'Hold to talk';
+    const left = live.L.lines - live.castLines;
+    $('psProgress').style.width = `${Math.min(100, (live.castLines / live.L.lines) * 100)}%`;
+    $('psEndLive').textContent = left <= 0 ? '🏁 Finish' : '🏁 End episode';
+  }
+
+  function micDown(e) {
+    if (!live || live.busy || live.recording) return;
+    e?.preventDefault?.();
+    live.recording = true;
+    live.chunks = [];
+    ctx.audio.interrupt();
+    ctx.audio.onMicChunk = c => live?.recording && live.chunks.push(c);
+    ctx.audio.micEnabled = true;
+    renderMic();
+  }
+
+  async function micUp() {
+    if (!live || !live.recording) return;
+    live.recording = false;
+    ctx.audio.micEnabled = false;
+    const chunks = live.chunks;
+    if (chunks.length < 15) { renderMic(); ctx.toast('Hold the button while you talk.'); return; } // < 0.6 s
+    live.busy = true;
+    renderMic();
+    const me = live.player;
+    $('psLoading').hidden = false;
+    let turn;
+    try {
+      const remaining = live.L.lines - live.castLines;
+      turn = await hostTurn({
+        showName: state.showName, cast: live.cast, limits: live.L, transcript: live.transcript,
+        remaining, final: remaining <= 4, eliminatedSoFar: live.eliminated,
+      }, pcmChunksToWav(chunks), ctx.apiKey());
+    } catch (err) {
+      $('psLoading').hidden = true;
+      ctx.toast(err.message, 5000);
+      if (live) { live.busy = false; renderMic(); }
+      return;
+    }
+    $('psLoading').hidden = true;
+    if (!live || live.player !== me) return;
+    if (!turn.heard) {
+      ctx.toast("Didn't catch that — try again a bit louder.");
+      live.busy = false;
+      renderMic();
+      return;
+    }
+    me.showHost(turn.heard);
+    live.transcript.push({ speaker: HOST_NAME, text: turn.heard });
+    await new Promise(r => setTimeout(r, 900));
+    if (turn.eliminated) live.eliminated = turn.eliminated;
+    const ok = await me.playMore(turn.lines);
+    if (!live || live.player !== me) return;
+    live.transcript.push(...turn.lines.map(l => ({ speaker: l.speaker, text: l.text, emotion: l.emotion, action: l.action })));
+    live.castLines += turn.lines.length;
+    if (!ok) return;
+    if (live.castLines >= live.L.lines) { endLive(true); return; }
+    live.busy = false;
+    renderMic();
+  }
+
+  /** Ends the hosted episode; saves it when `save` and anything happened. */
+  async function endLive(save) {
+    if (!live) return;
+    const l = live;
+    live = null;
+    ctx.audio.micEnabled = false;
+    ctx.audio.stopMic();
+    $('psHostBar').hidden = true;
+    if (!save || !l.transcript.length) { l.player.stop(); return; }
+    const L = l.L;
+    const ep = {
+      id: uid(), season: state.season.id, number: l.number, showName: state.showName, createdAt: Date.now(),
+      cast: l.cast, hosted: true, hostVoice: l.episode.hostVoice,
+      title: `Hosted live${l.eliminated ? `: ${l.eliminated} goes home` : ''}`,
+      summary: `The user hosted this episode live. ${l.transcript.filter(x => x.speaker === HOST_NAME).map(x => x.text).join(' ').slice(0, 300)}`,
+      eliminated: L.seasons ? l.eliminated : '',
+      scenes: [{ card: 'Live!', setting: '', lines: l.transcript.map(x => ({ speaker: x.speaker, text: x.text, emotion: x.emotion || 'neutral', action: x.action || 'none' })) }],
+    };
+    state.episodes.push(ep);
+    if (L.seasons && ep.eliminated && !state.season.eliminated.includes(ep.eliminated)) state.season.eliminated.push(ep.eliminated);
+    while (state.episodes.length > L.saved) state.episodes.shift();
+    save_();
+    lastEpisode = ep;
+    try { await l.player.card('THE END', ep.eliminated ? `${ep.eliminated} was eliminated!` : 'What a show, host!', 2600, true); } catch { /* stopped */ }
+    l.player.stop();
+    $('psEndTitle').textContent = ep.eliminated ? `Goodbye, ${ep.eliminated}!` : 'THE END';
+    $('psNext').textContent = '🎤 Host again';
+    $('psEnd').hidden = false;
+  }
+
   // ------------------------------------------------------------ wiring
 
   $('playshowBtn').onclick = () => {
@@ -332,6 +489,17 @@ export function initPlayshow(ctx) {
   $('psClose').onclick = () => { showTheater(false); $('playshow').hidden = true; };
   $('psShowName').onchange = () => { state.showName = $('psShowName').value.trim() || 'My Object Show'; save(); };
   $('psMake').onclick = makeEpisode;
+  $('psHostMe').onchange = () => { state.hostMe = $('psHostMe').checked; save(); renderStudio(); };
+  $('psMicBtn').addEventListener('pointerdown', micDown);
+  $('psMicBtn').addEventListener('pointerup', micUp);
+  $('psMicBtn').addEventListener('pointerleave', micUp);
+  $('psMicBtn').addEventListener('pointercancel', micUp);
+  $('psMicBtn').addEventListener('contextmenu', e => e.preventDefault());
+  $('psEndLive').onclick = () => endLive(true);
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space' && !e.repeat && live && !/INPUT|TEXTAREA/.test(document.activeElement?.tagName)) { e.preventDefault(); e.stopPropagation(); micDown(e); }
+  }, true);
+  window.addEventListener('keyup', e => { if (e.code === 'Space' && live) { e.stopPropagation(); micUp(); } }, true);
   $('psNewSeason').onclick = () => {
     if (!confirm('Start a new season? Everyone comes back and the episode count starts again.')) return;
     state.season = { id: state.season.id + 1, eliminated: [] };

@@ -1,0 +1,539 @@
+<title>BFDI Talk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Lexend:wght@400;500;600&display=swap">
+<style>
+/* Layout: a single sky — night at the top fading to daytime — with paper "cards" drawn in thick cartoon ink,
+   the same world as the app. One deliberate look (no dark/light switch): the sky is the brand. */
+:root {
+  --sky-top: #081846;
+  --sky-mid: #1b4fc4;
+  --sky-low: #8fd8ff;
+  --ink: #111111;
+  --paper: #fffdf5;
+  --paper-2: #fff3c4;
+  --yellow: #ffd93d;
+  --red: #ff4b4b;
+  --blue: #3ec7ff;
+  --grass: #5ccf4a;
+  --muted: #4d5677;
+  --on-sky: #ffffff;
+  --display: 'Fredoka', 'Arial Rounded MT Bold', 'Trebuchet MS', system-ui, sans-serif;
+  --body: 'Lexend', 'Segoe UI', system-ui, sans-serif;
+  --line: 3px;
+  --pop: 0 5px 0 var(--ink);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font: 400 1rem/1.6 var(--body);
+  color: var(--ink);
+  /* night at the top of the page, daytime by the footer */
+  background: linear-gradient(180deg, var(--sky-top) 0, #0f2c86 900px, var(--sky-mid) 45%, var(--sky-low) 100%) var(--sky-mid);
+  min-height: 100%;
+  overflow-x: hidden;
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.1; text-wrap: balance; margin: 0; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; border-radius: 8px; }
+
+/* the cartoon outlined type, like the app logo */
+.ink-type { -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 0 5px 0 var(--ink); }
+
+.btn {
+  display: inline-flex; align-items: center; gap: .5em; font: 600 1.05rem var(--display); text-decoration: none; color: var(--ink);
+  border: var(--line) solid var(--ink); border-radius: 999px; padding: .65em 1.3em; background: #fff; box-shadow: var(--pop);
+  transition: transform .08s, box-shadow .08s; cursor: pointer;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 7px 0 var(--ink); }
+.btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+.btn.yellow { background: var(--yellow); }
+.btn.big { font-size: 1.25rem; padding: .75em 1.6em; }
+
+/* ---------- top bar ---------- */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 18px; }
+.logo { display: flex; align-items: baseline; gap: 6px; transform: rotate(-3deg); text-decoration: none; }
+.logo span { font: 700 2rem var(--display); }
+.logo .b { color: var(--yellow); }
+.logo .t { color: #fff; font-size: 1.6rem; display: inline-block; transform: rotate(4deg); }
+.top nav { display: flex; gap: 18px; flex-wrap: wrap; justify-content: flex-end; }
+.top nav a { color: var(--on-sky); font: 500 .98rem var(--display); text-decoration: none; opacity: .9; }
+.top nav a:hover { opacity: 1; text-decoration: underline; text-underline-offset: 4px; }
+
+/* ---------- hero ---------- */
+.hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 28px; align-items: center; padding-block: 20px 40px; }
+.hero-copy { min-width: 0; color: var(--on-sky); }
+.hero h1 { font-size: clamp(2.5rem, 6.4vw, 4.6rem); color: #fff; }
+.hero h1 em { font-style: normal; color: var(--yellow); }
+.hero p.lead { font-size: 1.15rem; max-width: 36ch; opacity: .95; margin: 18px 0 24px; }
+.cta-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.platforms { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; padding: 0; list-style: none; }
+.platforms li { background: rgba(8, 24, 70, .55); border: 2px solid var(--ink); border-radius: 999px; padding: 3px 12px; font-size: .88rem; color: #fff; }
+
+.stage {
+  position: relative; min-width: 0; aspect-ratio: 1 / 1.02; max-width: 100%;
+  background: linear-gradient(180deg, #2a64e0 0%, #6ec3ff 60%, #bfe9ff 100%);
+  border: 4px solid var(--ink); border-radius: 28px; box-shadow: 0 8px 0 var(--ink); overflow: hidden;
+}
+.sun { position: absolute; top: 7%; right: 9%; width: 13%; aspect-ratio: 1; border-radius: 50%; background: #ffe066; border: 4px solid var(--ink); box-shadow: 0 0 40px rgba(255, 224, 102, .9); }
+.hill { position: absolute; left: -12%; right: -12%; bottom: -34%; height: 56%; background: linear-gradient(180deg, #74e05a, #3fae35); border: 4px solid var(--ink); border-radius: 50% 50% 0 0 / 30% 30% 0 0; }
+.bubble {
+  position: absolute; left: 7%; right: 7%; top: 6%; z-index: 2; background: var(--paper); border: var(--line) solid var(--ink);
+  border-radius: 22px; padding: 10px 16px 12px; box-shadow: var(--pop); min-height: 4.6em;
+}
+.bubble::after { content: ''; position: absolute; left: 50%; bottom: -15px; width: 24px; height: 24px; margin-left: -12px; background: var(--paper); border-right: var(--line) solid var(--ink); border-bottom: var(--line) solid var(--ink); transform: rotate(45deg); }
+.bubble small { display: block; font: 700 .72rem var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.bubble span { font-size: 1.02rem; }
+#buddy { position: absolute; left: 50%; bottom: 4%; width: 62%; transform: translateX(-50%); overflow: visible; }
+#buddy .rig { transform-origin: 200px 470px; transform-box: view-box; animation: bob 3s ease-in-out infinite; }
+@keyframes bob { 50% { transform: translateY(-8px); } }
+.faces { position: absolute; left: 0; right: 0; bottom: 10px; z-index: 3; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; padding-inline: 10px; }
+.faces button { font: 600 .82rem var(--display); border: 2px solid var(--ink); background: #fff; border-radius: 999px; padding: 3px 10px; cursor: pointer; box-shadow: 0 3px 0 var(--ink); }
+.faces button[aria-pressed="true"] { background: var(--yellow); }
+
+/* ---------- sections ---------- */
+section { padding-block: 34px; }
+.sec-head { color: var(--on-sky); margin-bottom: 22px; max-width: 60ch; }
+.sec-head h2 { font-size: clamp(1.9rem, 4.2vw, 2.8rem); color: #fff; }
+.sec-head p { margin: 10px 0 0; opacity: .92; }
+.paper { background: var(--paper); border: 4px solid var(--ink); border-radius: 24px; box-shadow: 0 7px 0 var(--ink); }
+
+.features { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; }
+.feat { grid-column: span 2; padding: 18px 20px 20px; min-width: 0; }
+.feat h3 { font-size: 1.35rem; margin-bottom: 6px; }
+.feat p { margin: 0; color: var(--muted); }
+.feat .tag { display: inline-block; font: 700 .7rem var(--display); letter-spacing: .08em; text-transform: uppercase; border: 2px solid var(--ink); border-radius: 999px; padding: 0 8px; margin-bottom: 10px; background: var(--paper-2); }
+.feat.wide { grid-column: span 3; }
+.feat.mode { background: var(--yellow); }
+.feat.mode p { color: var(--ink); }
+.feat ul { margin: 10px 0 0; padding-left: 1.1em; }
+.feat li { margin: 2px 0; }
+.emo { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+.emo span { font-size: .76rem; border: 1.5px solid var(--ink); border-radius: 999px; padding: 0 8px; background: #fff; }
+
+/* plans */
+.offer {
+  border: 4px solid var(--ink); border-radius: 24px; box-shadow: 0 7px 0 var(--ink); padding: 18px 22px; margin-bottom: 22px;
+  background: linear-gradient(115deg, #6a11cb, #ff3cac 52%, #ffb800); color: #fff; display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center;
+}
+.offer h3 { font-size: clamp(1.3rem, 3vw, 1.8rem); }
+.offer p { margin: 6px 0 0; }
+.offer .count { font: 700 clamp(1.4rem, 3.4vw, 2.2rem) var(--display); font-variant-numeric: tabular-nums; text-align: center; background: var(--ink); color: var(--yellow); border-radius: 18px; padding: 8px 16px; }
+.offer .count small { display: block; font: 500 .75rem var(--body); color: #fff; letter-spacing: .05em; text-transform: uppercase; }
+.plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; align-items: stretch; }
+.plan { padding: 20px; display: flex; flex-direction: column; gap: 8px; min-width: 0; position: relative; }
+.plan.pro { background: #fff8dc; }
+.plan .name { font: 700 1.6rem var(--display); }
+.plan .price { font: 700 2.3rem var(--display); line-height: 1; }
+.plan .price small { font: 500 .95rem var(--body); color: var(--muted); }
+.plan .note { font-weight: 600; color: #1b7a2d; font-size: .92rem; }
+.plan ul { margin: 6px 0 0; padding-left: 1.1em; flex: 1; }
+.plan li { margin: 3px 0; }
+.ribbon { position: absolute; top: -13px; right: 16px; background: var(--red); color: #fff; border: 2px solid var(--ink); border-radius: 999px; padding: 0 10px; font: 700 .78rem var(--display); }
+.packs { margin-top: 18px; padding: 18px 20px; display: grid; grid-template-columns: 1.2fr repeat(3, 1fr); gap: 14px; align-items: center; }
+.packs p { margin: 0; min-width: 0; }
+.pack { text-align: center; border: var(--line) solid var(--ink); border-radius: 18px; background: #fff; padding: 10px 6px; }
+.pack b { display: block; font: 700 1.5rem var(--display); }
+.pack span { font-size: .82rem; color: var(--muted); }
+.pack i { display: inline-block; font: 700 .95rem var(--display); font-style: normal; background: var(--yellow); border: 2px solid var(--ink); border-radius: 999px; padding: 0 12px; margin-top: 4px; }
+
+/* usage meter strip */
+.meter-strip { padding: 18px 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.meter-strip > div { min-width: 0; }
+.meter-strip h3 { font-size: 1.15rem; margin-bottom: 4px; }
+.meter-strip p { margin: 0; color: var(--muted); font-size: .95rem; }
+.bar { height: 18px; border: var(--line) solid var(--ink); border-radius: 999px; background: #1a2350; overflow: hidden; margin: 8px 0; }
+.bar i { display: block; height: 100%; width: 72%; border-radius: 999px; background: linear-gradient(180deg, #8bff7a, var(--grass)); animation: drain 8s linear infinite alternate; }
+@keyframes drain { to { width: 8%; background: linear-gradient(180deg, #ff9a9a, var(--red)); } }
+
+/* install */
+.install { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.os { padding: 18px 20px; min-width: 0; }
+.os h3 { font-size: 1.3rem; margin-bottom: 8px; }
+.os ol { margin: 0; padding-left: 1.2em; }
+.os li { margin: 4px 0; }
+.cmd { display: flex; gap: 6px; align-items: stretch; margin: 6px 0; }
+.cmd code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; font: 500 .82rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--ink); color: var(--yellow); border-radius: 10px; padding: 8px 10px; }
+.cmd button { font: 600 .82rem var(--display); border: 2px solid var(--ink); background: var(--yellow); border-radius: 10px; cursor: pointer; padding: 0 10px; }
+
+/* faq */
+.faq { padding: 8px 20px; }
+.faq details { border-bottom: 2px dashed #d7d2bf; padding-block: 12px; }
+.faq details:last-child { border-bottom: 0; }
+.faq summary { font: 600 1.08rem var(--display); cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+.faq summary::after { content: '+'; font-size: 1.4rem; line-height: 1; }
+.faq details[open] summary::after { content: '–'; }
+.faq p { margin: 8px 0 0; color: var(--muted); max-width: 70ch; }
+
+footer { color: var(--ink); padding-block: 30px 40px; font-size: .9rem; }
+footer .paper { padding: 16px 20px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; }
+footer p { margin: 0; }
+
+@media (max-width: 900px) {
+  .hero { grid-template-columns: 1fr; }
+  .stage { max-width: 520px; width: 100%; margin: 0 auto; }
+  .features { grid-template-columns: 1fr 1fr; }
+  .feat, .feat.wide { grid-column: span 1; }
+  .plans, .install, .meter-strip { grid-template-columns: 1fr; }
+  .packs { grid-template-columns: repeat(3, 1fr); }
+  .packs p { grid-column: 1 / -1; }
+  .offer { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .features { grid-template-columns: 1fr; }
+  .top nav { display: none; }
+  .logo span { font-size: 1.7rem; }
+  .bubble { top: 4%; padding: 8px 12px 10px; min-height: 0; }
+  .bubble span { font-size: .88rem; }
+  #buddy { width: 50%; bottom: 7%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #buddy .rig, .bar i { animation: none; }
+  .btn { transition: none; }
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <a class="logo" href="#top" aria-label="BFDI Talk"><span class="b ink-type">BFDI</span><span class="t ink-type">Talk</span></a>
+    <nav aria-label="Sections">
+      <a href="#features">Features</a>
+      <a href="#playshow">Playshow</a>
+      <a href="#agent">Agent Mode</a>
+      <a href="#plans">Plans</a>
+      <a href="#install">Install</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <div class="hero">
+      <div class="hero-copy">
+        <h1 class="ink-type">Talk out loud with <em>your own</em> object-show character.</h1>
+        <p class="lead">Build a cartoon object, press one big yellow button and just talk. It answers in a real voice, lip-syncs every word, and its face changes with how it feels.</p>
+        <div class="cta-row">
+          <a class="btn yellow big" href="https://jooykoll.itch.io/bfdi-talk-ai" target="_blank" rel="noopener">Get BFDI Talk</a>
+          <a class="btn" href="#features">See what it does</a>
+        </div>
+        <ul class="platforms" aria-label="Platforms">
+          <li>Windows 10/11</li><li>macOS · Apple Silicon</li><li>Android 7+</li>
+        </ul>
+      </div>
+
+      <div class="stage" aria-label="Try the character: pick a mood">
+        <div class="sun"></div>
+        <div class="hill"></div>
+        <div class="bubble" aria-live="polite"><small id="bname">Bouncy</small><span id="btext">Hi! I'm Bouncy. Tap a mood below and watch my face change!</span></div>
+        <svg id="buddy" viewBox="0 0 400 520" role="img" aria-label="Bouncy, a blue ball character">
+          <defs>
+            <linearGradient id="bg" x1="0" y1="0" x2=".3" y2="1"><stop offset="0" stop-color="#5fd6ff"/><stop offset=".65" stop-color="#3ec7ff"/><stop offset="1" stop-color="#0d9ed4"/></linearGradient>
+          </defs>
+          <ellipse cx="200" cy="492" rx="120" ry="16" fill="rgba(5,15,48,.35)"/>
+          <g class="rig">
+            <path d="M155 334 L149 470 L129 474 M245 334 L251 470 L271 474" fill="none" stroke="#111" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+            <path id="armL" d="M76 215 Q22 245 10 307" fill="none" stroke="#111" stroke-width="7" stroke-linecap="round"/>
+            <path id="armR" d="M324 215 Q378 245 390 307" fill="none" stroke="#111" stroke-width="7" stroke-linecap="round"/>
+            <circle cx="200" cy="210" r="140" fill="url(#bg)" stroke="#111" stroke-width="7"/>
+            <ellipse cx="140" cy="120" rx="46" ry="20" transform="rotate(-28 140 120)" fill="#fff" opacity=".35"/>
+            <image id="eyes" href=""/>
+            <image id="mouth" href=""/>
+          </g>
+        </svg>
+        <div class="faces" role="group" aria-label="Moods">
+          <button type="button" data-mood="happy" aria-pressed="true">Happy</button>
+          <button type="button" data-mood="laughing" aria-pressed="false">Laughing</button>
+          <button type="button" data-mood="surprised" aria-pressed="false">Surprised</button>
+          <button type="button" data-mood="angry" aria-pressed="false">Angry</button>
+          <button type="button" data-mood="sad" aria-pressed="false">Sad</button>
+          <button type="button" data-mood="out" aria-pressed="false">Out of usage</button>
+        </div>
+      </div>
+    </div>
+
+    <section id="features">
+      <div class="sec-head">
+        <h2 class="ink-type">Not another grey chat box</h2>
+        <p>Everything in BFDI Talk looks and moves like it came out of an object show, from the thick outlines to the knocked-out XX eyes.</p>
+      </div>
+      <div class="features">
+        <article class="feat paper">
+          <span class="tag">Voice</span>
+          <h3>Real conversations</h3>
+          <p>Talk hands-free and interrupt any time, hold-to-talk with the button or Space, or type. Powered by Gemini 3.8 Flash Live, or Extended Thinking for harder questions.</p>
+        </article>
+        <article class="feat paper">
+          <span class="tag">Face</span>
+          <h3>Lip-sync and 19 moods</h3>
+          <p>31 hand-drawn mouths follow the voice moment by moment, including a round "oo" mouth. 23 eye sets, blinking and arm waves.</p>
+          <div class="emo"><span>happy</span><span>excited</span><span>laughing</span><span>sad</span><span>furious</span><span>scared</span><span>smug</span><span>dizzy</span><span>+11</span></div>
+        </article>
+        <article class="feat paper">
+          <span class="tag">You</span>
+          <h3>Make your own object</h3>
+          <p>7 shapes (Ball, Block, Slice, Star, Drop, Card, Heart), 10 colors, any name, a personality, and 30 voices.</p>
+        </article>
+        <article class="feat paper wide mode" id="playshow">
+          <span class="tag">Playshow Mode</span>
+          <h3>Make your own object show episodes</h3>
+          <p>Build a cast, give an idea, and watch a real episode: title cards, a challenge, every object in its own voice, jumps, spins, and votes that fling someone off-screen.</p>
+          <ul>
+            <li>Be the host with your mic, or let the AI write the whole episode</li>
+            <li>Seasons remember what happened and who's gone (Lite and Pro)</li>
+          </ul>
+        </article>
+        <article class="feat paper wide mode" id="agent">
+          <span class="tag">Agent Mode</span>
+          <h3>Your character walks out of the window to help</h3>
+          <p>On Windows and Mac it strolls onto your desktop and sits above the taskbar. On Android it moves to a corner of the app.</p>
+          <ul>
+            <li>Timers, a to-do list and notes it writes for you</li>
+            <li>Looks things up on Wikipedia and the BFDI Wiki, opens sites and searches</li>
+          </ul>
+        </article>
+        <article class="feat paper wide">
+          <span class="tag">Pro</span>
+          <h3>Video and screen live</h3>
+          <p>Turn on your camera and your character sees you. Share your screen and talk about what's on it (Windows and Mac).</p>
+        </article>
+        <article class="feat paper wide">
+          <span class="tag">Account</span>
+          <h3>Your credits on every device</h3>
+          <p>Sign in once and your Usage Credits, plan and subscription follow you to your computer, Mac and phone.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="plans">
+      <div class="sec-head">
+        <h2 class="ink-type">Free to start. Way more with a plan.</h2>
+        <p>Everyone gets a free usage meter. Usage Credits keep you talking while it refills: 1 credit = 1 second of talk.</p>
+      </div>
+
+      <div class="offer" id="offer">
+        <div>
+          <h3>Ultra rare offer: the December 23 credit drop</h3>
+          <p>Subscribe before December 23 and get <b>500,000,000 credits</b> on Pro or <b>100,000 credits</b> on Lite, once your subscription is paid.</p>
+        </div>
+        <div class="count"><small>Ends in</small><span id="countdown">—</span></div>
+      </div>
+
+      <div class="plans">
+        <div class="plan paper">
+          <div class="name">Free</div>
+          <div class="price">$0</div>
+          <div class="note">No account needed</div>
+          <ul>
+            <li>Usage meter: about 20 minutes of talk</li>
+            <li>Refills to 100% after 1 hour</li>
+            <li>Agent Mode and everything else in the basic app</li>
+            <li>Playshow skits with 3 objects (~10 lines)</li>
+          </ul>
+        </div>
+        <div class="plan paper">
+          <div class="name">Lite</div>
+          <div class="price">$1<small> / month for 5 months</small></div>
+          <div class="note">Then $6 / month</div>
+          <ul>
+            <li>1,500 Usage Credits every month</li>
+            <li>Playshow: 5 objects, ~24-line episodes</li>
+            <li>Eliminations, votes and seasons</li>
+          </ul>
+        </div>
+        <div class="plan paper pro">
+          <span class="ribbon">7 days free</span>
+          <div class="name">Pro</div>
+          <div class="price">$10<small> / month</small></div>
+          <div class="note">Try it free for 7 days</div>
+          <ul>
+            <li>5,000 Usage Credits every month</li>
+            <li>Video live and screen live</li>
+            <li>Meter refills in 30 minutes</li>
+            <li>Playshow: 8 objects, ~40-line episodes, smartest scripts</li>
+            <li>Gold PRO crown</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="packs paper">
+        <p><b>Credit packs.</b> One-time, paid securely with Stripe inside the app. Credits never expire.</p>
+        <div class="pack"><b>300</b><span>credits</span><br><i>$5</i></div>
+        <div class="pack"><b>600</b><span>credits</span><br><i>$10</i></div>
+        <div class="pack"><b>1,200</b><span>credits</span><br><i>$20</i></div>
+      </div>
+
+      <div class="meter-strip paper" style="margin-top: 18px">
+        <div>
+          <h3>The free meter</h3>
+          <div class="bar" aria-hidden="true"><i></i></div>
+          <p>100% is about 20 minutes on Flash Live, or about 8 on Extended Thinking (2.5× usage).</p>
+        </div>
+        <div>
+          <h3>When it hits 0%</h3>
+          <p>It refills to 100% after 1 hour (30 minutes on Pro). With credits you keep talking meanwhile; without them your character gets knocked out until the refill.</p>
+        </div>
+        <div>
+          <h3>Playshow costs the same</h3>
+          <p>One second of episode audio uses one second of the meter, or one credit. A short skit uses about 5%.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="install">
+      <div class="sec-head">
+        <h2 class="ink-type">Install in a minute</h2>
+        <p>The apps aren't signed by a paid developer account yet, so your computer asks once before opening them.</p>
+      </div>
+      <div class="install">
+        <div class="os paper">
+          <h3>Windows</h3>
+          <ol>
+            <li>Run the <b>.exe</b> installer.</li>
+            <li>If you see "Windows protected your PC", click <b>More info</b>, then <b>Run anyway</b>.</li>
+            <li>Open BFDI Talk from the Start menu.</li>
+          </ol>
+        </div>
+        <div class="os paper">
+          <h3>macOS (Apple Silicon)</h3>
+          <ol>
+            <li>Open the <b>.dmg</b> and drag BFDI Talk into Applications.</li>
+            <li>Open Terminal and run:
+              <div class="cmd"><code id="maccmd">xattr -cr "/Applications/BFDI Talk.app"</code><button type="button" id="copycmd">Copy</button></div>
+            </li>
+            <li>Open BFDI Talk and allow the microphone.</li>
+          </ol>
+        </div>
+        <div class="os paper">
+          <h3>Android</h3>
+          <ol>
+            <li>Download the <b>.apk</b> on your phone and tap it.</li>
+            <li>Allow "install unknown apps" if Android asks.</li>
+            <li>Open BFDI Talk and allow the microphone (and the camera for video live).</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq">
+      <div class="sec-head"><h2 class="ink-type">Questions</h2></div>
+      <div class="faq paper">
+        <details open>
+          <summary>Is this an official BFDI app?</summary>
+          <p>No. BFDI Talk is an unofficial fan app. Battle for Dream Island belongs to jacknjellify. The characters you make are your own original objects.</p>
+        </details>
+        <details>
+          <summary>Do I need an account?</summary>
+          <p>No, you can talk for free as a guest. An account saves your credits and lets you subscribe or buy credit packs.</p>
+        </details>
+        <details>
+          <summary>How do I pay?</summary>
+          <p>Subscriptions and credit packs are paid through Stripe's secure checkout in your browser. Stripe checks and charges your card; BFDI Talk never sees your card number.</p>
+        </details>
+        <details>
+          <summary>Where do my voice and video go?</summary>
+          <p>During a call, your voice (and your camera or screen if you turn them on) is sent to Google's Gemini AI so your character can understand and react. BFDI Talk doesn't save your conversations.</p>
+        </details>
+        <details>
+          <summary>What can Agent Mode do on my computer?</summary>
+          <p>Timers, a to-do list, notes, copying text, opening websites or a search you ask for, looking things up, and telling the time. With Pro it can look at your screen when you ask. It can't click or type in other apps.</p>
+        </details>
+        <details>
+          <summary>Is it kid-friendly?</summary>
+          <p>Characters are told to stay kind and kid-friendly. Like any AI it can make mistakes, so younger fans should chat with a grown-up nearby, and a parent should handle any payments.</p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="paper">
+      <p><b>BFDI Talk</b> by jooykoll · Eye art by MsBonnieArt · Voices and brains by Google Gemini · Font: Fredoka</p>
+      <p>Unofficial fan app, inspired by Battle for Dream Island by jacknjellify.</p>
+    </div>
+  </footer>
+</div>
+
+<script>
+(() => {
+  const S = /*SPRITES*/{};
+  const MOODS = {
+    happy:     { eyes: 'e2',  mouths: ['m1', 'm7', 'm4', 'm5'], line: "Yay! This is the best day ever! Want to make a show together?" },
+    laughing:  { eyes: 'e16', mouths: ['m8', 'm4', 'm9', 'm30'], line: "Ha ha ha! Blocky tried to swim and just sank like a brick!" },
+    surprised: { eyes: 'e0',  mouths: ['m24', 'm27', 'm24', 'm23'], line: "Wait, WHAT? Five hundred MILLION credits on December 23?!" },
+    angry:     { eyes: 'e8',  mouths: ['m25', 'm26', 'm21', 'm23'], line: "Hey! Who ate my snacks during the challenge?! Not cool!" },
+    sad:       { eyes: 'e14', mouths: ['m11', 'm27', 'm24', 'm23'], line: "Drip got eliminated... I'm gonna miss that little drop." },
+    out:       { eyes: 'e13', mouths: ['m12', 'm12', 'm12', 'm12'], line: "I'm all tuckered out! The meter refills in an hour... zzz." },
+  };
+  const eyes = document.getElementById('eyes');
+  const mouth = document.getElementById('mouth');
+  const text = document.getElementById('btext');
+  const armL = document.getElementById('armL'), armR = document.getElementById('armR');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let mood = 'happy', talking = false, blinkUntil = 0, nextBlink = performance.now() + 2500, slot = 0, typer = null;
+
+  function place(el, key, cx, anchorY, scale, isEyes) {
+    const s = S[key]; if (!s) return;
+    const w = s.w * scale, h = s.h * scale;
+    el.setAttribute('href', s.src);
+    el.setAttribute('width', w); el.setAttribute('height', h);
+    el.setAttribute('x', cx - w / 2);
+    el.setAttribute('y', isEyes ? anchorY - h * (92 / 110) : anchorY - h / 2);
+  }
+  function render(now) {
+    const m = MOODS[mood];
+    const blink = now < blinkUntil && mood !== 'out' && mood !== 'laughing';
+    place(eyes, blink ? 'e18' : m.eyes, 200, 200, 1.9, true);
+    place(mouth, m.mouths[talking ? slot : 0], 200, 262, 0.95, false);
+  }
+  function say(line) {
+    clearInterval(typer);
+    let i = 0;
+    text.textContent = '';
+    talking = true;
+    typer = setInterval(() => {
+      text.textContent = line.slice(0, ++i);
+      if (i >= line.length) { clearInterval(typer); setTimeout(() => { talking = false; }, 250); }
+    }, reduce ? 1 : 38);
+  }
+  let lastFlip = 0;
+  function frame(now) {
+    if (now > nextBlink) { blinkUntil = now + 130; nextBlink = now + 2200 + Math.random() * 3500; }
+    if (talking && now - lastFlip > 85) { slot = [1, 2, 3, 2, 1, 0, 2, 3][Math.floor(Math.random() * 8)]; lastFlip = now; }
+    const wave = talking && !reduce && mood !== 'out' ? Math.sin(now / 140) * 10 : 0;
+    armL.setAttribute('transform', `rotate(${-wave} 76 215)`);
+    armR.setAttribute('transform', `rotate(${wave} 324 215)`);
+    render(now);
+    requestAnimationFrame(frame);
+  }
+  document.querySelectorAll('[data-mood]').forEach(b => b.addEventListener('click', () => {
+    mood = b.dataset.mood;
+    document.querySelectorAll('[data-mood]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    say(MOODS[mood].line);
+  }));
+  render(performance.now());
+  requestAnimationFrame(frame);
+  setTimeout(() => say("Hi! I'm Bouncy. Tap a mood below and watch my face change!"), 600);
+
+  // December 23 countdown (midnight UTC); the banner disappears once it has passed.
+  const end = Date.parse('2026-12-23T00:00:00Z');
+  const cd = document.getElementById('countdown');
+  function tick() {
+    const ms = end - Date.now();
+    if (ms <= 0) { document.getElementById('offer').hidden = true; return; }
+    const d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5), m = Math.floor(ms % 36e5 / 6e4), s = Math.floor(ms % 6e4 / 1e3);
+    cd.textContent = `${d}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  document.getElementById('copycmd').addEventListener('click', e => {
+    const code = document.getElementById('maccmd');
+    navigator.clipboard.writeText(code.textContent).then(() => { e.target.textContent = 'Copied'; }, () => {
+      const r = document.createRange(); r.selectNodeContents(code);
+      const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      e.target.textContent = 'Selected';
+    });
+  });
+})();
+</script>

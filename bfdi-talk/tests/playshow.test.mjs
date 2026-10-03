@@ -69,3 +69,37 @@ test('writeEpisode falls back to the next model when one is overloaded', async (
   assert.equal(ep.title, 'Ep');
   assert.deepEqual(calls, ['gemini-3.8-flash', 'gemini-3.5-flash']);
 });
+
+import { hostTurn, pcmChunksToWav, hostTurnPrompt } from '../www/js/playshow-script.js';
+
+test('host turn: transcript + cast reactions, never lines for the host, one elimination', async () => {
+  const contestants = cast.filter(c => !c.host);
+  const fake = async () => ({ ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify({
+    heard: 'Starla, you are eliminated!',
+    eliminated: 'Starla',
+    lines: [L('Starla', 'Noooo!', { action: 'eliminated' }), L('Blocky', 'Ha.'), L('Ghost', 'boo'), L('Drip', 'Bye!'), L('Blocky', 'More.'), L('Drip', 'Too many lines.')],
+  }) }] } }] }) });
+  const r = await hostTurn({ showName: 'S', cast: contestants, limits: PS_LIMITS.pro, transcript: [], remaining: 30 }, 'UklGRg==', 'k', fake);
+  assert.equal(r.heard, 'Starla, you are eliminated!');
+  assert.equal(r.eliminated, 'Starla');
+  assert.equal(r.lines.length, 4, 'max 4 lines per turn, unknown speakers dropped');
+  const again = await hostTurn({ showName: 'S', cast: contestants, limits: PS_LIMITS.pro, transcript: [], remaining: 30, eliminatedSoFar: 'Starla' }, 'UklGRg==', 'k', fake);
+  assert.equal(again.eliminated, '', 'only one elimination per episode');
+  assert.ok(again.lines.every(l => l.action !== 'eliminated'));
+});
+
+test('host turn: silence gives no lines; prompt says when to wrap up', async () => {
+  const silent = async () => ({ ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"heard":"","lines":[],"eliminated":""}' }] } }] }) });
+  assert.deepEqual(await hostTurn({ showName: 'S', cast, limits: PS_LIMITS.free, transcript: [], remaining: 5 }, 'x', 'k', silent), { heard: '', lines: [], eliminated: '' });
+  assert.match(hostTurnPrompt({ showName: 'S', cast, limits: PS_LIMITS.free, transcript: [], remaining: 3, final: true }), /LAST turn/);
+  assert.match(hostTurnPrompt({ showName: 'S', cast, limits: PS_LIMITS.free, transcript: [], remaining: 3 }), /Nobody can be eliminated/);
+});
+
+test('mic PCM -> valid 16 kHz WAV', () => {
+  const pcm = Buffer.alloc(3200).toString('base64'); // 0.1 s of silence
+  const wav = Buffer.from(pcmChunksToWav([pcm, pcm]), 'base64');
+  assert.equal(wav.toString('ascii', 0, 4), 'RIFF');
+  assert.equal(wav.readUInt32LE(24), 16000);
+  assert.equal(wav.readUInt32LE(40), 6400);
+  assert.equal(wav.length, 44 + 6400);
+});
