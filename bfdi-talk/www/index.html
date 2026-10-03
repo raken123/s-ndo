@@ -83,6 +83,10 @@
       <svg viewBox="0 0 24 24" class="ico"><path d="M3 4h18a1 1 0 011 1v11a1 1 0 01-1 1h-7v2h3v2H7v-2h3v-2H3a1 1 0 01-1-1V5a1 1 0 011-1zm1 2v9h16V6z"/></svg>
       <span>Screen</span><b class="pro-tag">PRO</b>
     </button>
+    <button class="btn btn-yellow chip media-btn" id="playshowBtn">
+      <svg viewBox="0 0 24 24" class="ico"><path d="M4 4h2l2 3h3L9 4h2l2 3h3l-2-3h2l2 3h3V5a1 1 0 00-1-1zM3 9v10a1 1 0 001 1h16a1 1 0 001-1V9zm7 2.5l5 3-5 3z"/></svg>
+      <span>Playshow</span>
+    </button>
   </div>
 
   <div class="controls">
@@ -144,6 +148,84 @@
     </section>
 
     <div class="dlg-foot"><button class="btn btn-yellow" value="save" id="saveSettings">Done</button></div>
+  </form>
+</dialog>
+
+<!-- ============ Playshow Mode ============ -->
+<section class="playshow" id="playshow" hidden aria-label="Playshow Mode">
+  <header class="ps-top">
+    <div class="ps-logo"><span>PLAY</span><span>SHOW</span></div>
+    <span class="plan-badge" id="psPlanBadge">FREE</span>
+    <button class="x" id="psClose" aria-label="Close Playshow">✕</button>
+  </header>
+
+  <div class="ps-studio" id="psStudio">
+    <div class="ps-panel">
+      <h3>🎬 Your show</h3>
+      <label class="field"><span>Name</span><input id="psShowName" maxlength="40"></label>
+      <h3>Cast <small id="psCastCount"></small></h3>
+      <div class="ps-cast" id="psCast"></div>
+      <p class="hint" id="psSeasonInfo"></p>
+    </div>
+    <div class="ps-panel">
+      <h3>✨ New episode</h3>
+      <textarea id="psPremise" rows="3" maxlength="500" placeholder="What happens? e.g. &quot;The challenge is to bake the biggest cake, but Drip keeps melting the frosting.&quot; (optional)"></textarea>
+      <div class="ps-limits" id="psLimits"></div>
+      <button type="button" class="btn btn-yellow ps-make" id="psMake">🎬 Make episode</button>
+      <button type="button" class="linkish" id="psNewSeason" hidden>Start a new season</button>
+      <h3>📼 Saved episodes</h3>
+      <div class="ps-episodes" id="psEpisodes"></div>
+    </div>
+  </div>
+
+  <div class="ps-theater" id="psTheater" hidden>
+    <div class="ps-stage" id="psStage">
+      <div class="ps-sun"></div>
+      <div class="ps-ground"></div>
+      <div class="ps-row" id="psRow"></div>
+      <div class="ps-sub" id="psSub" hidden></div>
+      <div class="ps-card" id="psCard" hidden></div>
+      <div class="ps-loading" id="psLoading" hidden><span>●</span><span>●</span><span>●</span></div>
+      <div class="ps-writing" id="psWriting" hidden>
+        <div class="ps-clapper">🎬</div>
+        <div class="ps-writing-text" id="psWritingText">Writing the episode…</div>
+      </div>
+      <div class="ps-end" id="psEnd" hidden>
+        <div class="ps-end-title" id="psEndTitle">THE END</div>
+        <div class="ps-end-actions">
+          <button type="button" class="btn btn-yellow" id="psNext">▶ Next episode</button>
+          <button type="button" class="btn btn-white" id="psReplay">↻ Replay</button>
+          <button type="button" class="btn btn-white" id="psBack">Back to studio</button>
+        </div>
+      </div>
+    </div>
+    <div class="ps-controls">
+      <button type="button" class="btn btn-white" id="psPause">⏸ Pause</button>
+      <button type="button" class="btn btn-white" id="psSkip">⏭ Skip</button>
+      <div class="ps-progress"><div id="psProgress"></div></div>
+      <button type="button" class="btn btn-white" id="psStop">⏹ Stop</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Playshow: edit an object ============ -->
+<dialog id="castDlg" class="dlg">
+  <form method="dialog" class="dlg-card">
+    <div class="dlg-head"><h2>Edit object</h2><button class="x" value="close" aria-label="Close">✕</button></div>
+    <section>
+      <div class="cast-preview"><svg id="castPreview"></svg></div>
+      <label class="field"><span>Name</span><input id="castName" maxlength="20"></label>
+      <div class="shape-picker" id="castShapes"></div>
+      <div class="swatches" id="castColors"></div>
+      <label class="field"><span>Voice</span><select id="castVoice"></select></label>
+      <div class="chips" id="castPersonaChips"></div>
+      <textarea id="castPersona" rows="2" maxlength="300" placeholder="Personality"></textarea>
+      <label class="toggle"><input type="checkbox" id="castHost"><span>Host of the show (runs the challenges, never eliminated)</span></label>
+    </section>
+    <div class="dlg-foot ps-dlg-foot">
+      <button type="button" class="btn btn-white" id="castDelete">🗑 Remove</button>
+      <button class="btn btn-yellow" value="save">Done</button>
+    </div>
   </form>
 </dialog>
 

@@ -6,6 +6,7 @@ import { verifyScreenshot, STORE_URL } from './purchase.js';
 import { Account } from './account.js';
 import { PLANS, DEC23, formatCredits, formatCountdown } from './plans.js';
 import { VisionFeed, canShareScreen } from './media.js';
+import { initPlayshow } from './playshow-ui.js';
 import { openExternal, loadBuildConfig, isCapacitor } from './platform.js';
 
 const $ = id => document.getElementById(id);
@@ -463,7 +464,9 @@ function renderAccount() {
 // Animation loop: lip-sync, emotion timing, body squash and arm waving.
 function frame(now) {
   if (face) {
-    const { level, round } = audio.ctx ? audio.sample() : { level: 0, round: false };
+    // While Playshow is open its player reads the analyser (reading it twice would break the smoothing).
+    const playshowOpen = !$('playshow').hidden;
+    const { level, round } = audio.ctx && !playshowOpen ? audio.sample() : { level: 0, round: false };
     const pe = session.pendingEmotion;
     if (pe && (!audio.ctx || audio.ctx.currentTime >= pe.at)) {
       if (!usage.locked || pe.emotion === 'knockedOut') face.setEmotion(pe.emotion);
@@ -911,7 +914,15 @@ async function boot() {
     toast('Usage refilled to 100%!');
   });
 
+  const playshow = initPlayshow({
+    settings, account, usage, audio, toast, openPlans,
+    sprites: () => sprites,
+    apiKey,
+    stopTalking: () => { if (session.state !== 'idle') endSession(null); },
+  });
+
   account.addEventListener('change', () => {
+    playshow.refresh();
     usage.plan = account.plan;
     usage.cloud = account.signedIn ? account : null;
     if (!account.isPro && vision.active) vision.stop();

@@ -52,6 +52,28 @@ app in `www/`. Electron wraps it for desktop and Capacitor wraps it for Android.
   that day, the app claims a one-time drop: **Pro 500,000,000 credits**, **Lite 100,000
   credits**. The subscription must have started before the cutoff and be paid
   (`active`). Trial-only accounts get it once their first payment goes through.
+- **🎬 Playshow Mode.** Make your own object show and watch it like a real episode:
+  - Build a cast (shape, colour, voice, personality, optional host) and name your show.
+  - Type an idea (optional) and press *Make episode*. A Gemini text model writes the script as
+    scenes and lines, each with a speaker, emotion and stage action. It falls back to other
+    models when one is busy, and `playshow-script.js` repairs or drops anything that doesn't fit.
+  - Every line is performed by **Gemini Live acting as a voice actor**, in that character's voice,
+    and generated a few lines ahead. (The free key only allows 3 text-to-speech requests a
+    minute, while Live has no per-request limit.) Up to 3 voice connections are open at once
+    and idle ones are recycled.
+  - The stage has title cards, subtitles, lip-sync for the speaker, emotions, and actions (jump,
+    shake, spin, cheer, faint). An eliminated contestant gets flung off-screen.
+  - Episodes cost usage like talking: 1 second of episode audio = 1 second of the meter (or 1
+    credit).
+
+  | | Free | Lite | Pro |
+  |---|---|---|---|
+  | Objects in the cast | 3 | 5 | 8 |
+  | Episode length | ~10 lines, 2 scenes (short skits) | ~24 lines, 3 scenes | ~40 lines, 5 scenes |
+  | Eliminations & voting | — | ✓ | ✓ |
+  | Seasons (recaps, eliminated objects stay out) | — | ✓ | ✓ |
+  | Script writer | standard | standard | extended thinking |
+  | Saved episodes | 3 | 10 | 30 |
 - **Video & screen live (Pro).** The camera or a shared screen is sent to Gemini Live at
   1 frame per second, and the character reacts to what it sees. A preview shows in the corner.
   Screen sharing works on Windows/macOS. Android web views can't share the screen, so that
@@ -167,6 +189,9 @@ www/                 the app (HTML/CSS/JS, no bundler)
   js/account.js      Supabase accounts, credits sync, subscriptions, Dec 23 claim
   js/plans.js        plan prices/perks shown in the app
   js/media.js        Pro video & screen live (1 fps JPEG frames)
+  js/playshow-script.js  Playshow: plan limits, episode prompt + schema, script repair
+  js/playshow.js     Playshow: voice-actor pool (Gemini Live) + episode player
+  js/playshow-ui.js  Playshow: studio, cast editor, seasons, theater
   js/purchase.js     guest screenshot verification with Gemini
   assets/            sliced sprites (generated)
 electron/            desktop shell (serves www/ from app://bfdi; mic/camera/screen permissions)

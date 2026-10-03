@@ -29,8 +29,11 @@ function shade(hex, amt) {
   return '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
 }
 
-/** Builds the character SVG into `svg` and returns the face anchors + limb groups. */
-export function drawCharacter(svg, bodyKey, color) {
+/**
+ * Builds the character SVG into `svg` and returns the face anchors + limb groups.
+ * `idPrefix` keeps gradient/clip ids unique when several characters share a page (Playshow).
+ */
+export function drawCharacter(svg, bodyKey, color, idPrefix = 'main') {
   const b = BODIES[bodyKey] || BODIES.ball;
   const NS = 'http://www.w3.org/2000/svg';
   svg.innerHTML = '';
@@ -38,12 +41,12 @@ export function drawCharacter(svg, bodyKey, color) {
 
   const defs = document.createElementNS(NS, 'defs');
   defs.innerHTML = `
-    <linearGradient id="bodyGrad" x1="0" y1="0" x2="0.3" y2="1">
+    <linearGradient id="${idPrefix}Grad" x1="0" y1="0" x2="0.3" y2="1">
       <stop offset="0" stop-color="${shade(color, 0.12)}"/>
       <stop offset="0.65" stop-color="${color}"/>
       <stop offset="1" stop-color="${shade(color, -0.18)}"/>
     </linearGradient>
-    <clipPath id="bodyClip"><path d="${b.path}"/></clipPath>`;
+    <clipPath id="${idPrefix}Clip"><path d="${b.path}"/></clipPath>`;
   svg.appendChild(defs);
 
   const shadow = document.createElementNS(NS, 'ellipse');
@@ -78,12 +81,12 @@ export function drawCharacter(svg, bodyKey, color) {
   const body = document.createElementNS(NS, 'path');
   body.setAttribute('d', b.path);
   body.setAttribute('class', 'body');
-  body.setAttribute('fill', 'url(#bodyGrad)');
+  body.setAttribute('fill', `url(#${idPrefix}Grad)`);
   rig.appendChild(body);
 
   // Cartoon shine
   const shine = document.createElementNS(NS, 'g');
-  shine.setAttribute('clip-path', 'url(#bodyClip)');
+  shine.setAttribute('clip-path', `url(#${idPrefix}Clip)`);
   shine.innerHTML = `<ellipse cx="140" cy="120" rx="46" ry="20" transform="rotate(-28 140 120)" fill="#fff" opacity=".35"/>`;
   rig.appendChild(shine);
 
