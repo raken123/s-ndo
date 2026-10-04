@@ -59,6 +59,15 @@ jobs:
           name: HubAI-apk
           path: hub-ai/dist/HubAI-1.0.0.apk
 
+      - name: Refresh the APK on the Hub AI release
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view hub-ai-v1.0.0 >/dev/null 2>&1; then
+            gh release upload hub-ai-v1.0.0 dist/HubAI-1.0.0.apk --clobber
+          fi
+
       # Keep a downloadable copy on the branch, next to the source.
       - name: Commit APK to the branch
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'

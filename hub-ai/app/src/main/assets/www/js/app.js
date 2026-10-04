@@ -130,20 +130,23 @@
 
   // ---------- hub actions shared by Create and hub detail ----------
 
+  function exportFailed(e) { if (e.message !== 'cancelled') toast('Export failed: ' + e.message); }
+
   function exportHtml(hub) {
-    HubBridge.save(slug(hub.title) + '.html', 'text/html', hub.html).then(toast, function (e) { toast('Export failed: ' + e.message); });
+    HubBridge.save(slug(hub.title) + '.html', 'text/html', hub.html).then(toast, exportFailed);
   }
 
   function exportZip(hub) {
     var meta = { title: hub.title, engine: hub.engineName, prompt: hub.prompt, type: hub.type, created: hub.created, app: 'Hub AI' };
     var readme = hub.title + '\n\nMade with Hub AI (' + hub.engineName + ').\nOpen index.html in any browser. It works offline.\n';
     var data = Zip.zip([{ name: 'index.html', data: hub.html }, { name: 'hub.json', data: JSON.stringify(meta, null, 2) }, { name: 'README.txt', data: readme }]);
-    HubBridge.save(slug(hub.title) + '.zip', 'application/zip', data).then(toast, function (e) { toast('Export failed: ' + e.message); });
+    HubBridge.save(slug(hub.title) + '.zip', 'application/zip', data).then(toast, exportFailed);
   }
 
   function shareHub(title, html) {
     HubBridge.share(slug(title) + '.html', 'text/html', html, title + ' — made with Hub AI. Open the file in a browser to use it.')
-      .catch(function (e) { if (e && e.name !== 'AbortError') toast('Could not share: ' + e.message); });
+      .then(function (msg) { if (msg) toast(msg); },
+            function (e) { if (e && e.name !== 'AbortError') toast('Could not share: ' + e.message); });
   }
 
   function hubAction(act, hub, after) {

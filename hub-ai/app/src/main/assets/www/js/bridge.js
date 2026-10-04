@@ -42,7 +42,8 @@
   window.HubBridge = {
     native: !!N,
 
-    // Saves to Downloads/Hub AI on the phone. Resolves to a short message.
+    // Saves to Downloads/Hub AI on the phone (a save dialog on desktop).
+    // Resolves to a short message.
     save: function (name, mime, data) {
       if (N) {
         var r = JSON.parse(N.saveFile(token, name, mime, b64(toBytes(data))));
@@ -52,11 +53,13 @@
       return Promise.resolve('Downloaded ' + name);
     },
 
-    // Opens the system share sheet with the file attached (and text as a fallback).
+    // Opens the system share sheet with the file attached (and text as a
+    // fallback). Desktop has no share sheet; it saves the file and resolves
+    // to a message saying where.
     share: function (name, mime, data, text) {
       if (N) {
         var r = JSON.parse(N.shareFile(token, name, mime, b64(toBytes(data)), text || ''));
-        return r.ok ? Promise.resolve() : Promise.reject(new Error(r.error));
+        return r.ok ? Promise.resolve(r.message) : Promise.reject(new Error(r.error));
       }
       try {
         var file = new File([toBytes(data)], name, { type: mime });
@@ -82,7 +85,8 @@
               function (e) { return { status: 0, body: String(e && e.message || e) }; });
     },
 
-    // MainActivity hands the top page a token after it loads. Hub iframes
+    // MainActivity hands the top page a token after it loads (the desktop
+    // shell doesn't need one: its bridge only exists in the top frame). Hub iframes
     // also see window.HubNative but never get the token.
     _setToken: function (t) { token = t; },
 

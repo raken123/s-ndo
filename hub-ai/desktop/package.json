@@ -1,0 +1,61 @@
+{
+  "name": "hub-ai",
+  "productName": "Hub AI",
+  "version": "1.0.0",
+  "description": "Make hubs (single-file apps) with the Hub v1 agents or Gemini, and play them on FunHub.",
+  "author": { "name": "Hub AI", "email": "hubai@users.noreply.github.com" },
+  "homepage": "https://github.com/raken123/s-ndo/tree/main/hub-ai",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "sync": "node scripts/sync-www.js",
+    "start": "npm run sync && electron .",
+    "dist:mac": "npm run sync && electron-builder --mac --publish never",
+    "dist:win": "npm run sync && electron-builder --win --publish never",
+    "dist:linux": "npm run sync && electron-builder --linux --publish never"
+  },
+  "devDependencies": {
+    "electron": "43.2.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.hubai.app",
+    "productName": "Hub AI",
+    "copyright": "Hub AI",
+    "files": ["main.js", "preload.js", "build/icon.png", "www/**/*"],
+    "directories": { "output": "release", "buildResources": "build" },
+    "electronLanguages": ["en-US"],
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.png",
+      "identity": null
+    },
+    "dmg": {
+      "format": "ULFO",
+      "artifactName": "HubAI-${version}-mac-${arch}.${ext}"
+    },
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "Hub AI",
+      "artifactName": "HubAI-Setup-${version}.${ext}"
+    },
+    "linux": {
+      "target": [{ "target": "deb", "arch": ["x64"] }],
+      "icon": "build/icon.png",
+      "category": "Utility",
+      "maintainer": "Hub AI <hubai@users.noreply.github.com>",
+      "synopsis": "Make and play hubs"
+    },
+    "deb": {
+      "artifactName": "hub-ai_${version}_amd64.${ext}"
+    }
+  }
+}
