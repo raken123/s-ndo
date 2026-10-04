@@ -79,6 +79,12 @@ class ProviderTest(unittest.TestCase):
         self.assertIn("<title>gpt-6-astra</title>", review)
         self.assertEqual(out["title"], "gpt-6-sol")
 
+    def test_translate_sends_the_hub(self):
+        self.agents.generate("standard", "", "translate", "<html><body>Hello {x}</body></html>", lang="Swedish")
+        msg = SEEN[0][2]["messages"][1]["content"]
+        self.assertIn("<html><body>Hello {x}</body></html>", msg)
+        self.assertIn("into Swedish", msg)
+
     def test_gemini(self):
         out = self.agents.generate("flash", "timer")
         path, headers, body = SEEN[0]

@@ -7,6 +7,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 import unittest
 import urllib.error
 import urllib.request
@@ -61,16 +62,27 @@ class ServerTest(unittest.TestCase):
     def api(self):
         return Api(self.base).signup()
 
-    def test_config_and_base_models(self):
+    def test_config_hides_models_and_the_secret_agent(self):
         s, d = Api(self.base).call("GET", "/v1/config")
         self.assertEqual(s, 200)
-        base = {e["id"]: e["base"] for e in d["engines"]}
-        self.assertEqual(base["mini"], ["GPT-4o"])
-        self.assertEqual(base["lite"], ["GPT-4.5"])
-        self.assertEqual(base["standard"], ["GPT-5"])
-        self.assertEqual(base["plus"], ["GPT-5.6 Sol"])
-        self.assertEqual(base["max"], ["GPT-6 Astra"])
-        self.assertEqual(base["v2max"], ["GPT-6 Astra", "GPT-6 Sol"])
+        text = json.dumps(d)
+        for leak in ("GPT", "gpt-", "Astra", "Sol", "base", "training", "V2 Max", "v2max"):
+            self.assertNotIn(leak, text)
+        self.assertEqual([e["id"] for e in d["engines"]], ["mini", "lite", "standard", "plus", "max", "flash", "gpro"])
+        self.assertEqual(len(d["features"]), 20)
+        per_plan = {p["id"]: len(p["features"]) for p in d["plans"]}
+        self.assertEqual(per_plan, {"free": 5, "go": 10, "plus": 15, "enterprise": 20})
+
+    def test_base_models_used(self):
+        a = self.api()
+        a.call("POST", "/v1/subscribe", {"plan": "plus"})
+        for engine, model in (("mini", "gpt-4o"), ("lite", "gpt-4.5-preview"), ("standard", "gpt-5"),
+                              ("plus", "gpt-5.6-sol"), ("max", "gpt-6-astra")):
+            s, d = a.call("POST", "/v1/generate", {"engine": engine, "prompt": "x"})
+            self.assertEqual(s, 200, d)
+            self.assertIn('data-model="%s"' % model, d["html"])
+            self.assertNotIn("models", d)
+            self.assertNotIn("base", d)
 
     def test_needs_token(self):
         s, d = Api(self.base).call("POST", "/v1/generate", {"engine": "mini", "prompt": "x"})
@@ -111,22 +123,54 @@ class ServerTest(unittest.TestCase):
         s, d = a.call("POST", "/v1/generate", {"engine": "max", "prompt": "x"})
         self.assertEqual((s, d["code"]), (429, "limit"))
         s, d = a.call("POST", "/v1/generate", {"engine": "v2max", "prompt": "x"})
-        self.assertEqual((s, d["code"]), (402, "plan"))
+        self.assertEqual((s, d["error"]), (400, "Unknown engine."))
 
-    def test_enterprise_is_not_for_sale(self):
+    def test_secret_agent_and_enterprise(self):
         a = self.api()
+        s, me = a.call("GET", "/v1/me")
+        self.assertEqual(me["secretEngines"], [])
+        # For everyone else the secret agent doesn't exist.
+        s, d = a.call("POST", "/v1/generate", {"engine": "v2max", "prompt": "x"})
+        self.assertEqual((s, d["error"]), (400, "Unknown engine."))
         s, d = a.call("POST", "/v1/subscribe", {"plan": "enterprise"})
-        self.assertEqual((s, d["code"]), (403, "contact_sales"))
-        s, d = a.call("POST", "/v1/admin/plan", {"account": a.account, "plan": "enterprise"}, {"X-Admin-Key": "wrong"})
-        self.assertEqual(s, 403)
-        s, d = a.call("POST", "/v1/admin/plan", {"account": a.account, "plan": "enterprise"}, {"X-Admin-Key": "test-admin"})
-        self.assertEqual((s, d["plan"]), (200, "enterprise"))
+        self.assertEqual((s, d["plan"]), (200, "enterprise"), d)
+        self.assertTrue(d["receipt"].startswith("DEMO-"))
+        self.assertEqual([e["id"] for e in d["secretEngines"]], ["v2max"])
+        self.assertEqual(len(d["features"]), 20)
+        self.assertGreater(d["renews"], (time.time() + 300 * 86400) * 1000, "Enterprise renews yearly")
         s, d = a.call("POST", "/v1/generate", {"engine": "v2max", "prompt": "a crm"})
         self.assertEqual(s, 200, d)
         # Astra builds it, then Sol reviews it: the final hub comes from Sol.
-        self.assertEqual(d["base"], ["GPT-6 Astra", "GPT-6 Sol"])
         self.assertIn('data-model="gpt-6-sol"', d["html"])
         self.assertEqual(d["me"]["credits"], 100000 - 100)
+        s, d = a.call("GET", "/v1/me")
+        self.assertEqual(d["receipts"][0]["amount"], 120000)
+
+    def test_admin_plan(self):
+        a = self.api()
+        s, d = a.call("POST", "/v1/admin/plan", {"account": a.account, "plan": "plus"}, {"X-Admin-Key": "wrong"})
+        self.assertEqual(s, 403)
+        s, d = a.call("POST", "/v1/admin/plan", {"account": a.account, "plan": "plus"}, {"X-Admin-Key": "test-admin"})
+        self.assertEqual((s, d["plan"]), (200, "plus"))
+
+    def test_feature_modes(self):
+        a = self.api()
+        hub = "<!doctype html><html><head><title>T</title><style>a{color:red}</style></head><body>Hi</body></html>"
+        s, d = a.call("POST", "/v1/generate", {"engine": "mini", "prompt": "", "mode": "crazier", "html": hub})
+        self.assertEqual((s, d["code"], d["error"]), (402, "plan", "Make It CRAZIER needs Hub Plus."))
+        a.call("POST", "/v1/subscribe", {"plan": "plus"})
+        s, d = a.call("POST", "/v1/generate", {"engine": "standard", "prompt": "", "mode": "crazier", "html": hub})
+        self.assertEqual((s, d["mode"]), (200, "crazier"), d)
+        s, d = a.call("POST", "/v1/generate", {"engine": "standard", "mode": "translate", "html": hub, "lang": "Klingon"})
+        self.assertEqual(s, 400)
+        s, d = a.call("POST", "/v1/generate", {"engine": "standard", "mode": "translate", "html": hub, "lang": "Swedish"})
+        self.assertEqual(s, 200, d)
+        s, d = a.call("POST", "/v1/generate", {"engine": "standard", "mode": "mashup", "html": hub, "html2": hub})
+        self.assertEqual((s, d["code"]), (402, "plan"))
+        s, d = a.call("POST", "/v1/generate", {"engine": "standard", "mode": "crazier"})
+        self.assertEqual(s, 400)
+        s, d = a.call("POST", "/v1/generate", {"engine": "standard", "mode": "nope", "html": hub})
+        self.assertEqual(s, 400)
 
     def test_failed_generation_is_refunded(self):
         a = self.api()

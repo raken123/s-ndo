@@ -57,18 +57,37 @@ def title_of(html, fallback):
     return m.group(1).strip() if m else fallback
 
 
-def generate(engine_id, prompt):
+# What the agent is asked for each mode. "create" is a plain request.
+MODES = {
+    "crazier": ("Here is a hub:\n\n{html}\n\nRebuild it to be MUCH crazier and more fun: bold colours, playful "
+                "animations, surprising easter eggs and silly sound-free effects, while every feature still works. "
+                "Keep the same purpose. {prompt}"),
+    "translate": ("Here is a hub:\n\n{html}\n\nTranslate every piece of visible text (including the title, buttons, "
+                  "placeholders and messages) into {lang}. Keep the code, layout and behaviour exactly the same."),
+    "mashup": ("Here are two hubs.\n\nHub A:\n{html}\n\nHub B:\n{html2}\n\nFuse them into ONE new hub that combines "
+               "their best features in a surprising, delightful way. {prompt}"),
+}
+
+
+def build_request(mode, prompt, html="", html2="", lang=""):
+    if mode == "create":
+        return prompt
+    return MODES[mode].format(prompt=prompt, html=html, html2=html2, lang=lang).strip()
+
+
+def generate(engine_id, prompt, mode="create", html="", html2="", lang=""):
     """Returns {"html", "title", "models"}. Raises providers.ProviderError."""
     e = config.engine(engine_id)
     models = config.models_for(engine_id)
     system = system_prompt(engine_id)
+    request = build_request(mode, prompt, html, html2, lang)
     if e["provider"] == "gemini":
-        html = clean_html(providers.gemini(models[0], system, prompt))
+        html = clean_html(providers.gemini(models[0], system, request))
     else:
-        html = clean_html(providers.openai_chat(models[0], system, [{"role": "user", "content": prompt}]))
+        html = clean_html(providers.openai_chat(models[0], system, [{"role": "user", "content": request}]))
         # Hub V2 Max: the second model reviews and fixes the first one's hub.
         for reviewer in models[1:]:
             review = REVIEW.format(name=e["name"], rules=system)
             html = clean_html(providers.openai_chat(reviewer, review, [
-                {"role": "user", "content": "Request:\n" + prompt + "\n\nHub:\n" + html}]))
-    return {"html": html, "title": title_of(html, prompt[:40]), "models": models}
+                {"role": "user", "content": "Request:\n" + request + "\n\nHub:\n" + html}]))
+    return {"html": html, "title": title_of(html, (prompt or mode)[:40]), "models": models}

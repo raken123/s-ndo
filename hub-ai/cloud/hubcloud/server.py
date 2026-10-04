@@ -6,7 +6,8 @@
     GET  /v1/me                     plan, credits, daily caps, receipts
     POST /v1/subscribe {"plan"}     demo checkout: no payment is taken
     POST /v1/cancel
-    POST /v1/generate {"engine", "prompt"}
+    POST /v1/generate {"engine", "prompt", "mode"?, "html"?, "html2"?, "lang"?}
+                                    mode: create | crazier | translate | mashup
     POST /v1/admin/plan {"account", "plan"}   needs X-Admin-Key
 
 Authenticated calls send "Authorization: Bearer <token>".
@@ -22,7 +23,11 @@ from . import agents, config, providers
 from .store import Store
 
 MAX_PROMPT = 4000
-MAX_BODY = 64 * 1024
+MAX_HUB = 400 * 1024          # a hub sent back for crazier / translate / mashup
+MAX_BODY = 1024 * 1024
+MODE_FEATURE = {"create": None, "crazier": "crazier", "translate": "translate", "mashup": "mashup"}
+LANGUAGES = {"English", "Swedish", "Spanish", "French", "German", "Italian", "Portuguese", "Japanese",
+             "Korean", "Chinese", "Arabic", "Hindi", "Turkish", "Polish", "Dutch", "Finnish"}
 
 
 class ApiError(Exception):
@@ -131,8 +136,6 @@ class Handler(BaseHTTPRequestHandler):
             raise ApiError(400, "Unknown plan.")
         if not p["buyable"]:
             raise ApiError(403, "%s is only for very large companies. Talk to Hub AI sales." % p["name"], "contact_sales")
-        if acc["plan"] == "enterprise":
-            raise ApiError(403, "This account is managed by your company.", "managed")
         ref = self.store.subscribe(acc["id"], plan)
         st = self.store.status(self.store.account(acc["id"]))
         st["receipt"] = ref
@@ -148,26 +151,43 @@ class Handler(BaseHTTPRequestHandler):
         body = self._body()
         engine_id = body.get("engine")
         prompt = str(body.get("prompt") or "").strip()
-        if not config.engine(engine_id):
+        mode = body.get("mode") or "create"
+        e = config.engine(engine_id)
+        # Secret engines don't exist for accounts whose plan lacks them.
+        if not e or (e.get("secret") and engine_id not in config.PLANS[acc["plan"]]["engines"]):
             raise ApiError(400, "Unknown engine.")
-        if not prompt:
+        if mode not in MODE_FEATURE:
+            raise ApiError(400, "Unknown mode.")
+        feature = MODE_FEATURE[mode]
+        if feature and feature not in config.PLANS[acc["plan"]]["features"]:
+            f = next(x for x in config.FEATURES if x["id"] == feature)
+            raise ApiError(402, "%s needs %s." % (f["name"], config.PLANS[f["plan"]]["name"]), "plan")
+        if mode == "create" and not prompt:
             raise ApiError(400, "Describe the hub you want.")
         if len(prompt) > MAX_PROMPT:
             raise ApiError(400, "Keep the request under %d characters." % MAX_PROMPT)
+        html, html2, lang = str(body.get("html") or ""), str(body.get("html2") or ""), str(body.get("lang") or "")
+        if mode != "create" and not html or mode == "mashup" and not html2:
+            raise ApiError(400, "Send the hub to work on.")
+        if len(html) > MAX_HUB or len(html2) > MAX_HUB:
+            raise ApiError(413, "That hub is too big.")
+        if mode == "translate" and lang not in LANGUAGES:
+            raise ApiError(400, "Pick a language.")
         refused = self.store.reserve(acc, engine_id)
         if refused:
             raise ApiError(402 if refused[0] in ("credits", "plan") else 429, refused[1], refused[0])
         started = time.time()
         try:
-            out = agents.generate(engine_id, prompt)
+            out = agents.generate(engine_id, prompt, mode, html, html2, lang)
         except providers.ProviderError as e:
             self.store.refund(acc["id"], engine_id)
             raise ApiError(502, str(e), "model")
         except Exception:
             self.store.refund(acc["id"], engine_id)
             raise
-        e = config.engine(engine_id)
-        out.update(engine=engine_id, engineName=e["name"], base=e["base"], seconds=round(time.time() - started, 1),
+        # Which models an agent runs on stays on the server.
+        out.pop("models", None)
+        out.update(engine=engine_id, engineName=e["name"], mode=mode, seconds=round(time.time() - started, 1),
                    me=self.store.status(self.store.account(acc["id"])))
         return out
 

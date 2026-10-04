@@ -5,7 +5,7 @@
   var out = {};
   out.native = !!window.HubNative && HubBridge.native;
   out.version = HubBridge.version();
-  out.cloud = typeof Cloud === 'object' && Plans.engines().length === 8;
+  out.cloud = typeof Cloud === 'object' && Plans.engines().length === 7 && typeof Features === 'object';
   var r = { html: HubTemplates.render('snake', { title: 'Snake', accent: '#2f9e5b', dark: true, persist: true, extras: true, n: null, topic: '', key: 'smoke', engine: 'smoke' }) };
   out.save = await HubBridge.save('My Snake.html', 'text/html', r.html);
   out.zip = await HubBridge.save('bundle.zip', 'application/zip', Zip.zip([{name:'index.html', data:r.html}]));

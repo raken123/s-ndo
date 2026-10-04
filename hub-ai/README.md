@@ -56,32 +56,49 @@ Payments are a **demo**: checkout takes a test card, charges nothing, and
 only records the plan on the server. Plans and credits are enforced by Hub AI
 Cloud.
 
-| | Hub Free | Hub Go — $2/month | Hub Plus — $12/month | Hub Enterprise |
+| | Hub Free | Hub Go — $2/month | Hub Plus — $12/month | Hub Enterprise — $120,000/seat/year |
 |---|---|---|---|---|
 | Credits | 10 per day, 200 per year max | 100 per day | 1,000 per month | 100,000 per month |
-| Hub agents | V1 Mini | V1 Mini, Lite, **Standard** | + **V1 Plus**, a little **V1 Max** (5 per day) | Everything, incl. **Hub V2 Max** |
+| Hub agents | V1 Mini | V1 Mini, Lite, **Standard** | + **V1 Plus**, a little **V1 Max** (5 per day) | All of them, plus 🤫 a secret one |
 | Gemini | — | **Gemini 3.8 Flash** | Flash, a little **Gemini 3.8 Pro** (3 per day) | Flash and Pro |
 | Hubs | Preview only, no saving | Save, **HTML export only** | Save, HTML and ZIP export | Save, HTML and ZIP export |
-| Price | Free | $2/month | $12/month | $120,000 per seat per year, very large companies only, not sold in the app |
+| Features | 5 | 10 | 15 | all 20 |
 
-Credit costs per hub: V1 Mini 1, Lite 1, Standard 2, Plus 3, Max 5, V2 Max 100,
+Credit costs per hub: V1 Mini 1, Lite 1, Standard 2, Plus 3, Max 5,
 Gemini Flash 3, Gemini Pro 10. Credits are refunded when generation fails.
+
+The secret agent (Hub V2 Max) never appears in the app or in `/v1/config`
+unless the account is on Hub Enterprise. Model details stay on the server.
+
+## Features
+
+Five per plan, and every plan keeps the ones below it. (You asked for "Pro";
+the paid tier between Go and Enterprise is Hub Plus, so they are there.)
+
+| Plan | Features |
+|---|---|
+| Free | 🎲 Surprise Me · 🎉 Confetti Blast · 🐱 Cat Walk · 🙃 Upside-Down Mode · 📱 Device Flip |
+| Go | 🌈 Rainbow Mode · 🔊 Click Sounds · 🧬 Hub DNA · 🔥 Daily Hub Challenge · 🧩 Embed Code |
+| Plus | 🤪 Make It CRAZIER · ⚔️ Hub Battle · 🕰️ Time Machine · 🌍 Translate Hub · 🧼 No Watermark |
+| Enterprise | 🧪 Hub Mashup · 🔐 Password Lock · 📲 Install as App · 🎨 Brand Kit · 🎰 Variation Blaster |
+
+- Power-ups (Confetti, Cat Walk, Upside-Down, Rainbow, Click Sounds, No
+  Watermark) are toggles under a hub; they go into previews and exports.
+- CRAZIER, Translate and Mashup send the hub back to the agent (normal
+  credit cost). Battle and Variation Blaster run 2 or 3 generations.
+- Password Lock exports a file that asks for the password before showing
+  the hub (password-stretched SHA-256 keystream; it keeps casual eyes out,
+  not a determined attacker).
+- Install as App exports a ZIP with a web manifest, icon and service worker:
+  host it on any HTTPS site and "Add to Home Screen".
+- The catalog lives in `cloud/hubcloud/config.py` (`FEATURES`); the app-side
+  parts are in `app/src/main/assets/www/js/features.js`.
 
 ## Hub agents
 
-| Agent | Starts from |
-|---|---|
-| Hub V1 Mini | GPT-4o |
-| Hub V1 Lite | GPT-4.5 |
-| Hub V1 Standard | GPT-5 |
-| Hub V1 Plus | GPT-5.6 Sol |
-| Hub V1 Max | GPT-6 Astra |
-| Hub V2 Max | GPT-6 Astra (builds) + GPT-6 Sol (reviews and fixes) |
-
-Each agent is its base model plus Hub's instructions, fine-tuned in Python
-on Hub examples rendered from the app's hub templates
-(`cloud/training/`). The model ids are configurable on the server; some of
-these models don't exist under these names yet. See
+The agents run on Hub AI Cloud. Each starts from a base model and is
+fine-tuned in Python on Hub examples (`cloud/training/`). Which models they
+use is configured on the server, not shown in the app; see
 [cloud/README.md](cloud/README.md#agents).
 
 ## How it's built

@@ -10,7 +10,15 @@
   function cfg() { return Store.get('cloud.config', null) || window.HUB_CLOUD_CONFIG; }
   function me() { return Store.get('cloud.me', null); }
 
-  function engines() { return cfg().engines; }
+  // Public engines, plus any secret ones this account's plan unlocks.
+  function engines() {
+    var m = me();
+    return cfg().engines.concat((m && m.secretEngines) || []);
+  }
+  function secret(id) {
+    var m = me();
+    return ((m && m.secretEngines) || []).some(function (e) { return e.id === id; });
+  }
   function plans() {
     var out = {};
     cfg().plans.forEach(function (p) { out[p.id] = p; });
@@ -35,8 +43,8 @@
   // server checks again.
   function blocked(id) {
     var p = plan(), e = engine(id), all = plans();
-    if (p.engines.indexOf(id) < 0) {
-      if (id === 'v2max') return { reason: 'plan', text: e.name + ' is only for Hub Enterprise customers.' };
+    if (!e) return { reason: 'plan', text: 'That agent isn\'t available.' };
+    if (p.engines.indexOf(id) < 0 && !secret(id)) {
       var need = all.go.engines.indexOf(id) >= 0 ? 'Hub Go' : 'Hub Plus';
       return { reason: 'plan', text: e.name + ' needs ' + need + '.' };
     }
@@ -57,7 +65,7 @@
   }
 
   window.Plans = {
-    engines: engines, plans: plans, engine: engine, plan: plan, me: me,
+    engines: engines, secret: secret, plans: plans, engine: engine, plan: plan, me: me,
     credits: credits, limitLeft: limitLeft, blocked: blocked, can: can
   };
 })();

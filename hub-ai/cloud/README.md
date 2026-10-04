@@ -17,12 +17,17 @@ examples (see [Training](#training)).
 | Hub V1 Standard | GPT-5 | `gpt-5` | 2 |
 | Hub V1 Plus | GPT-5.6 Sol | `gpt-5.6-sol` | 3 |
 | Hub V1 Max | GPT-6 Astra | `gpt-6-astra` | 5 |
-| Hub V2 Max | GPT-6 Astra + GPT-6 Sol | `gpt-6-astra`, then `gpt-6-sol` | 100 |
+| Hub V2 Max 🤫 | GPT-6 Astra + GPT-6 Sol | `gpt-6-astra`, then `gpt-6-sol` | 100 |
 | Gemini 3.8 Flash | — | `gemini-3.8-flash` | 3 |
 | Gemini 3.8 Pro | — | `gemini-3.8-pro` | 10 |
 
-Hub V2 Max uses two models: GPT-6 Astra builds the hub, then GPT-6 Sol
-reviews it and returns a fixed version.
+Hub V2 Max is secret: `/v1/config` never lists it, and for accounts outside
+Hub Enterprise it answers "Unknown engine". Enterprise accounts get it in
+`/v1/me` (`secretEngines`). It uses two models: GPT-6 Astra builds the hub,
+then GPT-6 Sol reviews it and returns a fixed version.
+
+The apps never see which model an agent uses: `/v1/config` and
+`/v1/generate` only carry names and credit costs.
 
 **Check the model ids.** They follow the names Hub AI uses. `gpt-4o` and
 `gpt-5` are real OpenAI ids, but `gpt-4.5-preview` has been retired by OpenAI.
@@ -45,11 +50,11 @@ API's error and the user's credits are refunded.
 |---|---|---|---|---|
 | Credits | 10/day, 200/year | 100/day | 1,000/month | 100,000/month |
 | Agents | Mini | Mini, Lite, Standard, Gemini Flash | + Plus, Max (5/day), Gemini Pro (3/day) | Everything, incl. **Hub V2 Max** |
+| Features | 5 | 10 | 15 | 20 |
 
 Payments are a demo: subscribing records the plan and a `DEMO-` receipt;
-no card data reaches the server. Hub Enterprise can't be bought in the
-app. It is for very large companies, and an operator moves their accounts
-onto it:
+no card data reaches the server. All four plans can be bought in the app
+(Enterprise renews yearly). An operator can also move an account directly:
 
 ```sh
 python -m hubcloud.admin set-plan acc_1234abcd enterprise      # where the database lives
@@ -57,8 +62,7 @@ curl -X POST https://YOUR-SERVER/v1/admin/plan -H "X-Admin-Key: $HUBAI_ADMIN_KEY
      -H "Content-Type: application/json" -d '{"account": "acc_1234abcd", "plan": "enterprise"}'
 ```
 
-Users find their account id in the app under Settings (and in the
-Hub Enterprise sheet).
+Users find their account id in the app under Settings.
 
 ## Run it
 
@@ -106,9 +110,9 @@ The apps need HTTPS (Android refuses plain HTTP), which those hosts provide.
 | `GET /v1/config` | agents, base models, plans |
 | `POST /v1/accounts` | new anonymous account → `{account, token}` |
 | `GET /v1/me` | plan, credits, daily caps, receipts |
-| `POST /v1/subscribe {"plan"}` | demo checkout (`free`, `go`, `plus`) |
+| `POST /v1/subscribe {"plan"}` | demo checkout (`free`, `go`, `plus`, `enterprise`) |
 | `POST /v1/cancel` | cancel at the end of the period |
-| `POST /v1/generate {"engine", "prompt"}` | build a hub → `{html, title, base, me, …}` |
+| `POST /v1/generate {"engine", "prompt", "mode"?, "html"?, "html2"?, "lang"?}` | build a hub → `{html, title, me, …}`. `mode`: `create` (default), `crazier` and `translate` (Plus), `mashup` (Enterprise) |
 | `POST /v1/admin/plan {"account", "plan"}` | needs `X-Admin-Key` |
 
 Calls other than health, config and accounts send `Authorization: Bearer <token>`.

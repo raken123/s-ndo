@@ -34,6 +34,10 @@ CREATE TABLE IF NOT EXISTS receipts (
 """
 
 
+# Billing period of each paid plan, in days (demo renewals).
+PERIOD_DAYS = {"go": 30, "plus": 30, "enterprise": 365}
+
+
 def _hash(token):
     return hashlib.sha256(token.encode()).hexdigest()
 
@@ -70,14 +74,14 @@ class Store:
     def _roll(self, a):
         """Demo renewals: a cancelled plan ends at the end of its period,
         otherwise it rolls over (no money moves)."""
-        if a["plan"] in ("go", "plus") and a["renews"] and time.time() > a["renews"]:
+        if a["plan"] in PERIOD_DAYS and a["renews"] and time.time() > a["renews"]:
             if a["cancelled"]:
                 self.set_plan(a["id"], "free")
                 a.update(plan="free", renews=None, cancelled=0)
             else:
                 r = a["renews"]
                 while time.time() > r:
-                    r += 30 * 86400
+                    r += PERIOD_DAYS[a["plan"]] * 86400
                 with self.lock, self.db:
                     self.db.execute("UPDATE accounts SET renews = ? WHERE id = ?", (r, a["id"]))
                 a["renews"] = r
@@ -90,7 +94,7 @@ class Store:
 
     def subscribe(self, acc_id, plan):
         p = config.PLANS[plan]
-        renews = time.time() + 30 * 86400 if p["price"] and plan != "enterprise" else None
+        renews = time.time() + PERIOD_DAYS[plan] * 86400 if plan in PERIOD_DAYS else None
         self.set_plan(acc_id, plan, renews)
         if plan != "free":
             # A new paid period starts with its full allowance; the yearly
@@ -108,7 +112,7 @@ class Store:
 
     def cancel(self, acc_id):
         with self.lock, self.db:
-            self.db.execute("UPDATE accounts SET cancelled = 1 WHERE id = ? AND plan IN ('go', 'plus')", (acc_id,))
+            self.db.execute("UPDATE accounts SET cancelled = 1 WHERE id = ? AND plan != 'free'", (acc_id,))
 
     def receipts(self, acc_id):
         rows = self.db.execute("SELECT * FROM receipts WHERE account = ? ORDER BY at DESC LIMIT 20", (acc_id,))
@@ -153,6 +157,8 @@ class Store:
             "account": acc["id"], "plan": acc["plan"], "credits": max(0, left or 0), "rule": " · ".join(rule),
             "limitsLeft": limits, "renews": int(acc["renews"] * 1000) if acc["renews"] else None,
             "cancelled": bool(acc["cancelled"]),
+            "features": p["features"],
+            "secretEngines": config.secret_engines(acc["plan"]),
         }
 
     def check(self, acc, engine_id):
@@ -160,8 +166,6 @@ class Store:
         p = config.PLANS[acc["plan"]]
         e = config.engine(engine_id)
         if engine_id not in p["engines"]:
-            if engine_id == "v2max":
-                return "plan", "Hub V2 Max is only for Hub Enterprise customers."
             need = "Hub Go" if engine_id in config.PLANS["go"]["engines"] else "Hub Plus"
             return "plan", "%s needs %s." % (e["name"], need)
         st = self.status(acc)

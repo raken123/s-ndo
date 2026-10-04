@@ -79,8 +79,11 @@
         call('GET', '/v1/me').then(keepMe)
       ]);
     },
-    generate: function (engine, prompt) {
-      return call('POST', '/v1/generate', { engine: engine, prompt: prompt }).then(function (r) { keepMe(r.me); return r; });
+    // extra: { mode: 'crazier'|'translate'|'mashup', html, html2, lang }
+    generate: function (engine, prompt, extra) {
+      var body = { engine: engine, prompt: prompt };
+      for (var k in (extra || {})) body[k] = extra[k];
+      return call('POST', '/v1/generate', body).then(function (r) { keepMe(r.me); return r; });
     },
     subscribe: function (plan) { return call('POST', '/v1/subscribe', { plan: plan }).then(keepMe); },
     cancel: function () { return call('POST', '/v1/cancel').then(keepMe); },
