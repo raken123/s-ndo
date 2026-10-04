@@ -70,7 +70,7 @@ jobs:
             if [[ "$dmg" == *arm64* ]]; then
               code=0
               HUBAI_SAVE_DIR=$(mktemp -d) HUBAI_SMOKE=1 HUBAI_SMOKE_OUT="$PWD/smoke.log" ELECTRON_ENABLE_LOGGING=1 \
-                perl -e 'alarm 120; exec @ARGV' "$app/Contents/MacOS/Hub AI" 2>&1 | tail -40 || code=$?
+                perl -e 'alarm 120; exec { $ARGV[0] } @ARGV or die "exec failed: $!"' "$app/Contents/MacOS/Hub AI" 2>&1 | tail -40 || code=$?
               echo "app exit: $code"
               cat smoke.log || true
               grep -q SMOKE_OK smoke.log
