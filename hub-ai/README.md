@@ -34,9 +34,12 @@ The desktop apps are the same UI in an Electron window (`desktop/`). Exports
 open a save dialog; "Share" saves the file to `Downloads/Hub AI` and shows it
 in the file manager, since desktops have no share sheet.
 
-- **macOS:** open the `.dmg` and drag Hub AI to Applications. The app isn't
-  signed or notarised, so the first time right-click it and choose Open (or run
-  `xattr -dr com.apple.quarantine "/Applications/Hub AI.app"`).
+- **macOS:** open the `.dmg` and drag Hub AI to Applications. The app is
+  ad-hoc signed but has no Apple Developer ID, so the first open is blocked
+  with "can't verify the developer". On macOS 15 and newer, go to System
+  Settings → Privacy & Security and click Open Anyway; on macOS 14 and older,
+  right-click the app and choose Open. Or run
+  `xattr -dr com.apple.quarantine "/Applications/Hub AI.app"`.
 - **Windows:** run `HubAI-Setup-1.0.0.exe`. It isn't code-signed, so
   SmartScreen may warn: choose "More info", then "Run anyway".
 - **Linux:** `sudo apt install ./hub-ai_1.0.0_amd64.deb`, then start Hub AI from

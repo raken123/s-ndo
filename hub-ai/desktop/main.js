@@ -101,11 +101,20 @@ function create() {
   });
   win.on('closed', () => { win = null; });
 
+  // HUBAI_SMOKE=1 runs scripts/smoke.js in the page and exits 0 if the app
+  // and its bridge work. CI uses it on the packaged apps.
   if (process.env.HUBAI_SMOKE) {
     win.webContents.once('did-finish-load', async () => {
-      const r = await win.webContents.executeJavaScript(process.env.HUBAI_SMOKE);
+      let r = null;
+      try {
+        r = await win.webContents.executeJavaScript(fs.readFileSync(path.join(__dirname, 'scripts', 'smoke.js'), 'utf8'));
+      } catch (e) {
+        r = { error: String(e.message || e) };
+      }
       console.log('SMOKE_RESULT=' + JSON.stringify(r));
-      app.quit();
+      const ok = r && r.native && r.iframe === 'undefined' && /^Saved/.test(r.save || '') && r.blocked && r.blocked.status === 0;
+      console.log(ok ? 'SMOKE_OK' : 'SMOKE_FAILED');
+      app.exit(ok ? 0 : 1);
     });
   }
 }

@@ -23,17 +23,20 @@
     "appId": "com.hubai.app",
     "productName": "Hub AI",
     "copyright": "Hub AI",
-    "files": ["main.js", "preload.js", "build/icon.png", "www/**/*"],
+    "files": ["main.js", "preload.js", "scripts/smoke.js", "build/icon.png", "www/**/*"],
     "directories": { "output": "release", "buildResources": "build" },
     "electronLanguages": ["en-US"],
     "mac": {
       "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
       "category": "public.app-category.productivity",
       "icon": "build/icon.png",
-      "identity": null
+      "identity": "-",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
     },
     "dmg": {
-      "format": "ULFO",
+      "format": "UDZO",
+      "sign": false,
       "artifactName": "HubAI-${version}-mac-${arch}.${ext}"
     },
     "win": {

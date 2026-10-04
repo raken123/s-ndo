@@ -51,6 +51,35 @@ jobs:
         shell: bash
         run: ls -l release
 
+      # An unsigned or badly signed app is what makes macOS call it
+      # "damaged". Check every DMG the way a Mac would see it, and start the
+      # Apple Silicon app (the runner is arm64).
+      - name: Verify macOS apps
+        if: matrix.target == 'mac'
+        run: |
+          set -euo pipefail
+          for dmg in release/*.dmg; do
+            echo "== $dmg"
+            hdiutil verify "$dmg"
+            mnt=$(mktemp -d)
+            hdiutil attach -nobrowse -readonly -mountpoint "$mnt" "$dmg"
+            app="$mnt/Hub AI.app"
+            codesign --verify --deep --strict --verbose=2 "$app"
+            codesign -dv "$app" 2>&1 | grep -E "^(Identifier|Format|Signature)"
+            lipo -archs "$app/Contents/MacOS/Hub AI"
+            if [[ "$dmg" == *arm64* ]]; then
+              HUBAI_SAVE_DIR=$(mktemp -d) HUBAI_SMOKE=1 perl -e 'alarm 120; exec @ARGV' "$app/Contents/MacOS/Hub AI" | tee smoke.log
+              grep -q SMOKE_OK smoke.log
+            fi
+            hdiutil detach "$mnt"
+          done
+
+      - name: Start the Linux app
+        if: matrix.target == 'linux'
+        run: |
+          HUBAI_SAVE_DIR=$(mktemp -d) HUBAI_SMOKE=1 timeout 120 xvfb-run -a release/linux-unpacked/hub-ai --no-sandbox | tee smoke.log
+          grep -q SMOKE_OK smoke.log
+
       - uses: actions/upload-artifact@v4
         with:
           name: hub-ai-${{ matrix.target }}
