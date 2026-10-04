@@ -276,7 +276,7 @@
   };
 
   T.habit = function (p) {
-    return page(p, '.h{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid var(--line)}.h .nm{flex:1}.d{width:30px;height:30px;padding:0;border-radius:8px;font-size:11px}.d.on{background:var(--accent);border-color:var(--accent);color:#fff}',
+    return page(p, '.h{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}.h .nm{flex:1 1 calc(100% - 44px);font-weight:600;order:0}.h .d{order:2}.h .d.dx{order:1}.d{width:30px;height:30px;padding:0;border-radius:8px;font-size:11px}.d.on{background:var(--accent);border-color:var(--accent);color:#fff}',
       '<div class="card"><form id="f" class="row"><input id="t" placeholder="New habit, e.g. Drink water"><button class="primary" style="flex:0">Add</button></form></div><div class="card" id="l"></div>',
       'var H=S.get("habits",[]),l=document.getElementById("l");function key(d){return d.toISOString().slice(0,10)}' +
       'function days(){var a=[];for(var i=6;i>=0;i--){var d=new Date();d.setDate(d.getDate()-i);a.push(d)}return a}' +
@@ -284,7 +284,7 @@
       'function draw(){l.innerHTML=H.length?"":"<p class=muted>Add a habit to start tracking.</p>";H.forEach(function(h,hi){var r=document.createElement("div");r.className="h";' +
       'var n=document.createElement("div");n.className="nm";n.textContent=h.name+" · "+streak(h)+"🔥";r.appendChild(n);' +
       'days().forEach(function(d){var b=document.createElement("button");var k=key(d);b.className="d"+(h.done[k]?" on":"");b.textContent="SMTWTFS"[d.getDay()];b.onclick=function(){if(h.done[k])delete h.done[k];else h.done[k]=1;S.set("habits",H);draw()};r.appendChild(b)});' +
-      'var x=document.createElement("button");x.className="d";x.textContent="×";x.onclick=function(){H.splice(hi,1);S.set("habits",H);draw()};r.appendChild(x);l.appendChild(r)})}' +
+      'var x=document.createElement("button");x.className="d dx";x.textContent="×";x.onclick=function(){H.splice(hi,1);S.set("habits",H);draw()};r.appendChild(x);l.appendChild(r)})}' +
       'document.getElementById("f").onsubmit=function(e){e.preventDefault();var t=document.getElementById("t");if(t.value.trim()){H.push({name:t.value.trim(),done:{}});t.value="";S.set("habits",H);draw()}};draw();');
   };
 
