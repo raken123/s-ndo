@@ -15,6 +15,8 @@ import android.provider.MediaStore;
 import android.util.Base64;
 import android.view.ViewGroup;
 import android.webkit.JavascriptInterface;
+import android.webkit.MimeTypeMap;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -51,8 +53,11 @@ public class MainActivity extends Activity {
     private static final String START_URL = "file:///android_asset/www/index.html";
     private static final int BLACK = 0xFF0D0D0D;
 
+    private static final int PICK_FILE = 41;
+
     private WebView web;
     private final String token = newToken();
+    private ValueCallback<Uri[]> pickCallback;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -89,7 +94,24 @@ public class MainActivity extends Activity {
         s.setMediaPlaybackRequiresUserGesture(false);
 
         web.addJavascriptInterface(new Bridge(), "HubNative");
-        web.setWebChromeClient(new WebChromeClient());
+        web.setWebChromeClient(new WebChromeClient() {
+            // <input type="file">: photos to edit and data files to import.
+            @Override
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
+                if (pickCallback != null) {
+                    pickCallback.onReceiveValue(null);
+                }
+                pickCallback = callback;
+                try {
+                    startActivityForResult(params.createIntent(), PICK_FILE);
+                } catch (ActivityNotFoundException e) {
+                    pickCallback = null;
+                    callback.onReceiveValue(null);
+                    return false;
+                }
+                return true;
+            }
+        });
         web.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -118,6 +140,16 @@ public class MainActivity extends Activity {
         } else {
             web.loadUrl(START_URL);
         }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == PICK_FILE && pickCallback != null) {
+            pickCallback.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data));
+            pickCallback = null;
+            return;
+        }
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
@@ -167,6 +199,14 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** A MIME type MediaStore knows for the file's extension, so it keeps the
+     *  name as given (3D models, videos, SVGs...). */
+    private static String storeMime(String file, String mime) {
+        int dot = file.lastIndexOf('.');
+        String known = dot < 0 ? null : MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.substring(dot + 1).toLowerCase());
+        return known != null ? known : (mime.startsWith("text/") ? mime : "application/octet-stream");
+    }
+
     /** Methods called from js/bridge.js. They run on the WebView's bridge thread. */
     private final class Bridge {
 
@@ -182,7 +222,7 @@ public class MainActivity extends Activity {
                     ContentResolver cr = getContentResolver();
                     ContentValues v = new ContentValues();
                     v.put(MediaStore.MediaColumns.DISPLAY_NAME, file);
-                    v.put(MediaStore.MediaColumns.MIME_TYPE, mime);
+                    v.put(MediaStore.MediaColumns.MIME_TYPE, storeMime(file, mime));
                     v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Hub AI");
                     Uri uri = cr.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
                     if (uri == null) {

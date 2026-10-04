@@ -1,56 +1,61 @@
 # Hub AI Cloud
 
-The server the Hub AI apps talk to. The Hub agents run here, as do Gemini
-3.8 Flash and Pro. Plans, credits and daily caps are enforced here too.
-It only needs Python 3.10+ (standard library only) and API keys.
+The server the Hub AI apps talk to. The Hub agents run here; plans, credits
+and daily caps are enforced here too. It only needs Python 3.10+ (standard
+library only) and a Gemini API key.
 
 ## Agents
 
-Each Hub agent starts from a base model, gets Hub's instructions (rules for
-building a hub, plus a polish level per tier), and can be fine-tuned on Hub
-examples (see [Training](#training)).
+Every Hub agent is a Gemini model plus Hub's instructions for each creation
+type (app, animation, slides, card, 3D model, UI design, picture, game,
+website, infographic, logo, diagram, document) and a polish level per agent.
+**The apps never learn this**: `/v1/config`, `/v1/me` and `/v1/generate` only
+carry Hub V1 names and credit costs, the agents are told to present
+themselves only by their Hub V1 name, and model errors reach the apps as
+"Hub V1 … couldn't finish this one" (the details go to the server log).
+Keep it that way when you change things: `tests/test_server.py` checks that
+no API answer mentions the provider.
 
-| Agent | Base model | Default API model id | Credits |
+| Agent | Default model id | Makes | Credits |
 |---|---|---|---|
-| Hub V1 Mini | GPT-4o | `gpt-4o` | 1 |
-| Hub V1 Lite | GPT-4.5 | `gpt-4.5-preview` | 1 |
-| Hub V1 Standard | GPT-5 | `gpt-5` | 2 |
-| Hub V1 Plus | GPT-5.6 Sol | `gpt-5.6-sol` | 3 |
-| Hub V1 Max | GPT-6 Astra | `gpt-6-astra` | 5 |
-| Hub V2 Max 🤫 | GPT-6 Astra + GPT-6 Sol | `gpt-6-astra`, then `gpt-6-sol` | 100 |
-| Gemini 3.8 Flash | — | `gemini-3.8-flash` | 3 |
-| Gemini 3.8 Pro | — | `gemini-3.8-pro` | 10 |
+| Hub V1 Spark | `gemini-3.1-flash-lite` | everything but pictures | 1 |
+| Hub V1 Flux | `gemini-2.5-flash` | everything but pictures | 1 |
+| Hub V1 Volt | `gemini-3-flash-preview` | everything but pictures | 2 |
+| Hub V1 Prism | `gemini-2.5-pro` | everything but pictures | 3 |
+| Hub V1 Titan | `gemini-3.1-pro-preview` | everything but pictures | 6 |
+| Hub V1 Pixel | `gemini-2.5-flash-image` | pictures and photo edits | 4 |
+| Hub V2 Max 🤫 | `gemini-3.1-pro-preview`, twice | everything but pictures | 100 |
 
 Hub V2 Max is secret: `/v1/config` never lists it, and for accounts outside
 Hub Enterprise it answers "Unknown engine". Enterprise accounts get it in
-`/v1/me` (`secretEngines`). It uses two models: GPT-6 Astra builds the hub,
-then GPT-6 Sol reviews it and returns a fixed version.
+`/v1/me` (`secretEngines`). It runs two passes: one builds the hub, the
+second reviews it and returns a fixed version.
 
-The apps never see which model an agent uses: `/v1/config` and
-`/v1/generate` only carry names and credit costs.
+3D models are asked for as JSON (unit shapes, scaled, rotated and coloured);
+`hubcloud/viewer3d.py` checks the scene and wraps it in a self-contained
+WebGL viewer that exports GLB and OBJ.
 
-**Check the model ids.** They follow the names Hub AI uses. `gpt-4o` and
-`gpt-5` are real OpenAI ids, but `gpt-4.5-preview` has been retired by OpenAI.
-`gpt-5.6-sol`, `gpt-6-astra`, `gpt-6-sol` and the Gemini 3.8 ids are
-placeholders until those models exist under those names. Point an agent at
-another model without code changes:
+**Check the model ids before you deploy.** Gemini models are renamed and
+retired often: `gemini-2.5-pro` is scheduled to shut down on the Gemini
+API on 16 October 2026, `gemini-3-flash-preview` is deprecated, and the
+`-preview` ids change when models go stable. Point an agent at another model
+without code changes:
 
 ```sh
-HUBAI_MODEL_LITE=gpt-4.1
-HUBAI_MODEL_V2MAX=gpt-5,gpt-5-mini      # builder, reviewer
-HUBAI_MODEL_FLASH=gemini-2.5-flash
+HUBAI_MODEL_PRISM=gemini-3.5-flash
+HUBAI_MODEL_V2MAX=gemini-3.1-pro-preview,gemini-3.1-pro-preview   # builder, reviewer
 ```
 
-If a model id doesn't exist, generating with that agent fails with the
-API's error and the user's credits are refunded.
+If a model id doesn't exist, generating with that agent fails and the
+user's credits are refunded.
 
 ## Plans
 
 | | Free | Go ($2/mo) | Plus ($12/mo) | Enterprise ($120,000/seat/yr) |
 |---|---|---|---|---|
 | Credits | 10/day, 200/year | 100/day | 1,000/month | 100,000/month |
-| Agents | Mini | Mini, Lite, Standard, Gemini Flash | + Plus, Max (5/day), Gemini Pro (3/day) | Everything, incl. **Hub V2 Max** |
-| Features | 5 | 10 | 15 | 20 |
+| Agents | Spark, Flux, Pixel | + Volt | + Prism, Titan (5/day) | Everything, incl. **Hub V2 Max** |
+| Tools | 5 | 10 | 15 | 20 |
 
 Payments are a demo: subscribing records the plan and a `DEMO-` receipt;
 no card data reaches the server. All four plans can be bought in the app
@@ -67,14 +72,14 @@ Users find their account id in the app under Settings.
 ## Run it
 
 ```sh
-export OPENAI_API_KEY=sk-...        # Hub agents
-export GEMINI_API_KEY=...          # Gemini 3.8 Flash / Pro
+export GEMINI_API_KEY=...          # every Hub agent
 export HUBAI_ADMIN_KEY=$(openssl rand -hex 24)   # optional, for /v1/admin/plan
 python -m hubcloud --port 8787     # data in ./hubai.sqlite3 (or HUBAI_DB)
 ```
 
 Try it without keys: `HUBAI_FAKE_MODELS=1 python -m hubcloud` returns small
-placeholder hubs that name the model they would have used.
+placeholder results (a small page, a 3D rocket, a gradient picture) that
+name the model they would have used.
 
 ### Deploy
 
@@ -83,7 +88,7 @@ Any host that runs a Docker image or a Python process works. With Docker:
 ```sh
 docker build -t hub-ai-cloud hub-ai/cloud
 docker run -p 8787:8787 -v hubai-data:/data \
-  -e OPENAI_API_KEY -e GEMINI_API_KEY -e HUBAI_ADMIN_KEY hub-ai-cloud
+  -e GEMINI_API_KEY -e HUBAI_ADMIN_KEY hub-ai-cloud
 ```
 
 On Render, Railway, Fly.io and similar: create a web service from this
@@ -107,38 +112,16 @@ The apps need HTTPS (Android refuses plain HTTP), which those hosts provide.
 | | |
 |---|---|
 | `GET /v1/health` | liveness |
-| `GET /v1/config` | agents, base models, plans |
+| `GET /v1/config` | agents (names and costs only), creation types, plans, tools |
 | `POST /v1/accounts` | new anonymous account → `{account, token}` |
 | `GET /v1/me` | plan, credits, daily caps, receipts |
 | `POST /v1/subscribe {"plan"}` | demo checkout (`free`, `go`, `plus`, `enterprise`) |
 | `POST /v1/cancel` | cancel at the end of the period |
-| `POST /v1/generate {"engine", "prompt", "mode"?, "html"?, "lang"?, "data"?, "dataName"?}` | build a hub → `{html, title, me, …}`. `mode`: `create` (default), `refine` (every plan), `fix` and `translate` (Plus). `data`: an attached file, up to 100 KB (Plus) |
+| `POST /v1/generate {"engine", "prompt", "kind"?, "mode"?, "html"?, "lang"?, "data"?, "dataName"?, "image"?}` | make something → `{html, title, kind, me, …}` (+ `image` for pictures). `kind`: one of the creation types (default `app`); `image` needs Hub V1 Pixel. `mode`: `create` (default), `refine` (every plan), `fix` and `translate` (Plus; not for pictures or 3D). `data`: an attached file, up to 100 KB (Plus). `image`: a PNG/JPEG/WebP data URL to edit, up to about 6 MB |
 | `POST /v1/admin/plan {"account", "plan"}` | needs `X-Admin-Key` |
 
 Calls other than health, config and accounts send `Authorization: Bearer <token>`.
 Only a SHA-256 of each token is stored.
-
-## Training
-
-Fine-tuning teaches each agent Hub's format and its tier's level of polish,
-using examples rendered from the app's hub templates.
-
-```sh
-cd hub-ai/cloud
-python training/build_dataset.py       # -> training/out/<agent>.train.jsonl / .valid.jsonl
-export OPENAI_API_KEY=sk-...
-python training/finetune.py            # fine-tunes every agent, waits, writes agents.json
-python training/finetune.py --tier mini --no-wait   # or submit now...
-python training/finetune.py --collect               # ...and collect later
-```
-
-- `training/hubspec.py`: hub types, plus examples and template features per agent.
-- `training/dataset.py`: request phrasings. Add your own to `training/data/extra.jsonl`.
-- `agents.json`: the fine-tuned model per agent. The server reads it on
-  every request, so commit it and redeploy (or copy it to the server).
-- OpenAI only fine-tunes some models. When it refuses an agent's base
-  model, the script says so and that agent keeps running as the base model
-  with Hub's instructions. Fine-tuning is billed by OpenAI.
 
 ## Tests
 
@@ -146,6 +129,7 @@ python training/finetune.py --collect               # ...and collect later
 python -m unittest discover -s tests -v
 ```
 
-These cover the API, plans, credits, caps, refunds, the Enterprise lock, the
-exact requests sent to OpenAI and Gemini (against a local stand-in), the
-datasets, and `finetune.py`. They need Node.js for the dataset tests.
+These cover the API, plans, credits, caps, refunds, the Enterprise lock, every
+creation type, 3D scenes and photo edits, that nothing the apps receive names
+the provider, and the exact requests sent to the model API (against a local
+stand-in).

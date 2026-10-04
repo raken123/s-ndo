@@ -6,7 +6,8 @@
     GET  /v1/me                     plan, credits, daily caps, receipts
     POST /v1/subscribe {"plan"}     demo checkout: no payment is taken
     POST /v1/cancel
-    POST /v1/generate {"engine", "prompt", "mode"?, "html"?, "lang"?, "data"?, "dataName"?}
+    POST /v1/generate {"engine", "prompt", "kind"?, "mode"?, "html"?, "lang"?, "data"?, "dataName"?, "image"?}
+                                    kind: app | animation | slides | card | model3d | ui | image | ...
                                     mode: create | refine | fix | translate
     POST /v1/admin/plan {"account", "plan"}   needs X-Admin-Key
 
@@ -25,7 +26,8 @@ from .store import Store
 MAX_PROMPT = 4000
 MAX_HUB = 400 * 1024          # a hub sent back to refine / fix / translate
 MAX_DATA = 100 * 1024         # an attached data file (Data Import)
-MAX_BODY = 1024 * 1024
+MAX_IMAGE = 8 * 1024 * 1024   # a picture to edit, as a base64 data: URL
+MAX_BODY = 10 * 1024 * 1024
 MODE_FEATURE = {"create": None, "refine": "refine", "fix": "autofix", "translate": "translate"}
 LANGUAGES = {"English", "Swedish", "Spanish", "French", "German", "Italian", "Portuguese", "Japanese",
              "Korean", "Chinese", "Arabic", "Hindi", "Turkish", "Polish", "Dutch", "Finnish"}
@@ -153,19 +155,38 @@ class Handler(BaseHTTPRequestHandler):
         engine_id = body.get("engine")
         prompt = str(body.get("prompt") or "").strip()
         mode = body.get("mode") or "create"
+        kind = config.kind(body.get("kind") or "app")
         e = config.engine(engine_id)
         # Secret engines don't exist for accounts whose plan lacks them.
         if not e or (e.get("secret") and engine_id not in config.PLANS[acc["plan"]]["engines"]):
             raise ApiError(400, "Unknown engine.")
         if mode not in MODE_FEATURE:
             raise ApiError(400, "Unknown mode.")
+        if not kind:
+            raise ApiError(400, "Unknown creation type.")
+        if (kind["output"] == "image") != (e["makes"] == "image"):
+            pixel = next(x["name"] for x in config.ENGINES if x["makes"] == "image")
+            raise ApiError(400, "Pictures are made by %s." % pixel if kind["output"] == "image"
+                           else "%s only makes pictures." % e["name"])
+        if kind["output"] == "image" and mode != "create" or kind["output"] == "model3d" and mode not in ("create", "refine"):
+            raise ApiError(400, "That doesn't work on a %s." % kind["name"].lower())
+        image = None
+        if body.get("image"):
+            if kind["output"] != "image":
+                raise ApiError(400, "Only images can be edited from a picture.")
+            if len(str(body["image"])) > MAX_IMAGE:
+                raise ApiError(413, "Pictures can be up to about 6 MB.")
+            image = agents.decode_image(str(body["image"]))
+            if not image:
+                raise ApiError(400, "Use a PNG, JPEG or WebP picture.")
         data, data_name = str(body.get("data") or ""), str(body.get("dataName") or "")[:80]
         for feature in (MODE_FEATURE[mode], "dataimport" if data else None):
             if feature and feature not in config.PLANS[acc["plan"]]["features"]:
                 f = next(x for x in config.FEATURES if x["id"] == feature)
                 raise ApiError(402, "%s needs %s." % (f["name"], config.PLANS[f["plan"]]["name"]), "plan")
         if mode in ("create", "refine") and not prompt:
-            raise ApiError(400, "Describe the hub you want." if mode == "create" else "Describe the change you want.")
+            raise ApiError(400, ("Describe what you want." if not image else "Describe the edit you want.")
+                           if mode == "create" else "Describe the change you want.")
         if len(data.encode("utf-8")) > MAX_DATA:
             raise ApiError(413, "Data files can be up to %d KB." % (MAX_DATA // 1024))
         if len(prompt) > MAX_PROMPT:
@@ -182,16 +203,21 @@ class Handler(BaseHTTPRequestHandler):
             raise ApiError(402 if refused[0] in ("credits", "plan") else 429, refused[1], refused[0])
         started = time.time()
         try:
-            out = agents.generate(engine_id, prompt, mode, html, lang, data, data_name)
-        except providers.ProviderError as e:
+            out = agents.generate(engine_id, prompt, mode, html, lang, data, data_name, kind["id"], image)
+        except providers.ProviderError as err:
+            # The details name the provider, so they stay in the server log.
             self.store.refund(acc["id"], engine_id)
-            raise ApiError(502, str(e), "model")
+            self.log_error("generation failed (%s, %s): %s", engine_id, kind["id"], err)
+            raise ApiError(502, "%s couldn't finish this one. Try again, or pick another agent." % e["name"], "model")
+        except ValueError as err:
+            self.store.refund(acc["id"], engine_id)
+            raise ApiError(400, str(err))
         except Exception:
             self.store.refund(acc["id"], engine_id)
             raise
         # Which models an agent runs on stays on the server.
         out.pop("models", None)
-        out.update(engine=engine_id, engineName=e["name"], mode=mode, seconds=round(time.time() - started, 1),
+        out.update(engine=engine_id, engineName=e["name"], kind=kind["id"], mode=mode, seconds=round(time.time() - started, 1),
                    me=self.store.status(self.store.account(acc["id"])))
         return out
 

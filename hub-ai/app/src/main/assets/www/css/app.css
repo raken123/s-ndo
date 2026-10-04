@@ -203,3 +203,13 @@ textarea.in.code.tall { min-height: 52vh; }
 .serp-d { color: var(--muted); font-size: 13px; margin-top: 2px; }
 .starters { display: grid; gap: 8px; }
 .starter { display: flex; flex-direction: column; gap: 4px; text-align: left; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+
+/* creation types */
+.kinds { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; margin-top: 8px; }
+.kind { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; font-size: 12px; text-align: center; }
+.kind.on { border-color: var(--text); background: var(--surface-2); }
+.kind:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.kemoji { font-size: 22px; line-height: 1; }
+.photo-thumb { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); }
+.rec-box { margin: 12px 0 6px; overflow: hidden; border-radius: 10px; }
+.rec-box:empty { display: none; }

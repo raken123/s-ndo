@@ -2,7 +2,6 @@
 FROM python:3.12-slim
 WORKDIR /app
 COPY hubcloud ./hubcloud
-COPY agents.json ./
 # Runs as root so it can write to whatever disk the host mounts at /data.
 RUN mkdir -p /data
 ENV PORT=8787 HUBAI_DB=/data/hubai.sqlite3 PYTHONUNBUFFERED=1

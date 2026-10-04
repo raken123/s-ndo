@@ -22,7 +22,7 @@
     if (!built[s.id]) {
       built[s.id] = HubTemplates.render(s.type, {
         title: s.title, accent: s.accent, dark: true, persist: true, extras: true,
-        n: s.n || null, topic: s.topic || '', key: s.id, engine: 'Hub V1 Max'
+        n: s.n || null, topic: s.topic || '', key: s.id, engine: 'Hub V1 Titan'
       });
     }
     return built[s.id];
@@ -31,7 +31,7 @@
   function posts() {
     var mine = Store.get('funhub.posts', []);
     var seeds = SEEDS.map(function (s) {
-      return { id: s.id, title: s.title, author: s.author, engine: 'Hub V1 Max', likes: s.likes, seed: true, html: null, _seed: s };
+      return { id: s.id, title: s.title, author: s.author, engine: 'Hub V1 Titan', likes: s.likes, seed: true, html: null, _seed: s };
     });
     return mine.concat(seeds);
   }

@@ -6,20 +6,13 @@
   var view = document.getElementById('view');
   var state = {
     view: 'create', arg: null, stack: [],
-    engine: Store.get('engine', 'mini'),
+    engine: Store.get('engine', 'flux'),
+    kind: Store.get('kind', 'app'),     // what to create (Kinds)
+    photo: null,                        // a photo to edit (image kind)
     prompt: Store.get('promptDraft', ''),
     draft: Store.get('draft', null),   // last generated, unsaved hub
     busy: false
   };
-
-  var EXAMPLES = [
-    'A to-do list for my groceries',
-    'Pomodoro timer in green called Deep Work',
-    'Quiz about space',
-    'Snake game',
-    'Landing page for my bakery',
-    'Tip calculator for dinner with friends'
-  ];
 
   // ---------- helpers ----------
 
@@ -246,10 +239,10 @@
       return '<button class="chip' + (on && ok ? ' on' : '') + (ok ? '' : ' locked') + '" data-pow="' + id + '" aria-pressed="' + (on && ok) + '">' +
         (ok ? (on ? '✓ ' : '') : '🔒 ') + f.emoji + ' ' + esc(Features.OPTION_LABEL[id]) + '</button>';
     }).join('') + '</div><div class="label-sm">Tools</div><div class="tools">' +
-      featBtn('refine', 'Edit with AI') + featBtn('a11y', 'Accessibility') + featBtn('source', 'Source') +
-      featBtn('timemachine', 'Versions (' + o.versions.length + ')') + featBtn('editor', 'Code editor') + featBtn('seo', 'SEO') +
-      featBtn('dna', 'Performance') + featBtn('embed', 'Embed') + featBtn('translate', 'Translate') + featBtn('autofix', 'AI Bug Fix') +
-      featBtn('security', 'Security scan') + featBtn('lock', 'Password') + featBtn('pwa', 'Installable app') + '</div>';
+      [['refine', Kinds.output(hubKind(o)) === 'image' ? 'Edit photo with AI' : 'Edit with AI'], ['a11y', 'Accessibility'], ['source', 'Source'],
+        ['timemachine', 'Versions (' + o.versions.length + ')'], ['editor', 'Code editor'], ['seo', 'SEO'], ['dna', 'Performance'],
+        ['embed', 'Embed'], ['translate', 'Translate'], ['autofix', 'AI Bug Fix'], ['security', 'Security scan'], ['lock', 'Password'],
+        ['pwa', 'Installable app']].filter(function (x) { return Kinds.toolOk(hubKind(o), x[0]); }).map(function (x) { return featBtn(x[0], x[1]); }).join('') + '</div>';
   }
 
   function bindHubTools(root, t) {
@@ -271,9 +264,16 @@
     });
   }
 
-  function pickEngine() {
-    var id = state.engine, bl = Plans.blocked(id);
-    return bl && bl.reason === 'plan' ? 'mini' : id;
+  function hubKind(o) { return (o && o.kind) || 'app'; }
+
+  // The agent to use for this kind: the chosen one if it can, else the
+  // first one the plan allows.
+  function pickEngine(kindId) {
+    var list = Kinds.engines(kindId || state.kind);
+    var ok = function (id) { var bl = Plans.blocked(id); return list.some(function (e) { return e.id === id; }) && !(bl && bl.reason === 'plan'); };
+    if (ok(state.engine)) return state.engine;
+    var first = list.filter(function (e) { return ok(e.id); })[0];
+    return (first || list[0]).id;
   }
 
   // Keeps html as the hub's new current version.
@@ -291,9 +291,10 @@
   // result as a new version.
   function runCloud(t, mode, extra, label) {
     if (!Cloud.configured()) { go('settings'); return toast('Add your Hub AI Cloud server first.'); }
-    var o = getT(t), engine = pickEngine(), e = Plans.engine(engine);
+    var o = getT(t), k = hubKind(o), engine = pickEngine(k), e = Plans.engine(engine);
     openSheet('<h2>' + esc(label) + '</h2><p class="muted" role="status"><span class="spinner"></span> ' + esc(e.name) + ' is working on it…</p>');
-    Cloud.generate(engine, extra.prompt || '', Object.assign({ mode: mode, html: o.html }, extra)).then(function (r) {
+    var body = Object.assign({ mode: mode, kind: k }, Kinds.output(k) === 'image' ? {} : { html: o.html }, extra);
+    Cloud.generate(engine, extra.prompt || '', body).then(function (r) {
       addVersion(t, r.html, label);
       closeSheet(); redraw(t); renderCredits(); toast(label + ' ✓');
     }, function (err) {
@@ -326,6 +327,8 @@
         s.querySelector('[data-x=go]').onclick = function () {
           var change = s.querySelector('#rf').value.trim();
           if (!change) return toast('Describe the change first.');
+          var o = getT(t);
+          if (Kinds.output(hubKind(o)) === 'image') return runCloud(t, 'create', { prompt: change.slice(0, 3900), image: Kinds.imageOf(o.html) }, '✏️ ' + change.slice(0, 40));
           runCloud(t, 'refine', { prompt: change.slice(0, 3900) }, '✏️ ' + change.slice(0, 40));
         };
       });
@@ -530,22 +533,30 @@
   }
 
   function setDraft(r, prompt) {
-    state.draft = { title: r.title, html: r.html, engine: r.engine, engineName: r.engineName, seconds: r.seconds,
+    state.draft = { title: r.title, html: r.html, engine: r.engine, engineName: r.engineName, seconds: r.seconds, kind: r.kind || state.kind,
       prompt: prompt, at: Date.now(), powerups: [], versions: [{ label: 'Original', html: r.html, at: Date.now() }] };
     Store.set('draft', state.draft);
+  }
+
+  // What goes with every new request: the kind, and the attached data file
+  // (Data Import) or the photo to edit.
+  function newExtra() {
+    var x = Object.assign({ kind: state.kind }, dataExtra());
+    if (Kinds.output(state.kind) === 'image' && state.photo) x.image = state.photo.dataUrl;
+    return x;
   }
 
   // The attached data file (Data Import) goes with every new hub request.
   function dataExtra() {
     var d = state.data;
-    return d && Features.has('dataimport') ? { data: d.text, dataName: d.name } : {};
+    return d && Features.has('dataimport') && Kinds.output(state.kind) !== 'image' ? { data: d.text, dataName: d.name } : {};
   }
 
   function battle() {
     var prompt = ($('#prompt').value || '').trim();
     if (!prompt) return toast('Describe the hub first.');
-    var open = Plans.engines().filter(function (e) { return !Plans.blocked(e.id); });
-    if (open.length < 2) return toast('You need two agents with credits left.');
+    var open = Kinds.engines(state.kind).filter(function (e) { return !Plans.blocked(e.id); });
+    if (open.length < 2) return toast('You need two agents that can make this, with credits left.');
     var opts = function (sel) { return open.map(function (e) { return '<option value="' + e.id + '"' + (e.id === sel ? ' selected' : '') + '>' + esc(e.name) + '</option>'; }).join(''); };
     openSheet('<h2>⚖️ Compare Agents</h2><p class="muted small">Both agents build “' + esc(prompt.slice(0, 60)) + '”. Each costs its usual credits.</p>' +
       '<div class="row"><select class="in" id="ba" aria-label="First agent">' + opts(open[0].id) + '</select><b>vs</b><select class="in" id="bb" aria-label="Second agent">' + opts(open[open.length > 2 ? 2 : 1].id) + '</select></div>' +
@@ -555,7 +566,7 @@
         var a = s.querySelector('#ba').value, b = s.querySelector('#bb').value, p = Features.brandPrompt(prompt);
         if (a === b) return toast('Pick two different agents.');
         pickSheet('⚖️ ' + Plans.engine(a).name + ' vs ' + Plans.engine(b).name, [a, b].map(function (id) {
-          return { label: Plans.engine(id).name, run: function () { return Cloud.generate(id, p, dataExtra()); } };
+          return { label: Plans.engine(id).name, run: function () { return Cloud.generate(id, p, newExtra()); } };
         }));
       };
     });
@@ -565,9 +576,10 @@
     var prompt = ($('#prompt').value || '').trim();
     if (!prompt) return toast('Describe the hub first.');
     var id = pickEngine(), p = Features.brandPrompt(prompt);
+    if (Kinds.output(state.kind) === 'image') return toast('Multiple Drafts works for everything except pictures.');
     var ideas = ['', '\n\n(Draft 2: choose a different layout and visual style.)', '\n\n(Draft 3: choose another different layout, and the simplest possible interface.)'];
     pickSheet('🗂️ Multiple Drafts · ' + Plans.engine(id).name, ideas.map(function (extra, n) {
-      return { label: 'Draft ' + (n + 1), run: function () { return Cloud.generate(id, p + extra, dataExtra()); } };
+      return { label: 'Draft ' + (n + 1), run: function () { return Cloud.generate(id, p + extra, newExtra()); } };
     }));
   }
 
@@ -600,7 +612,86 @@
     });
   }
 
-  // ---------- Create ----------
+  // ---------- Exports by kind: video, SVG/PNG, pictures, files from hubs ----------
+
+  var MEDIA_LOCK = 'Video, SVG, PNG, picture and 3D downloads need Hub Plus.';
+
+  function kindActions(o) {
+    var out = Kinds.output(hubKind(o)), ok = Plans.can('export:zip'), lock = ok ? '' : '<span class="lock">🔒</span>';
+    var b = function (act, label) { return '<button class="btn' + (ok ? '' : ' locked') + '" data-kact="' + act + '">' + lock + label + '</button>'; };
+    if (hubKind(o) === 'animation') return b('video', '🎬 Video');
+    if (out === 'svg') return b('svg', 'SVG') + b('png', 'PNG');
+    if (out === 'image') return b('picture', '⤓ Picture');
+    if (out === 'model3d') return '<span class="muted small" style="align-self:center">GLB and OBJ: open full screen and use the buttons in the viewer.</span>';
+    return '';
+  }
+
+  function bindKindActions(root, getHub) {
+    Array.prototype.forEach.call(root.querySelectorAll('[data-kact]'), function (b) {
+      b.onclick = function () {
+        if (!Plans.can('export:zip')) return upgrade(MEDIA_LOCK);
+        var o = getHub(), act = b.getAttribute('data-kact'), name = slug(o.title);
+        if (act === 'video') return videoSheet(o);
+        if (act === 'picture') {
+          var pic = Kinds.bytesOf(Kinds.imageOf(o.html));
+          if (!pic) return toast('No picture found in this hub.');
+          return HubBridge.save(name + '.' + (pic.mime === 'image/jpeg' ? 'jpg' : pic.mime.split('/')[1]), pic.mime, pic.bytes).then(toast, exportFailed);
+        }
+        var svg = Kinds.svgOf(o.html);
+        if (!svg) return toast('No SVG artwork found in this hub.');
+        if (act === 'svg') return HubBridge.save(name + '.svg', 'image/svg+xml', '<?xml version="1.0" encoding="UTF-8"?>\n' + svg).then(toast, exportFailed);
+        Kinds.pngOf(svg, 2048).then(function (bytes) { return HubBridge.save(name + '.png', 'image/png', bytes); }).then(toast, exportFailed);
+      };
+    });
+  }
+
+  var FORMATS = { vertical: ['Vertical 9:16', 540, 960], square: ['Square 1:1', 720, 720], landscape: ['Landscape 16:9', 960, 540] };
+  function videoSheet(o) {
+    openSheet('<h2>🎬 Export video</h2><p class="muted small">Records the animation as it plays. Keep this screen open while it records.</p>' +
+      '<label class="field" for="vf">Format</label><select class="in" id="vf">' + Object.keys(FORMATS).map(function (k) { return '<option value="' + k + '">' + FORMATS[k][0] + '</option>'; }).join('') + '</select>' +
+      '<label class="field" for="vd">Length</label><select class="in" id="vd"><option value="5">5 seconds</option><option value="10" selected>10 seconds</option><option value="15">15 seconds</option></select>' +
+      '<div id="vr" class="rec-box"></div><p class="muted small" id="vs" role="status"></p>' +
+      '<div class="row"><button class="btn" data-x="no">Close</button><button class="btn primary grow" data-x="go">Record</button></div>', function (s) {
+      s.querySelector('[data-x=no]').onclick = closeSheet;
+      s.querySelector('[data-x=go]').onclick = function () {
+        var f = FORMATS[s.querySelector('#vf').value], secs = +s.querySelector('#vd').value, st = s.querySelector('#vs'), go2 = s.querySelector('[data-x=go]');
+        go2.disabled = true; st.innerHTML = '<span class="spinner"></span> Recording ' + secs + ' seconds…';
+        Kinds.record(effective(o), secs, f[1], f[2], s.querySelector('#vr'), frame).then(function (v) {
+          st.textContent = 'Saving…';
+          return HubBridge.save(slug(o.title) + '.' + v.ext, v.mime, v.bytes);
+        }).then(function (m) { closeSheet(); toast('🎬 ' + m); }, function (e) {
+          go2.disabled = false;
+          if (e.message === 'cancelled') { st.textContent = ''; return; }
+          st.textContent = e.message;
+        });
+      };
+    });
+  }
+
+  // A hub (the 3D viewer, or any hub) asks to save a file: confirm first.
+  var FILE_TYPES = { glb: 'model/gltf-binary', obj: 'text/plain', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', svg: 'image/svg+xml',
+    csv: 'text/csv', json: 'application/json', txt: 'text/plain', webm: 'video/webm', mp4: 'video/mp4' };
+  window.addEventListener('message', function (e) {
+    var m = e.data;
+    if (!m || m.type !== 'hub-file' || typeof m.name !== 'string' || typeof m.data !== 'string') return;
+    var ours = Array.prototype.some.call(document.querySelectorAll('iframe'), function (f) { return f.contentWindow === e.source; });
+    var ext = (/\.([a-z0-9]{1,5})$/i.exec(m.name) || [])[1];
+    ext = ext && ext.toLowerCase();
+    if (!ours || !FILE_TYPES[ext]) return;
+    if (!Plans.can('export:zip')) return upgrade(MEDIA_LOCK);
+    var name = slug(m.name.replace(/\.[a-z0-9]+$/i, '')) + '.' + ext, kb = Math.max(1, Math.round(m.data.length * 0.75 / 1024));
+    openSheet('<h2>Save file?</h2><p>This hub wants to save <b>' + esc(name) + '</b> (' + kb + ' KB).</p>' +
+      '<div class="row"><button class="btn grow" data-x="no">Cancel</button><button class="btn primary grow" data-x="go">Save</button></div>', function (s) {
+      s.querySelector('[data-x=no]').onclick = closeSheet;
+      s.querySelector('[data-x=go]').onclick = function () {
+        var f = Kinds.bytesOf('data:' + FILE_TYPES[ext] + ';base64,' + m.data);
+        closeSheet();
+        if (!f) return toast('That file could not be read.');
+        HubBridge.save(name, FILE_TYPES[ext], f.bytes).then(toast, exportFailed);
+      };
+    });
+  });
+
   // ---------- Create ----------
 
   function engineRow(e) {
@@ -616,30 +707,45 @@
   }
 
   function renderCreate() {
-    var c = Plans.credits();
+    var c = Plans.credits(), k = Kinds.get(state.kind), isImage = k.output === 'image';
     var status = !Cloud.configured()
       ? '<div class="note">Hub agents run in Hub AI Cloud. Add your server address in <a href="#" id="toSettings">Settings</a> to start generating.</div>'
       : '<p class="muted small" style="margin:8px 0 0">' + (c.left === null ? 'Connecting…' : c.left + ' credits left') + ' · ' +
         esc(Plans.plan().name) + (c.rule ? ' (' + esc(c.rule) + ')' : '') + '</p>';
-    var d = state.data;
-    var dataRow = '<div class="row" style="margin-top:8px">' + featBtn('dataimport', d ? 'Replace data file' : 'Attach data (CSV, JSON)') +
-      '<input type="file" id="dataFile" accept=".csv,.tsv,.json,.txt" hidden>' +
-      (d ? '<span class="chip on grow" style="cursor:default">📎 ' + esc(d.name) + ' · ' + d.kb + ' KB · ' + d.rows + ' rows</span>' +
-        '<button class="btn" id="dataRm" aria-label="Remove data file">✕</button>' : '') + '</div>';
+    var d = state.data, ph = state.photo;
+    var extraRow = isImage
+      ? '<div class="row" style="margin-top:8px"><button class="btn" id="photoBtn">📷 ' + (ph ? 'Change photo' : 'Add a photo to edit') + '</button>' +
+        '<input type="file" id="photoFile" accept="image/png,image/jpeg,image/webp" hidden>' +
+        (ph ? '<img class="photo-thumb" src="' + ph.dataUrl + '" alt="Photo to edit"><span class="muted small grow">' + esc(ph.name) + ' · ' + ph.w + '×' + ph.h + '</span>' +
+          '<button class="btn" id="photoRm" aria-label="Remove photo">✕</button>' : '<span class="muted small grow">Optional. Without one, a new picture is made.</span>') + '</div>'
+      : '<div class="row" style="margin-top:8px">' + featBtn('dataimport', d ? 'Replace data file' : 'Attach data (CSV, JSON)') +
+        '<input type="file" id="dataFile" accept=".csv,.tsv,.json,.txt" hidden>' +
+        (d ? '<span class="chip on grow" style="cursor:default">📎 ' + esc(d.name) + ' · ' + d.kb + ' KB · ' + d.rows + ' rows</span>' +
+          '<button class="btn" id="dataRm" aria-label="Remove data file">✕</button>' : '') + '</div>';
+    var placeholder = isImage ? (ph ? 'Describe the edit, e.g. make the sky a sunset and remove the people' : 'Describe the picture, e.g. ' + k.examples[2])
+      : 'Describe it, e.g. ' + k.examples[0];
     view.innerHTML = '<div class="wrap">' +
-      '<div class="card"><h2>Create a hub</h2>' +
-      '<label class="field" for="prompt" style="margin-top:0">What should it do?</label>' +
-      '<textarea class="in" id="prompt" placeholder="Describe the app you want, e.g. an expense tracker with monthly totals per category">' + esc(state.prompt) + '</textarea>' +
-      dataRow +
-      '<div class="chips"><button class="chip' + (Features.has('starters') ? '' : ' locked') + '" id="sur">📋 Templates</button>' +
-      EXAMPLES.map(function (x) { return '<button class="chip" data-ex="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div>' +
-      '<label class="field">Agent</label><div class="engines">' + Plans.engines().map(engineRow).join('') + '</div>' +
+      '<div class="card"><h2>What do you want to make?</h2>' +
+      '<div class="kinds" role="radiogroup" aria-label="What to make">' + Kinds.list().map(function (x) {
+        return '<button class="kind' + (x.id === k.id ? ' on' : '') + '" role="radio" aria-checked="' + (x.id === k.id) + '" data-kind="' + x.id + '">' +
+          '<span class="kemoji" aria-hidden="true">' + x.emoji + '</span><span>' + esc(x.name) + '</span></button>';
+      }).join('') + '</div>' +
+      '<p class="muted small" style="margin:8px 0 0">' + k.emoji + ' ' + esc(k.desc) + '</p>' +
+      '<label class="field" for="prompt">' + (isImage && ph ? 'The edit' : 'Describe it') + '</label>' +
+      '<textarea class="in" id="prompt" placeholder="' + esc(placeholder) + '">' + esc(state.prompt) + '</textarea>' +
+      extraRow +
+      '<div class="chips">' + (k.id === 'app' ? '<button class="chip' + (Features.has('starters') ? '' : ' locked') + '" id="sur">📋 Templates</button>' : '') +
+      k.examples.map(function (x) { return '<button class="chip" data-ex="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div>' +
+      '<label class="field">Agent</label><div class="engines">' + Kinds.engines(k.id).map(engineRow).join('') + '</div>' +
       '<button class="btn primary block" id="gen" style="margin-top:12px">' + (state.busy ? '<span class="spinner"></span> Generating…' : 'Generate') + '</button>' +
-      '<div class="row" style="margin-top:8px">' + featBtn('battle', 'Compare agents', ' style="flex:1"') + featBtn('variations', '3 drafts', ' style="flex:1"') + '</div>' +
+      (isImage ? '' : '<div class="row" style="margin-top:8px">' + featBtn('battle', 'Compare agents', ' style="flex:1"') + featBtn('variations', '3 drafts', ' style="flex:1"') + '</div>') +
       status + '</div><div id="result"></div></div>';
 
     var p = $('#prompt');
     p.oninput = function () { state.prompt = p.value; Store.set('promptDraft', p.value); };
+    Array.prototype.forEach.call(view.querySelectorAll('[data-kind]'), function (b) {
+      b.onclick = function () { state.kind = b.getAttribute('data-kind'); Store.set('kind', state.kind); renderCreate(); };
+    });
     Array.prototype.forEach.call(view.querySelectorAll('[data-ex]'), function (b) {
       b.onclick = function () { p.value = state.prompt = b.getAttribute('data-ex'); Store.set('promptDraft', p.value); };
     });
@@ -652,19 +758,31 @@
       };
     });
     $('#gen').onclick = generate;
-    $('#sur').onclick = function () {
+    var sur = $('#sur');
+    if (sur) sur.onclick = function () {
       if (!Features.has('starters')) return upgrade(Features.needs('starters'));
       starters();
     };
     var file = $('#dataFile');
-    file.onchange = function () {
+    if (file) file.onchange = function () {
       if (!file.files[0]) return;
-      Features.readData(file.files[0]).then(function (d) { state.data = d; renderCreate(); toast('📎 ' + d.name + ' attached'); },
+      Features.readData(file.files[0]).then(function (dd) { state.data = dd; renderCreate(); toast('📎 ' + dd.name + ' attached'); },
         function (e) { toast(e.message); });
       file.value = '';
     };
     var rm = $('#dataRm');
     if (rm) rm.onclick = function () { state.data = null; renderCreate(); };
+    var pf = $('#photoFile');
+    if (pf) {
+      $('#photoBtn').onclick = function () { pf.click(); };
+      pf.onchange = function () {
+        if (!pf.files[0]) return;
+        Kinds.readPhoto(pf.files[0]).then(function (x) { state.photo = x; renderCreate(); }, function (e) { toast(e.message); });
+        pf.value = '';
+      };
+    }
+    var prm = $('#photoRm');
+    if (prm) prm.onclick = function () { state.photo = null; renderCreate(); };
     Array.prototype.forEach.call(view.querySelectorAll('.wrap > .card [data-feat]'), function (b) {
       b.onclick = function () {
         var id = b.getAttribute('data-feat');
@@ -676,9 +794,9 @@
     });
     var ts = $('#toSettings');
     if (ts) ts.onclick = function (ev) { ev.preventDefault(); go('settings'); };
-    if (!Plans.engine(state.engine) || (Plans.blocked(state.engine) && Plans.blocked(state.engine).reason === 'plan')) {
-      state.engine = 'mini';
-      Array.prototype.forEach.call(view.querySelectorAll('[data-engine]'), function (x) { x.classList.toggle('on', x.getAttribute('data-engine') === 'mini'); });
+    var use = pickEngine();
+    if (use !== state.engine) {
+      Array.prototype.forEach.call(view.querySelectorAll('[data-engine]'), function (x) { x.classList.toggle('on', x.getAttribute('data-engine') === use); });
     }
     renderResult();
   }
@@ -690,7 +808,7 @@
     if (!d) { box.innerHTML = ''; return; }
     var saved = d.savedId && hubById(d.savedId);
     box.innerHTML = '<div class="card"><div class="row"><div class="grow"><h3>' + esc(d.title) + '</h3>' +
-      '<div class="muted small">' + esc(d.engineName) + (d.seconds ? ' · ' + d.seconds + ' s' : '') + '</div></div>' +
+      '<div class="muted small">' + Kinds.get(hubKind(d)).emoji + ' ' + esc(Kinds.get(hubKind(d)).name) + ' · ' + esc(d.engineName) + (d.seconds ? ' · ' + d.seconds + ' s' : '') + '</div></div>' +
       '<button class="btn" data-act="open">Full screen</button></div>' +
       (d.notes || []).map(function (n) { return '<div class="note">' + esc(n) + '</div>'; }).join('') +
       '<div id="pv" style="margin-top:10px"></div>' +
@@ -698,10 +816,11 @@
       (saved ? '<button class="btn" id="saved">Saved ✓</button>' : '<button class="btn' + (Plans.can('save') ? '' : ' locked') + '" id="save">' + (Plans.can('save') ? '' : '<span class="lock">🔒</span>') + 'Save</button>') +
       lockBtn('HTML', 'export:html', 'html') + lockBtn('ZIP', 'export:zip', 'zip') +
       lockBtn(saved && FunHub.isPublished(saved.id) ? 'Unpublish' : 'Publish', 'publish', 'publish') +
-      lockBtn('Share', 'export:html', 'share') +
+      lockBtn('Share', 'export:html', 'share') + kindActions(d) +
       '<button class="btn" id="discard">Discard</button></div>' + hubTools(getT({ kind: 'draft' })) + '</div>';
     previewBox(effective(d), $('#pv'));
     bindHubTools(box, { kind: 'draft' });
+    bindKindActions(box, function () { return getT({ kind: 'draft' }); });
 
     var saveBtn = $('#save');
     if (saveBtn) saveBtn.onclick = function () {
@@ -725,7 +844,7 @@
   function saveDraft() {
     var d = state.draft;
     if (d.savedId && hubById(d.savedId)) return d.savedId;
-    var hub = { id: uid(), title: d.title, html: d.html, engine: d.engine, engineName: d.engineName, prompt: d.prompt, created: Date.now(),
+    var hub = { id: uid(), title: d.title, html: d.html, engine: d.engine, engineName: d.engineName, kind: hubKind(d), prompt: d.prompt, created: Date.now(),
       powerups: (d.powerups || []).slice(), versions: (d.versions || []).slice() };
     var list = hubs(); list.unshift(hub);
     if (!saveHubs(list)) return null;
@@ -736,14 +855,14 @@
   function generate() {
     if (state.busy) return;
     var prompt = ($('#prompt').value || '').trim();
-    if (!prompt) { toast('Describe the hub you want first.'); return; }
+    if (!prompt) { toast(state.photo && Kinds.output(state.kind) === 'image' ? 'Describe the edit first.' : 'Describe what you want first.'); return; }
     if (!Cloud.configured()) { go('settings'); toast('Add your Hub AI Cloud server first.'); return; }
-    var id = state.engine, e = Plans.engine(id), bl = Plans.blocked(id);
+    var id = pickEngine(), e = Plans.engine(id), bl = Plans.blocked(id);
     if (bl) return bl.reason === 'credits' || bl.reason === 'plan' ? upgrade(bl.text) : toast(bl.text);
 
     state.busy = true;
-    $('#gen').innerHTML = '<span class="spinner"></span> ' + esc(e.name) + ' is building your hub…';
-    Cloud.generate(id, Features.brandPrompt(prompt), dataExtra()).then(function (r) {
+    $('#gen').innerHTML = '<span class="spinner"></span> ' + esc(e.name) + ' is making your ' + esc(Kinds.get(state.kind).name.toLowerCase()) + '…';
+    Cloud.generate(id, Features.brandPrompt(prompt), newExtra()).then(function (r) {
       setDraft(r, prompt);
     }, function (err) {
       if (err.code === 'plan' || err.code === 'credits') upgrade(err.message);
@@ -760,15 +879,15 @@
 
   function renderHubs() {
     if (!Plans.can('save')) {
-      view.innerHTML = '<div class="wrap"><div class="card empty"><h2>Hubs</h2><p>Hub Free can try Hub V1 Mini and preview what it makes, but saving and exporting hubs starts with Hub Go ($2/month).</p>' +
+      view.innerHTML = '<div class="wrap"><div class="card empty"><h2>Hubs</h2><p>Hub Free can make anything and preview it, but saving and exporting starts with Hub Go ($2/month).</p>' +
         '<button class="btn primary" id="up">See plans</button></div></div>';
       $('#up').onclick = function () { go('plans'); };
       return;
     }
     var list = hubs();
     view.innerHTML = '<div class="wrap"><div class="row"><h2 class="grow">Your hubs</h2></div>' + (list.length ? list.map(function (h) {
-      return '<button class="hub-item" data-id="' + h.id + '"><span class="thumb">' + esc(h.title.charAt(0).toUpperCase()) + '</span>' +
-        '<span class="grow"><div class="t">' + esc(h.title) + '</div><div class="muted small">' + esc(h.engineName) + ' · ' + fmtDate(h.created) +
+      return '<button class="hub-item" data-id="' + h.id + '"><span class="thumb" aria-hidden="true">' + Kinds.get(hubKind(h)).emoji + '</span>' +
+        '<span class="grow"><div class="t">' + esc(h.title) + '</div><div class="muted small">' + esc(Kinds.get(hubKind(h)).name) + ' · ' + esc(h.engineName) + ' · ' + fmtDate(h.created) +
         (FunHub.isPublished(h.id) ? ' · on FunHub' : '') + '</div></span></button>';
     }).join('') : '<div class="card empty">No hubs yet. Make one on the Create tab.</div>') + '</div>';
     Array.prototype.forEach.call(view.querySelectorAll('[data-id]'), function (b) {
@@ -780,13 +899,14 @@
     var h = hubById(id);
     if (!h || !Plans.can('save')) { state.view = 'hubs'; renderHubs(); return; }
     view.innerHTML = '<div class="wrap"><div class="card"><input class="in" id="title" value="' + esc(h.title) + '" aria-label="Hub title">' +
-      '<div class="muted small" style="margin:8px 0">' + esc(h.engineName) + ' · ' + fmtDate(h.created) + (h.prompt ? ' · “' + esc(h.prompt.slice(0, 80)) + '”' : '') + '</div>' +
+      '<div class="muted small" style="margin:8px 0">' + Kinds.get(hubKind(h)).emoji + ' ' + esc(Kinds.get(hubKind(h)).name) + ' · ' + esc(h.engineName) + ' · ' + fmtDate(h.created) + (h.prompt ? ' · “' + esc(h.prompt.slice(0, 80)) + '”' : '') + '</div>' +
       '<div id="pv"></div><div class="actions">' +
       '<button class="btn" data-act="open">Full screen</button>' + lockBtn('HTML', 'export:html', 'html') + lockBtn('ZIP', 'export:zip', 'zip') +
-      lockBtn(FunHub.isPublished(h.id) ? 'Unpublish' : 'Publish', 'publish', 'publish') + lockBtn('Share', 'export:html', 'share') +
+      lockBtn(FunHub.isPublished(h.id) ? 'Unpublish' : 'Publish', 'publish', 'publish') + lockBtn('Share', 'export:html', 'share') + kindActions(h) +
       '<button class="btn danger" id="del">Delete</button></div>' + hubTools(getT({ kind: 'hub', id: id })) + '</div></div>';
     previewBox(effective(h), $('#pv'));
     bindHubTools(view, { kind: 'hub', id: id });
+    bindKindActions(view, function () { return getT({ kind: 'hub', id: id }); });
     $('#title').onchange = function () {
       var list = hubs();
       list.forEach(function (x) { if (x.id === id) x.title = $('#title').value.trim() || x.title; });
@@ -1012,7 +1132,7 @@
         '<div class="row"><button class="btn grow" data-x="no">Cancel</button><button class="btn danger grow" data-x="yes">Erase</button></div>', function (sh) {
         sh.querySelector('[data-x=no]').onclick = closeSheet;
         sh.querySelector('[data-x=yes]').onclick = function () {
-          Store.clear(); state.draft = null; state.prompt = ''; state.engine = 'mini'; state.stack = [];
+          Store.clear(); state.draft = null; state.prompt = ''; state.engine = 'flux'; state.kind = 'app'; state.photo = null; state.stack = [];
           closeSheet(); go('create', null, false); toast('All data erased'); sync();
         };
       });

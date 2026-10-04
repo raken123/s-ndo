@@ -1,8 +1,0 @@
-# Extra hand-labelled requests, one JSON object per line. Used by every tier
-# that knows the label. Retrain with: python training/train.py
-{"text": "something to track how much water I drink", "label": "habit"}
-{"text": "help me remember what to buy at the store", "label": "todo"}
-{"text": "keep score for our card game", "label": "counter"}
-{"text": "who pays for lunch today", "label": "picker"}
-{"text": "how long until my birthday", "label": "countdown"}
-{"text": "a page about me with my links", "label": "landing"}

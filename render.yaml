@@ -1,5 +1,5 @@
 # One-click deploy of Hub AI Cloud on Render (render.com): New → Blueprint,
-# pick this repository and branch. You'll be asked for the API keys.
+# pick this repository and branch. You'll be asked for the API key.
 services:
   - type: web
     name: hub-ai-cloud
@@ -9,8 +9,6 @@ services:
     plan: starter            # a disk (below) needs a paid instance
     healthCheckPath: /v1/health
     envVars:
-      - key: OPENAI_API_KEY
-        sync: false
       - key: GEMINI_API_KEY
         sync: false
       - key: HUBAI_ADMIN_KEY

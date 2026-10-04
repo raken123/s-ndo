@@ -1,13 +1,14 @@
 # Hub AI
 
-Apps for making **hubs**: small single-file apps you can preview, save,
-export as HTML and share. Hubs are built by the **Hub agents**, cloud agents
-that each start from a GPT base model and are fine-tuned in Python, or by
-**Gemini 3.8 Flash / Pro**. **FunHub** is a scrolling feed of hubs you can
+Apps for making **hubs**: apps, animations, slides, HTML cards, 3D models,
+UI designs, pictures and photo edits, games, websites, infographics, logos,
+diagrams and documents, each a single file you can preview, save, export and
+share. They are made by the **Hub V1 agents**: Spark, Flux, Volt, Prism,
+Titan and Pixel (pictures). **FunHub** is a scrolling feed of hubs you can
 play and share.
 
 The agents run on **Hub AI Cloud** (`cloud/`), a small Python server you
-deploy with your OpenAI and Gemini keys. The apps need its address; see
+deploy with your model API key. The apps need its address; see
 [cloud/README.md](cloud/README.md).
 
 Downloads:
@@ -59,13 +60,32 @@ Cloud.
 | | Hub Free | Hub Go — $2/month | Hub Plus — $12/month | Hub Enterprise — $120,000/seat/year |
 |---|---|---|---|---|
 | Credits | 10 per day, 200 per year max | 100 per day | 1,000 per month | 100,000 per month |
-| Hub agents | V1 Mini | V1 Mini, Lite, **Standard** | + **V1 Plus**, a little **V1 Max** (5 per day) | All of them, plus 🤫 a secret one |
-| Gemini | — | **Gemini 3.8 Flash** | Flash, a little **Gemini 3.8 Pro** (3 per day) | Flash and Pro |
-| Hubs | Preview only, no saving | Save, **HTML export only** | Save, HTML and ZIP export | Save, HTML and ZIP export |
+| Hub agents | V1 Spark, V1 Flux, V1 Pixel | + **V1 Volt** | + **V1 Prism**, a little **V1 Titan** (5 per day) | All of them, plus 🤫 a secret one |
+| What you can make | Everything (13 types) | Everything | Everything | Everything |
+| Hubs | Preview only, no saving | Save, **HTML export only** | Save; HTML, ZIP, video, SVG/PNG, picture and 3D exports | Same as Plus |
 | Tools | 5 | 10 | 15 | all 20 |
 
-Credit costs per hub: V1 Mini 1, Lite 1, Standard 2, Plus 3, Max 5,
-Gemini Flash 3, Gemini Pro 10. Credits are refunded when generation fails.
+Credit costs per hub: V1 Spark 1, Flux 1, Volt 2, Prism 3, Titan 6, Pixel
+(pictures and photo edits) 4. Credits are refunded when generation fails.
+
+## What you can make
+
+| Type | What comes out | Extra export |
+|---|---|---|
+| 🧩 App, 🎮 Game, 🌐 Website | a working single-file app | |
+| 🎞️ Animation | a looping canvas animation | 🎬 video (WebM/MP4, 9:16, 1:1 or 16:9, 5–15 s), recorded on the device |
+| 📽️ Slides | a deck with keyboard/swipe navigation and speaker notes | print to PDF from the deck |
+| 💌 HTML Card | an invitation, greeting, business card or post | print |
+| 🧊 3D Model | a model in a WebGL viewer (spin, zoom) | GLB and OBJ from the viewer |
+| 🎨 UI Design | high-fidelity screens plus a small design system | |
+| 🖼️ Image & Photo Edit | a new picture, or your photo edited as described (Hub V1 Pixel) | the picture (PNG/JPEG) |
+| 📈 Infographic | charts and visual explainers | |
+| ✒️ Logo & Icon, 🔀 Diagram | one standalone SVG | SVG and PNG |
+| 📄 Document | printable A4 pages | print to PDF |
+
+Edit with AI works on every type; for pictures it edits the picture again.
+Hubs that offer a file (like the 3D viewer) ask the app, which asks you
+before saving.
 
 The secret agent (Hub V2 Max) never appears in the app or in `/v1/config`
 unless the account is on Hub Enterprise. Model details stay on the server.
@@ -110,10 +130,9 @@ Plus, so they are there.)
 
 ## Hub agents
 
-The agents run on Hub AI Cloud. Each starts from a base model and is
-fine-tuned in Python on Hub examples (`cloud/training/`). Which models they
-use is configured on the server, not shown in the app; see
-[cloud/README.md](cloud/README.md#agents).
+The agents run on Hub AI Cloud with Hub's instructions for each type of
+creation. Which model powers each one is configured on the server and never
+shown in the apps; see [cloud/README.md](cloud/README.md#agents).
 
 ## How it's built
 
