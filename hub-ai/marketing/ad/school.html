@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hub AI ad 2 — Detention</title>
+<!--
+  Ad 2 (1080x1920, ~45 s). Timings come from TL.marks, written by
+  make_audio_school.py from the real length of every spoken line, so the
+  picture always follows the voices. render.js calls init(timeline) and
+  render(t) per frame. Open with ?play to preview with sound.
+-->
+<style>
+  html, body { margin: 0; background: #000; }
+  svg { display: block; width: 1080px; height: 1920px; }
+  text { font-family: "DejaVu Sans", "Noto Color Emoji", sans-serif; }
+</style>
+</head>
+<body>
+<svg id="s" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe9b0"/><stop offset="1" stop-color="#f3cf7a"/>
+    </linearGradient>
+    <linearGradient id="minnieFill" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffe680"/><stop offset="0.55" stop-color="#ffd23a"/><stop offset="1" stop-color="#f0b400"/>
+    </linearGradient>
+    <linearGradient id="maxFill" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#eef38a"/><stop offset="0.55" stop-color="#d8e04a"/><stop offset="1" stop-color="#b9c42a"/>
+    </linearGradient>
+    <linearGradient id="teacherFill" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f2cf6a"/><stop offset="0.55" stop-color="#d9a93c"/><stop offset="1" stop-color="#b8862a"/>
+    </linearGradient>
+    <clipPath id="screenClip"><rect x="-231" y="-450" width="462" height="900" rx="46"/></clipPath>
+  </defs>
+
+  <!-- classroom -->
+  <rect width="1080" height="1920" fill="url(#wall)"/>
+  <rect y="1230" width="1080" height="40" fill="#b9864a"/>
+  <rect y="1270" width="1080" height="650" fill="#a8703c"/>
+  <g id="planks"></g>
+  <g id="board"></g>
+  <g id="clock"></g>
+
+  <g id="charsBack"></g>
+  <g id="desks"></g>
+  <g id="charsFront"></g>
+
+  <g id="phone" opacity="0">
+    <rect x="-251" y="-470" width="502" height="940" rx="64" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="6"/>
+    <g clip-path="url(#screenClip)">
+      <rect x="-231" y="-450" width="462" height="900" fill="#0d0d0d"/>
+      <image id="scrCreate" href="build/screens/create-school.png" x="-231" y="-450" width="462" height="1000" preserveAspectRatio="xMidYMin slice"/>
+      <image id="scrResult" href="build/screens/result-school.png" x="-231" y="-450" width="462" height="1000" preserveAspectRatio="xMidYMin slice" opacity="0"/>
+    </g>
+    <rect x="-60" y="-446" width="120" height="26" rx="13" fill="#0a0a0a"/>
+  </g>
+
+  <g id="fx"></g>
+  <rect id="dim" width="1080" height="1920" fill="#0b1630" opacity="0"/>
+  <g id="cards"></g>
+  <g id="caption"></g>
+  <g id="endcard" opacity="0"></g>
+  <rect id="flash" width="1080" height="1920" fill="#fff" opacity="0"/>
+</svg>
+
+<script src="cats.js"></script>
+<script>
+var M = {}, max, minnie, teacher, F = {};
+
+function makeRemote(parent) {
+  // The spiky projector remote: chunky, with cartoon spikes and a red button.
+  var g = el('g', {}, parent);
+  for (var i = 0; i < 5; i++) {
+    var y = -48 + i * 22;
+    el('path', { d: 'M-22,' + (y - 8) + ' L-44,' + y + ' L-22,' + (y + 8) + ' Z M22,' + (y - 8) + ' L44,' + y + ' L22,' + (y + 8) + ' Z', fill: '#9aa3ad', stroke: '#1b1b1b', 'stroke-width': 4, 'stroke-linejoin': 'round' }, g);
+  }
+  el('path', { d: 'M-8,-62 L0,-92 L8,-62 Z', fill: '#9aa3ad', stroke: '#1b1b1b', 'stroke-width': 4 }, g);
+  el('rect', { x: -24, y: -64, width: 48, height: 128, rx: 14, fill: '#2a2d33', stroke: '#1b1b1b', 'stroke-width': 6 }, g);
+  el('circle', { cx: 0, cy: -34, r: 11, fill: '#e5484d', stroke: '#1b1b1b', 'stroke-width': 4 }, g);
+  [0, 18, 36].forEach(function (y) { el('rect', { x: -12, y: y - 6, width: 24, height: 10, rx: 4, fill: '#5d636d' }, g); });
+  return g;
+}
+
+function setup() {
+  M = TL.marks;
+  for (var i = 0; i < 9; i++) el('path', { d: 'M0,' + (1330 + i * 70) + ' L1080,' + (1300 + i * 72), stroke: '#8f5c2e', 'stroke-width': 4, opacity: 0.6 }, $('planks'));
+  // projector screen
+  var b = $('board');
+  el('rect', { x: 100, y: 590, width: 820, height: 26, rx: 12, fill: '#6b6f78', stroke: '#2b2b2b', 'stroke-width': 5 }, b);
+  el('rect', { x: 120, y: 612, width: 780, height: 450, fill: '#fbfbf7', stroke: '#c9c9c0', 'stroke-width': 5 }, b);
+  F.boardTitle = el('text', { x: 510, y: 690, 'font-size': 54, 'font-weight': 800, fill: '#30343b', 'text-anchor': 'middle' }, b);
+  F.code = [0, 1, 2, 3, 4].map(function (i) { return el('text', { x: 170, y: 770 + i * 56, 'font-size': 40, 'font-family': 'DejaVu Sans Mono', fill: '#2b6cb0' }, b); });
+  F.err = el('g', { opacity: 0 }, b);
+  el('rect', { x: 120, y: 612, width: 780, height: 450, fill: '#e5484d', opacity: 0.92 }, F.err);
+  var e1 = el('text', { x: 510, y: 820, 'font-size': 92, 'font-weight': 900, fill: '#fff', 'text-anchor': 'middle' }, F.err); e1.textContent = '❌ ERROR';
+  var e2 = el('text', { x: 510, y: 900, 'font-size': 42, 'font-weight': 700, fill: '#fff', 'text-anchor': 'middle' }, F.err); e2.textContent = 'APP NOT FOUND (404)';
+  F.grade = el('text', { x: 720, y: 930, 'font-size': 230, 'font-weight': 900, fill: '#2f9e5b', 'text-anchor': 'middle', opacity: 0 }, b); F.grade.textContent = 'A+';
+  // wall clock
+  var c = $('clock');
+  el('circle', { cx: 990, cy: 680, r: 62, fill: '#fff', stroke: '#2b2b2b', 'stroke-width': 8 }, c);
+  F.hourHand = el('path', { d: 'M990,680 L990,646', stroke: '#2b2b2b', 'stroke-width': 9, 'stroke-linecap': 'round' }, c);
+  F.minHand = el('path', { d: 'M990,680 L990,630', stroke: '#2b2b2b', 'stroke-width': 6, 'stroke-linecap': 'round' }, c);
+  // characters: Max and Minnie sit behind the desks, the teacher stands in front
+  max = makeCat('max', $('charsBack'));
+  minnie = makeCat('minnie', $('charsBack'));
+  teacher = makeCat('teacher', $('charsFront'));
+  F.remote = makeRemote(teacher.armR);
+  F.remote.setAttribute('transform', 'translate(80,92) rotate(-20) scale(0.95)');
+  [[90, 520], [570, 990]].forEach(function (d) {
+    var g = el('g', {}, $('desks'));
+    el('rect', { x: d[0] + 30, y: 1500, width: 24, height: 300, fill: '#6b4512' }, g);
+    el('rect', { x: d[1] - 54, y: 1500, width: 24, height: 300, fill: '#6b4512' }, g);
+    el('rect', { x: d[0], y: 1440, width: d[1] - d[0], height: 70, rx: 12, fill: '#c98a4b', stroke: '#5a3a12', 'stroke-width': 8 }, g);
+    el('rect', { x: d[0] + 10, y: 1450, width: d[1] - d[0] - 20, height: 14, rx: 6, fill: '#e2a868', opacity: 0.8 }, g);
+  });
+  // effects
+  var fx = $('fx');
+  F.steam = [0, 1, 2, 3, 4, 5].map(function () { return el('circle', { r: 26, fill: '#fff', opacity: 0 }, fx); });
+  F.sweat = [0, 1].map(function () { return el('path', { d: 'M0,-26 C14,-6 14,10 0,14 C-14,10 -14,-6 0,-26 Z', fill: '#7cc4ff', stroke: '#1b1b1b', 'stroke-width': 4, opacity: 0 }, fx); });
+  F.cloud = el('g', { opacity: 0 }, fx);
+  F.puffs = [];
+  for (var p = 0; p < 11; p++) F.puffs.push(el('circle', { r: 120, fill: p % 3 ? '#e9e9e9' : '#ffffff', stroke: '#1b1b1b', 'stroke-width': 8 }, F.cloud));
+  F.stars = [0, 1, 2, 3, 4].map(function () { var s = el('text', { 'font-size': 80, 'text-anchor': 'middle', fill: '#ffd23a', stroke: '#1b1b1b', 'stroke-width': 4, 'paint-order': 'stroke' }, F.cloud); s.textContent = '★'; return s; });
+  F.cloudRemote = makeRemote(F.cloud);
+  F.cloudPaw = el('circle', { r: 30, fill: '#d8e04a', stroke: '#5a3a12', 'stroke-width': 7 }, F.cloud);
+  F.bonk = el('g', { opacity: 0 }, fx);
+  var pts = [];
+  for (var k2 = 0; k2 < 20; k2++) { var a = k2 / 20 * Math.PI * 2, rr = k2 % 2 ? 95 : 150; pts.push(Math.cos(a) * rr * 1.3 + ',' + Math.sin(a) * rr); }
+  el('polygon', { points: pts.join(' '), fill: '#ffd23a', stroke: '#1b1b1b', 'stroke-width': 8, 'stroke-linejoin': 'round' }, F.bonk);
+  var bt = el('text', { y: 26, 'font-size': 78, 'font-weight': 900, 'text-anchor': 'middle', fill: '#e5484d', stroke: '#1b1b1b', 'stroke-width': 5, 'paint-order': 'stroke' }, F.bonk); bt.textContent = 'BONK!';
+  F.count = el('text', { x: 860, y: 1180, 'font-size': 150, 'font-weight': 900, 'text-anchor': 'middle', fill: '#fff', stroke: '#1b1b1b', 'stroke-width': 10, 'paint-order': 'stroke', opacity: 0 }, fx);
+  F.dizzy = [0, 1, 2].map(function () { var s = el('text', { 'font-size': 64, 'text-anchor': 'middle', fill: '#ffd23a', stroke: '#1b1b1b', 'stroke-width': 4, 'paint-order': 'stroke', opacity: 0 }, fx); s.textContent = '★'; return s; });
+  F.bandage = el('g', { opacity: 0 }, fx);
+  el('rect', { x: -60, y: -16, width: 120, height: 32, rx: 10, fill: '#ffd7c2', stroke: '#1b1b1b', 'stroke-width': 5, transform: 'rotate(35)' }, F.bandage);
+  el('rect', { x: -60, y: -16, width: 120, height: 32, rx: 10, fill: '#ffd7c2', stroke: '#1b1b1b', 'stroke-width': 5, transform: 'rotate(-35)' }, F.bandage);
+  F.dropRemote = makeRemote(fx); F.dropRemote.setAttribute('opacity', 0);
+  F.hearts = [0, 1, 2, 3].map(function () { var h = el('text', { 'font-size': 80, 'text-anchor': 'middle', opacity: 0 }, fx); h.textContent = '💛'; return h; });
+  F.confetti = [];
+  var colors = ['#ff5c5c', '#ffd166', '#06d6a0', '#4cc9f0', '#b388ff', '#ff8fab'];
+  for (var q = 0; q < 70; q++) F.confetti.push(el('rect', { width: 18, height: 28, rx: 4, fill: colors[q % colors.length], opacity: 0 }, fx));
+  // "12 hours later" card and the "next lesson" banner
+  var cards = $('cards');
+  F.later = el('g', { opacity: 0 }, cards);
+  el('rect', { width: 1080, height: 1920, fill: '#141a2e' }, F.later);
+  el('circle', { cx: 540, cy: 900, r: 230, fill: '#fff', stroke: '#ffd23a', 'stroke-width': 20 }, F.later);
+  for (var h = 0; h < 12; h++) { var ah = h / 12 * Math.PI * 2; el('circle', { cx: 540 + Math.sin(ah) * 190, cy: 900 - Math.cos(ah) * 190, r: 10, fill: '#2b2b2b' }, F.later); }
+  F.bigHour = el('path', { d: 'M540,900 L540,780', stroke: '#2b2b2b', 'stroke-width': 18, 'stroke-linecap': 'round' }, F.later);
+  F.bigMin = el('path', { d: 'M540,900 L540,730', stroke: '#e5484d', 'stroke-width': 10, 'stroke-linecap': 'round' }, F.later);
+  var lt = el('text', { x: 540, y: 1300, 'font-size': 96, 'font-weight': 900, fill: '#fff', 'text-anchor': 'middle' }, F.later); lt.textContent = '12 HOURS LATER…';
+  F.next = el('g', { opacity: 0 }, cards);
+  el('rect', { x: -40, y: -80, width: 1160, height: 160, fill: '#ffd23a', stroke: '#1b1b1b', 'stroke-width': 10, transform: 'rotate(-4)' }, F.next);
+  var nt = el('text', { x: 540, y: 28, 'font-size': 92, 'font-weight': 900, fill: '#1b1b1b', 'text-anchor': 'middle', transform: 'rotate(-4)' }, F.next); nt.textContent = 'NEXT LESSON';
+  // caption
+  F.capBg = el('rect', { rx: 34, fill: '#ffffff', stroke: '#1b1b1b', 'stroke-width': 8 }, $('caption'));
+  F.capTag = el('g', {}, $('caption'));
+  F.capTagBg = el('rect', { rx: 26, height: 52, stroke: '#1b1b1b', 'stroke-width': 6 }, F.capTag);
+  F.capTagTx = el('text', { 'font-size': 34, 'font-weight': 800, fill: '#fff', 'text-anchor': 'middle' }, F.capTag);
+  F.capLines = [0, 1, 2].map(function () { return el('text', { 'font-size': 58, 'font-weight': 800, fill: '#1b1b1b', 'text-anchor': 'middle' }, $('caption')); });
+  // end card
+  var ec = $('endcard');
+  el('rect', { width: 1080, height: 1920, fill: '#0d0d0d' }, ec);
+  F.logo = el('g', {}, ec);
+  el('rect', { x: -130, y: -130, width: 260, height: 260, rx: 58, fill: '#161616', stroke: '#3a3a3a', 'stroke-width': 4 }, F.logo);
+  el('path', { d: 'M-62,-82 h36 v62 h52 v-62 h36 v164 h-36 v-66 h-52 v66 h-36 z', fill: '#ececec' }, F.logo);
+  var t1 = el('text', { x: 540, y: 880, 'font-size': 118, 'font-weight': 800, fill: '#ececec', 'text-anchor': 'middle' }, ec); t1.textContent = 'Hub AI';
+  var t2 = el('text', { x: 540, y: 970, 'font-size': 52, fill: '#cfcfcf', 'text-anchor': 'middle' }, ec); t2.textContent = 'Make apps by just asking.';
+  var t3 = el('text', { x: 540, y: 1045, 'font-size': 44, fill: '#ffd23a', 'text-anchor': 'middle', 'font-weight': 700 }, ec); t3.textContent = 'Even your teacher can do it.';
+  F.pill = el('g', {}, ec);
+  el('rect', { x: -330, y: -52, width: 660, height: 104, rx: 52, fill: '#ececec' }, F.pill);
+  var t4 = el('text', { x: 0, y: 17, 'font-size': 46, 'font-weight': 800, fill: '#0d0d0d', 'text-anchor': 'middle' }, F.pill); t4.textContent = 'Free to start ✨';
+  var t5 = el('text', { x: 540, y: 1290, 'font-size': 38, fill: '#8d8d8d', 'text-anchor': 'middle' }, ec); t5.textContent = 'Android · Mac · Windows · Linux';
+}
+
+function between(t, a, b) { return t >= M[a] && (b === undefined || t < M[b]); }
+
+var WHO = { minnie: ['MINNIE', '#ff4f8b', 860], max: ['MAX', '#7cb518', 220], teacher: ['MR. CRUNCH', '#c0392b', 540] };
+function caption(t) {
+  var line = null;
+  TL.lines.forEach(function (l) { if (t >= l.start - 0.08 && t <= l.end + 0.28) line = l; });
+  var g = $('caption');
+  if (!line || t >= M.end) { g.setAttribute('opacity', 0); return; }
+  var words = line.text.split(' '), rows = [], row = '';
+  words.forEach(function (w) { if ((row + ' ' + w).trim().length > 22) { rows.push(row.trim()); row = w; } else row += ' ' + w; });
+  rows.push(row.trim());
+  var top = 300, lh = 70, h = rows.length * lh + 70, w = 960;
+  F.capBg.setAttribute('x', 60); F.capBg.setAttribute('y', top); F.capBg.setAttribute('width', w); F.capBg.setAttribute('height', h);
+  F.capLines.forEach(function (tx, i) { tx.textContent = rows[i] || ''; tx.setAttribute('x', 540); tx.setAttribute('y', top + 72 + i * lh); });
+  var who = WHO[line.who], tw = who[0].length * 24 + 50;
+  F.capTagBg.setAttribute('fill', who[1]); F.capTagBg.setAttribute('width', tw); F.capTagBg.setAttribute('x', -tw / 2); F.capTagBg.setAttribute('y', -26);
+  F.capTagTx.textContent = who[0]; F.capTagTx.setAttribute('y', 12);
+  F.capTag.setAttribute('transform', 'translate(' + who[2] + ',' + top + ')');
+  var k = easeBack(seg(t, line.start - 0.08, line.start + 0.14)), out = seg(t, line.end + 0.12, line.end + 0.28);
+  g.setAttribute('opacity', 1 - out);
+  g.setAttribute('transform', 'translate(540,' + (top + h / 2) + ') scale(' + (0.6 + 0.4 * k) + ') translate(-540,' + (-(top + h / 2)) + ')');
+}
+
+var CODE = ['function makeApp() {', '  let app = magic()', '  app.work = true ???', '  return app // pls', '}'];
+
+function render(t) {
+  var shake = 0;
+  if (t > M.error && t < M.error + 0.4) shake = 12 * (1 - seg(t, M.error, M.error + 0.4));
+  if (t > M.rage && t < M.rage + 0.9) shake = 18 * (1 - seg(t, M.rage, M.rage + 0.9));
+  if (between(t, 'bonk', 'dizzy')) shake = 8;
+  $('s').setAttribute('style', shake ? 'transform:translate(' + Math.sin(t * 90) * shake + 'px,' + Math.cos(t * 77) * shake + 'px)' : '');
+
+  // projector screen
+  var lesson2 = t >= M.next;
+  F.boardTitle.textContent = t >= M.detention && t < M.next ? 'DETENTION' : lesson2 ? 'LESSON 2: APPS' : 'PROGRAMMING 101';
+  F.boardTitle.setAttribute('fill', t >= M.detention && t < M.next ? '#c0392b' : '#30343b');
+  var typed = seg(t, M.typing, M.error) * CODE.join('').length;
+  var shown = t < M.next ? typed : 0;
+  F.code.forEach(function (tx, i) {
+    var before = CODE.slice(0, i).join('').length;
+    tx.textContent = CODE[i].slice(0, Math.max(0, Math.floor(shown - before)));
+    tx.setAttribute('opacity', t >= M.detention ? 0 : 1);
+  });
+  F.err.setAttribute('opacity', t >= M.error && t < M.detention ? (Math.floor(t * 4) % 2 || t > M.error + 1 ? 1 : 0.6) : 0);
+  var gk = easeBack(seg(t, M.works, M.works + 0.4));
+  F.grade.setAttribute('opacity', t >= M.works ? 1 : 0);
+  F.grade.setAttribute('transform', 'translate(720,850) scale(' + Math.max(0.001, gk) + ') translate(-720,-850)');
+  // wall clock (spins fast through the 12 hours)
+  var clockT = t < M.later ? t * 0.02 : t < M.detention ? 0.4 + seg(t, M.later, M.detention) * 12 : 12.4 + (t - M.detention) * 0.02;
+  F.hourHand.setAttribute('transform', 'rotate(' + clockT * 30 + ',990,680)');
+  F.minHand.setAttribute('transform', 'rotate(' + clockT * 360 + ',990,680)');
+
+  // --- Max (behind the left desk) ---
+  var mp = { x: 300, y: 1690, s: 0.92, look: 0.6, eyes: 'open', brow: 0, armL: 20, armR: -20 };
+  if (between(t, 'class', 'pick')) { mp.look = 1; }
+  if (between(t, 'error', 'pick')) { mp.eyes = 'wide'; }
+  if (between(t, 'pick', 'rage')) { mp.eyes = 'wide'; mp.brow = 0.8; mp.armL = -40 + Math.sin(t * 8) * 10; mp.look = 1; mp.rot = Math.sin(t * 2.5) * 4; }
+  if (between(t, 'rage', 'bonk')) { mp.eyes = 'wide'; mp.brow = 1.2; mp.squash = 0.9; }
+  if (between(t, 'dizzy', 'later')) { mp.eyes = 'wide'; mp.rot = Math.sin(t * 6) * 10; mp.look = Math.sin(t * 9); mp.squash = 0.94; }
+  if (between(t, 'detention', 'next')) { mp.eyes = 'bored'; mp.brow = -0.7; mp.rot = -5; mp.squash = 0.9; mp.look = 0; }
+  if (between(t, 'next', 'phone')) { mp.look = 1; mp.brow = 0.2; }
+  if (between(t, 'minnie', 'phone') && t > TL.lines.filter(function (l) { return l.text.indexOf('THAT') >= 0; })[0].start) { mp.eyes = 'wide'; mp.brow = 1; mp.armL = 120; mp.armR = -120; }
+  if (between(t, 'phone', 'show')) { mp.look = 0.8; mp.eyes = t >= M.built ? 'happy' : 'open'; mp.armR = -100 + Math.sin(t * 20) * (t < M.built ? 12 : 0); }
+  if (t >= M.show) { mp.look = 1; mp.eyes = 'happy'; mp.armR = -150; mp.armL = 130; }
+  // --- Minnie (arrives next lesson) ---
+  var mz = easeBack(seg(t, M.minnie - 0.25, M.minnie + 0.2));
+  var np = { x: lerp(1400, 790, mz), y: 1690, s: 0.92, look: -1, eyes: 'open', armL: 25, armR: -25, rot: (1 - seg(t, M.minnie - 0.25, M.minnie + 0.35)) * -15 };
+  if (between(t, 'minnie', 'phone')) np.armL = 60 + Math.sin(t * 7) * 15;
+  if (between(t, 'phone', 'teacher')) { np.eyes = 'happy'; np.armL = 110; }
+  if (t >= M.teacher) { np.x = lerp(790, 690, easeInOut(seg(t, M.teacher, M.teacher + 0.4))); np.eyes = t >= M.works ? 'happy' : 'wide'; np.look = 1; }
+  // --- the teacher ---
+  var tp = { x: 800, y: 1700, s: 1.05, look: -1, eyes: 'open', brow: 0, armL: 20, armR: -30, rage: 0.15 };
+  if (between(t, 'typing', 'error')) { tp.armR = -95 + Math.sin(t * 40) * 14; tp.armL = 70 + Math.cos(t * 37) * 14; tp.look = -1; }
+  if (between(t, 'error', 'bonk')) { tp.rage = Math.min(1, 0.5 + seg(t, M.error, M.error + 0.6) * 0.5); tp.brow = 0; tp.armR = -140 + Math.sin(t * 12) * 20; }
+  if (between(t, 'pick', 'rage')) { tp.armL = 75; tp.look = -1; tp.rage = 0.7; }
+  if (between(t, 'rage', 'bonk')) { tp.rage = 1; tp.s = 1.05 + seg(t, M.rage, M.rage + 0.3) * 0.12; tp.armR = -160; tp.squash = 1.08; }
+  var fighting = between(t, 'bonk', 'dizzy');
+  if (between(t, 'dizzy', 'later')) { tp.rage = 0.6; tp.armR = -60; tp.armL = 40; tp.eyes = 'happy'; }
+  var showTeacher = t < M.later || t >= M.teacher;
+  if (t >= M.teacher) {
+    var walk = easeOut(seg(t, M.teacher - 0.4, M.teacher + 0.2));
+    tp.x = lerp(1450, 880, walk); tp.y = 1700 - Math.abs(Math.sin(t * 9)) * 18 * (1 - walk); tp.rage = 0.8; tp.armR = -120;
+    if (t >= M.show) { tp.eyes = 'open'; tp.look = -1; }
+    if (t >= M.works) { tp.rage = Math.max(0, 0.8 - seg(t, M.works, M.works + 0.5)); tp.eyes = 'wide'; tp.brow = 1; tp.armR = -20; tp.armL = 30; }
+    if (t >= M.soft) { tp.eyes = 'happy'; tp.rage = 0; tp.brow = 0.5; tp.armL = -60; tp.armR = 60; tp.rot = Math.sin(t * 3) * 4; }
+  }
+  poseCat(max, t, mp);
+  poseCat(minnie, t, np);
+  poseCat(teacher, t, tp);
+  max.g.setAttribute('opacity', fighting ? 0 : 1);
+  minnie.g.setAttribute('opacity', t >= M.minnie - 0.25 && t < M.end ? 1 : 0);
+  teacher.g.setAttribute('opacity', showTeacher && !fighting ? 1 : 0);
+  F.remote.setAttribute('opacity', t >= M.works + 0.1 ? 0 : 1);
+
+  // steam from the teacher's ears when he's angry
+  var steamOn = (between(t, 'error', 'bonk') || between(t, 'teacher', 'works')) && showTeacher;
+  F.steam.forEach(function (c, i) {
+    var side = i % 2 ? 1 : -1, ph = ((t * 1.6 + i * 0.37) % 1);
+    c.setAttribute('opacity', steamOn ? 0.85 * (1 - ph) : 0);
+    c.setAttribute('cx', tp.x + side * (95 + ph * 60) * tp.s); c.setAttribute('cy', tp.y - (540 + ph * 160) * tp.s);
+    c.setAttribute('r', 18 + ph * 30);
+  });
+  // nervous sweat on Max
+  F.sweat.forEach(function (d, i) {
+    var on = between(t, 'pick', 'bonk'), ph = (t * 1.3 + i * 0.5) % 1;
+    d.setAttribute('opacity', on ? 1 - ph : 0);
+    d.setAttribute('transform', 'translate(' + (mp.x + (i ? 120 : -130) * mp.s) + ',' + (mp.y - (520 - ph * 120) * mp.s) + ')');
+  });
+  // the scuffle: ten bonks inside a cartoon dust cloud
+  F.cloud.setAttribute('opacity', fighting ? 1 : 0);
+  if (fighting) {
+    var cx = 480, cy = 1270;
+    F.puffs.forEach(function (c, i) {
+      var a = i / F.puffs.length * Math.PI * 2 + t * 3;
+      c.setAttribute('cx', cx + Math.cos(a) * 170 + Math.sin(t * 23 + i) * 25);
+      c.setAttribute('cy', cy + Math.sin(a) * 120 + Math.cos(t * 19 + i) * 25);
+      c.setAttribute('r', 110 + Math.sin(t * 17 + i * 2) * 20);
+    });
+    F.stars.forEach(function (s, i) {
+      var a = t * 9 + i * 1.3;
+      s.setAttribute('x', cx + Math.cos(a) * 250); s.setAttribute('y', cy + Math.sin(a * 1.3) * 180);
+    });
+    var hit = Math.floor((t - M.bonk - 0.15) / 0.29);
+    var r = rnd(hit + 5);
+    F.cloudRemote.setAttribute('transform', 'translate(' + (cx + (r() - 0.5) * 300) + ',' + (cy - 120 + (r() - 0.5) * 160) + ') rotate(' + (r() * 360) + ')');
+    F.cloudPaw.setAttribute('cx', cx + (r() - 0.5) * 360); F.cloudPaw.setAttribute('cy', cy + (r() - 0.5) * 220);
+  }
+  var hitN = Math.floor((t - M.bonk - 0.15) / 0.29) + 1;
+  var inHit = fighting && hitN >= 1 && hitN <= 10;
+  var hp = ((t - M.bonk - 0.15) % 0.29) / 0.29;
+  var rb = rnd(hitN * 7 + 1);
+  F.bonk.setAttribute('opacity', inHit && hp < 0.8 ? 1 : 0);
+  F.bonk.setAttribute('transform', 'translate(' + (300 + rb() * 480) + ',' + (1080 + rb() * 260) + ') rotate(' + ((rb() - 0.5) * 40) + ') scale(' + (0.6 + 0.5 * easeBack(Math.min(1, hp * 4))) + ')');
+  F.count.setAttribute('opacity', inHit || (fighting && hitN > 10) ? 1 : 0);
+  F.count.textContent = '×' + Math.min(10, Math.max(1, hitN));
+  // dizzy stars and a bandage
+  var hurt = t >= M.dizzy && t < M.later + 99;
+  F.dizzy.forEach(function (s, i) {
+    var a = t * 5 + i * 2.1;
+    s.setAttribute('opacity', between(t, 'dizzy', 'later') ? 1 : 0);
+    s.setAttribute('x', mp.x + Math.cos(a) * 140); s.setAttribute('y', mp.y - 560 * mp.s + Math.sin(a) * 30);
+  });
+  F.bandage.setAttribute('opacity', hurt ? 1 : 0);
+  F.bandage.setAttribute('transform', 'translate(' + (mp.x - 70 * mp.s) + ',' + (mp.y - 470 * mp.s) + ') scale(0.75)');
+  // the dropped remote
+  var dk = seg(t, M.works, M.works + 0.6);
+  F.dropRemote.setAttribute('opacity', t >= M.works && t < M.end ? 1 : 0);
+  F.dropRemote.setAttribute('transform', 'translate(' + (tp.x + 150) + ',' + lerp(1450, 1780, dk * dk) + ') rotate(' + (dk * 260) + ')');
+  // hearts when he asks for Hub AI
+  F.hearts.forEach(function (h, i) {
+    var d = t - (M.soft + i * 0.3);
+    h.setAttribute('opacity', d > 0 && d < 1.8 && t < M.end ? 1 - d / 1.8 : 0);
+    h.setAttribute('x', tp.x + (i - 1.5) * 80); h.setAttribute('y', tp.y - 640 - d * 200);
+  });
+
+  // dim detention room, cards
+  $('dim').setAttribute('opacity', between(t, 'detention', 'next') ? 0.55 : 0);
+  var lk = seg(t, M.later, M.later + 0.25) * (1 - seg(t, M.detention - 0.25, M.detention));
+  F.later.setAttribute('opacity', lk);
+  var spin = seg(t, M.later, M.detention) * 12;
+  F.bigHour.setAttribute('transform', 'rotate(' + spin * 30 + ',540,900)');
+  F.bigMin.setAttribute('transform', 'rotate(' + spin * 360 + ',540,900)');
+  var nk = seg(t, M.next, M.next + 1.3);
+  F.next.setAttribute('opacity', nk > 0 && nk < 1 ? 1 : 0);
+  F.next.setAttribute('transform', 'translate(' + lerp(-1100, 1100, easeInOut(nk)) + ',1000)');
+
+  // the phone
+  var pin = easeBack(seg(t, M.phone, M.phone + 0.4));
+  var ph = $('phone');
+  var showPos = easeInOut(seg(t, M.show, M.show + 0.4));
+  var px = lerp(540, 330, showPos), py = lerp(880, 860, showPos), ps = lerp(0.7, 0.64, showPos) * pin, pr = lerp(0, 8, showPos);
+  ph.setAttribute('opacity', t >= M.phone && t < M.end ? 1 : 0);
+  ph.setAttribute('transform', 'translate(' + px + ',' + py + ') rotate(' + pr + ') scale(' + Math.max(0.001, ps) + ')');
+  $('scrCreate').setAttribute('opacity', t < M.built ? 1 : 0);
+  $('scrResult').setAttribute('opacity', t >= M.built ? 1 : 0);
+  $('scrResult').setAttribute('y', -450 - easeInOut(seg(t, M.built + 0.5, M.show)) * 60);
+  // confetti when the app is built
+  var cr = rnd(3);
+  F.confetti.forEach(function (c, i) {
+    var a = -Math.PI / 2 + (cr() - 0.5) * 2.4, v = 900 + cr() * 900, life = 1.5 + cr() * 0.6, spin2 = (cr() - 0.5) * 1200;
+    var d = t - M.built;
+    if (d < 0 || d > life) { c.setAttribute('opacity', 0); return; }
+    var drag = Math.exp(-d * 1.6);
+    c.setAttribute('opacity', 1 - seg(d, life * 0.7, life));
+    c.setAttribute('transform', 'translate(' + (540 + Math.cos(a) * v * (1 - drag) / 1.6) + ',' + (880 + Math.sin(a) * v * (1 - drag) / 1.6 + 900 * d * d) + ') rotate(' + spin2 * d + ')');
+  });
+  $('flash').setAttribute('opacity', Math.max(t >= M.built && t < M.built + 0.25 ? 0.8 * (1 - seg(t, M.built, M.built + 0.25)) : 0,
+    t >= M.end && t < M.end + 0.3 ? 1 - seg(t, M.end, M.end + 0.3) : 0));
+
+  caption(t);
+
+  // end card, with all three peeking in
+  var ek = seg(t, M.end, M.end + 0.1);
+  $('endcard').setAttribute('opacity', ek);
+  var lg = easeBack(seg(t, M.end + 0.1, M.end + 0.55));
+  F.logo.setAttribute('transform', 'translate(540,600) scale(' + Math.max(0.001, lg) + ') rotate(' + (1 - lg) * -20 + ')');
+  F.pill.setAttribute('transform', 'translate(540,1170) scale(' + (1 + Math.sin(t * 6) * 0.03) + ')');
+  var svg = $('s');
+  if (t >= M.end) {
+    var pk = easeBack(seg(t, M.end + 0.3, M.end + 0.8));
+    poseCat(max, t, { x: 190, y: lerp(2500, 1960, pk), s: 0.58, look: 0.6, eyes: 'happy', armL: 20, armR: -115 + Math.sin(t * 10) * 25 });
+    poseCat(teacher, t, { x: 540, y: lerp(2500, 1990, pk), s: 0.62, look: 0, eyes: 'happy', armL: 115 + Math.sin(t * 10 + 1) * 20, armR: -115 + Math.sin(t * 10) * 20, rage: 0 });
+    poseCat(minnie, t, { x: 890, y: lerp(2500, 1960, pk), s: 0.58, look: -0.6, eyes: 'happy', armL: 115 + Math.sin(t * 10) * 25, armR: -20 });
+    [max, minnie, teacher].forEach(function (c) { c.g.setAttribute('opacity', 1); });
+    svg.appendChild($('charsBack')); svg.appendChild($('charsFront'));
+    F.remote.setAttribute('opacity', 0);
+  } else if ($('charsBack').nextSibling !== $('desks')) {
+    svg.insertBefore($('charsBack'), $('desks'));
+    svg.insertBefore($('charsFront'), $('phone'));
+  }
+}
+
+function init(tl) { TL = tl; setup(); render(0); }
+
+if (location.search.indexOf('play') >= 0) {
+  fetch('build/school/timeline.json').then(function (r) { return r.json(); }).then(function (tl) {
+    init(tl);
+    var a = new Audio('build/school/audio.wav'), t0 = null;
+    document.body.onclick = function () { a.play(); t0 = performance.now(); (function f() { render((performance.now() - t0) / 1000 % TL.length); requestAnimationFrame(f); })(); };
+  });
+}
+</script>
+</body>
+</html>

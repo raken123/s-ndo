@@ -34,5 +34,20 @@ const OUT = __dirname + '/build/screens/';
   await p.evaluate(() => document.getElementById('feed').scrollBy(0, document.getElementById('feed').clientHeight));
   await p.waitForTimeout(1500);
   await p.screenshot({ path: OUT + 'funhub2.png' });
+  // 5. the school ad: a detention countdown
+  await p.click('#tabs [data-go=create]');
+  await p.evaluate(() => { localStorage.removeItem('hubai.draft'); });
+  await p.reload(); await p.waitForTimeout(800);
+  await p.fill('#prompt', 'A detention countdown');
+  await p.screenshot({ path: OUT + 'create-school.png' });
+  await p.evaluate(() => {
+    const t = new Date(Date.now() + 864e5); const day = t.toISOString().slice(0, 10);
+    let html = HubTemplates.render('countdown', { title: 'Detention Countdown', accent: '#e5484d', dark: true, persist: false, extras: true, n: 1, topic: 'Freedom', key: 'ad2', engine: 'Hub V1 Mini' });
+    localStorage['hubai.draft'] = JSON.stringify({ title: 'Detention Countdown', html: html, engine: 'mini', engineName: 'Hub V1 Mini', seconds: 3.1, prompt: 'A detention countdown', at: Date.now(), powerups: ['confetti'], versions: [] });
+  });
+  await p.reload(); await p.waitForTimeout(1200);
+  await p.evaluate(() => document.getElementById('result').scrollIntoView());
+  await p.waitForTimeout(600);
+  await p.screenshot({ path: OUT + 'result-school.png' });
   await b.close();
 })();

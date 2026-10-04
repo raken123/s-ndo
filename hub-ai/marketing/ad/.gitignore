@@ -1,1 +1,3 @@
 build/
+tts/
+__pycache__/
