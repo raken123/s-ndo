@@ -91,8 +91,16 @@
   }
 
   function renderCredits() {
-    var c = Plans.credits();
-    $('#credits').textContent = c.left + ' credits · ' + Plans.plan().name.replace('Hub ', '');
+    var c = Plans.credits(), el = $('#credits');
+    if (!Cloud.configured()) el.textContent = 'Not connected';
+    else el.textContent = (c.left === null ? '–' : c.left) + ' credits · ' + Plans.plan().name.replace('Hub ', '');
+  }
+
+  // Refreshes plan and credits from the cloud, then redraws.
+  function sync() {
+    if (!Cloud.configured()) return Promise.resolve();
+    return Cloud.refresh().then(function () { renderCredits(); if (!state.busy) render(); },
+      function (e) { if (state.view === 'settings') renderSettings(); return e; });
   }
 
   // ---------- sheets ----------
@@ -179,23 +187,27 @@
     var blocked = Plans.blocked(e.id);
     var planLock = blocked && blocked.reason === 'plan';
     var lim = Plans.limitLeft(e.id);
-    var meta = e.kind === 'gemini' ? 'Gemini API · needs your key' : 'On-device agent · trained in Python';
+    var meta = e.kind === 'gemini' ? 'Google · runs in Hub AI Cloud' : 'Cloud agent · built on ' + e.base.join(' + ');
     if (lim !== null) meta += ' · ' + lim + ' left today';
+    var tag = planLock ? (e.id === 'v2max' ? '🔒 Enterprise · ' : '🔒 ') : '';
     return '<button class="engine' + (state.engine === e.id ? ' on' : '') + (planLock ? ' off' : '') + '" data-engine="' + e.id + '">' +
-      '<span class="dot"></span><span><div>' + (planLock ? '🔒 ' : '') + esc(e.name) + '</div><div class="meta">' + esc(meta) + '</div></span>' +
+      '<span class="dot"></span><span><div>' + tag + esc(e.name) + '</div><div class="meta">' + esc(meta) + '</div></span>' +
       '<span class="cost">' + e.cost + ' credit' + (e.cost > 1 ? 's' : '') + '</span></button>';
   }
 
   function renderCreate() {
     var c = Plans.credits();
+    var status = !Cloud.configured()
+      ? '<div class="note">Hub agents run in Hub AI Cloud. Add your server address in <a href="#" id="toSettings">Settings</a> to start generating.</div>'
+      : '<p class="muted small" style="margin:8px 0 0">' + (c.left === null ? 'Connecting…' : c.left + ' credits left') + ' · ' +
+        esc(Plans.plan().name) + (c.rule ? ' (' + esc(c.rule) + ')' : '') + '</p>';
     view.innerHTML = '<div class="wrap">' +
       '<div class="card"><h2>Create a hub</h2>' +
       '<textarea class="in" id="prompt" placeholder="Describe the app you want, e.g. a habit tracker for drinking water">' + esc(state.prompt) + '</textarea>' +
       '<div class="chips">' + EXAMPLES.map(function (x) { return '<button class="chip" data-ex="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div>' +
-      '<label class="field">Engine</label><div class="engines">' + Plans.ENGINES.map(engineRow).join('') + '</div>' +
+      '<label class="field">Agent</label><div class="engines">' + Plans.engines().map(engineRow).join('') + '</div>' +
       '<button class="btn primary block" id="gen" style="margin-top:12px">' + (state.busy ? '<span class="spinner"></span> Generating…' : 'Generate') + '</button>' +
-      '<p class="muted small" style="margin:8px 0 0">' + c.left + ' credits left · ' + esc(Plans.plan().name) + ' (' + esc(c.rule) + ')</p></div>' +
-      '<div id="result"></div></div>';
+      status + '</div><div id="result"></div></div>';
 
     var p = $('#prompt');
     p.oninput = function () { state.prompt = p.value; Store.set('promptDraft', p.value); };
@@ -205,13 +217,15 @@
     Array.prototype.forEach.call(view.querySelectorAll('[data-engine]'), function (b) {
       b.onclick = function () {
         var id = b.getAttribute('data-engine'), bl = Plans.blocked(id);
-        if (bl && bl.reason === 'plan') return upgrade(bl.text);
+        if (bl && bl.reason === 'plan') return id === 'v2max' ? enterprise() : upgrade(bl.text);
         state.engine = id; Store.set('engine', id);
         Array.prototype.forEach.call(view.querySelectorAll('[data-engine]'), function (x) { x.classList.toggle('on', x === b); });
       };
     });
     $('#gen').onclick = generate;
-    if (Plans.blocked(state.engine) && Plans.blocked(state.engine).reason === 'plan') {
+    var ts = $('#toSettings');
+    if (ts) ts.onclick = function (ev) { ev.preventDefault(); go('settings'); };
+    if (!Plans.engine(state.engine) || (Plans.blocked(state.engine) && Plans.blocked(state.engine).reason === 'plan')) {
       state.engine = 'mini';
       Array.prototype.forEach.call(view.querySelectorAll('[data-engine]'), function (x) { x.classList.toggle('on', x.getAttribute('data-engine') === 'mini'); });
     }
@@ -225,8 +239,8 @@
     if (!d) { box.innerHTML = ''; return; }
     var saved = d.savedId && hubById(d.savedId);
     box.innerHTML = '<div class="card"><div class="row"><div class="grow"><h3>' + esc(d.title) + '</h3>' +
-      '<div class="muted small">' + esc(d.engineName) + (d.typeName ? ' · ' + esc(d.typeName) : '') +
-      (d.confidence ? ' · ' + Math.round(d.confidence * 100) + '% sure' : '') + '</div></div>' +
+      '<div class="muted small">' + esc(d.engineName) + (d.base ? ' · ' + esc(d.base.join(' + ')) : '') +
+      (d.seconds ? ' · ' + d.seconds + ' s' : '') + '</div></div>' +
       '<button class="btn" data-act="open">Full screen</button></div>' +
       (d.notes || []).map(function (n) { return '<div class="note">' + esc(n) + '</div>'; }).join('') +
       '<div id="pv" style="margin-top:10px"></div>' +
@@ -271,21 +285,20 @@
     if (state.busy) return;
     var prompt = ($('#prompt').value || '').trim();
     if (!prompt) { toast('Describe the hub you want first.'); return; }
+    if (!Cloud.configured()) { go('settings'); toast('Add your Hub AI Cloud server first.'); return; }
     var id = state.engine, e = Plans.engine(id), bl = Plans.blocked(id);
     if (bl) return bl.reason === 'credits' || bl.reason === 'plan' ? upgrade(bl.text) : toast(bl.text);
 
     state.busy = true;
-    $('#gen').innerHTML = '<span class="spinner"></span> Generating with ' + esc(e.name) + '…';
-    var job = e.kind === 'agent'
-      ? new Promise(function (resolve) { setTimeout(function () { resolve(HubAgent.generate(id, prompt, { id: uid() })); }, 350); })
-      : Gemini.generate(id, prompt);
-    job.then(function (r) {
-      Plans.spend(id);
-      state.draft = { title: r.title, html: r.html, engine: id, engineName: e.name, type: r.type, typeName: r.typeName,
-        confidence: r.confidence, notes: r.notes, prompt: prompt, at: Date.now() };
+    $('#gen').innerHTML = '<span class="spinner"></span> ' + esc(e.name) + ' is building your hub…';
+    Cloud.generate(id, prompt).then(function (r) {
+      state.draft = { title: r.title, html: r.html, engine: id, engineName: r.engineName, base: r.base,
+        seconds: r.seconds, notes: [], prompt: prompt, at: Date.now() };
       Store.set('draft', state.draft);
     }, function (err) {
-      toast(err.message || String(err));
+      if (err.code === 'plan' || err.code === 'credits') upgrade(err.message);
+      else toast(err.message || String(err));
+      if (err.status === 402 || err.status === 429) sync();
     }).then(function () {
       state.busy = false;
       if (state.view === 'create') { renderCreate(); var r = $('#result'); if (r && state.draft) r.scrollIntoView({ behavior: 'smooth' }); }
@@ -297,7 +310,7 @@
 
   function renderHubs() {
     if (!Plans.can('save')) {
-      view.innerHTML = '<div class="wrap"><div class="card empty"><h2>Hubs</h2><p>Hub Free can try Hub v1 Mini and preview what it makes, but saving and exporting hubs starts with Hub Go ($2/month).</p>' +
+      view.innerHTML = '<div class="wrap"><div class="card empty"><h2>Hubs</h2><p>Hub Free can try Hub V1 Mini and preview what it makes, but saving and exporting hubs starts with Hub Go ($2/month).</p>' +
         '<button class="btn primary" id="up">See plans</button></div></div>';
       $('#up').onclick = function () { go('plans'); };
       return;
@@ -393,69 +406,49 @@
 
   function renderAgents() {
     var plan = Plans.plan();
-    var html = '<div class="wrap"><h2>Hub v1 agents</h2><p class="muted small">Five on-device agents, trained in Python (training/train.py) and shipped inside the app. ' +
-      'Bigger tiers know more hub types and read more from your request. You can keep teaching them here.</p>';
-    HubAgent.tiers.forEach(function (t) {
-      var m = HubAgent.model(t), open = plan.engines.indexOf(t) >= 0;
-      html += '<div class="card"><div class="row"><h3 class="grow">' + esc(m.label) + '</h3>' +
-        (open ? '<span class="tag ok">' + (plan.limits[t] ? 'Limited' : 'Unlocked') + '</span>' : '<span class="tag">🔒 ' + (Plans.PLANS.go.engines.indexOf(t) >= 0 ? 'Go' : 'Plus') + '</span>') + '</div>' +
-        '<div class="muted small">' + m.labels.length + ' hub types · ' + m.vocab.length + ' features · ' + m.metrics.train_examples + ' training examples · ' +
-        (m.metrics.accuracy * 100).toFixed(1) + '% test accuracy' + (m.taught ? ' · ' + m.taught + ' taught on this phone' : '') + '</div>' +
-        '<div style="margin-top:6px">' + (m.features.length ? m.features : ['basic']).map(function (f) { return '<span class="tag">' + esc(f) + '</span>'; }).join('') + '</div>' +
-        '<details style="margin-top:6px"><summary class="muted small">Hub types</summary><div class="small" style="margin-top:6px">' +
-        m.labels.map(function (l) { return esc(m.names[l]); }).join(' · ') + '</div></details></div>';
+    var html = '<div class="wrap"><h2>Hub agents</h2><p class="muted small">Hub agents run in Hub AI Cloud. Each one starts from a ' +
+      'base model and is fine-tuned in Python (hub-ai/cloud/training) to build hubs.</p>';
+    Plans.engines().forEach(function (e) {
+      var open = plan.engines.indexOf(e.id) >= 0;
+      var lock = e.id === 'v2max' ? 'Enterprise' : Plans.plans().go.engines.indexOf(e.id) >= 0 ? 'Go' : 'Plus';
+      var trained = e.kind === 'gemini' ? 'Google model' : e.training === 'fine-tuned' ? 'Fine-tuned for Hub' : 'Base model + Hub instructions';
+      html += '<div class="card"><div class="row"><h3 class="grow">' + esc(e.name) + '</h3>' +
+        (open ? '<span class="tag ok">' + (plan.limits[e.id] ? plan.limits[e.id] + ' per day' : 'Unlocked') + '</span>' : '<span class="tag">🔒 ' + lock + '</span>') + '</div>' +
+        '<div class="small">' + (e.base.length > 1 ? 'Built by ' + esc(e.base[0]) + ', reviewed by ' + esc(e.base[1]) : 'Base model: ' + esc(e.base[0])) + '</div>' +
+        '<div class="muted small" style="margin-top:4px">' + esc(trained) + ' · ' + e.cost + ' credit' + (e.cost > 1 ? 's' : '') + ' per hub</div></div>';
     });
-    var teachable = HubAgent.tiers.filter(function (t) { return plan.engines.indexOf(t) >= 0; });
-    html += '<div class="card"><h3>Train an agent</h3><p class="muted small">Type a request and tell the agent which hub it should build. ' +
-      'This is saved on this phone and added on top of the Python training.</p>' +
-      '<label class="field">Agent</label><select class="in" id="tt">' + teachable.map(function (t) { return '<option value="' + t + '">' + esc(HubAgent.model(t).label) + '</option>'; }).join('') + '</select>' +
-      '<label class="field">Request</label><input class="in" id="tx" placeholder="e.g. something to track how much water I drink">' +
-      '<div class="muted small" id="guess" style="margin-top:6px"></div>' +
-      '<label class="field">Should build</label><select class="in" id="tl"></select>' +
-      '<div class="row" style="margin-top:12px"><button class="btn" id="forget">Reset teaching</button><button class="btn primary grow" id="teach">Teach</button></div></div></div>';
-    view.innerHTML = html;
-
-    var tt = $('#tt'), tx = $('#tx'), tl = $('#tl'), guess = $('#guess');
-    function fill() {
-      var m = HubAgent.model(tt.value);
-      tl.innerHTML = m.labels.map(function (l) { return '<option value="' + l + '">' + esc(m.names[l]) + '</option>'; }).join('');
-      update();
-    }
-    function update() {
-      if (!tx.value.trim()) { guess.textContent = 'The agent\'s current guess shows here.'; return; }
-      var r = HubAgent.classify(tt.value, tx.value), m = HubAgent.model(tt.value);
-      guess.textContent = 'Now it would build: ' + r.ranked.map(function (x) { return m.names[x.label] + ' ' + Math.round(x.p * 100) + '%'; }).join(' · ');
-    }
-    tt.onchange = fill; tx.oninput = update;
-    $('#teach').onclick = function () {
-      if (!tx.value.trim()) return toast('Type a request first.');
-      HubAgent.teach(tt.value, tx.value, tl.value);
-      toast('Taught ' + HubAgent.model(tt.value).label);
-      var keep = tt.value; renderAgents(); $('#tt').value = keep; $('#tt').onchange();
-    };
-    $('#forget').onclick = function () {
-      HubAgent.forget(tt.value); toast('Teaching reset');
-      var keep = tt.value; renderAgents(); $('#tt').value = keep; $('#tt').onchange();
-    };
-    fill();
+    view.innerHTML = html + '</div>';
   }
 
   // ---------- Plans ----------
 
+  function enterprise() {
+    var p = Plans.plans().enterprise;
+    openSheet('<h2>' + esc(p.name) + '</h2><p>Hub V2 Max (GPT-6 Astra builds, GPT-6 Sol reviews) is only available to very large companies.</p>' +
+      '<p class="muted">$' + p.price.toLocaleString('en-US') + ' per ' + esc(p.period) + ', about one person\'s yearly salary. ' +
+      'It can\'t be bought in the app: Hub AI sets it up for your company\'s accounts.</p>' +
+      (Cloud.account() ? '<p class="muted small">Your account ID for your company admin: <b>' + esc(Cloud.account()) + '</b></p>' : '') +
+      '<button class="btn block" data-x="ok">OK</button>', function (s) { s.querySelector('[data-x=ok]').onclick = closeSheet; });
+  }
+
   function renderPlans() {
-    var s = Plans.sub(), cur = Plans.plan(), c = Plans.credits();
+    var me = Plans.me(), cur = Plans.plan(), c = Plans.credits(), all = Plans.plans();
     var html = '<div class="wrap"><h2>Plans</h2><div class="demo-banner">Demo payments: nothing is charged and no card details leave this screen.</div>' +
-      '<div class="card"><div class="muted small">Current plan</div><h3>' + esc(cur.name) + '</h3><div>' + c.left + ' credits available · ' + esc(c.rule) + '</div>' +
-      (s.renews ? '<div class="muted small" style="margin-top:4px">' + (s.cancelled ? 'Ends' : 'Renews') + ' ' + fmtDate(s.renews) + ' (demo)</div>' : '') +
-      (s.plan !== 'free' && !s.cancelled ? '<button class="btn" id="cancel" style="margin-top:10px">Cancel plan</button>' : '') + '</div>';
-    ['free', 'go', 'plus'].forEach(function (id) {
-      var p = Plans.PLANS[id], here = id === s.plan;
-      html += '<div class="card plan' + (here ? ' current' : '') + '"><h3>' + esc(p.name) + '<span class="price">' + (p.price ? '$' + p.price + ' / ' + p.period : 'Free') + '</span></h3>' +
-        '<ul>' + p.perks.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' +
-        (here ? '<button class="btn block" disabled>Current plan</button>'
-          : '<button class="btn ' + (p.price > cur.price ? 'primary ' : '') + 'block" data-plan="' + id + '">' + (p.price ? 'Choose ' + esc(p.name) : 'Switch to Free') + '</button>') + '</div>';
+      '<div class="card"><div class="muted small">Current plan</div><h3>' + esc(cur.name) + '</h3><div>' +
+      (c.left === null ? (Cloud.configured() ? 'Connecting to Hub AI Cloud…' : 'Not connected to Hub AI Cloud') : c.left + ' credits available · ' + esc(c.rule)) + '</div>' +
+      (me && me.renews ? '<div class="muted small" style="margin-top:4px">' + (me.cancelled ? 'Ends' : 'Renews') + ' ' + fmtDate(me.renews) + ' (demo)</div>' : '') +
+      (me && (me.plan === 'go' || me.plan === 'plus') && !me.cancelled ? '<button class="btn" id="cancel" style="margin-top:10px">Cancel plan</button>' : '') + '</div>';
+    ['free', 'go', 'plus', 'enterprise'].forEach(function (id) {
+      var p = all[id], here = id === cur.id;
+      var price = p.price ? '$' + p.price.toLocaleString('en-US') + ' / ' + p.period : 'Free';
+      var btn = here ? '<button class="btn block" disabled>Current plan</button>'
+        : !p.buyable ? '<button class="btn block" data-ent="1">Large companies only</button>'
+        : cur.id === 'enterprise' ? ''
+        : '<button class="btn ' + (p.price > cur.price ? 'primary ' : '') + 'block" data-plan="' + id + '">' + (p.price ? 'Choose ' + esc(p.name) : 'Switch to Free') + '</button>';
+      html += '<div class="card plan' + (here ? ' current' : '') + '"><h3>' + esc(p.name) + '<span class="price">' + price + '</span></h3>' +
+        '<ul>' + p.perks.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' + btn + '</div>';
     });
-    var receipts = Store.get('receipts', []);
+    var receipts = (me && me.receipts) || [];
     if (receipts.length) {
       html += '<div class="card"><h3>Demo receipts</h3>' + receipts.map(function (r) {
         return '<div class="row small" style="padding:4px 0"><span class="grow">' + esc(r.plan) + ' · ' + fmtDate(r.at) + '</span><span class="muted">$' + r.amount.toFixed(2) + ' · ' + esc(r.ref) + '</span></div>';
@@ -465,8 +458,13 @@
     Array.prototype.forEach.call(view.querySelectorAll('[data-plan]'), function (b) {
       b.onclick = function () { checkout(b.getAttribute('data-plan')); };
     });
+    var ent = view.querySelector('[data-ent]');
+    if (ent) ent.onclick = enterprise;
     var cn = $('#cancel');
-    if (cn) cn.onclick = function () { Plans.cancel(); toast('Plan cancelled. It stays active until the end of the period.'); renderPlans(); };
+    if (cn) cn.onclick = function () {
+      Cloud.cancel().then(function () { toast('Plan cancelled. It stays active until the end of the period.'); renderPlans(); },
+        function (e) { toast(e.message); });
+    };
   }
 
   function luhn(n) {
@@ -479,13 +477,25 @@
     return n.length >= 12 && s % 10 === 0;
   }
 
+  function subscribed(p) {
+    renderCredits();
+    if (state.view === 'plans') renderPlans();
+    openSheet('<h2>You\'re on ' + esc(p.name) + '</h2><p class="muted">' + (p.price ? 'Demo payment complete. Nothing was charged.' : '') + '</p><ul class="muted">' +
+      p.perks.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul><button class="btn primary block" data-x="ok">Start creating</button>', function (s2) {
+      s2.querySelector('[data-x=ok]').onclick = function () { closeSheet(); go('create'); };
+    });
+  }
+
   function checkout(id) {
-    var p = Plans.PLANS[id];
+    var p = Plans.plans()[id];
+    if (!Cloud.configured()) { go('settings'); toast('Connect to Hub AI Cloud first.'); return; }
     if (!p.price) {
-      openSheet('<h2>Switch to Hub Free?</h2><p>You keep your saved hubs, but you can only use Hub v1 Mini and can\'t open or export saved hubs.</p>' +
+      openSheet('<h2>Switch to Hub Free?</h2><p>You keep your saved hubs, but you can only use Hub V1 Mini and can\'t open or export saved hubs.</p>' +
         '<div class="row"><button class="btn grow" data-x="no">Keep my plan</button><button class="btn danger grow" data-x="yes">Switch</button></div>', function (s) {
         s.querySelector('[data-x=no]').onclick = closeSheet;
-        s.querySelector('[data-x=yes]').onclick = function () { Plans.subscribe('free'); closeSheet(); render(); toast('You are on Hub Free'); };
+        s.querySelector('[data-x=yes]').onclick = function () {
+          Cloud.subscribe('free').then(function () { closeSheet(); render(); toast('You are on Hub Free'); }, function (e) { toast(e.message); });
+        };
       });
       return;
     }
@@ -503,15 +513,11 @@
         if (!luhn(num)) { s.querySelector('#err').textContent = 'That card number doesn\'t look right. Use 4242 4242 4242 4242.'; return; }
         if (!/^\d{3,4}$/.test(s.querySelector('#cv').value.trim())) { s.querySelector('#err').textContent = 'CVC should be 3 or 4 digits.'; return; }
         var b = this; b.disabled = true; b.innerHTML = '<span class="spinner"></span> Processing…';
-        setTimeout(function () {
-          Plans.subscribe(id);
-          openSheet('<h2>You\'re on ' + esc(p.name) + '</h2><p class="muted">Demo payment complete. Nothing was charged.</p><ul class="muted">' +
-            p.perks.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul><button class="btn primary block" data-x="ok">Start creating</button>', function (s2) {
-            s2.querySelector('[data-x=ok]').onclick = function () { closeSheet(); go('create'); };
-          });
-          renderCredits();
-          if (state.view === 'plans') renderPlans();
-        }, 1100);
+        // Only the plan goes to the server; the card details never leave this sheet.
+        Cloud.subscribe(id).then(function () { subscribed(p); }, function (e) {
+          b.disabled = false; b.textContent = 'Pay $' + p.price.toFixed(2) + ' (demo)';
+          s.querySelector('#err').textContent = e.message;
+        });
       };
     });
   }
@@ -520,30 +526,36 @@
 
   function renderSettings() {
     var s = Store.get('settings', {});
+    var status = !Cloud.configured() ? 'Not connected.'
+      : Plans.me() ? 'Connected · account ' + esc(Cloud.account() || '') + ' · ' + esc(Plans.plan().name) : 'Not connected yet.';
     view.innerHTML = '<div class="wrap"><h2>Settings</h2>' +
-      '<div class="card"><h3>Gemini</h3><p class="muted small">Gemini 3.8 Flash and Pro run through the Gemini API with your own key (aistudio.google.com). ' +
-      'The key stays on this phone and is only sent to Google.</p>' +
-      '<label class="field">API key</label><div class="row"><input class="in" id="key" type="password" autocomplete="off" value="' + esc(s.geminiKey || '') + '"><button class="btn" id="show">Show</button></div>' +
-      '<label class="field">Gemini 3.8 Flash model id</label><input class="in" id="fm" value="' + esc(s.flashModel || Gemini.DEFAULT_MODELS.flash) + '">' +
-      '<label class="field">Gemini 3.8 Pro model id</label><input class="in" id="pm" value="' + esc(s.proModel || Gemini.DEFAULT_MODELS.gpro) + '"></div>' +
+      '<div class="card"><h3>Hub AI Cloud</h3><p class="muted small">The Hub agents and Gemini run on your Hub AI Cloud server ' +
+      '(hub-ai/cloud). Your plan and credits are kept there.</p>' +
+      '<label class="field">Server address</label><input class="in" id="url" inputmode="url" autocomplete="off" placeholder="https://your-hub-ai-cloud.example.com" value="' +
+      esc(s.cloudUrl || (window.HUB_CONFIG && window.HUB_CONFIG.cloudUrl) || '') + '">' +
+      '<p class="small" id="cs" style="margin:8px 0 0">' + status + '</p></div>' +
       '<div class="card"><h3>FunHub</h3><label class="field">Name shown on your posts</label><input class="in" id="au" value="' + esc(s.author || 'You') + '"></div>' +
-      '<button class="btn primary block" id="sv">Save settings</button>' +
-      '<div class="card" style="margin-top:12px"><h3>Data</h3><p class="muted small">Hubs, FunHub posts, teaching and plan live on this phone only.</p>' +
-      '<button class="btn danger" id="wipe">Erase all Hub AI data</button></div>' +
+      '<button class="btn primary block" id="sv">Save and connect</button>' +
+      '<div class="card" style="margin-top:12px"><h3>Data</h3><p class="muted small">Hubs and FunHub posts live on this device. Your plan lives on the server.</p>' +
+      '<button class="btn danger" id="wipe">Erase all Hub AI data on this device</button></div>' +
       '<p class="muted small" style="text-align:center">Hub AI ' + esc(HubBridge.version()) + ' · payments are a demo</p></div>';
-    $('#show').onclick = function () { var k = $('#key'); k.type = k.type === 'password' ? 'text' : 'password'; this.textContent = k.type === 'password' ? 'Show' : 'Hide'; };
     $('#sv').onclick = function () {
-      Store.set('settings', { geminiKey: $('#key').value.trim(), flashModel: $('#fm').value.trim(), proModel: $('#pm').value.trim(), author: $('#au').value.trim() || 'You' });
-      toast('Settings saved');
+      var next = $('#url').value.trim();
+      if (next && !/^https?:\/\//.test(next)) { toast('The address should start with https://'); return; }
+      Store.set('settings', { cloudUrl: next, author: $('#au').value.trim() || 'You' });
+      Store.set('cloud.me', null);
+      if (!next) { renderSettings(); renderCredits(); return; }
+      $('#cs').textContent = 'Connecting…';
+      Cloud.refresh().then(function () { toast('Connected to Hub AI Cloud'); renderSettings(); renderCredits(); },
+        function (e) { $('#cs').textContent = e.message; renderCredits(); });
     };
     $('#wipe').onclick = function () {
-      openSheet('<h2>Erase everything?</h2><p>All hubs, FunHub posts, teaching, settings and your demo plan will be removed.</p>' +
+      openSheet('<h2>Erase everything?</h2><p>All hubs, FunHub posts and settings on this device are removed, and this device gets a new anonymous account.</p>' +
         '<div class="row"><button class="btn grow" data-x="no">Cancel</button><button class="btn danger grow" data-x="yes">Erase</button></div>', function (sh) {
         sh.querySelector('[data-x=no]').onclick = closeSheet;
         sh.querySelector('[data-x=yes]').onclick = function () {
           Store.clear(); state.draft = null; state.prompt = ''; state.engine = 'mini'; state.stack = [];
-          HubAgent.tiers.forEach(HubAgent.forget);
-          closeSheet(); go('create', null, false); toast('All data erased');
+          closeSheet(); go('create', null, false); toast('All data erased'); sync();
         };
       });
     };
@@ -568,4 +580,5 @@
   window.HubApp = { back: back, go: go };
 
   render();
+  sync();
 })();

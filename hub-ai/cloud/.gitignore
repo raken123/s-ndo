@@ -1,0 +1,3 @@
+training/out/
+*.sqlite3
+__pycache__/

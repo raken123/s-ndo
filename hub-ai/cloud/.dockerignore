@@ -1,0 +1,4 @@
+training/
+tests/
+*.sqlite3
+__pycache__/

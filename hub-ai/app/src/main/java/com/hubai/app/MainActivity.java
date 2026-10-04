@@ -33,35 +33,25 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.util.Iterator;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
- * Hosts the Hub AI web UI (assets/www) and gives it a few native abilities:
- * saving files to Downloads, the share sheet, and HTTPS calls to the Gemini
- * API. Hubs run in sandboxed iframes; because Android injects the bridge
- * into every frame, each call must carry a token that only the top page
- * receives.
+ * Hosts the Hub AI web UI (assets/www) and gives it two native abilities:
+ * saving files to Downloads and the share sheet. The UI talks to Hub AI
+ * Cloud itself over HTTPS. Hubs run in sandboxed iframes; because Android
+ * injects the bridge into every frame, each call must carry a token that
+ * only the top page receives.
  */
 public class MainActivity extends Activity {
 
     private static final String START_URL = "file:///android_asset/www/index.html";
-    private static final String ALLOWED_HOST = "generativelanguage.googleapis.com";
     private static final int BLACK = 0xFF0D0D0D;
 
     private WebView web;
-    private final ExecutorService io = Executors.newCachedThreadPool();
     private final String token = newToken();
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -148,7 +138,6 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        io.shutdownNow();
         web.destroy();
         super.onDestroy();
     }
@@ -254,50 +243,6 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void httpRequest(String callToken, String id, String method, String url, String headersJson, String body) {
-            if (!token.equals(callToken)) {
-                return;
-            }
-            io.execute(() -> {
-                int status = 0;
-                String text;
-                HttpURLConnection c = null;
-                try {
-                    URL u = new URL(url);
-                    if (!"https".equals(u.getProtocol()) || !ALLOWED_HOST.equals(u.getHost())) {
-                        throw new IOException("Blocked host " + u.getHost());
-                    }
-                    c = (HttpURLConnection) u.openConnection();
-                    c.setConnectTimeout(20000);
-                    c.setReadTimeout(180000);
-                    c.setRequestMethod(method);
-                    JSONObject h = new JSONObject(headersJson == null || headersJson.isEmpty() ? "{}" : headersJson);
-                    for (Iterator<String> it = h.keys(); it.hasNext(); ) {
-                        String k = it.next();
-                        c.setRequestProperty(k, h.getString(k));
-                    }
-                    if (body != null && !body.isEmpty()) {
-                        c.setDoOutput(true);
-                        try (OutputStream out = c.getOutputStream()) {
-                            out.write(body.getBytes(StandardCharsets.UTF_8));
-                        }
-                    }
-                    status = c.getResponseCode();
-                    InputStream in = status >= 400 ? c.getErrorStream() : c.getInputStream();
-                    text = in == null ? "" : readAll(in);
-                } catch (IOException | JSONException | RuntimeException e) {
-                    text = String.valueOf(e.getMessage());
-                } finally {
-                    if (c != null) {
-                        c.disconnect();
-                    }
-                }
-                String js = "HubBridge._done(" + JSONObject.quote(id) + "," + status + "," + JSONObject.quote(text) + ")";
-                runOnUiThread(() -> web.evaluateJavascript(js, null));
-            });
-        }
-
-        @JavascriptInterface
         public void toast(String message) {
             runOnUiThread(() -> Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show());
         }
@@ -309,17 +254,6 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "1.0";
             }
-        }
-    }
-
-    private static String readAll(InputStream in) throws IOException {
-        try (InputStream s = in; ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            byte[] buf = new byte[16384];
-            int n;
-            while ((n = s.read(buf)) > 0) {
-                out.write(buf, 0, n);
-            }
-            return out.toString("UTF-8");
         }
     }
 }

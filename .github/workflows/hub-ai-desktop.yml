@@ -44,6 +44,26 @@ jobs:
       - name: Install Electron and electron-builder
         run: npm install --no-audit --no-fund
 
+      - name: Point the app at Hub AI Cloud
+        if: vars.HUBAI_CLOUD_URL != ''
+        shell: bash
+        env:
+          CLOUD_URL: ${{ vars.HUBAI_CLOUD_URL }}
+        run: |
+          node -e "console.log('window.HUB_CONFIG = { cloudUrl: ' + JSON.stringify(process.env.CLOUD_URL) + ' };')" > ../app/src/main/assets/www/js/config.js
+          cat ../app/src/main/assets/www/js/config.js
+
+      # A local Hub AI Cloud with fake models, so the smoke tests below can
+      # generate a hub through the real API.
+      - name: Start a test Hub AI Cloud
+        if: matrix.target != 'win'
+        shell: bash
+        working-directory: hub-ai/cloud
+        run: |
+          HUBAI_FAKE_MODELS=1 HUBAI_QUIET=1 nohup python3 -m hubcloud --host 127.0.0.1 --port 8799 --db "$RUNNER_TEMP/hubai.sqlite3" > "$RUNNER_TEMP/cloud.log" 2>&1 &
+          for i in $(seq 1 20); do curl -fs http://127.0.0.1:8799/v1/health && exit 0; sleep 1; done
+          cat "$RUNNER_TEMP/cloud.log"; exit 1
+
       - name: Build installers
         run: npm run dist:${{ matrix.target }}
 
@@ -69,7 +89,7 @@ jobs:
             lipo -archs "$app/Contents/MacOS/Hub AI"
             if [[ "$dmg" == *arm64* ]]; then
               code=0
-              HUBAI_SAVE_DIR=$(mktemp -d) HUBAI_SMOKE=1 HUBAI_SMOKE_OUT="$PWD/smoke.log" ELECTRON_ENABLE_LOGGING=1 \
+              HUBAI_SAVE_DIR=$(mktemp -d) HUBAI_SMOKE=1 HUBAI_SMOKE_OUT="$PWD/smoke.log" HUBAI_SMOKE_CLOUD=http://127.0.0.1:8799 ELECTRON_ENABLE_LOGGING=1 \
                 perl -e 'alarm 120; exec { $ARGV[0] } @ARGV or die "exec failed: $!"' "$app/Contents/MacOS/Hub AI" 2>&1 | tail -40 || code=$?
               echo "app exit: $code"
               cat smoke.log || true
@@ -81,7 +101,8 @@ jobs:
       - name: Start the Linux app
         if: matrix.target == 'linux'
         run: |
-          HUBAI_SAVE_DIR=$(mktemp -d) HUBAI_SMOKE=1 HUBAI_SMOKE_OUT="$PWD/smoke.log" timeout 120 xvfb-run -a release/linux-unpacked/hub-ai --no-sandbox || true
+          HUBAI_SAVE_DIR=$(mktemp -d) HUBAI_SMOKE=1 HUBAI_SMOKE_OUT="$PWD/smoke.log" HUBAI_SMOKE_CLOUD=http://127.0.0.1:8799 \
+            timeout 120 xvfb-run -a release/linux-unpacked/hub-ai --no-sandbox || true
           cat smoke.log
           grep -q SMOKE_OK smoke.log
 

@@ -1,5 +1,7 @@
 Hub AI 1.0.0 for Android, macOS, Windows and Linux. Payments in the app are a demo.
 
+The Hub agents run on Hub AI Cloud. Enter your server's address under Settings → Hub AI Cloud (see `hub-ai/cloud/README.md` to deploy one).
+
 | File | Platform |
 |---|---|
 | `HubAI-1.0.0.apk` | Android 7.0+ |

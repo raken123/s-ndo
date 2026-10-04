@@ -33,10 +33,19 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Train Hub v1 agents (Python)
+      - name: Test Hub AI Cloud and its training pipeline (Python)
+        working-directory: hub-ai/cloud
+        run: python -m unittest discover -s tests -v
+
+      # Set the repository variable HUBAI_CLOUD_URL to your deployed server
+      # and the apps connect to it without any setup.
+      - name: Point the app at Hub AI Cloud
+        if: vars.HUBAI_CLOUD_URL != ''
+        env:
+          CLOUD_URL: ${{ vars.HUBAI_CLOUD_URL }}
         run: |
-          python training/train.py
-          python -m unittest discover -s training -p "test_*.py" -v
+          python -c "import json,os; print('window.HUB_CONFIG = { cloudUrl: %s };' % json.dumps(os.environ['CLOUD_URL']))" > app/src/main/assets/www/js/config.js
+          cat app/src/main/assets/www/js/config.js
 
       - uses: actions/setup-java@v4
         with:

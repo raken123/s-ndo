@@ -1,8 +1,9 @@
-/* Hub templates used by the Hub v1 agents.
+/* Hub templates: the FunHub starter hubs, and the example answers the Hub
+ * agents are fine-tuned on (hub-ai/cloud/training/build_dataset.py).
  *
- * Every template takes the options built by agent.js and returns one
- * self-contained HTML document (no network, no external files), which is
- * what a hub is. Template names match HUB_TYPES in training/hubspec.py.
+ * Every template returns one self-contained HTML document (no network, no
+ * external files), which is what a hub is. Template names match HUB_TYPES
+ * in hub-ai/cloud/training/hubspec.py.
  *
  * Options: title, accent, dark, persist, extras, n (a number from the
  * request or null), topic, key (storage namespace), engine (label for the

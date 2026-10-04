@@ -1,9 +1,8 @@
 // Hub AI desktop shell: loads the same UI as the Android app from www/.
-const { app, BrowserWindow, dialog, ipcMain, net, shell } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
-const ALLOWED_HOST = 'generativelanguage.googleapis.com';
 let win = null;
 
 function safeName(name) {
@@ -62,23 +61,6 @@ ipcMain.on('hub:share', (event, name, mime, base64) => {
 
 ipcMain.on('hub:version', (event) => { event.returnValue = app.getVersion(); });
 
-ipcMain.on('hub:http', async (event, id, method, url, headersJson, body) => {
-  if (!trusted(event)) return;
-  let status = 0, text = '';
-  try {
-    const u = new URL(url);
-    if (u.protocol !== 'https:' || u.hostname !== ALLOWED_HOST) throw new Error('Blocked host ' + u.hostname);
-    const r = await net.fetch(url, { method, headers: JSON.parse(headersJson || '{}'), body: body || undefined });
-    status = r.status;
-    text = await r.text();
-  } catch (e) {
-    text = String(e.message || e);
-  }
-  if (win && !win.isDestroyed()) {
-    win.webContents.executeJavaScript('HubBridge._done(' + JSON.stringify(id) + ',' + status + ',' + JSON.stringify(text) + ')');
-  }
-});
-
 function create() {
   win = new BrowserWindow({
     width: 1100, height: 800, minWidth: 380, minHeight: 560,
@@ -107,11 +89,16 @@ function create() {
     win.webContents.once('did-finish-load', async () => {
       let r = null;
       try {
+        // HUBAI_SMOKE_CLOUD points the app at a (test) Hub AI Cloud server.
+        if (process.env.HUBAI_SMOKE_CLOUD) {
+          await win.webContents.executeJavaScript('Store.set("settings", ' + JSON.stringify({ cloudUrl: process.env.HUBAI_SMOKE_CLOUD }) + ')');
+        }
         r = await win.webContents.executeJavaScript(fs.readFileSync(path.join(__dirname, 'scripts', 'smoke.js'), 'utf8'));
       } catch (e) {
         r = { error: String(e.message || e) };
       }
-      const ok = r && r.native && r.iframe === 'undefined' && /^Saved/.test(r.save || '') && r.blocked && r.blocked.status === 0;
+      const ok = r && r.native && r.cloud && r.iframe === 'undefined' && /^Saved/.test(r.save || '') && /^Saved/.test(r.zip || '') &&
+        (!process.env.HUBAI_SMOKE_CLOUD || (r.generated && r.generated.ok));
       const report = 'SMOKE_RESULT=' + JSON.stringify(r) + '\n' + (ok ? 'SMOKE_OK' : 'SMOKE_FAILED') + '\n';
       // stdout to a pipe is asynchronous on macOS and would be cut off by
       // app.exit(), so the report also goes to a file when asked.

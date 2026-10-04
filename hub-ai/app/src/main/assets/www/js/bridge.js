@@ -1,6 +1,7 @@
-/* Storage and the bridge to the Android shell (MainActivity.java, exposed as
- * window.HubNative). In a normal browser the same calls fall back to web
- * APIs, so the UI can be developed and tested without a phone.
+/* Storage and the bridge to the native shells (MainActivity.java on
+ * Android, preload.js on desktop, both exposed as window.HubNative). In a
+ * normal browser the same calls fall back to web APIs, so the UI can be
+ * developed and tested without a phone.
  */
 (function () {
   'use strict';
@@ -21,7 +22,7 @@
   };
 
   var N = window.HubNative || null;
-  var pending = {}, seq = 0, token = '';
+  var token = '';
 
   function utf8(s) { return new TextEncoder().encode(s); }
   function b64(bytes) {
@@ -71,31 +72,10 @@
       return Promise.resolve();
     },
 
-    // HTTP without CORS limits when running inside the app.
-    request: function (method, url, headers, body) {
-      if (N) {
-        return new Promise(function (resolve) {
-          var id = 'r' + (++seq);
-          pending[id] = resolve;
-          N.httpRequest(token, id, method, url, JSON.stringify(headers || {}), body || '');
-        });
-      }
-      return fetch(url, { method: method, headers: headers, body: body })
-        .then(function (r) { return r.text().then(function (t) { return { status: r.status, body: t }; }); },
-              function (e) { return { status: 0, body: String(e && e.message || e) }; });
-    },
-
     // MainActivity hands the top page a token after it loads (the desktop
     // shell doesn't need one: its bridge only exists in the top frame). Hub iframes
     // also see window.HubNative but never get the token.
     _setToken: function (t) { token = t; },
-
-    // Called by MainActivity when a request finishes.
-    _done: function (id, status, body) {
-      var f = pending[id];
-      delete pending[id];
-      if (f) f({ status: status, body: body });
-    },
 
     toast: function (msg) { if (N) N.toast(String(msg)); },
     version: function () { return N ? N.appVersion() : 'web'; }

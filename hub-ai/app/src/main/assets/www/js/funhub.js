@@ -1,7 +1,7 @@
-/* FunHub: a scrolling feed of hubs. Starter posts are built from the Hub v1
- * templates; hubs you publish are added on top. Everything lives on this
- * device (there is no server yet), and sharing goes through the system
- * share sheet as an .html file.
+/* FunHub: a scrolling feed of hubs. Starter posts are built from the hub
+ * templates; hubs you publish are added on top. The feed lives on this
+ * device (it isn't shared through Hub AI Cloud yet), and sharing goes
+ * through the system share sheet as an .html file.
  */
 (function () {
   'use strict';
