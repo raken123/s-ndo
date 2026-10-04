@@ -111,10 +111,12 @@ function create() {
       } catch (e) {
         r = { error: String(e.message || e) };
       }
-      console.log('SMOKE_RESULT=' + JSON.stringify(r));
       const ok = r && r.native && r.iframe === 'undefined' && /^Saved/.test(r.save || '') && r.blocked && r.blocked.status === 0;
-      console.log(ok ? 'SMOKE_OK' : 'SMOKE_FAILED');
-      app.exit(ok ? 0 : 1);
+      const report = 'SMOKE_RESULT=' + JSON.stringify(r) + '\n' + (ok ? 'SMOKE_OK' : 'SMOKE_FAILED') + '\n';
+      // stdout to a pipe is asynchronous on macOS and would be cut off by
+      // app.exit(), so the report also goes to a file when asked.
+      if (process.env.HUBAI_SMOKE_OUT) fs.writeFileSync(process.env.HUBAI_SMOKE_OUT, report);
+      process.stdout.write(report, () => app.exit(ok ? 0 : 1));
     });
   }
 }
