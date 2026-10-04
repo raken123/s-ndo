@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hub AI — Banana Moon</title>
+<!-- Episode 2 (1080x1920, ~23 s): liftoff to the Banana Moon. Max tries to
+     code the landing countdown and sets off every alarm; Minnie asks Hub AI
+     and they land. Timings follow build/ep/space/timeline.json. -->
+<style>
+  html, body { margin: 0; background: #000; }
+  svg { display: block; width: 1080px; height: 1920px; }
+  text { font-family: "DejaVu Sans", "Noto Color Emoji", sans-serif; }
+</style>
+</head>
+<body>
+<script src="cats.js"></script>
+<script src="stage.js"></script>
+<script>
+var max, minnie, F = {}, o = '#1b1b1b';
+
+function makeRocket(parent) {
+  var g = el('g', {}, parent);
+  F.flame = el('g', {}, g);
+  el('path', { d: 'M-60,0 Q0,260 60,0 Z', fill: '#ff9b2f', stroke: o, 'stroke-width': 6 }, F.flame);
+  el('path', { d: 'M-32,0 Q0,150 32,0 Z', fill: '#ffe066' }, F.flame);
+  el('path', { d: 'M-90,-40 L-170,60 L-90,30 Z M90,-40 L170,60 L90,30 Z', fill: '#e5484d', stroke: o, 'stroke-width': 7, 'stroke-linejoin': 'round' }, g);
+  el('path', { d: 'M-90,10 L-90,-330 C-90,-470 0,-560 0,-560 C0,-560 90,-470 90,-330 L90,10 Z', fill: '#f4f4f4', stroke: o, 'stroke-width': 8, 'stroke-linejoin': 'round' }, g);
+  el('path', { d: 'M-60,-470 C-30,-530 0,-560 0,-560 C0,-560 30,-530 60,-470 Z', fill: '#e5484d', stroke: o, 'stroke-width': 7 }, g);
+  el('circle', { cy: -300, r: 52, fill: '#7cc4ff', stroke: o, 'stroke-width': 8 }, g);
+  el('circle', { cx: -16, cy: -316, r: 14, fill: '#fff', opacity: 0.8 }, g);
+  var hub = el('text', { y: -120, 'font-size': 70, 'font-weight': 900, 'text-anchor': 'middle', fill: '#1b1b1b' }, g);
+  hub.textContent = 'H';
+  el('path', { d: 'M-50,10 L-40,-30 L40,-30 L50,10 Z', fill: '#7d838c', stroke: o, 'stroke-width': 6 }, g);
+  return g;
+}
+
+function stars(parent, n, seed, h) {
+  var r = rnd(seed), list = [];
+  for (var i = 0; i < n; i++) list.push(el('circle', { cx: r() * 1080, cy: r() * h, r: 1.5 + r() * 3.5, fill: '#fff', opacity: 0.4 + r() * 0.6 }, parent));
+  return list;
+}
+
+function setup() {
+  // --- outside: the launch pad
+  F.out = el('g', {}, $('bg'));
+  el('rect', { width: 1080, height: 1920, fill: '#141a3d' }, F.out);
+  el('rect', { y: 900, width: 1080, height: 1020, fill: '#2a2360', opacity: 0.6 }, F.out);
+  stars(F.out, 90, 3, 1500);
+  el('circle', { cx: 870, cy: 520, r: 70, fill: '#ffe680', stroke: o, 'stroke-width': 6 }, F.out);
+  el('rect', { y: 1650, width: 1080, height: 270, fill: '#3b3f4c' }, F.out);
+  el('rect', { x: 380, y: 1630, width: 320, height: 40, rx: 8, fill: '#7d838c', stroke: o, 'stroke-width': 6 }, F.out);
+  el('path', { d: 'M760,1650 L760,700 M840,1650 L840,700 M760,800 L840,860 M840,860 L760,920 M760,1000 L840,1060 M840,1060 L760,1120 M760,1200 L840,1260 M760,1400 L840,1460', stroke: '#e5484d', 'stroke-width': 12, 'stroke-linecap': 'round' }, F.out);
+  F.rocket = makeRocket(F.out);
+  F.smoke = el('g', {}, F.out);
+  F.smokes = [];
+  for (var i = 0; i < 12; i++) F.smokes.push(el('circle', { r: 60, fill: '#e8e8e8', stroke: o, 'stroke-width': 6, opacity: 0 }, F.smoke));
+
+  // --- inside: the cabin
+  F.cabin = el('g', {}, $('bg'));
+  el('rect', { width: 1080, height: 1920, fill: '#39415a' }, F.cabin);
+  for (var y = 80; y < 1500; y += 240) {
+    el('path', { d: 'M0,' + y + ' L1080,' + y, stroke: '#2b3245', 'stroke-width': 8 }, F.cabin);
+    for (var x = 40; x < 1080; x += 120) el('circle', { cx: x, cy: y + 24, r: 6, fill: '#566079' }, F.cabin);
+  }
+  F.win = el('g', { transform: 'translate(620,880)' }, F.cabin);
+  el('circle', { r: 270, fill: '#7d838c', stroke: o, 'stroke-width': 10 }, F.win);
+  el('clipPath', { id: 'winClip' }, $('s').querySelector('defs')).appendChild(el('circle', { r: 230 }));
+  var inside = el('g', { 'clip-path': 'url(#winClip)' }, F.win);
+  el('rect', { x: -240, y: -240, width: 480, height: 480, fill: '#0b1030' }, inside);
+  F.streaks = [];
+  var sr = rnd(9);
+  for (var k = 0; k < 26; k++) F.streaks.push([el('path', { stroke: '#fff', 'stroke-width': 3 + sr() * 3, 'stroke-linecap': 'round', opacity: 0.8 }, inside), sr() * 480 - 240, sr()]);
+  F.moon = el('g', {}, inside);
+  el('circle', { r: 200, fill: '#ffe066', stroke: o, 'stroke-width': 8 }, F.moon);
+  [[-70, -60, 40], [60, 40, 30], [-20, 90, 22], [90, -80, 18]].forEach(function (c) { el('circle', { cx: c[0], cy: c[1], r: c[2], fill: '#f0c419', stroke: '#c99a00', 'stroke-width': 5 }, F.moon); });
+  el('circle', { r: 230, fill: 'none', stroke: '#fff', 'stroke-width': 14, opacity: 0.25 }, F.win);
+  F.beacon = el('g', { transform: 'translate(150,190)' }, F.cabin);
+  el('rect', { x: -40, y: 30, width: 80, height: 30, rx: 6, fill: '#566079', stroke: o, 'stroke-width': 6 }, F.beacon);
+  F.beaconLight = el('path', { d: 'M-34,30 C-34,-30 34,-30 34,30 Z', fill: '#7a2a2a', stroke: o, 'stroke-width': 6 }, F.beacon);
+  F.alarmTint = el('rect', { width: 1080, height: 1920, fill: '#ff2d2d', opacity: 0 }, $('mid'));
+  // the control panel, in front of the cats
+  F.panel = el('g', {}, $('front'));
+  el('path', { d: 'M-20,1460 L1100,1460 L1100,1940 L-20,1940 Z', fill: '#2b3245', stroke: o, 'stroke-width': 8 }, F.panel);
+  el('path', { d: 'M-20,1460 L1100,1460 L1100,1500 L-20,1500 Z', fill: '#566079', stroke: o, 'stroke-width': 8 }, F.panel);
+  F.buttons = [];
+  var cols = ['#e5484d', '#ffd23a', '#06d6a0', '#4cc9f0', '#b388ff', '#ff8fab'];
+  for (var b = 0; b < 12; b++) F.buttons.push(el('circle', { cx: 90 + (b % 6) * 70, cy: 1570 + Math.floor(b / 6) * 80, r: 24, fill: cols[b % 6], stroke: o, 'stroke-width': 5 }, F.panel));
+  el('rect', { x: 560, y: 1540, width: 440, height: 200, rx: 18, fill: '#0d1a12', stroke: o, 'stroke-width': 7 }, F.panel);
+  F.panelText = el('text', { x: 780, y: 1660, 'font-size': 52, 'font-weight': 800, 'text-anchor': 'middle', 'font-family': 'DejaVu Sans Mono', fill: '#3bea7a' }, F.panel);
+  F.sparks = [];
+  for (var s = 0; s < 14; s++) F.sparks.push(el('path', { d: 'M0,-14 L4,-4 L14,0 L4,4 L0,14 L-4,4 L-14,0 L-4,-4 Z', fill: '#ffe066', stroke: '#ff9b2f', 'stroke-width': 3, opacity: 0 }, $('front')));
+
+  // --- the moon surface
+  F.surface = el('g', {}, $('bg'));
+  el('rect', { width: 1080, height: 1920, fill: '#070a1c' }, F.surface);
+  stars(F.surface, 110, 21, 1300);
+  var earth = el('g', { transform: 'translate(850,720)' }, F.surface);
+  el('circle', { r: 95, fill: '#4c8dff', stroke: o, 'stroke-width': 7 }, earth);
+  el('path', { d: 'M-60,-40 C-30,-70 10,-50 0,-20 C-10,10 -50,0 -60,-40 Z M20,20 C50,0 80,30 60,60 C40,80 10,60 20,20 Z', fill: '#06d6a0' }, earth);
+  el('path', { d: 'M-200,1500 C100,1300 900,1300 1280,1500 L1280,1920 L-200,1920 Z', fill: '#ffe066', stroke: o, 'stroke-width': 10 }, F.surface);
+  [[200, 1600, 70], [820, 1720, 90], [520, 1840, 50], [950, 1500, 40]].forEach(function (c) {
+    el('ellipse', { cx: c[0], cy: c[1], rx: c[2], ry: c[2] * 0.35, fill: '#f0c419', stroke: '#c99a00', 'stroke-width': 6 }, F.surface);
+  });
+  var landed = el('g', { transform: 'translate(110,1600) scale(0.6)' }, F.surface);
+  makeRocket(landed);
+  F.flag = el('g', {}, $('props'));
+  el('path', { d: 'M0,0 L0,-330', stroke: '#c9cdd3', 'stroke-width': 12, 'stroke-linecap': 'round' }, F.flag);
+  F.flagCloth = el('path', { fill: '#ececec', stroke: o, 'stroke-width': 6 }, F.flag);
+  F.flagH = el('text', { 'font-size': 76, 'font-weight': 900, 'text-anchor': 'middle', fill: '#0d0d0d' }, F.flag);
+  F.flagH.textContent = 'H';
+
+  max = makeCat('max', $('chars'));
+  minnie = makeCat('minnie', $('chars'));
+  costume(max, 'helmet');
+  costume(minnie, 'helmet');
+}
+
+function render(t) {
+  if (endCard(t)) { caption(t); flash(t, [[M.end, 0.3]]); return; }
+  var outside = t < M.cabin, moon = t >= M.land;
+  F.out.setAttribute('opacity', outside ? 1 : 0);
+  F.cabin.setAttribute('opacity', !outside && !moon ? 1 : 0);
+  F.surface.setAttribute('opacity', moon ? 1 : 0);
+  $('chars').setAttribute('opacity', outside ? 0 : 1);
+  $('front').setAttribute('opacity', !outside && !moon ? 1 : 0);
+  F.flag.setAttribute('opacity', moon ? 1 : 0);
+
+  // --- liftoff
+  var rise = seg(t, M.launch + 1.0, M.cabin + 0.1);
+  var jitter = t < M.launch + 1.0 ? Math.sin(t * 80) * 4 * seg(t, M.launch + 0.2, M.launch + 1.0) : 0;
+  F.rocket.setAttribute('transform', 'translate(' + (540 + jitter) + ',' + (1640 - 1900 * rise * rise) + ')');
+  F.flame.setAttribute('transform', 'scale(' + (0.6 + 0.4 * seg(t, M.launch + 0.6, M.launch + 1.0) + Math.sin(t * 60) * 0.12) + ')');
+  F.flame.setAttribute('opacity', t > M.launch + 0.5 ? 1 : 0);
+  F.smokes.forEach(function (c, i) {
+    var r = rnd(i + 40), d = t - (M.launch + 0.7 + i * 0.05), side = i % 2 ? 1 : -1;
+    c.setAttribute('opacity', d > 0 ? 1 - seg(d, 0.8, 1.4) : 0);
+    c.setAttribute('cx', 540 + side * (60 + d * (300 + r() * 300)));
+    c.setAttribute('cy', 1640 - r() * 60 - d * 40);
+    c.setAttribute('r', 40 + d * 90 + r() * 30);
+  });
+  stamp('n3', t, M.launch, M.launch + 0.35, '3', { size: 220, fill: '#4cc9f0', y: 900, rot: -4 });
+  stamp('n2', t, M.launch + 0.4, M.launch + 0.75, '2', { size: 220, fill: '#ffd23a', y: 900, rot: 4 });
+  stamp('n1', t, M.launch + 0.8, M.launch + 1.05, '1', { size: 220, fill: '#ff8fab', y: 900, rot: -4 });
+  stamp('lift', t, M.launch + 1.2, M.cabin, 'LIFTOFF!', { burst: true, size: 110, fill: '#ff9b2f', y: 900, w: 380, h: 200 });
+
+  // --- the cabin
+  var approach = easeInOut(seg(t, M.built + 0.5, M.land));
+  F.streaks.forEach(function (s, i) {
+    var sp = moon ? 0 : 1 - 0.7 * approach, y = ((s[2] * 480 + t * 900 * sp) % 480) - 240, len = 30 + 90 * sp;
+    s[0].setAttribute('d', 'M' + s[1] + ',' + y + ' L' + s[1] + ',' + (y - len));
+  });
+  F.moon.setAttribute('transform', 'translate(' + lerp(120, 0, approach) + ',' + lerp(-120, 60, approach) + ') scale(' + lerp(0.15, 1.6, approach * approach) + ')');
+  F.moon.setAttribute('opacity', t >= M.built ? 1 : 0);
+  var alarm = at(t, 'panic', 'phone') ? 1 : 0;
+  var pulse = alarm * (0.5 + 0.5 * Math.sin(t * 16));
+  F.alarmTint.setAttribute('opacity', pulse * 0.22);
+  F.beaconLight.setAttribute('fill', alarm ? mixColor('#7a2a2a', '#ff2d2d', pulse) : '#7a2a2a');
+  var mashing = t >= TL.lines[2].start && t < M.panic + 0.3;
+  F.buttons.forEach(function (b, i) {
+    var lit = mashing ? (Math.floor(t * 12 + i * 7) % 3 === 0) : alarm ? (Math.floor(t * 6) % 2 === i % 2) : (Math.floor(t * 2 + i) % 5 === 0);
+    b.setAttribute('opacity', lit ? 1 : 0.45);
+  });
+  F.panelText.textContent = t < TL.lines[2].start ? 'ALL GOOD' : t < M.panic ? 'BEEP BOOP' : t < M.phone ? '⚠ ERROR ⚠' : t < M.built ? 'ASKING…' : 'LANDING ✓';
+  F.panelText.setAttribute('fill', alarm ? '#ff5c5c' : '#3bea7a');
+  F.sparks.forEach(function (s, i) {
+    var r = rnd(70 + i), d = (t - M.panic - r() * 1.4);
+    var on = t >= M.panic && t < M.phone && d >= 0 && d < 0.5;
+    var a = -Math.PI / 2 + (r() - 0.5) * 2.4;
+    s.setAttribute('opacity', on ? 1 - d * 2 : 0);
+    s.setAttribute('transform', 'translate(' + (140 + r() * 360 + Math.cos(a) * d * 400) + ',' + (1580 + Math.sin(a) * d * 400 + d * d * 600) + ') scale(' + (1.4 - d) + ')');
+  });
+  puff('smoke', t, M.panic + 0.2, 330, 1480, 160, 1.8, '#9aa0aa');
+
+  // --- the cats: floating in the cabin, standing on the moon
+  var fl = moon ? 0 : 1;
+  var mp = { x: 300, y: 1640 + fl * Math.sin(t * 1.7) * 18, s: 0.95, rot: fl * Math.sin(t * 1.3) * 4, look: 0.7, eyes: 'open', brow: 0, armL: 25, armR: -25 };
+  var np = { x: 790, y: 1640 + fl * Math.sin(t * 1.5 + 1) * 18, s: 0.95, rot: fl * Math.sin(t * 1.1 + 2) * -4, look: -0.7, eyes: 'open', armL: 25, armR: -25 };
+  if (at(t, 'cabin', 'panic') && t < TL.lines[2].start) { np.armL = 70; np.armR = -50; }
+  if (t >= TL.lines[2].start && t < M.panic) { mp.armL = 40 + Math.sin(t * 24) * 25; mp.armR = -40 - Math.sin(t * 24 + 1.5) * 25; mp.look = 0; mp.brow = 0.4; }
+  if (at(t, 'panic', 'phone')) { mp.eyes = 'wide'; mp.brow = 1; mp.armL = 130 + Math.sin(t * 18) * 15; mp.armR = -130 - Math.sin(t * 18) * 15; mp.x = 300 + Math.sin(t * 22) * 10; np.eyes = 'wide'; }
+  if (at(t, 'phone', 'built')) { np.armL = 110; np.look = -0.5; mp.look = 1; mp.eyes = 'open'; }
+  if (at(t, 'built', 'land')) { mp.eyes = t < M.built + 0.7 ? 'wide' : 'open'; mp.armL = 60; mp.armR = -60; np.eyes = 'happy'; }
+  if (moon) {
+    var hop = Math.abs(Math.sin((t - M.land) * 2.4));
+    mp.y = 1700 - hop * 70 * seg(t, M.land + 0.6, M.land + 1); np.y = 1700 - Math.abs(Math.sin((t - M.land) * 2.4 + 1.2)) * 70 * seg(t, M.land + 0.6, M.land + 1);
+    mp.x = 290; np.x = 650; mp.s = np.s = 0.8; mp.eyes = 'happy'; np.eyes = 'happy';
+    mp.armL = 110 + Math.sin(t * 8) * 15; mp.armR = -110 - Math.sin(t * 8) * 15;
+    np.armR = -100;
+  }
+  poseCat(max, t, mp);
+  poseCat(minnie, t, np);
+  // the flag, planted by Minnie
+  var plant = easeBack(seg(t, M.land + 0.6, M.land + 1.0));
+  F.flag.setAttribute('transform', 'translate(880,' + lerp(1200, 1690, plant) + ')');
+  var wv = Math.sin(t * 4) * 8;
+  F.flagCloth.setAttribute('d', 'M0,-330 C60,' + (-345 + wv) + ' 120,' + (-315 - wv) + ' 180,-330 L180,-200 C120,' + (-185 - wv) + ' 60,' + (-215 + wv) + ' 0,-200 Z');
+  F.flagH.setAttribute('x', 90); F.flagH.setAttribute('y', -238);
+
+  // --- the phone
+  var pk = easeBack(seg(t, M.phone + 0.1, M.phone + 0.5));
+  var side = easeInOut(seg(t, M.built + 0.6, M.built + 1.2));
+  phone({ show: t >= M.phone && t < M.land, k: pk, x: lerp(540, 220, side), y: lerp(860, 850, side), s: lerp(0.52, 0.4, side),
+    rot: Math.sin(t * 1.4) * 5 + side * -6, screen: t >= M.built ? 'space-result' : 'space-create' });
+  stamp('uhoh', t, M.panic, M.panic + 1.2, 'UH-OH!', { burst: true, fill: '#ff5c5c', size: 96, x: 540, y: 1100, w: 300, h: 170 });
+  stamp('moon', t, M.land + 0.2, M.land + 1.6, 'TOUCHDOWN!', { fill: '#4cc9f0', size: 84, y: 880 });
+  confetti(t, [[M.built, 540, 860, 5, 60, 2.4], [M.land + 0.3, 540, 1300, 8, 70, 2.0]]);
+  emojiRain(t, [[M.land + 0.8, 2.5, '⭐', 18, 4], [M.land + 1.0, 2.2, '🍌', 12, 6]]);
+  var landShake = [[M.land, 0.6, 22]];
+  shake(t, [[M.launch + 0.4, 1.4, 9], [M.panic, 1.8, 6], [M.built + 1.5, M.land - M.built - 1.5, 3]].concat(landShake));
+  flash(t, [[M.cabin, 0.3], [M.built, 0.25, 0.7], [M.land, 0.35]]);
+  caption(t);
+}
+
+function init(tl) {
+  TL = tl;
+  stage({ screens: ['space-create', 'space-result'], tagline: 'Apps that are out of this world.', costumes: { max: 'helmet', minnie: 'helmet' } });
+  setup();
+  render(0);
+}
+play('build/ep/space');
+</script>
+</body>
+</html>

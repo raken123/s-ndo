@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hub AI — Banana Rap Battle</title>
+<!-- Episode 5 (1080x1920, ~23 s): Max and Minnie battle on the mic. Max
+     says "prove it", Minnie starts a Hub Battle (two agents, one app) and
+     everybody wins. Timings follow build/ep/rap/timeline.json. -->
+<style>
+  html, body { margin: 0; background: #000; }
+  svg { display: block; width: 1080px; height: 1920px; }
+  text { font-family: "DejaVu Sans", "Noto Color Emoji", sans-serif; }
+</style>
+</head>
+<body>
+<script src="cats.js"></script>
+<script src="stage.js"></script>
+<script>
+var max, minnie, F = {}, o = '#1b1b1b', BEAT = 60 / 90;
+
+function speaker(parent, x) {
+  var g = el('g', { transform: 'translate(' + x + ',1180)' }, parent);
+  el('rect', { x: -95, y: 0, width: 190, height: 330, rx: 14, fill: '#1e1e26', stroke: '#000', 'stroke-width': 7 }, g);
+  el('circle', { cx: 0, cy: 80, r: 40, fill: '#33333d', stroke: '#000', 'stroke-width': 6 }, g);
+  var woof = el('g', { transform: 'translate(0,220)' }, g);
+  el('circle', { r: 72, fill: '#33333d', stroke: '#000', 'stroke-width': 6 }, woof);
+  el('circle', { r: 28, fill: '#4c4c58' }, woof);
+  return woof;
+}
+
+function setup() {
+  var bg = $('bg');
+  el('rect', { width: 1080, height: 1920, fill: '#120d1f' }, bg);
+  // brick wall
+  for (var y = 560; y < 1480; y += 50) for (var x = (y / 50) % 2 ? -50 : 0; x < 1080; x += 100)
+    el('rect', { x: x + 3, y: y + 3, width: 94, height: 44, rx: 4, fill: '#1d1530' }, bg);
+  el('rect', { y: 1470, width: 1080, height: 450, fill: '#26203a' }, bg);
+  el('rect', { y: 1460, width: 1080, height: 22, fill: '#3a3354', stroke: '#000', 'stroke-width': 5 }, bg);
+  // neon sign
+  F.neon = el('g', { transform: 'translate(540,700)' }, bg);
+  [['BANANA', -60, '#ffd23a'], ['RAP BATTLE', 50, '#ff4f8b']].forEach(function (w) {
+    var glow = el('text', { y: w[1], 'font-size': 96, 'font-weight': 900, 'text-anchor': 'middle', fill: 'none', stroke: w[2], 'stroke-width': 18, opacity: 0.3 }, F.neon);
+    glow.textContent = w[0];
+    var tx = el('text', { y: w[1], 'font-size': 96, 'font-weight': 900, 'text-anchor': 'middle', fill: '#fff', stroke: w[2], 'stroke-width': 5 }, F.neon);
+    tx.textContent = w[0];
+  });
+  F.woofers = [speaker(bg, 100), speaker(bg, 980)];
+  // light beams (behind the cats)
+  F.beams = [['#ff4f8b', 200], ['#4cc9f0', 880], ['#ffd23a', 540]].map(function (b) {
+    var g = el('g', { transform: 'translate(' + b[1] + ',0)' }, $('mid'));
+    el('path', { d: 'M-40,0 L40,0 L260,1560 L-260,1560 Z', fill: b[0], opacity: 0.18 }, g);
+    el('ellipse', { cx: 0, cy: 1560, rx: 260, ry: 50, fill: b[0], opacity: 0.3 }, g);
+    return g;
+  });
+  F.dark = el('rect', { width: 1080, height: 1920, fill: '#000', opacity: 0 }, $('front'));
+  F.spot = el('ellipse', { rx: 300, ry: 1000, fill: '#fff6c8', opacity: 0 }, $('front'));
+  max = makeCat('max', $('chars'));
+  minnie = makeCat('minnie', $('chars'));
+  costume(max, 'cap');
+  costume(minnie, 'shades');
+  F.maxMic = mic(max.armR, false);
+  F.minnieMic = mic(minnie.armL, true);
+  F.dropMic = el('g', {}, $('fx'));
+  el('rect', { x: -13, y: -10, width: 26, height: 90, rx: 10, fill: '#2a2a2a', stroke: o, 'stroke-width': 5 }, F.dropMic);
+  el('circle', { cx: 0, cy: -28, r: 30, fill: '#9aa3ad', stroke: o, 'stroke-width': 6 }, F.dropMic);
+  // the crowd, hands up
+  F.crowd = [];
+  for (var c = 0; c < 10; c++) {
+    var h = el('g', {}, $('front'));
+    var col = c % 2 ? '#2b2342' : '#221b36';
+    el('path', { d: 'M-46,-20 L-70,-140 M46,-20 L70,-140', stroke: col, 'stroke-width': 26, 'stroke-linecap': 'round' }, h);
+    el('path', { d: 'M-60,40 L-56,-60 L-30,-30 Z M60,40 L56,-60 L30,-30 Z', fill: col }, h);
+    el('ellipse', { cx: 0, cy: 30, rx: 70, ry: 80, fill: col }, h);
+    F.crowd.push([h, 50 + c * 110]);
+  }
+}
+
+// paw position of a cat's arm, for the mic drop
+function paw(c, p, left) {
+  var a = (left ? p.armL : p.armR) * Math.PI / 180, lx = left ? -74 : 74;
+  var x = Math.cos(a) * lx - Math.sin(a) * 64 + (left ? -110 : 110), y = Math.sin(a) * lx + Math.cos(a) * 64 - 250;
+  return [p.x + x * p.s, p.y + y * p.s];
+}
+
+function render(t) {
+  if (endCard(t)) { caption(t); flash(t, [[M.end, 0.3]]); return; }
+  var playing = t < M.roll, beatPh = (t % BEAT) / BEAT, kick = playing ? Math.pow(1 - beatPh, 3) : 0;
+  var groove = playing ? Math.abs(Math.sin(Math.PI * t / BEAT)) : 0;
+  // Max (left) and Minnie (right) with mics
+  var mp = { x: 300, y: 1610 - groove * 18, s: 0.95, look: 0.6, eyes: 'open', brow: 0.4, armL: 25, armR: -95, rot: Math.sin(Math.PI * t / BEAT) * 3 };
+  var np = { x: 790, y: 1610 - groove * 18, s: 0.95, look: -0.6, eyes: 'open', armL: 95, armR: -25, rot: -Math.sin(Math.PI * t / BEAT) * 3 };
+  if (at(t, 'title', 'max')) { mp.armL = 120; np.armR = -120; }
+  if (at(t, 'max', 'minnie')) { mp.armR = -110; mp.armL = 60 + kick * 50; mp.brow = 0.6; np.eyes = 'bored'; np.armR = -10; }
+  if (at(t, 'minnie', 'prove')) { np.armL = 110; np.armR = -60 - kick * 50; np.eyes = 'happy'; mp.eyes = 'wide'; mp.armR = -40; mp.brow = 1; }
+  if (at(t, 'prove', 'phone')) { mp.armL = 20; mp.armR = -75; mp.look = 1; mp.brow = 0.8; mp.eyes = 'open'; np.look = -1; }
+  if (at(t, 'phone', 'roll')) { np.armR = -130; np.eyes = 'happy'; mp.look = 0.4; mp.eyes = 'wide'; }
+  if (at(t, 'roll', 'winner')) { mp.eyes = 'wide'; np.eyes = 'wide'; mp.armL = 60 + Math.sin(t * 30) * 8; np.armR = -60 - Math.sin(t * 30) * 8; mp.look = 0; np.look = 0; }
+  if (t >= M.winner) {
+    var hop = Math.abs(Math.sin((t - M.winner) * 7)) * 30;
+    np.eyes = 'happy'; np.armL = 120; np.armR = -130; np.y -= hop;
+    mp.eyes = 'happy'; mp.armL = 130; mp.armR = -120; mp.brow = 0; mp.y -= hop;
+  }
+  var dropping = t >= M.drop - 0.1;
+  if (dropping) { np.armL = 70; np.look = 0; }
+  poseCat(max, t, mp);
+  poseCat(minnie, t, np);
+  F.minnieMic.setAttribute('opacity', dropping ? 0 : 1);
+  var pw = paw(minnie, np, true), fall = seg(t, M.drop - 0.1, M.drop + 0.3);
+  F.dropMic.setAttribute('opacity', dropping && t < M.end ? 1 : 0);
+  F.dropMic.setAttribute('transform', 'translate(' + (pw[0] - 20 * fall) + ',' + lerp(pw[1], 1600, fall * fall) + ') rotate(' + (25 + fall * 120) + ')');
+  // speakers thump on the beat
+  F.woofers.forEach(function (w) { w.setAttribute('transform', 'translate(0,220) scale(' + (1 + kick * 0.12) + ')'); });
+  F.neon.setAttribute('opacity', t < M.title + 0.6 ? (Math.floor(t * 14) % 3 ? 1 : 0.3) : 0.85 + 0.15 * kick);
+  // lights: sweep with the beat, spotlight the rapper, dark for the drumroll
+  F.beams.forEach(function (b, i) {
+    var base = [200, 880, 540][i], sw = Math.sin(t * (at(t, 'roll', 'winner') ? 6 : 1.2) + i * 2) * (at(t, 'roll', 'winner') ? 360 : 140);
+    b.setAttribute('transform', 'translate(' + (base + sw) + ',0) rotate(' + sw * -0.02 + ')');
+  });
+  var focus = at(t, 'max', 'minnie') ? mp.x : at(t, 'minnie', 'prove') ? np.x : at(t, 'roll', 'winner') ? 540 + Math.sin(t * 7) * 260 : null;
+  var dim = focus === null ? 0 : at(t, 'roll', 'winner') ? 0.55 : 0.35;
+  F.dark.setAttribute('opacity', dim);
+  F.spot.setAttribute('opacity', focus === null ? 0 : 0.14);
+  if (focus !== null) { F.spot.setAttribute('cx', focus); F.spot.setAttribute('cy', 1200); }
+  // the crowd
+  var cheer = t >= M.winner ? 1 : 0;
+  F.crowd.forEach(function (c, i) {
+    var b = cheer ? Math.sin(t * 14 + i * 1.7) * 26 : -groove * 16 * (i % 2 ? 1 : 0.7);
+    c[0].setAttribute('transform', 'translate(' + c[1] + ',' + (1830 + b) + ')');
+  });
+  // the phone with the Hub Battle
+  var pk = easeBack(seg(t, M.phone, M.phone + 0.4)), shrink = easeInOut(seg(t, M.roll, M.roll + 0.4));
+  phone({ show: t >= M.phone, k: pk, x: 540, y: lerp(900, 880, shrink), s: lerp(0.58, 0.5, shrink), rot: Math.sin(t * 2) * 2, screen: 'rap-battle',
+    scroll: easeInOut(seg(t, M.phone + 1.0, M.roll)) * 120 });
+  // rhyme stamps
+  var L1 = TL.lines[1], L2 = TL.lines[2];
+  stamp('title', t, M.title + 0.2, M.max - 0.1, 'RAP BATTLE!', { burst: true, fill: '#ff4f8b', size: 92, y: 1050, w: 360, h: 180 });
+  stamp('r1', t, L1.start + (L1.end - L1.start) * 0.42, L1.start + (L1.end - L1.start) * 0.62, '🔥 night', { fill: '#ffd23a', color: '#1b1b1b', size: 64, x: 330, y: 960, rot: -6 });
+  stamp('r2', t, L1.end - 0.5, M.minnie, '🔥 tight', { fill: '#ffd23a', color: '#1b1b1b', size: 64, x: 330, y: 960, rot: 5 });
+  stamp('r3', t, L2.start + (L2.end - L2.start) * 0.38, L2.start + (L2.end - L2.start) * 0.6, '✨ stress', { fill: '#4cc9f0', color: '#1b1b1b', size: 64, x: 760, y: 960, rot: 5 });
+  stamp('r4', t, L2.end - 0.5, M.prove, '✨ rest', { fill: '#4cc9f0', color: '#1b1b1b', size: 64, x: 760, y: 960, rot: -5 });
+  stamp('scratch', t, M.prove - 0.4, M.prove + 0.5, 'SCRATCH!', { burst: true, fill: '#fff', color: '#e5484d', size: 80, y: 980, w: 320, h: 150 });
+  stamp('battle', t, M.phone + 0.2, M.roll, 'HUB BATTLE ⚔️', { fill: '#7cb518', size: 70, y: 1470, rot: -3 });
+  stamp('drum', t, M.roll, M.winner, '🥁', { fill: '#ffd23a', size: 90, x: 540, y: 1420, rot: 0 });
+  stamp('win', t, M.winner, M.drop, '🏆 EVERYBODY WINS', { fill: '#ffd23a', color: '#1b1b1b', size: 64, y: 1420, rot: -3 });
+  stamp('micdrop', t, M.drop + 0.1, M.end, 'MIC DROP!', { burst: true, fill: '#e5484d', size: 84, y: 1250, w: 330, h: 160 });
+  confetti(t, [[M.winner, 540, 1100, 41, 80, 2.6], [M.winner + 0.6, 300, 1300, 42, 40, 1.8]]);
+  emojiRain(t, [[M.winner + 0.2, 1.8, '🍌', 14, 43], [M.title + 0.2, 1.2, '🎤', 8, 44, true]]);
+  shake(t, [[M.drop + 0.2, 0.3, 14], [M.prove - 0.4, 0.3, 6]]);
+  flash(t, [[M.winner, 0.3, 0.8]]);
+  caption(t);
+}
+
+function init(tl) {
+  TL = tl;
+  stage({ screens: ['rap-battle'], tagline: 'Two agents enter. One app wins.', costumes: { max: 'cap', minnie: 'shades' } });
+  setup();
+  render(0);
+}
+play('build/ep/rap');
+</script>
+</body>
+</html>

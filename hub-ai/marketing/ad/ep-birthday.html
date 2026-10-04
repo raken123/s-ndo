@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hub AI — Minnie's Birthday</title>
+<!-- Episode 4 (1080x1920, ~19 s): Max forgot Minnie's birthday. No cake, no
+     card, no gift... so he asks Hub AI for a birthday card app, just before
+     she rings the bell. Timings follow build/ep/birthday/timeline.json. -->
+<style>
+  html, body { margin: 0; background: #000; }
+  svg { display: block; width: 1080px; height: 1920px; }
+  text { font-family: "DejaVu Sans", "Noto Color Emoji", sans-serif; }
+</style>
+</head>
+<body>
+<script src="cats.js"></script>
+<script src="stage.js"></script>
+<script>
+var max, minnie, F = {}, o = '#1b1b1b';
+
+function setup() {
+  var bg = $('bg');
+  el('rect', { width: 1080, height: 1920, fill: '#d9ecff' }, bg);
+  for (var x = 0; x < 1080; x += 80) el('rect', { x: x, width: 40, height: 1460, fill: '#cfe5fb' }, bg);
+  el('rect', { y: 1440, width: 1080, height: 480, fill: '#c99556' }, bg);
+  el('rect', { y: 1430, width: 1080, height: 26, fill: '#fff', stroke: o, 'stroke-width': 5 }, bg);
+  for (var k = 0; k < 7; k++) el('path', { d: 'M0,' + (1510 + k * 62) + ' L1080,' + (1510 + k * 62), stroke: '#a8703c', 'stroke-width': 4 }, bg);
+  // the calendar
+  var cal = F.cal = el('g', { transform: 'translate(250,820)' }, bg);
+  el('rect', { x: -170, y: -200, width: 340, height: 400, rx: 16, fill: '#fff', stroke: o, 'stroke-width': 7 }, cal);
+  el('rect', { x: -170, y: -200, width: 340, height: 90, rx: 16, fill: '#e5484d', stroke: o, 'stroke-width': 7 }, cal);
+  var mo = el('text', { y: -140, 'font-size': 46, 'font-weight': 900, fill: '#fff', 'text-anchor': 'middle' }, cal); mo.textContent = 'OCTOBER';
+  for (var d = 0; d < 20; d++) {
+    var dx = -130 + (d % 5) * 65, dy = -70 + Math.floor(d / 5) * 62;
+    var tx = el('text', { x: dx, y: dy, 'font-size': 28, fill: '#6b6f78', 'text-anchor': 'middle' }, cal);
+    tx.textContent = d + 1;
+  }
+  el('rect', { x: -150, y: 150, width: 300, height: 40, rx: 8, fill: '#fff' }, cal);
+  F.bday = el('text', { y: 30, 'font-size': 120, 'text-anchor': 'middle' }, cal);
+  F.bday.textContent = '🎂';
+  F.bdayCircle = el('ellipse', { cx: 0, cy: -10, rx: 110, ry: 90, fill: 'none', stroke: '#e5484d', 'stroke-width': 12, 'stroke-dasharray': 650, 'stroke-linecap': 'round' }, cal);
+  var bt = el('text', { y: 180, 'font-size': 27, 'font-weight': 900, fill: '#e5484d', 'text-anchor': 'middle' }, cal); bt.textContent = "MINNIE'S BIRTHDAY!";
+  // the front door
+  var door = el('g', { transform: 'translate(780,780)' }, bg);
+  el('rect', { x: -14, y: -14, width: 278, height: 690, fill: '#7a4a24', stroke: o, 'stroke-width': 7 }, door);
+  el('rect', { width: 250, height: 662, fill: '#2b2140' }, door);
+  F.doorPanel = el('g', {}, door);
+  el('rect', { width: 250, height: 662, fill: '#e07b2a', stroke: o, 'stroke-width': 7 }, F.doorPanel);
+  el('rect', { x: 30, y: 40, width: 190, height: 250, rx: 10, fill: 'none', stroke: '#a8521a', 'stroke-width': 7 }, F.doorPanel);
+  el('rect', { x: 30, y: 350, width: 190, height: 250, rx: 10, fill: 'none', stroke: '#a8521a', 'stroke-width': 7 }, F.doorPanel);
+  el('circle', { cx: 30, cy: 340, r: 16, fill: '#ffd23a', stroke: o, 'stroke-width': 5 }, F.doorPanel);
+  // a picture frame (of Minnie, of course)
+  var pic = el('g', { transform: 'translate(560,560) rotate(3)' }, bg);
+  el('rect', { x: -80, y: -90, width: 160, height: 180, fill: '#fff6d6', stroke: '#a8703c', 'stroke-width': 12 }, pic);
+  var ph = el('text', { y: 30, 'font-size': 90, 'text-anchor': 'middle' }, pic); ph.textContent = '🍌';
+
+  // Minnie enters through the door, so she is drawn after the door; Max in front
+  minnie = makeCat('minnie', $('chars'));
+  max = makeCat('max', $('chars'));
+  F.minnieHat = costume(minnie, 'party');
+  F.maxHat = costume(max, 'party');
+  F.bulb = el('g', {}, $('fx'));
+  el('circle', { r: 90, fill: '#fff59d', opacity: 0.6 }, F.bulb);
+  var b = el('text', { y: 40, 'font-size': 130, 'text-anchor': 'middle' }, F.bulb); b.textContent = '💡';
+  F.sweat = [0, 1, 2].map(function () { return el('path', { d: 'M0,-26 C14,-6 14,10 0,14 C-14,10 -14,-6 0,-26 Z', fill: '#7cc4ff', stroke: o, 'stroke-width': 4, opacity: 0 }, $('fx')); });
+  F.hearts = [0, 1, 2, 3, 4].map(function () { var h = el('text', { 'font-size': 90, 'text-anchor': 'middle', opacity: 0 }, $('fx')); h.textContent = '💛'; return h; });
+}
+
+function render(t) {
+  if (endCard(t)) { caption(t); flash(t, [[M.end, 0.3]]); return; }
+  // Max reads the calendar, panics, gets an idea
+  var mp = { x: 560, y: 1640, s: 0.95, look: -1, eyes: 'open', brow: 0, armL: 25, armR: -25 };
+  if (t < M.panic) {
+    var realise = seg(t, M.calendar + 1.3, M.calendar + 1.6);
+    mp.eyes = realise > 0 ? 'wide' : 'open'; mp.brow = realise; mp.armL = 25 + realise * 100; mp.armR = -25 - realise * 100;
+  }
+  if (at(t, 'panic', 'idea')) {
+    var run = t - M.panic;
+    mp.x = 540 + Math.sin(run * 4.2) * 230;
+    mp.look = Math.cos(run * 4.2) > 0 ? 1 : -1;
+    mp.eyes = 'wide'; mp.brow = 1; mp.armL = 130 + Math.sin(t * 25) * 20; mp.armR = -130 - Math.sin(t * 25) * 20;
+    mp.rot = Math.cos(run * 4.2) * 8;
+  }
+  var ix = M.panic + (M.idea - M.panic), endRunX = 540 + Math.sin((M.idea - M.panic) * 4.2) * 230;
+  if (t >= M.idea) {
+    mp.x = lerp(endRunX, 380, easeInOut(seg(t, M.idea, M.idea + 0.6)));
+    mp.eyes = 'happy'; mp.look = 0.4; mp.armL = 30; mp.armR = -140;
+  }
+  if (t >= M.idea + 0.9 && t < M.built) { mp.eyes = 'open'; mp.armL = 70 + Math.sin(t * 30) * 10; mp.armR = -70 - Math.sin(t * 30 + 1) * 10; mp.look = 0.3; }
+  if (at(t, 'built', 'door')) { mp.eyes = 'happy'; mp.armL = 120; mp.armR = -120; }
+  if (at(t, 'door', 'minnie')) { mp.eyes = 'wide'; mp.look = 1; mp.armL = 30; mp.armR = -30; mp.brow = 0.6; }
+  if (t >= M.minnie) { mp.look = 1; mp.eyes = 'open'; mp.brow = 0; mp.armL = 25; mp.armR = -25; }
+  if (t >= TL.lines[4].start) { mp.armR = -110; mp.eyes = 'happy'; }
+  if (t >= M.gift + 0.4) { mp.armL = 120; mp.armR = -120; }
+  void ix;
+  // Minnie at the door
+  var opened = easeInOut(seg(t, M.minnie - 0.35, M.minnie + 0.05));
+  F.doorPanel.setAttribute('transform', 'scale(' + (1 - 0.85 * opened) + ',1)');
+  var walk = easeInOut(seg(t, TL.lines[3].end, TL.lines[3].end + 0.6));
+  var np = { x: lerp(905, 790, walk), y: lerp(1450, 1640, walk), s: lerp(0.78, 0.95, walk), look: -1, eyes: 'happy', armL: 25, armR: -25 };
+  if (t < TL.lines[3].end) { np.armL = 120 + Math.sin(t * 12) * 20; }
+  if (at(t, 'gift', 'end')) { np.eyes = t < M.gift + 1.0 ? 'wide' : 'happy'; np.armL = 125 + Math.sin(t * 9) * 15; np.armR = -125 - Math.sin(t * 9) * 15; }
+  minnie.g.setAttribute('opacity', t >= M.minnie - 0.2 ? 1 : 0);
+  poseCat(minnie, t, np);
+  poseCat(max, t, mp);
+  F.maxHat.setAttribute('opacity', t >= M.built + 0.2 ? 1 : 0);
+  F.maxHat.setAttribute('transform', 'translate(0,' + (-300 * (1 - easeBack(seg(t, M.built + 0.2, M.built + 0.5)))) + ')');
+  // the calendar circle draws itself
+  F.bdayCircle.setAttribute('stroke-dashoffset', 650 * (1 - easeInOut(seg(t, M.calendar + 0.5, M.calendar + 1.2))));
+  F.cal.setAttribute('transform', 'translate(250,820) scale(' + (1 + 0.12 * Math.sin(Math.PI * seg(t, M.calendar + 1.2, M.calendar + 1.7))) + ')');
+  // the idea bulb
+  var bk = easeBack(seg(t, M.idea, M.idea + 0.35));
+  F.bulb.setAttribute('opacity', t >= M.idea && t < M.idea + 1.6 ? 1 - seg(t, M.idea + 1.3, M.idea + 1.6) : 0);
+  F.bulb.setAttribute('transform', 'translate(' + (mp.x + 20) + ',' + (mp.y - 760) + ') scale(' + Math.max(0.001, bk) + ')');
+  // sweat while panicking
+  F.sweat.forEach(function (s, i) {
+    var d = (t - M.panic + i * 0.3) % 0.9;
+    s.setAttribute('opacity', at(t, 'panic', 'idea') ? 1 - d / 0.9 : 0);
+    s.setAttribute('transform', 'translate(' + (mp.x + (i - 1) * 90) + ',' + (mp.y - 600 + d * 180) + ')');
+  });
+  // the phone: Max types, it builds, then he shows it to Minnie
+  var pin = M.idea + 0.9, show = easeInOut(seg(t, TL.lines[4].start + 0.3, TL.lines[4].start + 0.8));
+  var aside = easeInOut(seg(t, M.door, M.door + 0.4)) * (1 - show);
+  phone({ show: t >= pin, k: easeBack(seg(t, pin, pin + 0.4)), x: lerp(lerp(560, 230, aside), 560, show), y: lerp(lerp(840, 1150, aside), 860, show),
+    s: lerp(lerp(0.52, 0.28, aside), 0.5, show), rot: aside * -15, screen: t >= M.built ? 'birthday-result' : 'birthday-create' });
+  // hearts for the best gift ever
+  F.hearts.forEach(function (h, i) {
+    var d = t - M.gift - 0.3 - i * 0.25, r = rnd(80 + i);
+    h.setAttribute('opacity', d > 0 && d < 1.8 ? 1 - seg(d, 1.2, 1.8) : 0);
+    h.setAttribute('transform', 'translate(' + (np.x + (r() - 0.5) * 300) + ',' + (1050 - d * 280) + ') scale(' + (0.7 + 0.5 * easeBack(Math.min(1, d * 3))) + ')');
+  });
+  stamp('what', t, M.calendar + 1.3, M.panic, '!!!', { burst: true, fill: '#ffd23a', color: '#e5484d', size: 110, x: 560, y: 760, w: 200, h: 140 });
+  var L = TL.lines[1], step = (L.end - L.start) / 4;
+  stamp('cake', t, L.start + 0.05, M.idea - 0.2, 'No cake ❌', { fill: '#fff', color: '#e5484d', size: 56, x: 300, y: 1090, rot: -5 });
+  stamp('card', t, L.start + step, M.idea - 0.2, 'No card ❌', { fill: '#fff', color: '#e5484d', size: 56, x: 780, y: 1190, rot: 4 });
+  stamp('gift', t, L.start + step * 2, M.idea - 0.2, 'No gift ❌', { fill: '#fff', color: '#e5484d', size: 56, x: 330, y: 1290, rot: -3 });
+  stamp('doomed', t, L.start + step * 3, M.idea - 0.2, 'DOOMED!', { burst: true, fill: '#5e3a7a', color: '#fff', size: 100, x: 560, y: 760, w: 330, h: 170 });
+  stamp('dingdong', t, M.door, M.minnie, 'DING DONG!', { burst: true, fill: '#ffd23a', color: '#e07b2a', size: 76, x: 760, y: 700, w: 330, h: 150, rot: 6 });
+  stamp('best', t, M.gift + 1.0, M.end, 'BEST GIFT EVER!', { fill: '#ff4f8b', size: 70, y: 600, rot: -4 });
+  confetti(t, [[M.built, 560, 840, 21, 70, 2.4], [M.gift + 0.8, 540, 1100, 22, 60, 2.6]]);
+  emojiRain(t, [[M.built + 0.2, 1.4, '🎈', 12, 31, true], [M.gift + 0.5, 2.0, '🎉', 14, 32]]);
+  shake(t, [[M.panic, M.idea - M.panic, 3]]);
+  flash(t, [[M.built, 0.25, 0.7], [M.idea, 0.2, 0.5]]);
+  caption(t);
+}
+
+function init(tl) {
+  TL = tl;
+  stage({ screens: ['birthday-create', 'birthday-result'], tagline: 'Forgot a gift? Make one.', costumes: { max: 'party', minnie: 'party' } });
+  setup();
+  render(0);
+}
+play('build/ep/birthday');
+</script>
+</body>
+</html>

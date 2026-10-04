@@ -1,6 +1,6 @@
 # Hub AI marketing
 
-Two vertical ads (1080×1920, H.264 + AAC, 30 fps) for Instagram Reels,
+Seven vertical ads (1080×1920, H.264 + AAC, 30 fps) for Instagram Reels,
 TikTok and YouTube Shorts, starring two cat-bananas: **Minnie**, who knows
 Hub AI, and **Max**, who doesn't (yet). The phone in each ad shows real
 screenshots of the app.
@@ -10,9 +10,20 @@ screenshots of the app.
 | `HubAI-ad-Minnie-and-Max.mp4` | 30 s | Bored Max can't code; Minnie shows him Hub AI, the features, FunHub and a secret model. |
 | `HubAI-ad-Detention.mp4` | 45 s | In programming class the furious teacher, Mr. Crunch, can't build an app himself. Max blanks on the name ("Hubba Bubba?"), gets 12 hours of detention and ten cartoon bonks with a spiky projector remote. Next lesson Minnie sits next to him and explains Hub AI; Max builds a Detention Countdown, and the teacher ends up wanting Hub AI too. |
 
+Plus five short episodes (19–23 s each), the Max & Minnie series:
+
+| File | Length | Story | End line |
+|---|---|---|---|
+| `HubAI-ad-Kitchen.mp4` | 21 s | *Banana Kitchen*: Max tries to bake an app with flour, eggs and a laptop (it's crunchy). Minnie asks Hub AI for a pizza timer and it comes out of the oven. | Fresh apps, baked in seconds. |
+| `HubAI-ad-Space.mp4` | 23 s | Liftoff to the Banana Moon. Max codes the landing countdown and sets off every alarm ("Houston, we have a problem"); Minnie asks Hub AI and they touch down. | Apps that are out of this world. |
+| `HubAI-ad-Magic.mp4` | 19 s | The Great Maxini promises to make an app appear and gets a banana peel. Minnie asks Hub AI for a card trick app: ta-da, applause. | It's not magic. It's Hub AI. |
+| `HubAI-ad-Birthday.mp4` | 19 s | Max realises it's Minnie's birthday: no cake, no card, no gift, doomed. He asks Hub AI for a birthday card app just before the doorbell rings. "Best gift ever!" | Forgot a gift? Make one. |
+| `HubAI-ad-Rap-Battle.mp4` | 23 s | The Banana Rap Battle. Max raps, Minnie raps back, Max says "prove it", and Minnie starts a Hub Battle: two agents, one app. Everybody wins. Mic drop. | Two agents enter. One app wins. |
+
 The voices are real speech from Kokoro, an open text-to-speech model, run
-offline: Minnie is `af_bella`, Max is `am_michael` and Mr. Crunch is
-`bm_lewis`, each pitched for the character. The mouths move with the
+offline: Minnie is `af_bella`, Max is `am_michael`, Mr. Crunch is
+`bm_lewis` and the episodes' announcer is `bm_george`, each pitched for the
+character. The mouths move with the
 loudness of each voice, frame by frame. Every line was checked with an
 offline speech recognizer (Whisper tiny) against the script.
 
@@ -39,10 +50,22 @@ node screens.js                  # app screenshots (serve app/src/main/assets/ww
 node render.js                                          # ad 1 -> build/hub-ai-ad.mp4
 node render.js --page=school.html --build=build/school  # ad 2 -> build/school/hub-ai-ad.mp4
 node render.js --still=9.2,17.6                         # just a few frames, to check a change
+
+# the five episodes
+python3 episodes.py all          # build/ep/<name>/audio.wav + timeline.json
+python3 check_voices.py build/ep/*   # optional: Whisper tiny listens to every line
+node screens_eps.js              # their phone screens (serve the app on :8765)
+for e in kitchen space magic birthday rap; do node render.js --page=ep-$e.html --build=build/ep/$e; done
 ```
 
 - `lib_audio.py`: voices (TTS + pitch), music, sound effects, mixing and lip sync.
 - `cats.js`: Minnie, Max and Mr. Crunch, drawn in SVG.
+- `stage.js`: what the episodes share: phone, captions, confetti, emoji
+  rain, comic stamps, smoke puffs, costumes (chef hats, space helmets, top
+  hat, party hats, cap and shades) and the end card.
+- `ep-<name>.html`: one page per episode. `episodes.py` holds every
+  episode's script, its named marks and its sound effects; the page's
+  `render(t)` follows those marks.
 - `ad.html` / `school.html`: each ad's animation; `render(t)` draws any
   moment `t`. Open either with `?play` in a browser and click to preview
   with sound.

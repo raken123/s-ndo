@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hub AI — Banana Kitchen</title>
+<!-- Episode 1 (1080x1920, ~21 s): Max tries to bake an app with flour and a
+     laptop; Minnie asks Hub AI for a pizza timer and it comes out of the oven.
+     Timings follow build/ep/kitchen/timeline.json (episodes.py). -->
+<style>
+  html, body { margin: 0; background: #000; }
+  svg { display: block; width: 1080px; height: 1920px; }
+  text { font-family: "DejaVu Sans", "Noto Color Emoji", sans-serif; }
+</style>
+</head>
+<body>
+<script src="cats.js"></script>
+<script src="stage.js"></script>
+<script>
+var max, minnie, F = {};
+// The counter scene is drawn at 1x and zoomed in; Z maps its points to the screen.
+var ZOOM = 1.2, ZX = 540, ZY = 1400;
+function Z(x, y) { return [ZX + (x - ZX) * ZOOM, ZY + (y - ZY) * ZOOM]; }
+
+function setup() {
+  var bg = $('bg'), o = '#1b1b1b';
+  el('rect', { width: 1080, height: 1920, fill: '#fdf1dc' }, bg);
+  for (var y = 0; y < 1400; y += 90) for (var x = (y / 90) % 2 ? 45 : 0; x < 1080; x += 90)
+    el('rect', { x: x, y: y, width: 86, height: 86, rx: 6, fill: '#f6e2bd' }, bg);
+  // the sign
+  var sign = el('g', { transform: 'translate(540,170)' }, bg);
+  el('rect', { x: -330, y: -70, width: 660, height: 130, rx: 30, fill: '#e07b2a', stroke: o, 'stroke-width': 8 }, sign);
+  var st = el('text', { y: 22, 'font-size': 64, 'font-weight': 900, fill: '#fff', 'text-anchor': 'middle', stroke: o, 'stroke-width': 5, 'paint-order': 'stroke' }, sign);
+  st.textContent = '🍌 Banana Kitchen';
+  // shelf with jars
+  el('rect', { x: 60, y: 860, width: 300, height: 22, rx: 8, fill: '#a8703c', stroke: o, 'stroke-width': 5 }, bg);
+  [['#ff8fab', 90], ['#7cc4ff', 170], ['#06d6a0', 250]].forEach(function (j) {
+    el('rect', { x: j[1], y: 770, width: 60, height: 90, rx: 14, fill: j[0], stroke: o, 'stroke-width': 5 }, bg);
+    el('rect', { x: j[1] + 6, y: 760, width: 48, height: 20, rx: 6, fill: '#a8703c', stroke: o, 'stroke-width': 4 }, bg);
+  });
+  // the toaster oven on the counter, right
+  var ov = F.oven = el('g', { transform: 'translate(865,1342) scale(0.72)' }, $('front'));
+  el('rect', { x: -150, y: -170, width: 300, height: 200, rx: 22, fill: '#c9cdd3', stroke: o, 'stroke-width': 8 }, ov);
+  F.ovenWin = el('rect', { x: -130, y: -145, width: 190, height: 140, rx: 14, fill: '#3a2a1a', stroke: o, 'stroke-width': 6 }, ov);
+  F.ovenGlow = el('rect', { x: -130, y: -145, width: 190, height: 140, rx: 14, fill: '#ff9b2f', opacity: 0 }, ov);
+  F.dial = el('g', { transform: 'translate(105,-110)' }, ov);
+  el('circle', { r: 22, fill: '#fff', stroke: o, 'stroke-width': 5 }, F.dial);
+  el('path', { d: 'M0,0 L0,-16', stroke: o, 'stroke-width': 5, 'stroke-linecap': 'round' }, F.dial);
+  el('circle', { cx: 105, cy: -45, r: 14, fill: '#e5484d', stroke: o, 'stroke-width': 4 }, ov);
+  el('rect', { x: -120, y: 30, width: 30, height: 18, fill: '#7d838c' }, ov);
+  el('rect', { x: 90, y: 30, width: 30, height: 18, fill: '#7d838c' }, ov);
+  // counter
+  var c = $('front');
+  el('rect', { y: 1380, width: 1080, height: 50, fill: '#e9e3d6', stroke: o, 'stroke-width': 8 }, c);
+  el('rect', { y: 1430, width: 1080, height: 490, fill: '#b9864a' }, c);
+  [180, 540, 900].forEach(function (x) {
+    el('rect', { x: x - 160, y: 1480, width: 320, height: 380, rx: 16, fill: '#c99556', stroke: '#8f5c2e', 'stroke-width': 6 }, c);
+    el('rect', { x: x - 40, y: 1510, width: 80, height: 16, rx: 8, fill: '#8f5c2e' }, c);
+  });
+  c.insertBefore(ov, null);
+  // the laptop, flour bag and eggs on the counter, left
+  F.laptop = el('g', { transform: 'translate(400,1385)' }, $('front'));
+  el('path', { d: 'M-120,0 L120,0 L135,14 L-135,14 Z', fill: '#8d939c', stroke: o, 'stroke-width': 6, 'stroke-linejoin': 'round' }, F.laptop);
+  el('rect', { x: -105, y: -150, width: 210, height: 150, rx: 10, fill: '#2a2d33', stroke: o, 'stroke-width': 6 }, F.laptop);
+  F.lapScreen = el('rect', { x: -92, y: -138, width: 184, height: 124, rx: 6, fill: '#4c8dff' }, F.laptop);
+  F.bite = el('path', { d: 'M105,-150 m-40,0 a40,40 0 0 0 40,40 L105,-150 Z', fill: '#fdf1dc', opacity: 0 }, F.laptop);
+  F.biteRim = el('path', { d: 'M65,-150 a40,40 0 0 0 40,40', fill: 'none', stroke: o, 'stroke-width': 6, opacity: 0 }, F.laptop);
+  F.floured = el('g', { opacity: 0 }, F.laptop);
+  el('path', { d: 'M-125,8 C-110,-40 -60,-60 -10,-50 C40,-70 110,-40 125,8 Z', fill: '#fff', stroke: '#ddd', 'stroke-width': 4 }, F.floured);
+  F.bag = el('g', {}, $('front'));
+  el('path', { d: 'M-55,0 L-60,-150 L60,-150 L55,0 Z', fill: '#f4ecd8', stroke: o, 'stroke-width': 6, 'stroke-linejoin': 'round' }, F.bag);
+  var bt = el('text', { y: -60, 'font-size': 34, 'font-weight': 900, fill: '#a8703c', 'text-anchor': 'middle' }, F.bag); bt.textContent = 'FLOUR';
+  F.stream = el('path', { d: 'M0,0 L0,0', stroke: '#fff', 'stroke-width': 26, 'stroke-linecap': 'round', opacity: 0 }, $('front'));
+  [[90, 1360], [130, 1368]].forEach(function (e) { el('ellipse', { cx: e[0], cy: e[1], rx: 22, ry: 28, fill: '#fff8ea', stroke: o, 'stroke-width': 5 }, $('front')); });
+  // characters, behind the counter
+  max = makeCat('max', $('chars'));
+  minnie = makeCat('minnie', $('chars'));
+  F.hatMax = costume(max, 'chef');
+  F.hatMinnie = costume(minnie, 'chef');
+  F.flourFace = el('g', { opacity: 0 }, max.inner);
+  [[-60, -470, 30], [40, -500, 24], [-20, -300, 36], [80, -380, 20], [-110, -380, 22], [30, -260, 18]].forEach(function (d) {
+    el('circle', { cx: d[0], cy: d[1], r: d[2], fill: '#fff', opacity: 0.85 }, F.flourFace);
+  });
+  // steam over the oven
+  F.steam = [0, 1, 2, 3].map(function () { return el('circle', { r: 30, fill: '#fff', opacity: 0 }, $('front')); });
+  ['chars', 'front'].forEach(function (id) { $(id).setAttribute('transform', 'translate(' + ZX + ',' + ZY + ') scale(' + ZOOM + ') translate(' + -ZX + ',' + -ZY + ')'); });
+  F.crumbs = [0, 1, 2, 3, 4, 5].map(function () { return el('rect', { width: 14, height: 14, fill: '#2a2d33', opacity: 0 }, $('fx')); });
+}
+
+function render(t) {
+  if (endCard(t)) { caption(t); flash(t, [[M.end, 0.3]]); return; }
+  // Max: proud, then pouring flour, then dazed
+  var mp = { x: 270, y: 1570, s: 1.0, look: 0.7, eyes: 'open', brow: 0, armL: 20, armR: -20 };
+  var minX = lerp(1400, 640, easeOut(seg(t, M.intro - 0.4, M.intro + 0.3)));
+  var np = { x: minX, y: 1570, s: 1.0, look: -0.8, eyes: 'open', armL: 25, armR: -25 };
+  if (t < M.intro) { mp.eyes = 'happy'; mp.armL = 110 + Math.sin(t * 9) * 15; mp.armR = -110 - Math.sin(t * 9) * 15; mp.look = 0; }
+  // flour pour: the bag rises in Max's right paw and tips over the laptop
+  var lift = easeInOut(seg(t, M.flour - 1.6, M.flour - 0.6)), tip = easeInOut(seg(t, M.flour - 0.5, M.flour)), down = easeInOut(seg(t, M.flour + 0.6, M.flour + 1.0));
+  var bx = lerp(lerp(520, 440, lift), 520, down), by = lerp(lerp(1385, 1130, lift), 1385, down);
+  F.bag.setAttribute('transform', 'translate(' + bx + ',' + by + ') rotate(' + (-120 * tip * (1 - down)) + ')');
+  if (t > M.flour - 1.6 && t < M.flour + 0.6) mp.armR = -60 * lift;
+  var pouring = t >= M.flour - 0.1 && t < M.flour + 0.5;
+  F.stream.setAttribute('opacity', pouring ? 1 : 0);
+  F.stream.setAttribute('d', 'M' + (bx - 70) + ',' + (by + 20) + ' L' + 400 + ',' + 1290);
+  var fp = Z(400, 1280);
+  puff('flour', t, M.flour, fp[0], fp[1], 210, 1.4);
+  var floured = t >= M.flour + 0.3;
+  F.floured.setAttribute('opacity', floured ? 1 : 0);
+  F.flourFace.setAttribute('opacity', floured ? 1 : 0);
+  if (floured && t < M.phone) { mp.eyes = 'bored'; mp.look = 0.2; }
+  // "It's… crunchy": Max takes a bite of the laptop
+  var bite = t >= TL.lines[3].start - 0.15;
+  F.bite.setAttribute('opacity', bite ? 1 : 0);
+  F.biteRim.setAttribute('opacity', bite ? 1 : 0);
+  var chew = t >= TL.lines[3].start - 0.4 && t < TL.lines[3].start;
+  if (chew) { mp.x = 310; mp.armL = 70; mp.armR = -70; }
+  F.crumbs.forEach(function (c, i) {
+    var d = t - TL.lines[3].start + 0.15, r = rnd(50 + i);
+    var a = -Math.PI / 2 + (r() - 0.5) * 2.5, v = 300 + r() * 300;
+    c.setAttribute('opacity', d > 0 && d < 1 ? 1 : 0);
+    var cp = Z(490, 1240);
+    c.setAttribute('transform', 'translate(' + (cp[0] + Math.cos(a) * v * d) + ',' + (cp[1] + Math.sin(a) * v * d + 700 * d * d) + ') rotate(' + d * 400 + ')');
+  });
+  F.lapScreen.setAttribute('fill', t >= M.flour ? '#2a2d33' : '#4c8dff');
+  // Minnie: talks, then types
+  if (at(t, 'phone', 'type')) { np.armR = -110; np.eyes = 'open'; np.brow = 0; mp.look = 1; }
+  if (at(t, 'type', 'ding')) { np.armL = 70 + Math.sin(t * 30) * 10; np.armR = -70 - Math.sin(t * 30 + 1) * 10; np.look = -0.3; }
+  if (t >= M.wow) { np.eyes = 'happy'; np.armR = -115; mp.eyes = 'wide'; mp.brow = 1; mp.armL = 120; mp.armR = -120; mp.look = 0.8; }
+  if (t >= M.wow + 1.6) { mp.eyes = 'happy'; mp.brow = 0; }
+  poseCat(max, t, mp);
+  poseCat(minnie, t, np);
+  // the phone: pops up, goes into the oven, comes out baked
+  var into = easeInOut(seg(t, M.type + 0.9, M.ding - 0.1)), out = easeBack(seg(t, M.ding + 0.3, M.ding + 0.75));
+  var pk = easeBack(seg(t, M.phone + 0.2, M.phone + 0.6));
+  var op = Z(845, 1290), px = lerp(540, op[0], into), py = lerp(860, op[1], into), ps = lerp(0.52, 0.1, into), rot = into * -10;
+  if (t >= M.ding + 0.3) { px = lerp(op[0], 540, out); py = lerp(op[1], 840, out); ps = lerp(0.1, 0.54, out); rot = (1 - out) * 25; }
+  var inside = t >= M.ding - 0.1 && t < M.ding + 0.3;
+  phone({ show: t >= M.phone && !inside, k: pk, x: px, y: py, s: ps, rot: rot,
+    screen: t >= M.ding ? 'kitchen-result' : 'kitchen-create', scroll: easeInOut(seg(t, M.wow, M.wow + 1.5)) * 40 });
+  // the oven heats up, then DING
+  var heat = seg(t, M.ding - 0.2, M.ding) * (1 - seg(t, M.ding + 0.6, M.ding + 1.4));
+  F.ovenGlow.setAttribute('opacity', heat * (0.75 + 0.25 * Math.sin(t * 25)));
+  F.dial.setAttribute('transform', 'translate(105,-110) rotate(' + (seg(t, M.type + 0.9, M.ding) * 300) + ')');
+  F.steam.forEach(function (c, i) {
+    var d = (t - M.ding - i * 0.18) % 1.4, on = t >= M.ding && t < M.end - 0.5 && d >= 0;
+    c.setAttribute('opacity', on ? 0.7 * (1 - d / 1.4) : 0);
+    c.setAttribute('cx', 840 + Math.sin(d * 5 + i) * 20 + i * 12);
+    c.setAttribute('cy', 1200 - d * 220);
+    c.setAttribute('r', 20 + d * 30);
+  });
+  stamp('title', t, M.title, M.intro - 0.2, 'Banana Kitchen', { fill: '#e07b2a', size: 92, y: 1000 });
+  stamp('crunchy', t, TL.lines[3].start - 0.1, TL.lines[3].end + 0.3, 'CRUNCH!', { burst: true, fill: '#ffd23a', color: '#e5484d', size: 90, x: 560, y: 1000, w: 260, h: 150 });
+  stamp('ding', t, M.ding, M.ding + 0.9, 'DING!', { burst: true, fill: '#ffd23a', color: '#e07b2a', size: 100, x: 800, y: 1000, w: 240, h: 160, rot: 8 });
+  confetti(t, [[M.ding + 0.6, 540, 900, 11, 70, 2.4]]);
+  emojiRain(t, [[M.wow, 2.4, '🍕', 26, 5]]);
+  shake(t, [[M.flour, 0.4, 10], [M.ding, 0.3, 8]]);
+  flash(t, [[M.ding + 0.3, 0.25, 0.8]]);
+  caption(t);
+}
+
+function init(tl) {
+  TL = tl;
+  stage({ screens: ['kitchen-create', 'kitchen-result'], tagline: 'Fresh apps, baked in seconds.', costumes: { max: 'chef', minnie: 'chef' } });
+  setup();
+  render(0);
+}
+play('build/ep/kitchen');
+</script>
+</body>
+</html>

@@ -30,6 +30,7 @@ VOICES = {
     "minnie": {"sid": 1, "pitch": 2.0, "tempo": 1.05, "gain": 1.0},
     "max": {"sid": 6, "pitch": 1.0, "tempo": 1.05, "gain": 1.0},
     "teacher": {"sid": 10, "pitch": -1.5, "tempo": 1.1, "gain": 1.15, "grit": True},
+    "announcer": {"sid": 9, "pitch": -0.5, "tempo": 1.05, "gain": 1.05},
 }
 
 
@@ -195,6 +196,64 @@ class Mix:
 
     def tick(self, t0, gain=0.25):
         self.add(t0, self.noise(0.025, 200, gain))
+
+    def ding(self, t0, gain=0.25, f=1760):
+        """A bell: a few inharmonic partials ringing out."""
+        n, out = int(1.6 * SR), []
+        for i in range(n):
+            t = i / SR
+            v = sum(a * math.sin(2 * math.pi * f * r * t) * math.exp(-t * d) for r, a, d in ((1, 1, 2.5), (2.76, 0.5, 4), (5.4, 0.25, 6)))
+            out.append(v * gain)
+        self.add(t0, out)
+
+    def doorbell(self, t0, gain=0.25):
+        self.ding(t0, gain, 1318.5)
+        self.ding(t0 + 0.45, gain, 1046.5)
+
+    def poof(self, t0, gain=0.4):
+        n, out, y = int(0.7 * SR), [], 0.0
+        for i in range(n):
+            a = 1 - math.exp(-2 * math.pi * (2500 * math.exp(-i / SR * 4) + 200) / SR)
+            y += a * (self.rng.uniform(-1, 1) - y)
+            out.append(y * math.exp(-i / SR * 4) * gain)
+        self.add(t0, out)
+
+    def applause(self, t0, dur=2.5, gain=0.35):
+        """Lots of little claps, swelling and fading."""
+        claps = int(dur * 45)
+        for k in range(claps):
+            t = t0 + self.rng.uniform(0, dur)
+            env = math.sin(math.pi * (t - t0) / dur)
+            self.add(t, self.noise(0.03, 120, gain * env * self.rng.uniform(0.4, 1.0)))
+
+    def cheer(self, t0, dur=2.0, gain=0.25):
+        self.applause(t0, dur, gain)
+        n, out, y = int(dur * SR), [], 0.0
+        for i in range(n):
+            a = 1 - math.exp(-2 * math.pi * 900 / SR)
+            y += a * (self.rng.uniform(-1, 1) - y)
+            out.append(y * math.sin(math.pi * i / n) * gain * 0.8)
+        self.add(t0, out)
+
+    def drumroll(self, t0, dur=1.6, gain=0.25):
+        t = t0
+        while t < t0 + dur:
+            self.add(t, self.noise(0.04, 60, gain * (0.5 + 0.5 * (t - t0) / dur)))
+            t += 0.035
+        self.add(t0 + dur, self.noise(0.5, 6, gain * 1.6, hp=False))
+
+    def alarm(self, t0, dur=1.5, gain=0.18):
+        n = int(dur * SR)
+        self.add(t0, [math.sin(2 * math.pi * (880 if (i // (SR // 4)) % 2 else 660) * i / SR) * gain for i in range(n)])
+
+    def thud(self, t0, gain=0.8):
+        n, ph, out = int(0.5 * SR), 0.0, []
+        for i in range(n):
+            t = i / SR
+            ph += (40 + 60 * math.exp(-t * 20)) / SR
+            out.append(math.sin(2 * math.pi * ph) * math.exp(-t * 7) * gain)
+        self.add(t0, out)
+        self.add(t0, self.noise(0.3, 10, gain * 0.3, hp=False))
 
 
 def note(m):
