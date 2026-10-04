@@ -1,0 +1,44 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.hubai.app'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.hubai.app'
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+    }
+
+    signingConfigs {
+        // Demo key committed with the project so every build installs over
+        // the last one. Set HUBAI_KEYSTORE (+ _PASSWORD, _ALIAS) to sign with
+        // your own key before publishing anywhere.
+        demo {
+            storeFile file(System.getenv('HUBAI_KEYSTORE') ?: 'hubai-demo.jks')
+            storePassword System.getenv('HUBAI_KEYSTORE_PASSWORD') ?: 'hubai-demo'
+            keyAlias System.getenv('HUBAI_KEY_ALIAS') ?: 'hubai'
+            keyPassword System.getenv('HUBAI_KEY_PASSWORD') ?: System.getenv('HUBAI_KEYSTORE_PASSWORD') ?: 'hubai-demo'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.demo
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core:1.13.1'
+}

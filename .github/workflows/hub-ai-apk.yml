@@ -1,0 +1,79 @@
+name: Hub AI APK
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+    paths:
+      - "hub-ai/**"
+      - "!hub-ai/dist/**"
+      - ".github/workflows/hub-ai-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hub-ai-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hub-ai
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Train Hub v1 agents (Python)
+        run: |
+          python training/train.py
+          python -m unittest discover -s training -p "test_*.py" -v
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build APK
+        run: ./gradlew --no-daemon assembleRelease
+
+      - name: Collect APK
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/release/app-release.apk dist/HubAI-1.0.0.apk
+          ls -l dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HubAI-apk
+          path: hub-ai/dist/HubAI-1.0.0.apk
+
+      # Keep a downloadable copy on the branch, next to the source.
+      - name: Commit APK to the branch
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f dist/HubAI-1.0.0.apk
+          if git diff --cached --quiet; then
+            echo "APK unchanged"
+            exit 0
+          fi
+          git commit -m "Build Hub AI APK from ${GITHUB_SHA::7}"
+          git checkout -- .
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            sleep $((i * 5))
+          done
+          exit 1

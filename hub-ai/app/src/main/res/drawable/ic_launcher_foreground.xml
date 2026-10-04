@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A plain "H" on black. 108dp canvas, content kept inside the 66dp safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#ECECEC"
+        android:pathData="M38,34h8v16h16v-16h8v40h-8v-17h-16v17h-8z" />
+</vector>
