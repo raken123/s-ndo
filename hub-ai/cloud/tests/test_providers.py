@@ -85,6 +85,18 @@ class ProviderTest(unittest.TestCase):
         self.assertIn("<html><body>Hello {x}</body></html>", msg)
         self.assertIn("into Swedish", msg)
 
+    def test_data_import_sends_the_file(self):
+        self.agents.generate("standard", "A sales chart", data="month,sales\n{Jan},10", data_name="sales.csv")
+        msg = SEEN[0][2]["messages"][1]["content"]
+        self.assertTrue(msg.startswith("A sales chart"))
+        self.assertIn("--- sales.csv ---\nmonth,sales\n{Jan},10\n--- end of sales.csv ---", msg)
+
+    def test_refine_sends_the_hub_and_the_change(self):
+        self.agents.generate("standard", "Add a reset button", "refine", "<html><body>Count</body></html>")
+        msg = SEEN[0][2]["messages"][1]["content"]
+        self.assertIn("<html><body>Count</body></html>", msg)
+        self.assertIn("Change it as follows: Add a reset button", msg)
+
     def test_gemini(self):
         out = self.agents.generate("flash", "timer")
         path, headers, body = SEEN[0]

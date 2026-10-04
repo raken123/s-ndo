@@ -1,6 +1,7 @@
-/* The 20 extras. The catalog (names, which plan unlocks what) comes from
+/* The 20 tools. The catalog (names, which plan unlocks what) comes from
  * Hub AI Cloud; this file holds the parts that run in the app. The cloud
- * ones (Make It CRAZIER, Translate, Mashup) are modes of /v1/generate.
+ * ones (Edit with AI, AI Bug Fix, Translate, Data Import) go through
+ * /v1/generate.
  */
 (function () {
   'use strict';
@@ -19,67 +20,34 @@
     var f = info(id), p = Plans.plans()[f.plan];
     return f.emoji + ' ' + f.name + ' needs ' + p.name + '.';
   }
+  function parse(html) { return new DOMParser().parseFromString(html, 'text/html'); }
+  function attr(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+  function css(doc) { return Array.prototype.map.call(doc.querySelectorAll('style'), function (s) { return s.textContent; }).join('\n').replace(/\/\*[\s\S]*?\*\//g, ''); }
+  function scripts(doc) { return Array.prototype.map.call(doc.querySelectorAll('script:not([src])'), function (s) { return s.textContent; }).join('\n'); }
 
-  // ---------- 🎲 Surprise Me ----------
+  // ---------- 📋 Prompt Templates ----------
 
-  var IDEAS = [
-    'A tamagotchi for a pet rock that gets sad if you ignore it',
-    'A compliment generator that gets more dramatic every click',
-    'A soundless disco where the whole screen dances',
-    'A fortune cookie that predicts what you will eat for dinner',
-    'A to-do list where finished tasks explode into fireworks',
-    'A dog name generator that rates every name out of 10',
-    'A "should I take a nap" decision machine',
-    'A stopwatch that cheers louder the longer it runs',
-    'A pizza topping roulette with a spinning wheel',
-    'A tiny zoo where you feed emoji animals',
-    'A weather report for your mood',
-    'A countdown to the next time someone says "banana"',
-    'A plant that grows one leaf every time you drink water',
-    'A pirate name generator with a treasure map background',
-    'A dance move randomizer for kitchen parties',
-    'A haiku machine about whatever you type',
-    'A "how many cats tall am I" height converter',
-    'A button that is way too excited to be pressed',
-    'A space mission control for making toast',
-    'A superhero name generator based on your breakfast',
-    'An excuse generator for being late to everything',
-    'A memory game with only cats',
-    'A clicker game where you build a banana empire',
-    'A mood ring that changes when you shake the phone',
-    'A dramatic movie trailer voice for your grocery list',
-    'A rock paper scissors tournament against a smug robot',
-    'A "rate my sandwich" judge with fancy scorecards',
-    'A sleepy sloth timer that takes forever to finish',
-    'A pixel art pad that only uses 4 colours',
-    'A daily dad joke dispenser with a groan meter'
+  var STARTERS = [
+    { name: 'Contact form', prompt: 'A contact form with name, email, phone (optional) and message. Validate every field with clear error messages next to it, show a confirmation screen after sending, keep all submissions on this device and let me export them as CSV.' },
+    { name: 'Invoice generator', prompt: 'An invoice generator: my company details, customer details, invoice number and date, line items (description, quantity, unit price), VAT rate, subtotal, VAT and total calculated automatically. A clean print layout and a "Print / Save as PDF" button. Remember my company details.' },
+    { name: 'Expense tracker', prompt: 'An expense tracker: add expenses with date, amount, category and note; monthly totals per category with a bar chart; filter by month; edit and delete entries; export to CSV. Save everything on the device.' },
+    { name: 'Loan calculator', prompt: 'A loan and mortgage calculator: amount, interest rate, term in years and start date. Show the monthly payment, total interest and a full amortization table by month, with a chart of principal vs interest.' },
+    { name: 'Inventory list', prompt: 'An inventory manager: items with name, SKU, quantity, location and minimum stock level. Search and sort, quick +/- buttons for quantity, highlight items below minimum, import and export CSV.' },
+    { name: 'Appointment booking', prompt: 'An appointment booking page: a week view with 30-minute slots from 9:00 to 17:00, book a slot with name and phone, prevent double booking, list upcoming appointments, cancel a booking. Save on the device.' },
+    { name: 'Task board', prompt: 'A project task board with To do, In progress and Done columns. Add tasks with title, owner, due date and priority; move tasks between columns (buttons and drag and drop); highlight overdue tasks; filter by owner. Save on the device.' },
+    { name: 'KPI dashboard', prompt: 'A KPI dashboard for a small business: cards for revenue, new customers, average order value and conversion rate with change vs last month, a line chart for revenue over 12 months and a table of top products. Let me edit the numbers and save them.' },
+    { name: 'Training quiz', prompt: 'A training quiz for employees: 10 multiple-choice questions, one at a time, with explanations after each answer, a final score with pass/fail at 80%, and a review of wrong answers. Make the questions easy to edit in the code.' },
+    { name: 'Time tracker', prompt: 'A time tracker: start and stop timers for projects, manual entries, a daily and weekly summary per project, and CSV export. Save on the device.' },
+    { name: 'Customer survey', prompt: 'A customer feedback survey: a 0–10 "How likely are you to recommend us" question, what we do well, what to improve, and optional email. Show the NPS score and all responses in an admin view, export to CSV.' },
+    { name: 'Event landing page', prompt: 'A landing page for an event: name, date, time and venue, a countdown, the agenda, speakers with short bios, FAQ in an accordion, and a registration form that saves sign-ups and can export them as CSV.' }
   ];
-  function surprise() { return IDEAS[Math.floor(Math.random() * IDEAS.length)]; }
 
-  // ---------- Power-ups injected into a hub ----------
+  // ---------- Export options (per hub) ----------
+  // 🏷️ White-label removes the footer; 🛡️ Lockdown adds a
+  // Content-Security-Policy that blocks every network request.
 
-  var POWERUPS = {
-    confetti: '<script>(function(){var C=["#ff5c5c","#ffd166","#06d6a0","#4cc9f0","#b388ff","#ff8fab"];' +
-      'document.addEventListener("pointerdown",function(e){for(var i=0;i<26;i++){var d=document.createElement("div"),a=Math.random()*6.28,v=4+Math.random()*7;' +
-      'd.style.cssText="position:fixed;z-index:2147483647;pointer-events:none;width:8px;height:12px;border-radius:2px;left:"+e.clientX+"px;top:"+e.clientY+"px;background:"+C[i%C.length];' +
-      'document.body.appendChild(d);(function(d,vx,vy){var x=0,y=0,r=0,t=0;(function f(){t++;x+=vx;y+=vy;vy+=0.35;r+=12;d.style.transform="translate("+x+"px,"+y+"px) rotate("+r+"deg)";d.style.opacity=1-t/70;' +
-      'if(t<70)requestAnimationFrame(f);else d.remove()})()})(d,Math.cos(a)*v,Math.sin(a)*v-5)}},true)})();</script>',
-    catwalk: '<style>@keyframes hubCatWalk{0%{left:-60px;transform:scaleX(-1)}49%{left:calc(100% + 10px);transform:scaleX(-1)}50%{left:calc(100% + 10px);transform:scaleX(1)}100%{left:-60px;transform:scaleX(1)}}' +
-      '.hub-cat{position:fixed;bottom:6px;font-size:38px;z-index:2147483646;pointer-events:none;animation:hubCatWalk 16s linear infinite}</style>' +
-      '<script>(function(){var c=document.createElement("div");c.className="hub-cat";c.textContent="🐈";document.body.appendChild(c)})();</script>',
-    upsidedown: '<style>body{transform:rotate(180deg);transform-origin:50% 50%}</style>',
-    rainbow: '<style>@keyframes hubRainbow{to{filter:hue-rotate(360deg)}}html{animation:hubRainbow 6s linear infinite}</style>',
-    sounds: '<script>(function(){var A;document.addEventListener("click",function(e){if(!e.target.closest("button,a,input,select,label,[role=button]"))return;' +
-      'try{A=A||new(window.AudioContext||window.webkitAudioContext)();var o=A.createOscillator(),g=A.createGain();o.type=["sine","triangle","square"][Math.floor(Math.random()*3)];' +
-      'o.frequency.setValueAtTime(300+Math.random()*700,A.currentTime);o.frequency.exponentialRampToValueAtTime(900+Math.random()*900,A.currentTime+0.12);' +
-      'g.gain.setValueAtTime(0.12,A.currentTime);g.gain.exponentialRampToValueAtTime(0.001,A.currentTime+0.18);o.connect(g);g.connect(A.destination);o.start();o.stop(A.currentTime+0.2)}catch(x){}},true)})();</script>'
-  };
-  var POWERUP_LIST = ['confetti', 'catwalk', 'upsidedown', 'rainbow', 'sounds', 'nowatermark'];
-
-  function inject(html, snippet) {
-    var i = html.search(/<\/body>/i);
-    return i < 0 ? html + snippet : html.slice(0, i) + snippet + html.slice(i);
-  }
+  var OPTION_LIST = ['nowatermark', 'security'];
+  var OPTION_LABEL = { nowatermark: 'No Hub AI footer', security: 'Block network access' };
 
   function stripWatermark(html) {
     return html
@@ -87,78 +55,240 @@
       .replace(/Made with Hub AI(\s*·\s*[^<]*)?/g, '');
   }
 
-  // The hub as previewed and exported, with the power-ups the plan allows.
-  function apply(html, powerups) {
+  function csp(self) {
+    var s = self ? "'self' " : '';
+    return "default-src 'none'; script-src " + s + "'unsafe-inline'; style-src 'unsafe-inline'; img-src " + s + 'data: blob:; ' +
+      'font-src data:; media-src data: blob:; connect-src ' + (self ? "'self'" : "'none'") + "; form-action 'none'; frame-src 'none'; base-uri 'none'" +
+      (self ? "; manifest-src 'self'; worker-src 'self'" : '');
+  }
+
+  function withHead(html, tags) {
+    if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, function (h) { return h + tags; });
+    if (/<html[^>]*>/i.test(html)) return html.replace(/<html[^>]*>/i, function (h) { return h + '<head>' + tags + '</head>'; });
+    return tags + html;
+  }
+
+  function lockdown(html, self) {
+    var clean = html.replace(/<meta[^>]+http-equiv=["']?Content-Security-Policy["']?[^>]*>/gi, '');
+    return withHead(clean, '<meta http-equiv="Content-Security-Policy" content="' + csp(self) + '">');
+  }
+
+  // The hub as previewed and exported, with the options the plan allows.
+  // ctx.pwa: the hub is served as an installable app (needs 'self').
+  function apply(html, options, ctx) {
     var out = html;
-    (powerups || []).forEach(function (p) {
+    (options || []).forEach(function (p) {
       if (!has(p)) return;
       if (p === 'nowatermark') out = stripWatermark(out);
-      else if (POWERUPS[p]) out = inject(out, POWERUPS[p]);
+      if (p === 'security') out = lockdown(out, ctx && ctx.pwa);
     });
     return out;
   }
 
-  // ---------- 🧬 Hub DNA ----------
+  // ---------- ♿ Accessibility Check ----------
 
-  function dna(html) {
-    var doc = new DOMParser().parseFromString(html, 'text/html');
-    var colors = {};
-    (html.match(/#[0-9a-f]{6}\b|#[0-9a-f]{3}\b/gi) || []).forEach(function (c) { c = c.toLowerCase(); colors[c] = (colors[c] || 0) + 1; });
-    var top = Object.keys(colors).sort(function (a, b) { return colors[b] - colors[a]; }).slice(0, 12);
-    var scripts = Array.prototype.map.call(doc.scripts, function (s) { return s.textContent.length; }).reduce(function (a, b) { return a + b; }, 0);
-    var styles = Array.prototype.map.call(doc.querySelectorAll('style'), function (s) { return s.textContent.length; }).reduce(function (a, b) { return a + b; }, 0);
-    return {
-      title: (doc.title || '').trim(),
-      kb: Math.round(new Blob([html]).size / 102.4) / 10,
-      lines: html.split('\n').length,
-      elements: doc.querySelectorAll('*').length,
-      buttons: doc.querySelectorAll('button,[role=button]').length,
-      inputs: doc.querySelectorAll('input,textarea,select').length,
-      canvas: doc.querySelectorAll('canvas').length,
-      jsChars: scripts, cssChars: styles,
-      remembers: /localStorage/.test(html),
-      animates: /@keyframes|requestAnimationFrame/.test(html),
-      colors: top
+  var NAMED = { white: [255, 255, 255], black: [0, 0, 0], red: [255, 0, 0], gray: [128, 128, 128], grey: [128, 128, 128], silver: [192, 192, 192] };
+  function rgb(v) {
+    v = String(v || '').trim().toLowerCase();
+    var m;
+    if ((m = v.match(/^#([0-9a-f]{3})$/))) return m[1].split('').map(function (c) { return parseInt(c + c, 16); });
+    if ((m = v.match(/^#([0-9a-f]{6})([0-9a-f]{2})?$/))) return [0, 2, 4].map(function (i) { return parseInt(m[1].substr(i, 2), 16); });
+    if ((m = v.match(/^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)\s*(?:[,/]\s*([\d.]+%?))?\)$/))) {
+      if (m[4] !== undefined && parseFloat(m[4]) < (m[4].indexOf('%') > 0 ? 100 : 1)) return null;   // translucent: unknown
+      return [+m[1], +m[2], +m[3]];
+    }
+    return NAMED[v] || null;
+  }
+  function lum(c) {
+    var a = c.map(function (x) { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); });
+    return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+  }
+  function ratio(a, b) { var x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+
+  // The colour/background pairs the CSS declares, with var(--x) resolved.
+  function colorPairs(doc) {
+    var text = css(doc), vars = {}, rules = [], m, re = /([^{}]+)\{([^{}]*)\}/g;
+    while ((m = re.exec(text))) rules.push({ sel: m[1].trim(), body: m[2] });
+    rules.forEach(function (r) { var v, vr = /(--[\w-]+)\s*:\s*([^;]+)/g; while ((v = vr.exec(r.body))) vars[v[1]] = v[2].trim(); });
+    function val(body, prop) {
+      var mm = body.match(new RegExp('(?:^|[;\\s])' + prop + '\\s*:\\s*([^;]+)', 'i'));
+      if (!mm) return null;
+      var s = mm[1].replace(/!important/, '').trim();
+      for (var i = 0; i < 5 && /var\(/.test(s); i++) s = s.replace(/var\(\s*(--[\w-]+)\s*(?:,\s*([^)]+))?\)/g, function (_, n, d) { return vars[n] || d || ''; });
+      var c = s.match(/#[0-9a-f]{3,8}\b|rgba?\([^)]*\)|\b(?:white|black|red|gray|grey|silver)\b/i);
+      return c ? rgb(c[0]) : null;
+    }
+    var page = null;
+    rules.forEach(function (r) { if (/(^|,)\s*(html|body|:root)\s*($|,)/.test(r.sel)) page = val(r.body, 'background(?:-color)?') || page; });
+    var pairs = [];
+    rules.forEach(function (r) {
+      var fg = val(r.body, 'color'), bg = val(r.body, 'background(?:-color)?') || page;
+      if (fg && bg) pairs.push({ sel: r.sel.replace(/\s+/g, ' ').slice(0, 40), ratio: ratio(fg, bg) });
+    });
+    Array.prototype.forEach.call(doc.querySelectorAll('[style]'), function (e) {
+      var s = e.getAttribute('style'), fg = val(s, 'color'), bg = val(s, 'background(?:-color)?');
+      if (fg && bg) pairs.push({ sel: '<' + e.tagName.toLowerCase() + ' style>', ratio: ratio(fg, bg) });
+    });
+    return pairs;
+  }
+
+  function name(e) {
+    return (e.getAttribute('aria-label') || e.getAttribute('aria-labelledby') || e.getAttribute('title') || e.textContent ||
+      Array.prototype.map.call(e.querySelectorAll('img[alt]'), function (i) { return i.alt; }).join('')).trim();
+  }
+
+  // Returns [{level: 'error'|'warning', msg, n, how}], errors first.
+  function a11y(html) {
+    var doc = parse(html), out = [], style = css(doc);
+    function add(level, n, msg, how) { if (n) out.push({ level: level, n: n, msg: msg, how: how }); }
+    add('error', doc.documentElement.getAttribute('lang') ? 0 : 1, 'The page language is not set.', 'Add lang="en" (or the right language) to the <html> tag so screen readers pronounce it correctly.');
+    var vp = doc.querySelector('meta[name=viewport]');
+    add('error', vp ? 0 : 1, 'There is no viewport meta tag, so the page will not fit phone screens.', 'Add <meta name="viewport" content="width=device-width, initial-scale=1">.');
+    add('error', vp && /user-scalable\s*=\s*(no|0)|maximum-scale\s*=\s*1(\.0*)?(\s|,|$)/i.test(vp.content) ? 1 : 0, 'Zooming is blocked.', 'Remove user-scalable=no and maximum-scale=1 from the viewport tag.');
+    add('error', (doc.title || '').trim() ? 0 : 1, 'The page has no title.', 'Add a short, descriptive <title>.');
+    add('error', doc.querySelectorAll('img:not([alt]), input[type=image]:not([alt]), area:not([alt])').length, 'Images without a text alternative (alt).', 'Describe each image in alt="…", or use alt="" for decorative ones.');
+    var unlabeled = 0, placeholderOnly = 0;
+    Array.prototype.forEach.call(doc.querySelectorAll('input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=reset]):not([type=image]), select, textarea'), function (e) {
+      var ok = e.getAttribute('aria-label') || e.getAttribute('aria-labelledby') || e.getAttribute('title') || e.closest('label') ||
+        (e.id && doc.querySelector('label[for="' + e.id.replace(/"/g, '\\"') + '"]'));
+      if (!ok) { unlabeled++; if (e.getAttribute('placeholder')) placeholderOnly++; }
+    });
+    add('error', unlabeled, 'Form fields without a label' + (placeholderOnly ? ' (' + placeholderOnly + ' only have a placeholder, which is not a label)' : '') + '.', 'Give every field a <label for="…">, or an aria-label.');
+    add('error', Array.prototype.filter.call(doc.querySelectorAll('button, [role=button], a[href]'), function (e) { return !name(e); }).length,
+      'Buttons or links without a name.', 'Put text inside, or add aria-label="…" for icon-only buttons.');
+    var low = colorPairs(doc).filter(function (p) { return p.ratio < 4.5; });
+    add('error', low.length, 'Text with too little contrast against its background: ' + low.slice(0, 3).map(function (p) {
+      return p.sel + ' (' + p.ratio.toFixed(1) + ':1)'; }).join(', ') + (low.length > 3 ? ', …' : '') + '.', 'Normal text needs a contrast ratio of at least 4.5:1.');
+    var ids = {}, dup = 0;
+    Array.prototype.forEach.call(doc.querySelectorAll('[id]'), function (e) { if (ids[e.id]) dup++; ids[e.id] = 1; });
+    add('error', dup, 'Duplicate id attributes.', 'Every id must be unique; labels and scripts can point at the wrong element.');
+    add('warning', /outline\s*:\s*(none|0)\b/i.test(style) && !/:focus(-visible)?[^{]*\{[^}]*(outline|box-shadow|border)/i.test(style) ? 1 : 0,
+      'The focus outline is removed and nothing replaces it.', 'Keyboard users need to see focus. Add a :focus-visible style.');
+    add('warning', doc.querySelector('h1') ? 0 : 1, 'There is no main heading (h1).', 'Start the page with one <h1> naming it.');
+    var last = 0, skips = 0;
+    Array.prototype.forEach.call(doc.querySelectorAll('h1,h2,h3,h4,h5,h6'), function (h) { var l = +h.tagName[1]; if (last && l > last + 1) skips++; last = l; });
+    add('warning', skips, 'Heading levels are skipped (for example h1 then h3).', 'Use heading levels in order so the outline makes sense.');
+    add('warning', doc.querySelectorAll('[onclick]:not(button):not(a):not(input):not([role]):not([tabindex])').length, 'Clickable elements that a keyboard cannot reach.', 'Use <button> for actions, or add role="button" and tabindex="0".');
+    add('warning', doc.querySelectorAll('video[autoplay]:not([muted]), audio[autoplay]').length, 'Media that plays sound automatically.', 'Let the user start audio themselves.');
+    add('warning', doc.querySelectorAll('[tabindex]').length && Array.prototype.filter.call(doc.querySelectorAll('[tabindex]'), function (e) { return +e.getAttribute('tabindex') > 0; }).length,
+      'Positive tabindex values change the keyboard order.', 'Use tabindex="0" or "-1" only.');
+    return out.sort(function (a, b) { return a.level === b.level ? 0 : a.level === 'error' ? -1 : 1; });
+  }
+
+  // ---------- 📊 Performance Report ----------
+
+  function external(doc, html) {
+    var list = [];
+    Array.prototype.forEach.call(doc.querySelectorAll('script[src], link[href], img[src], iframe[src], audio[src], video[src], source[src], embed[src], object[data]'), function (e) {
+      var u = e.getAttribute('src') || e.getAttribute('href') || e.getAttribute('data');
+      if (e.tagName === 'LINK' && !/stylesheet|icon|preload|manifest/i.test(e.getAttribute('rel') || '')) return;
+      if (/^(https?:)?\/\//i.test(u)) list.push(e.tagName.toLowerCase() + ': ' + u);
+    });
+    var m, re = /url\(\s*["']?((?:https?:)?\/\/[^"')\s]+)|@import\s+["']((?:https?:)?\/\/[^"']+)/gi;
+    while ((m = re.exec(css(doc)))) list.push('css: ' + (m[1] || m[2]));
+    void html;
+    return list;
+  }
+
+  function report(html) {
+    var doc = parse(html), js = scripts(doc), st = css(doc), bytes = new Blob([html]).size;
+    var depth = 0;
+    (function walk(e, d) { if (d > depth) depth = d; for (var c = e.firstElementChild; c; c = c.nextElementSibling) walk(c, d + 1); })(doc.documentElement, 1);
+    var dataUris = html.match(/data:[^"')\s]{200,}/g) || [];
+    var dataBytes = dataUris.reduce(function (a, s) { return a + s.length; }, 0);
+    var ext = external(doc, html);
+    var timers = [], m, tr = /setInterval\s*\([\s\S]{0,400}?,\s*(\d+)\s*\)/g;
+    while ((m = tr.exec(js))) timers.push(+m[1]);
+    var r = {
+      title: (doc.title || '').trim(), kb: Math.round(bytes / 102.4) / 10, lines: html.split('\n').length,
+      elements: doc.querySelectorAll('*').length, depth: depth, jsKb: Math.round(new Blob([js]).size / 102.4) / 10,
+      cssKb: Math.round(new Blob([st]).size / 102.4) / 10, mediaKb: Math.round(dataBytes / 102.4) / 10,
+      external: ext, network: /\bfetch\s*\(|XMLHttpRequest|WebSocket|EventSource|sendBeacon/.test(js),
+      storage: /localStorage|indexedDB|sessionStorage/.test(js), handlers: (html.match(/\son[a-z]+\s*=/gi) || []).length
     };
+    var w = [];
+    if (r.kb > 500) w.push('The file is ' + r.kb + ' KB. Over 500 KB loads slowly on mobile data.');
+    if (r.mediaKb > 200) w.push(r.mediaKb + ' KB of embedded images or media. Compress them or use SVG.');
+    if (ext.length) w.push(ext.length + ' external request' + (ext.length > 1 ? 's' : '') + ': the hub needs a connection and will not work offline.');
+    if (r.network) w.push('The code calls the network (fetch, XMLHttpRequest or WebSocket).');
+    if (r.elements > 1500) w.push(r.elements + ' elements. Over 1,500 makes layout and scrolling slow.');
+    if (depth > 32) w.push('Elements are nested ' + depth + ' levels deep. Deep nesting slows down rendering.');
+    if (timers.some(function (x) { return x < 100; })) w.push('A timer runs faster than every 100 ms, which drains the battery. Use requestAnimationFrame for animation.');
+    if (/document\.write\s*\(/.test(js)) w.push('document.write is used; it blocks rendering.');
+    if (/@import/i.test(st)) w.push('CSS @import delays the first paint.');
+    r.warnings = w;
+    return r;
   }
 
-  // ---------- 🔥 Daily Hub Challenge ----------
+  // ---------- 🛡️ Security Scan ----------
 
-  var CHALLENGES = [
-    'A game you can win in under 10 seconds', 'A tool for deciding what to eat', 'Something that makes your friends laugh',
-    'An app with exactly three buttons', 'A hub about space', 'A tracker for something weird', 'A hub that only uses emojis',
-    'A tiny shop for imaginary things', 'A quiz about yourself', 'A calm hub for a stressful day', 'A hub for your pet',
-    'A party game for 4 people', 'A hub that changes every time you open it', 'A retro arcade game', 'A gift idea machine',
-    'A hub in black and white only', 'A hub that teaches one fun fact', 'A soundboard with no sound (just vibes)',
-    'A countdown to something you love', 'A hub your grandma would use', 'A hub for a rainy day', 'A secret club hub',
-    'A hub that compliments you', 'A board game score keeper', 'A hub about bananas', 'A hub with a hidden easter egg',
-    'A workout for lazy people', 'A hub that rates your outfit', 'A one-button game', 'A hub that tells a story'
-  ];
-  function dayKey(d) { d = d || new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
-  function challenge() {
-    var n = Math.floor(Date.now() / 86400000);
-    var st = Store.get('challenge', { last: null, streak: 0 });
-    var y = new Date(); y.setDate(y.getDate() - 1);
-    var alive = st.last === dayKey() || st.last === dayKey(y);
-    return { prompt: CHALLENGES[n % CHALLENGES.length], doneToday: st.last === dayKey(), streak: alive ? st.streak : 0 };
+  function scan(html) {
+    var doc = parse(html), js = scripts(doc) + '\n' + Array.prototype.map.call(doc.querySelectorAll('*'), function (e) {
+      return Array.prototype.filter.call(e.attributes, function (a) { return /^on/i.test(a.name); }).map(function (a) { return a.value; }).join('\n');
+    }).join('\n'), out = [];
+    function add(level, n, msg) { if (n) out.push({ level: level, n: n, msg: msg }); }
+    var count = function (re) { return (js.match(re) || []).length; };
+    add('high', doc.querySelectorAll('script[src]').length, 'Loads scripts from other servers. They can change at any time and read everything on the page.');
+    add('high', count(/\bfetch\s*\(|new\s+XMLHttpRequest|new\s+WebSocket|new\s+EventSource|sendBeacon\s*\(/g), 'Sends or receives data over the network.');
+    add('high', Array.prototype.filter.call(doc.querySelectorAll('form[action]'), function (f) { return /^(https?:)?\/\//i.test(f.getAttribute('action')); }).length, 'Forms that submit to another website.');
+    var ext = external(doc, html).filter(function (u) { return u.indexOf('script:') !== 0; });
+    add('medium', ext.length, 'Loads styles, fonts, images or frames from other servers (they see who opens the hub).');
+    add('medium', count(/\beval\s*\(|new\s+Function\s*\(|set(?:Timeout|Interval)\s*\(\s*["'`]/g), 'Runs code from strings (eval, new Function).');
+    add('medium', count(/document\.cookie/g), 'Reads or writes cookies.');
+    add('medium', (html.match(/["'(]http:\/\/[^"')\s]+/gi) || []).length, 'Uses insecure http:// addresses.');
+    add('low', count(/\.innerHTML\s*\+?=|insertAdjacentHTML\s*\(/g), 'Inserts HTML from code. Make sure user input is never inserted this way (use textContent).');
+    add('low', doc.querySelectorAll('a[target=_blank]:not([rel~=noopener]):not([rel~=noreferrer])').length, 'Links open new tabs without rel="noopener".');
+    add('low', count(/postMessage\s*\([^)]*["']\*["']/g), 'Sends messages to any window (postMessage with "*").');
+    var order = { high: 0, medium: 1, low: 2 };
+    return out.sort(function (a, b) { return order[a.level] - order[b.level]; });
   }
-  function completeChallenge() {
-    var c = challenge();
-    if (c.doneToday) return c.streak;
-    var streak = c.streak + 1;
-    Store.set('challenge', { last: dayKey(), streak: streak });
-    return streak;
+
+  // ---------- 🔎 SEO & Share Tags ----------
+
+  function seoRead(html) {
+    var doc = parse(html), meta = function (sel) { var e = doc.querySelector(sel); return e ? e.getAttribute('content') || '' : ''; };
+    return { title: (doc.title || '').trim(), description: meta('meta[name=description]'), color: meta('meta[name=theme-color]') || '#0d0d0d' };
+  }
+
+  function seoApply(html, s) {
+    var t = attr(s.title), d = attr(s.description);
+    var out = html.replace(/<meta[^>]+(name|property)=["']?(description|og:[\w:]+|twitter:[\w:]+|theme-color)["']?[^>]*>\s*/gi, '');
+    if (/<title[^>]*>[\s\S]*?<\/title>/i.test(out)) out = out.replace(/<title[^>]*>[\s\S]*?<\/title>/i, '<title>' + t + '</title>');
+    else out = withHead(out, '<title>' + t + '</title>');
+    var tags = '<meta name="description" content="' + d + '"><meta property="og:type" content="website">' +
+      '<meta property="og:title" content="' + t + '"><meta property="og:description" content="' + d + '">' +
+      '<meta name="twitter:card" content="summary"><meta name="twitter:title" content="' + t + '"><meta name="twitter:description" content="' + d + '">' +
+      (/^#[0-9a-f]{3,8}$/i.test(s.color || '') ? '<meta name="theme-color" content="' + s.color + '">' : '');
+    return out.replace(/<\/title>/i, '</title>' + tags);
+  }
+
+  // ---------- 📎 Data Import ----------
+
+  var MAX_DATA = 100 * 1024;
+  function readData(file) {
+    return new Promise(function (resolve, reject) {
+      if (!/\.(csv|tsv|json|txt)$/i.test(file.name)) return reject(new Error('Use a CSV, TSV, JSON or TXT file.'));
+      if (file.size > MAX_DATA) return reject(new Error('Data files can be up to 100 KB (this one is ' + Math.ceil(file.size / 1024) + ' KB).'));
+      var r = new FileReader();
+      r.onload = function () {
+        var text = String(r.result);
+        if (/\.json$/i.test(file.name)) { try { JSON.parse(text); } catch (e) { return reject(new Error('That JSON file is not valid: ' + e.message)); } }
+        var rows = text.split(/\r?\n/).filter(function (l) { return l.trim(); }).length;
+        resolve({ name: file.name, text: text, kb: Math.ceil(file.size / 1024), rows: rows });
+      };
+      r.onerror = function () { reject(new Error('Could not read the file.')); };
+      r.readAsText(file);
+    });
   }
 
   // ---------- 🧩 Embed Code ----------
 
   function embed(html, title) {
-    var src = html.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-    return '<iframe title="' + String(title).replace(/"/g, '&quot;') + '" style="width:100%;height:640px;border:0;border-radius:12px" ' +
-      'sandbox="allow-scripts allow-forms allow-modals" srcdoc="' + src + '"></iframe>';
+    return '<iframe title="' + attr(title) + '" style="width:100%;height:640px;border:0;border-radius:12px" ' +
+      'sandbox="allow-scripts allow-forms allow-modals" srcdoc="' + html.replace(/&/g, '&amp;').replace(/"/g, '&quot;') + '"></iframe>';
   }
 
-  // ---------- 🔐 Password Lock ----------
+  // ---------- 🔐 Password Protection ----------
   // A self-contained SHA-256 (it must also run inside the exported file, where
   // crypto.subtle may be missing), used to stretch the password and as a
   // counter-mode keystream. The loader carries the same code.
@@ -188,12 +318,13 @@
     var key = lib.stretch(password, salt, ROUNDS);
     var check = hex(lib.sha256(lib.cat(key, new TextEncoder().encode('hub-ai-check'))));
     var data = b64(lib.xor(key, new TextEncoder().encode(html)));
-    var t = String(title || 'Locked hub').replace(/[<&"]/g, '');
+    var t = String(title || 'Protected hub').replace(/[<&"]/g, '');
     return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>🔐 ' + t + '</title>' +
       '<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0d0d0d;color:#ececec;font:16px system-ui,sans-serif}' +
       'form{width:min(320px,90vw);text-align:center}input,button{font:inherit;width:100%;box-sizing:border-box;padding:12px;border-radius:10px;margin-top:10px}' +
       'input{background:#161616;color:#ececec;border:1px solid #2b2b2b}button{background:#ececec;color:#0d0d0d;border:0;font-weight:600}p{color:#8d8d8d;min-height:20px}</style></head>' +
-      '<body><form id="f"><h1 style="font-size:20px">🔐 ' + t + '</h1><input id="p" type="password" placeholder="Password" autofocus><button>Open</button><p id="m"></p></form>' +
+      '<body><form id="f"><h1 style="font-size:20px">🔐 ' + t + '</h1><label for="p" style="display:block;text-align:left;margin-top:10px">Password</label>' +
+      '<input id="p" type="password" autocomplete="current-password" autofocus><button>Open</button><p id="m" role="status"></p></form>' +
       '<script>' + SHA + 'var SALT="' + b64(salt) + '",CHECK="' + check + '",N=' + ROUNDS + ',DATA="' + data + '";' +
       'function un(s){var b=atob(s),o=new Uint8Array(b.length);for(var i=0;i<b.length;i++)o[i]=b.charCodeAt(i);return o}' +
       'function hx(u){return Array.prototype.map.call(u,function(x){return("0"+x.toString(16)).slice(-2)}).join("")}' +
@@ -202,14 +333,18 @@
       'var h=new TextDecoder().decode(xor(k,un(DATA)));document.open();document.write(h);document.close()},30)};</script></body></html>';
   }
 
-  // ---------- 📲 Install as App ----------
+  // ---------- 📲 Installable App ----------
+
+  function inject(html, snippet) {
+    var i = html.search(/<\/body>/i);
+    return i < 0 ? html + snippet : html.slice(0, i) + snippet + html.slice(i);
+  }
 
   function pwaFiles(html, title, color) {
     var name = String(title || 'Hub').slice(0, 40);
     var accent = color || '#3b74d9';
-    var head = '<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0d0d0d">' +
-      '<link rel="icon" href="icon.svg"><link rel="apple-touch-icon" href="icon.svg"><meta name="apple-mobile-web-app-capable" content="yes">';
-    var page = /<\/head>/i.test(html) ? html.replace(/<\/head>/i, head + '</head>') : head + html;
+    var page = withHead(html, '<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0d0d0d">' +
+      '<link rel="icon" href="icon.svg"><link rel="apple-touch-icon" href="icon.svg"><meta name="apple-mobile-web-app-capable" content="yes">');
     page = inject(page, '<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(function(){});</script>');
     var letter = (name.match(/[A-Za-z0-9]/) || ['H'])[0].toUpperCase();
     return [
@@ -224,7 +359,7 @@
         'self.addEventListener("fetch",function(e){e.respondWith(caches.match(e.request).then(function(r){return r||fetch(e.request)}))});' },
       { name: 'icon.svg', data: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#0d0d0d"/>' +
         '<text x="256" y="340" font-size="260" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="700" fill="' + accent + '">' + letter + '</text></svg>' },
-      { name: 'README.txt', data: name + ' — an installable hub made with Hub AI.\n\nPut these files on any HTTPS web host (GitHub Pages, Netlify, ...).\n' +
+      { name: 'README.txt', data: name + ' — an installable app made with Hub AI.\n\nPut these files on any HTTPS web host (GitHub Pages, Netlify, ...).\n' +
         'Open the page on a phone and choose "Add to Home Screen" / "Install app". It then works offline.\n' }
     ];
   }
@@ -240,9 +375,9 @@
 
   window.Features = {
     catalog: catalog, info: info, has: has, needs: needs,
-    surprise: surprise, POWERUP_LIST: POWERUP_LIST, apply: apply, stripWatermark: stripWatermark,
-    dna: dna, challenge: challenge, completeChallenge: completeChallenge, embed: embed,
-    lock: lock, pwaFiles: pwaFiles, brand: brand, brandPrompt: brandPrompt,
+    STARTERS: STARTERS, OPTION_LIST: OPTION_LIST, OPTION_LABEL: OPTION_LABEL, apply: apply, stripWatermark: stripWatermark,
+    a11y: a11y, report: report, scan: scan, csp: csp, lockdown: lockdown, seoRead: seoRead, seoApply: seoApply,
+    readData: readData, MAX_DATA: MAX_DATA, embed: embed, lock: lock, pwaFiles: pwaFiles, brand: brand, brandPrompt: brandPrompt,
     LANGUAGES: ['English', 'Swedish', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Japanese', 'Korean', 'Chinese', 'Arabic', 'Hindi', 'Turkish', 'Polish', 'Dutch', 'Finnish'],
     _lib: lib
   };

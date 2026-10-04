@@ -13,6 +13,7 @@ Rules:
 - It must work offline on a phone: responsive layout, touch friendly, viewport meta tag.
 - Use a calm dark theme (near-black background, light text, one accent colour) unless the request asks otherwise.
 - Wrap any localStorage use in try/catch; hubs may run in a sandbox without storage.
+- Make it accessible: set <html lang>, give every form field a label and every icon button an aria-label, keep text contrast at least 4.5:1, and never block zoom.
 - Give the document a short <title> naming the hub.
 - End the page with a small footer: "Made with Hub AI · {name}".
 {tier}"""
@@ -59,28 +60,35 @@ def title_of(html, fallback):
 
 # What the agent is asked for each mode. "create" is a plain request.
 MODES = {
-    "crazier": ("Here is a hub:\n\n{html}\n\nRebuild it to be MUCH crazier and more fun: bold colours, playful "
-                "animations, surprising easter eggs and silly sound-free effects, while every feature still works. "
-                "Keep the same purpose. {prompt}"),
+    "refine": ("Here is a hub:\n\n{html}\n\nChange it as follows: {prompt}\n\nKeep everything else (purpose, data, "
+               "design and behaviour) the same, and reply with the complete updated HTML document."),
+    "fix": ("Here is a hub:\n\n{html}\n\nReview it as a careful senior engineer and fix every problem you find: "
+            "JavaScript errors and broken interactions, lost or corrupted saved data, layout problems on small screens, "
+            "and accessibility (labels for every input, text alternatives, colour contrast of at least 4.5:1, visible "
+            "focus states, keyboard use, zoom not blocked). Keep its purpose, content and design. {prompt}"),
     "translate": ("Here is a hub:\n\n{html}\n\nTranslate every piece of visible text (including the title, buttons, "
-                  "placeholders and messages) into {lang}. Keep the code, layout and behaviour exactly the same."),
-    "mashup": ("Here are two hubs.\n\nHub A:\n{html}\n\nHub B:\n{html2}\n\nFuse them into ONE new hub that combines "
-               "their best features in a surprising, delightful way. {prompt}"),
+                  "placeholders and messages) into {lang}. Set the lang attribute to match. Keep the code, layout and "
+                  "behaviour exactly the same."),
 }
 
-
-def build_request(mode, prompt, html="", html2="", lang=""):
-    if mode == "create":
-        return prompt
-    return MODES[mode].format(prompt=prompt, html=html, html2=html2, lang=lang).strip()
+DATA = ("\n\nThe user attached a data file, {name}. Build the hub around this data: embed it in the page (as a "
+        "JavaScript constant) so the hub works offline, parse it robustly, and use the real column names and values."
+        "\n\n--- {name} ---\n{data}\n--- end of {name} ---")
 
 
-def generate(engine_id, prompt, mode="create", html="", html2="", lang=""):
+def build_request(mode, prompt, html="", lang="", data="", data_name=""):
+    request = prompt if mode == "create" else MODES[mode].format(prompt=prompt, html=html, lang=lang).strip()
+    if data:
+        request += DATA.format(name=data_name or "data.csv", data=data)
+    return request
+
+
+def generate(engine_id, prompt, mode="create", html="", lang="", data="", data_name=""):
     """Returns {"html", "title", "models"}. Raises providers.ProviderError."""
     e = config.engine(engine_id)
     models = config.models_for(engine_id)
     system = system_prompt(engine_id)
-    request = build_request(mode, prompt, html, html2, lang)
+    request = build_request(mode, prompt, html, lang, data, data_name)
     if e["provider"] == "gemini":
         html = clean_html(providers.gemini(models[0], system, request))
     else:

@@ -79,7 +79,7 @@
         call('GET', '/v1/me').then(keepMe)
       ]);
     },
-    // extra: { mode: 'crazier'|'translate'|'mashup', html, html2, lang }
+    // extra: { mode: 'refine'|'fix'|'translate', html, lang } and/or { data, dataName }
     generate: function (engine, prompt, extra) {
       var body = { engine: engine, prompt: prompt };
       for (var k in (extra || {})) body[k] = extra[k];

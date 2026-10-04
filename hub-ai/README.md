@@ -62,7 +62,7 @@ Cloud.
 | Hub agents | V1 Mini | V1 Mini, Lite, **Standard** | + **V1 Plus**, a little **V1 Max** (5 per day) | All of them, plus 🤫 a secret one |
 | Gemini | — | **Gemini 3.8 Flash** | Flash, a little **Gemini 3.8 Pro** (3 per day) | Flash and Pro |
 | Hubs | Preview only, no saving | Save, **HTML export only** | Save, HTML and ZIP export | Save, HTML and ZIP export |
-| Features | 5 | 10 | 15 | all 20 |
+| Tools | 5 | 10 | 15 | all 20 |
 
 Credit costs per hub: V1 Mini 1, Lite 1, Standard 2, Plus 3, Max 5,
 Gemini Flash 3, Gemini Pro 10. Credits are refunded when generation fails.
@@ -70,27 +70,41 @@ Gemini Flash 3, Gemini Pro 10. Credits are refunded when generation fails.
 The secret agent (Hub V2 Max) never appears in the app or in `/v1/config`
 unless the account is on Hub Enterprise. Model details stay on the server.
 
-## Features
+## Tools
 
-Five per plan, and every plan keeps the ones below it. (You asked for "Pro";
-the paid tier between Go and Enterprise is Hub Plus, so they are there.)
+Twenty professional tools, five per plan; every plan keeps the ones below
+it. (You asked for "Pro"; the paid tier between Go and Enterprise is Hub
+Plus, so they are there.)
 
-| Plan | Features |
+| Plan | Tools |
 |---|---|
-| Free | 🎲 Surprise Me · 🎉 Confetti Blast · 🐱 Cat Walk · 🙃 Upside-Down Mode · 📱 Device Flip |
-| Go | 🌈 Rainbow Mode · 🔊 Click Sounds · 🧬 Hub DNA · 🔥 Daily Hub Challenge · 🧩 Embed Code |
-| Plus | 🤪 Make It CRAZIER · ⚔️ Hub Battle · 🕰️ Time Machine · 🌍 Translate Hub · 🧼 No Watermark |
-| Enterprise | 🧪 Hub Mashup · 🔐 Password Lock · 📲 Install as App · 🎨 Brand Kit · 🎰 Variation Blaster |
+| Free | ✏️ Edit with AI · 📱 Device Preview · 🧾 Source Code · 📋 Prompt Templates · ♿ Accessibility Check |
+| Go | 🕘 Version History · ⌨️ Code Editor · 🧩 Embed Code · 🔎 SEO & Share Tags · 📊 Performance Report |
+| Plus | 🌍 Translate · 🩺 AI Bug Fix · ⚖️ Compare Agents · 📎 Data Import · 🏷️ White-label Export |
+| Enterprise | 🔐 Password Protection · 🛡️ Security Scan & Lockdown · 📲 Installable App · 🎨 Brand Kit · 🗂️ Multiple Drafts |
 
-- Power-ups (Confetti, Cat Walk, Upside-Down, Rainbow, Click Sounds, No
-  Watermark) are toggles under a hub; they go into previews and exports.
-- CRAZIER, Translate and Mashup send the hub back to the agent (normal
-  credit cost). Battle and Variation Blaster run 2 or 3 generations.
-- Password Lock exports a file that asks for the password before showing
-  the hub (password-stretched SHA-256 keystream; it keeps casual eyes out,
-  not a determined attacker).
-- Install as App exports a ZIP with a web manifest, icon and service worker:
-  host it on any HTTPS site and "Add to Home Screen".
+- **Edit with AI**, **AI Bug Fix** and **Translate** send the hub back to the
+  agent (`mode` `refine`, `fix`, `translate`; the agent's usual credit cost).
+  Every change, by AI or in the Code Editor, is kept in Version History.
+- **Data Import** attaches a CSV, TSV, JSON or text file (up to 100 KB) to
+  the request; the agent embeds the data in the hub so it still works
+  offline.
+- **Accessibility Check** runs in the app: page language, viewport and zoom,
+  title, alt text, form labels, button names, colour contrast (4.5:1, CSS
+  variables resolved), duplicate ids, focus styles, headings, keyboard
+  reachability. Errors it finds can go straight to AI Bug Fix. Automatic
+  checks catch many problems, not all.
+- **Performance Report**: size, JS/CSS/embedded media, element count and
+  nesting, external requests (offline or not), fast timers, `document.write`.
+- **Security Scan** flags external scripts, network calls, forms posting
+  elsewhere, `eval`, cookies, `http://` and unsafe `innerHTML`. **Lockdown**
+  exports with a Content-Security-Policy that blocks every network request.
+- **Password Protection** exports an encrypted file (password-stretched
+  SHA-256 keystream, 8+ character passwords). It keeps the content private
+  from anyone without the password; a weak password can still be guessed
+  offline.
+- **Installable App** exports a ZIP with a web manifest, icon and service
+  worker: host it on any HTTPS site and "Add to Home Screen".
 - The catalog lives in `cloud/hubcloud/config.py` (`FEATURES`); the app-side
   parts are in `app/src/main/assets/www/js/features.js`.
 

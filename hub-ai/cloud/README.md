@@ -112,7 +112,7 @@ The apps need HTTPS (Android refuses plain HTTP), which those hosts provide.
 | `GET /v1/me` | plan, credits, daily caps, receipts |
 | `POST /v1/subscribe {"plan"}` | demo checkout (`free`, `go`, `plus`, `enterprise`) |
 | `POST /v1/cancel` | cancel at the end of the period |
-| `POST /v1/generate {"engine", "prompt", "mode"?, "html"?, "html2"?, "lang"?}` | build a hub → `{html, title, me, …}`. `mode`: `create` (default), `crazier` and `translate` (Plus), `mashup` (Enterprise) |
+| `POST /v1/generate {"engine", "prompt", "mode"?, "html"?, "lang"?, "data"?, "dataName"?}` | build a hub → `{html, title, me, …}`. `mode`: `create` (default), `refine` (every plan), `fix` and `translate` (Plus). `data`: an attached file, up to 100 KB (Plus) |
 | `POST /v1/admin/plan {"account", "plan"}` | needs `X-Admin-Key` |
 
 Calls other than health, config and accounts send `Authorization: Bearer <token>`.

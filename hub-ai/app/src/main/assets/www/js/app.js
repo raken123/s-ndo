@@ -212,7 +212,7 @@
       (ok ? '' : '<span class="lock">🔒</span>') + f.emoji + ' ' + esc(label || f.name) + '</button>';
   }
 
-  // 📱 Device Flip: the preview at phone, tablet and desktop size.
+  // 📱 Device Preview: the hub at phone, tablet and desktop size.
   var DEVICES = { phone: [390, 720], tablet: [820, 1000], desktop: [1280, 800] };
   function previewBox(html, holder) {
     holder.innerHTML = '';
@@ -239,14 +239,17 @@
     stage.appendChild(f);
   }
 
-  // Power-up chips and the tool buttons under a hub.
+  // Export options and the tool buttons under a hub.
   function hubTools(o) {
-    return '<div class="label-sm">Power-ups</div><div class="chips">' + Features.POWERUP_LIST.map(function (id) {
+    return '<div class="label-sm">Export options</div><div class="chips">' + Features.OPTION_LIST.map(function (id) {
       var f = Features.info(id), ok = Features.has(id), on = o.powerups.indexOf(id) >= 0;
-      return '<button class="chip' + (on && ok ? ' on' : '') + (ok ? '' : ' locked') + '" data-pow="' + id + '">' + (ok ? '' : '🔒 ') + f.emoji + ' ' + esc(f.name) + '</button>';
+      return '<button class="chip' + (on && ok ? ' on' : '') + (ok ? '' : ' locked') + '" data-pow="' + id + '" aria-pressed="' + (on && ok) + '">' +
+        (ok ? (on ? '✓ ' : '') : '🔒 ') + f.emoji + ' ' + esc(Features.OPTION_LABEL[id]) + '</button>';
     }).join('') + '</div><div class="label-sm">Tools</div><div class="tools">' +
-      featBtn('crazier', 'CRAZIER') + featBtn('translate', 'Translate') + featBtn('timemachine', 'Versions (' + o.versions.length + ')') +
-      featBtn('dna', 'DNA') + featBtn('embed', 'Embed') + featBtn('lock', 'Lock') + featBtn('pwa', 'App') + '</div>';
+      featBtn('refine', 'Edit with AI') + featBtn('a11y', 'Accessibility') + featBtn('source', 'Source') +
+      featBtn('timemachine', 'Versions (' + o.versions.length + ')') + featBtn('editor', 'Code editor') + featBtn('seo', 'SEO') +
+      featBtn('dna', 'Performance') + featBtn('embed', 'Embed') + featBtn('translate', 'Translate') + featBtn('autofix', 'AI Bug Fix') +
+      featBtn('security', 'Security scan') + featBtn('lock', 'Password') + featBtn('pwa', 'Installable app') + '</div>';
   }
 
   function bindHubTools(root, t) {
@@ -273,118 +276,251 @@
     return bl && bl.reason === 'plan' ? 'mini' : id;
   }
 
-  // Sends a hub back to the cloud (crazier / translate) and keeps the result
-  // as a new version.
+  // Keeps html as the hub's new current version.
+  function addVersion(t, html, label) {
+    var o = getT(t);
+    o.html = html;
+    var m = html.match(/<title[^>]*>([^<]{1,80})<\/title>/i);
+    if (m && t.kind === 'draft') o.title = m[1].trim();
+    o.versions.push({ label: label, html: html, at: Date.now() });
+    if (o.versions.length > 30) o.versions.splice(1, 1);
+    putT(t, o);
+  }
+
+  // Sends a hub back to the cloud (edit / fix / translate) and keeps the
+  // result as a new version.
   function runCloud(t, mode, extra, label) {
+    if (!Cloud.configured()) { go('settings'); return toast('Add your Hub AI Cloud server first.'); }
     var o = getT(t), engine = pickEngine(), e = Plans.engine(engine);
-    openSheet('<h2>' + esc(label) + '</h2><p class="muted"><span class="spinner"></span> ' + esc(e.name) + ' is on it…</p>');
+    openSheet('<h2>' + esc(label) + '</h2><p class="muted" role="status"><span class="spinner"></span> ' + esc(e.name) + ' is working on it…</p>');
     Cloud.generate(engine, extra.prompt || '', Object.assign({ mode: mode, html: o.html }, extra)).then(function (r) {
-      o = getT(t);
-      o.html = r.html;
-      o.versions.push({ label: label, html: r.html, at: Date.now() });
-      if (o.versions.length > 12) o.versions.splice(1, 1);
-      putT(t, o); closeSheet(); redraw(t); renderCredits(); toast(label + ' ✓');
+      addVersion(t, r.html, label);
+      closeSheet(); redraw(t); renderCredits(); toast(label + ' ✓');
     }, function (err) {
       closeSheet();
       if (err.code === 'plan' || err.code === 'credits') upgrade(err.message); else toast(err.message);
     });
   }
 
+  function copyText(text, ta, what) {
+    var done = function () { toast(what + ' copied'); };
+    var fallback = function () { ta.select(); document.execCommand('copy'); done(); };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+  }
+
+  function issueList(items, levels) {
+    if (!items.length) return '<div class="note ok">No problems found.</div>';
+    return '<ul class="issues">' + items.map(function (i) {
+      return '<li class="issue ' + i.level + '"><span class="tag ' + i.level + '">' + esc(levels[i.level]) + (i.n > 1 ? ' × ' + i.n : '') + '</span>' +
+        '<div>' + esc(i.msg) + (i.how ? '<div class="muted small">' + esc(i.how) + '</div>' : '') + '</div></li>';
+    }).join('') + '</ul>';
+  }
+
   var TOOLS = {
-    crazier: function (t) {
-      openSheet('<h2>🤪 Make It CRAZIER</h2><p class="muted">The agent rebuilds this hub way wilder. Costs the same as a new hub.</p>' +
-        '<label class="field">Any special craziness? (optional)</label><input class="in" id="cz" placeholder="e.g. everything is made of cheese">' +
-        '<div class="row" style="margin-top:12px"><button class="btn" data-x="no">Cancel</button><button class="btn primary grow" data-x="go">Go crazy</button></div>', function (s) {
+    refine: function (t) {
+      openSheet('<h2>✏️ Edit with AI</h2><p class="muted small">Describe the change. The agent updates the hub and keeps the current version in the history. Costs the agent\'s usual credits.</p>' +
+        '<label class="field" for="rf">Change</label><textarea class="in" id="rf" placeholder="e.g. Add a dark/light mode switch and sort the list by date"></textarea>' +
+        '<div class="row" style="margin-top:12px"><button class="btn" data-x="no">Cancel</button><button class="btn primary grow" data-x="go">Apply change</button></div>', function (s) {
         s.querySelector('[data-x=no]').onclick = closeSheet;
-        s.querySelector('[data-x=go]').onclick = function () { runCloud(t, 'crazier', { prompt: s.querySelector('#cz').value.trim() }, '🤪 Crazier'); };
+        s.querySelector('#rf').focus();
+        s.querySelector('[data-x=go]').onclick = function () {
+          var change = s.querySelector('#rf').value.trim();
+          if (!change) return toast('Describe the change first.');
+          runCloud(t, 'refine', { prompt: change.slice(0, 3900) }, '✏️ ' + change.slice(0, 40));
+        };
       });
     },
     translate: function (t) {
-      openSheet('<h2>🌍 Translate Hub</h2><label class="field">Language</label><select class="in" id="lg">' +
+      openSheet('<h2>🌍 Translate</h2><label class="field" for="lg">Language</label><select class="in" id="lg">' +
         Features.LANGUAGES.map(function (l) { return '<option>' + l + '</option>'; }).join('') + '</select>' +
         '<div class="row" style="margin-top:12px"><button class="btn" data-x="no">Cancel</button><button class="btn primary grow" data-x="go">Translate</button></div>', function (s) {
         s.querySelector('[data-x=no]').onclick = closeSheet;
         s.querySelector('[data-x=go]').onclick = function () { var l = s.querySelector('#lg').value; runCloud(t, 'translate', { lang: l }, '🌍 ' + l); };
       });
     },
-    timemachine: function (t) {
-      var o = getT(t);
-      openSheet('<h2>🕰️ Time Machine</h2>' + o.versions.map(function (v, i) {
-        var cur = v.html === o.html;
-        return '<div class="row" style="padding:8px 0;border-bottom:1px solid var(--line)"><span class="grow">' + esc(v.label) + '<div class="muted small">' +
-          new Date(v.at).toLocaleString() + '</div></span>' + (cur ? '<span class="tag ok">Now</span>' : '<button class="btn" data-v="' + i + '">Go back</button>') + '</div>';
-      }).join('') + '<button class="btn block" data-x="no" style="margin-top:12px">Close</button>', function (s) {
+    autofix: function (t, issues) {
+      var known = issues || Features.a11y(getT(t).html).map(function (i) { return '- ' + i.msg; });
+      openSheet('<h2>🩺 AI Bug Fix</h2><p class="muted small">The agent reviews the hub for bugs, broken interactions, accessibility and small-screen problems and fixes them. ' +
+        'The result is saved as a new version. Costs the agent\'s usual credits.</p>' +
+        (known.length ? '<p class="small">It will also fix the ' + known.length + ' problem' + (known.length > 1 ? 's' : '') + ' the Accessibility Check found.</p>' : '') +
+        '<label class="field" for="fx">Anything specific? (optional)</label><input class="in" id="fx" placeholder="e.g. The total is wrong when a discount is added">' +
+        '<div class="row" style="margin-top:12px"><button class="btn" data-x="no">Cancel</button><button class="btn primary grow" data-x="go">Review and fix</button></div>', function (s) {
         s.querySelector('[data-x=no]').onclick = closeSheet;
-        Array.prototype.forEach.call(s.querySelectorAll('[data-v]'), function (b) {
-          b.onclick = function () { var o2 = getT(t); o2.html = o2.versions[+b.getAttribute('data-v')].html; putT(t, o2); closeSheet(); redraw(t); toast('Time travelled 🕰️'); };
-        });
-      });
-    },
-    dna: function (t) {
-      var d = Features.dna(getT(t).html);
-      var row = function (k, v) { return '<div class="row small" style="padding:4px 0"><span class="grow muted">' + k + '</span><b>' + v + '</b></div>'; };
-      openSheet('<h2>🧬 Hub DNA</h2>' + (d.colors.length ? '<div class="swatches">' + d.colors.map(function (c) {
-        return '<span class="sw" style="background:' + c + '" title="' + c + '"></span>'; }).join('') + '</div>' : '') +
-        row('Title', esc(d.title || '–')) + row('Size', d.kb + ' KB') + row('Lines of code', d.lines) + row('Elements', d.elements) +
-        row('Buttons', d.buttons) + row('Inputs', d.inputs) + row('Canvas', d.canvas ? 'yes' : 'no') + row('JavaScript', d.jsChars + ' characters') +
-        row('CSS', d.cssChars + ' characters') + row('Remembers data', d.remembers ? 'yes' : 'no') + row('Animated', d.animates ? 'yes' : 'no') +
-        '<button class="btn block" data-x="no" style="margin-top:12px">Close</button>', function (s) { s.querySelector('[data-x=no]').onclick = closeSheet; });
-    },
-    embed: function (t) {
-      var o = getT(t), code = Features.embed(effective(o), o.title);
-      openSheet('<h2>🧩 Embed Code</h2><p class="muted small">Paste this into any web page.</p><textarea class="in" id="em" readonly style="min-height:140px;font-family:monospace;font-size:12px"></textarea>' +
-        '<div class="row" style="margin-top:10px"><button class="btn" data-x="no">Close</button><button class="btn primary grow" data-x="cp">Copy</button></div>', function (s) {
-        var ta = s.querySelector('#em'); ta.value = code;
-        s.querySelector('[data-x=no]').onclick = closeSheet;
-        s.querySelector('[data-x=cp]').onclick = function () {
-          var done = function () { toast('Embed code copied'); };
-          if (navigator.clipboard) navigator.clipboard.writeText(code).then(done, function () { ta.select(); document.execCommand('copy'); done(); });
-          else { ta.select(); document.execCommand('copy'); done(); }
+        s.querySelector('[data-x=go]').onclick = function () {
+          var note = s.querySelector('#fx').value.trim();
+          var prompt = (note ? 'The user reports: ' + note + '\n' : '') + (known.length ? 'Also fix these problems:\n' + known.join('\n') : '');
+          runCloud(t, 'fix', { prompt: prompt.slice(0, 3900) }, '🩺 Bug fix');
         };
       });
     },
+    timemachine: function (t) {
+      var o = getT(t);
+      openSheet('<h2>🕘 Version History</h2><p class="muted small">' + o.versions.length + ' version' + (o.versions.length > 1 ? 's' : '') + ', newest last.</p>' + o.versions.map(function (v, i) {
+        var cur = v.html === o.html;
+        return '<div class="row" style="padding:8px 0;border-bottom:1px solid var(--line)"><span class="grow">' + esc(v.label) + '<div class="muted small">' +
+          new Date(v.at).toLocaleString() + ' · ' + Math.round(new Blob([v.html]).size / 102.4) / 10 + ' KB</div></span>' +
+          '<button class="btn" data-pv="' + i + '">Preview</button>' +
+          (cur ? '<span class="tag ok">Current</span>' : '<button class="btn" data-v="' + i + '">Restore</button>') + '</div>';
+      }).join('') + '<button class="btn block" data-x="no" style="margin-top:12px">Close</button>', function (s) {
+        s.querySelector('[data-x=no]').onclick = closeSheet;
+        Array.prototype.forEach.call(s.querySelectorAll('[data-pv]'), function (b) {
+          b.onclick = function () { var v = getT(t).versions[+b.getAttribute('data-pv')]; openPlayer(v.label, v.html); };
+        });
+        Array.prototype.forEach.call(s.querySelectorAll('[data-v]'), function (b) {
+          b.onclick = function () {
+            var v = getT(t).versions[+b.getAttribute('data-v')];
+            addVersion(t, v.html, 'Restored: ' + v.label); closeSheet(); redraw(t); toast('Version restored');
+          };
+        });
+      });
+    },
+    source: function (t) {
+      var o = getT(t), html = o.html;
+      openSheet('<h2>🧾 Source Code</h2><p class="muted small">' + html.split('\n').length + ' lines · ' + Math.round(new Blob([html]).size / 102.4) / 10 + ' KB</p>' +
+        '<textarea class="in code" id="src" readonly aria-label="HTML source"></textarea>' +
+        '<div class="row" style="margin-top:10px"><button class="btn" data-x="no">Close</button><button class="btn primary grow" data-x="cp">Copy</button></div>', function (s) {
+        var ta = s.querySelector('#src'); ta.value = html;
+        s.querySelector('[data-x=no]').onclick = closeSheet;
+        s.querySelector('[data-x=cp]').onclick = function () { copyText(html, ta, 'Source'); };
+      });
+    },
+    editor: function (t) {
+      var o = getT(t);
+      openSheet('<h2>⌨️ Code Editor</h2><p class="muted small">Saving keeps the current version in the history.</p>' +
+        '<textarea class="in code tall" id="ed" spellcheck="false" aria-label="HTML"></textarea>' +
+        '<div class="row" style="margin-top:10px"><button class="btn" data-x="no">Cancel</button><button class="btn" data-x="pv">Preview</button>' +
+        '<button class="btn primary grow" data-x="go">Save</button></div>', function (s) {
+        var ta = s.querySelector('#ed'); ta.value = o.html;
+        ta.onkeydown = function (e) {
+          if (e.key !== 'Tab') return;
+          e.preventDefault();
+          var a = ta.selectionStart; ta.setRangeText('  ', a, ta.selectionEnd, 'end');
+        };
+        s.querySelector('[data-x=no]').onclick = closeSheet;
+        s.querySelector('[data-x=pv]').onclick = function () { openPlayer('Preview', ta.value); };
+        s.querySelector('[data-x=go]').onclick = function () {
+          if (ta.value === getT(t).html) return closeSheet();
+          if (!/<html|<body|<!doctype/i.test(ta.value)) return toast('That does not look like an HTML document.');
+          addVersion(t, ta.value, '⌨️ Edited by hand'); closeSheet(); redraw(t); toast('Saved');
+        };
+      });
+    },
+    seo: function (t) {
+      var cur = Features.seoRead(getT(t).html);
+      openSheet('<h2>🔎 SEO & Share Tags</h2><p class="muted small">Used by search engines and in link previews (messages, social media) when the hub is published on a website.</p>' +
+        '<label class="field" for="st">Page title <span class="muted" id="stc"></span></label><input class="in" id="st" maxlength="70">' +
+        '<label class="field" for="sd">Description <span class="muted" id="sdc"></span></label><textarea class="in" id="sd" maxlength="200" style="min-height:70px"></textarea>' +
+        '<label class="field" for="sc">Browser bar colour</label><input class="in" id="sc" type="color" style="height:46px">' +
+        '<div class="serp"><div class="serp-t" id="pt"></div><div class="serp-d" id="pd"></div></div>' +
+        '<div class="row" style="margin-top:12px"><button class="btn" data-x="no">Cancel</button><button class="btn primary grow" data-x="go">Save tags</button></div>', function (s) {
+        var st = s.querySelector('#st'), sd = s.querySelector('#sd'), sc = s.querySelector('#sc');
+        st.value = cur.title; sd.value = cur.description; sc.value = /^#[0-9a-f]{6}$/i.test(cur.color) ? cur.color : '#0d0d0d';
+        var upd = function () {
+          s.querySelector('#stc').textContent = st.value.length + '/60'; s.querySelector('#sdc').textContent = sd.value.length + '/160';
+          s.querySelector('#pt').textContent = st.value || 'Untitled'; s.querySelector('#pd').textContent = sd.value || 'No description.';
+        };
+        st.oninput = sd.oninput = upd; upd();
+        s.querySelector('[data-x=no]').onclick = closeSheet;
+        s.querySelector('[data-x=go]').onclick = function () {
+          if (!st.value.trim()) return toast('Give the page a title.');
+          addVersion(t, Features.seoApply(getT(t).html, { title: st.value.trim(), description: sd.value.trim(), color: sc.value }), '🔎 SEO tags');
+          closeSheet(); redraw(t); toast('Tags saved');
+        };
+      });
+    },
+    a11y: function (t) {
+      var items = Features.a11y(getT(t).html), errors = items.filter(function (i) { return i.level === 'error'; }).length;
+      openSheet('<h2>♿ Accessibility Check</h2><p class="muted small">' + (items.length ? errors + ' error' + (errors === 1 ? '' : 's') + ', ' +
+        (items.length - errors) + ' warning' + (items.length - errors === 1 ? '' : 's') + '. Automatic checks find many problems, not all of them; test with a screen reader too.' : 'Automatic checks passed.') + '</p>' +
+        issueList(items, { error: 'Error', warning: 'Warning' }) +
+        '<div class="row" style="margin-top:12px"><button class="btn" data-x="no">Close</button>' +
+        (items.length ? '<button class="btn primary grow' + (Features.has('autofix') ? '' : ' locked') + '" data-x="fix">' + (Features.has('autofix') ? '' : '🔒 ') + '🩺 Fix with AI</button>' : '') + '</div>', function (s) {
+        s.querySelector('[data-x=no]').onclick = closeSheet;
+        var fx = s.querySelector('[data-x=fix]');
+        if (fx) fx.onclick = function () {
+          if (!Features.has('autofix')) return upgrade(Features.needs('autofix'));
+          TOOLS.autofix(t, items.map(function (i) { return '- ' + i.msg + (i.how ? ' ' + i.how : ''); }));
+        };
+      });
+    },
+    dna: function (t) {
+      var d = Features.report(effective(getT(t)));
+      var row = function (k, v) { return '<div class="row small" style="padding:4px 0"><span class="grow muted">' + k + '</span><b>' + v + '</b></div>'; };
+      openSheet('<h2>📊 Performance Report</h2>' +
+        (d.warnings.length ? '<ul class="issues">' + d.warnings.map(function (w) { return '<li class="issue warning"><span class="tag warning">Check</span><div>' + esc(w) + '</div></li>'; }).join('') + '</ul>'
+          : '<div class="note ok">Light and self-contained: no problems found.</div>') +
+        row('File size', d.kb + ' KB') + row('JavaScript', d.jsKb + ' KB') + row('CSS', d.cssKb + ' KB') + row('Embedded media', d.mediaKb + ' KB') +
+        row('Elements', d.elements) + row('Nesting depth', d.depth) + row('Lines', d.lines) + row('Inline event handlers', d.handlers) +
+        row('External requests', d.external.length) + row('Saves data on the device', d.storage ? 'yes' : 'no') + row('Works offline', d.external.length || d.network ? 'no' : 'yes') +
+        (d.external.length ? '<details class="small" style="margin-top:8px"><summary>External requests</summary><ul>' + d.external.map(function (u) { return '<li>' + esc(u) + '</li>'; }).join('') + '</ul></details>' : '') +
+        '<button class="btn block" data-x="no" style="margin-top:12px">Close</button>', function (s) { s.querySelector('[data-x=no]').onclick = closeSheet; });
+    },
+    security: function (t) {
+      var o = getT(t), items = Features.scan(o.html), on = o.powerups.indexOf('security') >= 0;
+      openSheet('<h2>🛡️ Security Scan</h2>' + issueList(items, { high: 'High', medium: 'Medium', low: 'Low' }) +
+        '<div class="card" style="margin-top:12px"><b>Lockdown</b><p class="muted small">Exports get a Content-Security-Policy that blocks every network request, form submission and external file, ' +
+        'so the hub cannot send data anywhere. Features that need the internet will stop working.</p>' +
+        '<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="ld"' + (on ? ' checked' : '') + '> Block network access in exports</label></div>' +
+        '<button class="btn block" data-x="no" style="margin-top:12px">Done</button>', function (s) {
+        s.querySelector('[data-x=no]').onclick = function () {
+          var o2 = getT(t), want = s.querySelector('#ld').checked, i = o2.powerups.indexOf('security');
+          if (want && i < 0) o2.powerups.push('security');
+          if (!want && i >= 0) o2.powerups.splice(i, 1);
+          putT(t, o2); closeSheet(); redraw(t);
+        };
+      });
+    },
+    embed: function (t) {
+      var o = getT(t), code = Features.embed(effective(o), o.title);
+      openSheet('<h2>🧩 Embed Code</h2><p class="muted small">Paste this into any web page. The hub runs in a sandbox and cannot reach the host page.</p>' +
+        '<textarea class="in code" id="em" readonly aria-label="Embed code"></textarea>' +
+        '<div class="row" style="margin-top:10px"><button class="btn" data-x="no">Close</button><button class="btn primary grow" data-x="cp">Copy</button></div>', function (s) {
+        var ta = s.querySelector('#em'); ta.value = code;
+        s.querySelector('[data-x=no]').onclick = closeSheet;
+        s.querySelector('[data-x=cp]').onclick = function () { copyText(code, ta, 'Embed code'); };
+      });
+    },
     lock: function (t) {
-      openSheet('<h2>🔐 Password Lock</h2><p class="muted small">Exports this hub as a file that only opens with the password.</p>' +
-        '<label class="field">Password</label><input class="in" id="p1" type="password"><label class="field">Again</label><input class="in" id="p2" type="password">' +
-        '<p class="muted small" id="pe"></p><div class="row"><button class="btn" data-x="no">Cancel</button><button class="btn primary grow" data-x="go">Lock and export</button></div>', function (s) {
+      openSheet('<h2>🔐 Password Protection</h2><p class="muted small">Exports this hub encrypted. It only opens with the password, and the password cannot be recovered.</p>' +
+        '<label class="field" for="p1">Password</label><input class="in" id="p1" type="password" autocomplete="new-password">' +
+        '<label class="field" for="p2">Repeat password</label><input class="in" id="p2" type="password" autocomplete="new-password">' +
+        '<p class="muted small" id="pe" role="status"></p><div class="row"><button class="btn" data-x="no">Cancel</button><button class="btn primary grow" data-x="go">Encrypt and export</button></div>', function (s) {
         s.querySelector('[data-x=no]').onclick = closeSheet;
         s.querySelector('[data-x=go]').onclick = function () {
           var a = s.querySelector('#p1').value, b = s.querySelector('#p2').value;
-          if (a.length < 4) { s.querySelector('#pe').textContent = 'Use at least 4 characters.'; return; }
+          if (a.length < 8) { s.querySelector('#pe').textContent = 'Use at least 8 characters.'; return; }
           if (a !== b) { s.querySelector('#pe').textContent = 'The passwords don\'t match.'; return; }
-          s.querySelector('#pe').innerHTML = '<span class="spinner"></span> Locking…';
+          s.querySelector('#pe').innerHTML = '<span class="spinner"></span> Encrypting…';
           setTimeout(function () {
             var o = getT(t);
-            HubBridge.save(slug(o.title) + '-locked.html', 'text/html', Features.lock(effective(o), a, o.title)).then(function (m) { closeSheet(); toast('🔐 ' + m); }, exportFailed);
+            HubBridge.save(slug(o.title) + '-protected.html', 'text/html', Features.lock(effective(o), a, o.title)).then(function (m) { closeSheet(); toast('🔐 ' + m); }, exportFailed);
           }, 30);
         };
       });
     },
     pwa: function (t) {
       var o = getT(t);
-      var data = Zip.zip(Features.pwaFiles(effective(o), o.title, Features.brand().on ? Features.brand().color : null));
+      var data = Zip.zip(Features.pwaFiles(Features.apply(o.html, o.powerups, { pwa: true }), o.title, Features.brand().on ? Features.brand().color : null));
       HubBridge.save(slug(o.title) + '-app.zip', 'application/zip', data).then(function (m) { toast('📲 ' + m); }, exportFailed);
     }
   };
 
-  // Several hubs side by side to pick from (⚔️ Battle and 🎰 Variations).
+  // Several hubs side by side to pick from (Compare Agents, Multiple Drafts).
   function pickSheet(title, jobs) {
     openSheet('<h2>' + esc(title) + '</h2><div class="picks">' + jobs.map(function (j, i) {
       return '<div class="pick"><div class="small"><b>' + esc(j.label) + '</b></div><div class="pick-pv" id="pk' + i + '"><p class="muted small"><span class="spinner"></span> Building…</p></div>' +
-        '<button class="btn block" data-pick="' + i + '" disabled>🏆 This one</button></div>';
+        '<button class="btn block" data-pick="' + i + '" disabled>Keep this one</button></div>';
     }).join('') + '</div><button class="btn block" data-x="no" style="margin-top:10px">Cancel</button>', function (s) {
       s.querySelector('[data-x=no]').onclick = closeSheet;
     });
-    var results = [];
     jobs.forEach(function (j, i) {
       j.run().then(function (r) {
-        results[i] = r;
         var box = document.getElementById('pk' + i);
         if (!box) return;
         box.innerHTML = ''; box.appendChild(frame(r.html, 'pick-frame'));
         var b = document.querySelector('[data-pick="' + i + '"]');
         b.disabled = false;
-        b.onclick = function () { setDraft(r, state.prompt); closeSheet(); renderCreate(); toast('🏆 Winner saved as your hub'); };
+        b.onclick = function () { setDraft(r, state.prompt); closeSheet(); renderCreate(); toast('Kept ' + j.label); };
         renderCredits();
       }, function (err) {
         var box = document.getElementById('pk' + i);
@@ -399,20 +535,27 @@
     Store.set('draft', state.draft);
   }
 
+  // The attached data file (Data Import) goes with every new hub request.
+  function dataExtra() {
+    var d = state.data;
+    return d && Features.has('dataimport') ? { data: d.text, dataName: d.name } : {};
+  }
+
   function battle() {
     var prompt = ($('#prompt').value || '').trim();
     if (!prompt) return toast('Describe the hub first.');
     var open = Plans.engines().filter(function (e) { return !Plans.blocked(e.id); });
     if (open.length < 2) return toast('You need two agents with credits left.');
     var opts = function (sel) { return open.map(function (e) { return '<option value="' + e.id + '"' + (e.id === sel ? ' selected' : '') + '>' + esc(e.name) + '</option>'; }).join(''); };
-    openSheet('<h2>⚔️ Hub Battle</h2><p class="muted small">Both agents build “' + esc(prompt.slice(0, 60)) + '”. Each costs its usual credits.</p>' +
-      '<div class="row"><select class="in" id="ba">' + opts(open[0].id) + '</select><b>vs</b><select class="in" id="bb">' + opts(open[open.length > 2 ? 2 : 1].id) + '</select></div>' +
-      '<div class="row" style="margin-top:12px"><button class="btn" data-x="no">Cancel</button><button class="btn primary grow" data-x="go">Fight!</button></div>', function (s) {
+    openSheet('<h2>⚖️ Compare Agents</h2><p class="muted small">Both agents build “' + esc(prompt.slice(0, 60)) + '”. Each costs its usual credits.</p>' +
+      '<div class="row"><select class="in" id="ba" aria-label="First agent">' + opts(open[0].id) + '</select><b>vs</b><select class="in" id="bb" aria-label="Second agent">' + opts(open[open.length > 2 ? 2 : 1].id) + '</select></div>' +
+      '<div class="row" style="margin-top:12px"><button class="btn" data-x="no">Cancel</button><button class="btn primary grow" data-x="go">Compare</button></div>', function (s) {
       s.querySelector('[data-x=no]').onclick = closeSheet;
       s.querySelector('[data-x=go]').onclick = function () {
         var a = s.querySelector('#ba').value, b = s.querySelector('#bb').value, p = Features.brandPrompt(prompt);
-        pickSheet('⚔️ ' + Plans.engine(a).name + ' vs ' + Plans.engine(b).name, [a, b].map(function (id) {
-          return { label: Plans.engine(id).name, run: function () { return Cloud.generate(id, p); } };
+        if (a === b) return toast('Pick two different agents.');
+        pickSheet('⚖️ ' + Plans.engine(a).name + ' vs ' + Plans.engine(b).name, [a, b].map(function (id) {
+          return { label: Plans.engine(id).name, run: function () { return Cloud.generate(id, p, dataExtra()); } };
         }));
       };
     });
@@ -422,27 +565,23 @@
     var prompt = ($('#prompt').value || '').trim();
     if (!prompt) return toast('Describe the hub first.');
     var id = pickEngine(), p = Features.brandPrompt(prompt);
-    pickSheet('🎰 Variation Blaster', [1, 2, 3].map(function (n) {
-      return { label: 'Version ' + n, run: function () { return Cloud.generate(id, p + (n > 1 ? '\n\n(Variation ' + n + ': make a different design choice.)' : '')); } };
+    var ideas = ['', '\n\n(Draft 2: choose a different layout and visual style.)', '\n\n(Draft 3: choose another different layout, and the simplest possible interface.)'];
+    pickSheet('🗂️ Multiple Drafts · ' + Plans.engine(id).name, ideas.map(function (extra, n) {
+      return { label: 'Draft ' + (n + 1), run: function () { return Cloud.generate(id, p + extra, dataExtra()); } };
     }));
   }
 
-  function mashup() {
-    var list = hubs();
-    if (list.length < 2) return toast('Save at least two hubs first.');
-    var opts = function (i) { return list.map(function (h, j) { return '<option value="' + h.id + '"' + (i === j ? ' selected' : '') + '>' + esc(h.title) + '</option>'; }).join(''); };
-    openSheet('<h2>🧪 Hub Mashup</h2><p class="muted small">Fuse two hubs into a brand-new one.</p><select class="in" id="m1">' + opts(0) + '</select>' +
-      '<div style="text-align:center;padding:6px">+</div><select class="in" id="m2">' + opts(1) + '</select>' +
-      '<div class="row" style="margin-top:12px"><button class="btn" data-x="no">Cancel</button><button class="btn primary grow" data-x="go">Fuse!</button></div>', function (s) {
+  function starters() {
+    openSheet('<h2>📋 Prompt Templates</h2><p class="muted small">Pick one, then adjust the details before generating.</p><div class="starters">' +
+      Features.STARTERS.map(function (x, i) { return '<button class="starter" data-st="' + i + '"><b>' + esc(x.name) + '</b><span class="muted small">' + esc(x.prompt) + '</span></button>'; }).join('') +
+      '</div><button class="btn block" data-x="no" style="margin-top:12px">Close</button>', function (s) {
       s.querySelector('[data-x=no]').onclick = closeSheet;
-      s.querySelector('[data-x=go]').onclick = function () {
-        var a = hubById(s.querySelector('#m1').value), b = hubById(s.querySelector('#m2').value);
-        if (a.id === b.id) return toast('Pick two different hubs.');
-        s.querySelector('[data-x=go]').innerHTML = '<span class="spinner"></span> Fusing…';
-        Cloud.generate(pickEngine(), '', { mode: 'mashup', html: a.html, html2: b.html }).then(function (r) {
-          setDraft(r, '🧪 ' + a.title + ' + ' + b.title); closeSheet(); state.stack = []; go('create'); renderCredits(); toast('🧪 Mashup ready');
-        }, function (err) { closeSheet(); if (err.code === 'plan' || err.code === 'credits') upgrade(err.message); else toast(err.message); });
-      };
+      Array.prototype.forEach.call(s.querySelectorAll('[data-st]'), function (b) {
+        b.onclick = function () {
+          state.prompt = Features.STARTERS[+b.getAttribute('data-st')].prompt; Store.set('promptDraft', state.prompt);
+          closeSheet(); renderCreate(); $('#prompt').focus();
+        };
+      });
     });
   }
 
@@ -482,18 +621,21 @@
       ? '<div class="note">Hub agents run in Hub AI Cloud. Add your server address in <a href="#" id="toSettings">Settings</a> to start generating.</div>'
       : '<p class="muted small" style="margin:8px 0 0">' + (c.left === null ? 'Connecting…' : c.left + ' credits left') + ' · ' +
         esc(Plans.plan().name) + (c.rule ? ' (' + esc(c.rule) + ')' : '') + '</p>';
-    var ch = Features.has('challenge') ? Features.challenge() : null;
-    var challengeCard = ch ? '<div class="card challenge"><div class="row"><div class="grow"><div class="label-sm">🔥 Today\'s challenge' +
-      (ch.streak ? ' · ' + ch.streak + ' day streak' : '') + '</div><b>' + esc(ch.prompt) + '</b></div>' +
-      (ch.doneToday ? '<span class="tag ok">Done ✓</span>' : '<button class="btn" id="acc">Accept</button>') + '</div></div>' : '';
-    view.innerHTML = '<div class="wrap">' + challengeCard +
+    var d = state.data;
+    var dataRow = '<div class="row" style="margin-top:8px">' + featBtn('dataimport', d ? 'Replace data file' : 'Attach data (CSV, JSON)') +
+      '<input type="file" id="dataFile" accept=".csv,.tsv,.json,.txt" hidden>' +
+      (d ? '<span class="chip on grow" style="cursor:default">📎 ' + esc(d.name) + ' · ' + d.kb + ' KB · ' + d.rows + ' rows</span>' +
+        '<button class="btn" id="dataRm" aria-label="Remove data file">✕</button>' : '') + '</div>';
+    view.innerHTML = '<div class="wrap">' +
       '<div class="card"><h2>Create a hub</h2>' +
-      '<textarea class="in" id="prompt" placeholder="Describe the app you want, e.g. a habit tracker for drinking water">' + esc(state.prompt) + '</textarea>' +
-      '<div class="chips"><button class="chip surprise' + (Features.has('surprise') ? '' : ' locked') + '" id="sur">🎲 Surprise Me</button>' +
+      '<label class="field" for="prompt" style="margin-top:0">What should it do?</label>' +
+      '<textarea class="in" id="prompt" placeholder="Describe the app you want, e.g. an expense tracker with monthly totals per category">' + esc(state.prompt) + '</textarea>' +
+      dataRow +
+      '<div class="chips"><button class="chip' + (Features.has('starters') ? '' : ' locked') + '" id="sur">📋 Templates</button>' +
       EXAMPLES.map(function (x) { return '<button class="chip" data-ex="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div>' +
       '<label class="field">Agent</label><div class="engines">' + Plans.engines().map(engineRow).join('') + '</div>' +
       '<button class="btn primary block" id="gen" style="margin-top:12px">' + (state.busy ? '<span class="spinner"></span> Generating…' : 'Generate') + '</button>' +
-      '<div class="row" style="margin-top:8px">' + featBtn('battle', 'Battle', ' style="flex:1"') + featBtn('variations', '×3 Variations', ' style="flex:1"') + '</div>' +
+      '<div class="row" style="margin-top:8px">' + featBtn('battle', 'Compare agents', ' style="flex:1"') + featBtn('variations', '3 drafts', ' style="flex:1"') + '</div>' +
       status + '</div><div id="result"></div></div>';
 
     var p = $('#prompt');
@@ -511,16 +653,23 @@
     });
     $('#gen').onclick = generate;
     $('#sur').onclick = function () {
-      if (!Features.has('surprise')) return upgrade(Features.needs('surprise'));
-      p.value = state.prompt = Features.surprise(); Store.set('promptDraft', p.value);
-      p.classList.remove('wiggle'); void p.offsetWidth; p.classList.add('wiggle');
+      if (!Features.has('starters')) return upgrade(Features.needs('starters'));
+      starters();
     };
-    var acc = $('#acc');
-    if (acc) acc.onclick = function () { p.value = state.prompt = ch.prompt; state.challenge = ch.prompt; Store.set('promptDraft', p.value); p.focus(); toast('🔥 Challenge accepted. Pick an agent and hit Generate.'); };
+    var file = $('#dataFile');
+    file.onchange = function () {
+      if (!file.files[0]) return;
+      Features.readData(file.files[0]).then(function (d) { state.data = d; renderCreate(); toast('📎 ' + d.name + ' attached'); },
+        function (e) { toast(e.message); });
+      file.value = '';
+    };
+    var rm = $('#dataRm');
+    if (rm) rm.onclick = function () { state.data = null; renderCreate(); };
     Array.prototype.forEach.call(view.querySelectorAll('.wrap > .card [data-feat]'), function (b) {
       b.onclick = function () {
         var id = b.getAttribute('data-feat');
         if (!Features.has(id)) return upgrade(Features.needs(id));
+        if (id === 'dataimport') return file.click();
         if (!Cloud.configured()) { go('settings'); return toast('Add your Hub AI Cloud server first.'); }
         (id === 'battle' ? battle : variations)();
       };
@@ -594,13 +743,8 @@
 
     state.busy = true;
     $('#gen').innerHTML = '<span class="spinner"></span> ' + esc(e.name) + ' is building your hub…';
-    Cloud.generate(id, Features.brandPrompt(prompt)).then(function (r) {
+    Cloud.generate(id, Features.brandPrompt(prompt), dataExtra()).then(function (r) {
       setDraft(r, prompt);
-      if (state.challenge && state.challenge === prompt && Features.has('challenge')) {
-        var n = Features.completeChallenge();
-        state.challenge = null;
-        setTimeout(function () { toast('🔥 Challenge done! ' + n + ' day streak'); }, 300);
-      }
     }, function (err) {
       if (err.code === 'plan' || err.code === 'credits') upgrade(err.message);
       else toast(err.message || String(err));
@@ -622,7 +766,7 @@
       return;
     }
     var list = hubs();
-    view.innerHTML = '<div class="wrap"><div class="row"><h2 class="grow">Your hubs</h2>' + featBtn('mashup', 'Mashup') + '</div>' + (list.length ? list.map(function (h) {
+    view.innerHTML = '<div class="wrap"><div class="row"><h2 class="grow">Your hubs</h2></div>' + (list.length ? list.map(function (h) {
       return '<button class="hub-item" data-id="' + h.id + '"><span class="thumb">' + esc(h.title.charAt(0).toUpperCase()) + '</span>' +
         '<span class="grow"><div class="t">' + esc(h.title) + '</div><div class="muted small">' + esc(h.engineName) + ' · ' + fmtDate(h.created) +
         (FunHub.isPublished(h.id) ? ' · on FunHub' : '') + '</div></span></button>';
@@ -630,10 +774,6 @@
     Array.prototype.forEach.call(view.querySelectorAll('[data-id]'), function (b) {
       b.onclick = function () { go('hub', b.getAttribute('data-id')); };
     });
-    view.querySelector('[data-feat=mashup]').onclick = function () {
-      if (!Features.has('mashup')) return upgrade(Features.needs('mashup'));
-      mashup();
-    };
   }
 
   function renderHub(id) {
@@ -717,7 +857,7 @@
 
   function renderFeatures() {
     var all = Plans.plans(), cur = Plans.plan();
-    var html = '<div class="wrap"><h2>🤯 Features</h2><p class="muted small">20 CRAEYYYYZAEYYYY and UNBELAIVABULLL extras. Five come with every plan.</p>';
+    var html = '<div class="wrap"><h2>Tools</h2><p class="muted small">20 professional tools. Each plan adds five, and keeps the ones below it.</p>';
     ['free', 'go', 'plus', 'enterprise'].forEach(function (pid) {
       html += '<div class="label-sm" style="margin-top:14px">' + esc(all[pid].name) + '</div>';
       Features.catalog().filter(function (f) { return f.plan === pid; }).forEach(function (f) {
@@ -739,15 +879,14 @@
   // Features that can be started from the Features tab: [button, action].
   var tryOnHub = ['Try it', function () { go('create'); toast('Make or open a hub, then use it under the preview.'); }];
   var FEATURE_GO = {
-    surprise: ['Try it', function () { go('create'); setTimeout(function () { $('#sur').click(); }, 0); }],
-    challenge: ['Today', function () { go('create'); }],
-    battle: ['Try it', function () { go('create'); toast('Describe a hub, then tap ⚔️ Battle.'); }],
-    variations: ['Try it', function () { go('create'); toast('Describe a hub, then tap 🎰 ×3 Variations.'); }],
-    mashup: ['Try it', function () { go('hubs'); }],
+    starters: ['Open', function () { go('create'); setTimeout(function () { $('#sur').click(); }, 0); }],
+    dataimport: ['Attach', function () { go('create'); setTimeout(function () { $('#dataFile').click(); }, 0); }],
+    battle: ['Try it', function () { go('create'); toast('Describe a hub, then tap ⚖️ Compare agents.'); }],
+    variations: ['Try it', function () { go('create'); toast('Describe a hub, then tap 🗂️ 3 drafts.'); }],
     brandkit: ['Set up', brandKit],
-    confetti: tryOnHub, catwalk: tryOnHub, upsidedown: tryOnHub, deviceflip: tryOnHub, rainbow: tryOnHub, sounds: tryOnHub,
-    dna: tryOnHub, embed: tryOnHub, crazier: tryOnHub, timemachine: tryOnHub, translate: tryOnHub, nowatermark: tryOnHub,
-    lock: tryOnHub, pwa: tryOnHub
+    refine: tryOnHub, deviceflip: tryOnHub, source: tryOnHub, a11y: tryOnHub, timemachine: tryOnHub, editor: tryOnHub,
+    embed: tryOnHub, seo: tryOnHub, dna: tryOnHub, translate: tryOnHub, autofix: tryOnHub, nowatermark: tryOnHub,
+    lock: tryOnHub, security: tryOnHub, pwa: tryOnHub
   };
 
   // ---------- Plans ----------

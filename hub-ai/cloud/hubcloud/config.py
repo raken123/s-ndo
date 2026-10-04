@@ -29,29 +29,30 @@ ENGINES = [
     {"id": "gpro", "name": "Gemini 3.8 Pro", "provider": "gemini", "base": ["Gemini 3.8 Pro"], "models": ["gemini-3.8-pro"], "cost": 10},
 ]
 
-# The 20 extras, five unlocked by each plan (and kept on higher plans).
-# "cloud" ones run through /v1/generate (mode=...), the rest in the apps.
+# The 20 tools, five unlocked by each plan (and kept on higher plans).
+# "cloud" ones run through /v1/generate (mode=..., or data=... for Data
+# Import); the rest run in the apps.
 FEATURES = [
-    {"id": "surprise", "plan": "free", "emoji": "🎲", "name": "Surprise Me", "desc": "One tap fills in a wild hub idea you'd never think of."},
-    {"id": "confetti", "plan": "free", "emoji": "🎉", "name": "Confetti Blast", "desc": "Every tap inside your hub explodes into confetti."},
-    {"id": "catwalk", "plan": "free", "emoji": "🐱", "name": "Cat Walk", "desc": "A tiny cat strolls across your hub. Forever."},
-    {"id": "upsidedown", "plan": "free", "emoji": "🙃", "name": "Upside-Down Mode", "desc": "Flip the whole hub on its head. Prank your friends."},
-    {"id": "deviceflip", "plan": "free", "emoji": "📱", "name": "Device Flip", "desc": "See your hub as a phone, a tablet and a big screen."},
-    {"id": "rainbow", "plan": "go", "emoji": "🌈", "name": "Rainbow Mode", "desc": "Your hub cycles through every colour of the rainbow."},
-    {"id": "sounds", "plan": "go", "emoji": "🔊", "name": "Click Sounds", "desc": "Bloops and bleeps on every button."},
-    {"id": "dna", "plan": "go", "emoji": "🧬", "name": "Hub DNA", "desc": "X-ray any hub: its colours, size, buttons and code."},
-    {"id": "challenge", "plan": "go", "emoji": "🔥", "name": "Daily Hub Challenge", "desc": "A new challenge every day. Keep your streak alive."},
-    {"id": "embed", "plan": "go", "emoji": "🧩", "name": "Embed Code", "desc": "Drop any hub into a website with one snippet."},
-    {"id": "crazier", "plan": "plus", "emoji": "🤪", "name": "Make It CRAZIER", "desc": "Send a hub back to the agent to make it way wilder.", "cloud": True},
-    {"id": "battle", "plan": "plus", "emoji": "⚔️", "name": "Hub Battle", "desc": "Two agents build the same hub. You pick the winner."},
-    {"id": "timemachine", "plan": "plus", "emoji": "🕰️", "name": "Time Machine", "desc": "Every version of a hub, saved. Jump back any time."},
-    {"id": "translate", "plan": "plus", "emoji": "🌍", "name": "Translate Hub", "desc": "Your hub, in another language, in seconds.", "cloud": True},
-    {"id": "nowatermark", "plan": "plus", "emoji": "🧼", "name": "No Watermark", "desc": "Export hubs without the Hub AI footer."},
-    {"id": "mashup", "plan": "enterprise", "emoji": "🧪", "name": "Hub Mashup", "desc": "Fuse two hubs into one brand-new creature.", "cloud": True},
-    {"id": "lock", "plan": "enterprise", "emoji": "🔐", "name": "Password Lock", "desc": "Export a hub only people with the password can open."},
-    {"id": "pwa", "plan": "enterprise", "emoji": "📲", "name": "Install as App", "desc": "Export a hub that installs on phones and works offline."},
-    {"id": "brandkit", "plan": "enterprise", "emoji": "🎨", "name": "Brand Kit", "desc": "Your company's name and colour on every hub."},
-    {"id": "variations", "plan": "enterprise", "emoji": "🎰", "name": "Variation Blaster", "desc": "Three versions of a hub at once. Keep the best."},
+    {"id": "refine", "plan": "free", "emoji": "✏️", "name": "Edit with AI", "desc": "Describe a change in plain words. The agent updates the hub and the old version is kept.", "cloud": True},
+    {"id": "deviceflip", "plan": "free", "emoji": "📱", "name": "Device Preview", "desc": "Check the hub at phone, tablet and desktop sizes."},
+    {"id": "source", "plan": "free", "emoji": "🧾", "name": "Source Code", "desc": "Read the hub's complete HTML and copy it."},
+    {"id": "starters", "plan": "free", "emoji": "📋", "name": "Prompt Templates", "desc": "Detailed starting prompts for forms, calculators, trackers, dashboards and more."},
+    {"id": "a11y", "plan": "free", "emoji": "♿", "name": "Accessibility Check", "desc": "Finds missing labels and alt text, low contrast, blocked zoom and other WCAG problems."},
+    {"id": "timemachine", "plan": "go", "emoji": "🕘", "name": "Version History", "desc": "Every change is kept. Preview and restore any earlier version."},
+    {"id": "editor", "plan": "go", "emoji": "⌨️", "name": "Code Editor", "desc": "Edit the HTML yourself, preview it, and save it as a new version."},
+    {"id": "embed", "plan": "go", "emoji": "🧩", "name": "Embed Code", "desc": "Put a hub on any website with a sandboxed iframe snippet."},
+    {"id": "seo", "plan": "go", "emoji": "🔎", "name": "SEO & Share Tags", "desc": "Set the page title, description and the preview shown when the link is shared."},
+    {"id": "dna", "plan": "go", "emoji": "📊", "name": "Performance Report", "desc": "File size, page structure, external requests and what slows the hub down."},
+    {"id": "translate", "plan": "plus", "emoji": "🌍", "name": "Translate", "desc": "Translate all visible text into one of 16 languages. Code and layout stay the same.", "cloud": True},
+    {"id": "autofix", "plan": "plus", "emoji": "🩺", "name": "AI Bug Fix", "desc": "The agent reviews the hub for bugs, accessibility and small-screen problems and fixes them.", "cloud": True},
+    {"id": "battle", "plan": "plus", "emoji": "⚖️", "name": "Compare Agents", "desc": "Two agents build the same request side by side. Keep the better result."},
+    {"id": "dataimport", "plan": "plus", "emoji": "📎", "name": "Data Import", "desc": "Attach a CSV or JSON file and the hub is built around your own data.", "cloud": True},
+    {"id": "nowatermark", "plan": "plus", "emoji": "🏷️", "name": "White-label Export", "desc": "Export and share hubs without the \"Made with Hub AI\" footer."},
+    {"id": "lock", "plan": "enterprise", "emoji": "🔐", "name": "Password Protection", "desc": "Export an encrypted hub that only opens with the password."},
+    {"id": "security", "plan": "enterprise", "emoji": "🛡️", "name": "Security Scan & Lockdown", "desc": "Scan for external requests and risky code, and export with a policy that blocks all network access."},
+    {"id": "pwa", "plan": "enterprise", "emoji": "📲", "name": "Installable App", "desc": "Export a progressive web app that installs on phones and works offline."},
+    {"id": "brandkit", "plan": "enterprise", "emoji": "🎨", "name": "Brand Kit", "desc": "Your company name and brand colour on every new hub."},
+    {"id": "variations", "plan": "enterprise", "emoji": "🗂️", "name": "Multiple Drafts", "desc": "Generate three alternative designs at once and keep the best."},
 ]
 
 
@@ -69,7 +70,7 @@ PLANS = {
         "engines": ["mini"], "limits": {},
         "saveHubs": False, "exports": [], "publish": False, "features": _features("free"),
         "perks": ["10 credits per day, up to 200 per year", "Hub V1 Mini",
-                  "Preview hubs (no saving or exports)", "5 CRAZY features", "Browse and share FunHub"],
+                  "Preview hubs (no saving or exports)", "5 tools", "Browse and share FunHub"],
     },
     "go": {
         "id": "go", "name": "Hub Go", "price": 2, "period": "month", "buyable": True,
@@ -77,7 +78,7 @@ PLANS = {
         "engines": ["mini", "lite", "standard", "flash"], "limits": {},
         "saveHubs": True, "exports": ["html"], "publish": True, "features": _features("go"),
         "perks": ["100 credits per day", "Hub V1 Standard, plus Mini and Lite", "Gemini 3.8 Flash",
-                  "Save hubs, HTML export only", "Publish to FunHub", "10 CRAZY features"],
+                  "Save hubs, HTML export only", "Publish to FunHub", "10 tools"],
     },
     "plus": {
         "id": "plus", "name": "Hub Plus", "price": 12, "period": "month", "buyable": True,
@@ -85,7 +86,7 @@ PLANS = {
         "engines": ["mini", "lite", "standard", "plus", "max", "flash", "gpro"], "limits": {"max": 5, "gpro": 3},
         "saveHubs": True, "exports": ["html", "zip"], "publish": True, "features": _features("plus"),
         "perks": ["1000 credits per month", "Hub V1 Plus", "A little Hub V1 Max, 5 per day",
-                  "A little Gemini 3.8 Pro, 3 per day", "HTML and ZIP export", "15 UNBELIEVABLE features"],
+                  "A little Gemini 3.8 Pro, 3 per day", "HTML and ZIP export", "15 tools"],
     },
     "enterprise": {
         "id": "enterprise", "name": "Hub Enterprise", "price": 120000, "period": "seat / year", "buyable": True,
@@ -93,7 +94,7 @@ PLANS = {
         "engines": ["mini", "lite", "standard", "plus", "max", "v2max", "flash", "gpro"], "limits": {},
         "saveHubs": True, "exports": ["html", "zip"], "publish": True, "features": _features("enterprise"),
         "perks": ["🤫 A top-secret model", "Every agent, no daily caps", "100,000 credits per month",
-                  "All 20 features", "For very large companies",
+                  "All 20 tools", "For very large companies",
                   "Costs about one person's yearly salary per seat"],
     },
 }

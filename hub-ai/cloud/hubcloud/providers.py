@@ -7,6 +7,7 @@ names the model, which is what the tests run against.
 
 import json
 import os
+import re
 import urllib.error
 import urllib.request
 
@@ -84,7 +85,11 @@ def gemini(model, system, prompt):
 
 def _fake_html(model, prompt):
     import html
-    p = html.escape(prompt[:200])
+    # A request about an existing hub keeps that hub's title; a new one is
+    # titled after the first line of the request.
+    old = re.search(r"<title[^>]*>([^<]*)</title>", prompt) if prompt.startswith("Here is a hub") else None
+    title = html.unescape(old.group(1)) if old else prompt.strip().split("\n")[0]
+    p = html.escape(title[:200])
     return ("```html\n<!doctype html><html><head><meta charset=\"utf-8\"><title>%s</title></head>"
             "<body style=\"background:#0f0f0f;color:#eee;font-family:sans-serif\"><h1>%s</h1>"
             "<p data-model=\"%s\">Made by %s</p></body></html>\n```" % (p[:40], p, model, model))

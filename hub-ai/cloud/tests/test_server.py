@@ -156,21 +156,34 @@ class ServerTest(unittest.TestCase):
     def test_feature_modes(self):
         a = self.api()
         hub = "<!doctype html><html><head><title>T</title><style>a{color:red}</style></head><body>Hi</body></html>"
-        s, d = a.call("POST", "/v1/generate", {"engine": "mini", "prompt": "", "mode": "crazier", "html": hub})
-        self.assertEqual((s, d["code"], d["error"]), (402, "plan", "Make It CRAZIER needs Hub Plus."))
+        # Edit with AI is on every plan; it needs the hub and the change.
+        s, d = a.call("POST", "/v1/generate", {"engine": "mini", "prompt": "Make the button blue", "mode": "refine", "html": hub})
+        self.assertEqual((s, d["mode"]), (200, "refine"), d)
+        s, d = a.call("POST", "/v1/generate", {"engine": "mini", "prompt": "", "mode": "refine", "html": hub})
+        self.assertEqual(s, 400)
+        s, d = a.call("POST", "/v1/generate", {"engine": "mini", "prompt": "x", "mode": "refine"})
+        self.assertEqual(s, 400)
+        # AI Bug Fix, Translate and Data Import start with Hub Plus.
+        s, d = a.call("POST", "/v1/generate", {"engine": "mini", "prompt": "", "mode": "fix", "html": hub})
+        self.assertEqual((s, d["code"], d["error"]), (402, "plan", "AI Bug Fix needs Hub Plus."))
+        s, d = a.call("POST", "/v1/generate", {"engine": "mini", "prompt": "A chart", "data": "a,b\n1,2", "dataName": "x.csv"})
+        self.assertEqual((s, d["error"]), (402, "Data Import needs Hub Plus."))
         a.call("POST", "/v1/subscribe", {"plan": "plus"})
-        s, d = a.call("POST", "/v1/generate", {"engine": "standard", "prompt": "", "mode": "crazier", "html": hub})
-        self.assertEqual((s, d["mode"]), (200, "crazier"), d)
+        s, d = a.call("POST", "/v1/generate", {"engine": "standard", "prompt": "", "mode": "fix", "html": hub})
+        self.assertEqual((s, d["mode"]), (200, "fix"), d)
         s, d = a.call("POST", "/v1/generate", {"engine": "standard", "mode": "translate", "html": hub, "lang": "Klingon"})
         self.assertEqual(s, 400)
         s, d = a.call("POST", "/v1/generate", {"engine": "standard", "mode": "translate", "html": hub, "lang": "Swedish"})
         self.assertEqual(s, 200, d)
-        s, d = a.call("POST", "/v1/generate", {"engine": "standard", "mode": "mashup", "html": hub, "html2": hub})
-        self.assertEqual((s, d["code"]), (402, "plan"))
-        s, d = a.call("POST", "/v1/generate", {"engine": "standard", "mode": "crazier"})
+        s, d = a.call("POST", "/v1/generate", {"engine": "standard", "prompt": "A chart", "data": "a,b\n1,2", "dataName": "x.csv"})
+        self.assertEqual(s, 200, d)
+        s, d = a.call("POST", "/v1/generate", {"engine": "standard", "prompt": "A chart", "data": "x" * (101 * 1024)})
+        self.assertEqual(s, 413)
+        s, d = a.call("POST", "/v1/generate", {"engine": "standard", "mode": "fix"})
         self.assertEqual(s, 400)
-        s, d = a.call("POST", "/v1/generate", {"engine": "standard", "mode": "nope", "html": hub})
-        self.assertEqual(s, 400)
+        for gone in ("crazier", "mashup", "nope"):
+            s, d = a.call("POST", "/v1/generate", {"engine": "standard", "mode": gone, "html": hub})
+            self.assertEqual(s, 400, gone)
 
     def test_failed_generation_is_refunded(self):
         a = self.api()
