@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hub AI — Meet the New Agents</title>
+<!-- Update ad 1 (1080x1920, ~25 s): an arena announcer presents the new Hub
+     V1 agents one by one on the big screen; Minnie explains who does what,
+     then Pixel arrives for pictures. Timings: build/ep/agents/timeline.json. -->
+<style>
+  html, body { margin: 0; background: #000; }
+  svg { display: block; width: 1080px; height: 1920px; }
+  text { font-family: "DejaVu Sans", "Noto Color Emoji", sans-serif; }
+</style>
+</head>
+<body>
+<script src="cats.js"></script>
+<script src="stage.js"></script>
+<script>
+var max, minnie, F = {}, o = '#1b1b1b';
+// name, icon, trait, colour, and when Minnie mentions it (fraction of her line)
+var AGENTS = [
+  ['Spark', '✨', 'Fast', '#ffd23a', 0.0], ['Flux', '🌊', 'Fast', '#4cc9f0', 0.12], ['Volt', '🔋', 'Smart', '#06d6a0', 0.36],
+  ['Prism', '💎', 'Smart', '#b388ff', 0.5], ['Titan', '🗿', 'Genius', '#ff8a5b', 0.72], ['Pixel', '🎨', 'Pictures', '#ff4f8b', null]
+];
+
+function card(a, parent) {
+  var g = el('g', {}, parent);
+  el('rect', { x: -150, y: -120, width: 300, height: 240, rx: 30, fill: '#14141c', stroke: a[3], 'stroke-width': 8 }, g);
+  var ic = el('text', { y: -22, 'font-size': 84, 'text-anchor': 'middle' }, g); ic.textContent = a[1];
+  var hv = el('text', { y: 38, 'font-size': 26, fill: '#9a9aaa', 'text-anchor': 'middle', 'font-weight': 700 }, g); hv.textContent = 'HUB V1';
+  var nm = el('text', { y: 80, 'font-size': 46, fill: '#fff', 'text-anchor': 'middle', 'font-weight': 900 }, g); nm.textContent = a[0];
+  var tg = el('g', { transform: 'translate(0,128)' }, g);
+  el('rect', { x: -80, y: -24, width: 160, height: 48, rx: 24, fill: a[3] }, tg);
+  var tt = el('text', { y: 10, 'font-size': 28, fill: '#111', 'text-anchor': 'middle', 'font-weight': 800 }, tg); tt.textContent = a[2];
+  return g;
+}
+
+function setup() {
+  var bg = $('bg');
+  el('rect', { width: 1080, height: 1920, fill: '#0b0b14' }, bg);
+  // arena lights
+  F.beams = ['#ff4f8b', '#4cc9f0', '#ffd23a', '#b388ff'].map(function (c, i) {
+    var g = el('g', {}, $('props'));
+    el('path', { d: 'M-30,0 L30,0 L240,1500 L-240,1500 Z', fill: c, opacity: 0.12 }, g);
+    return [g, 140 + i * 270];
+  });
+  // the big screen
+  el('rect', { x: 40, y: 660, width: 1000, height: 760, rx: 34, fill: '#0f0f18', stroke: '#2b2b3a', 'stroke-width': 10 }, bg);
+  el('rect', { x: 40, y: 660, width: 1000, height: 760, rx: 34, fill: 'url(#screenGlow)', opacity: 0.6 }, bg);
+  F.cards = AGENTS.map(function (a) { return card(a, $('mid')); });
+  F.ring = el('rect', { x: -164, y: -134, width: 328, height: 288, rx: 38, fill: 'none', stroke: '#fff', 'stroke-width': 8, opacity: 0 }, $('mid'));
+  // floor and crowd
+  el('rect', { y: 1500, width: 1080, height: 420, fill: '#15151f' }, bg);
+  F.crowd = [];
+  for (var c = 0; c < 10; c++) {
+    var h = el('g', {}, $('front')), col = c % 2 ? '#22223a' : '#1b1b30';
+    el('path', { d: 'M-46,-20 L-70,-140 M46,-20 L70,-140', stroke: col, 'stroke-width': 26, 'stroke-linecap': 'round' }, h);
+    el('path', { d: 'M-60,40 L-56,-60 L-30,-30 Z M60,40 L56,-60 L30,-30 Z', fill: col }, h);
+    el('ellipse', { cx: 0, cy: 30, rx: 70, ry: 80, fill: col }, h);
+    F.crowd.push([h, 50 + c * 110]);
+  }
+  max = makeCat('max', $('chars'));
+  minnie = makeCat('minnie', $('chars'));
+}
+
+function slot(i) { return [220 + (i % 3) * 320, 870 + Math.floor(i / 3) * 320]; }
+
+function render(t) {
+  if (endCard(t)) { caption(t); flash(t, [[M.end, 0.3]]); return; }
+  var L = TL.lines, lineup = L[1], mline = L[3];
+  // cards fly in as the announcer names them; Pixel arrives on its own line
+  var lift = easeInOut(seg(t, M.wow, M.wow + 0.5));
+  F.cards.forEach(function (g, i) {
+    var t0 = i < 5 ? lineup.start + 0.1 + i * (lineup.end - lineup.start - 0.3) / 5 : M.pixel + 1.0;
+    var k = easeBack(seg(t, t0, t0 + 0.35)), s = slot(i);
+    var named = AGENTS[i][4] !== null && t >= mline.start + AGENTS[i][4] * (mline.end - mline.start) && t < mline.end;
+    var pulse = named ? 1.08 + Math.sin(t * 12) * 0.03 : 1;
+    var y = lerp(s[1], 800, lift), sc = lerp(1, 0.5, lift);
+    var x = lerp(s[0], 115 + i * 170, lift);
+    g.setAttribute('opacity', t >= t0 ? 1 : 0);
+    g.setAttribute('transform', 'translate(' + lerp(x, x, k) + ',' + lerp(y + 500, y, k) + ') scale(' + Math.max(0.001, k * pulse * sc) + ') rotate(' + (1 - k) * 20 + ')');
+  });
+  // the camera flash ring on whoever is announced right now
+  var cur = -1;
+  for (var i = 0; i < 5; i++) { var a0 = lineup.start + 0.1 + i * (lineup.end - lineup.start - 0.3) / 5; if (t >= a0 && t < a0 + 0.7) cur = i; }
+  if (t >= M.pixel + 1.0 && t < M.pixel + 1.8) cur = 5;
+  F.ring.setAttribute('opacity', cur >= 0 ? 0.9 : 0);
+  if (cur >= 0) F.ring.setAttribute('transform', 'translate(' + slot(cur)[0] + ',' + slot(cur)[1] + ') scale(' + (1 + 0.1 * Math.sin(t * 20)) + ')');
+  F.beams.forEach(function (b, i) { b[0].setAttribute('transform', 'translate(' + (b[1] + Math.sin(t * 1.5 + i * 2) * 120) + ',0) rotate(' + Math.sin(t * 1.5 + i * 2) * -6 + ')'); });
+  var cheer = at(t, 'intro', 'lineup') || at(t, 'wow', 'end');
+  F.crowd.forEach(function (c, i) { c[0].setAttribute('transform', 'translate(' + c[1] + ',' + (1840 + Math.sin(t * (cheer ? 12 : 3) + i * 1.7) * (cheer ? 24 : 8)) + ')'); });
+  // the cats
+  var mp = { x: 200, y: 1810, s: 0.7, look: 0.5, eyes: 'open', brow: 0, armL: 25, armR: -25 };
+  var np = { x: 880, y: 1810, s: 0.7, look: -0.5, eyes: 'happy', armL: 25, armR: -25 };
+  if (t < M.lineup) { mp.armL = 120; mp.armR = -120; np.armL = 120; np.armR = -120; mp.eyes = 'happy'; }
+  if (at(t, 'lineup', 'max')) { mp.eyes = 'wide'; mp.look = 0.2; np.look = -0.2; }
+  if (at(t, 'max', 'minnie')) { mp.brow = 0.6; mp.armR = -100; mp.look = 0.8; }
+  if (at(t, 'minnie', 'pixel')) { np.armL = 110 + Math.sin(t * 6) * 15; np.eyes = 'open'; mp.look = 0.3; }
+  if (at(t, 'pixel', 'wow')) { mp.eyes = 'wide'; np.eyes = 'wide'; }
+  if (t >= M.wow) { mp.eyes = 'wide'; mp.brow = 1; mp.armL = 110; mp.armR = -110; np.armR = -120; np.eyes = 'happy'; }
+  poseCat(max, t, mp);
+  poseCat(minnie, t, np);
+  // the phone with every agent on it
+  var pk = easeBack(seg(t, M.wow + 0.3, M.wow + 0.7));
+  phone({ show: t >= M.wow + 0.3, k: pk, x: 540, y: 1290, s: 0.55, rot: Math.sin(t * 2) * 2,
+    screen: t < M.wow + 1.9 ? 'v2-agents' : 'v2-pixel' });
+  stamp('new', t, M.intro + 0.4, M.lineup - 0.2, 'NEW AGENTS!', { burst: true, fill: '#ffd23a', color: '#e5484d', size: 84, y: 1040, w: 380, h: 190 });
+  confetti(t, [[M.intro + 0.5, 540, 950, 51, 60, 2.6], [M.wow + 0.3, 540, 1100, 52, 70, 2.4]]);
+  emojiRain(t, [[M.pixel + 1.2, 1.4, '🎨', 10, 53, true]]);
+  flash(t, [[M.pixel + 1.0, 0.25, 0.5]]);
+  caption(t);
+}
+
+function init(tl) {
+  TL = tl;
+  stage({ screens: ['v2-agents', 'v2-pixel'], tagline: 'Meet the new Hub V1 agents.', subline: 'Make anything by just asking.', badge: 'NEW UPDATE' });
+  var d = $('s').querySelector('defs');
+  var g = el('radialGradient', { id: 'screenGlow' }, d);
+  el('stop', { offset: '0', 'stop-color': '#3b2a6a' }, g); el('stop', { offset: '1', 'stop-color': '#0f0f18' }, g);
+  setup();
+  render(0);
+}
+play('build/ep/agents');
+</script>
+</body>
+</html>

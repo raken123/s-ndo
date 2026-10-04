@@ -213,3 +213,17 @@ textarea.in.code.tall { min-height: 52vh; }
 .photo-thumb { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); }
 .rec-box { margin: 12px 0 6px; overflow: hidden; border-radius: 10px; }
 .rec-box:empty { display: none; }
+
+/* what's new */
+.wn { position: fixed; inset: 0; z-index: 100; background: #000; color: #fff; }
+.wn-top { position: absolute; top: 0; left: 0; right: 0; z-index: 2; display: flex; align-items: center; gap: 8px; padding: calc(10px + env(safe-area-inset-top)) 12px 10px; background: linear-gradient(#000c, #0000); }
+.wn-btn { background: #0008; color: #fff; border: 1px solid #fff4; border-radius: 999px; padding: 6px 12px; font-size: 13px; }
+.wn-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.wn-feed { height: 100%; overflow-y: auto; scroll-snap-type: y mandatory; }
+.wn-item { position: relative; height: 100%; scroll-snap-align: start; display: grid; place-items: center; }
+.wn-item video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+.wn-info { position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 16px calc(18px + env(safe-area-inset-bottom)); background: linear-gradient(#0000, #000e 40%); }
+.wn-info h2 { margin: 2px 0 4px; font-size: 20px; }
+.wn-info p { margin: 0 0 10px; color: #ddd; font-size: 14px; }
+.wn-count { font-size: 12px; color: #aaa; }
+.wn-next { font-size: 12px; color: #aaa; text-align: center; }

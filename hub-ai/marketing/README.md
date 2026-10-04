@@ -1,6 +1,6 @@
 # Hub AI marketing
 
-Seven vertical ads (1080×1920, H.264 + AAC, 30 fps) for Instagram Reels,
+Twelve vertical ads (1080×1920, H.264 + AAC, 30 fps) for Instagram Reels,
 TikTok and YouTube Shorts, starring two cat-bananas: **Minnie**, who knows
 Hub AI, and **Max**, who doesn't (yet). The phone in each ad shows real
 screenshots of the app.
@@ -10,7 +10,21 @@ screenshots of the app.
 | `HubAI-ad-Minnie-and-Max.mp4` | 30 s | Bored Max can't code; Minnie shows him Hub AI, the features, FunHub and a secret model. |
 | `HubAI-ad-Detention.mp4` | 45 s | In programming class the furious teacher, Mr. Crunch, can't build an app himself. Max blanks on the name ("Hubba Bubba?"), gets 12 hours of detention and ten cartoon bonks with a spiky projector remote. Next lesson Minnie sits next to him and explains Hub AI; Max builds a Detention Countdown, and the teacher ends up wanting Hub AI too. |
 
-Plus five short episodes (19–23 s each), the Max & Minnie series:
+**The update** (19–25 s each): five Max & Minnie ads about the new Hub V1
+agents and everything you can make now. They are also the first thing the
+app shows after updating (compressed copies in
+`app/src/main/assets/www/media/whatsnew/`). They never name the model
+provider, on screen or out loud.
+
+| File | Length | Story | End line |
+|---|---|---|---|
+| `HubAI-ad-Update-Agents.mp4` | 25 s | An arena announcer presents the new agents card by card: Spark, Flux, Volt, Prism, Titan, then Pixel for pictures. Minnie explains who's fast, who's smart and who's the genius. | Meet the new Hub V1 agents. |
+| `HubAI-ad-Update-Animations.mp4` | 19 s | Lights, camera, banana: Max can't draw a cartoon fast enough. Minnie asks Hub AI for an animation, it plays on the big screen, and one tap exports it as a video (9:16, 1:1, 16:9). | Animations in seconds. Export as video. |
+| `HubAI-ad-Update-Slides-and-Cards.mp4` | 21 s | Max's pitch is in five minutes and he has zero slides. Minnie makes a 10-slide deck with charts (full screen or PDF), then a thank-you card for the team. | Slides and cards, ready before the meeting. |
+| `HubAI-ad-Update-3D-and-UI.mp4` | 20 s | Max's cardboard rocket collapses. Minnie asks for a 3D model: a spinning hologram you can zoom and download (GLB/OBJ, games, 3D printing). Then UI Design makes the rocket app's screens. | From idea to 3D, and the screens too. |
+| `HubAI-ad-Update-Photo-Edits.mp4` | 21 s | Max's photo-booth selfie has a banana peel on his head. Minnie edits it away and adds a sunset, then shows the rest: games, websites, logos, diagrams, documents. "Thirteen things to make. Twenty pro tools. One Hub AI." | Apps, animations, slides, 3D, photos and more. |
+
+And the earlier Max & Minnie series (19–23 s each):
 
 | File | Length | Story | End line |
 |---|---|---|---|
@@ -52,10 +66,11 @@ node render.js --page=school.html --build=build/school  # ad 2 -> build/school/h
 node render.js --still=9.2,17.6                         # just a few frames, to check a change
 
 # the five episodes
-python3 episodes.py all          # build/ep/<name>/audio.wav + timeline.json
+python3 episodes.py all          # build/ep/<name>/audio.wav + timeline.json (all ten episodes)
 python3 check_voices.py build/ep/*   # optional: Whisper tiny listens to every line
 node screens_eps.js              # their phone screens (serve the app on :8765)
-for e in kitchen space magic birthday rap; do node render.js --page=ep-$e.html --build=build/ep/$e; done
+node screens_v2.js               # the update ads' screens (app on :8765, a fake-model cloud on :8799)
+for e in kitchen space magic birthday rap agents studio pitch lab photo; do node render.js --page=ep-$e.html --build=build/ep/$e; done
 ```
 
 - `lib_audio.py`: voices (TTS + pitch), music, sound effects, mixing and lip sync.
@@ -63,6 +78,7 @@ for e in kitchen space magic birthday rap; do node render.js --page=ep-$e.html -
 - `stage.js`: what the episodes share: phone, captions, confetti, emoji
   rain, comic stamps, smoke puffs, costumes (chef hats, space helmets, top
   hat, party hats, cap and shades) and the end card.
+- `photo-booth.html`: Max's selfie (before and after) that the photo-edit ad edits.
 - `ep-<name>.html`: one page per episode. `episodes.py` holds every
   episode's script, its named marks and its sound effects; the page's
   `render(t)` follows those marks.

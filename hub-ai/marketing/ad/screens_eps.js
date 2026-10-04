@@ -30,7 +30,7 @@ li{padding:8px 0;font-size:18px;font-weight:600}</style></head><body><main><h1>ð
     await p.evaluate(() => {
       localStorage.clear();
       // An unreachable server keeps the cached Plus account on screen.
-      localStorage['hubai.settings'] = JSON.stringify({ cloudUrl: 'http://127.0.0.1:1' });
+      localStorage['hubai.settings'] = JSON.stringify({ cloudUrl: 'http://127.0.0.1:1' }); localStorage['hubai.whatsnew'] = '"v2"';
       const cfg = window.HUB_CLOUD_CONFIG, plus = cfg.plans.find(x => x.id === 'plus');
       localStorage['hubai.cloud.config'] = JSON.stringify(cfg);
       localStorage['hubai.cloud.me'] = JSON.stringify({ account: 'acc_demo', plan: 'plus', credits: 975, rule: '1,000/month', limitsLeft: { max: 5, gpro: 3 }, features: plus.features, secretEngines: [] });

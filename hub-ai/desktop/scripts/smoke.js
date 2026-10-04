@@ -20,8 +20,8 @@
   });
   if (Cloud.configured()) {
     try {
-      var g = await Cloud.generate('mini', 'a to-do list');
-      out.generated = { ok: /<html/i.test(g.html), engine: g.engineName, base: g.base, credits: g.me.credits };
+      var g = await Cloud.generate('flux', 'a to-do list');
+      out.generated = { ok: /<html/i.test(g.html), engine: g.engineName, credits: g.me.credits };
     } catch (e) {
       out.generated = { ok: false, error: e.message };
     }

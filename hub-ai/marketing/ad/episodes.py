@@ -104,6 +104,86 @@ EPISODES = {
         ("mark", "drop"), ("wait", 0.4),
         ("mark", "end"), ("wait", 3.0),
     ],
+    # ---- the update: new agents and everything you can make ----
+    "agents": [
+        ("wait", 0.3), ("mark", "intro"),
+        ("say", "announcer", "Ladies and bananas… meet the new Hub V1 agents!", 0.15),
+        ("mark", "lineup"),
+        ("say", "announcer", "Spark! Flux! Volt! Prism! Titan!", 0.25),
+        ("mark", "max"),
+        ("say", "max", "Whoa. Which one do I pick?", 0.15),
+        ("mark", "minnie"),
+        ("say", "minnie", "Spark and Flux are fast. Volt and Prism are smart. And Titan is a genius!", 0.2),
+        ("mark", "pixel"),
+        ("say", "announcer", "And Hub V1 Pixel… makes pictures!", 0.2),
+        ("mark", "wow"),
+        ("say", "max", "They're all in Hub AI?", 0.1),
+        ("say", "minnie", "All of them. Pick one and just ask!", 0.3),
+        ("mark", "end"), ("wait", 3.0),
+    ],
+    "studio": [
+        ("wait", 0.3), ("mark", "clap"),
+        ("say", "announcer", "Lights… camera… banana!", 0.2),
+        ("mark", "max"),
+        ("say", "max", "I want to make a cartoon, but drawing takes forever.", 0.15),
+        ("mark", "minnie"),
+        ("say", "minnie", "Hub AI makes animations now. Watch!", 0.15),
+        ("mark", "phone"),
+        ("say", "minnie", "An animation of a rocket flying to the moon.", 0.3),
+        ("mark", "built"), ("wait", 0.4),
+        ("say", "max", "It moves!", 0.15),
+        ("mark", "video"),
+        ("say", "minnie", "And with one tap, it's a video. Ready for your feed.", 0.25),
+        ("mark", "star"),
+        ("say", "max", "I'm a movie star!", 0.3),
+        ("mark", "end"), ("wait", 3.0),
+    ],
+    "pitch": [
+        ("wait", 0.3), ("mark", "panic"),
+        ("say", "max", "My big presentation is in five minutes, and I have zero slides!", 0.15),
+        ("mark", "phone"),
+        ("say", "minnie", "Hub AI, make a pitch deck for Banana Juice!", 0.3),
+        ("mark", "built"), ("wait", 0.3),
+        ("say", "max", "Ten slides? With charts?!", 0.15),
+        ("say", "minnie", "Present it full screen, or save it as a PDF.", 0.2),
+        ("mark", "card"),
+        ("say", "max", "Can it make a thank-you card for the team?", 0.15),
+        ("mark", "cardbuilt"),
+        ("say", "minnie", "Cards, invitations, business cards. Done.", 0.3),
+        ("mark", "end"), ("wait", 3.0),
+    ],
+    "lab": [
+        ("wait", 0.3), ("mark", "build"),
+        ("say", "max", "Behold! My rocket… made of cardboard.", 0.2),
+        ("mark", "collapse"), ("wait", 0.8),
+        ("say", "max", "Okay, maybe not.", 0.15),
+        ("mark", "minnie"),
+        ("say", "minnie", "Ask Hub AI for a 3D model instead!", 0.3),
+        ("mark", "built"), ("wait", 0.3),
+        ("say", "max", "I can spin it! And zoom!", 0.15),
+        ("say", "minnie", "Download it for games or 3D printing.", 0.2),
+        ("mark", "ui"),
+        ("say", "max", "Now my rocket needs an app.", 0.15),
+        ("mark", "uibuilt"),
+        ("say", "minnie", "UI Design makes the screens for you.", 0.3),
+        ("mark", "end"), ("wait", 3.0),
+    ],
+    "photo": [
+        ("wait", 0.3), ("mark", "pose"),
+        ("say", "max", "Say cheese!", 0.1),
+        ("mark", "snap"), ("wait", 0.9),
+        ("mark", "look"),
+        ("say", "max", "Oh no! A banana peel on my head!", 0.15),
+        ("mark", "phone"),
+        ("say", "minnie", "Hub AI, remove the peel and add a sunset.", 0.3),
+        ("mark", "built"), ("wait", 0.3),
+        ("say", "max", "It's perfect!", 0.15),
+        ("mark", "more"),
+        ("say", "minnie", "And there's more. Games, websites, logos, diagrams, documents…", 0.15),
+        ("mark", "outro"),
+        ("say", "announcer", "Thirteen things to make. Twenty pro tools. One Hub AI.", 0.3),
+        ("mark", "end"), ("wait", 3.0),
+    ],
 }
 
 
@@ -221,6 +301,82 @@ def sound_rap(M, music, fx):
     fx.drumroll(M["roll"], M["winner"] - M["roll"] - 0.1, 0.22)
     fx.thud(M["drop"], 0.8)                                        # mic drop
     fx.cheer(M["drop"] + 0.1, 2.2, 0.3)
+    stinger(music, fx, M["end"])
+
+
+def sound_agents(M, music, fx):
+    fx.cheer(M["intro"] + 0.1, 2.2, 0.22)
+    fx.drumroll(M["intro"] + 0.2, M["lineup"] - M["intro"] - 0.3, 0.16)
+    groove(music, M["lineup"], M["end"], *HAPPY, bpm=124, gain=0.7)
+    line = M["lineup"]
+    for i in range(5):
+        fx.whoosh(line + 0.15 + i * 0.42, 0.35, 0.3)
+        fx.pop(line + 0.3 + i * 0.42, 700 + 140 * i, 0.12)
+    fx.sweep(M["pixel"] - 0.2, 0.5, 300, 1500, 0.2)
+    fx.ding(M["pixel"] + 1.6, 0.25, 2093)
+    fx.cheer(M["wow"], 2.0, 0.2)
+    stinger(music, fx, M["end"])
+
+
+def sound_studio(M, music, fx):
+    fx.add(M["clap"] + 1.2, fx.noise(0.06, 60, 0.6))              # clapperboard
+    fx.tick(M["clap"] + 1.2, 0.5)
+    for i in range(int((M["phone"] - M["max"]) / 0.09)):            # projector purr
+        fx.add(M["max"] + i * 0.09, fx.noise(0.05, 40, 0.03))
+    groove(music, M["minnie"], M["end"], *HAPPY, bpm=118, gain=0.75)
+    for i in range(10):
+        fx.tick(M["phone"] + 0.4 + i * 0.08, 0.15)
+    fx.whoosh(M["built"], 0.6, 0.35)
+    fx.sweep(M["built"] + 0.2, 1.2, 200, 1200, 0.18)
+    fx.ding(M["video"] + 1.4, 0.3)
+    fx.applause(M["star"] + 0.2, 2.2, 0.3)
+    stinger(music, fx, M["end"])
+
+
+def sound_pitch(M, music, fx):
+    for i in range(int(M["phone"] / 0.5)):                         # the clock
+        fx.tick(i * 0.5, 0.3)
+    frantic = [[57, 60, 64], [55, 59, 62], [53, 57, 60], [52, 56, 59]]
+    groove(music, 0.0, M["built"], frantic, [33, 31, 29, 28], bpm=150, gain=0.6)
+    for i in range(10):
+        fx.tick(M["phone"] + 0.3 + i * 0.08, 0.15)
+    fx.ding(M["built"], 0.3)
+    for i in range(6):
+        fx.pop(M["built"] + 0.1 + i * 0.07, 900 + 160 * i, 0.12)
+    groove(music, M["built"], M["end"], *HAPPY, bpm=120, gain=0.7)
+    fx.whoosh(M["cardbuilt"] - 0.2, 0.5, 0.3)
+    fx.ding(M["cardbuilt"] + 0.1, 0.2, 2349)
+    stinger(music, fx, M["end"])
+
+
+def sound_lab(M, music, fx):
+    groove(music, 0.0, M["collapse"], *HAPPY, bpm=100, drums=False, gain=0.6)
+    fx.thud(M["collapse"], 0.7)
+    fx.poof(M["collapse"] + 0.05, 0.4)
+    fx.sweep(M["collapse"] + 0.3, 0.6, 700, 180, 0.2, "tri")
+    groove(music, M["minnie"], M["end"], *HAPPY, bpm=122, gain=0.75)
+    for i in range(10):
+        fx.tick(M["minnie"] + 0.6 + i * 0.08, 0.15)
+    fx.whoosh(M["built"], 0.6, 0.35)
+    fx.sweep(M["built"] + 0.6, 1.4, 300, 900, 0.15)                 # spinning
+    fx.whoosh(M["uibuilt"] - 0.2, 0.5, 0.3)
+    fx.ding(M["uibuilt"] + 0.1, 0.22, 2093)
+    stinger(music, fx, M["end"])
+
+
+def sound_photo(M, music, fx):
+    groove(music, 0.0, M["snap"], *HAPPY, bpm=110, drums=False, gain=0.5)
+    fx.add(M["snap"], fx.noise(0.08, 50, 0.7))                      # shutter
+    fx.tick(M["snap"] + 0.06, 0.5)
+    fx.sweep(M["look"] - 0.1, 0.5, 900, 200, 0.22, "tri")
+    groove(music, M["phone"], M["end"], *HAPPY, bpm=122, gain=0.75)
+    for i in range(10):
+        fx.tick(M["phone"] + 0.4 + i * 0.08, 0.15)
+    fx.whoosh(M["built"], 0.6, 0.35)
+    fx.ding(M["built"] + 0.1, 0.3)
+    for i in range(5):
+        fx.pop(M["more"] + 0.5 + i * 0.6, 800 + 120 * i, 0.12)
+    fx.cheer(M["outro"] + 0.2, 2.5, 0.22)
     stinger(music, fx, M["end"])
 
 

@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hub AI — The Big Pitch</title>
+<!-- Update ad 3 (1080x1920, ~21 s): Max's presentation starts in five
+     minutes and he has no slides. Minnie asks Hub AI for a pitch deck, then
+     a thank-you card for the team. Timings: build/ep/pitch/timeline.json. -->
+<style>
+  html, body { margin: 0; background: #000; }
+  svg { display: block; width: 1080px; height: 1920px; }
+  text { font-family: "DejaVu Sans", "Noto Color Emoji", sans-serif; }
+</style>
+</head>
+<body>
+<script src="cats.js"></script>
+<script src="stage.js"></script>
+<script>
+var max, minnie, F = {}, o = '#1b1b1b';
+
+function setup() {
+  var bg = $('bg');
+  el('rect', { width: 1080, height: 1920, fill: '#dfe6ee' }, bg);
+  el('rect', { y: 1380, width: 1080, height: 540, fill: '#9aa7b6' }, bg);
+  // window with the city
+  var w = el('g', {}, bg);
+  el('rect', { x: 760, y: 1110, width: 280, height: 230, fill: '#9fd3ff', stroke: '#5d6b7c', 'stroke-width': 10 }, w);
+  [[780, 60], [830, 110], [880, 80], [930, 140], [985, 95]].forEach(function (b) { el('rect', { x: b[0], y: 1340 - b[1], width: 42, height: b[1], fill: '#6c7fa0' }, w); });
+  // wall clock
+  F.clock = el('g', { transform: 'translate(120,1200)' }, bg);
+  el('circle', { r: 70, fill: '#fff', stroke: '#2b2b2b', 'stroke-width': 8 }, F.clock);
+  F.hand1 = el('path', { d: 'M0,0 L0,-40', stroke: '#2b2b2b', 'stroke-width': 8, 'stroke-linecap': 'round' }, F.clock);
+  F.hand2 = el('path', { d: 'M0,0 L0,-56', stroke: '#e5484d', 'stroke-width': 5, 'stroke-linecap': 'round' }, F.clock);
+  // the projector screen
+  el('rect', { x: 70, y: 590, width: 940, height: 26, rx: 12, fill: '#6b6f78', stroke: '#2b2b2b', 'stroke-width': 5 }, bg);
+  el('rect', { x: 90, y: 612, width: 900, height: 470, fill: '#fbfbf7', stroke: '#c9c9c0', 'stroke-width': 5 }, bg);
+  var sc = el('g', { 'clip-path': 'url(#scrClip)' }, bg);
+  F.empty = el('g', {}, sc);
+  var e1 = el('text', { x: 540, y: 820, 'font-size': 70, 'font-weight': 800, fill: '#c0392b', 'text-anchor': 'middle', 'font-family': 'DejaVu Sans' }, F.empty); e1.textContent = 'SLIDES: 0';
+  var e2 = el('text', { x: 540, y: 900, 'font-size': 40, fill: '#7a7a7a', 'text-anchor': 'middle' }, F.empty); e2.textContent = '(nothing here)';
+  F.s1 = el('g', {}, sc);
+  el('rect', { x: 92, y: 614, width: 896, height: 466, fill: 'url(#green)' }, F.s1);
+  var a1 = el('text', { x: 150, y: 760, 'font-size': 78, 'font-weight': 900, fill: '#ffd23a' }, F.s1); a1.textContent = '🍌 Banana Juice';
+  var a2 = el('text', { x: 155, y: 830, 'font-size': 36, fill: '#d9e8cc' }, F.s1); a2.textContent = 'Fresh, fast, everywhere.';
+  var a3 = el('text', { x: 870, y: 1000, 'font-size': 120, 'text-anchor': 'middle' }, F.s1); a3.textContent = '🥤';
+  F.s2 = el('g', {}, sc);
+  el('rect', { x: 92, y: 614, width: 896, height: 466, fill: 'url(#green)' }, F.s2);
+  var b1 = el('text', { x: 150, y: 710, 'font-size': 52, 'font-weight': 900, fill: '#ffd23a' }, F.s2); b1.textContent = 'Sales are going bananas';
+  F.bars = [0.25, 0.42, 0.66, 0.95].map(function (h, i) {
+    var r = el('rect', { x: 200 + i * 180, width: 120, rx: 8, fill: '#ffd23a' }, F.s2);
+    var q = el('text', { x: 260 + i * 180, y: 1050, 'font-size': 30, fill: '#d9e8cc', 'text-anchor': 'middle' }, F.s2); q.textContent = 'Q' + (i + 1);
+    return [r, h];
+  });
+  F.s3 = el('g', {}, sc);
+  el('rect', { x: 92, y: 614, width: 896, height: 466, fill: '#1a1622' }, F.s3);
+  el('rect', { x: 370, y: 640, width: 340, height: 420, rx: 18, fill: 'url(#cream)' }, F.s3);
+  var c1 = el('text', { x: 540, y: 760, 'font-size': 80, 'text-anchor': 'middle' }, F.s3); c1.textContent = '🍌✨';
+  var c2 = el('text', { x: 540, y: 860, 'font-size': 42, 'font-weight': 700, fill: '#3b2a0a', 'text-anchor': 'middle', 'font-family': 'DejaVu Serif' }, F.s3); c2.textContent = 'Thank you,';
+  var c3 = el('text', { x: 540, y: 910, 'font-size': 42, 'font-weight': 700, fill: '#3b2a0a', 'text-anchor': 'middle', 'font-family': 'DejaVu Serif' }, F.s3); c3.textContent = 'team!';
+  var c4 = el('text', { x: 540, y: 1000, 'font-size': 26, fill: '#6b4a14', 'text-anchor': 'middle', 'font-style': 'italic' }, F.s3); c4.textContent = '— Max';
+  F.counter = el('text', { x: 960, y: 1066, 'font-size': 26, fill: '#d9e8cc', 'text-anchor': 'end' }, sc);
+  // countdown timer on the wall
+  F.timer = el('g', { transform: 'translate(540,1190)' }, bg);
+  el('rect', { x: -110, y: -50, width: 220, height: 100, rx: 16, fill: '#1b1b1b' }, F.timer);
+  F.timerText = el('text', { y: 22, 'font-size': 60, 'font-weight': 800, fill: '#ff5c5c', 'text-anchor': 'middle', 'font-family': 'DejaVu Sans Mono' }, F.timer);
+  // the table in front
+  var tb = $('front');
+  el('rect', { x: -20, y: 1440, width: 1120, height: 60, rx: 20, fill: '#7a4a24', stroke: o, 'stroke-width': 8 }, tb);
+  el('rect', { x: 120, y: 1500, width: 40, height: 420, fill: '#5e3a1a' }, tb);
+  el('rect', { x: 920, y: 1500, width: 40, height: 420, fill: '#5e3a1a' }, tb);
+  [[430, 1420], [650, 1425]].forEach(function (c) { var m = el('text', { x: c[0], y: c[1], 'font-size': 60, 'text-anchor': 'middle' }, tb); m.textContent = '☕'; });
+  F.sweat = [0, 1, 2].map(function () { return el('path', { d: 'M0,-26 C14,-6 14,10 0,14 C-14,10 -14,-6 0,-26 Z', fill: '#7cc4ff', stroke: o, 'stroke-width': 4, opacity: 0 }, $('fx')); });
+  max = makeCat('max', $('chars'));
+  minnie = makeCat('minnie', $('chars'));
+  costume(max, 'bow-tie');
+}
+
+function render(t) {
+  if (endCard(t)) { caption(t); flash(t, [[M.end, 0.3]]); return; }
+  // what's on the projector
+  var L = TL.lines, slide2 = t >= L[2].start;
+  F.empty.setAttribute('opacity', t < M.built ? 1 : 0);
+  F.s1.setAttribute('opacity', t >= M.built && !slide2 ? 1 : 0);
+  F.s2.setAttribute('opacity', slide2 && t < M.cardbuilt ? 1 : 0);
+  F.s3.setAttribute('opacity', t >= M.cardbuilt ? 1 : 0);
+  F.counter.textContent = t < M.built || t >= M.cardbuilt ? '' : (slide2 ? 'Slide 2 / 10' : 'Slide 1 / 10');
+  F.bars.forEach(function (b, i) {
+    var k = easeOut(seg(t, L[2].start + i * 0.15, L[2].start + 0.6 + i * 0.15)), h = 300 * b[1] * k;
+    b[0].setAttribute('y', 1020 - h); b[0].setAttribute('height', Math.max(0, h));
+  });
+  // the clock races, the timer counts down
+  F.hand1.setAttribute('transform', 'rotate(' + t * 40 + ')');
+  F.hand2.setAttribute('transform', 'rotate(' + t * 480 + ')');
+  var left = Math.max(0, 300 - Math.floor(t * 11)), mm = Math.floor(left / 60), ss = left % 60;
+  F.timerText.textContent = '0' + mm + ':' + (ss < 10 ? '0' : '') + ss;
+  F.timer.setAttribute('opacity', t < M.built ? 1 : 0.35);
+  // the cats, behind the table
+  var mp = { x: 270, y: 1650, s: 0.9, look: 0.5, eyes: 'open', brow: 0, armL: 25, armR: -25 };
+  var np = { x: 810, y: 1650, s: 0.9, look: -0.5, eyes: 'happy', armL: 25, armR: -25 };
+  if (t < M.phone) {
+    mp.eyes = 'wide'; mp.brow = 1; mp.armL = 130 + Math.sin(t * 18) * 15; mp.armR = -130 - Math.sin(t * 18) * 15;
+    mp.x = 270 + Math.sin(t * 9) * 25; mp.look = Math.sin(t * 4) > 0 ? 1 : -1; np.eyes = 'open';
+  }
+  if (at(t, 'phone', 'built')) { np.armR = -110; np.eyes = 'open'; mp.look = 0.8; }
+  if (at(t, 'built', 'card')) { mp.eyes = 'wide'; mp.armL = 110; mp.armR = -110; mp.look = 0.2; np.eyes = 'happy'; np.armL = 60; }
+  if (t >= L[3].start && t < M.card) { np.armL = 120; mp.eyes = 'happy'; mp.armL = 30; mp.armR = -30; }
+  if (at(t, 'card', 'cardbuilt')) { mp.armR = -90; mp.look = 1; mp.eyes = 'open'; }
+  if (t >= M.cardbuilt) { mp.eyes = 'happy'; np.armR = -120; mp.armL = 120; }
+  poseCat(max, t, mp);
+  poseCat(minnie, t, np);
+  F.sweat.forEach(function (s, i) {
+    var d = (t + i * 0.3) % 0.9;
+    s.setAttribute('opacity', t < M.phone ? 1 - d / 0.9 : 0);
+    s.setAttribute('transform', 'translate(' + (mp.x + (i - 1) * 90) + ',' + (1110 + d * 160) + ')');
+  });
+  // the phone
+  var pk = easeBack(seg(t, M.phone, M.phone + 0.4));
+  phone({ show: t >= M.phone, k: pk, x: 540, y: 1260, s: 0.46, rot: Math.sin(t * 2) * 2,
+    screen: t >= M.cardbuilt ? 'v2-pitch-card' : t >= M.built ? 'v2-pitch-result' : 'v2-pitch-create' });
+  stamp('zero', t, M.panic + 1.6, M.phone, '😱 ZERO SLIDES', { burst: true, fill: '#ffd23a', color: '#e5484d', size: 62, x: 560, y: 1000, w: 340, h: 160 });
+  stamp('ten', t, L[2].start + 0.2, L[3].start, '10 SLIDES ✓', { fill: '#06d6a0', color: '#0d0d0d', size: 58, x: 540, y: 1580, rot: -3 });
+  stamp('full', t, L[3].start + 0.4, M.card, '⛶ FULL SCREEN', { fill: '#4cc9f0', color: '#0d0d0d', size: 48, x: 280, y: 1560, rot: -4 });
+  stamp('pdf', t, L[3].start + 1.4, M.card, 'PDF ✓', { fill: '#ff8fab', color: '#0d0d0d', size: 56, x: 820, y: 1560, rot: 5 });
+  var cl = L[5];
+  [['Cards', 300, 1560], ['Invitations', 780, 1560], ['Business cards', 540, 1660]].forEach(function (x, i) {
+    stamp('c' + i, t, cl.start + 0.1 + i * 0.6, M.end, x[0], { fill: '#ffd23a', color: '#0d0d0d', size: 46, x: x[1], y: x[2], rot: (i - 1) * 5 });
+  });
+  confetti(t, [[M.built, 540, 850, 81, 60, 2.6], [M.cardbuilt, 540, 850, 82, 60, 2.6]]);
+  emojiRain(t, [[M.cardbuilt + 0.2, 1.4, '💛', 10, 83, true]]);
+  flash(t, [[M.built, 0.25, 0.6], [M.cardbuilt, 0.2, 0.4]]);
+  shake(t, [[M.panic, M.phone - M.panic, 3]]);
+  caption(t);
+}
+
+function init(tl) {
+  TL = tl;
+  stage({ screens: ['v2-pitch-create', 'v2-pitch-result', 'v2-pitch-card'], tagline: 'Slides and cards, ready before the meeting.', subline: 'Make anything by just asking.', badge: 'NEW: SLIDES & CARDS', costumes: { max: 'bow-tie' } });
+  var d = $('s').querySelector('defs');
+  el('clipPath', { id: 'scrClip' }, d).appendChild(el('rect', { x: 92, y: 614, width: 896, height: 466 }));
+  var g = el('linearGradient', { id: 'green', x1: 0, y1: 0, x2: 1, y2: 1 }, d);
+  el('stop', { offset: '0', 'stop-color': '#1d2b1a' }, g); el('stop', { offset: '1', 'stop-color': '#2e4a1f' }, g);
+  var c = el('linearGradient', { id: 'cream', x1: 0, y1: 0, x2: 1, y2: 1 }, d);
+  el('stop', { offset: '0', 'stop-color': '#fff7e0' }, c); el('stop', { offset: '1', 'stop-color': '#ffe3a3' }, c);
+  setup();
+  render(0);
+}
+play('build/ep/pitch');
+</script>
+</body>
+</html>

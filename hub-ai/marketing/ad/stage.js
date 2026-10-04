@@ -48,8 +48,15 @@ function stage(opts) {
   el('rect', { x: -130, y: -130, width: 260, height: 260, rx: 58, fill: '#161616', stroke: '#3a3a3a', 'stroke-width': 4 }, S.logo);
   el('path', { d: 'M-62,-82 h36 v62 h52 v-62 h36 v164 h-36 v-66 h-52 v66 h-36 z', fill: '#ececec' }, S.logo);
   var t1 = el('text', { x: 540, y: 880, 'font-size': 118, 'font-weight': 800, fill: '#ececec', 'text-anchor': 'middle' }, ec); t1.textContent = 'Hub AI';
-  var t2 = el('text', { x: 540, y: 970, 'font-size': 52, fill: '#cfcfcf', 'text-anchor': 'middle' }, ec); t2.textContent = 'Make apps by just asking.';
-  var t3 = el('text', { x: 540, y: 1045, 'font-size': 46, fill: '#ffd23a', 'text-anchor': 'middle', 'font-weight': 700 }, ec); t3.textContent = opts.tagline || '';
+  var t2 = el('text', { x: 540, y: 970, 'font-size': Math.min(52, Math.floor(1700 / Math.max(1, (opts.subline || 'Make apps by just asking.').length))), fill: '#cfcfcf', 'text-anchor': 'middle' }, ec); t2.textContent = opts.subline || 'Make apps by just asking.';
+  var t3 = el('text', { x: 540, y: 1045, 'font-size': Math.min(46, Math.floor(1500 / Math.max(1, (opts.tagline || '').length))), fill: '#ffd23a', 'text-anchor': 'middle', 'font-weight': 700 }, ec); t3.textContent = opts.tagline || '';
+  if (opts.badge) {
+    var bd = el('g', { transform: 'translate(540,400)' }, ec);
+    var bw = opts.badge.length * 26 + 70;
+    el('rect', { x: -bw / 2, y: -34, width: bw, height: 68, rx: 34, fill: '#ffd23a' }, bd);
+    var bt = el('text', { y: 14, 'font-size': 38, 'font-weight': 900, fill: '#0d0d0d', 'text-anchor': 'middle' }, bd);
+    bt.textContent = opts.badge;
+  }
   S.pill = el('g', {}, ec);
   el('rect', { x: -330, y: -52, width: 660, height: 104, rx: 52, fill: '#ececec' }, S.pill);
   var t4 = el('text', { x: 0, y: 17, 'font-size': 46, 'font-weight': 800, fill: '#0d0d0d', 'text-anchor': 'middle' }, S.pill); t4.textContent = 'Free to start ✨';
@@ -227,6 +234,11 @@ function costume(c, type) {
     el('path', { d: 'M-90,-235 Q0,-150 90,-235', fill: 'none', stroke: '#e8b400', 'stroke-width': 14, 'stroke-dasharray': '16 6' }, g);
     var pend = el('text', { y: -150, 'font-size': 60, 'font-weight': 900, 'text-anchor': 'middle', fill: '#ffd23a', stroke: '#1b1b1b', 'stroke-width': 4, 'paint-order': 'stroke' }, g);
     pend.textContent = 'H';
+  } else if (type === 'beret') {
+    var br = el('g', { transform: 'translate(-10,-560) rotate(-10)' }, g);
+    el('ellipse', { cx: 0, cy: 0, rx: 125, ry: 42, fill: '#2b2b38', stroke: o, 'stroke-width': 7 }, br);
+    el('ellipse', { cx: -10, cy: -18, rx: 95, ry: 34, fill: '#3a3a4a' }, br);
+    el('path', { d: 'M0,-40 L6,-62', stroke: o, 'stroke-width': 8, 'stroke-linecap': 'round' }, br);
   } else if (type === 'bow-tie') {
     var bt = el('g', { transform: 'translate(-10,-232)' }, g);
     el('path', { d: 'M0,0 L-40,-24 L-40,24 Z M0,0 L40,-24 L40,24 Z', fill: '#1b1b1b' }, bt);

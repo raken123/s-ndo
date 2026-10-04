@@ -60,6 +60,7 @@
   }
 
   function back() {
+    if (WhatsNew.isOpen()) { WhatsNew.close(); return true; }
     if (!$('#player').hidden) { closePlayer(); return true; }
     if (!$('#sheet').hidden) { closeSheet(); return true; }
     if (state.stack.length) {
@@ -622,7 +623,6 @@
     if (hubKind(o) === 'animation') return b('video', '🎬 Video');
     if (out === 'svg') return b('svg', 'SVG') + b('png', 'PNG');
     if (out === 'image') return b('picture', '⤓ Picture');
-    if (out === 'model3d') return '<span class="muted small" style="align-self:center">GLB and OBJ: open full screen and use the buttons in the viewer.</span>';
     return '';
   }
 
@@ -1107,13 +1107,15 @@
     var status = !Cloud.configured() ? 'Not connected.'
       : Plans.me() ? 'Connected · account ' + esc(Cloud.account() || '') + ' · ' + esc(Plans.plan().name) : 'Not connected yet.';
     view.innerHTML = '<div class="wrap"><h2>Settings</h2>' +
-      '<div class="card"><h3>Hub AI Cloud</h3><p class="muted small">The Hub agents and Gemini run on your Hub AI Cloud server ' +
+      '<div class="card"><h3>Hub AI Cloud</h3><p class="muted small">The Hub agents run on your Hub AI Cloud server ' +
       '(hub-ai/cloud). Your plan and credits are kept there.</p>' +
       '<label class="field">Server address</label><input class="in" id="url" inputmode="url" autocomplete="off" placeholder="https://your-hub-ai-cloud.example.com" value="' +
       esc(s.cloudUrl || (window.HUB_CONFIG && window.HUB_CONFIG.cloudUrl) || '') + '">' +
       '<p class="small" id="cs" style="margin:8px 0 0">' + status + '</p></div>' +
       '<div class="card"><h3>FunHub</h3><label class="field">Name shown on your posts</label><input class="in" id="au" value="' + esc(s.author || 'You') + '"></div>' +
       '<button class="btn primary block" id="sv">Save and connect</button>' +
+      '<div class="card" style="margin-top:12px"><h3>What\'s new</h3><p class="muted small">The new agents, animations, slides, 3D models, photo edits and more, in five short videos.</p>' +
+      '<button class="btn" id="wn">▶ Watch what\'s new</button></div>' +
       '<div class="card" style="margin-top:12px"><h3>Data</h3><p class="muted small">Hubs and FunHub posts live on this device. Your plan lives on the server.</p>' +
       '<button class="btn danger" id="wipe">Erase all Hub AI data on this device</button></div>' +
       '<p class="muted small" style="text-align:center">Hub AI ' + esc(HubBridge.version()) + ' · payments are a demo</p></div>';
@@ -1127,6 +1129,7 @@
       Cloud.refresh().then(function () { toast('Connected to Hub AI Cloud'); renderSettings(); renderCredits(); },
         function (e) { $('#cs').textContent = e.message; renderCredits(); });
     };
+    $('#wn').onclick = function () { WhatsNew.open(); };
     $('#wipe').onclick = function () {
       openSheet('<h2>Erase everything?</h2><p>All hubs, FunHub posts and settings on this device are removed, and this device gets a new anonymous account.</p>' +
         '<div class="row"><button class="btn grow" data-x="no">Cancel</button><button class="btn danger grow" data-x="yes">Erase</button></div>', function (sh) {
@@ -1159,4 +1162,6 @@
 
   render();
   sync();
+  // After an update, the first thing shown is what's new.
+  WhatsNew.maybeOpen();
 })();

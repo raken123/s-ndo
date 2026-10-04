@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hub AI — The 3D Lab</title>
+<!-- Update ad 4 (1080x1920, ~20 s): Max's cardboard rocket collapses; Minnie
+     asks Hub AI for a 3D model (a spinning hologram you can download), then
+     UI Design makes the rocket's app screens. Timings: build/ep/lab/timeline.json. -->
+<style>
+  html, body { margin: 0; background: #000; }
+  svg { display: block; width: 1080px; height: 1920px; }
+  text { font-family: "DejaVu Sans", "Noto Color Emoji", sans-serif; }
+</style>
+</head>
+<body>
+<script src="cats.js"></script>
+<script src="stage.js"></script>
+<script>
+var max, minnie, F = {}, o = '#1b1b1b';
+
+function setup() {
+  var bg = $('bg');
+  el('rect', { width: 1080, height: 1920, fill: '#c9a978' }, bg);
+  el('rect', { x: 40, y: 560, width: 1000, height: 640, rx: 16, fill: '#b08d5b', stroke: '#8a6a3f', 'stroke-width': 8 }, bg);
+  for (var y = 600; y < 1180; y += 50) for (var x = 80; x < 1020; x += 50) el('circle', { cx: x, cy: y, r: 6, fill: '#8a6a3f' }, bg);
+  [['🔧', 140, 680], ['🔨', 260, 700], ['🪛', 900, 690], ['📐', 960, 820], ['🪚', 120, 840]].forEach(function (tl) {
+    var e = el('text', { x: tl[1], y: tl[2], 'font-size': 80, 'text-anchor': 'middle' }, bg); e.textContent = tl[0];
+  });
+  el('rect', { y: 1460, width: 1080, height: 460, fill: '#6b5a48' }, bg);
+  el('rect', { y: 1450, width: 1080, height: 24, fill: '#4f4234' }, bg);
+  // the cardboard rocket: [x, y, w, h, colour, text] boxes and a cone
+  F.box = [];
+  [[470, 1290, 180, 160, '#c8955a', 'TAPE'], [480, 1140, 160, 150, '#d6a468', '📦'], [490, 1000, 140, 140, '#c8955a', '']].forEach(function (b, i) {
+    var g = el('g', {}, $('mid'));
+    el('rect', { x: -b[2] / 2, y: -b[3] / 2, width: b[2], height: b[3], fill: b[4], stroke: '#6b4512', 'stroke-width': 6 }, g);
+    el('path', { d: 'M' + (-b[2] / 2) + ',0 L' + (b[2] / 2) + ',0', stroke: '#e8c48f', 'stroke-width': 18, opacity: 0.8 }, g);
+    var tx = el('text', { y: 14, 'font-size': 38, 'font-weight': 800, fill: '#6b4512', 'text-anchor': 'middle' }, g); tx.textContent = b[5];
+    F.box.push([g, b[0] + b[2] / 2, b[1] + b[3] / 2, i]);
+  });
+  var cone = el('g', {}, $('mid'));
+  el('path', { d: 'M-80,0 L0,-140 L80,0 Z', fill: '#d6a468', stroke: '#6b4512', 'stroke-width': 6, 'stroke-linejoin': 'round' }, cone);
+  F.box.push([cone, 560, 1000, 3]);
+  // the hologram 3D model
+  F.holo = el('g', { opacity: 0 }, $('mid'));
+  el('ellipse', { cx: 0, cy: 330, rx: 210, ry: 46, fill: '#4cc9f0', opacity: 0.35 }, F.holo);
+  el('path', { d: 'M-190,330 L-120,-330 L120,-330 L190,330 Z', fill: '#4cc9f0', opacity: 0.08 }, F.holo);
+  F.holoParts = el('g', {}, F.holo);
+  F.scan = el('rect', { x: -200, width: 400, height: 6, fill: '#bff0ff', opacity: 0.5 }, F.holo);
+  // UI screens that replace it
+  F.ui = el('g', { opacity: 0 }, $('mid'));
+  [[-130, '#6c2bd9', '🚀 RocketGo'], [130, '#1b1e29', 'Mission log']].forEach(function (u) {
+    var g = el('g', { transform: 'translate(' + u[0] + ',0)' }, F.ui);
+    el('rect', { x: -110, y: -220, width: 220, height: 440, rx: 28, fill: '#0b0d14', stroke: '#2b2b38', 'stroke-width': 8 }, g);
+    var h = el('text', { x: -85, y: -170, 'font-size': 24, 'font-weight': 800, fill: '#fff' }, g); h.textContent = u[2];
+    el('rect', { x: -88, y: -150, width: 176, height: 90, rx: 14, fill: u[1] }, g);
+    [0, 1, 2].forEach(function (r) { el('rect', { x: -88, y: -45 + r * 56, width: 176, height: 44, rx: 10, fill: '#1b1e29' }, g); });
+    el('rect', { x: -88, y: 128, width: 176, height: 46, rx: 12, fill: '#ffd23a' }, g);
+  });
+  max = makeCat('max', $('chars'));
+  minnie = makeCat('minnie', $('chars'));
+  F.goggles = el('g', {}, max.inner);
+  el('rect', { x: -110, y: -520, width: 220, height: 24, rx: 12, fill: '#333' }, F.goggles);
+  [-46, 46].forEach(function (x) { el('circle', { cx: x, cy: -508, r: 34, fill: '#9fd3ff', stroke: '#333', 'stroke-width': 8 }, F.goggles); });
+}
+
+// A rocket drawn turning around its axis: angle a (radians).
+function drawHolo(a, scale) {
+  var g = F.holoParts, parts = [];
+  g.innerHTML = '';
+  var fin = function (k) {
+    var ang = a + k * Math.PI * 2 / 3, x = Math.sin(ang) * 70, depth = Math.cos(ang), w = Math.abs(Math.sin(ang)) * 46 + 6;
+    var sgn = Math.sin(ang) >= 0 ? 1 : -1;
+    parts.push([depth, function () {
+      el('path', { d: 'M' + x + ',120 L' + (x + sgn * w) + ',230 L' + x + ',230 Z', fill: '#e5484d', stroke: '#bff0ff', 'stroke-width': 3, opacity: 0.9 }, g);
+    }]);
+  };
+  [0, 1, 2].forEach(fin);
+  parts.push([0, function () {
+    el('rect', { x: -70, y: -150, width: 140, height: 380, rx: 18, fill: '#ffd23a', stroke: '#bff0ff', 'stroke-width': 4, opacity: 0.92 }, g);
+    for (var i = 0; i < 5; i++) {
+      var sx = Math.sin(a * 1 + i * 1.3) * 60;
+      el('path', { d: 'M' + sx + ',-150 L' + sx + ',230', stroke: '#f0b400', 'stroke-width': 3, opacity: Math.max(0, Math.cos(a + i * 1.3)) * 0.6 }, g);
+    }
+    el('path', { d: 'M-70,-150 Q0,-330 70,-150 Z', fill: '#f0b400', stroke: '#bff0ff', 'stroke-width': 4, opacity: 0.92 }, g);
+    el('ellipse', { cx: 0, cy: 40, rx: 86, ry: 18, fill: 'none', stroke: '#e5484d', 'stroke-width': 14, opacity: 0.9 }, g);
+    var wd = Math.cos(a);
+    if (wd > 0) el('ellipse', { cx: Math.sin(a) * 60, cy: -40, rx: 26 * wd + 2, ry: 26, fill: '#7cc4ff', stroke: '#bff0ff', 'stroke-width': 3 }, g);
+    el('path', { d: 'M-40,230 L0,' + (300 + Math.sin(a * 9) * 12) + ' L40,230 Z', fill: '#ff9b2f', opacity: 0.9 }, g);
+  }]);
+  parts.sort(function (p, q) { return p[0] - q[0]; }).forEach(function (p) { p[1](); });
+  g.setAttribute('transform', 'scale(' + scale + ')');
+}
+
+function render(t) {
+  if (endCard(t)) { caption(t); flash(t, [[M.end, 0.3]]); return; }
+  var L = TL.lines;
+  // the cardboard rocket wobbles, then falls apart
+  var fall = seg(t, M.collapse, M.collapse + 0.7), gone = t >= M.minnie + 0.6;
+  F.box.forEach(function (b, i) {
+    var r = rnd(90 + i), wob = t < M.collapse ? Math.sin(t * (6 + i)) * (1 + i) * seg(t, M.collapse - 1.2, M.collapse) * 3 : 0;
+    var dx = fall * (r() - 0.5) * 420, dy = fall * fall * (1430 - b[2] - (3 - b[3]) * 40), rot = fall * (r() - 0.5) * 160;
+    b[0].setAttribute('opacity', gone ? 1 - seg(t, M.minnie + 0.6, M.minnie + 1.0) : 1);
+    b[0].setAttribute('transform', 'translate(' + (b[1] + dx) + ',' + (b[2] + Math.max(0, dy)) + ') rotate(' + (rot + wob) + ')');
+  });
+  puff('dust', t, M.collapse + 0.5, 560, 1400, 220, 1.4, '#e3c9a0');
+  // the hologram
+  var on = easeOut(seg(t, M.built, M.built + 0.5)), off = seg(t, M.uibuilt - 0.3, M.uibuilt);
+  var spinFast = t >= L[3].start && t < L[3].end ? 3 : 1, zoom = t >= L[3].start + 0.9 && t < L[4].start ? 1.25 : 1;
+  F.holo.setAttribute('opacity', on * (1 - off) * (0.85 + 0.15 * Math.sin(t * 30)));
+  F.holo.setAttribute('transform', 'translate(560,' + (1020 + Math.sin(t * 2) * 10) + ')');
+  if (on > 0 && off < 1) drawHolo(t * 1.4 * spinFast + (t > L[3].start ? (t - L[3].start) * 2 : 0), zoom * (0.6 + 0.4 * on));
+  F.scan.setAttribute('y', -300 + ((t * 300) % 620));
+  var uk = easeBack(seg(t, M.uibuilt, M.uibuilt + 0.4));
+  F.ui.setAttribute('opacity', t >= M.uibuilt ? 1 : 0);
+  F.ui.setAttribute('transform', 'translate(560,1010) scale(' + Math.max(0.001, uk) + ')');
+  // the cats
+  var mp = { x: 220, y: 1800, s: 0.8, look: 0.8, eyes: 'happy', brow: 0, armL: 120, armR: -20 };
+  var np = { x: lerp(1450, 880, easeOut(seg(t, M.minnie - 0.4, M.minnie + 0.2))), y: 1800, s: 0.8, look: -0.7, eyes: 'happy', armL: 25, armR: -25 };
+  if (t >= M.collapse) { mp.eyes = 'wide'; mp.brow = 1; mp.armL = 30; mp.armR = -30; }
+  if (t >= L[1].start && t < M.minnie) { mp.eyes = 'bored'; mp.brow = -0.4; mp.look = 0.3; }
+  if (at(t, 'minnie', 'built')) { np.armL = 110; np.eyes = 'open'; mp.look = 1; mp.eyes = 'open'; mp.brow = 0; }
+  if (at(t, 'built', 'ui')) { mp.eyes = 'wide'; mp.armL = 120; mp.armR = -100 + Math.sin(t * 10) * 20; mp.look = 0.6; np.armL = 60; }
+  if (t >= L[4].start && t < M.ui) { mp.eyes = 'happy'; np.armR = -110; np.eyes = 'open'; }
+  if (at(t, 'ui', 'uibuilt')) { mp.armR = -90; mp.look = 1; mp.eyes = 'open'; }
+  if (t >= M.uibuilt) { mp.eyes = 'happy'; mp.armL = 130; mp.armR = -130; np.armR = -120; }
+  poseCat(max, t, mp);
+  poseCat(minnie, t, np);
+  // the phone, to the right
+  var pk = easeBack(seg(t, M.minnie + 1.0, M.minnie + 1.4));
+  phone({ show: t >= M.minnie + 1.0, k: pk, x: 860, y: 1110, s: 0.38, rot: 6 + Math.sin(t * 2) * 2,
+    screen: t >= M.uibuilt ? 'v2-lab-ui' : t >= M.built ? 'v2-lab-result' : 'v2-lab-create' });
+  stamp('behold', t, M.build + 0.4, M.collapse, 'TA-DAAA!', { burst: true, fill: '#ffd23a', color: '#e5484d', size: 64, x: 330, y: 1000, w: 260, h: 140 });
+  stamp('crash', t, M.collapse + 0.1, L[1].start + 0.4, 'CRUNCH!', { burst: true, fill: '#fff', color: '#6b4512', size: 76, y: 1180, w: 300, h: 150 });
+  stamp('3d', t, M.built + 0.3, L[3].start + 0.8, '3D MODEL ✓', { fill: '#4cc9f0', color: '#0d0d0d', size: 58, x: 380, y: 1560, rot: -4 });
+  stamp('zoom', t, L[3].start + 0.9, L[4].start, '🔍 ZOOM', { fill: '#fff', color: '#0d0d0d', size: 52, x: 300, y: 1260, rot: -6 });
+  [['GLB ✓', 260, 1300], ['OBJ ✓', 260, 1410], ['🎮 Games', 560, 1590], ['🖨️ 3D printing', 820, 1560]].forEach(function (x, i) {
+    stamp('d' + i, t, L[4].start + 0.3 + i * 0.4, M.ui, x[0], { fill: i < 2 ? '#06d6a0' : '#ffd23a', color: '#0d0d0d', size: 46, x: x[1], y: x[2], rot: (i % 2 ? 4 : -4) });
+  });
+  stamp('ui', t, M.uibuilt + 0.2, M.end, 'UI DESIGN ✓', { fill: '#b388ff', color: '#0d0d0d', size: 58, x: 520, y: 1560, rot: -3 });
+  confetti(t, [[M.built, 560, 1000, 91, 60, 2.6], [M.uibuilt, 560, 1000, 92, 50, 2.4]]);
+  flash(t, [[M.built, 0.25, 0.6]]);
+  shake(t, [[M.collapse + 0.6, 0.4, 14]]);
+  caption(t);
+}
+
+function init(tl) {
+  TL = tl;
+  stage({ screens: ['v2-lab-create', 'v2-lab-result', 'v2-lab-ui'], tagline: 'From idea to 3D, and the screens too.', subline: 'Make anything by just asking.', badge: 'NEW: 3D MODELS & UI DESIGN' });
+  setup();
+  render(0);
+}
+play('build/ep/lab');
+</script>
+</body>
+</html>

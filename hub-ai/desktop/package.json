@@ -2,7 +2,7 @@
   "name": "hub-ai",
   "productName": "Hub AI",
   "version": "1.0.0",
-  "description": "Make hubs (single-file apps) with the Hub v1 agents or Gemini, and play them on FunHub.",
+  "description": "Make apps, animations, slides, 3D models, designs and more with the Hub V1 agents, and play them on FunHub.",
   "author": { "name": "Hub AI", "email": "hubai@users.noreply.github.com" },
   "homepage": "https://github.com/raken123/s-ndo/tree/main/hub-ai",
   "license": "UNLICENSED",
