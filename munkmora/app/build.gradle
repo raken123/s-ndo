@@ -1,0 +1,44 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'se.munkmora.app'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'se.munkmora.app'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+    }
+
+    // The web app in ../web is the same page that runs in the browser.
+    sourceSets {
+        main.assets.srcDirs = ['../web']
+    }
+
+    signingConfigs {
+        // Demo key committed with the project so every build installs over
+        // the last one. Set APP_KEYSTORE (+ _PASSWORD, _ALIAS) to use your own.
+        demo {
+            storeFile file(System.getenv('APP_KEYSTORE') ?: 'demo.jks')
+            storePassword System.getenv('APP_KEYSTORE_PASSWORD') ?: 'munkmora-demo'
+            keyAlias System.getenv('APP_KEY_ALIAS') ?: 'app'
+            keyPassword System.getenv('APP_KEYSTORE_PASSWORD') ?: 'munkmora-demo'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.demo
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

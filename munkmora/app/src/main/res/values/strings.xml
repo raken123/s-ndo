@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The app has no name: a zero-width space keeps the launcher label empty. -->
+    <string name="app_name">​</string>
+</resources>

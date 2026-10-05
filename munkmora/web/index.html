@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>&#8203;</title>
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --panel: #ffffff;
+    --ink: #111827;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --brand: #2563eb;
+    --ok: #16a34a;
+    --warn: #d97706;
+    --alert: #dc2626;
+    --ring-track: #e5e7eb;
+    --radius: 16px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f172a;
+      --panel: #1e293b;
+      --ink: #f1f5f9;
+      --muted: #94a3b8;
+      --border: #334155;
+      --brand: #60a5fa;
+      --ok: #4ade80;
+      --warn: #fbbf24;
+      --alert: #f87171;
+      --ring-track: #334155;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--ink);
+    display: flex; flex-direction: column; align-items: center;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  }
+  main { width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 16px; flex: 1; }
+
+  header { display: flex; align-items: center; justify-content: space-between; }
+  header small { color: var(--muted); font-size: 14px; letter-spacing: .3px; }
+  .icon-btn {
+    width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--ink); display: grid; place-items: center; cursor: pointer;
+  }
+  .icon-btn svg { width: 22px; height: 22px; }
+
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+
+  /* Status ring */
+  .status { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 28px 20px; }
+  .ring { position: relative; width: 220px; height: 220px; }
+  .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring circle { fill: none; stroke-width: 10; }
+  .ring .track { stroke: var(--ring-track); }
+  .ring .prog { stroke: var(--brand); stroke-linecap: round; transition: stroke-dashoffset .25s linear, stroke .3s; }
+  .ring-center {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  }
+  .ring-center .big { font-size: 46px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .ring-center .sub { font-size: 14px; color: var(--muted); }
+  .state-text { font-size: 18px; font-weight: 600; text-align: center; min-height: 24px; }
+  .state-detail { font-size: 14px; color: var(--muted); text-align: center; min-height: 20px; }
+
+  .meter { width: 100%; height: 8px; border-radius: 4px; background: var(--ring-track); overflow: hidden; }
+  .meter div { height: 100%; width: 0%; background: var(--ok); transition: width .1s linear; }
+
+  .main-btn {
+    width: 100%; padding: 18px; border-radius: var(--radius); border: 0; cursor: pointer;
+    font-size: 19px; font-weight: 700; color: #fff; background: var(--brand);
+  }
+  .main-btn.stop { background: var(--alert); }
+  .main-btn:disabled { opacity: .5; cursor: default; }
+
+  .log h2 { font-size: 15px; margin-bottom: 10px; color: var(--muted); font-weight: 600; }
+  .log ul { list-style: none; display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; }
+  .log li { display: flex; gap: 10px; font-size: 14px; line-height: 1.35; }
+  .log time { color: var(--muted); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot.ok { background: var(--ok); } .dot.bad { background: var(--alert); } .dot.err { background: var(--warn); } .dot.quiet { background: var(--muted); }
+  .log .empty { color: var(--muted); font-size: 14px; }
+
+  .note { font-size: 12px; color: var(--muted); text-align: center; line-height: 1.5; }
+
+  /* Alert overlay */
+  #alert {
+    position: fixed; inset: 0; background: var(--alert); color: #fff; display: none;
+    flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px; text-align: center; z-index: 50;
+  }
+  #alert.show { display: flex; animation: flash .5s ease-in-out 4 alternate; }
+  #alert h1 { font-size: clamp(44px, 14vw, 96px); line-height: 1.05; }
+  #alert p { font-size: 16px; opacity: .9; max-width: 480px; }
+  @keyframes flash { from { filter: brightness(1); } to { filter: brightness(1.35); } }
+
+  /* Settings */
+  dialog {
+    border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); color: var(--ink);
+    width: min(520px, calc(100% - 32px)); padding: 20px; margin: auto;
+  }
+  dialog::backdrop { background: rgba(0,0,0,.5); }
+  dialog h2 { font-size: 19px; margin-bottom: 16px; }
+  label { display: block; font-size: 14px; font-weight: 600; margin: 14px 0 6px; }
+  input, select {
+    width: 100%; padding: 12px; font-size: 16px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--ink);
+  }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .row { display: flex; gap: 10px; margin-top: 20px; }
+  .row button { flex: 1; padding: 12px; font-size: 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--ink); cursor: pointer; }
+  .row button.primary { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <small>Munkmoraskolan</small>
+    <button class="icon-btn" id="settingsBtn" aria-label="Inställningar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </header>
+
+  <section class="card status">
+    <div class="ring">
+      <svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52"/><circle class="prog" id="prog" cx="60" cy="60" r="52"/></svg>
+      <div class="ring-center">
+        <div class="big" id="countdown">15</div>
+        <div class="sub" id="ringSub">sekunder</div>
+      </div>
+    </div>
+    <div class="state-text" id="stateText">Tryck på Starta för att börja lyssna</div>
+    <div class="state-detail" id="stateDetail"></div>
+    <div class="meter" aria-hidden="true"><div id="meter"></div></div>
+  </section>
+
+  <button class="main-btn" id="mainBtn">Starta</button>
+
+  <section class="card log">
+    <h2>Senaste kontroller</h2>
+    <ul id="log"><li class="empty">Inga kontroller än.</li></ul>
+  </section>
+
+  <p class="note">Var 15:e sekund skickas en ljudinspelning från mikrofonen till Google Gemini för analys.
+    Inget ljud sparas i appen.</p>
+</main>
+
+<div id="alert" role="alert">
+  <h1>Sluta tramsa!</h1>
+  <p id="alertReason"></p>
+</div>
+
+<dialog id="settings">
+  <form method="dialog" id="settingsForm">
+    <h2>Inställningar</h2>
+    <label for="apiKey">API-nyckel</label>
+    <input id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Klistra in nyckeln">
+    <div class="hint">Sparas bara på den här enheten.</div>
+
+    <label for="model">Modell</label>
+    <input id="model" type="text" spellcheck="false">
+
+    <label for="sensitivity">Känslighet</label>
+    <select id="sensitivity">
+      <option value="0.85">Låg – bara tydligt tramsande</option>
+      <option value="0.7">Normal</option>
+      <option value="0.5">Hög – reagerar lättare</option>
+    </select>
+
+    <label for="interval">Inspelningslängd (sekunder)</label>
+    <input id="interval" type="number" min="5" max="60" step="1">
+
+    <div class="row">
+      <button value="cancel" type="submit">Avbryt</button>
+      <button value="save" type="submit" class="primary">Spara</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- Inställningar ----------
+  const DEFAULTS = { apiKey: "", model: "gemini-3.8-flash", sensitivity: "0.7", interval: 15 };
+  const STORE_KEY = "klassrum-settings-v1";
+
+  function loadSettings() {
+    try { return Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem(STORE_KEY) || "{}")); }
+    catch (e) { return Object.assign({}, DEFAULTS); }
+  }
+  function saveSettings(s) {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch (e) { /* privat läge */ }
+  }
+  let settings = loadSettings();
+
+  // ---------- UI ----------
+  const $ = (id) => document.getElementById(id);
+  const prog = $("prog"), countdownEl = $("countdown"), ringSub = $("ringSub");
+  const stateText = $("stateText"), stateDetail = $("stateDetail"), meter = $("meter");
+  const mainBtn = $("mainBtn"), logEl = $("log"), alertEl = $("alert"), alertReason = $("alertReason");
+  const CIRC = 2 * Math.PI * 52;
+  prog.style.strokeDasharray = CIRC;
+  prog.style.strokeDashoffset = CIRC;
+
+  function setState(text, detail) { stateText.textContent = text; stateDetail.textContent = detail || ""; }
+
+  function addLog(kind, text) {
+    const empty = logEl.querySelector(".empty");
+    if (empty) empty.remove();
+    const li = document.createElement("li");
+    const t = document.createElement("time");
+    t.textContent = new Date().toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    const dot = document.createElement("span");
+    dot.className = "dot " + kind;
+    const span = document.createElement("span");
+    span.textContent = text;
+    li.append(dot, t, span);
+    logEl.prepend(li);
+    while (logEl.children.length > 40) logEl.lastChild.remove();
+  }
+
+  // ---------- Inställningsdialog ----------
+  const dlg = $("settings");
+  function openSettings() {
+    $("apiKey").value = settings.apiKey;
+    $("model").value = settings.model;
+    $("sensitivity").value = settings.sensitivity;
+    $("interval").value = settings.interval;
+    if (typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open", "");
+  }
+  $("settingsBtn").addEventListener("click", openSettings);
+  dlg.addEventListener("close", () => {
+    if (dlg.returnValue !== "save") return;
+    const interval = Math.min(60, Math.max(5, parseInt($("interval").value, 10) || DEFAULTS.interval));
+    settings = {
+      apiKey: $("apiKey").value.trim(),
+      model: $("model").value.trim() || DEFAULTS.model,
+      sensitivity: $("sensitivity").value,
+      interval,
+    };
+    saveSettings(settings);
+    workingEndpoint = null;
+    if (!running) countdownEl.textContent = settings.interval;
+  });
+  countdownEl.textContent = settings.interval;
+
+  // ---------- Ljud ut: pip + röst ----------
+  let audioCtx = null;
+
+  function beep(times) {
+    if (!audioCtx) return Promise.resolve();
+    const now = audioCtx.currentTime;
+    for (let i = 0; i < times; i++) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "square";
+      osc.frequency.value = 1000;
+      const t0 = now + i * 0.32;
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.35, t0 + 0.02);
+      gain.gain.setValueAtTime(0.35, t0 + 0.2);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.24);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t0);
+      osc.stop(t0 + 0.26);
+    }
+    return new Promise((r) => setTimeout(r, times * 320 + 100));
+  }
+
+  function speak(text) {
+    // I APK:n används Androids egen talsyntes (fungerar inte i WebView annars).
+    if (window.AppBridge && typeof window.AppBridge.speak === "function") {
+      window.AppBridge.speak(text);
+      return new Promise((r) => setTimeout(r, 1800));
+    }
+    if (!("speechSynthesis" in window)) return Promise.resolve();
+    return new Promise((resolve) => {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "sv-SE";
+      u.rate = 1;
+      u.volume = 1;
+      const sv = speechSynthesis.getVoices().find((v) => v.lang && v.lang.toLowerCase().startsWith("sv"));
+      if (sv) u.voice = sv;
+      u.onend = resolve;
+      u.onerror = resolve;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+      setTimeout(resolve, 4000);
+    });
+  }
+
+  let alerting = false;
+  async function triggerAlert(reason) {
+    alerting = true;           // inspelningen pausas så att appens eget ljud inte skickas vidare
+    alertReason.textContent = reason || "";
+    alertEl.classList.add("show");
+    if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300]);
+    await beep(3);
+    await speak("Sluta tramsa!");
+    setTimeout(() => {
+      alertEl.classList.remove("show");
+      alerting = false;
+    }, 1200);
+  }
+  alertEl.addEventListener("click", () => alertEl.classList.remove("show"));
+
+  // ---------- Inspelning ----------
+  const TARGET_RATE = 16000;
+  let stream = null, source = null, processor = null;
+  let chunks = [], chunkLen = 0;
+  let running = false, tickTimer = null, cycleStart = 0;
+  let wakeLock = null;
+
+  async function start() {
+    if (!settings.apiKey) {
+      setState("API-nyckel saknas", "Öppna inställningarna och klistra in nyckeln.");
+      openSettings();
+      return;
+    }
+    mainBtn.disabled = true;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true, channelCount: 1 },
+      });
+    } catch (e) {
+      mainBtn.disabled = false;
+      setState("Ingen åtkomst till mikrofonen", "Tillåt mikrofonen och försök igen.");
+      return;
+    }
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") await audioCtx.resume();
+
+    source = audioCtx.createMediaStreamSource(stream);
+    processor = audioCtx.createScriptProcessor(4096, 1, 1);
+    processor.onaudioprocess = onAudio;
+    const mute = audioCtx.createGain();
+    mute.gain.value = 0;
+    source.connect(processor);
+    processor.connect(mute).connect(audioCtx.destination);
+
+    chunks = []; chunkLen = 0;
+    running = true;
+    cycleStart = performance.now();
+    tickTimer = setInterval(tick, 250);
+    mainBtn.disabled = false;
+    mainBtn.textContent = "Stoppa";
+    mainBtn.classList.add("stop");
+    setState("Lyssnar …", "");
+    requestWakeLock();
+  }
+
+  function stop() {
+    running = false;
+    clearInterval(tickTimer);
+    if (processor) { processor.disconnect(); processor.onaudioprocess = null; }
+    if (source) source.disconnect();
+    if (stream) stream.getTracks().forEach((t) => t.stop());
+    processor = source = stream = null;
+    chunks = []; chunkLen = 0;
+    mainBtn.textContent = "Starta";
+    mainBtn.classList.remove("stop");
+    prog.style.strokeDashoffset = CIRC;
+    countdownEl.textContent = settings.interval;
+    meter.style.width = "0%";
+    setState("Stoppad", "");
+    if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+  }
+
+  function onAudio(ev) {
+    const input = ev.inputBuffer.getChannelData(0);
+    let sum = 0;
+    for (let i = 0; i < input.length; i++) sum += input[i] * input[i];
+    const rms = Math.sqrt(sum / input.length);
+    meter.style.width = Math.min(100, rms * 400) + "%";
+    if (!running || alerting) return;
+    chunks.push(new Float32Array(input));
+    chunkLen += input.length;
+  }
+
+  function tick() {
+    const ms = settings.interval * 1000;
+    const elapsed = performance.now() - cycleStart;
+    const left = Math.max(0, Math.ceil((ms - elapsed) / 1000));
+    countdownEl.textContent = left;
+    prog.style.strokeDashoffset = CIRC * (1 - Math.min(1, elapsed / ms));
+    if (elapsed >= ms) {
+      cycleStart = performance.now();
+      const pcm = takeChunk();
+      analyze(pcm);
+    }
+  }
+
+  function takeChunk() {
+    const out = new Float32Array(chunkLen);
+    let off = 0;
+    for (const c of chunks) { out.set(c, off); off += c.length; }
+    chunks = []; chunkLen = 0;
+    return out;
+  }
+
+  // ---------- WAV ----------
+  function downsample(buf, from, to) {
+    if (from === to) return buf;
+    const ratio = from / to;
+    const len = Math.floor(buf.length / ratio);
+    const out = new Float32Array(len);
+    for (let i = 0; i < len; i++) {
+      const start = Math.floor(i * ratio), end = Math.min(buf.length, Math.floor((i + 1) * ratio));
+      let s = 0;
+      for (let j = start; j < end; j++) s += buf[j];
+      out[i] = s / Math.max(1, end - start);
+    }
+    return out;
+  }
+
+  function encodeWav(samples, rate) {
+    const buffer = new ArrayBuffer(44 + samples.length * 2);
+    const v = new DataView(buffer);
+    const str = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+    str(0, "RIFF"); v.setUint32(4, 36 + samples.length * 2, true); str(8, "WAVE");
+    str(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    str(36, "data"); v.setUint32(40, samples.length * 2, true);
+    let o = 44;
+    for (let i = 0; i < samples.length; i++, o += 2) {
+      const s = Math.max(-1, Math.min(1, samples[i]));
+      v.setInt16(o, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+    }
+    return new Uint8Array(buffer);
+  }
+
+  function toBase64(bytes) {
+    let bin = "";
+    const step = 0x8000;
+    for (let i = 0; i < bytes.length; i += step) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + step));
+    return btoa(bin);
+  }
+
+  // ---------- Gemini ----------
+  const PROMPT = `Du lyssnar på en ljudinspelning (cirka {SEK} sekunder) från ett klassrum på Munkmoraskolan, en svensk grundskola.
+Avgör om någon elev beter sig som en klassklown och tramsar, alltså medvetet stör undervisningen för att få uppmärksamhet.
+
+Exempel på tramsande: fåniga ljud, låtsasrapningar eller pruttljud, skrik eller tjut utan anledning, härmar läraren,
+skämtar högt eller avbryter medan läraren pratar, sjunger eller gör ljud för att få klasskamraterna att skratta,
+upprepade störande kommentarer.
+
+Räkna INTE som tramsande: läraren som undervisar, vanligt samtal eller grupparbete, frågor och svar,
+enstaka spontana skratt, normalt sorl, ljud från stolar, väskor eller korridoren, tystnad, musik som spelas i undervisningen.
+
+Var säker innan du svarar true. Svara bara med JSON enligt schemat. "reason" ska vara en kort mening på svenska
+som beskriver vad du hörde, utan att nämna några namn.`;
+
+  const SCHEMA = {
+    type: "OBJECT",
+    properties: {
+      disruptive: { type: "BOOLEAN" },
+      confidence: { type: "NUMBER" },
+      reason: { type: "STRING" },
+    },
+    required: ["disruptive", "confidence", "reason"],
+  };
+
+  // Nycklar som börjar med "AIza" hör till Gemini API (AI Studio); övriga (t.ex. "AQ.") till Vertex AI.
+  let workingEndpoint = null;
+  function endpoints() {
+    const m = encodeURIComponent(settings.model);
+    const studio = { name: "gemini", url: `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent` };
+    const vertex = { name: "vertex", url: `https://aiplatform.googleapis.com/v1/publishers/google/models/${m}:generateContent` };
+    if (workingEndpoint) return [workingEndpoint];
+    return settings.apiKey.startsWith("AIza") ? [studio, vertex] : [vertex, studio];
+  }
+
+  // Androidappen gör anropet natively (inga CORS-problem); webbläsaren använder fetch.
+  let reqSeq = 0;
+  const pending = new Map();
+  window.__appHttpDone = (id, status, text) => {
+    const p = pending.get(id);
+    if (p) { pending.delete(id); p({ status, text }); }
+  };
+  function post(url, body) {
+    if (window.AppBridge && typeof window.AppBridge.post === "function") {
+      const id = ++reqSeq;
+      return new Promise((resolve) => {
+        pending.set(id, resolve);
+        window.AppBridge.post(id, url, settings.apiKey, body);
+      });
+    }
+    return fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": settings.apiKey },
+      body,
+    }).then(async (r) => ({ status: r.status, text: await r.text() }))
+      .catch((e) => ({ status: 0, text: String(e && e.message || e) }));
+  }
+
+  async function callGemini(wavBase64, seconds) {
+    const body = JSON.stringify({
+      contents: [{
+        role: "user",
+        parts: [
+          { inlineData: { mimeType: "audio/wav", data: wavBase64 } },
+          { text: PROMPT.replace("{SEK}", String(Math.round(seconds))) },
+        ],
+      }],
+      generationConfig: { responseMimeType: "application/json", responseSchema: SCHEMA, temperature: 0.2 },
+    });
+    let lastErr = "";
+    for (const ep of endpoints()) {
+      const res = await post(ep.url, body);
+      if (res.status === 200) {
+        workingEndpoint = ep;
+        const data = JSON.parse(res.text);
+        const text = (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || "").join("");
+        return JSON.parse(text);
+      }
+      lastErr = describeError(res);
+      // Prova nästa tjänst bara om nyckeln/modellen inte passade här.
+      if (![400, 401, 403, 404].includes(res.status)) break;
+    }
+    throw new Error(lastErr);
+  }
+
+  function describeError(res) {
+    if (res.status === 0) return "Inget nätverk: " + res.text;
+    let msg = "";
+    try { msg = JSON.parse(res.text).error.message; } catch (e) { msg = res.text.slice(0, 160); }
+    return `Fel ${res.status}: ${msg}`;
+  }
+
+  let busy = false;
+  async function analyze(pcm) {
+    if (!pcm.length || !audioCtx) return;
+    let sum = 0;
+    for (let i = 0; i < pcm.length; i++) sum += pcm[i] * pcm[i];
+    const rms = Math.sqrt(sum / pcm.length);
+    if (rms < 0.004) {
+      addLog("quiet", "Tyst – skickades inte.");
+      setState("Lyssnar …", "Det var tyst.");
+      return;
+    }
+    if (busy) { addLog("err", "Förra analysen pågår fortfarande – hoppar över."); return; }
+    busy = true;
+    ringSub.textContent = "analyserar …";
+    try {
+      const samples = downsample(pcm, audioCtx.sampleRate, TARGET_RATE);
+      const wav = encodeWav(samples, TARGET_RATE);
+      const result = await callGemini(toBase64(wav), samples.length / TARGET_RATE);
+      const conf = Number(result.confidence) || 0;
+      const hit = result.disruptive === true && conf >= parseFloat(settings.sensitivity);
+      if (hit) {
+        addLog("bad", `Tramsande (${Math.round(conf * 100)} %): ${result.reason || ""}`);
+        setState("Tramsande upptäckt!", result.reason || "");
+        if (running) triggerAlert(result.reason);
+      } else {
+        addLog("ok", result.reason || "Lugnt.");
+        setState("Lyssnar …", "Senast: " + (result.reason || "lugnt"));
+      }
+    } catch (e) {
+      addLog("err", e.message || String(e));
+      setState("Lyssnar …", "Analysen misslyckades – se loggen.");
+    } finally {
+      busy = false;
+      ringSub.textContent = "sekunder";
+    }
+  }
+
+  // ---------- Skärmen vaken ----------
+  async function requestWakeLock() {
+    try { if ("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen"); } catch (e) { /* ej tillgängligt */ }
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (running && document.visibilityState === "visible") requestWakeLock();
+  });
+
+  mainBtn.addEventListener("click", () => (running ? stop() : start()));
+  if ("speechSynthesis" in window) speechSynthesis.getVoices();
+  if (!settings.apiKey) setState("Lägg in API-nyckeln först", "Tryck på kugghjulet uppe till höger.");
+})();
+</script>
+</body>
+</html>
