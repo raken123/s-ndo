@@ -77,6 +77,12 @@ export HUBAI_ADMIN_KEY=$(openssl rand -hex 24)   # optional, for /v1/admin/plan
 python -m hubcloud --port 8787     # data in ./hubai.sqlite3 (or HUBAI_DB)
 ```
 
+Or put the settings in `hub-ai/cloud/.env` (one `KEY=value` per line, e.g.
+`GEMINI_API_KEY=...`). The server reads it at start-up for anything not set
+in the environment. It is git-ignored and kept out of the Docker image,
+because this repository is public: a key committed here can be used by
+anyone and is disabled by Google once it is found.
+
 Try it without keys: `HUBAI_FAKE_MODELS=1 python -m hubcloud` returns small
 placeholder results (a small page, a 3D rocket, a gradient picture) that
 name the model they would have used.

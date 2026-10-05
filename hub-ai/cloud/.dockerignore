@@ -2,3 +2,4 @@ training/
 tests/
 *.sqlite3
 __pycache__/
+.env

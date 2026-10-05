@@ -1,9 +1,32 @@
-"""python -m hubcloud [--host 0.0.0.0] [--port 8787] [--db hubai.sqlite3]"""
+"""python -m hubcloud [--host 0.0.0.0] [--port 8787] [--db hubai.sqlite3]
+
+Settings come from the environment. A `.env` file next to this package
+(hub-ai/cloud/.env, KEY=value per line) fills in any that aren't set; it is
+git-ignored so keys never reach the repository.
+"""
 
 import argparse
 import os
 
-from .server import make_server
+ENV_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
+
+
+def load_env_file(path=ENV_FILE):
+    try:
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+    except OSError:
+        pass
+
+
+load_env_file()
+
+from .server import make_server  # noqa: E402
 
 
 def main():
