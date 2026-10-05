@@ -1,0 +1,265 @@
+<!doctype html><meta charset="utf-8">
+<body style="margin:0;background:#000">
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="../../app/js/mascot.js"></script>
+<script src="../../app/js/tiktok.js"></script>
+<script>
+/* Motey Pro – Reels ad (1080×1920, 25.5 s). draw(t) renders the frame at time t (seconds). */
+const c = document.getElementById('c'), x = c.getContext('2d');
+const W = 1080, H = 1920, HALF = 960;
+const FONT = '"DejaVu Sans", "Noto Color Emoji", sans-serif';
+const EMO = '"Noto Color Emoji", sans-serif';
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const ease = p => 1 - Math.pow(1 - clamp(p), 3);
+const back = p => { p = clamp(p); const s = 1.7; return 1 + (s + 1) * Math.pow(p - 1, 3) + s * Math.pow(p - 1, 2); };
+const local = (t, a, b) => (t - a) / (b - a);
+const SCENES = [[0, 2.2], [2.2, 7], [7, 11.8], [11.8, 16.4], [16.4, 21], [21, 25.5]];
+function rr(px, py, w, h, r) { x.beginPath(); x.moveTo(px + r, py); x.arcTo(px + w, py, px + w, py + h, r); x.arcTo(px + w, py + h, px, py + h, r); x.arcTo(px, py + h, px, py, r); x.arcTo(px, py, px + w, py, r); x.closePath(); }
+function text(s, px, py, size, color, opts) {
+  opts = opts || {};
+  x.font = `${opts.weight || 900} ${size}px ${opts.emoji ? EMO : FONT}`;
+  x.textAlign = opts.align || 'center'; x.textBaseline = 'middle';
+  const lines = []; let line = '';
+  for (const w of String(s).split(' ')) { const tt = line ? line + ' ' + w : w; if (opts.max && x.measureText(tt).width > opts.max && line) { lines.push(line); line = w; } else line = tt; }
+  lines.push(line);
+  lines.forEach((l, i) => {
+    const yy = py + (i - (lines.length - 1) / 2) * size * 1.15;
+    if (opts.stroke) { x.lineWidth = opts.stroke; x.strokeStyle = opts.strokeColor || '#1E1B3A'; x.lineJoin = 'round'; x.strokeText(l, px, yy); }
+    x.fillStyle = color; x.fillText(l, px, yy);
+  });
+}
+function emoji(s, px, py, size, rot) { x.save(); x.translate(px, py); x.rotate(rot || 0); x.font = `${size}px ${EMO}`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(s, 0, 0); x.restore(); }
+function pill(s, px, py, bg, fg, size) {
+  x.font = `900 ${size}px ${FONT}`; const w = x.measureText(s).width + size * 1.4, h = size * 1.9;
+  x.fillStyle = bg; rr(px - w / 2, py - h / 2, w, h, h / 2); x.fill(); text(s, px, py + 2, size, fg);
+}
+
+/* ---- people ---- */
+function person(px, py, s, o) {
+  o = o || {}; const t = o.t || 0;
+  x.save(); x.translate(px, py + (o.bob ? Math.sin(t * 6) * 4 : 0)); x.scale(s, s);
+  x.fillStyle = o.shirt || '#5B6B8C'; rr(-90, 70, 180, 190, 70); x.fill();
+  x.fillStyle = '#F2C29B'; x.fillRect(-16, 40, 32, 40);
+  x.beginPath(); x.ellipse(0, 0, 62, 72, 0, 0, 7); x.fill();
+  x.fillStyle = o.hair || '#3B2A20'; x.beginPath(); x.ellipse(0, -42, 66, 38, 0, Math.PI, 0); x.fill();
+  x.beginPath(); x.ellipse(-50, -20, 16, 34, 0.25, 0, 7); x.fill(); x.beginPath(); x.ellipse(50, -24, 14, 28, -0.25, 0, 7); x.fill();
+  const m = o.mood || 'happy';
+  x.fillStyle = '#1E1B3A'; x.strokeStyle = '#1E1B3A'; x.lineCap = 'round';
+  if (m === 'cool') { x.fillStyle = '#111'; rr(-52, -18, 46, 26, 10); x.fill(); rr(6, -18, 46, 26, 10); x.fill(); x.fillRect(-8, -12, 16, 6); }
+  else if (m === 'tired') { x.lineWidth = 6; [-24, 24].forEach(ex => { x.beginPath(); x.moveTo(ex - 12, -2); x.lineTo(ex + 12, -2); x.stroke(); }); x.fillStyle = 'rgba(80,60,120,.35)'; [-24, 24].forEach(ex => { x.beginPath(); x.ellipse(ex, 8, 12, 5, 0, 0, 7); x.fill(); }); }
+  else if (m === 'scared' || m === 'confused') { [-24, 24].forEach(ex => { x.fillStyle = '#fff'; x.beginPath(); x.arc(ex, -4, 13, 0, 7); x.fill(); x.fillStyle = '#1E1B3A'; x.beginPath(); x.arc(ex + (m === 'confused' ? 4 : 0), -2, 6, 0, 7); x.fill(); }); }
+  else { [-24, 24].forEach(ex => { x.beginPath(); x.ellipse(ex, -4, 7, 9, 0, 0, 7); x.fill(); }); }
+  x.lineWidth = 6;
+  if (m === 'happy' || m === 'cool') { x.beginPath(); x.arc(0, 18, 20, 0.15 * Math.PI, 0.85 * Math.PI); x.stroke(); }
+  else if (m === 'scared') { x.fillStyle = '#7A1F2B'; x.beginPath(); x.ellipse(0, 30, 14, 18, 0, 0, 7); x.fill(); }
+  else if (m === 'confused') { x.beginPath(); x.moveTo(-16, 30); x.quadraticCurveTo(0, 22, 18, 34); x.stroke(); }
+  else { x.beginPath(); x.arc(0, 40, 18, 1.15 * Math.PI, 1.85 * Math.PI); x.stroke(); }
+  if (m === 'happy' || m === 'cool') { x.fillStyle = 'rgba(255,110,140,.4)'; [-38, 38].forEach(ex => { x.beginPath(); x.ellipse(ex, 20, 12, 7, 0, 0, 7); x.fill(); }); }
+  if (o.sweat) { x.fillStyle = '#7CC4FF'; x.beginPath(); x.ellipse(60, -30 + (t * 60 % 30), 8, 13, 0, 0, 7); x.fill(); }
+  x.restore();
+}
+function boss(px, py, s, t, angry) {
+  x.save(); x.translate(px + (angry ? Math.sin(t * 50) * 5 : 0), py); x.scale(s, s);
+  x.fillStyle = '#2F2A48'; rr(-95, 70, 190, 190, 70); x.fill(); x.fillStyle = '#E5484D'; x.beginPath(); x.moveTo(-10, 70); x.lineTo(10, 70); x.lineTo(6, 150); x.lineTo(-6, 150); x.fill();
+  x.fillStyle = angry ? '#F2A48B' : '#F2C9A0'; x.beginPath(); x.ellipse(0, 0, 66, 74, 0, 0, 7); x.fill();
+  x.fillStyle = '#8A8A99'; x.beginPath(); x.ellipse(-56, -10, 14, 30, 0, 0, 7); x.fill(); x.beginPath(); x.ellipse(56, -10, 14, 30, 0, 0, 7); x.fill();
+  x.strokeStyle = '#1E1B3A'; x.lineWidth = 8; x.lineCap = 'round';
+  x.beginPath(); if (angry) { x.moveTo(-44, -26); x.lineTo(-12, -14); x.moveTo(44, -26); x.lineTo(12, -14); } else { x.moveTo(-42, -24); x.lineTo(-14, -26); x.moveTo(42, -24); x.lineTo(14, -26); } x.stroke();
+  x.fillStyle = '#1E1B3A'; [-26, 26].forEach(ex => { x.beginPath(); x.arc(ex, -2, 7, 0, 7); x.fill(); });
+  if (angry) { x.fillStyle = '#7A1F2B'; x.beginPath(); x.ellipse(0, 36, 26, 12 + 8 * Math.abs(Math.sin(t * 14)), 0, 0, 7); x.fill(); }
+  else { x.lineWidth = 6; x.beginPath(); x.arc(0, 22, 18, 0.15 * Math.PI, 0.85 * Math.PI); x.stroke(); }
+  x.restore();
+}
+function bubble(px, py, w, s, bg, fg, size, tail) {
+  x.font = `900 ${size}px ${FONT}`;
+  const words = s.split(' '); const lines = []; let l = '';
+  for (const wd of words) { const tt = l ? l + ' ' + wd : wd; if (x.measureText(tt).width > w - 60 && l) { lines.push(l); l = wd; } else l = tt; }
+  lines.push(l);
+  const h = lines.length * size * 1.2 + 50;
+  x.fillStyle = bg; rr(px - w / 2, py - h / 2, w, h, 34); x.fill();
+  if (tail) { x.beginPath(); x.moveTo(px + tail[0], py + h / 2 - 2); x.lineTo(px + tail[0] + tail[1], py + h / 2 + 40); x.lineTo(px + tail[0] + 50, py + h / 2 - 2); x.fill(); }
+  lines.forEach((ln, i) => text(ln, px, py + (i - (lines.length - 1) / 2) * size * 1.2, size, fg));
+}
+
+/* ---- backgrounds ---- */
+function panels(t, label) {
+  // top: the ordinary person (grey), bottom: Motey Pro (purple)
+  let g = x.createLinearGradient(0, 0, 0, HALF); g.addColorStop(0, '#CFCBD8'); g.addColorStop(1, '#B9B4C7');
+  x.fillStyle = g; x.fillRect(0, 0, W, HALF);
+  g = x.createLinearGradient(0, HALF, W, H); g.addColorStop(0, '#6C4CF5'); g.addColorStop(1, '#FF5C8A');
+  x.fillStyle = g; x.fillRect(0, HALF, W, HALF);
+}
+function labels() {
+  pill('VANLIG PERSON', W / 2, 245, '#5B5878', '#fff', 44);
+  pill('⭐ MOTEY PRO', W / 2, HALF + 118, '#fff', '#6C4CF5', 44);
+  x.fillStyle = '#1E1B3A'; x.beginPath(); x.arc(W / 2, HALF, 52, 0, 7); x.fill();
+  x.strokeStyle = '#fff'; x.lineWidth = 8; x.stroke();
+  text('VS', W / 2, HALF + 3, 42, '#FFE14D');
+}
+function capt(s, py, color, t0, t) {
+  py = py < HALF ? 352 : HALF + 222;
+  const p = ease(local(t, t0, t0 + 0.4));
+  x.globalAlpha = p; text(s, W / 2, py + (1 - p) * 30, 56, color, { max: 1020, stroke: 12, strokeColor: color === '#fff' ? '#1E1B3A' : '#fff' }); x.globalAlpha = 1;
+}
+function office(top) {
+  x.fillStyle = '#A9A3BA'; x.fillRect(-200, top + 620, W + 400, 340);
+  x.fillStyle = '#8D86A3'; x.fillRect(80, top + 600, 920, 30);
+}
+function beach(top, t) {
+  let g = x.createLinearGradient(0, top, 0, top + 520); g.addColorStop(0, '#7FD3FF'); g.addColorStop(1, '#C9F0FF'); x.fillStyle = g; x.fillRect(-200, top, W + 400, 520);
+  x.fillStyle = '#FFD84D'; x.beginPath(); x.arc(860, top + 190, 80, 0, 7); x.fill();
+  x.fillStyle = '#2BB3E8'; x.fillRect(-200, top + 470, W + 400, 120);
+  x.fillStyle = 'rgba(255,255,255,.6)'; for (let i = 0; i < 6; i++) { x.beginPath(); x.ellipse((i * 220 + t * 60) % 1200 - 60, top + 500 + (i % 2) * 40, 60, 6, 0, 0, 7); x.fill(); }
+  x.fillStyle = '#F6DCA0'; x.fillRect(-200, top + 590, W + 400, 520);
+  emoji('🌴', 130, top + 430, 210);
+}
+
+/* ---- safe-zone layout: content of each half is scaled into the area Reels leaves free ---- */
+function topPart(fn) { x.save(); x.translate(97, 262); x.scale(0.8, 0.8); fn(); x.restore(); }
+function botPart(fn) { x.save(); x.translate(108, 318); x.scale(0.8, 0.8); fn(); x.restore(); }
+/* ---- scenes ---- */
+function hook(t) {
+  const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#1E1B3A'); g.addColorStop(1, '#3B1E6E'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  const a = back(local(t, 0.05, 0.5)), b = back(local(t, 0.7, 1.15)), v = back(local(t, 0.45, 0.8));
+  x.save(); x.translate(W / 2, 640 - (1 - a) * 500); text('VANLIG', 0, -70, 150, '#CFCBD8'); text('PERSON', 0, 80, 150, '#CFCBD8'); x.restore();
+  x.save(); x.translate(W / 2, 960); x.scale(v, v); x.rotate(-0.08); text('vs', 0, 0, 170, '#FFE14D', { stroke: 14 }); x.restore();
+  x.save(); x.translate(W / 2, 1290 + (1 - b) * 600); text('MOTEY', 0, -70, 160, '#fff'); text('PRO ⭐', 0, 90, 160, '#FF8FB1'); x.restore();
+  if (t > 1.2) TikTokMode.drawMotey(x, 880, 1580 - ease(local(t, 1.2, 1.7)) * 120, 1.2, t, true);
+}
+function sceneMeeting(t, t0) {
+  const lt = t - t0;
+  panels(t);
+  topPart(() => {
+  // top: stuck in meeting #4
+  office(0);
+  x.fillStyle = '#2B2840'; rr(560, 300, 380, 250, 18); x.fill();
+  for (let i = 0; i < 4; i++) { x.fillStyle = ['#6B7A99', '#8A6B99', '#6B9989', '#99886B'][i]; rr(574 + (i % 2) * 180, 314 + Math.floor(i / 2) * 114, 172, 106, 10); x.fill(); emoji('😐', 660 + (i % 2) * 180, 367 + Math.floor(i / 2) * 114, 54); }
+  person(300, 420, 1.15, { mood: 'tired', t, sweat: true });
+  emoji('☕', 470, 640, 80);
+  x.save(); x.translate(160, 260); x.rotate(t * 3); emoji('🕐', 0, 0, 80); x.restore();
+
+  });
+  botPart(() => {  // bottom: on the beach while the 3D twin takes the meeting
+  beach(HALF + 130, t);
+  person(370, HALF + 610, 1.05, { mood: 'cool', t, shirt: '#FF7A59', hair: '#2B1B12' });
+  emoji('🍹', 520, HALF + 700, 90, Math.sin(t * 2) * 0.1);
+  const ph = ease(local(t, t0 + 0.8, t0 + 1.4));
+  x.save(); x.translate(800, HALF + 560 + (1 - ph) * 400); x.rotate(0.06);
+  x.fillStyle = '#1E1B3A'; rr(-130, -230, 260, 460, 36); x.fill(); x.fillStyle = '#EAF0FF'; rr(-114, -200, 228, 400, 22); x.fill();
+  x.fillStyle = '#D6E2FF'; rr(-100, -186, 200, 170, 16); x.fill();
+  TikTokMode.drawMotey(x, 0, -105, 0.55, t, true);
+  x.fillStyle = 'rgba(30,27,58,.85)'; rr(-92, -180, 150, 30, 15); x.fill(); text('🤖 AI-tvilling', -17, -164, 18, '#fff');
+  for (let i = 0; i < 2; i++) { x.fillStyle = ['#C9BFE8', '#BFE8D6'][i]; rr(-100 + i * 104, -6, 96, 90, 12); x.fill(); emoji(['🙂', '😄'][i], -52 + i * 104, 40, 40); }
+  text('”Ja, rapporten är klar!”', 0, 140, 22, '#1E1B3A', { max: 200 });
+  x.restore();
+
+  });
+  capt('Möte nr 4 idag… 😩', 830, '#1E1B3A', t0 + 0.3, t);
+  capt('3D-tvillingen tar mötet 🏖️', HALF + 830, '#fff', t0 + 0.9, t);
+}
+
+function sceneBoss(t, t0) {
+  panels(t);
+  topPart(() => {
+  boss(300, 470, 1.2, t, true);
+  person(820, 560, 0.9 - 0.15 * ease(local(t, t0 + 0.6, t0 + 1.4)), { mood: 'scared', t, sweat: true });
+  const sb = back(local(t, t0 + 0.3, t0 + 0.7));
+  x.save(); x.translate(560, 270); x.scale(sb, sb); x.rotate(Math.sin(t * 40) * 0.01); bubble(0, 0, 640, 'DET HÄR ÄR HELT OACCEPTABELT!!', '#E5484D', '#fff', 46, [-200, -60]); x.restore();
+
+  });
+  botPart(() => {  // bottom: Live AI swaps the style
+  boss(260, HALF + 470, 1.1, t, false);
+  person(830, HALF + 560, 0.95, { mood: 'happy', t, bob: true, shirt: '#19C79A' });
+  TikTokMode.drawMotey(x, 560, HALF + 650, 0.75, t, true);
+  const sp = back(local(t, t0 + 1.0, t0 + 1.4));
+  x.save(); x.translate(560, HALF + 300); x.scale(sp, sp); bubble(0, 0, 700, 'Det här kan vi göra ännu bättre tillsammans 😊', '#fff', '#6C4CF5', 44, [-40, 30]); x.restore();
+  if (t > t0 + 1.4) pill('🎭 Live AI · Snäll stil', 560, HALF + 790, 'rgba(30,27,58,.85)', '#fff', 30);
+
+  });
+  capt('Chefen skriker. Du lider.', 830, '#1E1B3A', t0 + 0.5, t);
+  capt('Live AI gör chefen snäll 😊', HALF + 830, '#fff', t0 + 1.3, t);
+}
+
+function sceneMissed(t, t0) {
+  panels(t);
+  topPart(() => {
+  person(320, 500, 1.15, { mood: 'confused', t });
+  for (let i = 0; i < 3; i++) emoji('❓', 520 + i * 70, 300 - i * 40 + Math.sin(t * 5 + i) * 10, 80 - i * 10, Math.sin(t * 3 + i) * 0.3);
+  for (let i = 0; i < 4; i++) { const k = (lt => lt)(t - t0); x.save(); x.translate(760 + i * 60, 360 + ((k * 260 + i * 140) % 520)); x.rotate(k * 3 + i); x.fillStyle = '#fff'; x.fillRect(-36, -46, 72, 92); x.fillStyle = '#E5484D'; x.fillRect(-24, -30, 48, 8); x.restore(); }
+
+  });
+  botPart(() => {  // bottom: Motey pops up with what happened
+  const pop = back(local(t, t0 + 0.6, t0 + 1.1));
+  x.save(); x.translate(250, HALF + 430); x.scale(pop, pop); TikTokMode.drawMotey(x, 0, 0, 1.25, t, true); x.restore();
+  const card = ease(local(t, t0 + 1.0, t0 + 1.5));
+  x.globalAlpha = card;
+  x.fillStyle = '#fff'; rr(430, HALF + 200, 600, 470, 34); x.fill();
+  text('Förra mötet', 730, HALF + 250, 40, '#1E1B3A');
+  const items = ['✅ Lansering 14 november', '✅ Designen godkänd', '📝 Du: skicka rapporten'];
+  items.forEach((s, i) => { if (t > t0 + 1.4 + i * 0.4) text(s, 460, HALF + 330 + i * 70, 34, '#1E1B3A', { align: 'left', weight: 800 }); });
+  if (t > t0 + 2.7) { x.fillStyle = '#DDFBEF'; rr(460, HALF + 545, 540, 90, 24); x.fill(); text('📎 Kundrapport.pdf → Chefen ✓', 730, HALF + 590, 32, '#047857'); }
+  x.globalAlpha = 1;
+
+  });
+  capt('Missade mötet. Filerna?! 🤷', 830, '#1E1B3A', t0 + 0.4, t);
+  capt('Motey berättar & skickar ✅', HALF + 830, '#fff', t0 + 1.2, t);
+}
+
+function sceneBuild(t, t0) {
+  panels(t);
+  topPart(() => {
+  x.fillStyle = '#14112A'; rr(470, 260, 520, 330, 20); x.fill();
+  ['Traceback (most recent…', 'SyntaxError: invalid', '  model = Transfrmer(', 'NameError: torch?!', 'ERROR ERROR ERROR'].forEach((s, i) => { if (t > t0 + i * 0.25) text(s, 500, 300 + i * 56, 30, i % 2 ? '#FF6B6B' : '#FFB4B4', { align: 'left', weight: 700 }); });
+  person(260, 480, 1.1, { mood: 'scared', t, sweat: true });
+  emoji('😭', 260 + Math.sin(t * 9) * 6, 300, 70);
+
+  });
+  botPart(() => {  // bottom: Motey Studio does it
+  const cards = [['💻', 'Kod', '×5 varianter'], ['🎨', 'Design', '×5 varianter'], ['📚', 'Tutorial', 'steg för steg'], ['🛒', 'Inköp', 'vad ni behöver']];
+  cards.forEach(([ic, n, s], i) => {
+    const p = back(local(t, t0 + 0.6 + i * 0.35, t0 + 1.0 + i * 0.35));
+    const cx = 290 + (i % 2) * 500, cy = HALF + 330 + Math.floor(i / 2) * 250;
+    x.save(); x.translate(cx, cy); x.scale(p, p); x.rotate((i % 2 ? 1 : -1) * 0.03);
+    x.fillStyle = '#fff'; rr(-220, -100, 440, 200, 30); x.fill();
+    emoji(ic, -140, 0, 90); text(n, 50, -26, 46, '#1E1B3A'); text(s, 50, 32, 30, '#6C4CF5', { weight: 800 });
+    x.restore();
+  });
+  if (t > t0 + 2.4) pill('🛠️ Motey Studio · klart på sekunder', W / 2, HALF + 690, '#1E1B3A', '#FFE14D', 34);
+
+  });
+  capt('Ska bygga AI. Kan inte koda', 830, '#1E1B3A', t0 + 0.3, t);
+  capt('Motey kodar & designar 🛠️', HALF + 830, '#fff', t0 + 0.8, t);
+}
+
+function endCard(t, t0) {
+  const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#6C4CF5'); g.addColorStop(0.6, '#9B6BFF'); g.addColorStop(1, '#FF5C8A');
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  x.globalAlpha = 0.12; x.fillStyle = '#fff'; for (let i = 0; i < 8; i++) { x.beginPath(); x.arc((i * 170 + t * 40) % (W + 200) - 100, 200 + (i * 233) % 1500, 50 + i * 14, 0, 7); x.fill(); } x.globalAlpha = 1;
+  const p = back(local(t, t0, t0 + 0.6));
+  x.save(); x.translate(W / 2, 640); x.scale(p, p); TikTokMode.drawMotey(x, 0, 0, 2.6, t, local(t, t0, t0 + 3) < 1); x.restore();
+  const q = ease(local(t, t0 + 0.4, t0 + 0.9));
+  x.globalAlpha = q;
+  text('Motey Pro', W / 2, 990, 130, '#fff', { stroke: 0 });
+  text('Ligg på stranden.', W / 2, 1120, 64, '#fff'); text('Motey sköter mötet. 🏖️', W / 2, 1200, 64, '#FFE14D');
+  x.globalAlpha = 1;
+  if (t > t0 + 1.2) { const s = 1 + 0.05 * Math.sin(t * 6); x.save(); x.translate(W / 2, 1345); x.scale(s, s); pill('Ladda ner Motey', 0, 0, '#fff', '#6C4CF5', 54); x.restore(); }
+  if (t > t0 + 1.6) text('Pro 310 kr/mån · Plus 12 kr/mån · Lite gratis', W / 2, 1460, 34, '#fff', { weight: 700 });
+}
+
+function draw(t) {
+  x.clearRect(0, 0, W, H);
+  const i = SCENES.findIndex(([a, b]) => t >= a && t < b);
+  const k = i < 0 ? SCENES.length - 1 : i, [a] = SCENES[k];
+  [hook, sceneMeeting, sceneBoss, sceneMissed, sceneBuild, endCard][k](t, a);
+  if (k >= 1 && k <= 4) labels();
+  // swipe-in transition at the start of each scene
+  const sw = local(t, a, a + 0.28);
+  if (k > 0 && sw < 1) { x.fillStyle = '#1E1B3A'; x.fillRect(W * ease(sw), 0, W, H); }
+  // progress bar like stories
+  x.fillStyle = 'rgba(255,255,255,.35)'; rr(40, 60, W - 80, 8, 4); x.fill();
+  x.fillStyle = '#fff'; rr(40, 60, (W - 80) * clamp(t / 25.5), 8, 4); x.fill();
+}
+window.draw = draw; window.DURATION = 25.5;
+draw(0);
+</script>
+</body>
