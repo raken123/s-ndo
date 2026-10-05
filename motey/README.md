@@ -92,6 +92,36 @@ förklarar Motey vad den betyder och hur man "förstör" den i verkligheten.
 Svara rätt på frågan och väggen rasar. Du kan också fråga Motey vad som helst
 under spelets gång.
 
+## Motey Studio – design, kod och tutorials
+
+Karl och hans team ska bygga en transformer-AI, men de kan inte designa, inte
+koda och vet inte hur grejerna sitter ihop. I **Studio** beskriver de vad de vill
+bygga, och kan lägga till bilder från datorn eller internet (sök bland fria
+bilder på Wikimedia Commons eller klistra in en bildlänk). Motey:
+
+* **🧭 Plan** – förklarar hur allt hänger ihop: delarna, stegen och svåra ord.
+* **💻 Kod** – flera kompletta kodvarianter. Webbvarianter kan köras direkt i
+  appen, och allt går att ladda ner som zip.
+* **🎨 Design** – loggor, startsidor, app-skärmar, diagram och affischer, som
+  visas direkt (de bifogade bilderna kan användas i designen).
+* **📚 Tutorial** – steg-för-steg-guider på olika nivåer, med kod, bockar och
+  uppläsning. Kan sparas som PDF eller Markdown.
+* **🛒 Inköp** – vad de ska köpa, i olika budgetnivåer med ungefärliga priser.
+* **🏷️ Namn** – namn, slogan och domänförslag.
+* **✨ Mer** – tidsplan, roller i teamet, risker, pitch, testplan, budget,
+  README, FAQ, marknadsföring, licenser, mötesagenda – eller något eget.
+
+Allt finns i flera varianter: *🔁 Fler varianter* gör nya, och *✏️ Ändra*
+("gör den mörkare", "använd TensorFlow") gör om dem. Lite får 2 varianter per
+gång, Plus 3 och Pro 5. Hela projektet kan exporteras som zip eller delas
+med teamet i en Motey-chatt. Karls transformer-projekt finns med som exempel,
+med riktig kod: en egen mini-GPT i PyTorch, uppmärksamhet i NumPy, och
+finjustering av GPT-2/GPT-SW3 med Hugging Face.
+
+Studio drivs av Gemini 3.8 Flash. Utan Gemini fyller offline-mallar i
+grunderna. Det kostar (i procent av Plus): plan 2, kod 3, design 3,
+tutorial 3, inköpslista 1, namn 1, mer 2.
+
 ## AI – Gemini
 
 Motey drivs av Googles Gemini API:

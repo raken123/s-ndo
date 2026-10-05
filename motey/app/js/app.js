@@ -20,7 +20,7 @@
 
   /* ---------- router ---------- */
   const NAV = [
-    ['home', '🏠', 'Hem'], ['chat', '💬', 'Chattar'], ['live', '🎭', 'Live AI'], ['tiktok', '🎬', 'TikTok'], ['game', '🎮', 'Spel'], ['settings', '⚙️', 'Mer']
+    ['home', '🏠', 'Hem'], ['chat', '💬', 'Chattar'], ['studio', '🛠️', 'Studio'], ['live', '🎭', 'Live AI'], ['tiktok', '🎬', 'TikTok'], ['game', '🎮', 'Spel'], ['settings', '⚙️', 'Mer']
   ];
   let current = null;
   function go(hash) { if (location.hash === hash) route(); else location.hash = hash; }
@@ -28,7 +28,7 @@
     // invite links: …motey.html#join=M1…
     const jm = location.hash.match(/^#join=(.+)$/);
     if (jm) { history.replaceState(null, '', '#/chat'); return joinFromLink(decodeURIComponent(jm[1])); }
-    const [, name = 'home', arg] = (location.hash || '#/home').split('/');
+    const [, name = 'home', arg, arg2] = (location.hash || '#/home').split('/');
     if (current && current.destroy) current.destroy();
     current = null;
     Platform.stopSpeaking();
@@ -45,6 +45,7 @@
     if (name === 'new') return viewNew(v);
     if (name === 'settings') return viewSettings(v);
     if (name === 'plans') return Plans.render(v);
+    if (name === 'studio') { current = StudioMode; return StudioMode.render(v, arg, arg2, { toast, esc }); }
     if (name === 'scan') return Avatar.renderScan(v, { toast, esc });
     if (name === 'chat') { current = ChatMode; return ChatMode.render(v, arg, { toast, esc }); }
     if (name === 'call' && arg) { current = CallMode; return CallMode.render(v, arg, { toast, esc }); }
@@ -155,6 +156,7 @@
         <a class="card" href="#/tiktok" style="text-decoration:none;color:inherit;margin:0"><h3>🎬 TikTok-läge</h3><p class="small muted" style="margin:0">Mötet som en kort video med animerad presentatör och bilder.</p></a>
         <a class="card" href="#/game" style="text-decoration:none;color:inherit;margin:0"><h3>🎮 Spelläge</h3><p class="small muted" style="margin:0">Spring genom mötet, krossa väggar som F-skatt och lär dig på köpet.</p></a>
       </div>
+      <a class="card studio-card" href="#/studio" style="display:flex;gap:14px;align-items:center;text-decoration:none;color:inherit"><span style="font-size:2.2rem">🛠️</span><div style="flex:1"><h3 style="margin:0">Motey Studio</h3><p class="small muted" style="margin:0">Kan ni inte designa eller koda? Motey förklarar, kodar, designar, skriver tutorials, inköpslistor och namn – i flera varianter.</p></div><span>›</span></a>
       <div class="row between"><h2>Kommande</h2><a class="btn sm ghost" href="#/new">＋ Nytt möte</a></div>
       ${upcoming.map(meetingRow).join('') || `<p class="muted">Inga kommande möten.${demo ? '' : ' Skapa ett och bjud in dina kollegor – ni möts direkt i Motey.'}</p>`}
       <h2 style="margin-top:18px">Tidigare</h2>

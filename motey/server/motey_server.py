@@ -28,6 +28,7 @@ PLANS = {
     'pro': {'quota': 2000, 'live': True, 'replace': True},
 }
 COST = {'summary': 1, 'catchup': 1, 'ask': 0.5, 'fix': 1, 'tiktok': 4, 'game': 3, 'scan': 2, 'test': 0,
+        'studio_plan': 2, 'studio_code': 3, 'studio_design': 3, 'studio_tutorial': 3, 'studio_buy': 1, 'studio_names': 1, 'studio_more': 2,
         'live_min': 5, 'replace_min': 5}
 GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
 

@@ -16,10 +16,11 @@
   // cost of each thing, in Plus units (Plus month = 100)
   const COST = {
     summary: 1, catchup: 1, ask: 0.5, fix: 1, tiktok: 4, game: 3, scan: 2,
+    studio_plan: 2, studio_code: 3, studio_design: 3, studio_tutorial: 3, studio_buy: 1, studio_names: 1, studio_more: 2,
     live_min: 5,     // AI-Live (style swap with Motey's voice), per started minute
     replace_min: 5   // Live Replace (Pro), per started minute
   };
-  const LABEL = { summary: 'Sammanfattning', catchup: 'Vad hände förra gången', ask: 'Fråga Motey', fix: 'Motey fixar en fil', tiktok: 'TikTok-video', game: 'Spelbana', scan: '3D-skanning', live_min: 'AI-Live, per minut', replace_min: 'Live Replace, per minut' };
+  const LABEL = { summary: 'Sammanfattning', catchup: 'Vad hände förra gången', ask: 'Fråga Motey', fix: 'Motey fixar en fil', tiktok: 'TikTok-video', game: 'Spelbana', scan: '3D-skanning', studio_plan: 'Studio: plan', studio_code: 'Studio: kod', studio_design: 'Studio: design', studio_tutorial: 'Studio: tutorial', studio_buy: 'Studio: inköpslista', studio_names: 'Studio: namn', studio_more: 'Studio: mer', live_min: 'AI-Live, per minut', replace_min: 'Live Replace, per minut' };
 
   const S = () => Store.settings;
   const server = () => (S().serverUrl || '').replace(/\/+$/, '');
