@@ -6,6 +6,8 @@
 #   saveFile(name, base64, mime) -> String   saves to Download/Motey
 #   openUrl(url)                             mailto:, https: …
 #   speak(text, rate, pitch) / stopSpeaking() Swedish text-to-speech
+#   shareText(text)                          the system share sheet
+#   showNotification(title, text)            a notification for new messages
 
 .field private final a:Lse/motey/app/MainActivity;
 .field private final tts:Landroid/speech/tts/TextToSpeech;
@@ -162,4 +164,100 @@
     invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
     move-result-object v1
     return-object v1
+.end method
+
+
+.method public shareText(Ljava/lang/String;)V
+    .registers 6
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+
+    :try_start_0
+    new-instance v0, Landroid/content/Intent;
+    const-string v1, "android.intent.action.SEND"
+    invoke-direct {v0, v1}, Landroid/content/Intent;-><init>(Ljava/lang/String;)V
+    const-string v1, "text/plain"
+    invoke-virtual {v0, v1}, Landroid/content/Intent;->setType(Ljava/lang/String;)Landroid/content/Intent;
+    const-string v1, "android.intent.extra.TEXT"
+    invoke-virtual {v0, v1, p1}, Landroid/content/Intent;->putExtra(Ljava/lang/String;Ljava/lang/String;)Landroid/content/Intent;
+    const-string v1, "Dela med"
+    invoke-static {v0, v1}, Landroid/content/Intent;->createChooser(Landroid/content/Intent;Ljava/lang/CharSequence;)Landroid/content/Intent;
+    move-result-object v0
+    const/high16 v1, 0x10000000
+    invoke-virtual {v0, v1}, Landroid/content/Intent;->addFlags(I)Landroid/content/Intent;
+    iget-object v1, p0, Lse/motey/app/Bridge;->a:Lse/motey/app/MainActivity;
+    invoke-virtual {v1, v0}, Lse/motey/app/MainActivity;->startActivity(Landroid/content/Intent;)V
+    :try_end_0
+    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :catch_0
+    return-void
+
+    :catch_0
+    return-void
+.end method
+
+
+.method public showNotification(Ljava/lang/String;Ljava/lang/String;)V
+    .registers 9
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+
+    :try_start_0
+    iget-object v0, p0, Lse/motey/app/Bridge;->a:Lse/motey/app/MainActivity;
+    const-string v1, "notification"
+    invoke-virtual {v0, v1}, Lse/motey/app/MainActivity;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;
+    move-result-object v1
+    check-cast v1, Landroid/app/NotificationManager;
+
+    sget v2, Landroid/os/Build$VERSION;->SDK_INT:I
+    const/16 v3, 0x1a
+    if-lt v2, v3, :old
+
+    new-instance v2, Landroid/app/NotificationChannel;
+    const-string v3, "motey"
+    const-string v4, "Meddelanden och möten"
+    const/4 v5, 0x3
+    invoke-direct {v2, v3, v4, v5}, Landroid/app/NotificationChannel;-><init>(Ljava/lang/String;Ljava/lang/CharSequence;I)V
+    invoke-virtual {v1, v2}, Landroid/app/NotificationManager;->createNotificationChannel(Landroid/app/NotificationChannel;)V
+    new-instance v2, Landroid/app/Notification$Builder;
+    invoke-direct {v2, v0, v3}, Landroid/app/Notification$Builder;-><init>(Landroid/content/Context;Ljava/lang/String;)V
+    goto :build
+
+    :old
+    new-instance v2, Landroid/app/Notification$Builder;
+    invoke-direct {v2, v0}, Landroid/app/Notification$Builder;-><init>(Landroid/content/Context;)V
+
+    :build
+    invoke-virtual {v0}, Lse/motey/app/MainActivity;->getApplicationInfo()Landroid/content/pm/ApplicationInfo;
+    move-result-object v3
+    iget v3, v3, Landroid/content/pm/ApplicationInfo;->icon:I
+    invoke-virtual {v2, v3}, Landroid/app/Notification$Builder;->setSmallIcon(I)Landroid/app/Notification$Builder;
+    invoke-virtual {v2, p1}, Landroid/app/Notification$Builder;->setContentTitle(Ljava/lang/CharSequence;)Landroid/app/Notification$Builder;
+    invoke-virtual {v2, p2}, Landroid/app/Notification$Builder;->setContentText(Ljava/lang/CharSequence;)Landroid/app/Notification$Builder;
+    const/4 v3, 0x1
+    invoke-virtual {v2, v3}, Landroid/app/Notification$Builder;->setAutoCancel(Z)Landroid/app/Notification$Builder;
+
+    # tapping the notification brings Motey back
+    new-instance v3, Landroid/content/Intent;
+    const-class v4, Lse/motey/app/MainActivity;
+    invoke-direct {v3, v0, v4}, Landroid/content/Intent;-><init>(Landroid/content/Context;Ljava/lang/Class;)V
+    const/high16 v4, 0x34000000
+    invoke-virtual {v3, v4}, Landroid/content/Intent;->addFlags(I)Landroid/content/Intent;
+    const/4 v4, 0x0
+    const/high16 v5, 0x4000000
+    invoke-static {v0, v4, v3, v5}, Landroid/app/PendingIntent;->getActivity(Landroid/content/Context;ILandroid/content/Intent;I)Landroid/app/PendingIntent;
+    move-result-object v3
+    invoke-virtual {v2, v3}, Landroid/app/Notification$Builder;->setContentIntent(Landroid/app/PendingIntent;)Landroid/app/Notification$Builder;
+
+    invoke-virtual {v2}, Landroid/app/Notification$Builder;->build()Landroid/app/Notification;
+    move-result-object v2
+    invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
+    move-result-wide v3
+    long-to-int v3, v3
+    invoke-virtual {v1, v3, v2}, Landroid/app/NotificationManager;->notify(ILandroid/app/Notification;)V
+    :try_end_0
+    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :catch_0
+    return-void
+
+    :catch_0
+    return-void
 .end method

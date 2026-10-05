@@ -25,7 +25,7 @@ WORK = os.path.join(HERE, '.work')
 TOOLS = os.environ.get('MOTEY_TOOLS', os.path.join(HERE, '.tools'))
 ICONS = os.path.join(HERE, 'icons')
 
-VERSION = '1.0.0'
+VERSION = '1.1.0'
 APP_ID = 'se.motey.app'
 PORT = 47391  # fixed so the desktop app keeps its localStorage between runs
 
@@ -151,7 +151,7 @@ def neutralino_config():
         'port': PORT, 'documentRoot': '/www/', 'url': '/', 'enableServer': True, 'enableNativeAPI': True,
         'tokenSecurity': 'one-time', 'dataLocation': 'system',
         'logging': {'enabled': False, 'writeToLogFile': False},
-        'nativeAllowList': ['os.showSaveDialog', 'filesystem.writeBinaryFile', 'os.open', 'app.exit'],
+        'nativeAllowList': ['os.showSaveDialog', 'filesystem.writeBinaryFile', 'os.open', 'os.showNotification', 'app.exit'],
         'globalVariables': {},
         'modes': {'window': {
             'title': 'Motey', 'width': 1180, 'height': 820, 'minWidth': 400, 'minHeight': 600,
@@ -390,7 +390,8 @@ def app_bundle():
         'CFBundleShortVersionString': VERSION, 'CFBundleVersion': '1',
         'LSApplicationCategoryType': 'public.app-category.productivity', 'LSMinimumSystemVersion': '10.15',
         'NSHighResolutionCapable': True, 'NSHumanReadableCopyright': '© Motey',
-        'NSMicrophoneUsageDescription': 'Motey lyssnar på mötet när du startar Live AI.',
+        'NSMicrophoneUsageDescription': 'Motey använder mikrofonen i möten och när du startar Live AI.',
+        'NSCameraUsageDescription': 'Motey använder kameran när du är med i ett möte med video.',
         'NSSpeechRecognitionUsageDescription': 'Motey gör om tal till text i Live AI.',
     })
     c = 'Motey.app/Contents/'

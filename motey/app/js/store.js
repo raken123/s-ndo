@@ -16,11 +16,12 @@
     });
   }
 
+  const DEMO_IDS = ['nova-1', 'nova-2', 'fin-1', 'boss-1'];
   function demoMeetings(user, boss) {
     const lastWeekday = -6;
     return [
       {
-        id: 'nova-1', title: 'Veckomöte – Projekt Nova', series: 'nova', start: at(lastWeekday, 9), durationMin: 45,
+        id: 'nova-1', demo: true, title: 'Veckomöte – Projekt Nova', series: 'nova', start: at(lastWeekday, 9), durationMin: 45,
         attendees: [boss, 'Ali', 'Sara', user], boss, attended: false,
         transcript: lines(`
 ${boss}: Godmorgon allihop. ${user} är inte här idag, så vi tar det kort.
@@ -40,11 +41,11 @@ ${boss}: Toppen. Nästa möte är samma tid nästa vecka. Tack allihop!`),
         ]
       },
       {
-        id: 'nova-2', title: 'Veckomöte – Projekt Nova', series: 'nova', start: at(0, new Date().getHours() + 1), durationMin: 45,
+        id: 'nova-2', demo: true, title: 'Veckomöte – Projekt Nova', series: 'nova', start: at(0, new Date().getHours() + 1), durationMin: 45,
         attendees: [boss, 'Ali', 'Sara', user], boss, attended: null, transcript: [], files: []
       },
       {
-        id: 'fin-1', title: 'Finansmöte – F-skatt, moms & budget', series: 'fin', start: at(-1, 13), durationMin: 60,
+        id: 'fin-1', demo: true, title: 'Finansmöte – F-skatt, moms & budget', series: 'fin', start: at(-1, 13), durationMin: 60,
         attendees: ['Lena (ekonomi)', boss, user], boss, attended: true,
         transcript: lines(`
 Lena (ekonomi): Välkomna! Idag går vi igenom skatterna inför nästa kvartal.
@@ -62,7 +63,7 @@ ${boss}: ${user}, du ska gå igenom leverantörslistan och kontrollera F-skatt f
         files: [{ name: 'Leverantörslista.xlsx', status: 'missing', owner: user }]
       },
       {
-        id: 'boss-1', title: 'Kvartalsgenomgång med Gunnar', series: 'gunnar', start: at(-3, 15), durationMin: 30,
+        id: 'boss-1', demo: true, title: 'Kvartalsgenomgång med Gunnar', series: 'gunnar', start: at(-3, 15), durationMin: 30,
         attendees: ['Gunnar (chef)', user], boss: 'Gunnar (chef)', attended: true,
         transcript: lines(`
 Gunnar (chef): Det här är helt oacceptabelt! Försäljningen ligger 12 procent under målet.
@@ -85,9 +86,11 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
       name: 'Ronny', bossName: 'Birgitta', bossEmail: '',
       autoSend: true, sendMethod: 'email', webhookUrl: '',
       apiKey: '', model: 'claude-opus-5-5',
-      voice: true, liveStyle: 'snall', theme: 'auto'
+      voice: true, liveStyle: 'snall', theme: 'auto',
+      demo: true, showDemo: false, color: '#6C4CF5', relays: '', turnUrl: '', turnUser: '', turnPass: ''
     },
     meetings: [],
+    rooms: [],
     outbox: [],
     stats: { wallsBroken: 0, videos: 0, restyled: 0 }
   });
@@ -99,24 +102,29 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
       if (raw) state = Object.assign(defaults(), JSON.parse(raw));
     } catch (e) { /* storage blocked – start fresh */ }
     if (!state) state = defaults();
-    if (!state.meetings.length) state.meetings = demoMeetings(state.settings.name, state.settings.bossName);
+    state.settings = Object.assign(defaults().settings, state.settings);
+    state.meetings.forEach(m => { if (DEMO_IDS.includes(m.id)) m.demo = true; });
+    if (!state.meetings.some(m => m.demo)) state.meetings = state.meetings.concat(demoMeetings(state.settings.name, state.settings.bossName));
     return state;
   }
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* quota or blocked */ }
   }
   function reset() {
-    const s = state ? state.settings : defaults().settings;
-    state = defaults();
-    state.settings = Object.assign(state.settings, { name: s.name, bossName: s.bossName, bossEmail: s.bossEmail, apiKey: s.apiKey });
-    state.onboarded = true;
-    state.meetings = demoMeetings(state.settings.name, state.settings.bossName);
+    const real = state ? state.meetings.filter(m => m.room) : [];
+    const keep = state ? { settings: state.settings, rooms: state.rooms, outbox: state.outbox, onboarded: state.onboarded } : {};
+    state = Object.assign(defaults(), keep);
+    state.meetings = real.concat(demoMeetings(state.settings.name, state.settings.bossName));
     save();
+  }
+  // Meetings the user sees: real ones always, demo ones only while exploring.
+  function visible() {
+    return state.meetings.filter(m => !m.demo || state.settings.demo || state.settings.showDemo);
   }
 
   const byStart = (a, b) => new Date(a.start) - new Date(b.start);
   function meeting(id) { return state.meetings.find(m => m.id === id); }
-  function sorted() { return state.meetings.slice().sort(byStart); }
+  function sorted() { return visible().slice().sort(byStart); }
   function isPast(m) { return new Date(m.start).getTime() + (m.durationMin || 30) * 6e4 < Date.now(); }
   function previousInSeries(m) {
     if (!m.series) return null;
@@ -177,7 +185,7 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
   }
 
   window.Store = {
-    load, save, reset, meeting, sorted, isPast, previousInSeries, pendingCatchUp,
+    load, save, reset, visible, meeting, sorted, isPast, previousInSeries, pendingCatchUp,
     addMeeting, removeMeeting, parseTranscript, demoMeetings,
     get state() { return state; },
     get settings() { return state.settings; }

@@ -43,3 +43,12 @@
     iput-object v1, v0, Lse/motey/app/MainActivity;->fileCallback:Landroid/webkit/ValueCallback;
     return v1
 .end method
+
+
+# getUserMedia() from the page (calls)
+.method public onPermissionRequest(Landroid/webkit/PermissionRequest;)V
+    .registers 3
+    iget-object v0, p0, Lse/motey/app/Chrome;->a:Lse/motey/app/MainActivity;
+    invoke-virtual {v0, p1}, Lse/motey/app/MainActivity;->askMedia(Landroid/webkit/PermissionRequest;)V
+    return-void
+.end method

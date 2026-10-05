@@ -125,5 +125,29 @@
     return r;
   }
 
-  window.Platform = { kind, saveFile, openUrl, speak, stopSpeaking, recognizer, blobToB64, bufToB64, nl };
+  /* ---- notifications, sharing, clipboard ---- */
+  let asked = false;
+  function notify(title, body) {
+    if (android() && android().showNotification) { android().showNotification(String(title), String(body || '')); return; }
+    if (desktop()) { nl('os.showNotification', { title, content: body || '' }).catch(() => {}); return; }
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') { try { new Notification(title, { body, icon: 'img/icon-192.png' }); } catch (e) { /* not allowed here */ } }
+    else if (Notification.permission === 'default' && !asked) { asked = true; Notification.requestPermission().catch(() => {}); }
+  }
+  async function copy(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* fall back */ }
+    const t = document.createElement('textarea');
+    t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch (e) { /* unsupported */ }
+    t.remove();
+    return ok;
+  }
+  async function share(text, title) {
+    if (android() && android().shareText) { android().shareText(String(text)); return; }
+    if (navigator.share) { try { await navigator.share({ title, text }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+    if (await copy(text)) window.App && App.toast('Kopierat – klistra in där du vill dela 📋');
+  }
+
+  window.Platform = { kind, saveFile, openUrl, speak, stopSpeaking, recognizer, blobToB64, bufToB64, nl, notify, copy, share };
 })();

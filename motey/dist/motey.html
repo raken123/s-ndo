@@ -292,6 +292,69 @@ kbd { background: var(--surface-2); border: 1px solid var(--line); border-bottom
 .ai-tag { font-size: .72rem; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); }
 .ai-tag.claude { background: #FCE7D6; color: #9A3412; }
 
+/* ---------- chat ---------- */
+.avatar { width: 44px; height: 44px; flex: none; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1rem; overflow: hidden; }
+.chatrow .prev { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.unread { background: var(--coral); color: #fff; border-radius: 999px; min-width: 24px; height: 24px; padding: 0 7px; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; font-size: .8rem; }
+.chat-head { display: flex; gap: 10px; align-items: center; padding: 6px 0 10px; border-bottom: 1px solid var(--line); }
+.chat-head .t { font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.msgs { display: flex; flex-direction: column; gap: 6px; padding: 12px 2px; min-height: 40vh; max-height: calc(100vh - 290px); overflow-y: auto; }
+.msgs.compact { max-height: none; flex: 1; min-height: 0; }
+.msg { max-width: 82%; align-self: flex-start; }
+.msg.mine { align-self: flex-end; text-align: right; }
+.msg .from { font-size: .75rem; font-weight: 800; margin: 0 0 2px 10px; }
+.msg .bub { display: inline-block; text-align: left; background: var(--surface); border: 1px solid var(--line); padding: 9px 13px; border-radius: 18px 18px 18px 6px; overflow-wrap: anywhere; }
+.msg.mine .bub { background: var(--brand); color: #fff; border-color: transparent; border-radius: 18px 18px 6px 18px; }
+.msg.mine .bub a { color: #fff; }
+.msg .when { font-size: .68rem; color: var(--ink-2); margin: 2px 10px 0; }
+.sysmsg { align-self: center; font-size: .78rem; color: var(--ink-2); background: var(--surface-2); padding: 4px 12px; border-radius: 999px; text-align: center; }
+.trmsg { align-self: stretch; font-size: .88rem; color: var(--ink-2); font-style: italic; padding: 2px 10px; border-left: 3px solid var(--brand-2); }
+.filemsg { display: flex; gap: 10px; align-items: center; border: 0; background: rgba(255, 255, 255, .18); color: inherit; padding: 6px 8px; border-radius: 12px; cursor: pointer; text-align: left; font-size: 1.3rem; }
+.filemsg span { font-size: .9rem; }
+.msg:not(.mine) .filemsg { background: var(--surface-2); }
+.composer { display: flex; gap: 8px; align-items: flex-end; padding: 10px 0 4px; border-top: 1px solid var(--line); }
+.composer textarea { min-height: 44px; max-height: 140px; resize: none; border-radius: 22px; padding: 11px 16px; }
+.composer .icon-btn { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex: none; }
+.composer .btn { width: 48px; padding: 0; flex: none; }
+
+/* ---------- call ---------- */
+.call { display: flex; flex-direction: column; gap: 10px; min-height: calc(100vh - 170px); position: relative; }
+.call-top { display: flex; gap: 10px; align-items: center; }
+.tiles { flex: 1; display: grid; gap: 8px; grid-template-columns: 1fr; align-content: center; }
+.tiles[data-n="2"] { grid-template-columns: 1fr; }
+@media (min-width: 700px) { .tiles[data-n="2"], .tiles[data-n="3"], .tiles[data-n="4"] { grid-template-columns: 1fr 1fr; } .tiles[data-n="5"], .tiles[data-n="6"] { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 699px) { .tiles[data-n="3"], .tiles[data-n="4"], .tiles[data-n="5"], .tiles[data-n="6"] { grid-template-columns: 1fr 1fr; } }
+.tile { position: relative; background: #1E1B3A; border-radius: 18px; overflow: hidden; aspect-ratio: 16 / 10; }
+.tile video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tile.self video { transform: scaleX(-1); }
+.tile .tname { position: absolute; left: 10px; bottom: 8px; background: rgba(0, 0, 0, .55); color: #fff; padding: 2px 10px; border-radius: 999px; font-size: .8rem; font-weight: 800; }
+.tile .tav { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; font-size: 2.6rem; font-weight: 900; color: #fff; background: linear-gradient(135deg, #6C4CF5, #FF5C8A); }
+.tile.novideo .tav { display: flex; }
+.tile.novideo video { opacity: 0; }
+.call-bar { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; padding: 8px 0; }
+.cbtn { width: 54px; height: 54px; border-radius: 50%; border: 0; background: var(--surface-2); font-size: 1.35rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; color: inherit; }
+.cbtn.off { background: #FFE4E6; text-decoration: line-through; }
+.cbtn.on { background: var(--brand); color: #fff; }
+.cbtn.end { background: var(--danger); color: #fff; transform: rotate(135deg); }
+.captions { background: rgba(30, 27, 58, .85); color: #fff; padding: 8px 14px; border-radius: 12px; font-weight: 700; text-align: center; }
+.call-chat { position: fixed; right: 12px; bottom: 90px; width: min(380px, calc(100vw - 24px)); height: min(60vh, 520px); background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: 8px 12px; display: flex; flex-direction: column; z-index: 40; }
+.call-chat.hidden { display: none; }
+@media (min-width: 900px) { .call-chat { bottom: 24px; } }
+.mode-pick { display: grid; gap: 10px; margin-top: 10px; }
+.mode-pick button { text-align: left; border: 2px solid var(--line); background: var(--surface); border-radius: 18px; padding: 14px; cursor: pointer; }
+.mode-pick button:hover { border-color: var(--brand); }
+.mode-pick b { display: block; font-size: 1.05rem; }
+.demo-banner { display: flex; gap: 10px; align-items: center; background: #FFF4D6; color: #7A5300; border-radius: 14px; padding: 10px 14px; margin-bottom: 12px; font-weight: 700; font-size: .9rem; }
+:root[data-theme="dark"] .demo-banner { background: #3A2F12; color: #FFD979; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .demo-banner { background: #3A2F12; color: #FFD979; } }
+.tabbar button span:last-child { font-size: .66rem; }
+.swatch { width: 28px; height: 28px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; }
+.swatch.on { border-color: var(--ink); }
+.has-badge { position: relative; }
+.has-badge::after { content: attr(data-badge); position: absolute; top: 2px; right: calc(50% - 22px); background: var(--coral); color: #fff; font-size: .65rem; font-weight: 900; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+.rail .has-badge::after { position: static; margin-left: auto; }
+.mode-pick .small { display: block; margin-top: 2px; }
+
 </style>
 </head>
 <body>
@@ -390,11 +453,12 @@ kbd { background: var(--surface-2); border: 1px solid var(--line); border-bottom
     });
   }
 
+  const DEMO_IDS = ['nova-1', 'nova-2', 'fin-1', 'boss-1'];
   function demoMeetings(user, boss) {
     const lastWeekday = -6;
     return [
       {
-        id: 'nova-1', title: 'Veckomöte – Projekt Nova', series: 'nova', start: at(lastWeekday, 9), durationMin: 45,
+        id: 'nova-1', demo: true, title: 'Veckomöte – Projekt Nova', series: 'nova', start: at(lastWeekday, 9), durationMin: 45,
         attendees: [boss, 'Ali', 'Sara', user], boss, attended: false,
         transcript: lines(`
 ${boss}: Godmorgon allihop. ${user} är inte här idag, så vi tar det kort.
@@ -414,11 +478,11 @@ ${boss}: Toppen. Nästa möte är samma tid nästa vecka. Tack allihop!`),
         ]
       },
       {
-        id: 'nova-2', title: 'Veckomöte – Projekt Nova', series: 'nova', start: at(0, new Date().getHours() + 1), durationMin: 45,
+        id: 'nova-2', demo: true, title: 'Veckomöte – Projekt Nova', series: 'nova', start: at(0, new Date().getHours() + 1), durationMin: 45,
         attendees: [boss, 'Ali', 'Sara', user], boss, attended: null, transcript: [], files: []
       },
       {
-        id: 'fin-1', title: 'Finansmöte – F-skatt, moms & budget', series: 'fin', start: at(-1, 13), durationMin: 60,
+        id: 'fin-1', demo: true, title: 'Finansmöte – F-skatt, moms & budget', series: 'fin', start: at(-1, 13), durationMin: 60,
         attendees: ['Lena (ekonomi)', boss, user], boss, attended: true,
         transcript: lines(`
 Lena (ekonomi): Välkomna! Idag går vi igenom skatterna inför nästa kvartal.
@@ -436,7 +500,7 @@ ${boss}: ${user}, du ska gå igenom leverantörslistan och kontrollera F-skatt f
         files: [{ name: 'Leverantörslista.xlsx', status: 'missing', owner: user }]
       },
       {
-        id: 'boss-1', title: 'Kvartalsgenomgång med Gunnar', series: 'gunnar', start: at(-3, 15), durationMin: 30,
+        id: 'boss-1', demo: true, title: 'Kvartalsgenomgång med Gunnar', series: 'gunnar', start: at(-3, 15), durationMin: 30,
         attendees: ['Gunnar (chef)', user], boss: 'Gunnar (chef)', attended: true,
         transcript: lines(`
 Gunnar (chef): Det här är helt oacceptabelt! Försäljningen ligger 12 procent under målet.
@@ -459,9 +523,11 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
       name: 'Ronny', bossName: 'Birgitta', bossEmail: '',
       autoSend: true, sendMethod: 'email', webhookUrl: '',
       apiKey: '', model: 'claude-opus-5-5',
-      voice: true, liveStyle: 'snall', theme: 'auto'
+      voice: true, liveStyle: 'snall', theme: 'auto',
+      demo: true, showDemo: false, color: '#6C4CF5', relays: '', turnUrl: '', turnUser: '', turnPass: ''
     },
     meetings: [],
+    rooms: [],
     outbox: [],
     stats: { wallsBroken: 0, videos: 0, restyled: 0 }
   });
@@ -473,24 +539,29 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
       if (raw) state = Object.assign(defaults(), JSON.parse(raw));
     } catch (e) { /* storage blocked – start fresh */ }
     if (!state) state = defaults();
-    if (!state.meetings.length) state.meetings = demoMeetings(state.settings.name, state.settings.bossName);
+    state.settings = Object.assign(defaults().settings, state.settings);
+    state.meetings.forEach(m => { if (DEMO_IDS.includes(m.id)) m.demo = true; });
+    if (!state.meetings.some(m => m.demo)) state.meetings = state.meetings.concat(demoMeetings(state.settings.name, state.settings.bossName));
     return state;
   }
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* quota or blocked */ }
   }
   function reset() {
-    const s = state ? state.settings : defaults().settings;
-    state = defaults();
-    state.settings = Object.assign(state.settings, { name: s.name, bossName: s.bossName, bossEmail: s.bossEmail, apiKey: s.apiKey });
-    state.onboarded = true;
-    state.meetings = demoMeetings(state.settings.name, state.settings.bossName);
+    const real = state ? state.meetings.filter(m => m.room) : [];
+    const keep = state ? { settings: state.settings, rooms: state.rooms, outbox: state.outbox, onboarded: state.onboarded } : {};
+    state = Object.assign(defaults(), keep);
+    state.meetings = real.concat(demoMeetings(state.settings.name, state.settings.bossName));
     save();
+  }
+  // Meetings the user sees: real ones always, demo ones only while exploring.
+  function visible() {
+    return state.meetings.filter(m => !m.demo || state.settings.demo || state.settings.showDemo);
   }
 
   const byStart = (a, b) => new Date(a.start) - new Date(b.start);
   function meeting(id) { return state.meetings.find(m => m.id === id); }
-  function sorted() { return state.meetings.slice().sort(byStart); }
+  function sorted() { return visible().slice().sort(byStart); }
   function isPast(m) { return new Date(m.start).getTime() + (m.durationMin || 30) * 6e4 < Date.now(); }
   function previousInSeries(m) {
     if (!m.series) return null;
@@ -551,7 +622,7 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
   }
 
   window.Store = {
-    load, save, reset, meeting, sorted, isPast, previousInSeries, pendingCatchUp,
+    load, save, reset, visible, meeting, sorted, isPast, previousInSeries, pendingCatchUp,
     addMeeting, removeMeeting, parseTranscript, demoMeetings,
     get state() { return state; },
     get settings() { return state.settings; }
@@ -687,7 +758,31 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     return r;
   }
 
-  window.Platform = { kind, saveFile, openUrl, speak, stopSpeaking, recognizer, blobToB64, bufToB64, nl };
+  /* ---- notifications, sharing, clipboard ---- */
+  let asked = false;
+  function notify(title, body) {
+    if (android() && android().showNotification) { android().showNotification(String(title), String(body || '')); return; }
+    if (desktop()) { nl('os.showNotification', { title, content: body || '' }).catch(() => {}); return; }
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') { try { new Notification(title, { body, icon: 'img/icon-192.png' }); } catch (e) { /* not allowed here */ } }
+    else if (Notification.permission === 'default' && !asked) { asked = true; Notification.requestPermission().catch(() => {}); }
+  }
+  async function copy(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* fall back */ }
+    const t = document.createElement('textarea');
+    t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch (e) { /* unsupported */ }
+    t.remove();
+    return ok;
+  }
+  async function share(text, title) {
+    if (android() && android().shareText) { android().shareText(String(text)); return; }
+    if (navigator.share) { try { await navigator.share({ title, text }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+    if (await copy(text)) window.App && App.toast('Kopierat – klistra in där du vill dela 📋');
+  }
+
+  window.Platform = { kind, saveFile, openUrl, speak, stopSpeaking, recognizer, blobToB64, bufToB64, nl, notify, copy, share };
 })();
 
 </script>
@@ -923,7 +1018,7 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     'innan sen sedan då mer mycket under alltså får måste ha här kommer vara varit ut upp in över nästa ' +
     'samma tar idag hittills ungefär helst runt gå går vår våra vårt deras min mitt mina din ditt dina sina ' +
     'sitt egna egen alla allihop tack bra toppen okej ja nej först också annars åt dra inom senast vid ' +
-    'möte mötet godmorgon välkomna inför helt ligger kort igenom först annars procent kvartal dag vecka veckan tid gång heller ingen inga något några alltid aldrig blev blir bli ser gör göra gjort').split(' '));
+    'hej hejsan möte mötet godmorgon välkomna inför helt ligger kort igenom först annars procent kvartal dag vecka veckan tid gång heller ingen inga något några alltid aldrig blev blir bli ser gör göra gjort').split(' '));
 
   /* ---------- glossary used by the game and TikTok images ---------- */
   const GLOSSARY = {
@@ -1246,7 +1341,9 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
 
   async function catchUp(prev, user) {
     const sum = (await summarize(prev)).value;
-    const day = new Date(prev.start).toLocaleDateString('sv-SE', { weekday: 'long' }) + 's';
+    const d0 = new Date(prev.start), today = new Date();
+    const ago = Math.round((new Date(today.toDateString()) - new Date(d0.toDateString())) / 864e5);
+    const day = ago === 0 ? 'dag' : ago === 1 ? 'går' : d0.toLocaleDateString('sv-SE', { weekday: 'long' }) + 's';
     const mine = sum.actions.filter(a => firstName(a.who).toLowerCase() === firstName(user).toLowerCase() || a.who === 'Alla');
     const r = await withFallback(
       () => claude({
@@ -1313,6 +1410,1003 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
   }
 
   window.AI = { summarize, catchUp, restyle, videoScript, gameLevel, ask, testKey, hasKey, STYLES, GLOSSARY, keywords, concepts, localRestyle, localSummary, firstName };
+})();
+
+</script>
+<script>
+/* Motey – Nostr transport, written from the specs (NIP-01, BIP-340).
+ * Motey uses public Nostr relays as a mailbox: every message is AES-GCM
+ * encrypted with the room key before it leaves the device, so relays only
+ * see random-looking bytes, a room tag and a throwaway public key. */
+(function () {
+  'use strict';
+  const enc = new TextEncoder();
+
+  /* ---------------- bytes ---------------- */
+  const hex = b => Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
+  const unhex = h => new Uint8Array(h.match(/../g).map(x => parseInt(x, 16)));
+  const concat = (...a) => { const o = new Uint8Array(a.reduce((s, x) => s + x.length, 0)); let i = 0; for (const x of a) { o.set(x, i); i += x.length; } return o; };
+  const b64 = u => { let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
+  const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  const b64url = u => b64(u).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const unb64url = s => unb64(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4));
+  const rand = n => crypto.getRandomValues(new Uint8Array(n));
+  const sha256 = async data => new Uint8Array(await crypto.subtle.digest('SHA-256', typeof data === 'string' ? enc.encode(data) : data));
+
+  /* ---------------- secp256k1 + BIP-340 signing ---------------- */
+  const P = 2n ** 256n - 0x1000003D1n;
+  const N = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141n;
+  const G = [0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798n,
+             0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8n, 1n];
+  const mod = (a, m = P) => { const r = a % m; return r >= 0n ? r : r + m; };
+  function inv(a, m = P) {
+    let [x0, x1, r0, r1] = [0n, 1n, m, mod(a, m)];
+    while (r1) { const q = r0 / r1; [r0, r1] = [r1, r0 - q * r1]; [x0, x1] = [x1, x0 - q * x1]; }
+    return mod(x0, m);
+  }
+  // Jacobian coordinates [X, Y, Z]; Z = 0 is the point at infinity.
+  function dbl([X, Y, Z]) {
+    if (!Y || !Z) return [0n, 1n, 0n];
+    const S = mod(4n * X * Y * Y), M = mod(3n * X * X);
+    const X3 = mod(M * M - 2n * S);
+    return [X3, mod(M * (S - X3) - 8n * Y ** 4n), mod(2n * Y * Z)];
+  }
+  function add(p, q) {
+    if (!p[2]) return q; if (!q[2]) return p;
+    const [X1, Y1, Z1] = p, [X2, Y2, Z2] = q;
+    const Z1Z1 = mod(Z1 * Z1), Z2Z2 = mod(Z2 * Z2);
+    const U1 = mod(X1 * Z2Z2), U2 = mod(X2 * Z1Z1), S1 = mod(Y1 * Z2 * Z2Z2), S2 = mod(Y2 * Z1 * Z1Z1);
+    if (U1 === U2) return S1 === S2 ? dbl(p) : [0n, 1n, 0n];
+    const H = mod(U2 - U1), R = mod(S2 - S1), H2 = mod(H * H), H3 = mod(H * H2), U1H2 = mod(U1 * H2);
+    const X3 = mod(R * R - H3 - 2n * U1H2);
+    return [X3, mod(R * (U1H2 - X3) - S1 * H3), mod(H * Z1 * Z2)];
+  }
+  function mul(k, p = G) {
+    let r = [0n, 1n, 0n];
+    for (let i = BigInt(k.toString(2).length) - 1n; i >= 0n; i--) { r = dbl(r); if ((k >> i) & 1n) r = add(r, p); }
+    return r;
+  }
+  function affine([X, Y, Z]) { const zi = inv(Z), zi2 = mod(zi * zi); return [mod(X * zi2), mod(Y * zi2 * zi)]; }
+  const big = b => BigInt('0x' + (hex(b) || '0'));
+  const bytes32 = n => unhex(n.toString(16).padStart(64, '0'));
+  async function tagged(tag, ...msgs) { const t = await sha256(tag); return sha256(concat(t, t, ...msgs)); }
+
+  function newSecret() {
+    for (;;) { const k = big(rand(32)); if (k > 0n && k < N) return bytes32(k); }
+  }
+  function publicKey(sk) { return bytes32(affine(mul(big(sk)))[0]); }
+
+  async function schnorrSign(msg, sk, aux) {
+    const d0 = big(sk);
+    const [px, py] = affine(mul(d0));
+    const d = py % 2n === 0n ? d0 : N - d0;
+    const t = new Uint8Array(32);
+    const ah = await tagged('BIP0340/aux', aux || rand(32));
+    const db = bytes32(d);
+    for (let i = 0; i < 32; i++) t[i] = db[i] ^ ah[i];
+    const k0 = mod(big(await tagged('BIP0340/nonce', t, bytes32(px), msg)), N);
+    if (!k0) throw new Error('bad nonce');
+    const [rx, ry] = affine(mul(k0));
+    const k = ry % 2n === 0n ? k0 : N - k0;
+    const e = mod(big(await tagged('BIP0340/challenge', bytes32(rx), bytes32(px), msg)), N);
+    return concat(bytes32(rx), bytes32(mod(k + e * d, N)));
+  }
+  // Verification (used by the self-test; relay events are authenticated by AES-GCM instead).
+  async function schnorrVerify(sig, msg, pub) {
+    const x = big(pub);
+    if (x >= P) return false;
+    const c = mod(x ** 3n + 7n);
+    let y = c;
+    { let r = 1n, b = c, e = (P + 1n) / 4n; while (e) { if (e & 1n) r = mod(r * b); b = mod(b * b); e >>= 1n; } y = r; }
+    if (mod(y * y) !== c) return false;
+    if (y % 2n) y = P - y;
+    const r = big(sig.slice(0, 32)), s = big(sig.slice(32));
+    if (r >= P || s >= N) return false;
+    const e = mod(big(await tagged('BIP0340/challenge', sig.slice(0, 32), pub, msg)), N);
+    const R = add(mul(s), mul(N - e, [x, y, 1n]));
+    if (!R[2]) return false;
+    const [Rx, Ry] = affine(R);
+    return Ry % 2n === 0n && Rx === r;
+  }
+
+  /* ---------------- NIP-01 events ---------------- */
+  async function signEvent(ev, sk) {
+    const pubkey = hex(publicKey(sk));
+    const e = { pubkey, created_at: ev.created_at || Math.floor(Date.now() / 1000), kind: ev.kind, tags: ev.tags || [], content: ev.content || '' };
+    const id = await sha256(JSON.stringify([0, e.pubkey, e.created_at, e.kind, e.tags, e.content]));
+    e.id = hex(id);
+    e.sig = hex(await schnorrSign(id, sk));
+    return e;
+  }
+
+  /* ---------------- AES-GCM ---------------- */
+  const keyCache = new Map();
+  async function aesKey(raw) {
+    const k = typeof raw === 'string' ? raw : b64(raw);
+    if (!keyCache.has(k)) keyCache.set(k, crypto.subtle.importKey('raw', typeof raw === 'string' ? unb64(raw) : raw, 'AES-GCM', false, ['encrypt', 'decrypt']));
+    return keyCache.get(k);
+  }
+  async function seal(keyB64, obj) {
+    const iv = rand(12);
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await aesKey(keyB64), enc.encode(JSON.stringify(obj))));
+    return b64(concat(iv, ct));
+  }
+  async function open(keyB64, content) {
+    const raw = unb64(content);
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: raw.slice(0, 12) }, await aesKey(keyB64), raw.slice(12));
+    return JSON.parse(new TextDecoder().decode(pt));
+  }
+
+  /* ---------------- relay pool ---------------- */
+  class Relay {
+    constructor(url, pool) { this.url = url; this.pool = pool; this.ws = null; this.status = 'off'; this.wait = 1000; this.closed = false; this.connect(); }
+    connect() {
+      if (this.closed) return;
+      this.status = 'connecting';
+      let ws;
+      try { ws = new WebSocket(this.url); } catch (e) { return this.retry(); }
+      this.ws = ws;
+      ws.onopen = () => {
+        this.status = 'open'; this.wait = 1000;
+        for (const [id, s] of this.pool.subs) this.send(['REQ', id, ...s.filters]);
+        for (const ev of this.pool.outbox.values()) this.send(['EVENT', ev]);
+        this.pool.changed();
+      };
+      ws.onmessage = m => {
+        let d; try { d = JSON.parse(m.data); } catch (e) { return; }
+        if (d[0] === 'EVENT') this.pool.onEvent(d[1], d[2], this);
+        else if (d[0] === 'EOSE') this.pool.onEose(d[1], this);
+        else if (d[0] === 'OK') this.pool.onOk(d[1], d[2], d[3], this);
+      };
+      ws.onclose = () => { this.status = 'off'; this.pool.changed(); this.retry(); };
+      ws.onerror = () => { try { ws.close(); } catch (e) { /* closing */ } };
+    }
+    retry() { if (this.closed) return; setTimeout(() => this.connect(), this.wait); this.wait = Math.min(this.wait * 2, 30000); }
+    send(msg) { if (this.ws && this.ws.readyState === 1) { this.ws.send(JSON.stringify(msg)); return true; } return false; }
+    close() { this.closed = true; try { this.ws && this.ws.close(); } catch (e) { /* closed */ } }
+  }
+
+  class Pool {
+    constructor(urls) { this.subs = new Map(); this.outbox = new Map(); this.seen = new Set(); this.listeners = new Set(); this.relays = []; this.setRelays(urls); }
+    setRelays(urls) {
+      this.relays.forEach(r => r.close());
+      this.relays = [...new Set(urls)].filter(u => /^wss?:\/\//.test(u)).map(u => new Relay(u, this));
+    }
+    changed() { this.listeners.forEach(f => f(this.state())); }
+    state() { return this.relays.map(r => ({ url: r.url, status: r.status })); }
+    online() { return this.relays.filter(r => r.status === 'open').length; }
+    sub(id, filters, onEvent, onEose) {
+      this.subs.set(id, { filters, onEvent, onEose, eosed: new Set() });
+      this.relays.forEach(r => r.send(['REQ', id, ...filters]));
+    }
+    unsub(id) { this.subs.delete(id); this.relays.forEach(r => r.send(['CLOSE', id])); }
+    onEvent(subId, ev, relay) {
+      const s = this.subs.get(subId);
+      if (!s || !ev || !ev.id) return;
+      if (this.seen.has(ev.id)) return;
+      this.seen.add(ev.id);
+      if (this.seen.size > 20000) this.seen = new Set([...this.seen].slice(-10000));
+      s.onEvent(ev, relay.url);
+    }
+    onEose(subId, relay) { const s = this.subs.get(subId); if (s && !s.eosed.has(relay.url)) { s.eosed.add(relay.url); s.onEose && s.onEose(relay.url); } }
+    onOk(id, ok, msg) { const p = this.outbox.get(id); if (p && ok) { this.outbox.delete(id); } if (!ok) console.warn('relay refused', id, msg); }
+    publish(ev, keep) {
+      // Stored events wait in the outbox until a relay confirms them; ephemeral ones are fire-and-forget.
+      if (keep) this.outbox.set(ev.id, ev);
+      let sent = 0;
+      this.relays.forEach(r => { if (r.send(['EVENT', ev])) sent++; });
+      return sent;
+    }
+  }
+
+  window.Nostr = { Pool, signEvent, seal, open, newSecret, publicKey, schnorrSign, schnorrVerify, sha256, hex, unhex, b64, unb64, b64url, unb64url, rand };
+})();
+
+</script>
+<script>
+/* Motey – real meetings and messages between devices, with no Motey server.
+ *
+ * A "room" is a chat or a meeting. It has a random id and a random 256-bit
+ * key; both travel only inside the invite code. Messages are encrypted with
+ * the key and stored on public Nostr relays (NIP-01), which act as a mailbox,
+ * so people get what was said while they were offline. Calls are WebRTC
+ * directly between devices; the relays only pass the encrypted handshake.
+ * Each room gets its own signing key derived from this device's secret, so
+ * relays cannot link the rooms you are in. */
+(function () {
+  'use strict';
+  const N = window.Nostr;
+  const KIND_STORED = 4333, KIND_SIGNAL = 24333;
+  const DEFAULT_RELAYS = ['wss://relay.damus.io', 'wss://nos.lol', 'wss://nostr.mom', 'wss://relay.primal.net'];
+  const INVITE_BASE = 'https://raken123.github.io/s-ndo/motey/dist/motey.html';
+  const MAX_FILE = 750 * 1024, CHUNK = 16 * 1024;
+  const COLORS = ['#6C4CF5', '#FF7A59', '#19C79A', '#FF5C8A', '#2F80ED', '#F2A007', '#9B51E0'];
+
+  let pool = null, started = false;
+  const listeners = { message: new Set(), signal: new Set(), status: new Set(), rooms: new Set() };
+  const emit = (k, ...a) => listeners[k].forEach(f => { try { f(...a); } catch (e) { console.error(e); } });
+  const on = (k, f) => { listeners[k].add(f); return () => listeners[k].delete(f); };
+
+  /* ---------------- identity ---------------- */
+  function secret() {
+    let s = null;
+    try { s = localStorage.getItem('motey.sk'); } catch (e) { /* blocked */ }
+    if (!s) { s = N.hex(N.newSecret()); try { localStorage.setItem('motey.sk', s); } catch (e) { /* blocked */ } }
+    return s;
+  }
+  const roomKeys = new Map();
+  async function roomSigner(room) {
+    if (!roomKeys.has(room.id)) {
+      // per-room key: sha256(device secret || room id), reduced into range by retrying
+      let k = await N.sha256(secret() + ':' + room.id);
+      while (k.every(b => b === 0)) k = await N.sha256(k);
+      roomKeys.set(room.id, { sk: k, pk: N.hex(N.publicKey(k)) });
+    }
+    return roomKeys.get(room.id);
+  }
+  const me = () => ({ name: Store.settings.name || 'Jag', color: Store.settings.color || COLORS[0] });
+
+  /* ---------------- rooms ---------------- */
+  const rooms = () => Store.state.rooms || (Store.state.rooms = []);
+  const room = id => rooms().find(r => r.id === id);
+  async function tagFor(id) { return N.hex(await N.sha256('motey-room/' + id)).slice(0, 32); }
+
+  async function createRoom({ name, kind, meta }) {
+    const r = { id: N.hex(N.rand(16)), key: N.b64(N.rand(32)), name: name || 'Chatt', kind: kind || 'chat', created: Date.now(), lastRead: Date.now(), members: {}, synced: 0 };
+    r.tag = await tagFor(r.id);
+    rooms().push(r); Store.save();
+    await resubscribe();
+    await hello(r);
+    if (meta) await send(r.id, Object.assign({ t: 'meta' }, meta));
+    emit('rooms');
+    return r;
+  }
+  function inviteCode(r) { return 'M1' + N.b64url(N.unhex(r.id + '')) + '.' + N.b64url(N.unb64(r.key)); }
+  function inviteLink(r) { return INVITE_BASE + '#join=' + inviteCode(r); }
+  function parseInvite(text) {
+    const m = String(text || '').match(/M1([A-Za-z0-9_-]{22})\.([A-Za-z0-9_-]{43})/);
+    if (!m) return null;
+    return { id: N.hex(N.unb64url(m[1])), key: N.b64(N.unb64url(m[2])) };
+  }
+  async function join(text, name) {
+    const inv = parseInvite(text);
+    if (!inv) throw new Error('Det där ser inte ut som en Motey-inbjudan.');
+    let r = room(inv.id);
+    if (!r) {
+      r = { id: inv.id, key: inv.key, name: name || 'Ny chatt', kind: 'chat', created: Date.now(), lastRead: 0, members: {}, synced: 0, joinedViaInvite: true };
+      r.tag = await tagFor(r.id);
+      rooms().push(r); Store.save();
+      await resubscribe();
+      await hello(r);
+      emit('rooms');
+    }
+    return r;
+  }
+  function leave(id) {
+    Store.state.rooms = rooms().filter(r => r.id !== id);
+    try { localStorage.removeItem('motey.msgs.' + id); } catch (e) { /* blocked */ }
+    Store.state.meetings = Store.state.meetings.filter(m => m.room !== id);
+    Store.save(); resubscribe(); emit('rooms');
+  }
+  const hello = r => send(r.id, { t: 'hello', name: me().name, color: me().color });
+
+  /* ---------------- local message log ---------------- */
+  const logs = new Map();
+  function messages(id) {
+    if (!logs.has(id)) {
+      let a = [];
+      try { a = JSON.parse(localStorage.getItem('motey.msgs.' + id) || '[]'); } catch (e) { /* corrupt or blocked */ }
+      logs.set(id, a);
+    }
+    return logs.get(id);
+  }
+  let saveTimer = 0;
+  const dirty = new Set();
+  function persist(id) {
+    dirty.add(id);
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      for (const d of dirty) {
+        const a = messages(d);
+        if (a.length > 2000) a.splice(0, a.length - 2000);
+        try { localStorage.setItem('motey.msgs.' + d, JSON.stringify(a)); } catch (e) { console.warn('kunde inte spara meddelanden', e); }
+      }
+      dirty.clear();
+      Store.save();
+    }, 300);
+  }
+  function insert(r, msg) {
+    const a = messages(r.id);
+    if (a.some(x => x.id === msg.id)) return false;
+    let i = a.length;
+    while (i > 0 && a[i - 1].at > msg.at) i--;
+    a.splice(i, 0, msg);
+    persist(r.id);
+    return true;
+  }
+
+  /* ---------------- sending ---------------- */
+  async function send(roomId, payload) {
+    const r = room(roomId);
+    if (!r) throw new Error('okänt rum');
+    const s = await roomSigner(r);
+    payload = Object.assign({ v: 1, pk: s.pk, name: me().name }, payload);
+    const ev = await N.signEvent({ kind: KIND_STORED, tags: [['y', r.tag]], content: await N.seal(r.key, payload) }, s.sk);
+    const msg = toMsg(ev, payload, true);
+    if (payload.t !== 'chunk') { handle(r, msg, true); }
+    if (pool) pool.publish(ev, true);
+    return msg;
+  }
+  async function signal(roomId, payload) {
+    const r = room(roomId);
+    if (!r || !pool) return;
+    const s = await roomSigner(r);
+    payload = Object.assign({ v: 1, pk: s.pk, name: me().name }, payload);
+    const ev = await N.signEvent({ kind: KIND_SIGNAL, tags: [['y', r.tag]], content: await N.seal(r.key, payload) }, s.sk);
+    pool.publish(ev, false);
+  }
+  const sendText = (roomId, text) => send(roomId, { t: 'msg', text: String(text).slice(0, 4000) });
+  const sendTranscript = (roomId, text) => send(roomId, { t: 'tr', text: String(text).slice(0, 2000) });
+
+  async function sendFile(roomId, blob, name) {
+    if (blob.size > MAX_FILE) throw new Error(`Filen är för stor (max ${Math.round(MAX_FILE / 1024)} kB).`);
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const fid = N.hex(N.rand(8));
+    const n = Math.max(1, Math.ceil(bytes.length / CHUNK));
+    await Files.putMeta(fid, { name, mime: blob.type || 'application/octet-stream', size: bytes.length, n });
+    for (let i = 0; i < n; i++) {
+      const d = N.b64(bytes.subarray(i * CHUNK, (i + 1) * CHUNK));
+      await Files.putChunk(fid, i, d);
+      await send(roomId, { t: 'chunk', fid, i, n, d });
+      await new Promise(res => setTimeout(res, 120)); // be gentle with public relays
+    }
+    return send(roomId, { t: 'file', fid, fname: name, mime: blob.type || 'application/octet-stream', size: bytes.length, n });
+  }
+
+  /* ---------------- receiving ---------------- */
+  function toMsg(ev, p, mine) {
+    return { id: ev.id, pk: p.pk, name: p.name, at: (p.at || ev.created_at * 1000), t: p.t, text: p.text, fid: p.fid, fname: p.fname, mime: p.mime, size: p.size, n: p.n, meta: p.t === 'meta' ? p : undefined, code: p.code, color: p.color, mine: !!mine };
+  }
+  async function onStored(ev) {
+    const r = rooms().find(x => ev.tags && ev.tags.some(t => t[0] === 'y' && t[1] === x.tag));
+    if (!r) return;
+    let p;
+    try { p = await N.open(r.key, ev.content); } catch (e) { return; } // not for us / tampered
+    if (!p || p.pk !== ev.pubkey) return;
+    r.synced = Math.max(r.synced || 0, ev.created_at);
+    if (p.t === 'chunk') { await Files.putChunk(p.fid, p.i, p.d); Files.progress(p.fid); return; }
+    const mine = p.pk === (await roomSigner(r)).pk;
+    handle(r, toMsg(ev, p, mine), mine);
+  }
+  function handle(r, msg, mine) {
+    const fresh = insert(r, msg);
+    if (msg.pk) {
+      const m = r.members[msg.pk] || (r.members[msg.pk] = {});
+      m.name = msg.name || m.name; if (msg.color) m.color = msg.color;
+      m.seen = Math.max(m.seen || 0, msg.at);
+      if (mine) m.me = true;
+    }
+    if (msg.t === 'meta') applyMeta(r, msg);
+    if (msg.t === 'next' && msg.code) join(msg.code).catch(() => {});
+    if (msg.t === 'file' && fresh) Files.putMeta(msg.fid, { name: msg.fname, mime: msg.mime, size: msg.size, n: msg.n });
+    if (!fresh) return;
+    if (!mine && (msg.t === 'msg' || msg.t === 'file') && msg.at > (r.lastRead || 0)) {
+      r.unread = (r.unread || 0) + 1;
+      if (document.hidden || location.hash !== '#/chat/' + r.id) Platform.notify(`${msg.name} i ${r.name}`, msg.t === 'file' ? '📎 ' + msg.fname : msg.text);
+    }
+    if (r.kind === 'meeting') syncMeeting(r);
+    emit('message', r, msg);
+  }
+
+  /* ---------------- meetings on top of rooms ---------------- */
+  function applyMeta(r, msg) {
+    const prev = r.meta;
+    if (prev && prev.at > msg.at) return;
+    r.meta = Object.assign({}, msg.meta, { at: msg.at, hostPk: prev ? prev.hostPk : msg.pk, hostName: prev ? prev.hostName : msg.name });
+    r.kind = 'meeting';
+    r.name = r.meta.title || r.name;
+    syncMeeting(r);
+    emit('rooms');
+  }
+  // Keep a Store meeting in step with its room, so every Motey mode (summary,
+  // catch-up, Live AI, TikTok, game) works on real meetings too.
+  function syncMeeting(r) {
+    if (!r.meta) return;
+    const id = 'r-' + r.id;
+    let m = Store.meeting(id);
+    if (!m) { m = { id, room: r.id, attended: null, files: [] }; Store.state.meetings.push(m); }
+    const mt = r.meta;
+    Object.assign(m, { title: mt.title, start: mt.start, durationMin: mt.durationMin || 45, series: mt.series || r.id, repeat: mt.repeat || '', boss: mt.hostName });
+    const msgs = messages(r.id);
+    const names = new Set(Object.values(r.members).map(x => x.name).filter(Boolean));
+    m.attendees = [...names];
+    m.transcript = msgs.filter(x => (x.t === 'msg' || x.t === 'tr') && x.text).map(x => ({ who: x.name || 'Någon', text: x.text, at: x.at, kind: x.t }));
+    const shared = msgs.filter(x => x.t === 'file');
+    const wanted = (mt.files || []).map(String);
+    for (const name of wanted) {
+      let f = m.files.find(x => x.name === name);
+      if (!f) { f = { name, status: 'missing', owner: '' }; m.files.push(f); }
+      const got = shared.filter(x => x.fname === name).pop();
+      if (got) Object.assign(f, { status: 'sent', fid: got.fid, from: got.name, mime: got.mime });
+    }
+    for (const s of shared) if (!m.files.some(f => f.fid === s.fid || (f.name === s.fname && f.status !== 'missing' && !f.fid))) {
+      if (!wanted.includes(s.fname)) m.files.push({ name: s.fname, status: 'sent', fid: s.fid, from: s.name, mime: s.mime, extra: true });
+    }
+    if (msgs.some(x => x.t === 'call' && x.mine)) m.attended = true;
+    Store.save();
+  }
+  // A real meeting is "missed" when it is over and this device never joined the call.
+  function updateAttendance() {
+    for (const m of Store.state.meetings) {
+      if (!m.room || m.attended === true) continue;
+      if (Store.isPast(m)) m.attended = false;
+    }
+    autoNext();
+    Store.save();
+  }
+  // Weekly meetings: the host's device books the next one and invites the room to it.
+  async function autoNext() {
+    for (const r of rooms()) {
+      if (!r.meta || r.meta.repeat !== 'weekly' || r.nextBooked) continue;
+      const s = await roomSigner(r);
+      if (r.meta.hostPk !== s.pk) continue;
+      const m = Store.meeting('r-' + r.id);
+      if (!m || new Date(m.start).getTime() > Date.now()) continue;
+      if (messages(r.id).some(x => x.t === 'next')) { r.nextBooked = true; continue; }
+      r.nextBooked = true;
+      await bookNext(r.id);
+    }
+  }
+  async function bookNext(roomId) {
+    const r = room(roomId);
+    const mt = r.meta;
+    let start = new Date(mt.start).getTime();
+    do start += 7 * 864e5; while (start < Date.now() - 36e5);
+    const nr = await createRoom({ name: mt.title, kind: 'meeting', meta: { title: mt.title, start: new Date(start).toISOString(), durationMin: mt.durationMin, series: mt.series, repeat: mt.repeat, files: mt.files } });
+    await send(roomId, { t: 'next', code: inviteCode(nr), text: `Nästa möte: ${new Date(start).toLocaleString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}` });
+    return nr;
+  }
+
+  /* ---------------- relay connection ---------------- */
+  async function resubscribe() {
+    if (!pool) return;
+    const rs = rooms();
+    pool.unsub('motey-msgs'); pool.unsub('motey-sig');
+    if (!rs.length) return;
+    const tags = rs.map(r => r.tag);
+    const since = rs.every(r => r.synced) ? Math.min(...rs.map(r => r.synced)) - 600 : undefined;
+    const f = { kinds: [KIND_STORED], '#y': tags, limit: 2000 };
+    if (since) f.since = since;
+    pool.sub('motey-msgs', [f], ev => onStored(ev).catch(e => console.warn(e)), () => { Store.save(); emit('status', status()); });
+    pool.sub('motey-sig', [{ kinds: [KIND_SIGNAL], '#y': tags, since: Math.floor(Date.now() / 1000) - 30 }], ev => onSignal(ev).catch(e => console.warn(e)));
+  }
+  async function onSignal(ev) {
+    const r = rooms().find(x => ev.tags && ev.tags.some(t => t[0] === 'y' && t[1] === x.tag));
+    if (!r) return;
+    let p; try { p = await N.open(r.key, ev.content); } catch (e) { return; }
+    if (!p || p.pk !== ev.pubkey) return;
+    const mine = (await roomSigner(r)).pk;
+    if (p.pk === mine || (p.to && p.to !== mine)) return;
+    if (p.name) { const m = r.members[p.pk] || (r.members[p.pk] = {}); m.name = p.name; m.live = Date.now(); }
+    emit('signal', r, p);
+  }
+  function relays() {
+    const list = (Store.settings.relays || '').split(/\s+/).filter(Boolean);
+    return list.length ? list : DEFAULT_RELAYS;
+  }
+  function start() {
+    if (started) return;
+    started = true;
+    pool = new N.Pool(relays());
+    pool.listeners.add(() => emit('status', status()));
+    resubscribe();
+    for (const r of rooms()) if (r.kind === 'meeting') syncMeeting(r);
+    updateAttendance();
+    setInterval(updateAttendance, 60000);
+  }
+  function restart() { if (pool) pool.setRelays(relays()); resubscribe(); }
+  function status() { return { online: pool ? pool.online() : 0, total: pool ? pool.relays.length : 0, relays: pool ? pool.state() : [] }; }
+
+  /* ---------------- files (IndexedDB) ---------------- */
+  const Files = (() => {
+    let dbp = null;
+    const db = () => dbp || (dbp = new Promise((res, rej) => {
+      const q = indexedDB.open('motey-files', 1);
+      q.onupgradeneeded = () => { q.result.createObjectStore('meta'); q.result.createObjectStore('chunks'); };
+      q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error);
+    }));
+    const tx = async (store, mode, fn) => { const d = await db(); return new Promise((res, rej) => { const t = d.transaction(store, mode); const r = fn(t.objectStore(store)); t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); }); };
+    const waiting = new Map();
+    return {
+      putMeta: (fid, meta) => tx('meta', 'readwrite', s => s.put(meta, fid)).catch(() => {}),
+      putChunk: (fid, i, d) => tx('chunks', 'readwrite', s => s.put(d, fid + ':' + i)).catch(() => {}),
+      async get(fid) {
+        const meta = await tx('meta', 'readonly', s => s.get(fid)).catch(() => null);
+        if (!meta) return null;
+        const parts = [];
+        for (let i = 0; i < meta.n; i++) {
+          const d = await tx('chunks', 'readonly', s => s.get(fid + ':' + i)).catch(() => null);
+          if (!d) return { meta, missing: true, have: i };
+          parts.push(N.unb64(d));
+        }
+        return { meta, blob: new Blob(parts, { type: meta.mime }) };
+      },
+      progress(fid) { const f = waiting.get(fid); if (f) f(); },
+      wait(fid, cb) { waiting.set(fid, cb); }
+    };
+  })();
+
+  window.MoteyNet = {
+    start, restart, status, on, rooms, room, createRoom, join, leave, inviteCode, inviteLink, parseInvite,
+    send, sendText, sendTranscript, sendFile, signal, messages, roomSigner, me, bookNext, syncMeeting, updateAttendance,
+    files: Files, COLORS, DEFAULT_RELAYS, MAX_FILE,
+    get started() { return started; }
+  };
+})();
+
+</script>
+<script>
+/* Motey Chattar – real text messages between people, inside Motey.
+ * Works on MoteyNet rooms; in demo mode a local chat with Motey is shown instead. */
+(function () {
+  'use strict';
+  const $ = (s, el) => (el || document).querySelector(s);
+  const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const isDemo = () => Store.settings.demo;
+  let offs = [];
+  const cleanup = () => { offs.forEach(f => f()); offs = []; };
+
+  const time = at => {
+    const d = new Date(at), now = new Date();
+    return d.toDateString() === now.toDateString() ? d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
+      : d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+  };
+  const initials = n => String(n || '?').trim().split(/\s+/).map(x => x[0]).slice(0, 2).join('').toUpperCase();
+  function avatar(name, color, kind) {
+    if (kind === 'meeting') return '<span class="avatar" style="background:#FFE6DC">📅</span>';
+    if (kind === 'motey') return `<span class="avatar" style="background:#EDE7FF">${Mascot.svg({ size: 30, animate: false })}</span>`;
+    return `<span class="avatar" style="background:${esc(color || '#6C4CF5')};color:#fff">${esc(initials(name))}</span>`;
+  }
+  function lastMsg(r) {
+    const a = MoteyNet.messages(r.id).filter(m => ['msg', 'file', 'tr', 'next'].includes(m.t));
+    return a[a.length - 1];
+  }
+  function statusPill() {
+    const s = MoteyNet.status();
+    const ok = s.online > 0;
+    return `<span class="badge ${ok ? 'ok' : 'warn'}" id="netpill" title="${esc(s.relays.map(r => r.url + ': ' + r.status).join('\n'))}">${ok ? '●' : '○'} ${ok ? 'Ansluten' : 'Ansluter…'} ${s.online}/${s.total}</span>`;
+  }
+
+  /* ---------------- chat list ---------------- */
+  function renderList(v, ui) {
+    if (isDemo()) return renderDemo(v, ui);
+    const rs = MoteyNet.rooms().slice().sort((a, b) => ((lastMsg(b) || {}).at || b.created) - ((lastMsg(a) || {}).at || a.created));
+    v.innerHTML = `<div class="row between"><h1 style="margin:0">💬 Chattar</h1>${statusPill()}</div>
+      <p class="muted">Meddelanden och möten med riktiga människor – krypterade, bara ni som har inbjudan kan läsa.</p>
+      <div class="row" style="margin-bottom:14px"><button class="btn" id="newchat">＋ Ny chatt</button><button class="btn ghost" id="joinchat">🔗 Gå med med kod</button></div>
+      <div id="rooms">${rs.map(r => {
+        const l = lastMsg(r);
+        const prev = !l ? '<i>Inga meddelanden än</i>' : l.t === 'file' ? '📎 ' + esc(l.fname) : l.t === 'tr' ? '🎙️ ' + esc(l.text) : esc((l.mine ? 'Du: ' : (l.name ? l.name + ': ' : '')) + (l.text || ''));
+        return `<div class="meeting chatrow" data-id="${r.id}" role="button" tabindex="0">${avatar(r.name, '#6C4CF5', r.kind)}
+          <div class="info"><div class="row between"><div class="t">${esc(r.name)}</div><small class="muted">${l ? time(l.at) : ''}</small></div>
+          <div class="small muted prev">${prev}</div></div>${r.unread ? `<span class="unread">${r.unread}</span>` : ''}</div>`;
+      }).join('') || `<div class="card empty">${Mascot.svg({ size: 90 })}<p><b>Inga chattar än.</b></p><p class="small muted">Starta en chatt och skicka inbjudan till någon – eller klistra in en kod du har fått.</p></div>`}</div>`;
+    $$('.chatrow', v).forEach(el => el.addEventListener('click', () => App.go('#/chat/' + el.dataset.id)));
+    $('#newchat', v).addEventListener('click', () => newChatSheet());
+    $('#joinchat', v).addEventListener('click', () => joinSheet());
+    offs.push(MoteyNet.on('message', () => renderList(v, ui)), MoteyNet.on('rooms', () => renderList(v, ui)),
+      MoteyNet.on('status', () => { const p = $('#netpill', v); if (p) p.outerHTML = statusPill(); }));
+  }
+
+  function newChatSheet() {
+    const sh = App.sheet(`<h2>Ny chatt</h2><label class="field"><span>Namn på chatten</span><input type="text" id="cn" placeholder="t.ex. Projekt Nova eller Lisa"></label>
+      <button class="btn block" id="cgo">Skapa och bjud in</button>`);
+    $('#cn', sh.el).focus();
+    $('#cgo', sh.el).addEventListener('click', async () => {
+      const r = await MoteyNet.createRoom({ name: $('#cn', sh.el).value.trim() || 'Chatt', kind: 'chat' });
+      sh.close(); App.go('#/chat/' + r.id); inviteSheet(r);
+    });
+  }
+
+  function joinSheet(prefill) {
+    const sh = App.sheet(`<h2>Gå med</h2><p class="muted small">Klistra in inbjudan (koden eller länken) som du har fått.</p>
+      <label class="field"><span>Inbjudan</span><textarea id="jc" style="min-height:80px" placeholder="M1…">${esc(prefill || '')}</textarea></label>
+      <button class="btn block" id="jgo">Gå med</button><p class="small" id="jerr" style="color:var(--danger)"></p>`);
+    $('#jgo', sh.el).addEventListener('click', async () => {
+      try {
+        const r = await MoteyNet.join($('#jc', sh.el).value);
+        sh.close(); App.toast('Du är med! 🎉');
+        App.go(r.kind === 'meeting' && r.meta ? '#/m/r-' + r.id : '#/chat/' + r.id);
+      } catch (e) { $('#jerr', sh.el).textContent = e.message; }
+    });
+  }
+
+  function inviteSheet(r) {
+    const code = MoteyNet.inviteCode(r), link = MoteyNet.inviteLink(r);
+    const what = r.kind === 'meeting' ? `mötet "${r.name}"` : `chatten "${r.name}"`;
+    const text = `Hej! Gå med i ${what} i Motey 💬\n\n1. Öppna länken (eller appen Motey → Gå med)\n${link}\n\n2. Eller klistra in koden i Motey:\n${code}`;
+    const sh = App.sheet(`<div class="motey-stage">${Mascot.svg({ size: 70, mood: 'wink' })}<div class="speech">Skicka inbjudan till dem som ska vara med. Alla som har koden kan läsa ${r.kind === 'meeting' ? 'mötet' : 'chatten'} – dela den bara med rätt personer.</div></div>
+      <label class="field" style="margin-top:14px"><span>Kod</span><input type="text" readonly value="${esc(code)}" id="ic"></label>
+      <div class="row"><button class="btn" id="icopy">📋 Kopiera inbjudan</button><button class="btn ghost" id="ishare">📤 Dela</button><button class="btn ghost" id="imail">✉️ E-post</button><button class="btn ghost" id="isms">💬 SMS</button></div>`);
+    $('#ic', sh.el).addEventListener('focus', e => e.target.select());
+    $('#icopy', sh.el).addEventListener('click', async () => App.toast(await Platform.copy(text) ? 'Inbjudan kopierad 📋' : 'Markera koden och kopiera den'));
+    $('#ishare', sh.el).addEventListener('click', () => Platform.share(text, 'Motey-inbjudan'));
+    $('#imail', sh.el).addEventListener('click', () => Platform.openUrl(`mailto:?subject=${encodeURIComponent('Inbjudan till ' + r.name + ' i Motey')}&body=${encodeURIComponent(text)}`));
+    $('#isms', sh.el).addEventListener('click', () => Platform.openUrl('sms:?&body=' + encodeURIComponent(text)));
+  }
+
+  /* ---------------- one conversation ---------------- */
+  function bubble(m, r) {
+    const who = esc(m.name || 'Någon');
+    if (m.t === 'hello') return `<div class="sysmsg">👋 ${m.mine ? 'Du' : who} gick med</div>`;
+    if (m.t === 'call') return `<div class="sysmsg">📞 ${m.mine ? 'Du' : who} gick med i samtalet</div>`;
+    if (m.t === 'meta') return `<div class="sysmsg">📅 ${who} ${m.meta && m.meta.title ? 'planerade ”' + esc(m.meta.title) + '” ' + esc(new Date(m.meta.start).toLocaleString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })) : 'uppdaterade mötet'}</div>`;
+    if (m.t === 'next') return `<div class="sysmsg">📅 ${esc(m.text || 'Nästa möte är bokat')} – du är inbjuden automatiskt.</div>`;
+    if (m.t === 'tr') return `<div class="trmsg">🎙️ <b>${who}:</b> ${esc(m.text)}</div>`;
+    const body = m.t === 'file'
+      ? `<button class="filemsg" data-fid="${esc(m.fid)}" data-name="${esc(m.fname)}">📎 <span><b>${esc(m.fname)}</b><br><small>${Math.max(1, Math.round((m.size || 0) / 1024))} kB · tryck för att spara</small></span></button>`
+      : esc(m.text).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>').replace(/\n/g, '<br>');
+    const col = (r.members[m.pk] || {}).color || '#6C4CF5';
+    return `<div class="msg ${m.mine ? 'mine' : ''}">${m.mine ? '' : `<div class="from" style="color:${esc(col)}">${who}</div>`}<div class="bub">${body}</div><div class="when">${time(m.at)}</div></div>`;
+  }
+
+  function mountRoom(container, roomId, opts) {
+    opts = opts || {};
+    const r = MoteyNet.room(roomId);
+    if (!r) { container.innerHTML = '<p class="muted">Chatten finns inte längre.</p>'; return () => {}; }
+    container.innerHTML = `<div class="msgs ${opts.compact ? 'compact' : ''}" id="msgs"></div>
+      <div class="composer"><label class="icon-btn" title="Skicka fil">📎<input type="file" id="cf" hidden></label>
+      <textarea id="ct" rows="1" placeholder="Skriv ett meddelande…"></textarea><button class="btn" id="cs" aria-label="Skicka">➤</button></div>`;
+    const list = $('#msgs', container);
+    const draw = () => {
+      const a = MoteyNet.messages(r.id).filter(m => m.t !== 'chunk');
+      list.innerHTML = a.map(m => bubble(m, r)).join('') || '<p class="muted small" style="text-align:center">Säg hej! 👋</p>';
+      list.scrollTop = list.scrollHeight;
+      $$('.filemsg', list).forEach(b => b.addEventListener('click', () => downloadFile(b.dataset.fid, b.dataset.name)));
+      r.lastRead = Date.now(); r.unread = 0; Store.save();
+    };
+    draw();
+    const ta = $('#ct', container);
+    const sendNow = async () => {
+      const t = ta.value.trim(); if (!t) return;
+      ta.value = ''; ta.style.height = '';
+      await MoteyNet.sendText(r.id, t);
+    };
+    $('#cs', container).addEventListener('click', sendNow);
+    ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendNow(); } });
+    ta.addEventListener('input', () => { ta.style.height = 'auto'; ta.style.height = Math.min(140, ta.scrollHeight) + 'px'; });
+    $('#cf', container).addEventListener('change', async e => {
+      const f = e.target.files[0]; if (!f) return;
+      try { App.toast('Skickar ' + f.name + '…'); await MoteyNet.sendFile(r.id, f, f.name); App.toast('📎 Skickad'); }
+      catch (err) { App.toast(err.message, 5000); }
+      e.target.value = '';
+    });
+    const off = MoteyNet.on('message', (room) => { if (room.id === r.id) draw(); });
+    return off;
+  }
+
+  async function downloadFile(fid, name) {
+    const f = await MoteyNet.files.get(fid);
+    if (!f) return App.toast('Filen har inte kommit fram än');
+    if (f.missing) return App.toast(`Hämtar filen… (${f.have}/${f.meta.n})`);
+    App.toast(await Platform.saveFile(name || f.meta.name, f.blob));
+  }
+
+  function renderRoom(v, id, ui) {
+    if (isDemo()) return renderDemo(v, ui);
+    const r = MoteyNet.room(id);
+    if (!r) return App.go('#/chat');
+    const n = Object.keys(r.members).length;
+    v.innerHTML = `<div class="chat-head"><a href="#/chat" class="btn sm ghost">‹</a>${avatar(r.name, '#6C4CF5', r.kind)}
+      <div style="flex:1;min-width:0"><div class="t">${esc(r.name)}</div><div class="small muted">${n} ${n === 1 ? 'person' : 'personer'} · ${Object.values(r.members).map(m => esc(m.name)).filter(Boolean).slice(0, 4).join(', ')}</div></div>
+      <button class="icon-btn" id="call" title="Ring">📞</button><button class="icon-btn" id="inv" title="Bjud in">🔗</button><button class="icon-btn" id="more" title="Mer">⋯</button></div>
+      ${r.kind === 'meeting' && r.meta ? `<a class="card" href="#/m/r-${r.id}" style="display:block;text-decoration:none;color:inherit;padding:10px 14px;margin:8px 0">📅 <b>${esc(r.meta.title)}</b> · ${esc(new Date(r.meta.start).toLocaleString('sv-SE', { weekday: 'long', hour: '2-digit', minute: '2-digit' }))} <span class="muted">– öppna mötet ›</span></a>` : ''}
+      <div id="room"></div>`;
+    $('#call', v).addEventListener('click', () => App.go('#/call/' + r.id));
+    $('#inv', v).addEventListener('click', () => inviteSheet(r));
+    $('#more', v).addEventListener('click', () => {
+      const sh = App.sheet(`<h2>${esc(r.name)}</h2>
+        <button class="btn ghost block" id="sum">✨ Motey, sammanfatta chatten</button><br><br>
+        ${r.kind !== 'meeting' ? '<label class="field"><span>Byt namn</span><input type="text" id="rn" value="' + esc(r.name) + '"></label><button class="btn ghost block" id="rsave">Spara namn</button><br><br>' : ''}
+        <button class="btn block" style="background:var(--danger)" id="leave">Lämna ${r.kind === 'meeting' ? 'mötet' : 'chatten'}</button>`);
+      $('#sum', sh.el).addEventListener('click', async () => {
+        const pseudo = { id: 'chat-' + r.id, title: r.name, attendees: Object.values(r.members).map(m => m.name), transcript: MoteyNet.messages(r.id).filter(m => m.t === 'msg' || m.t === 'tr').map(m => ({ who: m.name, text: m.text })), files: [] };
+        const s = (await AI.summarize(pseudo)).value;
+        sh.close();
+        const s2 = App.sheet(`<div id="sumb"></div>`);
+        App.moteySays($('#sumb', s2.el), s.summary + (s.actions.length ? ' Att göra: ' + s.actions.map(a => a.who + ' – ' + a.what).join('; ') : ''));
+      });
+      const rs = $('#rsave', sh.el);
+      if (rs) rs.addEventListener('click', () => { r.name = $('#rn', sh.el).value.trim() || r.name; Store.save(); sh.close(); renderRoom(v, id, ui); });
+      $('#leave', sh.el).addEventListener('click', () => { if (confirm('Lämna och ta bort från den här enheten?')) { sh.close(); MoteyNet.leave(r.id); App.go('#/chat'); } });
+    });
+    offs.push(mountRoom($('#room', v), r.id));
+    // the meeting info (name, time) can arrive after the chat is opened
+    const sig = r.name + r.kind;
+    offs.push(MoteyNet.on('rooms', () => { if (location.hash === '#/chat/' + id && r.name + r.kind !== sig) { cleanup(); renderRoom(v, id, ui); } }));
+  }
+
+  /* ---------------- demo ---------------- */
+  const demoLog = [];
+  function renderDemo(v) {
+    if (!demoLog.length) {
+      const n = AI.firstName(Store.settings.bossName || 'Birgitta');
+      demoLog.push({ who: n, text: `Hej ${AI.firstName(Store.settings.name)}! Hann du titta på budgeten?`, at: Date.now() - 36e5 },
+        { who: 'Du', mine: true, text: 'Inte än, jag missade mötet 😅', at: Date.now() - 35e5 },
+        { who: 'Motey', motey: true, text: 'Lugn! Jag har sammanfattat mötet åt dig. Tryck på 👀 på Hem så berättar jag allt.', at: Date.now() - 34e5 });
+    }
+    v.innerHTML = `<div class="card hero" style="padding:14px">${Mascot.svg({ size: 64 })}<div style="flex:1"><b>Det här är demon.</b><div class="small muted">Riktiga chattar och möten med andra människor startar du med ett klick.</div></div><button class="btn ghost sm" id="goreal">Börja på riktigt</button></div>
+      <div class="chat-head">${avatar('', '', 'motey')}<div style="flex:1"><div class="t">Projekt Nova (demo)</div><div class="small muted">Birgitta, Motey och du</div></div></div>
+      <div class="msgs" id="msgs"></div>
+      <div class="composer"><textarea id="ct" rows="1" placeholder="Skriv något – Motey svarar"></textarea><button class="btn" id="cs">➤</button></div>`;
+    const draw = () => {
+      $('#msgs', v).innerHTML = demoLog.map(m => `<div class="msg ${m.mine ? 'mine' : ''}">${m.mine ? '' : `<div class="from">${esc(m.who)}</div>`}<div class="bub">${esc(m.text)}</div><div class="when">${time(m.at)}</div></div>`).join('');
+      $('#msgs', v).scrollTop = 1e9;
+    };
+    draw();
+    const send = async () => {
+      const t = $('#ct', v).value.trim(); if (!t) return;
+      $('#ct', v).value = '';
+      demoLog.push({ who: 'Du', mine: true, text: t, at: Date.now() }); draw();
+      const r = await AI.ask(t, Store.meeting('fin-1'));
+      setTimeout(() => { demoLog.push({ who: 'Motey', motey: true, text: r.value, at: Date.now() }); if (document.body.contains(v)) draw(); }, 600);
+    };
+    $('#cs', v).addEventListener('click', send);
+    $('#ct', v).addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+    $('#goreal', v).addEventListener('click', () => App.goReal());
+  }
+
+  window.ChatMode = {
+    render(v, id, ui) { cleanup(); return id ? renderRoom(v, id, ui) : renderList(v, ui); },
+    destroy: cleanup, mountRoom, inviteSheet, joinSheet, downloadFile, avatar
+  };
+})();
+
+</script>
+<script>
+/* Motey samtal – video and voice calls straight between devices (WebRTC mesh,
+ * up to ~6 people). The encrypted handshake goes through MoteyNet signals.
+ * Rule that avoids both sides calling at once: of every pair, the device
+ * with the larger key makes the offer. */
+(function () {
+  'use strict';
+  const $ = (s, el) => (el || document).querySelector(s);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let session = null;
+
+  function iceServers() {
+    const s = Store.settings;
+    const list = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }];
+    if (s.turnUrl) list.push({ urls: s.turnUrl.split(/\s+/).filter(Boolean), username: s.turnUser || undefined, credential: s.turnPass || undefined });
+    return list;
+  }
+  const gathered = pc => new Promise(res => {
+    if (pc.iceGatheringState === 'complete') return res();
+    const h = () => { if (pc.iceGatheringState === 'complete') { pc.removeEventListener('icegatheringstatechange', h); res(); } };
+    pc.addEventListener('icegatheringstatechange', h);
+    setTimeout(res, 2500);
+  });
+
+  async function render(v, roomId, ui) {
+    if (Store.settings.demo) return renderDemo(v);
+    const r = MoteyNet.room(roomId);
+    if (!r) return App.go('#/chat');
+    const meeting = Store.meeting('r-' + r.id);
+    v.innerHTML = `<div class="call">
+      <div class="call-top"><a class="btn sm ghost" href="${meeting ? '#/m/' + meeting.id : '#/chat/' + r.id}" id="back">‹</a>
+        <div style="flex:1;min-width:0"><b>${esc(r.name)}</b><div class="small muted" id="cstat">Startar kamera…</div></div>
+        <span class="badge" id="ccount">1</span></div>
+      <div class="tiles" id="tiles"></div>
+      <div class="captions hidden" id="caps"></div>
+      <div class="call-bar">
+        <button class="cbtn" id="mic" title="Mikrofon">🎤</button>
+        <button class="cbtn" id="cam" title="Kamera">📷</button>
+        <button class="cbtn" id="scr" title="Dela skärm">🖥️</button>
+        <button class="cbtn" id="notes" title="Motey antecknar">📝</button>
+        <button class="cbtn" id="chat" title="Chatt">💬</button>
+        <button class="cbtn end" id="end" title="Lämna">✆</button>
+      </div>
+      <div class="call-chat hidden" id="cchat"></div>
+    </div>`;
+    const s = session = { r, pk: (await MoteyNet.roomSigner(r)).pk, peers: new Map(), local: null, alive: true, rec: null, offs: [] };
+    const status = t => { const e = $('#cstat', v); if (e) e.textContent = t; };
+    const count = () => { const e = $('#ccount', v); if (e) e.textContent = (1 + [...s.peers.values()].filter(p => p.connected).length) + ' i samtalet'; };
+
+    // local media: video+audio, else audio only, else listen-only
+    try { s.local = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true }, video: { width: { ideal: 640 }, height: { ideal: 360 }, facingMode: 'user' } }); }
+    catch (e) {
+      try { s.local = await navigator.mediaDevices.getUserMedia({ audio: true }); ui.toast('Ingen kamera – du är med med ljud'); }
+      catch (e2) { s.local = new MediaStream(); ui.toast('Mikrofon och kamera är blockerade – du kan lyssna och se'); }
+    }
+    if (!s.alive) return stopLocal(s);
+    tile('me', MoteyNet.me().name + ' (du)', s.local, true);
+    status('Väntar på de andra… dela inbjudan om ingen är här.');
+
+    function tile(id, name, stream, self) {
+      let t = $('#t-' + id, v);
+      if (!t) {
+        t = document.createElement('div'); t.className = 'tile' + (self ? ' self' : ''); t.id = 't-' + id;
+        t.innerHTML = `<video autoplay playsinline ${self ? 'muted' : ''}></video><div class="tname">${esc(name)}</div><div class="tav">${esc(String(name)[0] || '?').toUpperCase()}</div>`;
+        $('#tiles', v).appendChild(t);
+      }
+      const vid = $('video', t);
+      if (vid.srcObject !== stream) vid.srcObject = stream;
+      const hasVideo = stream && stream.getVideoTracks().some(x => x.readyState === 'live' && x.enabled);
+      t.classList.toggle('novideo', !hasVideo);
+      vid.play().catch(() => {});
+      layout();
+      return t;
+    }
+    function layout() { const n = $('#tiles', v).children.length; $('#tiles', v).dataset.n = Math.min(n, 6); }
+
+    function peer(pk, name) {
+      let p = s.peers.get(pk);
+      if (!p) { p = { pk, name: name || 'Någon', pc: null, sid: null, seen: Date.now(), connected: false }; s.peers.set(pk, p); }
+      if (name) p.name = name;
+      p.seen = Date.now();
+      return p;
+    }
+    function newPc(p) {
+      if (p.pc) try { p.pc.close(); } catch (e) { /* closed */ }
+      const pc = new RTCPeerConnection({ iceServers: iceServers() });
+      p.pc = pc; p.connected = false; p.started = Date.now();
+      s.local.getTracks().forEach(t => pc.addTrack(t, s.local));
+      // make sure we can receive even if we send nothing
+      if (!s.local.getAudioTracks().length) pc.addTransceiver('audio', { direction: 'recvonly' });
+      if (!s.local.getVideoTracks().length) pc.addTransceiver('video', { direction: 'recvonly' });
+      const remote = new MediaStream();
+      pc.ontrack = e => { remote.addTrack(e.track); e.track.onunmute = () => tile(p.pk, p.name, remote); tile(p.pk, p.name, remote); };
+      pc.onconnectionstatechange = () => {
+        if (pc !== p.pc) return;
+        p.connected = pc.connectionState === 'connected';
+        if (p.connected) status('Ansluten 🎉');
+        if (pc.connectionState === 'failed') { status('Anslutningen bröts – försöker igen…'); if (s.pk > p.pk) setTimeout(() => offer(p), 1500); }
+        count();
+      };
+      return pc;
+    }
+    async function offer(p) {
+      if (!s.alive) return;
+      p.sid = Math.random().toString(36).slice(2);
+      const pc = newPc(p);
+      await pc.setLocalDescription(await pc.createOffer());
+      await gathered(pc);
+      MoteyNet.signal(r.id, { t: 'rtc', type: 'offer', to: p.pk, sid: p.sid, sdp: pc.localDescription.sdp });
+    }
+    async function answer(p, msg) {
+      p.sid = msg.sid;
+      const pc = newPc(p);
+      await pc.setRemoteDescription({ type: 'offer', sdp: msg.sdp });
+      await pc.setLocalDescription(await pc.createAnswer());
+      await gathered(pc);
+      MoteyNet.signal(r.id, { t: 'rtc', type: 'answer', to: p.pk, sid: p.sid, sdp: pc.localDescription.sdp });
+    }
+    const needsOffer = p => s.pk > p.pk && (!p.pc || ['failed', 'closed'].includes(p.pc.connectionState) || (!p.connected && Date.now() - p.started > 15000));
+
+    s.offs.push(MoteyNet.on('signal', async (room, m) => {
+      if (room.id !== r.id || m.t !== 'rtc' || !s.alive) return;
+      const p = peer(m.pk, m.name);
+      try {
+        if (m.type === 'join' || m.type === 'here') {
+          if (m.type === 'join') MoteyNet.signal(r.id, { t: 'rtc', type: 'here', to: m.pk });
+          if (needsOffer(p)) await offer(p);
+        } else if (m.type === 'offer') await answer(p, m);
+        else if (m.type === 'answer' && m.sid === p.sid && p.pc && p.pc.signalingState === 'have-local-offer') await p.pc.setRemoteDescription({ type: 'answer', sdp: m.sdp });
+        else if (m.type === 'bye') drop(p.pk);
+      } catch (e) { console.warn('rtc', e); }
+    }));
+    function drop(pk) {
+      const p = s.peers.get(pk); if (!p) return;
+      try { p.pc && p.pc.close(); } catch (e) { /* closed */ }
+      s.peers.delete(pk);
+      const t = $('#t-' + pk, v); if (t) t.remove();
+      layout(); count();
+    }
+
+    // announce, then keep saying "here" so late joiners find us
+    MoteyNet.signal(r.id, { t: 'rtc', type: 'join' });
+    MoteyNet.send(r.id, { t: 'call' });
+    if (meeting) { meeting.attended = true; Store.save(); }
+    s.beat = setInterval(() => {
+      MoteyNet.signal(r.id, { t: 'rtc', type: 'here' });
+      for (const p of s.peers.values()) {
+        if (Date.now() - p.seen > 35000) drop(p.pk);
+        else if (needsOffer(p)) offer(p);
+      }
+    }, 8000);
+
+    /* ---------- controls ---------- */
+    const toggle = (kind, btn) => {
+      const tr = s.local[kind === 'audio' ? 'getAudioTracks' : 'getVideoTracks']();
+      if (!tr.length) return ui.toast(kind === 'audio' ? 'Ingen mikrofon' : 'Ingen kamera');
+      const on = !tr[0].enabled; tr.forEach(t => { t.enabled = on; });
+      btn.classList.toggle('off', !on);
+      if (kind === 'video') tile('me', MoteyNet.me().name + ' (du)', s.local, true);
+    };
+    $('#mic', v).addEventListener('click', e => toggle('audio', e.currentTarget));
+    $('#cam', v).addEventListener('click', e => toggle('video', e.currentTarget));
+    const scr = $('#scr', v);
+    if (!navigator.mediaDevices.getDisplayMedia) scr.classList.add('hidden');
+    scr.addEventListener('click', async () => {
+      if (s.screen) return stopScreen();
+      try {
+        s.screen = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        const track = s.screen.getVideoTracks()[0];
+        swapVideo(track); scr.classList.add('on');
+        track.onended = stopScreen;
+      } catch (e) { s.screen = null; }
+    });
+    function stopScreen() {
+      if (!s.screen) return;
+      s.screen.getTracks().forEach(t => t.stop()); s.screen = null; scr.classList.remove('on');
+      swapVideo(s.local.getVideoTracks()[0] || null);
+    }
+    function swapVideo(track) {
+      for (const p of s.peers.values()) if (p.pc) p.pc.getTransceivers().filter(x => x.receiver.track.kind === 'video').forEach(x => x.sender.replaceTrack(track).catch(() => {}));
+      const preview = new MediaStream([...s.local.getAudioTracks(), ...(track ? [track] : [])]);
+      tile('me', MoteyNet.me().name + ' (du)', preview, true);
+    }
+    // Motey takes notes: speech → text → shared transcript of the meeting
+    const notes = $('#notes', v);
+    if (!Platform.recognizer()) notes.title = 'Motey antecknar (stöds inte i den här webbläsaren – skriv i chatten i stället)';
+    notes.addEventListener('click', () => {
+      if (s.rec) { const x = s.rec; s.rec = null; x.stop(); notes.classList.remove('on'); $('#caps', v).classList.add('hidden'); return; }
+      const rec = Platform.recognizer();
+      if (!rec) return ui.toast('Den här enheten kan inte göra tal till text. Skriv i chatten så hamnar det i protokollet.', 5000);
+      rec.interimResults = true;
+      rec.onresult = e => {
+        const res = e.results[e.results.length - 1];
+        $('#caps', v).textContent = res[0].transcript;
+        if (res.isFinal && res[0].transcript.trim()) MoteyNet.sendTranscript(r.id, res[0].transcript.trim());
+      };
+      rec.onend = () => { if (s.rec === rec) try { rec.start(); } catch (e) { /* running */ } };
+      rec.onerror = ev => { if (ev.error === 'not-allowed') { s.rec = null; notes.classList.remove('on'); ui.toast('Mikrofonen är blockerad för tal till text'); } };
+      try { rec.start(); s.rec = rec; notes.classList.add('on'); $('#caps', v).classList.remove('hidden'); ui.toast('📝 Motey antecknar – allt sagt hamnar i mötesprotokollet'); }
+      catch (e) { ui.toast('Kunde inte starta tal till text'); }
+    });
+    $('#chat', v).addEventListener('click', e => {
+      const c = $('#cchat', v);
+      const show = c.classList.toggle('hidden') === false;
+      e.currentTarget.classList.toggle('on', show);
+      if (show && !c.dataset.mounted) { c.dataset.mounted = '1'; s.offs.push(ChatMode.mountRoom(c, r.id, { compact: true })); }
+    });
+    $('#end', v).addEventListener('click', () => App.go(meeting ? '#/m/' + meeting.id : '#/chat/' + r.id));
+  }
+
+  function stopLocal(s) { if (s.local) s.local.getTracks().forEach(t => t.stop()); if (s.screen) s.screen.getTracks().forEach(t => t.stop()); }
+
+  function destroy() {
+    const s = session; session = null;
+    if (!s) return;
+    s.alive = false;
+    clearInterval(s.beat);
+    if (s.rec) { const r = s.rec; s.rec = null; try { r.stop(); } catch (e) { /* stopped */ } }
+    try { MoteyNet.signal(s.r.id, { t: 'rtc', type: 'bye' }); } catch (e) { /* offline */ }
+    for (const p of s.peers.values()) try { p.pc && p.pc.close(); } catch (e) { /* closed */ }
+    stopLocal(s);
+    s.offs.forEach(f => f());
+  }
+
+  /* Demo: try your camera with Motey as the other participant. */
+  async function renderDemo(v) {
+    v.innerHTML = `<div class="call"><div class="call-top"><a class="btn sm ghost" href="#/home">‹</a><div style="flex:1"><b>Testsamtal (demo)</b><div class="small muted">Så här ser ett Motey-möte ut. Riktiga samtal startar du när du börjar på riktigt.</div></div></div>
+      <div class="tiles" id="tiles" data-n="2"><div class="tile self" id="t-me"><video autoplay playsinline muted></video><div class="tname">Du</div><div class="tav">🙂</div></div>
+      <div class="tile novideo"><div class="tname">Motey</div><div class="tav" style="background:#EDE7FF">${Mascot.svg({ size: 90, talking: true })}</div></div></div>
+      <div class="call-bar"><button class="btn" id="goreal">🚀 Börja på riktigt</button><a class="cbtn end" href="#/home">✆</a></div></div>`;
+    $('#goreal', v).addEventListener('click', () => App.goReal());
+    try {
+      const st = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      session = { alive: true, r: { id: '' }, peers: new Map(), local: st, offs: [], demo: true };
+      const vid = $('#t-me video', v); vid.srcObject = st; $('#t-me', v).classList.remove('novideo');
+    } catch (e) { $('#t-me', v).classList.add('novideo'); }
+    Platform.speak('Hej! Det här är ett testsamtal. När du börjar på riktigt kan du ringa dina kollegor direkt i Motey.');
+  }
+  const origDestroy = destroy;
+  window.CallMode = {
+    render,
+    destroy() { if (session && session.demo) { stopLocal(session); session = null; return; } origDestroy(); }
+  };
 })();
 
 </script>
@@ -2118,16 +3212,21 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
 
   /* ---------- router ---------- */
   const NAV = [
-    ['home', '🏠', 'Hem'], ['live', '🎭', 'Live AI'], ['tiktok', '🎬', 'TikTok'], ['game', '🎮', 'Spelläge'], ['settings', '⚙️', 'Mer']
+    ['home', '🏠', 'Hem'], ['chat', '💬', 'Chattar'], ['live', '🎭', 'Live AI'], ['tiktok', '🎬', 'TikTok'], ['game', '🎮', 'Spel'], ['settings', '⚙️', 'Mer']
   ];
   let current = null;
   function go(hash) { if (location.hash === hash) route(); else location.hash = hash; }
   function route() {
+    // invite links: …motey.html#join=M1…
+    const jm = location.hash.match(/^#join=(.+)$/);
+    if (jm) { history.replaceState(null, '', '#/chat'); return joinFromLink(decodeURIComponent(jm[1])); }
     const [, name = 'home', arg] = (location.hash || '#/home').split('/');
     if (current && current.destroy) current.destroy();
     current = null;
     Platform.stopSpeaking();
-    $$('.tabbar button, .rail button.nav').forEach(b => b.classList.toggle('on', b.dataset.go === name || (name === 'm' && b.dataset.go === 'home') || (name === 'new' && b.dataset.go === 'home')));
+    const tab = { m: 'home', new: 'home', call: 'chat' }[name] || name;
+    $$('.tabbar button, .rail button.nav').forEach(b => b.classList.toggle('on', b.dataset.go === tab));
+    updateUnread();
     const v = $('#view');
     v.innerHTML = '';
     window.scrollTo(0, 0);
@@ -2135,6 +3234,8 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     if (name === 'm' && arg) return viewMeeting(v, arg);
     if (name === 'new') return viewNew(v);
     if (name === 'settings') return viewSettings(v);
+    if (name === 'chat') { current = ChatMode; return ChatMode.render(v, arg, { toast, esc }); }
+    if (name === 'call' && arg) { current = CallMode; return CallMode.render(v, arg, { toast, esc }); }
     if (modes[name]) {
       const meeting = arg ? Store.meeting(arg) : null;
       current = modes[name];
@@ -2155,9 +3256,13 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
   function meetingRow(m) {
     const missing = (m.files || []).filter(f => f.status === 'missing').length;
     const past = Store.isPast(m);
+    const live = m.room && isLive(m);
     const badges = [
+      m.demo && !S().demo ? '<span class="badge">Demo</span>' : '',
+      live ? '<span class="badge ok">● Pågår nu</span>' : '',
+      m.room && !live && !past ? '<span class="badge brand">📞 Motey-möte</span>' : '',
       m.attended === false ? '<span class="badge warn">Missad</span>' : '',
-      !past ? '<span class="badge brand">Kommande</span>' : '',
+      !past && !m.room ? '<span class="badge brand">Kommande</span>' : '',
       missing ? `<span class="badge warn">${missing} fil${missing > 1 ? 'er' : ''} saknas</span>` : '',
       past && (m.transcript || []).length ? `<span class="badge">${m.transcript.length} repliker</span>` : ''
     ].join(' ');
@@ -2169,6 +3274,45 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
       <div aria-hidden="true">›</div></div>`;
   }
 
+  const isLive = m => { const s = new Date(m.start).getTime(); return Date.now() > s - 10 * 6e4 && Date.now() < s + (m.durationMin || 45) * 6e4; };
+  function updateUnread() {
+    const n = (Store.state.rooms || []).reduce((a, r) => a + (r.unread || 0), 0);
+    $$('[data-go="chat"]').forEach(b => { b.dataset.badge = n || ''; b.classList.toggle('has-badge', n > 0); });
+  }
+
+  /* ---------- demo vs real ---------- */
+  function goReal() {
+    S().demo = false; Store.save();
+    MoteyNet.start();
+    document.querySelectorAll('.overlay').forEach(o => o.remove());
+    toast('🚀 Nu är Motey på riktigt! Skapa ett möte eller en chatt och bjud in folk.', 5000);
+    go('#/home');
+  }
+  function goDemo() { S().demo = true; Store.save(); go('#/home'); }
+  async function joinFromLink(code) {
+    if (!Store.state.onboarded) {
+      // first time Motey is opened from an invite: just ask for a name
+      const sh = sheet(`<div style="text-align:center">${Mascot.svg({ size: 110, mood: 'wow' })}</div><h1 style="text-align:center">Du är inbjuden!</h1>
+        <p class="muted" style="text-align:center">Vad ska de andra kalla dig?</p>
+        <label class="field"><span>Ditt namn</span><input type="text" id="j-name" placeholder="Ditt namn"></label>
+        <button class="btn block" id="j-go">Gå med 🚀</button>`);
+      $('#j-go', sh.el).addEventListener('click', () => {
+        S().name = $('#j-name', sh.el).value.trim() || 'Gäst';
+        S().color = MoteyNet.COLORS[Math.floor(Math.random() * MoteyNet.COLORS.length)];
+        Store.state.onboarded = true; S().demo = false; Store.save();
+        sh.close(); joinFromLink(code);
+      });
+      return;
+    }
+    if (S().demo) { S().demo = false; Store.save(); }
+    MoteyNet.start();
+    try {
+      const r = await MoteyNet.join(code);
+      toast('Du är med! 🎉 Det kan ta några sekunder innan allt har hämtats.', 5000);
+      go('#/chat/' + r.id);
+    } catch (e) { toast(e.message, 5000); go('#/chat'); }
+  }
+
   /* ---------- home ---------- */
   function viewHome(v) {
     const all = Store.sorted();
@@ -2177,13 +3321,21 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     const pending = Store.pendingCatchUp();
     const h = new Date().getHours();
     const hello = h < 10 ? 'God morgon' : h < 18 ? 'Hej' : 'God kväll';
+    const demo = S().demo;
+    const liveNow = upcoming.concat(past).filter(m => m.room && isLive(m));
     v.innerHTML = `
+      ${demo ? `<div class="demo-banner">👀 Du kollar runt i demon – mötena här är påhittade.<span style="flex:1"></span><button class="btn sm" id="goreal">Börja på riktigt</button></div>` : ''}
       <div class="card hero">
         ${Mascot.svg({ size: 96, mood: pending ? 'wow' : 'happy' })}
         <div style="flex:1">
           <h1 style="margin:0">${hello}, ${esc(S().name)}!</h1>
-          <p class="muted" style="margin:.2em 0 .6em">${pending ? `Du missade förra ”${esc(pending.prev.title)}”. Jag har koll på allt!` : 'Jag lyssnar, sammanfattar och fixar – du gör det roliga.'}</p>
-          ${pending ? '<button class="btn coral" id="catch">👀 Vad hände förra gången?</button>' : '<a class="btn ghost" href="#/new">＋ Nytt möte</a>'}
+          <p class="muted" style="margin:.2em 0 .6em">${pending ? `Du missade förra ”${esc(pending.prev.title)}”. Jag har koll på allt!` : liveNow.length ? `”${esc(liveNow[0].title)}” pågår just nu.` : 'Jag lyssnar, sammanfattar och fixar – du gör det roliga.'}</p>
+          <div class="row">
+          ${pending ? '<button class="btn coral" id="catch">👀 Vad hände förra gången?</button>' : ''}
+          ${liveNow.length && !pending ? `<a class="btn mint" href="#/call/${liveNow[0].room}">📞 Gå med nu</a>` : ''}
+          ${!pending && !liveNow.length ? '<a class="btn ghost" href="#/new">＋ Nytt möte</a>' : ''}
+          ${!demo ? '<button class="btn ghost" id="joinc">🔗 Gå med</button>' : ''}
+          </div>
         </div>
       </div>
       <div class="grid three" style="margin-bottom:14px">
@@ -2192,9 +3344,11 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
         <a class="card" href="#/game" style="text-decoration:none;color:inherit;margin:0"><h3>🎮 Spelläge</h3><p class="small muted" style="margin:0">Spring genom mötet, krossa väggar som F-skatt och lär dig på köpet.</p></a>
       </div>
       <div class="row between"><h2>Kommande</h2><a class="btn sm ghost" href="#/new">＋ Nytt möte</a></div>
-      ${upcoming.map(meetingRow).join('') || '<p class="muted">Inga kommande möten.</p>'}
+      ${upcoming.map(meetingRow).join('') || `<p class="muted">Inga kommande möten.${demo ? '' : ' Skapa ett och bjud in dina kollegor – ni möts direkt i Motey.'}</p>`}
       <h2 style="margin-top:18px">Tidigare</h2>
       ${past.map(meetingRow).join('') || '<p class="muted">Inga tidigare möten.</p>'}`;
+    const gr = $('#goreal', v); if (gr) gr.addEventListener('click', goReal);
+    const jc = $('#joinc', v); if (jc) jc.addEventListener('click', () => ChatMode.joinSheet());
     $$('.meeting', v).forEach(el => {
       const open = () => go('#/m/' + el.dataset.id);
       el.addEventListener('click', open);
@@ -2210,12 +3364,19 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     if (!m) return go('#/home');
     const prev = Store.previousInSeries(m);
     const past = Store.isPast(m);
+    const room = m.room && MoteyNet.room(m.room);
     v.innerHTML = `
       <div class="row between"><a href="#/home" class="btn sm ghost">‹ Tillbaka</a>
-        <div class="row">${past ? `<label class="switch small" style="margin:0"><input type="checkbox" id="att" ${m.attended === false ? '' : 'checked'}> Jag var med</label>` : ''}
-        <button class="icon-btn" id="del" title="Ta bort mötet">🗑️</button></div></div>
+        <div class="row">${past && !room ? `<label class="switch small" style="margin:0"><input type="checkbox" id="att" ${m.attended === false ? '' : 'checked'}> Jag var med</label>` : ''}
+        <button class="icon-btn" id="del" title="${room ? 'Lämna mötet' : 'Ta bort mötet'}">🗑️</button></div></div>
       <h1 style="margin-top:12px">${esc(m.title)}</h1>
-      <p class="muted">${fmtWhen(m.start)} · ${esc((m.attendees || []).join(', '))}</p>
+      <p class="muted">${fmtWhen(m.start)}${m.repeat === 'weekly' ? ' · varje vecka' : ''} · ${esc((m.attendees || []).join(', ')) || 'Bara du än så länge'}</p>
+      ${room ? `<div class="card" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px"><b>${isLive(m) ? '● Mötet pågår' : past ? 'Mötet är slut' : 'Motey-möte'}</b><div class="small muted">${isLive(m) ? 'Gå med med video eller bara ljud.' : past ? 'Allt som sades och skrevs finns i transkriptet.' : 'Ni ses här i Motey – ingen annan app behövs.'}</div></div>
+          <a class="btn mint" href="#/call/${room.id}">📞 ${isLive(m) ? 'Gå med nu' : 'Starta samtal'}</a>
+          <a class="btn ghost" href="#/chat/${room.id}">💬 Chatt</a>
+          <button class="btn ghost" id="inv">🔗 Bjud in</button>
+          ${past ? '<button class="btn ghost" id="nextm">📅 Boka nästa</button>' : ''}</div>` : ''}
       ${!past && prev && prev.attended === false ? `<div class="card" style="display:flex;gap:12px;align-items:center">${Mascot.svg({ size: 64, mood: 'wow' })}<div style="flex:1"><b>Du missade förra mötet.</b><div class="small muted">Motey berättar vad som hände och fixar filerna.</div></div><button class="btn coral sm" id="cu">Kör!</button></div>` : ''}
       <div class="row" style="margin-bottom:6px">
         <a class="btn sm" href="#/live/${m.id}">🎭 Live AI</a>
@@ -2228,7 +3389,18 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
       <div id="tabc"></div>`;
     const cu = $('#cu', v); if (cu) cu.addEventListener('click', () => catchUpFlow(prev, m));
     const att = $('#att', v); if (att) att.addEventListener('change', () => { m.attended = att.checked; Store.save(); });
-    $('#del', v).addEventListener('click', () => { if (confirm('Ta bort mötet?')) { Store.removeMeeting(m.id); go('#/home'); } });
+    $('#del', v).addEventListener('click', () => {
+      if (!confirm(room ? 'Lämna mötet och ta bort det från den här enheten?' : 'Ta bort mötet?')) return;
+      if (room) MoteyNet.leave(room.id); else Store.removeMeeting(m.id);
+      go('#/home');
+    });
+    const inv = $('#inv', v); if (inv) inv.addEventListener('click', () => ChatMode.inviteSheet(room));
+    const nx = $('#nextm', v); if (nx) nx.addEventListener('click', async () => {
+      if (!room.meta) return toast('Mötet har inte laddats klart än');
+      const nr = await MoteyNet.bookNext(room.id);
+      toast('📅 Nästa möte är bokat och alla i mötet är inbjudna');
+      go('#/m/r-' + nr.id);
+    });
     const tabs = { sum: () => tabSummary(m), tr: () => tabTranscript(m), files: () => tabFiles(m) };
     $$('.tabs button', v).forEach(b => b.addEventListener('click', () => {
       $$('.tabs button', v).forEach(x => x.classList.toggle('on', x === b));
@@ -2239,8 +3411,12 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
 
   async function tabSummary(m) {
     const c = $('#tabc');
+    if (!(m.transcript || []).length && m.room) {
+      c.innerHTML = `<div class="card empty">${Mascot.svg({ size: 90 })}<p><b>Inget sagt än.</b></p><p class="muted small">Under mötet hamnar chatten och allt Motey antecknar (📝 i samtalet) här – sedan sammanfattar jag, gör TikTok och spel av det.</p></div>`;
+      return;
+    }
     if (!(m.transcript || []).length) {
-      c.innerHTML = `<div class="card empty">${Mascot.svg({ size: 90 })}<p><b>Mötet har inget transkript ännu.</b></p><p class="muted small">Klistra in anteckningar eller importera en .vtt/.srt/.txt från Teams, Zoom eller Meet.</p><button class="btn" id="addtr">Lägg till transkript</button></div>`;
+      c.innerHTML =`<div class="card empty">${Mascot.svg({ size: 90 })}<p><b>Mötet har inget transkript ännu.</b></p><p class="muted small">Klistra in anteckningar eller importera en .vtt/.srt/.txt från Teams, Zoom eller Meet.</p><button class="btn" id="addtr">Lägg till transkript</button></div>`;
       $('#addtr').addEventListener('click', () => { $$('.tabs button')[1].click(); });
       return;
     }
@@ -2262,6 +3438,24 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
 
   function tabTranscript(m) {
     const c = $('#tabc');
+    if (m.room) {
+      c.innerHTML = `
+        <div class="card transcript">${(m.transcript || []).map(l => `<div class="line"><div class="who">${esc(AI.firstName(l.who))}</div><div>${l.kind === 'tr' ? '🎙️ ' : ''}${esc(l.text)}</div></div>`).join('') || '<p class="muted">Tomt än så länge.</p>'}</div>
+        <div class="card"><h3>Skriv i protokollet</h3><p class="small muted">Det du skriver här delas med alla i mötet.</p>
+          <div class="row"><input type="text" id="note" placeholder="t.ex. Beslut: vi lanserar 14 november" style="flex:1"><button class="btn" id="nsend">Lägg till</button></div>
+          <label class="btn ghost sm" style="margin-top:10px">📂 Importera .vtt/.srt/.txt<input type="file" id="trfile" accept=".txt,.vtt,.srt,text/plain" hidden></label></div>`;
+      const add = async () => { const t = $('#note').value.trim(); if (!t) return; $('#note').value = ''; await MoteyNet.sendTranscript(m.room, t); tabTranscript(m); };
+      $('#nsend').addEventListener('click', add);
+      $('#note').addEventListener('keydown', e => { if (e.key === 'Enter') add(); });
+      $('#trfile').addEventListener('change', async e => {
+        const f = e.target.files[0]; if (!f) return;
+        const lines = Store.parseTranscript(await f.text()).slice(0, 300);
+        toast(`Delar ${lines.length} repliker med mötet…`);
+        for (const l of lines) { await MoteyNet.sendTranscript(m.room, `${l.who}: ${l.text}`); }
+        tabTranscript(m);
+      });
+      return;
+    }
     c.innerHTML = `
       <div class="card transcript">${(m.transcript || []).map(l => `<div class="line"><div class="who">${esc(AI.firstName(l.who))}</div><div>${esc(l.text)}</div></div>`).join('') || '<p class="muted">Tomt.</p>'}</div>
       <div class="card"><h3>Lägg till / ersätt transkript</h3>
@@ -2286,8 +3480,9 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     const files = m.files || (m.files = []);
     const label = { missing: '<span class="badge warn">Saknas</span>', attached: '<span class="badge ok">Bifogad</span>', generated: '<span class="badge brand">Utkast av Motey</span>', sent: '<span class="badge ok">Skickad ✓</span>' };
     c.innerHTML = `<div class="card">
-      ${files.map((f, i) => `<div class="file"><div class="fi">${fileIcon(f.name)}</div><div class="fn">${esc(f.name)}<div>${label[f.status] || ''}</div></div>
-        ${f.data ? `<button class="btn sm ghost" data-dl="${i}">⬇</button>` : ''}</div>`).join('') || '<p class="muted">Inga filer kopplade till mötet.</p>'}
+      ${files.map((f, i) => `<div class="file"><div class="fi">${fileIcon(f.name)}</div><div class="fn">${esc(f.name)}<div>${label[f.status] || ''}${f.from ? ` <span class="small muted">från ${esc(f.from)}</span>` : ''}</div></div>
+        ${f.data || f.fid ? `<button class="btn sm ghost" data-dl="${i}">⬇</button>` : ''}</div>`).join('') || '<p class="muted">Inga filer kopplade till mötet.</p>'}
+      ${m.room ? `<label class="btn ghost sm" style="margin-top:6px">📎 Dela en fil med mötet<input type="file" id="fshare" hidden></label>` : ''}
       <div class="row" style="margin-top:10px">
         ${files.some(f => f.status === 'missing') ? '<button class="btn coral" id="fix">🪄 Motey, fixa det</button>' : ''}
         ${files.some(f => f.data && f.status !== 'sent') ? `<button class="btn" id="send">📨 Skicka till ${esc(S().bossName)}</button>` : ''}
@@ -2295,13 +3490,26 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
       <div class="card"><h3>Kräv en fil till mötet</h3><div class="row"><input type="text" id="fname" placeholder="t.ex. Rapport.pdf" style="flex:1"><button class="btn ghost" id="fadd">Lägg till</button></div></div>`;
     $$('[data-dl]', c).forEach(b => b.addEventListener('click', async () => {
       const f = files[+b.dataset.dl];
-      toast(await Platform.saveFile(f.name, b64Blob(f.data, f.mime)));
+      if (f.data) toast(await Platform.saveFile(f.name, b64Blob(f.data, f.mime)));
+      else ChatMode.downloadFile(f.fid, f.name);
     }));
     const fix = $('#fix', c); if (fix) fix.addEventListener('click', () => filesFlow(m, null));
     const send = $('#send', c); if (send) send.addEventListener('click', async () => { await sendToBoss(m); tabFiles(m); });
-    $('#fadd', c).addEventListener('click', () => {
+    const fs = $('#fshare', c); if (fs) fs.addEventListener('change', async e => {
+      const f = e.target.files[0]; if (!f) return;
+      try { toast('Delar ' + f.name + '…'); await MoteyNet.sendFile(m.room, f, f.name); toast('📎 Delad med mötet'); tabFiles(m); }
+      catch (err) { toast(err.message, 5000); }
+    });
+    $('#fadd', c).addEventListener('click', async () => {
       const n = $('#fname', c).value.trim(); if (!n) return;
-      files.push({ name: n, status: 'missing', owner: S().name }); Store.save(); tabFiles(m);
+      const room = m.room && MoteyNet.room(m.room);
+      if (room && room.meta) {
+        // shared requirement: everyone in the meeting sees that this file should come along
+        const meta = Object.assign({}, room.meta, { files: [...new Set([...(room.meta.files || []), n])] });
+        ['at', 'hostPk', 'hostName', 'v', 'pk', 'name', 't'].forEach(k => delete meta[k]);
+        await MoteyNet.send(room.id, Object.assign({ t: 'meta' }, meta));
+      } else files.push({ name: n, status: 'missing', owner: S().name });
+      Store.save(); tabFiles(m);
     });
   }
 
@@ -2415,7 +3623,14 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     const body = `Hej ${AI.firstName(s.bossName)}!\n\nHär kommer ${files.length === 1 ? 'filen' : 'filerna'} från "${m.title}":\n${files.map(f => '• ' + f.name + (f.status === 'generated' ? ' (utkast från Motey)' : '')).join('\n')}\n\nKort sammanfattning: ${sum.summary}\n\nHälsningar,\n${s.name}\n(skickat med Motey)`;
     let text;
     try {
-      if (s.sendMethod === 'webhook' && s.webhookUrl) {
+      if (m.room && MoteyNet.room(m.room)) {
+        // Real meeting: deliver inside Motey, to everyone in the meeting (the boss included).
+        for (const f of files) await MoteyNet.sendFile(m.room, b64Blob(f.data, f.mime), f.name);
+        const to = AI.firstName(m.boss || s.bossName);
+        await MoteyNet.sendText(m.room, `Hej ${to}! Här är ${files.map(f => f.name).join(' och ')}${files.some(f => f.status === 'generated') ? ' (utkast från Motey)' : ''}. /${s.name}`);
+        if (s.sendMethod === 'webhook' && s.webhookUrl) await fetch(s.webhookUrl, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ to: s.bossEmail, toName: s.bossName, from: s.name, subject, body, files: files.map(f => ({ name: f.name, mime: f.mime, base64: f.data })) }) }).catch(() => {});
+        text = `Klart! Jag lade ${files.map(f => f.name).join(' och ')} i mötets chatt, så ${to} och alla andra i mötet har dem nu. Du är räddad! 😎`;
+      } else if (s.sendMethod === 'webhook' && s.webhookUrl) {
         const res = await fetch(s.webhookUrl, {
           method: 'POST', headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ to: s.bossEmail, toName: s.bossName, from: s.name, subject, body, files: files.map(f => ({ name: f.name, mime: f.mime, base64: f.data })) })
@@ -2439,9 +3654,11 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
 
   /* ---------- new meeting ---------- */
   function viewNew(v) {
+    if (!S().demo) return viewNewReal(v);
     const now = new Date(Date.now() + 36e5); now.setMinutes(0, 0, 0);
     const local = new Date(now.getTime() - now.getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
     v.innerHTML = `<a href="#/home" class="btn sm ghost">‹ Tillbaka</a><h1 style="margin-top:12px">Nytt möte</h1>
+      <div class="demo-banner">👀 I demon sparas mötet bara här. <span style="flex:1"></span><button class="btn sm" id="goreal">Börja på riktigt</button></div>
       <div class="card">
         <label class="field"><span>Titel</span><input type="text" id="nt" placeholder="Veckomöte – Projekt Nova"></label>
         <label class="field"><span>Serie (samma namn kopplar ihop återkommande möten)</span><input type="text" id="ns" placeholder="nova"></label>
@@ -2453,11 +3670,12 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
         <label class="field"><span>Filer som ska med (kommaseparerade)</span><input type="text" id="nfiles" placeholder="Rapport.pdf, Budget.xlsx"></label>
         <button class="btn block" id="nsave">Spara mötet</button>
       </div>`;
+    $('#goreal', v).addEventListener('click', goReal);
     $('#nf', v).addEventListener('change', async e => { const f = e.target.files[0]; if (f) $('#ntr', v).value = await f.text(); });
     $('#nsave', v).addEventListener('click', () => {
       const title = $('#nt', v).value.trim() || 'Möte';
       const m = Store.addMeeting({
-        title, series: ($('#ns', v).value.trim() || title).toLowerCase(), start: new Date($('#nd', v).value || Date.now()).toISOString(), durationMin: 45,
+        demo: true, title, series: ($('#ns', v).value.trim() || title).toLowerCase(), start: new Date($('#nd', v).value || Date.now()).toISOString(), durationMin: 45,
         attendees: $('#na', v).value.split(',').map(s => s.trim()).filter(Boolean), boss: S().bossName,
         attended: $('#nmiss', v).checked ? false : true, transcript: Store.parseTranscript($('#ntr', v).value),
         files: $('#nfiles', v).value.split(',').map(s => s.trim()).filter(Boolean).map(n => ({ name: n, status: 'missing', owner: S().name }))
@@ -2467,12 +3685,45 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     });
   }
 
+  // A real meeting: its own encrypted room that everyone joins with the invite.
+  function viewNewReal(v) {
+    const now = new Date(Date.now() + 36e5); now.setMinutes(0, 0, 0);
+    const local = new Date(now.getTime() - now.getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
+    v.innerHTML = `<a href="#/home" class="btn sm ghost">‹ Tillbaka</a><h1 style="margin-top:12px">Nytt möte</h1>
+      <p class="muted">Ni träffas med video eller ljud direkt i Motey. Chatten, filerna och allt som antecknas sparas i mötet.</p>
+      <div class="card">
+        <label class="field"><span>Vad handlar mötet om?</span><input type="text" id="nt" placeholder="Veckomöte – Projekt Nova"></label>
+        <div class="grid two"><label class="field"><span>När</span><input type="datetime-local" id="nd" value="${local}"></label>
+        <label class="field"><span>Hur länge</span><select id="nl"><option value="15">15 min</option><option value="30">30 min</option><option value="45" selected>45 min</option><option value="60">1 timme</option><option value="90">1,5 timme</option><option value="120">2 timmar</option></select></label></div>
+        <label class="switch"><input type="checkbox" id="nrep"> Varje vecka (Motey bokar nästa möte automatiskt)</label>
+        <label class="field"><span>Filer som ska med (kommaseparerade, valfritt)</span><input type="text" id="nfiles" placeholder="Rapport.pdf, Budget.xlsx"></label>
+        <div class="row"><button class="btn" id="nsave">Skapa och bjud in</button><button class="btn mint" id="nnow">📞 Starta ett möte nu</button></div>
+      </div>`;
+    const create = async (startNow) => {
+      const title = $('#nt', v).value.trim() || (startNow ? 'Snabbmöte' : 'Möte');
+      const start = startNow ? new Date() : new Date($('#nd', v).value || Date.now());
+      const r = await MoteyNet.createRoom({ name: title, kind: 'meeting', meta: {
+        title, start: start.toISOString(), durationMin: +$('#nl', v).value, repeat: $('#nrep', v).checked ? 'weekly' : '',
+        series: Nostr.hex(Nostr.rand(8)), files: $('#nfiles', v).value.split(',').map(x => x.trim()).filter(Boolean) } });
+      MoteyNet.syncMeeting(r);
+      go(startNow ? '#/call/' + r.id : '#/m/r-' + r.id);
+      setTimeout(() => ChatMode.inviteSheet(r), 300);
+    };
+    $('#nsave', v).addEventListener('click', () => create(false));
+    $('#nnow', v).addEventListener('click', () => create(true));
+  }
+
   /* ---------- settings ---------- */
   function viewSettings(v) {
     const s = S();
+    const me = MoteyNet.me();
     v.innerHTML = `<h1>Inställningar</h1>
+      <div class="card"><h3>Läge</h3>
+        <p class="small muted">${s.demo ? 'Du kollar runt i demon. Mötena är påhittade och inget skickas till någon.' : 'Motey är på riktigt: möten, samtal och chattar med andra människor.'}</p>
+        ${s.demo ? '<button class="btn" id="s-real">🚀 Börja på riktigt</button>' : '<button class="btn ghost sm" id="s-demo">👀 Titta på demon</button> <label class="switch" style="display:inline-flex;margin:0 0 0 10px"><input type="checkbox" id="s-showdemo" ' + (s.showDemo ? 'checked' : '') + '> Visa demomötena bland mina möten</label>'}</div>
       <div class="card"><h3>Du och din chef</h3>
-        <label class="field"><span>Ditt namn</span><input type="text" id="s-name" value="${esc(s.name)}"></label>
+        <label class="field"><span>Ditt namn (det här ser de andra)</span><input type="text" id="s-name" value="${esc(s.name)}"></label>
+        <div class="row" style="margin-bottom:10px"><span class="small muted">Din färg</span>${MoteyNet.COLORS.map(c => `<button class="swatch ${c === s.color ? 'on' : ''}" data-c="${c}" style="background:${c}" aria-label="Färg ${c}"></button>`).join('')}</div>
         <label class="field"><span>Chefens namn</span><input type="text" id="s-boss" value="${esc(s.bossName)}"></label>
         <label class="field"><span>Chefens e-post</span><input type="email" id="s-mail" value="${esc(s.bossEmail)}" placeholder="chef@foretag.se"></label></div>
       <div class="card"><h3>Skicka filer</h3>
@@ -2486,12 +3737,20 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
         <label class="field"><span>Modell</span><input type="text" id="s-model" value="${esc(s.model)}"></label>
         <button class="btn sm ghost" id="s-test">Testa nyckeln</button> <span id="s-testr" class="small muted"></span>
         <p class="small muted" style="margin-top:8px">Nyckeln sparas bara på den här enheten och skickas enbart till api.anthropic.com.</p></div>
+      ${s.demo ? '' : `<div class="card"><h3>Nätverk</h3>
+        <p class="small muted">Meddelanden krypteras på din enhet och lämnas i en "brevlåda" på publika Nostr-reläer. Samtal går direkt mellan enheterna.</p>
+        <div id="s-net" class="small"></div>
+        <label class="field" style="margin-top:10px"><span>Reläer (en per rad, tomt = standard)</span><textarea id="s-relays" style="min-height:90px" placeholder="${MoteyNet.DEFAULT_RELAYS.join('\n')}">${esc(s.relays)}</textarea></label>
+        <details><summary class="small">TURN-server (för nätverk där samtal inte kommer igenom)</summary>
+          <label class="field" style="margin-top:8px"><span>TURN-adress</span><input type="text" id="s-turn" value="${esc(s.turnUrl)}" placeholder="turn:turn.example.com:3478"></label>
+          <div class="grid two"><label class="field"><span>Användare</span><input type="text" id="s-tu" value="${esc(s.turnUser)}"></label><label class="field"><span>Lösenord</span><input type="password" id="s-tp" value="${esc(s.turnPass)}"></label></div></details>
+      </div>`}
       <div class="card"><h3>Övrigt</h3>
         <label class="switch"><input type="checkbox" id="s-voice" ${s.voice ? 'checked' : ''}> Motey pratar högt</label>
         <label class="field"><span>Tema</span><select id="s-theme"><option value="auto">Följ systemet</option><option value="light">Ljust</option><option value="dark">Mörkt</option></select></label>
         <div class="row"><button class="btn ghost sm" id="s-reset">Återställ demomöten</button><button class="btn ghost sm" id="s-export">Exportera data</button></div></div>
       <div class="card"><h3>Utkorg</h3>${Store.state.outbox.slice(0, 10).map(o => `<div class="small" style="padding:6px 0;border-bottom:1px dashed var(--line)">📨 ${new Date(o.at).toLocaleString('sv-SE')} → <b>${esc(o.to)}</b>: ${esc(o.files.join(', '))}</div>`).join('') || '<p class="muted small">Inget skickat ännu.</p>'}</div>
-      <p class="center small muted" style="text-align:center">${Mascot.logo({ size: 26, animate: false })}<br>Version 1.0.0 · ${Platform.kind()}</p>`;
+      <p class="center small muted" style="text-align:center">${Mascot.logo({ size: 26, animate: false })}<br>Version 1.1.0 · ${Platform.kind()}</p>`;
     $('#s-method', v).value = s.sendMethod;
     $('#s-theme', v).value = s.theme;
     const hookVis = () => $('#s-hook-w', v).classList.toggle('hidden', $('#s-method', v).value !== 'webhook');
@@ -2500,12 +3759,22 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     bind('#s-name', 'name'); bind('#s-boss', 'bossName'); bind('#s-mail', 'bossEmail'); bind('#s-auto', 'autoSend', 'checked');
     bind('#s-method', 'sendMethod'); bind('#s-hook', 'webhookUrl'); bind('#s-key', 'apiKey'); bind('#s-model', 'model');
     bind('#s-voice', 'voice', 'checked'); bind('#s-theme', 'theme');
+    const sr = $('#s-real', v); if (sr) sr.addEventListener('click', goReal);
+    const sd = $('#s-demo', v); if (sd) sd.addEventListener('click', goDemo);
+    const ssd = $('#s-showdemo', v); if (ssd) ssd.addEventListener('change', () => { s.showDemo = ssd.checked; Store.save(); });
+    $$('.swatch', v).forEach(b => b.addEventListener('click', () => { s.color = b.dataset.c; Store.save(); $$('.swatch', v).forEach(x => x.classList.toggle('on', x === b)); }));
+    if (!s.demo) {
+      bind('#s-turn', 'turnUrl'); bind('#s-tu', 'turnUser'); bind('#s-tp', 'turnPass');
+      $('#s-relays', v).addEventListener('change', e => { s.relays = e.target.value.trim(); Store.save(); MoteyNet.restart(); toast('Reläerna uppdaterade'); });
+      const net = () => { const st = MoteyNet.status(); const el = $('#s-net', v); if (el) el.innerHTML = st.relays.map(r => `<div>${r.status === 'open' ? '🟢' : r.status === 'connecting' ? '🟡' : '🔴'} ${esc(r.url)}</div>`).join(''); };
+      net(); const off = MoteyNet.on('status', net); current = { destroy: off };
+    }
     $('#s-test', v).addEventListener('click', async () => {
       s.apiKey = $('#s-key', v).value.trim(); Store.save();
       const r = $('#s-testr', v); r.textContent = 'Testar…';
       try { r.textContent = '✅ ' + await AI.testKey(); } catch (e) { r.textContent = '❌ ' + e.message; }
     });
-    $('#s-reset', v).addEventListener('click', () => { if (confirm('Ersätt alla möten med demomötena?')) { Store.reset(); toast('Demomöten återställda'); go('#/home'); } });
+    $('#s-reset', v).addEventListener('click', () => { if (confirm('Återställ demomötena? Dina riktiga möten och chattar påverkas inte.')) { Store.reset(); toast('Demomöten återställda'); go('#/home'); } });
     $('#s-export', v).addEventListener('click', async () => {
       const data = JSON.parse(JSON.stringify(Store.state)); data.settings.apiKey = '';
       toast(await Platform.saveFile('motey-data.json', new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })));
@@ -2522,24 +3791,29 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
   function onboarding() {
     const sh = sheet(`<div style="text-align:center">${Mascot.svg({ size: 130, mood: 'happy' })}</div>
       <h1 style="text-align:center">Hej! Jag heter Motey.</h1>
-      <p class="muted" style="text-align:center">Jag är din AI-mötespolare. Jag berättar vad du missade, fixar filerna, byter stil på arga chefer, gör TikToks och spel av tråkiga möten.</p>
-      <label class="field"><span>Vad heter du?</span><input type="text" id="o-name" value="${esc(S().name)}"></label>
-      <label class="field"><span>Vad heter din chef?</span><input type="text" id="o-boss" value="${esc(S().bossName)}"></label>
-      <label class="field"><span>Chefens e-post (valfritt)</span><input type="email" id="o-mail" placeholder="chef@foretag.se"></label>
-      <button class="btn block" id="o-go">Kör igång 🚀</button>`);
-    $('#o-go', sh.el).addEventListener('click', () => {
+      <p class="muted" style="text-align:center">Din AI-mötesapp. Ni har möten med video och chattar direkt här – och jag berättar vad du missade, fixar filerna, byter stil på arga chefer och gör TikToks och spel av tråkiga möten.</p>
+      <label class="field"><span>Vad heter du?</span><input type="text" id="o-name" value="" placeholder="Ditt namn"></label>
+      <label class="field"><span>Vad heter din chef? (valfritt)</span><input type="text" id="o-boss" value="" placeholder="t.ex. Birgitta"></label>
+      <div class="mode-pick">
+        <button id="o-real"><b>🚀 Börja på riktigt</b><span class="small muted">Skapa möten och chattar och bjud in riktiga människor.</span></button>
+        <button id="o-demo"><b>👀 Bara kolla runt</b><span class="small muted">Utforska med påhittade möten. Du kan börja på riktigt när du vill.</span></button>
+      </div>`);
+    const finish = real => {
       const s = S();
-      s.name = $('#o-name', sh.el).value.trim() || 'Du';
-      s.bossName = $('#o-boss', sh.el).value.trim() || 'Chefen';
-      s.bossEmail = $('#o-mail', sh.el).value.trim();
+      s.name = $('#o-name', sh.el).value.trim() || (real ? 'Jag' : 'Ronny');
+      s.bossName = $('#o-boss', sh.el).value.trim() || 'Birgitta';
+      s.color = MoteyNet.COLORS[Math.floor(Math.random() * MoteyNet.COLORS.length)];
+      s.demo = !real;
       Store.state.onboarded = true;
-      Store.state.meetings = Store.demoMeetings(s.name, s.bossName);
-      Store.save();
+      Store.reset();
       sh.close();
+      if (real) { MoteyNet.start(); route(); return; }
       route();
       const p = Store.pendingCatchUp();
       if (p) setTimeout(() => catchUpFlow(p.prev, p.next), 500);
-    });
+    };
+    $('#o-real', sh.el).addEventListener('click', () => finish(true));
+    $('#o-demo', sh.el).addEventListener('click', () => finish(false));
   }
 
   /* ---------- boot ---------- */
@@ -2553,8 +3827,20 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     $('#tabbar').innerHTML = navHtml('');
     $$('[data-go]').forEach(b => b.addEventListener('click', () => go('#/' + b.dataset.go)));
     window.addEventListener('hashchange', route);
+    if (!S().demo) MoteyNet.start();
+    // keep the visible screen fresh when messages and meetings arrive
+    let t = 0;
+    const refresh = () => {
+      updateUnread();
+      const name = (location.hash.split('/')[1] || 'home');
+      if (name !== 'home' && name !== 'm') return;
+      if (document.querySelector('.overlay') || document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
+      clearTimeout(t); t = setTimeout(route, 700);
+    };
+    MoteyNet.on('rooms', refresh);
+    MoteyNet.on('message', (r, m) => { if (m.t === 'meta' || m.t === 'file' || m.t === 'next') refresh(); else updateUnread(); });
     route();
-    if (!Store.state.onboarded) onboarding();
+    if (!Store.state.onboarded && !/^#join=/.test(location.hash)) onboarding();
     else {
       // Example 1: Motey pops up by itself when the next meeting follows a missed one.
       const p = Store.pendingCatchUp();
@@ -2562,7 +3848,7 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     }
   }
 
-  window.App = { toast, go, sheet, moteySays, esc, catchUpFlow, sendToBoss };
+  window.App = { toast, go, sheet, moteySays, esc, catchUpFlow, sendToBoss, goReal, goDemo };
   document.addEventListener('DOMContentLoaded', boot);
 })();
 

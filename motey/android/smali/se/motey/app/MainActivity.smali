@@ -7,6 +7,7 @@
 
 .field public web:Landroid/webkit/WebView;
 .field public fileCallback:Landroid/webkit/ValueCallback;
+.field public pendingPerm:Landroid/webkit/PermissionRequest;
 
 
 .method public constructor <init>()V
@@ -54,6 +55,20 @@
 
     const-string v1, "file:///android_asset/www/index.html"
     invoke-virtual {v0, v1}, Landroid/webkit/WebView;->loadUrl(Ljava/lang/String;)V
+
+    # Android 13+: ask once for permission to show message notifications
+    sget v1, Landroid/os/Build$VERSION;->SDK_INT:I
+    const/16 v2, 0x21
+    if-lt v1, v2, :no_notif
+    const/4 v1, 0x1
+    new-array v1, v1, [Ljava/lang/String;
+    const-string v2, "android.permission.POST_NOTIFICATIONS"
+    const/4 v3, 0x0
+    aput-object v2, v1, v3
+    const/16 v2, 0x8
+    invoke-virtual {p0, v1, v2}, Lse/motey/app/MainActivity;->requestPermissions([Ljava/lang/String;I)V
+
+    :no_notif
     return-void
 .end method
 
@@ -105,5 +120,64 @@
     return-void
 
     :catch_0
+    return-void
+.end method
+
+
+# Camera and microphone for calls: ask Android first, then let the page have them.
+.method public askMedia(Landroid/webkit/PermissionRequest;)V
+    .registers 7
+    iput-object p1, p0, Lse/motey/app/MainActivity;->pendingPerm:Landroid/webkit/PermissionRequest;
+    const-string v0, "android.permission.CAMERA"
+    invoke-virtual {p0, v0}, Lse/motey/app/MainActivity;->checkSelfPermission(Ljava/lang/String;)I
+    move-result v1
+    const-string v2, "android.permission.RECORD_AUDIO"
+    invoke-virtual {p0, v2}, Lse/motey/app/MainActivity;->checkSelfPermission(Ljava/lang/String;)I
+    move-result v3
+    or-int/2addr v1, v3
+    if-nez v1, :ask
+    invoke-virtual {p0}, Lse/motey/app/MainActivity;->grantPending()V
+    return-void
+
+    :ask
+    const/4 v1, 0x2
+    new-array v3, v1, [Ljava/lang/String;
+    const/4 v1, 0x0
+    aput-object v0, v3, v1
+    const/4 v1, 0x1
+    aput-object v2, v3, v1
+    const/4 v1, 0x7
+    invoke-virtual {p0, v3, v1}, Lse/motey/app/MainActivity;->requestPermissions([Ljava/lang/String;I)V
+    return-void
+.end method
+
+
+.method public grantPending()V
+    .registers 3
+    iget-object v0, p0, Lse/motey/app/MainActivity;->pendingPerm:Landroid/webkit/PermissionRequest;
+    if-eqz v0, :done
+
+    :try_start_0
+    invoke-virtual {v0}, Landroid/webkit/PermissionRequest;->getResources()[Ljava/lang/String;
+    move-result-object v1
+    invoke-virtual {v0, v1}, Landroid/webkit/PermissionRequest;->grant([Ljava/lang/String;)V
+    :try_end_0
+    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :catch_0
+
+    :clear
+    const/4 v0, 0x0
+    iput-object v0, p0, Lse/motey/app/MainActivity;->pendingPerm:Landroid/webkit/PermissionRequest;
+
+    :done
+    return-void
+
+    :catch_0
+    goto :clear
+.end method
+
+
+.method public onRequestPermissionsResult(I[Ljava/lang/String;[I)V
+    .registers 4
+    invoke-virtual {p0}, Lse/motey/app/MainActivity;->grantPending()V
     return-void
 .end method

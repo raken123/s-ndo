@@ -10,7 +10,7 @@
     'innan sen sedan då mer mycket under alltså får måste ha här kommer vara varit ut upp in över nästa ' +
     'samma tar idag hittills ungefär helst runt gå går vår våra vårt deras min mitt mina din ditt dina sina ' +
     'sitt egna egen alla allihop tack bra toppen okej ja nej först också annars åt dra inom senast vid ' +
-    'möte mötet godmorgon välkomna inför helt ligger kort igenom först annars procent kvartal dag vecka veckan tid gång heller ingen inga något några alltid aldrig blev blir bli ser gör göra gjort').split(' '));
+    'hej hejsan möte mötet godmorgon välkomna inför helt ligger kort igenom först annars procent kvartal dag vecka veckan tid gång heller ingen inga något några alltid aldrig blev blir bli ser gör göra gjort').split(' '));
 
   /* ---------- glossary used by the game and TikTok images ---------- */
   const GLOSSARY = {
@@ -333,7 +333,9 @@
 
   async function catchUp(prev, user) {
     const sum = (await summarize(prev)).value;
-    const day = new Date(prev.start).toLocaleDateString('sv-SE', { weekday: 'long' }) + 's';
+    const d0 = new Date(prev.start), today = new Date();
+    const ago = Math.round((new Date(today.toDateString()) - new Date(d0.toDateString())) / 864e5);
+    const day = ago === 0 ? 'dag' : ago === 1 ? 'går' : d0.toLocaleDateString('sv-SE', { weekday: 'long' }) + 's';
     const mine = sum.actions.filter(a => firstName(a.who).toLowerCase() === firstName(user).toLowerCase() || a.who === 'Alla');
     const r = await withFallback(
       () => claude({
