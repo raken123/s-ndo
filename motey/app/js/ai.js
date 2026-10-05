@@ -1,7 +1,8 @@
 /* Motey – the AI engine.
- * Every function works offline with a built-in Swedish engine. When the user
- * adds a Claude API key in Inställningar, the same functions call Claude
- * (Messages API) instead and fall back to the offline engine on any error. */
+ * Every function works offline with a built-in Swedish engine. When Gemini is
+ * connected (Motey-servern or an own key), Gemini 3.8 Flash does the work and
+ * the offline engine is the fallback on any error. Every call is metered
+ * against the subscription (plans.js). */
 (function () {
   'use strict';
 
@@ -265,81 +266,63 @@
       if (s > bs) { bs = s; best = l; }
     }
     if (best) return `På mötet sa ${firstName(best.who)}: ”${best.text}”`;
-    return 'Det vet jag inte riktigt än! Lägg till en Claude-nyckel i Inställningar så kan jag svara på allt. 😊';
+    return 'Det vet jag inte riktigt än! När Gemini är kopplat (Mer → AI) kan jag svara på allt. 😊';
   }
 
-  /* ---------- Claude (Messages API, raw fetch from the webview) ---------- */
-  const hasKey = () => !!(window.Store && Store.settings.apiKey);
-  async function claude({ system, prompt, schema, effort, maxTokens }) {
-    const s = Store.settings;
-    const body = {
-      model: s.model || 'claude-opus-5-5',
-      max_tokens: maxTokens || 16000,
-      system,
-      messages: [{ role: 'user', content: prompt }],
-      output_config: { effort: effort || 'low' },
-      // On a safety-classifier decline, let the API retry on its recommended fallback model.
-      fallbacks: 'default'
-    };
-    if (schema) body.output_config.format = { type: 'json_schema', schema };
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': s.apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'server-side-fallback-2026-07-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify(body)
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error((data.error && data.error.message) || ('HTTP ' + res.status));
-    if (data.stop_reason === 'refusal') throw new Error('refusal');
-    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
-    if (!text) throw new Error('empty');
-    return schema ? JSON.parse(text) : text.trim();
-  }
+  /* ---------- Gemini 3.8 Flash ---------- */
+  const hasKey = () => !!(window.Gemini && Gemini.available());
   const SYS = 'Du är Motey, en glad AI-mötesassistent formad som en pratbubbla. Du svarar alltid på svenska, kort och tydligt.';
   const transcriptText = m => (m.transcript || []).map(l => `${l.who}: ${l.text}`).join('\n');
-  const obj = (props, req) => ({ type: 'object', properties: props, required: req || Object.keys(props), additionalProperties: false });
-  const str = { type: 'string' };
-  const arr = items => ({ type: 'array', items });
+  const G = () => Gemini.schema;
 
-  async function withFallback(fnClaude, fnLocal) {
-    if (!hasKey()) return { source: 'local', value: fnLocal() };
-    try { return { source: 'claude', value: await fnClaude() }; }
-    catch (e) { console.warn('Claude misslyckades, använder offline-motorn:', e.message); return { source: 'local', value: fnLocal(), error: e.message }; }
+  // Usage gate: in Lite, Plus and Pro every AI thing counts (offline engine too).
+  function gate(action) { if (!Plans.allow(action)) throw new Plans.QuotaError('quota', action); }
+  async function withFallback(action, fnGemini, fnLocal) {
+    if (action) gate(action);
+    let r;
+    if (!hasKey()) r = { source: 'local', value: fnLocal() };
+    else {
+      try { r = { source: 'gemini', value: await fnGemini() }; }
+      catch (e) {
+        if (e.kind === 'quota' || e.status === 402) { Plans.refresh(); Plans.upgradeSheet(new Plans.QuotaError('quota', action)); throw new Plans.QuotaError('quota', action); }
+        console.warn('Gemini misslyckades, använder offline-motorn:', e.message);
+        r = { source: 'local', value: fnLocal(), error: e.message };
+      }
+    }
+    if (action) Plans.charge(action);
+    return r;
   }
 
   /* ---------- public API ---------- */
   const cache = {};
-  async function summarize(meeting) {
+  // opts.charge: count it as a "Sammanfattning" (the summary tab); internal uses are free.
+  async function summarize(meeting, opts) {
     const key = meeting.id + ':' + (meeting.transcript || []).length + ':' + hasKey();
     if (cache[key]) return cache[key];
-    const r = await withFallback(async () => {
-      const v = await claude({
-        system: SYS, effort: 'medium',
+    if (!(meeting.transcript || []).length) return { source: 'local', value: localSummary(meeting) };
+    const r = await withFallback(opts && opts.charge ? 'summary' : null, async () => {
+      const v = await Gemini.generate({
+        system: SYS, action: 'summary',
         prompt: `Sammanfatta mötet "${meeting.title}". Ge en kort sammanfattning (2–3 meningar), de viktigaste punkterna, beslut, att göra-punkter med ansvarig person, alla filer/dokument som nämns och 6–8 nyckelord.\n\nTranskript:\n${transcriptText(meeting)}`,
-        schema: obj({ summary: str, points: arr(str), decisions: arr(str), actions: arr(obj({ who: str, what: str })), files: arr(str), keywords: arr(str) })
+        schema: G().obj({ summary: G().str, points: G().arr(G().str), decisions: G().arr(G().str), actions: G().arr(G().obj({ who: G().str, what: G().str })), files: G().arr(G().str), keywords: G().arr(G().str) })
       });
       (meeting.files || []).forEach(f => v.files.includes(f.name) || v.files.push(f.name));
       return v;
     }, () => localSummary(meeting));
-    if (!(meeting.transcript || []).length) r.value = localSummary(meeting);
     cache[key] = r;
     return r;
   }
 
   async function catchUp(prev, user) {
+    gate('catchup');
     const sum = (await summarize(prev)).value;
     const d0 = new Date(prev.start), today = new Date();
     const ago = Math.round((new Date(today.toDateString()) - new Date(d0.toDateString())) / 864e5);
     const day = ago === 0 ? 'dag' : ago === 1 ? 'går' : d0.toLocaleDateString('sv-SE', { weekday: 'long' }) + 's';
     const mine = sum.actions.filter(a => firstName(a.who).toLowerCase() === firstName(user).toLowerCase() || a.who === 'Alla');
-    const r = await withFallback(
-      () => claude({
-        system: SYS, effort: 'low',
+    const r = await withFallback('catchup',
+      () => Gemini.generate({
+        system: SYS, action: 'catchup',
         prompt: `${user} missade mötet "${prev.title}" i ${day}. Skriv en kort, varm och lite rolig uppdatering (max 70 ord) direkt till ${user}: vad som hände, vilka beslut som togs och vad ${user} själv ska göra. Ingen rubrik.\n\nTranskript:\n${transcriptText(prev)}`
       }),
       () => `Hej ${user}! Du missade "${prev.title}" i ${day}. ${sum.summary}` +
@@ -349,48 +332,45 @@
     return { text: r.value, source: r.source, sum, mine };
   }
 
+  // Offline style swap (demo, and when Gemini isn't connected). With Gemini the
+  // Live AI screen uses Gemini 3.8 Flash Live instead, see live.js.
   async function restyle(text, style) {
+    return { source: 'local', value: localRestyle(text, style) };
+  }
+  function liveInstruction(style, who) {
     const st = STYLES[style] || STYLES.snall;
-    return withFallback(
-      () => claude({
-        system: SYS + ' Du ersätter en talare i ett möte i realtid.',
-        effort: 'low', maxTokens: 1024,
-        prompt: `Skriv om repliken i stilen "${st.name}". Behåll exakt samma budskap, fakta, siffror, datum och uppgifter – bara tonen ändras, och den ska vara vänlig. Svara endast med den nya repliken.\n\nReplik: ${text}`
-      }),
-      () => localRestyle(text, style)
-    );
+    return `Du är Motey och tar ${who ? who + 's' : 'talarens'} plats i ett möte i realtid. Varje gång du hör eller får en replik ska du direkt säga samma sak igen på svenska i stilen "${st.name}". ` +
+      'Behåll exakt samma budskap, fakta, siffror, datum, namn och uppgifter – bara tonen ändras, och den ska vara vänlig och lätt att höra. ' +
+      'Svara aldrig på frågor, lägg inte till något eget och kommentera inte. Säg bara den omskrivna repliken. Är det tyst eller ohörbart säger du ingenting.';
   }
 
   async function videoScript(meeting) {
     const sum = (await summarize(meeting)).value;
-    return withFallback(
-      () => claude({
-        system: SYS + ' Du gör korta, roliga vertikala videor (TikTok-stil) om möten.',
-        effort: 'low',
+    return withFallback('tiktok',
+      () => Gemini.generate({
+        system: SYS + ' Du gör korta, roliga vertikala videor (TikTok-stil) om möten.', action: 'tiktok', temperature: 0.9,
         prompt: `Gör ett manus för en 30–40 sekunders TikTok-video om mötet "${meeting.title}". 5–7 scener. Varje scen: caption (max 90 tecken, gärna med emoji), narration (det som sägs, max 25 ord), query (ett sökord för en passande Wikipedia-bild, helst ett substantiv på svenska, eller tom sträng), emoji (en emoji). Första scenen är en hook, sista en uppmaning.\n\nTranskript:\n${transcriptText(meeting)}`,
-        schema: obj({ scenes: arr(obj({ caption: str, narration: str, query: str, emoji: str })) })
+        schema: G().obj({ scenes: G().arr(G().obj({ caption: G().str, narration: G().str, query: G().str, emoji: G().str })) })
       }).then(v => v.scenes),
       () => localVideoScript(meeting, sum)
     );
   }
 
   async function gameLevel(meeting) {
-    return withFallback(
-      () => claude({
-        system: SYS + ' Du bygger banor i ett pedagogiskt spel där varje vägg är ett begrepp från mötet.',
-        effort: 'medium',
+    return withFallback('game',
+      () => Gemini.generate({
+        system: SYS + ' Du bygger banor i ett pedagogiskt spel där varje vägg är ett begrepp från mötet.', action: 'game', temperature: 0.6,
         prompt: `Gör 3–6 väggar till en spelbana om mötet "${meeting.title}". Varje vägg är ett viktigt begrepp från mötet (t.ex. F-skatt, moms). För varje: term, icon (en emoji), explain (förklara begreppet enkelt och korrekt, 2–3 meningar), howTo (så "förstör" man väggen = vad man konkret gör i verkligheten, 1–2 meningar), q (en kontrollfråga), opts (exakt 3 svarsalternativ), a (index 0–2 för rätt svar). Lägg också till 3–6 korta facts från mötet.\n\nTranskript:\n${transcriptText(meeting)}`,
-        schema: obj({ walls: arr(obj({ term: str, icon: str, explain: str, howTo: str, q: str, opts: arr(str), a: { type: 'integer' } })), facts: arr(str) })
+        schema: G().obj({ walls: G().arr(G().obj({ term: G().str, icon: G().str, explain: G().str, howTo: G().str, q: G().str, opts: G().arr(G().str), a: G().int })), facts: G().arr(G().str) })
       }).then(v => ({ title: meeting.title, walls: v.walls.filter(w => w.opts.length >= 2 && w.a >= 0 && w.a < w.opts.length).slice(0, 6), facts: v.facts })),
       () => localLevel(meeting)
     );
   }
 
   async function ask(question, meeting) {
-    return withFallback(
-      () => claude({
-        system: SYS + ' Du är spelkompis i Motey-spelläget och förklarar saker enkelt.',
-        effort: 'low', maxTokens: 1024,
+    return withFallback('ask',
+      () => Gemini.generate({
+        system: SYS + ' Du är spelkompis i Motey-spelläget och förklarar saker enkelt.', action: 'ask',
         prompt: `Fråga: ${question}\n\nSvara kort (max 60 ord).` + (meeting ? `\n\nMötets transkript:\n${transcriptText(meeting)}` : '')
       }),
       () => localAnswer(question, meeting)
@@ -398,8 +378,10 @@
   }
 
   async function testKey() {
-    return claude({ system: SYS, prompt: 'Säg hej i max fem ord.', effort: 'low', maxTokens: 256 });
+    const m = await Gemini.models();
+    const hi = await Gemini.generate({ system: SYS, prompt: 'Säg hej i max fem ord.', action: 'test' });
+    return `${hi} (${m.flash} · ${m.live})`;
   }
 
-  window.AI = { summarize, catchUp, restyle, videoScript, gameLevel, ask, testKey, hasKey, STYLES, GLOSSARY, keywords, concepts, localRestyle, localSummary, firstName };
+  window.AI = { summarize, catchUp, restyle, liveInstruction, videoScript, gameLevel, ask, testKey, hasKey, STYLES, GLOSSARY, keywords, concepts, localRestyle, localSummary, firstName };
 })();

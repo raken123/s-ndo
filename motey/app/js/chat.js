@@ -164,7 +164,7 @@
         <button class="btn block" style="background:var(--danger)" id="leave">Lämna ${r.kind === 'meeting' ? 'mötet' : 'chatten'}</button>`);
       $('#sum', sh.el).addEventListener('click', async () => {
         const pseudo = { id: 'chat-' + r.id, title: r.name, attendees: Object.values(r.members).map(m => m.name), transcript: MoteyNet.messages(r.id).filter(m => m.t === 'msg' || m.t === 'tr').map(m => ({ who: m.name, text: m.text })), files: [] };
-        const s = (await AI.summarize(pseudo)).value;
+        let s; try { s = (await AI.summarize(pseudo, { charge: true })).value; } catch (e) { sh.close(); return; }
         sh.close();
         const s2 = App.sheet(`<div id="sumb"></div>`);
         App.moteySays($('#sumb', s2.el), s.summary + (s.actions.length ? ' Att göra: ' + s.actions.map(a => a.who + ' – ' + a.what).join('; ') : ''));

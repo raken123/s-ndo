@@ -48,10 +48,12 @@
     };
 
     async function build() {
-      const r = await AI.gameLevel(meeting);
+      let r;
+      try { r = await AI.gameLevel(meeting); }
+      catch (e) { if (e instanceof Plans.QuotaError) { say('Månadens kvot räcker inte för en ny bana. Uppgradera så spelar vi! 🎮'); return; } throw e; }
       if (!alive) return;
       level = r.value;
-      $('#gsrc', v).textContent = r.source === 'claude' ? 'Bana: Claude' : 'Bana: Offline-AI';
+      $('#gsrc', v).textContent = r.source === 'gemini' ? 'Bana: Gemini 3.8 Flash' : 'Bana: Offline-AI';
       walls = level.walls.map((w, i) => Object.assign({}, w, { x: 520 + i * GAP, state: 'solid', shake: 0, t: 0 }));
       worldW = 520 + walls.length * GAP + 420;
       facts = level.facts.map((f, i) => ({ text: f, x: 330 + i * (worldW - 700) / Math.max(1, level.facts.length), y: FLOOR_TOP + 40 + ((i * 97) % (FLOOR_BOT - FLOOR_TOP - 90)), got: false }));
@@ -285,7 +287,8 @@
     $('#g-ask', v).addEventListener('click', async () => {
       const q = $('#g-q', v).value.trim(); if (!q) return;
       say('Motey tänker… 🤔');
-      const r = await AI.ask(q, meeting);
+      let r;
+      try { r = await AI.ask(q, meeting); } catch (e) { if (e instanceof Plans.QuotaError) return say('Kvoten är slut för den här månaden.'); throw e; }
       if (alive) say(r.value, { voice: true });
     });
     $('#g-q', v).addEventListener('keydown', e => { if (e.key === 'Enter') $('#g-ask', v).click(); });

@@ -246,9 +246,11 @@
 
     async function build() {
       bar(0.05); status('Skriver manus…');
-      const r = await AI.videoScript(meeting);
+      let r;
+      try { r = await AI.videoScript(meeting); }
+      catch (e) { if (e instanceof Plans.QuotaError) { status('Kvoten räcker inte för en ny video den här månaden.'); bar(0); return; } throw e; }
       if (!alive) return;
-      $('#src', v).textContent = r.source === 'claude' ? 'Manus: Claude' : 'Manus: Offline-AI';
+      $('#src', v).textContent = r.source === 'gemini' ? 'Manus: Gemini 3.8 Flash' : 'Manus: Offline-AI';
       const scenes = r.value.map(s => Object.assign({}, s, { dur: Math.max(4.2, Math.min(7.5, s.caption.split(' ').length * 0.42 + 1.6)) }));
       $('#scenes', v).innerHTML = scenes.map(s => `<li>${esc(s.emoji || '')} ${esc(s.caption)}</li>`).join('');
       status('Hämtar bilder från internet…');

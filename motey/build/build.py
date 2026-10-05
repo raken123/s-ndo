@@ -25,7 +25,7 @@ WORK = os.path.join(HERE, '.work')
 TOOLS = os.environ.get('MOTEY_TOOLS', os.path.join(HERE, '.tools'))
 ICONS = os.path.join(HERE, 'icons')
 
-VERSION = '1.1.0'
+VERSION = '1.2.0'
 APP_ID = 'se.motey.app'
 PORT = 47391  # fixed so the desktop app keeps its localStorage between runs
 

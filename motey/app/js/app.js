@@ -16,7 +16,7 @@
   const fmtDate = d => new Date(d).getDate();
   const fmtWhen = d => new Date(d).toLocaleString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
   const fileIcon = n => ({ pdf: '📕', xlsx: '📗', xls: '📗', csv: '📗', docx: '📘', doc: '📘', pptx: '📙' }[(n.split('.').pop() || '').toLowerCase()] || '📄');
-  const aiTag = src => src === 'claude' ? '<span class="ai-tag claude">Claude</span>' : '<span class="ai-tag">Offline-AI</span>';
+  const aiTag = src => src === 'gemini' ? '<span class="ai-tag gemini">Gemini 3.8 Flash</span>' : '<span class="ai-tag">Offline-AI</span>';
 
   /* ---------- router ---------- */
   const NAV = [
@@ -32,9 +32,11 @@
     if (current && current.destroy) current.destroy();
     current = null;
     Platform.stopSpeaking();
-    const tab = { m: 'home', new: 'home', call: 'chat' }[name] || name;
+    document.querySelectorAll('.overlay').forEach(o => o.remove());
+    const tab = { m: 'home', new: 'home', call: 'chat', plans: 'settings', scan: 'settings' }[name] || name;
     $$('.tabbar button, .rail button.nav').forEach(b => b.classList.toggle('on', b.dataset.go === tab));
     updateUnread();
+    Plans.paintPill();
     const v = $('#view');
     v.innerHTML = '';
     window.scrollTo(0, 0);
@@ -42,6 +44,8 @@
     if (name === 'm' && arg) return viewMeeting(v, arg);
     if (name === 'new') return viewNew(v);
     if (name === 'settings') return viewSettings(v);
+    if (name === 'plans') return Plans.render(v);
+    if (name === 'scan') return Avatar.renderScan(v, { toast, esc });
     if (name === 'chat') { current = ChatMode; return ChatMode.render(v, arg, { toast, esc }); }
     if (name === 'call' && arg) { current = CallMode; return CallMode.render(v, arg, { toast, esc }); }
     if (modes[name]) {
@@ -229,7 +233,9 @@
       return;
     }
     c.innerHTML = `<div class="card"><p class="muted">Motey tänker…</p></div>`;
-    const r = await AI.summarize(m);
+    let r;
+    try { r = await AI.summarize(m, { charge: true }); }
+    catch (e) { if (!(e instanceof Plans.QuotaError)) throw e; c.innerHTML = `<div class="card empty">${Mascot.svg({ size: 80, mood: 'worried' })}<p><b>Kvoten är slut för den här månaden.</b></p><a class="btn" href="#/plans">Se planer</a></div>`; return; }
     if (!document.body.contains(c)) return;
     const s = r.value;
     c.innerHTML = `
@@ -397,9 +403,13 @@
     draw();
     $('#later', sh.el).addEventListener('click', sh.close);
     $('#auto', sh.el).addEventListener('click', async () => {
-      const btn = $('#auto', sh.el); btn.disabled = true; btn.textContent = 'Fixar…';
+      const btn = $('#auto', sh.el);
+      const todo = missing.filter(x => x.status === 'missing');
+      for (let i = 0; i < todo.length; i++) if (!Plans.allow('fix')) return;
+      btn.disabled = true; btn.textContent = 'Fixar…';
       const sum = (await AI.summarize(m)).value;
-      for (const f of missing.filter(x => x.status === 'missing')) {
+      for (const f of todo) {
+        Plans.charge('fix');
         const d = Docs.draftFor(m, sum, f.name);
         f.name = d.name; f.data = await Platform.blobToB64(d.blob); f.mime = d.blob.type; f.status = 'generated'; f.size = d.blob.size;
       }
@@ -539,12 +549,20 @@
         <label class="field"><span>Hur</span><select id="s-method"><option value="email">E-post (öppnar e-postappen)</option><option value="webhook">Webhook – helt automatiskt</option></select></label>
         <label class="field" id="s-hook-w"><span>Webhook-URL (Zapier, Make, Power Automate, n8n…)</span><input type="url" id="s-hook" value="${esc(s.webhookUrl)}" placeholder="https://hooks.zapier.com/…"></label>
         <p class="small muted">Webhooken får JSON med mottagare, ämne, text och filerna i base64.</p></div>
-      <div class="card"><h3>AI</h3>
-        <p class="small muted">Motey fungerar helt offline. Med en Claude API-nyckel blir sammanfattningar, stilbyten, videomanus och spelbanor smartare.</p>
-        <label class="field"><span>Claude API-nyckel</span><input type="password" id="s-key" value="${esc(s.apiKey)}" placeholder="sk-ant-…" autocomplete="off"></label>
-        <label class="field"><span>Modell</span><input type="text" id="s-model" value="${esc(s.model)}"></label>
-        <button class="btn sm ghost" id="s-test">Testa nyckeln</button> <span id="s-testr" class="small muted"></span>
-        <p class="small muted" style="margin-top:8px">Nyckeln sparas bara på den här enheten och skickas enbart till api.anthropic.com.</p></div>
+      <div class="card"><div class="row between"><h3 style="margin:0">Prenumeration</h3><a class="btn sm" href="#/plans">Planer</a></div>
+        <div style="margin-top:10px">${Plans.meter(true)}</div>
+        <div class="row" style="margin-top:10px"><a class="btn ghost sm" href="#/scan">🏖️ Mitt 3D-ansikte (Pro)</a></div></div>
+      <div class="card"><h3>AI – Gemini</h3>
+        <p class="small muted">Motey drivs av Gemini: <b>3.8 Flash</b> för sammanfattningar, TikTok och spel, <b>3.8 Flash Live</b> för AI-Live och Live Replace. Utan Gemini kör Motey sin inbyggda offline-AI.</p>
+        <label class="field"><span>Motey-server (rekommenderas – håller API-nyckeln och prenumerationerna)</span><input type="url" id="s-server" value="${esc(s.serverUrl)}" placeholder="https://motey.example.se"></label>
+        <details ${s.geminiKey ? 'open' : ''}><summary class="small">…eller en egen Gemini API-nyckel (för test)</summary>
+          <label class="field" style="margin-top:8px"><span>Gemini API-nyckel</span><input type="password" id="s-gkey" value="${esc(s.geminiKey)}" placeholder="Din nyckel från Google AI Studio" autocomplete="off"></label>
+          <p class="small muted">Sparas bara på den här enheten och skickas bara till Google. Lägg den aldrig i en app du delar ut – använd Motey-servern för det.</p></details>
+        <details><summary class="small">Modeller (hittas automatiskt)</summary>
+          <div class="grid two" style="margin-top:8px"><label class="field"><span>Flash</span><input type="text" id="s-mflash" value="${esc(s.modelFlash)}" placeholder="${Gemini.DEFAULTS.flash}"></label>
+          <label class="field"><span>Flash Live</span><input type="text" id="s-mlive" value="${esc(s.modelLive)}" placeholder="${Gemini.DEFAULTS.live}"></label></div></details>
+        <button class="btn sm ghost" id="s-test">Testa Gemini</button> <span id="s-testr" class="small muted"></span>
+        ${s.serverUrl ? '' : `<label class="switch small" style="margin-top:10px"><input type="checkbox" id="s-testplans" ${s.testPlans ? 'checked' : ''}> Testläge: byt plan utan att betala (bara på den här enheten)</label>`}</div>
       ${s.demo ? '' : `<div class="card"><h3>Nätverk</h3>
         <p class="small muted">Meddelanden krypteras på din enhet och lämnas i en "brevlåda" på publika Nostr-reläer. Samtal går direkt mellan enheterna.</p>
         <div id="s-net" class="small"></div>
@@ -558,14 +576,14 @@
         <label class="field"><span>Tema</span><select id="s-theme"><option value="auto">Följ systemet</option><option value="light">Ljust</option><option value="dark">Mörkt</option></select></label>
         <div class="row"><button class="btn ghost sm" id="s-reset">Återställ demomöten</button><button class="btn ghost sm" id="s-export">Exportera data</button></div></div>
       <div class="card"><h3>Utkorg</h3>${Store.state.outbox.slice(0, 10).map(o => `<div class="small" style="padding:6px 0;border-bottom:1px dashed var(--line)">📨 ${new Date(o.at).toLocaleString('sv-SE')} → <b>${esc(o.to)}</b>: ${esc(o.files.join(', '))}</div>`).join('') || '<p class="muted small">Inget skickat ännu.</p>'}</div>
-      <p class="center small muted" style="text-align:center">${Mascot.logo({ size: 26, animate: false })}<br>Version 1.1.0 · ${Platform.kind()}</p>`;
+      <p class="center small muted" style="text-align:center">${Mascot.logo({ size: 26, animate: false })}<br>Version 1.2.0 · ${Platform.kind()}</p>`;
     $('#s-method', v).value = s.sendMethod;
     $('#s-theme', v).value = s.theme;
     const hookVis = () => $('#s-hook-w', v).classList.toggle('hidden', $('#s-method', v).value !== 'webhook');
     hookVis();
     const bind = (id, key, prop) => $(id, v).addEventListener('change', e => { s[key] = e.target[prop || 'value']; if (typeof s[key] === 'string') s[key] = s[key].trim(); Store.save(); if (key === 'theme') applyTheme(); hookVis(); });
     bind('#s-name', 'name'); bind('#s-boss', 'bossName'); bind('#s-mail', 'bossEmail'); bind('#s-auto', 'autoSend', 'checked');
-    bind('#s-method', 'sendMethod'); bind('#s-hook', 'webhookUrl'); bind('#s-key', 'apiKey'); bind('#s-model', 'model');
+    bind('#s-method', 'sendMethod'); bind('#s-hook', 'webhookUrl'); bind('#s-gkey', 'geminiKey'); bind('#s-server', 'serverUrl'); bind('#s-mflash', 'modelFlash'); bind('#s-mlive', 'modelLive');
     bind('#s-voice', 'voice', 'checked'); bind('#s-theme', 'theme');
     const sr = $('#s-real', v); if (sr) sr.addEventListener('click', goReal);
     const sd = $('#s-demo', v); if (sd) sd.addEventListener('click', goDemo);
@@ -577,14 +595,16 @@
       const net = () => { const st = MoteyNet.status(); const el = $('#s-net', v); if (el) el.innerHTML = st.relays.map(r => `<div>${r.status === 'open' ? '🟢' : r.status === 'connecting' ? '🟡' : '🔴'} ${esc(r.url)}</div>`).join(''); };
       net(); const off = MoteyNet.on('status', net); current = { destroy: off };
     }
+    ['#s-gkey', '#s-server', '#s-mflash', '#s-mlive'].forEach(id => $(id, v).addEventListener('change', () => { Gemini.reset(); Plans.refresh(); }));
+    const tp = $('#s-testplans', v); if (tp) tp.addEventListener('change', () => { s.testPlans = tp.checked; Store.save(); });
     $('#s-test', v).addEventListener('click', async () => {
-      s.apiKey = $('#s-key', v).value.trim(); Store.save();
+      s.geminiKey = $('#s-gkey', v).value.trim(); s.serverUrl = $('#s-server', v).value.trim(); Store.save(); Gemini.reset();
       const r = $('#s-testr', v); r.textContent = 'Testar…';
       try { r.textContent = '✅ ' + await AI.testKey(); } catch (e) { r.textContent = '❌ ' + e.message; }
     });
     $('#s-reset', v).addEventListener('click', () => { if (confirm('Återställ demomötena? Dina riktiga möten och chattar påverkas inte.')) { Store.reset(); toast('Demomöten återställda'); go('#/home'); } });
     $('#s-export', v).addEventListener('click', async () => {
-      const data = JSON.parse(JSON.stringify(Store.state)); data.settings.apiKey = '';
+      const data = JSON.parse(JSON.stringify(Store.state)); data.settings.geminiKey = '';
       toast(await Platform.saveFile('motey-data.json', new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })));
     });
   }
@@ -630,6 +650,10 @@
     applyTheme();
     $('#rail-logo').innerHTML = Mascot.logo({ size: 40 });
     $('#top-logo').innerHTML = Mascot.logo({ size: 30 });
+    $('.topbar .spacer').insertAdjacentHTML('afterend', '<a href="#/plans" id="planpill" class="planpill"></a>');
+    Plans.paintPill(); Plans.refresh();
+    // a blocked AI call has already shown the upgrade sheet
+    window.addEventListener('unhandledrejection', e => { if (e.reason instanceof Plans.QuotaError) e.preventDefault(); });
     const navHtml = cls => NAV.map(([k, ico, label]) => `<button class="${cls}" data-go="${k}"><span class="ico">${ico}</span><span>${label}</span></button>`).join('');
     $('#rail-nav').innerHTML = navHtml('nav');
     $('#tabbar').innerHTML = navHtml('');

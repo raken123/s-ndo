@@ -85,7 +85,7 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     settings: {
       name: 'Ronny', bossName: 'Birgitta', bossEmail: '',
       autoSend: true, sendMethod: 'email', webhookUrl: '',
-      apiKey: '', model: 'claude-opus-5-5',
+      geminiKey: '', serverUrl: '', modelFlash: '', modelLive: '', testPlans: false, liveVoice: 'Puck', replaceVoice: 'Charon', replaceNotes: '', replaceHear: false,
       voice: true, liveStyle: 'snall', theme: 'auto',
       demo: true, showDemo: false, color: '#6C4CF5', relays: '', turnUrl: '', turnUser: '', turnPass: ''
     },
@@ -103,6 +103,7 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     } catch (e) { /* storage blocked – start fresh */ }
     if (!state) state = defaults();
     state.settings = Object.assign(defaults().settings, state.settings);
+    delete state.settings.apiKey; delete state.settings.model; // Claude settings from 1.0/1.1
     state.meetings.forEach(m => { if (DEMO_IDS.includes(m.id)) m.demo = true; });
     if (!state.meetings.some(m => m.demo)) state.meetings = state.meetings.concat(demoMeetings(state.settings.name, state.settings.bossName));
     return state;

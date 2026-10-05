@@ -355,6 +355,45 @@ kbd { background: var(--surface-2); border: 1px solid var(--line); border-bottom
 .rail .has-badge::after { position: static; margin-left: auto; }
 .mode-pick .small { display: block; margin-top: 2px; }
 
+/* ---------- plans ---------- */
+.planpill { font-size: .78rem; font-weight: 900; padding: 5px 11px; border-radius: 999px; text-decoration: none; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
+.planpill.plus { background: color-mix(in srgb, var(--brand) 16%, var(--surface)); color: var(--brand); }
+.planpill.pro { background: linear-gradient(90deg, #FF7A59, #FF5C8A); color: #fff; }
+.meter .progress { margin: 6px 0 4px; }
+.meter.big .progress { height: 14px; }
+.plans { display: grid; gap: 14px; margin-bottom: 14px; }
+@media (min-width: 760px) { .plans { grid-template-columns: repeat(3, 1fr); } }
+.plan { background: var(--surface); border: 2px solid var(--line); border-radius: 22px; padding: 18px; display: flex; flex-direction: column; }
+.plan.on { border-color: var(--brand); box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 15%, transparent); }
+.plan.pro { background: linear-gradient(170deg, var(--surface) 60%, color-mix(in srgb, var(--coral) 14%, var(--surface))); }
+.plan .pname { font-weight: 900; font-size: 1.2rem; }
+.plan .pprice { font-weight: 900; font-size: 2rem; margin: 4px 0; }
+.plan .pprice small { font-size: .9rem; color: var(--ink-2); }
+.plan ul { flex: 1; margin-bottom: 12px; }
+.plan li { font-size: .9rem; padding: 4px 0 4px 24px; }
+table.cost { width: 100%; border-collapse: collapse; font-size: .88rem; }
+table.cost th, table.cost td { padding: 7px 6px; border-bottom: 1px dashed var(--line); text-align: right; }
+table.cost th:first-child, table.cost td:first-child { text-align: left; }
+.ai-tag.gemini { background: #E3ECFF; color: #1A56DB; }
+
+/* ---------- 3D scan + Live Replace ---------- */
+.scan-wrap { display: grid; gap: 16px; margin-bottom: 14px; }
+@media (min-width: 820px) { .scan-wrap { grid-template-columns: 1.1fr 1fr; } }
+.scan-cam { position: relative; aspect-ratio: 1; max-width: 460px; width: 100%; border-radius: 26px; overflow: hidden; background: #1E1B3A; }
+.scan-cam video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.scan-cam .oval { position: absolute; left: 22%; right: 22%; top: 12%; bottom: 14%; border: 4px dashed rgba(255, 255, 255, .85); border-radius: 50%; box-shadow: 0 0 0 999px rgba(30, 27, 58, .35); }
+.scan-cam .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+.scan-cam .flash.on { animation: flash .35s; }
+@keyframes flash { from { opacity: .9 } to { opacity: 0 } }
+.scan-tip { position: absolute; left: 12px; right: 12px; bottom: 12px; background: rgba(30, 27, 58, .85); color: #fff; padding: 10px 14px; border-radius: 14px; font-weight: 800; text-align: center; }
+.thumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+.thumb { aspect-ratio: 1; border-radius: 14px; background: var(--surface-2) center / cover no-repeat; border: 2px solid var(--line); }
+.avatar-preview canvas { width: 100%; max-width: 480px; border-radius: 18px; display: block; margin-bottom: 8px; }
+.replace-panel { position: fixed; left: 12px; right: 12px; bottom: 90px; max-width: 520px; margin: 0 auto; background: var(--surface); border: 2px solid var(--coral); border-radius: 20px; padding: 12px 14px; box-shadow: var(--shadow); z-index: 41; }
+.replace-panel.hidden { display: none; }
+@media (min-width: 900px) { .replace-panel { bottom: 24px; } }
+.r-said { background: var(--surface-2); border-radius: 12px; padding: 8px 12px; margin: 8px 0; min-height: 38px; font-weight: 700; }
+
 </style>
 </head>
 <body>
@@ -522,7 +561,7 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     settings: {
       name: 'Ronny', bossName: 'Birgitta', bossEmail: '',
       autoSend: true, sendMethod: 'email', webhookUrl: '',
-      apiKey: '', model: 'claude-opus-5-5',
+      geminiKey: '', serverUrl: '', modelFlash: '', modelLive: '', testPlans: false, liveVoice: 'Puck', replaceVoice: 'Charon', replaceNotes: '', replaceHear: false,
       voice: true, liveStyle: 'snall', theme: 'auto',
       demo: true, showDemo: false, color: '#6C4CF5', relays: '', turnUrl: '', turnUser: '', turnPass: ''
     },
@@ -540,6 +579,7 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     } catch (e) { /* storage blocked – start fresh */ }
     if (!state) state = defaults();
     state.settings = Object.assign(defaults().settings, state.settings);
+    delete state.settings.apiKey; delete state.settings.model; // Claude settings from 1.0/1.1
     state.meetings.forEach(m => { if (DEMO_IDS.includes(m.id)) m.demo = true; });
     if (!state.meetings.some(m => m.demo)) state.meetings = state.meetings.concat(demoMeetings(state.settings.name, state.settings.bossName));
     return state;
@@ -787,6 +827,211 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
 
 </script>
 <script>
+/* Motey – Gemini API client.
+ *   Gemini 3.8 Flash       → summaries, catch-up, TikTok scripts, game levels, questions
+ *   Gemini 3.8 Flash Live  → Live AI (the style swap, with Motey's voice) and Live Replace
+ *
+ * Two ways to reach Gemini:
+ *   1. Motey-servern (Mer → Prenumeration): the server holds the API key and
+ *      counts usage per subscription. This is how a published Motey should run.
+ *   2. Your own key (Mer → AI), stored only on this device – for testing.
+ * Model ids are looked up from the models list, so "3.8 Flash" and
+ * "3.8 Flash Live" resolve to whatever exact ids Google publishes. */
+(function () {
+  'use strict';
+  const API = 'https://generativelanguage.googleapis.com/v1beta';
+  const LIVE_WS = 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
+  const DEFAULTS = { flash: 'gemini-3.8-flash', live: 'gemini-3.8-flash-live' };
+  const S = () => Store.settings;
+  const server = () => (S().serverUrl || '').replace(/\/+$/, '');
+  const key = () => S().geminiKey || '';
+  const available = () => !!(server() || key());
+
+  class GeminiError extends Error { constructor(msg, status, kind) { super(msg); this.status = status; this.kind = kind; } }
+
+  async function request(path, opts) {
+    const url = server() ? `${server()}/v1/ai${path}` : `${S().geminiApi || API}${path}`;
+    const headers = { 'content-type': 'application/json' };
+    if (server()) headers.authorization = 'Bearer ' + Plans.token(); else headers['x-goog-api-key'] = key();
+    const res = await fetch(url, Object.assign({ headers }, opts));
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = (data.error && (data.error.message || data.error)) || 'HTTP ' + res.status;
+      throw new GeminiError(String(msg), res.status, data.error && data.error.kind);
+    }
+    return data;
+  }
+
+  /* ---------- model ids ---------- */
+  let resolved = null;
+  async function models() {
+    if (S().modelFlash && S().modelLive) return { flash: S().modelFlash, live: S().modelLive };
+    if (!resolved) {
+      resolved = (async () => {
+        const out = Object.assign({}, DEFAULTS);
+        try {
+          const d = await request('/models?pageSize=1000', { method: 'GET' });
+          const list = (d.models || []).map(m => ({ id: m.name.replace(/^models\//, ''), methods: m.supportedGenerationMethods || [] }));
+          const pick = (rx, method) => {
+            const c = list.filter(m => rx.test(m.id) && m.methods.includes(method));
+            // prefer stable ids over previews, shortest name wins
+            c.sort((a, b) => (/preview|exp/.test(a.id) - /preview|exp/.test(b.id)) || a.id.length - b.id.length);
+            return c[0] && c[0].id;
+          };
+          out.flash = pick(/^gemini-3\.8-flash(?!.*(live|audio|tts|image|lite))/, 'generateContent') || out.flash;
+          out.live = pick(/3\.8-flash.*(live|native-audio)|live.*3\.8-flash/, 'bidiGenerateContent') || out.live;
+        } catch (e) { console.warn('kunde inte läsa modellistan, använder standardnamn', e.message); }
+        return out;
+      })();
+    }
+    const r = await resolved;
+    return { flash: S().modelFlash || r.flash, live: S().modelLive || r.live };
+  }
+
+  /* ---------- Gemini 3.8 Flash: one request, text or JSON back ---------- */
+  // schema uses Gemini's OpenAPI subset: {type:'OBJECT', properties, required}
+  async function generate({ system, prompt, parts, schema, action, temperature }) {
+    const m = (await models()).flash;
+    const body = {
+      contents: [{ role: 'user', parts: parts || [{ text: prompt }] }],
+      generationConfig: { temperature: temperature == null ? 0.7 : temperature }
+    };
+    if (system) body.systemInstruction = { parts: [{ text: system }] };
+    if (schema) { body.generationConfig.responseMimeType = 'application/json'; body.generationConfig.responseSchema = schema; }
+    if (server()) body.motey = { action }; // the server meters it; Google never sees this field
+    const d = await request(`/models/${encodeURIComponent(m)}:generateContent`, { method: 'POST', body: JSON.stringify(body) });
+    if (d.promptFeedback && d.promptFeedback.blockReason) throw new GeminiError('blockerad: ' + d.promptFeedback.blockReason, 400, 'blocked');
+    const c = (d.candidates || [])[0];
+    const text = c && c.content && (c.content.parts || []).map(p => p.text || '').join('');
+    if (!text) throw new GeminiError('tomt svar' + (c && c.finishReason ? ' (' + c.finishReason + ')' : ''), 500);
+    if (d.motey && window.Plans) Plans.serverUsage(d.motey);
+    return schema ? JSON.parse(text) : text.trim();
+  }
+  const S_ = {
+    str: { type: 'STRING' }, int: { type: 'INTEGER' },
+    arr: items => ({ type: 'ARRAY', items }),
+    obj: (properties, required) => ({ type: 'OBJECT', properties, required: required || Object.keys(properties) })
+  };
+
+  /* ---------- Gemini 3.8 Flash Live: a two-way WebSocket session ---------- */
+  class Live {
+    constructor(opts) {
+      this.o = opts; // { system, voice, modality: 'AUDIO'|'TEXT', action, onText, onAudio, onIn, onTurn, onClose, onError }
+      this.ws = null; this.ready = null; this.closed = false;
+    }
+    async open() {
+      const m = (await models()).live;
+      const url = server()
+        ? `${server().replace(/^http/, 'ws')}/v1/ai/live?token=${encodeURIComponent(Plans.token())}&action=${encodeURIComponent(this.o.action || 'live')}`
+        : `${S().geminiWs || LIVE_WS}?key=${encodeURIComponent(key())}`;
+      this.ready = new Promise((resolve, reject) => {
+        const ws = this.ws = new WebSocket(url);
+        ws.onopen = () => {
+          const setup = {
+            model: 'models/' + m,
+            generationConfig: { responseModalities: [this.o.modality || 'AUDIO'] },
+            systemInstruction: { parts: [{ text: this.o.system || '' }] },
+            outputAudioTranscription: {},
+            inputAudioTranscription: {}
+          };
+          if ((this.o.modality || 'AUDIO') === 'AUDIO') setup.generationConfig.speechConfig = { voiceConfig: { prebuiltVoiceConfig: { voiceName: this.o.voice || 'Puck' } } };
+          ws.send(JSON.stringify({ setup }));
+        };
+        ws.onmessage = async ev => {
+          const raw = typeof ev.data === 'string' ? ev.data : await ev.data.text();
+          let msg; try { msg = JSON.parse(raw); } catch (e) { return; }
+          if (msg.setupComplete) return resolve(this);
+          if (msg.motey && window.Plans) Plans.serverUsage(msg.motey);
+          if (msg.error) { const e = new GeminiError(msg.error.message || 'fel', msg.error.code, msg.error.kind); this.o.onError && this.o.onError(e); return reject(e); }
+          const sc = msg.serverContent;
+          if (!sc) return;
+          if (sc.inputTranscription && sc.inputTranscription.text) this.o.onIn && this.o.onIn(sc.inputTranscription.text);
+          if (sc.outputTranscription && sc.outputTranscription.text) this.o.onText && this.o.onText(sc.outputTranscription.text);
+          for (const p of (sc.modelTurn && sc.modelTurn.parts) || []) {
+            if (p.text && this.o.onText && this.o.modality === 'TEXT') this.o.onText(p.text);
+            if (p.inlineData && /audio/.test(p.inlineData.mimeType) && this.o.onAudio) this.o.onAudio(p.inlineData.data, p.inlineData.mimeType);
+          }
+          if (sc.interrupted && this.o.onInterrupt) this.o.onInterrupt();
+          if (sc.turnComplete && this.o.onTurn) this.o.onTurn();
+        };
+        ws.onerror = () => reject(new GeminiError('kunde inte ansluta till Gemini Live', 0));
+        ws.onclose = ev => {
+          this.closed = true;
+          if (ev.code === 4402 || ev.code === 4403) this.o.onError && this.o.onError(new GeminiError(ev.reason || 'kvoten är slut', 402, 'quota'));
+          this.o.onClose && this.o.onClose(ev);
+          reject(new GeminiError(ev.reason || 'stängd', ev.code));
+        };
+      });
+      return this.ready;
+    }
+    text(t) { this.send({ clientContent: { turns: [{ role: 'user', parts: [{ text: t }] }], turnComplete: true } }); }
+    audio(b64) { this.send({ realtimeInput: { audio: { data: b64, mimeType: 'audio/pcm;rate=16000' } } }); }
+    send(obj) { if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify(obj)); }
+    close() { this.closed = true; try { this.ws && this.ws.close(); } catch (e) { /* closed */ } }
+  }
+
+  /* ---------- audio helpers ---------- */
+  const AC = window.AudioContext || window.webkitAudioContext;
+  // One or more MediaStreams (mixed) → 16 kHz 16-bit PCM chunks (base64) every ~130 ms.
+  function pcmCapture(streams, onChunk) {
+    const ctx = new AC({ sampleRate: 16000 });
+    const mix = ctx.createGain();
+    const proc = ctx.createScriptProcessor(2048, 1, 1);
+    const ratio = ctx.sampleRate / 16000;
+    proc.onaudioprocess = e => {
+      const f = e.inputBuffer.getChannelData(0);
+      const n = Math.floor(f.length / ratio);
+      const out = new Int16Array(n);
+      for (let i = 0; i < n; i++) { const s = Math.max(-1, Math.min(1, f[Math.floor(i * ratio)])); out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF; }
+      onChunk(Platform.bufToB64(out.buffer));
+    };
+    const mute = ctx.createGain(); mute.gain.value = 0;
+    mix.connect(proc); proc.connect(mute); mute.connect(ctx.destination);
+    const srcs = [];
+    const add = st => { if (st && st.getAudioTracks().length) { const src = ctx.createMediaStreamSource(new MediaStream(st.getAudioTracks())); src.connect(mix); srcs.push(src); } };
+    [].concat(streams).forEach(add);
+    if (ctx.state === 'suspended') ctx.resume();
+    return { ctx, add, stop() { try { srcs.forEach(x => x.disconnect()); proc.disconnect(); ctx.close(); } catch (e) { /* closed */ } } };
+  }
+  // 24 kHz PCM from Gemini → speakers (and optionally a MediaStream for calls).
+  function pcmPlayer(opts) {
+    opts = opts || {};
+    const ctx = new AC();
+    const out = ctx.createGain();
+    const an = ctx.createAnalyser(); an.fftSize = 512;
+    out.connect(an);
+    if (opts.speakers !== false) out.connect(ctx.destination);
+    const dest = ctx.createMediaStreamDestination ? ctx.createMediaStreamDestination() : null;
+    if (dest) out.connect(dest);
+    let at = 0;
+    const sources = new Set();
+    const lvl = new Uint8Array(an.fftSize);
+    return {
+      ctx, stream: dest && dest.stream,
+      play(b64, mime) {
+        if (ctx.state === 'suspended') ctx.resume();
+        const rate = +((mime || '').match(/rate=(\d+)/) || [0, 24000])[1];
+        const bin = atob(b64), n = bin.length >> 1;
+        const buf = ctx.createBuffer(1, n, rate), ch = buf.getChannelData(0);
+        for (let i = 0; i < n; i++) { let v = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8); if (v >= 0x8000) v -= 0x10000; ch[i] = v / 0x8000; }
+        const s = ctx.createBufferSource(); s.buffer = buf; s.connect(out);
+        at = Math.max(at, ctx.currentTime + 0.03); s.start(at); at += buf.duration;
+        sources.add(s); s.onended = () => sources.delete(s);
+      },
+      flush() { sources.forEach(s => { try { s.stop(); } catch (e) { /* done */ } }); sources.clear(); at = 0; },
+      level() { an.getByteTimeDomainData(lvl); let m = 0; for (const v of lvl) m = Math.max(m, Math.abs(v - 128)); return m / 128; },
+      speaking() { return ctx.currentTime < at; },
+      close() { this.flush(); try { ctx.close(); } catch (e) { /* closed */ } }
+    };
+  }
+
+  const VOICES = [['Puck', 'Glad (Motey)'], ['Kore', 'Lugn'], ['Aoede', 'Ljus'], ['Charon', 'Djup'], ['Fenrir', 'Energisk'], ['Leda', 'Mjuk']];
+
+  window.Gemini = { available, generate, Live, models, pcmCapture, pcmPlayer, schema: S_, GeminiError, VOICES, DEFAULTS, reset() { resolved = null; } };
+})();
+
+</script>
+<script>
 /* Motey – builds real documents in the browser, no libraries:
  * PDF (text, A4, Helvetica), XLSX and DOCX (Office Open XML in a stored ZIP). */
 (function () {
@@ -1007,9 +1252,10 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
 </script>
 <script>
 /* Motey – the AI engine.
- * Every function works offline with a built-in Swedish engine. When the user
- * adds a Claude API key in Inställningar, the same functions call Claude
- * (Messages API) instead and fall back to the offline engine on any error. */
+ * Every function works offline with a built-in Swedish engine. When Gemini is
+ * connected (Motey-servern or an own key), Gemini 3.8 Flash does the work and
+ * the offline engine is the fallback on any error. Every call is metered
+ * against the subscription (plans.js). */
 (function () {
   'use strict';
 
@@ -1273,81 +1519,63 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
       if (s > bs) { bs = s; best = l; }
     }
     if (best) return `På mötet sa ${firstName(best.who)}: ”${best.text}”`;
-    return 'Det vet jag inte riktigt än! Lägg till en Claude-nyckel i Inställningar så kan jag svara på allt. 😊';
+    return 'Det vet jag inte riktigt än! När Gemini är kopplat (Mer → AI) kan jag svara på allt. 😊';
   }
 
-  /* ---------- Claude (Messages API, raw fetch from the webview) ---------- */
-  const hasKey = () => !!(window.Store && Store.settings.apiKey);
-  async function claude({ system, prompt, schema, effort, maxTokens }) {
-    const s = Store.settings;
-    const body = {
-      model: s.model || 'claude-opus-5-5',
-      max_tokens: maxTokens || 16000,
-      system,
-      messages: [{ role: 'user', content: prompt }],
-      output_config: { effort: effort || 'low' },
-      // On a safety-classifier decline, let the API retry on its recommended fallback model.
-      fallbacks: 'default'
-    };
-    if (schema) body.output_config.format = { type: 'json_schema', schema };
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': s.apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'server-side-fallback-2026-07-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify(body)
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error((data.error && data.error.message) || ('HTTP ' + res.status));
-    if (data.stop_reason === 'refusal') throw new Error('refusal');
-    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
-    if (!text) throw new Error('empty');
-    return schema ? JSON.parse(text) : text.trim();
-  }
+  /* ---------- Gemini 3.8 Flash ---------- */
+  const hasKey = () => !!(window.Gemini && Gemini.available());
   const SYS = 'Du är Motey, en glad AI-mötesassistent formad som en pratbubbla. Du svarar alltid på svenska, kort och tydligt.';
   const transcriptText = m => (m.transcript || []).map(l => `${l.who}: ${l.text}`).join('\n');
-  const obj = (props, req) => ({ type: 'object', properties: props, required: req || Object.keys(props), additionalProperties: false });
-  const str = { type: 'string' };
-  const arr = items => ({ type: 'array', items });
+  const G = () => Gemini.schema;
 
-  async function withFallback(fnClaude, fnLocal) {
-    if (!hasKey()) return { source: 'local', value: fnLocal() };
-    try { return { source: 'claude', value: await fnClaude() }; }
-    catch (e) { console.warn('Claude misslyckades, använder offline-motorn:', e.message); return { source: 'local', value: fnLocal(), error: e.message }; }
+  // Usage gate: in Lite, Plus and Pro every AI thing counts (offline engine too).
+  function gate(action) { if (!Plans.allow(action)) throw new Plans.QuotaError('quota', action); }
+  async function withFallback(action, fnGemini, fnLocal) {
+    if (action) gate(action);
+    let r;
+    if (!hasKey()) r = { source: 'local', value: fnLocal() };
+    else {
+      try { r = { source: 'gemini', value: await fnGemini() }; }
+      catch (e) {
+        if (e.kind === 'quota' || e.status === 402) { Plans.refresh(); Plans.upgradeSheet(new Plans.QuotaError('quota', action)); throw new Plans.QuotaError('quota', action); }
+        console.warn('Gemini misslyckades, använder offline-motorn:', e.message);
+        r = { source: 'local', value: fnLocal(), error: e.message };
+      }
+    }
+    if (action) Plans.charge(action);
+    return r;
   }
 
   /* ---------- public API ---------- */
   const cache = {};
-  async function summarize(meeting) {
+  // opts.charge: count it as a "Sammanfattning" (the summary tab); internal uses are free.
+  async function summarize(meeting, opts) {
     const key = meeting.id + ':' + (meeting.transcript || []).length + ':' + hasKey();
     if (cache[key]) return cache[key];
-    const r = await withFallback(async () => {
-      const v = await claude({
-        system: SYS, effort: 'medium',
+    if (!(meeting.transcript || []).length) return { source: 'local', value: localSummary(meeting) };
+    const r = await withFallback(opts && opts.charge ? 'summary' : null, async () => {
+      const v = await Gemini.generate({
+        system: SYS, action: 'summary',
         prompt: `Sammanfatta mötet "${meeting.title}". Ge en kort sammanfattning (2–3 meningar), de viktigaste punkterna, beslut, att göra-punkter med ansvarig person, alla filer/dokument som nämns och 6–8 nyckelord.\n\nTranskript:\n${transcriptText(meeting)}`,
-        schema: obj({ summary: str, points: arr(str), decisions: arr(str), actions: arr(obj({ who: str, what: str })), files: arr(str), keywords: arr(str) })
+        schema: G().obj({ summary: G().str, points: G().arr(G().str), decisions: G().arr(G().str), actions: G().arr(G().obj({ who: G().str, what: G().str })), files: G().arr(G().str), keywords: G().arr(G().str) })
       });
       (meeting.files || []).forEach(f => v.files.includes(f.name) || v.files.push(f.name));
       return v;
     }, () => localSummary(meeting));
-    if (!(meeting.transcript || []).length) r.value = localSummary(meeting);
     cache[key] = r;
     return r;
   }
 
   async function catchUp(prev, user) {
+    gate('catchup');
     const sum = (await summarize(prev)).value;
     const d0 = new Date(prev.start), today = new Date();
     const ago = Math.round((new Date(today.toDateString()) - new Date(d0.toDateString())) / 864e5);
     const day = ago === 0 ? 'dag' : ago === 1 ? 'går' : d0.toLocaleDateString('sv-SE', { weekday: 'long' }) + 's';
     const mine = sum.actions.filter(a => firstName(a.who).toLowerCase() === firstName(user).toLowerCase() || a.who === 'Alla');
-    const r = await withFallback(
-      () => claude({
-        system: SYS, effort: 'low',
+    const r = await withFallback('catchup',
+      () => Gemini.generate({
+        system: SYS, action: 'catchup',
         prompt: `${user} missade mötet "${prev.title}" i ${day}. Skriv en kort, varm och lite rolig uppdatering (max 70 ord) direkt till ${user}: vad som hände, vilka beslut som togs och vad ${user} själv ska göra. Ingen rubrik.\n\nTranskript:\n${transcriptText(prev)}`
       }),
       () => `Hej ${user}! Du missade "${prev.title}" i ${day}. ${sum.summary}` +
@@ -1357,48 +1585,45 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     return { text: r.value, source: r.source, sum, mine };
   }
 
+  // Offline style swap (demo, and when Gemini isn't connected). With Gemini the
+  // Live AI screen uses Gemini 3.8 Flash Live instead, see live.js.
   async function restyle(text, style) {
+    return { source: 'local', value: localRestyle(text, style) };
+  }
+  function liveInstruction(style, who) {
     const st = STYLES[style] || STYLES.snall;
-    return withFallback(
-      () => claude({
-        system: SYS + ' Du ersätter en talare i ett möte i realtid.',
-        effort: 'low', maxTokens: 1024,
-        prompt: `Skriv om repliken i stilen "${st.name}". Behåll exakt samma budskap, fakta, siffror, datum och uppgifter – bara tonen ändras, och den ska vara vänlig. Svara endast med den nya repliken.\n\nReplik: ${text}`
-      }),
-      () => localRestyle(text, style)
-    );
+    return `Du är Motey och tar ${who ? who + 's' : 'talarens'} plats i ett möte i realtid. Varje gång du hör eller får en replik ska du direkt säga samma sak igen på svenska i stilen "${st.name}". ` +
+      'Behåll exakt samma budskap, fakta, siffror, datum, namn och uppgifter – bara tonen ändras, och den ska vara vänlig och lätt att höra. ' +
+      'Svara aldrig på frågor, lägg inte till något eget och kommentera inte. Säg bara den omskrivna repliken. Är det tyst eller ohörbart säger du ingenting.';
   }
 
   async function videoScript(meeting) {
     const sum = (await summarize(meeting)).value;
-    return withFallback(
-      () => claude({
-        system: SYS + ' Du gör korta, roliga vertikala videor (TikTok-stil) om möten.',
-        effort: 'low',
+    return withFallback('tiktok',
+      () => Gemini.generate({
+        system: SYS + ' Du gör korta, roliga vertikala videor (TikTok-stil) om möten.', action: 'tiktok', temperature: 0.9,
         prompt: `Gör ett manus för en 30–40 sekunders TikTok-video om mötet "${meeting.title}". 5–7 scener. Varje scen: caption (max 90 tecken, gärna med emoji), narration (det som sägs, max 25 ord), query (ett sökord för en passande Wikipedia-bild, helst ett substantiv på svenska, eller tom sträng), emoji (en emoji). Första scenen är en hook, sista en uppmaning.\n\nTranskript:\n${transcriptText(meeting)}`,
-        schema: obj({ scenes: arr(obj({ caption: str, narration: str, query: str, emoji: str })) })
+        schema: G().obj({ scenes: G().arr(G().obj({ caption: G().str, narration: G().str, query: G().str, emoji: G().str })) })
       }).then(v => v.scenes),
       () => localVideoScript(meeting, sum)
     );
   }
 
   async function gameLevel(meeting) {
-    return withFallback(
-      () => claude({
-        system: SYS + ' Du bygger banor i ett pedagogiskt spel där varje vägg är ett begrepp från mötet.',
-        effort: 'medium',
+    return withFallback('game',
+      () => Gemini.generate({
+        system: SYS + ' Du bygger banor i ett pedagogiskt spel där varje vägg är ett begrepp från mötet.', action: 'game', temperature: 0.6,
         prompt: `Gör 3–6 väggar till en spelbana om mötet "${meeting.title}". Varje vägg är ett viktigt begrepp från mötet (t.ex. F-skatt, moms). För varje: term, icon (en emoji), explain (förklara begreppet enkelt och korrekt, 2–3 meningar), howTo (så "förstör" man väggen = vad man konkret gör i verkligheten, 1–2 meningar), q (en kontrollfråga), opts (exakt 3 svarsalternativ), a (index 0–2 för rätt svar). Lägg också till 3–6 korta facts från mötet.\n\nTranskript:\n${transcriptText(meeting)}`,
-        schema: obj({ walls: arr(obj({ term: str, icon: str, explain: str, howTo: str, q: str, opts: arr(str), a: { type: 'integer' } })), facts: arr(str) })
+        schema: G().obj({ walls: G().arr(G().obj({ term: G().str, icon: G().str, explain: G().str, howTo: G().str, q: G().str, opts: G().arr(G().str), a: G().int })), facts: G().arr(G().str) })
       }).then(v => ({ title: meeting.title, walls: v.walls.filter(w => w.opts.length >= 2 && w.a >= 0 && w.a < w.opts.length).slice(0, 6), facts: v.facts })),
       () => localLevel(meeting)
     );
   }
 
   async function ask(question, meeting) {
-    return withFallback(
-      () => claude({
-        system: SYS + ' Du är spelkompis i Motey-spelläget och förklarar saker enkelt.',
-        effort: 'low', maxTokens: 1024,
+    return withFallback('ask',
+      () => Gemini.generate({
+        system: SYS + ' Du är spelkompis i Motey-spelläget och förklarar saker enkelt.', action: 'ask',
         prompt: `Fråga: ${question}\n\nSvara kort (max 60 ord).` + (meeting ? `\n\nMötets transkript:\n${transcriptText(meeting)}` : '')
       }),
       () => localAnswer(question, meeting)
@@ -1406,10 +1631,12 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
   }
 
   async function testKey() {
-    return claude({ system: SYS, prompt: 'Säg hej i max fem ord.', effort: 'low', maxTokens: 256 });
+    const m = await Gemini.models();
+    const hi = await Gemini.generate({ system: SYS, prompt: 'Säg hej i max fem ord.', action: 'test' });
+    return `${hi} (${m.flash} · ${m.live})`;
   }
 
-  window.AI = { summarize, catchUp, restyle, videoScript, gameLevel, ask, testKey, hasKey, STYLES, GLOSSARY, keywords, concepts, localRestyle, localSummary, firstName };
+  window.AI = { summarize, catchUp, restyle, liveInstruction, videoScript, gameLevel, ask, testKey, hasKey, STYLES, GLOSSARY, keywords, concepts, localRestyle, localSummary, firstName };
 })();
 
 </script>
@@ -1946,6 +2173,189 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
 
 </script>
 <script>
+/* Motey prenumerationer – Lite, Plus, Pro.
+ * Usage is counted in "Plus units": a Plus month is 100 units = 100 %.
+ * Lite gets a quarter of that (25 units), so 25 % in Plus is 100 % in Lite.
+ * With Motey-servern the server counts and enforces; without it the count
+ * lives on this device (fine for testing, not for selling). */
+(function () {
+  'use strict';
+  const PLANS = {
+    lite: { id: 'lite', name: 'Motey Lite', price: 0, quota: 25, live: false, replace: false,
+      blurb: 'Gratis. Gräns på allting – varje liten sak räknas, även spel och TikTok. Ingen AI-Live.' },
+    plus: { id: 'plus', name: 'Motey Plus', price: 12, quota: 100, live: true, replace: false,
+      blurb: 'Mer användning och AI-Live. AI-Live tar 5 % per minut – passar dig som har online-möten ungefär 4 gånger i månaden.' },
+    pro: { id: 'pro', name: 'Motey Pro', price: 310, quota: 2000, live: true, replace: true,
+      blurb: 'Mycket mer användning och Live Replace: en 3D-version av dig pratar i mötet medan du är på stranden.' }
+  };
+  // cost of each thing, in Plus units (Plus month = 100)
+  const COST = {
+    summary: 1, catchup: 1, ask: 0.5, fix: 1, tiktok: 4, game: 3, scan: 2,
+    live_min: 5,     // AI-Live (style swap with Motey's voice), per started minute
+    replace_min: 5   // Live Replace (Pro), per started minute
+  };
+  const LABEL = { summary: 'Sammanfattning', catchup: 'Vad hände förra gången', ask: 'Fråga Motey', fix: 'Motey fixar en fil', tiktok: 'TikTok-video', game: 'Spelbana', scan: '3D-skanning', live_min: 'AI-Live, per minut', replace_min: 'Live Replace, per minut' };
+
+  const S = () => Store.settings;
+  const server = () => (S().serverUrl || '').replace(/\/+$/, '');
+  const period = () => new Date().toISOString().slice(0, 7);
+
+  function token() {
+    let t = null;
+    try { t = localStorage.getItem('motey.token'); } catch (e) { /* blocked */ }
+    if (!t) { t = Nostr.hex(Nostr.rand(24)); try { localStorage.setItem('motey.token', t); } catch (e) { /* blocked */ } }
+    return t;
+  }
+  function state() {
+    const st = Store.state;
+    if (!st.plan) st.plan = { id: 'lite', used: 0, period: period() };
+    if (st.plan.period !== period()) { st.plan.used = 0; st.plan.period = period(); }
+    return st.plan;
+  }
+  const plan = () => PLANS[state().id] || PLANS.lite;
+  const pct = () => Math.min(100, Math.round(100 * state().used / plan().quota));
+  const can = f => !!plan()[f];
+  // Demo mode is for looking around: nothing is counted there.
+  const metered = () => !S().demo;
+
+  class QuotaError extends Error { constructor(kind, action) { super(kind === 'feature' ? 'Kräver en högre plan' : 'Kvoten är slut'); this.kind = kind; this.action = action; } }
+
+  // Check before doing something; count it afterwards with charge().
+  function check(action) {
+    if (!metered()) return true;
+    if ((action === 'live_min') && !can('live')) throw new QuotaError('feature', action);
+    if ((action === 'replace_min' || action === 'scan') && !can('replace')) throw new QuotaError('feature', action);
+    if (state().used + (COST[action] || 0) > plan().quota + 1e-9) throw new QuotaError('quota', action);
+    return true;
+  }
+  function charge(action, n) {
+    if (!metered()) return;
+    if (server()) return; // the server counts; numbers come back via serverUsage()
+    state().used = Math.round((state().used + (COST[action] || 0) * (n || 1)) * 100) / 100;
+    Store.save();
+    paintPill();
+  }
+  function serverUsage(u) {
+    const s = state();
+    if (u.plan && PLANS[u.plan]) s.id = u.plan;
+    if (typeof u.used === 'number') s.used = u.used;
+    if (u.period) s.period = u.period;
+    Store.save(); paintPill();
+  }
+  async function refresh() {
+    if (!server()) return state();
+    try {
+      const r = await fetch(server() + '/v1/me', { headers: { authorization: 'Bearer ' + token() } });
+      if (r.ok) serverUsage(await r.json());
+    } catch (e) { /* offline – keep last known */ }
+    return state();
+  }
+  // Guard used by every AI feature: shows the upgrade sheet and returns false when blocked.
+  function allow(action) {
+    try { check(action); return true; }
+    catch (e) { if (e instanceof QuotaError) { upgradeSheet(e); return false; } throw e; }
+  }
+
+  /* ---------------- buying ---------------- */
+  async function buy(id) {
+    if (id === 'lite') return manage();
+    if (server()) {
+      try {
+        const r = await fetch(server() + '/v1/checkout', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token() }, body: JSON.stringify({ plan: id }) });
+        const d = await r.json();
+        if (!r.ok || !d.url) throw new Error(d.error || 'HTTP ' + r.status);
+        App.toast('Öppnar betalningen… kom tillbaka hit när du är klar 💜', 5000);
+        await Platform.openUrl(d.url);
+        pollAfterBuy();
+      } catch (e) { App.toast('Kunde inte starta betalningen: ' + e.message, 6000); }
+      return;
+    }
+    if (S().testPlans) { state().id = id; Store.save(); paintPill(); App.toast(`TESTLÄGE: ${PLANS[id].name} aktiverad (ingen betalning)`); App.go('#/plans'); return; }
+    App.sheet(`<div class="motey-stage">${Mascot.svg({ size: 80, mood: 'worried' })}<div class="speech">Betalningen är inte kopplad än. Den som driver Motey behöver starta Motey-servern med Stripe – se README. Utan server går det att prova planerna i testläge under Mer.</div></div>`);
+  }
+  async function manage() {
+    if (!server()) { if (S().testPlans) { state().id = 'lite'; Store.save(); paintPill(); App.go('#/plans'); } return; }
+    try {
+      const r = await fetch(server() + '/v1/portal', { method: 'POST', headers: { authorization: 'Bearer ' + token() } });
+      const d = await r.json();
+      if (d.url) Platform.openUrl(d.url); else App.toast(d.error || 'Ingen prenumeration att hantera');
+    } catch (e) { App.toast('Kunde inte nå servern'); }
+  }
+  let polls = 0;
+  function pollAfterBuy() {
+    polls = 0;
+    const was = state().id;
+    const t = setInterval(async () => {
+      await refresh();
+      if (state().id !== was || ++polls > 60) { clearInterval(t); if (state().id !== was) { App.toast(`🎉 Välkommen till ${plan().name}!`, 5000); App.go('#/plans'); } }
+    }, 5000);
+    window.addEventListener('focus', () => refresh(), { once: true });
+  }
+
+  /* ---------------- UI ---------------- */
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function meter(big) {
+    const p = pct();
+    const color = p >= 90 ? 'var(--danger)' : p >= 70 ? 'var(--coral)' : 'var(--mint)';
+    return `<div class="meter ${big ? 'big' : ''}"><div class="row between"><b>${esc(plan().name)}</b><span>${S().demo ? 'Demo – räknas inte' : p + ' % använt'}</span></div>
+      <div class="progress"><i style="width:${S().demo ? 0 : p}%;background:${color}"></i></div>
+      ${big && !S().demo ? `<div class="small muted">Nollställs den 1:a varje månad.${server() ? '' : ' Räknas på den här enheten.'}</div>` : ''}</div>`;
+  }
+  function paintPill() {
+    const el = document.getElementById('planpill');
+    if (!el) return;
+    el.textContent = S().demo ? 'Demo' : `${plan().name.replace('Motey ', '')} · ${pct()} %`;
+    el.className = 'planpill ' + plan().id;
+  }
+  function upgradeSheet(err) {
+    const feature = err.kind === 'feature';
+    const need = err.action === 'replace_min' || err.action === 'scan' ? 'pro' : 'plus';
+    const text = feature
+      ? (need === 'pro' ? 'Live Replace finns i Motey Pro. Då pratar en 3D-version av dig i mötet medan du är någon helt annanstans. 🏖️' : 'AI-Live finns inte i Lite. Med Motey Plus byter jag stil på chefen i realtid – med min egen röst!')
+      : `Månadens ${plan().name}-kvot är slut (${LABEL[err.action] || 'det här'} behöver lite mer). Uppgradera så fortsätter jag direkt – eller vänta till den 1:a.`;
+    const sh = App.sheet(`<div class="motey-stage">${Mascot.svg({ size: 84, mood: 'worried' })}<div class="speech">${esc(text)}</div></div>
+      <div style="margin-top:14px">${meter(true)}</div>
+      <div class="row" style="margin-top:14px">${['plus', 'pro'].filter(id => PLANS[id].quota > plan().quota || (feature && PLANS[id][need === 'pro' ? 'replace' : 'live'])).map(id => `<button class="btn ${id === need ? '' : 'ghost'}" data-buy="${id}">${PLANS[id].name} – ${PLANS[id].price} kr/mån</button>`).join('')}
+      <a class="btn ghost" href="#/plans">Jämför planer</a></div>`);
+    sh.el.querySelectorAll('[data-buy]').forEach(b => b.addEventListener('click', () => { sh.close(); buy(b.dataset.buy); }));
+    sh.el.querySelector('a').addEventListener('click', () => sh.close());
+  }
+  function render(v) {
+    refresh().then(() => { if (location.hash === '#/plans') { const m = v.querySelector('#meterbox'); if (m) m.innerHTML = meter(true); } });
+    const cur = plan().id;
+    const feats = {
+      lite: ['Möten, samtal och chattar', 'Sammanfattningar, spel och TikTok – med gräns', 'Offline-AI när kvoten räcker', '✗ Ingen AI-Live', '✗ Ingen Live Replace'],
+      plus: ['Allt i Lite', '4× så mycket användning', 'AI-Live med Gemini 3.8 Flash Live (5 % per minut)', 'TikTok och spel med Gemini 3.8 Flash', '✗ Ingen Live Replace'],
+      pro: ['Allt i Plus', '20× så mycket som Plus', '🏖️ Live Replace – 3D-du pratar i mötet', 'Skanna ditt 3D-ansikte', 'Live-minuter för hela månaden']
+    };
+    v.innerHTML = `<h1>Prenumeration</h1>
+      ${S().demo ? '<div class="demo-banner">👀 I demon räknas ingenting. Börja på riktigt för att använda din plan.</div>' : ''}
+      <div class="card" id="meterbox">${meter(true)}</div>
+      <div class="plans">${Object.values(PLANS).map(p => `<div class="plan ${p.id} ${p.id === cur ? 'on' : ''}">
+        <div class="pname">${p.name}${p.id === 'pro' ? ' <span class="badge brand">3D</span>' : ''}</div>
+        <div class="pprice">${p.price ? p.price + ' kr<small>/mån</small>' : 'Gratis'}</div>
+        <p class="small muted">${esc(p.blurb)}</p>
+        <ul class="clean">${feats[p.id].map(f => `<li data-ico="${f.startsWith('✗') ? '' : '✓'}">${esc(f.replace(/^✗ /, '✗ '))}</li>`).join('')}</ul>
+        ${p.id === cur ? '<button class="btn ghost block" disabled>Din plan</button>' : `<button class="btn block ${p.id === 'pro' ? 'coral' : ''}" data-buy="${p.id}">${p.price ? (PLANS[cur].price > p.price ? 'Byt till ' : 'Uppgradera till ') + p.name.replace('Motey ', '') : 'Byt till Lite'}</button>`}
+      </div>`).join('')}</div>
+      <div class="card"><h3>Vad saker kostar</h3><p class="small muted">I procent av månadens kvot för varje plan.</p>
+        <table class="cost"><tr><th></th><th>Lite</th><th>Plus</th><th>Pro</th></tr>
+        ${Object.keys(COST).map(k => `<tr><td>${LABEL[k]}</td>${['lite', 'plus', 'pro'].map(id => {
+          const P = PLANS[id];
+          const ok = !(k === 'live_min' && !P.live) && !((k === 'replace_min' || k === 'scan') && !P.replace);
+          const v = 100 * COST[k] / P.quota;
+          return `<td>${ok ? (v < 0.1 ? '<0,1' : String(Math.round(v * 10) / 10).replace('.', ',')) + ' %' : '–'}</td>`;
+        }).join('')}</tr>`).join('')}</table></div>
+      ${server() ? '<button class="btn ghost" id="manage">Hantera prenumeration</button>' : ''}`;
+    v.querySelectorAll('[data-buy]').forEach(b => b.addEventListener('click', () => buy(b.dataset.buy)));
+    const mg = v.querySelector('#manage'); if (mg) mg.addEventListener('click', manage);
+  }
+
+  window.Plans = { PLANS, COST, LABEL, plan, pct, can, check, charge, allow, refresh, serverUsage, token, buy, manage, render, meter, paintPill, upgradeSheet, QuotaError, state };
+})();
+
+</script>
+<script>
 /* Motey Chattar – real text messages between people, inside Motey.
  * Works on MoteyNet rooms; in demo mode a local chat with Motey is shown instead. */
 (function () {
@@ -2112,7 +2522,7 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
         <button class="btn block" style="background:var(--danger)" id="leave">Lämna ${r.kind === 'meeting' ? 'mötet' : 'chatten'}</button>`);
       $('#sum', sh.el).addEventListener('click', async () => {
         const pseudo = { id: 'chat-' + r.id, title: r.name, attendees: Object.values(r.members).map(m => m.name), transcript: MoteyNet.messages(r.id).filter(m => m.t === 'msg' || m.t === 'tr').map(m => ({ who: m.name, text: m.text })), files: [] };
-        const s = (await AI.summarize(pseudo)).value;
+        let s; try { s = (await AI.summarize(pseudo, { charge: true })).value; } catch (e) { sh.close(); return; }
         sh.close();
         const s2 = App.sheet(`<div id="sumb"></div>`);
         App.moteySays($('#sumb', s2.el), s.summary + (s.actions.length ? ' Att göra: ' + s.actions.map(a => a.who + ' – ' + a.what).join('; ') : ''));
@@ -2204,12 +2614,18 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
         <button class="cbtn" id="cam" title="Kamera">📷</button>
         <button class="cbtn" id="scr" title="Dela skärm">🖥️</button>
         <button class="cbtn" id="notes" title="Motey antecknar">📝</button>
+        <button class="cbtn" id="restyle" title="AI-Live: byt stil på någon">🎭</button>
+        <button class="cbtn" id="replace" title="Live Replace (Pro)">🏖️</button>
         <button class="cbtn" id="chat" title="Chatt">💬</button>
         <button class="cbtn end" id="end" title="Lämna">✆</button>
       </div>
       <div class="call-chat hidden" id="cchat"></div>
+      <div class="replace-panel hidden" id="rpanel"></div>
     </div>`;
-    const s = session = { r, pk: (await MoteyNet.roomSigner(r)).pk, peers: new Map(), local: null, alive: true, rec: null, offs: [] };
+    const s = session = { r, pk: (await MoteyNet.roomSigner(r)).pk, peers: new Map(), local: null, alive: true, rec: null, offs: [], out: {} };
+    // what we send: normally camera + microphone; Live Replace swaps in the 3D head and Gemini's voice
+    const outgoing = () => new MediaStream([s.out.audio || s.local.getAudioTracks()[0], s.out.video || (s.screen && s.screen.getVideoTracks()[0]) || s.local.getVideoTracks()[0]].filter(Boolean));
+    s.outgoing = outgoing;
     const status = t => { const e = $('#cstat', v); if (e) e.textContent = t; };
     const count = () => { const e = $('#ccount', v); if (e) e.textContent = (1 + [...s.peers.values()].filter(p => p.connected).length) + ' i samtalet'; };
 
@@ -2251,12 +2667,13 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
       if (p.pc) try { p.pc.close(); } catch (e) { /* closed */ }
       const pc = new RTCPeerConnection({ iceServers: iceServers() });
       p.pc = pc; p.connected = false; p.started = Date.now();
-      s.local.getTracks().forEach(t => pc.addTrack(t, s.local));
+      const outS = outgoing(); outS.getTracks().forEach(t => pc.addTrack(t, outS));
       // make sure we can receive even if we send nothing
       if (!s.local.getAudioTracks().length) pc.addTransceiver('audio', { direction: 'recvonly' });
       if (!s.local.getVideoTracks().length) pc.addTransceiver('video', { direction: 'recvonly' });
       const remote = new MediaStream();
-      pc.ontrack = e => { remote.addTrack(e.track); e.track.onunmute = () => tile(p.pk, p.name, remote); tile(p.pk, p.name, remote); };
+      p.remote = remote;
+      pc.ontrack = e => { remote.addTrack(e.track); e.track.onunmute = () => tile(p.pk, p.name, remote); tile(p.pk, p.name, remote); if (e.track.kind === 'audio' && s.onRemoteAudio) s.onRemoteAudio(p, remote); };
       pc.onconnectionstatechange = () => {
         if (pc !== p.pc) return;
         p.connected = pc.connectionState === 'connected';
@@ -2333,6 +2750,7 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
       try {
         s.screen = await navigator.mediaDevices.getDisplayMedia({ video: true });
         const track = s.screen.getVideoTracks()[0];
+        if (s.replace) { s.screen.getTracks().forEach(t => t.stop()); s.screen = null; return ui.toast('Stäng av Live Replace först'); }
         swapVideo(track); scr.classList.add('on');
         track.onended = stopScreen;
       } catch (e) { s.screen = null; }
@@ -2365,6 +2783,121 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
       try { rec.start(); s.rec = rec; notes.classList.add('on'); $('#caps', v).classList.remove('hidden'); ui.toast('📝 Motey antecknar – allt sagt hamnar i mötesprotokollet'); }
       catch (e) { ui.toast('Kunde inte starta tal till text'); }
     });
+    /* ---------- AI-Live in the call: hear someone in another style ---------- */
+    $('#restyle', v).addEventListener('click', () => {
+      if (s.styler) return stopStyler();
+      if (!Plans.allow('live_min')) return;
+      if (!AI.hasKey()) return ui.toast('AI-Live behöver Gemini – koppla under Mer → AI', 5000);
+      const people = [...s.peers.values()].filter(p => p.remote);
+      if (!people.length) return ui.toast('Ingen annan är med i samtalet än');
+      const sh = App.sheet(`<h2>🎭 Byt stil på någon</h2><p class="muted small">Du hör Motey säga samma sak i stället för personen – bara du, de andra märker inget. Gemini 3.8 Flash Live.</p>
+        <p class="small muted">Vem?</p><div class="row" id="rp">${people.map((p, i) => `<span class="chip ${i ? '' : 'on'}" data-pk="${p.pk}">${esc(p.name)}</span>`).join('')}</div>
+        <p class="small muted" style="margin-top:12px">Stil</p><div class="row" id="rs">${Object.entries(AI.STYLES).map(([k, x]) => `<span class="chip ${k === (Store.settings.liveStyle || 'snall') ? 'on' : ''}" data-s="${k}">${x.icon} ${x.name}</span>`).join('')}</div>
+        <button class="btn block" id="rgo" style="margin-top:14px">Starta</button>`);
+      const pickOne = sel => sh.el.querySelectorAll(sel + ' .chip').forEach(c => c.addEventListener('click', () => sh.el.querySelectorAll(sel + ' .chip').forEach(x => x.classList.toggle('on', x === c))));
+      pickOne('#rp'); pickOne('#rs');
+      $('#rgo', sh.el).addEventListener('click', async () => {
+        const p = s.peers.get($('#rp .chip.on', sh.el).dataset.pk), style = $('#rs .chip.on', sh.el).dataset.s;
+        Store.settings.liveStyle = style; Store.save(); sh.close();
+        const vid = $('#t-' + p.pk + ' video', v); if (vid) vid.muted = true;
+        const caps = $('#caps', v); caps.classList.remove('hidden'); caps.textContent = `🎭 ${p.name} i stilen ${AI.STYLES[style].name}…`;
+        let out = '';
+        const sess = LiveMode.liveSession({
+          system: AI.liveInstruction(style, p.name), voice: Store.settings.liveVoice || 'Puck',
+          onOut: t => { caps.textContent = '🎭 ' + t; }, onIn: () => {}, onTurn: (i, o) => { out = o; },
+          onTalking: () => {}, onError: e => { if (!(e instanceof Plans.QuotaError)) ui.toast('AI-Live: ' + e.message); stopStyler(); }
+        });
+        try { if (!(await sess.open())) return; } catch (e) { ui.toast('Kunde inte starta AI-Live: ' + e.message); if (vid) vid.muted = false; return; }
+        const cap = Gemini.pcmCapture([p.remote], b64 => sess.live && !sess.live.closed && sess.live.audio(b64));
+        s.styler = { sess, cap, vid, pk: p.pk };
+        $('#restyle', v).classList.add('on');
+      });
+    });
+    function stopStyler() {
+      const x = s.styler; s.styler = null; if (!x) return;
+      x.cap.stop(); x.sess.close(); if (x.vid) x.vid.muted = false;
+      $('#restyle', v).classList.remove('on'); if (!s.rec) $('#caps', v).classList.add('hidden');
+    }
+    s.stopStyler = stopStyler;
+
+    /* ---------- Live Replace (Pro): a 3D you talks in the meeting ---------- */
+    $('#replace', v).addEventListener('click', () => s.replace ? stopReplace() : startReplace());
+    async function startReplace() {
+      if (!Plans.allow('replace_min')) return;
+      if (!Avatar.hasFace()) { ui.toast('Skanna ditt 3D-ansikte först (tar en halv minut)', 5000); return App.go('#/scan'); }
+      if (!AI.hasKey()) return ui.toast('Live Replace behöver Gemini – koppla under Mer → AI', 5000);
+      const me = MoteyNet.me().name, St = Store.settings;
+      const sofar = MoteyNet.messages(r.id).filter(m => (m.t === 'msg' || m.t === 'tr') && m.text).slice(-40).map(m => `${m.name}: ${m.text}`).join('\n');
+      const head = Avatar.createHead(Avatar.load(), { width: 640, height: 360 });
+      await head.ready;
+      const player = Gemini.pcmPlayer({ speakers: !!St.replaceHear });
+      head.setLevel(() => player.level());
+      let inp = '', out = '';
+      const panel = $('#rpanel', v);
+      const live = new Gemini.Live({
+        action: 'replace', modality: 'AUDIO', voice: St.replaceVoice || 'Charon',
+        system: `Du är ${me}s digitala 3D-tvilling i videomötet "${r.name}". ${me} är inte vid datorn just nu, så du pratar som ${me} – i första person, på svenska, kort och naturligt (en eller två meningar). ` +
+          `Det du hör är de andra i mötet. Svara bara när någon pratar till ${me} eller frågar alla; annars är du tyst. Lova inget och hitta inte på siffror – säg att du återkommer om du inte vet. ` +
+          `Om någon frågar om du är en AI svarar du ärligt att du är ${me}s AI-tvilling i Motey. Meddelanden som börjar med [Från ${me}] är instruktioner från riktiga ${me} – följ dem.\n\n` +
+          `Det här vet du: ${St.replaceNotes || '(inget särskilt)'}\n\nMötet hittills:\n${sofar || '(inget än)'}`,
+        onAudio: (d, m) => player.play(d, m),
+        onInterrupt: () => player.flush(),
+        onIn: t => { inp += t; },
+        onText: t => { out += t; const e = $('#r-said', v); if (e) e.textContent = out; },
+        onTurn: () => {
+          if (inp.trim()) MoteyNet.sendTranscript(r.id, 'Mötet: ' + inp.trim());
+          if (out.trim()) MoteyNet.sendTranscript(r.id, out.trim() + ' (3D-tvilling)');
+          inp = ''; out = '';
+        },
+        onError: e => { ui.toast('Live Replace: ' + e.message, 5000); stopReplace(); }
+      });
+      try { await live.open(); } catch (e) { head.destroy(); player.close(); return ui.toast('Kunde inte starta Gemini Live: ' + e.message, 6000); }
+      Plans.charge('replace_min');
+      const minute = setInterval(() => { try { Plans.check('replace_min'); Plans.charge('replace_min'); } catch (e) { stopReplace(); Plans.upgradeSheet(e); } }, 60000);
+      const cap = Gemini.pcmCapture([...s.peers.values()].map(p => p.remote).filter(Boolean), b64 => !live.closed && live.audio(b64));
+      s.onRemoteAudio = (p, st) => cap.add(st);
+      let raf = 0; const loop = () => { head.frame(); raf = requestAnimationFrame(loop); }; loop();
+      const vt = head.canvas.captureStream(25).getVideoTracks()[0];
+      const at = player.stream && player.stream.getAudioTracks()[0];
+      s.out = { audio: at, video: vt };
+      swapTracks();
+      tile('me', me + ' (3D-tvilling)', new MediaStream([vt]), false);
+      $('#t-me', v).classList.remove('self');
+      s.replace = { live, player, cap, head, minute, stop() { cancelAnimationFrame(raf); } };
+      $('#replace', v).classList.add('on');
+      panel.innerHTML = `<div class="row between"><b>🏖️ Live Replace är på</b><button class="btn sm" id="r-stop">Ta över själv</button></div>
+        <div class="small muted">3D-du pratar i mötet med Gemini 3.8 Flash Live. Ingen kan höra dig nu.</div>
+        <div class="r-said" id="r-said">…</div>
+        <div class="row"><input type="text" id="r-say" placeholder="Säg åt 3D-du, t.ex. ”säg att jag skickar rapporten i morgon”" style="flex:1"><button class="btn sm" id="r-send">Skicka</button></div>
+        <label class="switch small" style="margin:8px 0 0"><input type="checkbox" id="r-hear" ${St.replaceHear ? 'checked' : ''}> Hör vad 3D-du säger</label>`;
+      panel.classList.remove('hidden');
+      $('#r-stop', panel).addEventListener('click', stopReplace);
+      const send = () => { const t = $('#r-say', panel).value.trim(); if (!t) return; $('#r-say', panel).value = ''; live.text(`[Från ${me}] ${t}`); };
+      $('#r-send', panel).addEventListener('click', send);
+      $('#r-say', panel).addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+      $('#r-hear', panel).addEventListener('change', e => { St.replaceHear = e.target.checked; Store.save(); ui.toast('Gäller nästa gång du startar Live Replace'); });
+      MoteyNet.sendText(r.id, `🤖 ${me}s AI-tvilling tar mötet en stund (Motey Live Replace).`);
+    }
+    function stopReplace() {
+      const x = s.replace; s.replace = null; if (!x) return;
+      clearInterval(x.minute); x.stop(); x.cap.stop(); x.live.close(); x.player.close(); x.head.destroy();
+      s.onRemoteAudio = null; s.out = {};
+      swapTracks();
+      $('#t-me', v).classList.add('self');
+      tile('me', MoteyNet.me().name + ' (du)', s.local, true);
+      $('#replace', v).classList.remove('on'); $('#rpanel', v).classList.add('hidden');
+      MoteyNet.sendText(r.id, `🙋 ${MoteyNet.me().name} är tillbaka själv.`);
+    }
+    s.stopReplace = stopReplace;
+    function swapTracks() {
+      const o = outgoing();
+      const a = o.getAudioTracks()[0] || null, vtr = o.getVideoTracks()[0] || null;
+      for (const p of s.peers.values()) if (p.pc) p.pc.getTransceivers().forEach(x => {
+        const k = x.receiver.track.kind;
+        x.sender.replaceTrack(k === 'audio' ? a : vtr).catch(() => {});
+      });
+    }
+
     $('#chat', v).addEventListener('click', e => {
       const c = $('#cchat', v);
       const show = c.classList.toggle('hidden') === false;
@@ -2381,6 +2914,7 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     if (!s) return;
     s.alive = false;
     clearInterval(s.beat);
+    try { s.stopReplace && s.stopReplace(); s.stopStyler && s.stopStyler(); } catch (e) { /* closing anyway */ }
     if (s.rec) { const r = s.rec; s.rec = null; try { r.stop(); } catch (e) { /* stopped */ } }
     try { MoteyNet.signal(s.r.id, { t: 'rtc', type: 'bye' }); } catch (e) { /* offline */ }
     for (const p of s.peers.values()) try { p.pc && p.pc.close(); } catch (e) { /* closed */ }
@@ -2411,7 +2945,339 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
 
 </script>
 <script>
-/* Motey Live AI (example 2): replace a speaker with Motey – same sentences, new style. */
+/* Motey Pro – 3D face scan and the talking 3D head used by Live Replace.
+ *
+ * Scan: the camera takes 8 photos by itself (it waits until you hold still in
+ * each pose). Gemini 3.8 Flash looks at the front photo and returns where the
+ * eyes and mouth are, so the photos line up on the head.
+ * Head: a WebGL head mesh. Each photo is projected onto the mesh from the
+ * angle it was taken at and the views are blended by surface direction, so
+ * the head looks right when it turns. The jaw opens with the voice level and
+ * the open-mouth photo is blended in while talking. */
+(function () {
+  'use strict';
+  const $ = (s, el) => (el || document).querySelector(s);
+  const KEY = 'motey.face';
+  const POSES = [
+    ['front', 'Titta rakt in i kameran 🙂'], ['left', 'Vrid huvudet lite åt vänster ⬅️'], ['right', 'Vrid huvudet lite åt höger ➡️'],
+    ['up', 'Titta lite uppåt ⬆️'], ['down', 'Titta lite nedåt ⬇️'], ['smile', 'Le stort! 😁'], ['open', 'Säg ”aaa” – öppna munnen 😮'], ['front2', 'Rakt fram igen – sista bilden!']
+  ];
+
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } }
+  function save(f) { try { localStorage.setItem(KEY, JSON.stringify(f)); return true; } catch (e) { return false; } }
+  const hasFace = () => !!(load() || {}).photos;
+
+  /* ---------------- scan ---------------- */
+  function renderScan(v, ui) {
+    const S = Store.settings;
+    if (!S.demo && !Plans.can('replace')) {
+      v.innerHTML = `<h1>🏖️ Live Replace</h1><div class="card empty">${Mascot.svg({ size: 110, mood: 'wink' })}
+        <p><b>Live Replace finns i Motey Pro.</b></p><p class="muted">Skanna ditt ansikte en gång. Sedan kan en 3D-version av dig prata i mötet – med Gemini 3.8 Flash Live – medan du ligger på stranden.</p>
+        <div class="row" style="justify-content:center"><button class="btn coral" id="up">Skaffa Pro – 310 kr/mån</button><a class="btn ghost" href="#/plans">Jämför planer</a></div></div>`;
+      $('#up', v).addEventListener('click', () => Plans.buy('pro'));
+      return;
+    }
+    const face = load();
+    v.innerHTML = `<h1>🏖️ Ditt 3D-ansikte</h1>
+      <p class="muted">Kameran tar ${POSES.length} bilder automatiskt – håll bara still i varje läge. Bilderna stannar på den här enheten${S.demo ? '' : ' (framsidan skickas till Gemini en gång för att hitta ögon och mun)'}.</p>
+      <div class="scan-wrap">
+        <div class="scan-cam" id="cam"><video autoplay playsinline muted></video><div class="oval"></div><div class="flash"></div><div class="scan-tip" id="tip">Tryck Starta</div></div>
+        <div class="scan-side"><div class="thumbs" id="thumbs">${POSES.map(([id]) => `<div class="thumb" data-p="${id}"></div>`).join('')}</div>
+          <div class="row"><button class="btn" id="go">${face ? '🔁 Skanna igen' : '📸 Starta skanning'}</button></div>
+          ${face ? '<h3 style="margin-top:16px">Så här ser 3D-du ut</h3><div class="avatar-preview"><canvas id="prev" width="480" height="360"></canvas></div><div class="row"><button class="btn ghost sm" id="talk">🗣️ Låt 3D-du säga hej</button><button class="btn ghost sm" id="del">Radera mitt ansikte</button></div>' : ''}
+        </div></div>
+      <div class="card"><h3>Det här ska 3D-du veta</h3><p class="small muted">Live Replace pratar som du. Skriv vad den får säga – vad du jobbar med, vad som är klart, vad du vill ha sagt.</p>
+        <textarea id="notes" placeholder="T.ex. Jag är klar med rapporten och skickar den på fredag. Säg nej till nya uppgifter den här veckan.">${ui.esc(S.replaceNotes || '')}</textarea>
+        <label class="field" style="margin-top:10px"><span>3D-dus röst</span><select id="voice">${Gemini.VOICES.map(([id, n]) => `<option value="${id}" ${id === (S.replaceVoice || 'Charon') ? 'selected' : ''}>${n} (${id})</option>`).join('')}</select></label></div>`;
+    $('#notes', v).addEventListener('change', e => { S.replaceNotes = e.target.value.trim(); Store.save(); });
+    $('#voice', v).addEventListener('change', e => { S.replaceVoice = e.target.value; Store.save(); });
+    if (face) {
+      face.photos && Object.entries(face.photos).forEach(([k, src]) => { const t = v.querySelector(`.thumb[data-p="${k}"]`); if (t) t.style.backgroundImage = `url(${src})`; });
+      const head = createHead(face, { width: 480, height: 360, background: true });
+      head.ready.then(() => { const c = $('#prev', v); if (!c) return; const ctx = c.getContext('2d'); const loop = () => { if (!document.body.contains(c)) return head.destroy(); head.frame(); ctx.drawImage(head.canvas, 0, 0); requestAnimationFrame(loop); }; loop(); });
+      $('#talk', v).addEventListener('click', () => sayHello(head, ui));
+      $('#del', v).addEventListener('click', () => { if (confirm('Radera ditt 3D-ansikte från den här enheten?')) { localStorage.removeItem(KEY); renderScan(v, ui); } });
+    }
+    $('#go', v).addEventListener('click', () => scan(v, ui));
+  }
+
+  async function sayHello(head, ui) {
+    const name = AI.firstName(Store.settings.name);
+    const text = `Hej allihop! Det är jag, ${name}. Eller ja – min 3D-tvilling. Jag tar mötet idag!`;
+    if (AI.hasKey() && !Store.settings.demo) {
+      if (!Plans.allow('replace_min')) return;
+      const player = Gemini.pcmPlayer();
+      head.setLevel(() => player.level());
+      const live = new Gemini.Live({ system: `Du är ${name}s 3D-tvilling. Läs upp exakt den text du får, på svenska, glatt.`, voice: Store.settings.replaceVoice || 'Charon', action: 'replace',
+        onAudio: (d, m) => player.play(d, m), onTurn: () => setTimeout(() => { live.close(); }, 4000) });
+      try { await live.open(); Plans.charge('replace_min'); live.text(text); } catch (e) { ui.toast('Gemini Live: ' + e.message); }
+      return;
+    }
+    let on = true; head.setLevel(() => on ? 0.35 + 0.35 * Math.abs(Math.sin(performance.now() / 90)) : 0);
+    Platform.speak(text, { onend: () => { on = false; } });
+  }
+
+  async function scan(v, ui) {
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }, audio: false }); }
+    catch (e) { return ui.toast('Kameran gick inte att starta'); }
+    const video = $('#cam video', v); video.srcObject = stream; await video.play().catch(() => {});
+    $('#go', v).disabled = true;
+    const photos = {};
+    const tiny = document.createElement('canvas'); tiny.width = 32; tiny.height = 24;
+    const tctx = tiny.getContext('2d', { willReadFrequently: true });
+    let prev = null;
+    const motion = () => {
+      tctx.drawImage(video, 0, 0, 32, 24);
+      const d = tctx.getImageData(0, 0, 32, 24).data;
+      let diff = 0;
+      if (prev) for (let i = 0; i < d.length; i += 4) diff += Math.abs(d[i] - prev[i]);
+      prev = d.slice();
+      return diff / (32 * 24);
+    };
+    for (const [id, tip] of POSES) {
+      if (!document.body.contains(video)) break;
+      $('#tip', v).textContent = tip;
+      Platform.speak(tip);
+      const t0 = performance.now();
+      let still = 0;
+      // wait until the picture has been steady for a moment (or 5 s at most)
+      await new Promise(res => {
+        const iv = setInterval(() => {
+          const m = motion();
+          still = m < 6 ? still + 1 : 0;
+          const el = performance.now() - t0;
+          $('#tip', v).textContent = tip + (el > 1300 ? ' · håll still…' : '');
+          if ((el > 1500 && still >= 6) || el > 5000) { clearInterval(iv); res(); }
+        }, 100);
+      });
+      photos[id] = grab(video);
+      const fl = $('#cam .flash', v); fl.classList.remove('on'); void fl.offsetWidth; fl.classList.add('on');
+      const th = v.querySelector(`.thumb[data-p="${id}"]`); if (th) th.style.backgroundImage = `url(${photos[id]})`;
+    }
+    stream.getTracks().forEach(t => t.stop());
+    $('#tip', v).textContent = 'Bygger 3D-du…';
+    const face = { photos, made: Date.now(), marks: { eyeY: 0.42, mouthY: 0.72, eyeDist: 0.30, cx: 0.5 } };
+    if (AI.hasKey() && !Store.settings.demo && Plans.allow('scan')) {
+      try {
+        const g = Gemini.schema;
+        const r = await Gemini.generate({
+          action: 'scan', temperature: 0,
+          system: 'Du hittar ansiktsdrag i bilder. Svara med koordinater som andelar 0–1 av bildens bredd och höjd.',
+          parts: [{ text: 'Var i bilden är ögonens mitt (vänster och höger öga), munnens mitt och hakan? Beskriv också hårfärgen kort på svenska.' },
+                  { inlineData: { mimeType: 'image/jpeg', data: photos.front.split(',')[1] } }],
+          schema: g.obj({ leftEyeX: { type: 'NUMBER' }, leftEyeY: { type: 'NUMBER' }, rightEyeX: { type: 'NUMBER' }, rightEyeY: { type: 'NUMBER' }, mouthX: { type: 'NUMBER' }, mouthY: { type: 'NUMBER' }, chinY: { type: 'NUMBER' }, hair: g.str })
+        });
+        if (r.leftEyeY > 0.1 && r.mouthY > r.leftEyeY) {
+          face.marks = { eyeY: (r.leftEyeY + r.rightEyeY) / 2, mouthY: r.mouthY, eyeDist: Math.abs(r.rightEyeX - r.leftEyeX), cx: (r.leftEyeX + r.rightEyeX) / 2, chinY: r.chinY };
+          face.hair = r.hair;
+        }
+        Plans.charge('scan');
+      } catch (e) { console.warn('ansiktsanalys', e.message); }
+    }
+    if (!save(face)) return ui.toast('Kunde inte spara bilderna på enheten');
+    Store.state.stats.scans = (Store.state.stats.scans || 0) + 1; Store.save();
+    ui.toast('🎉 3D-du är klar!');
+    renderScan(v, ui);
+  }
+  // square crop around the face guide, 384 px
+  function grab(video) {
+    const c = document.createElement('canvas'); c.width = 384; c.height = 384;
+    const vw = video.videoWidth, vh = video.videoHeight, side = Math.min(vw, vh) * 0.9;
+    c.getContext('2d').drawImage(video, (vw - side) / 2, (vh - side) / 2, side, side, 0, 0, 384, 384);
+    return c.toDataURL('image/jpeg', 0.85);
+  }
+
+  /* ---------------- the 3D head ---------------- */
+  const VS = `
+attribute vec3 aPos; attribute vec3 aRest; attribute vec3 aNrm;
+uniform mat4 uMVP; uniform mat3 uRot;
+varying vec3 vRest; varying vec3 vN; varying float vJaw;
+void main(){ vRest = aRest; vN = normalize(uRot * aNrm); vJaw = aPos.y - aRest.y; gl_Position = uMVP * vec4(aPos, 1.0); }`;
+  const FS = `
+precision mediump float;
+uniform sampler2D tF; uniform sampler2D tL; uniform sampler2D tR; uniform sampler2D tO;
+uniform vec4 uMark; uniform float uOpen; uniform vec3 uHair; uniform float uBody;
+varying vec3 vRest; varying vec3 vN; varying float vJaw;
+vec2 proj(vec3 p, float yaw){
+  // where a point of the head lands in a photo taken with the head turned by yaw
+  float c = cos(yaw), s = sin(yaw);
+  vec3 q = vec3(c*p.x + s*p.z, p.y, -s*p.x + c*p.z);
+  float k = uMark.z / 0.48;            // model eyes sit at x = +-0.24, y = 0.2
+  return vec2(uMark.w + q.x * k, uMark.x + (0.2 - q.y) * k);
+}
+void main(){
+  if (uBody > 0.5) { float l = 0.55 + 0.45*max(0.0, dot(vN, normalize(vec3(0.3,0.5,1.0)))); gl_FragColor = vec4(vec3(0.42,0.30,0.96)*l, 1.0); return; }
+  vec3 n = normalize(vRest);
+  float wf = pow(max(0.0, n.z), 3.0);
+  float wl = pow(max(0.0, dot(n, normalize(vec3(-0.6,0.0,0.8)))), 3.0) * 0.8;
+  float wr = pow(max(0.0, dot(n, normalize(vec3(0.6,0.0,0.8)))), 3.0) * 0.8;
+  float wb = pow(max(0.0, -n.z + 0.15), 1.5) + max(0.0, n.y - 0.55) * 2.0;
+  vec4 cf = mix(texture2D(tF, proj(vRest, 0.0)), texture2D(tO, proj(vRest, 0.0)), uOpen);
+  vec4 cl = texture2D(tL, proj(vRest, 0.5));
+  vec4 cr = texture2D(tR, proj(vRest, -0.5));
+  vec3 col = (cf.rgb*wf + cl.rgb*wl + cr.rgb*wr + uHair*wb) / (wf + wl + wr + wb + 0.0001);
+  if (vJaw < -0.004 && abs(vRest.x) < 0.2 && vRest.z > 0.5) col *= 0.85;
+  float light = 0.72 + 0.28 * max(0.0, dot(vN, normalize(vec3(0.25, 0.45, 1.0))));
+  float rim = pow(1.0 - max(0.0, vN.z), 3.0) * 0.25;
+  gl_FragColor = vec4(col * light + rim, 1.0);
+}`;
+
+  function headMesh(mouthY) {
+    const pos = [], nrm = [], idx = [];
+    const LAT = 44, LON = 56;
+    for (let i = 0; i <= LAT; i++) {
+      const la = -Math.PI / 2 + Math.PI * i / LAT;
+      for (let j = 0; j <= LON; j++) {
+        const lo = -Math.PI + 2 * Math.PI * j / LON;
+        let x = 0.78 * Math.cos(la) * Math.sin(lo), y = 1.0 * Math.sin(la), z = 0.88 * Math.cos(la) * Math.cos(lo);
+        if (y < -0.35) { const k = 1 - 0.45 * Math.min(1, (-0.35 - y) / 0.65); x *= k; z = z > 0 ? z * (0.9 + 0.1 * k) : z * k; }
+        if (z > 0) z += 0.16 * Math.exp(-((x / 0.11) ** 2) - (((y + 0.02) / 0.2) ** 2)); // nose
+        if (z > 0) z -= 0.05 * Math.exp(-(((Math.abs(x) - 0.24) / 0.12) ** 2) - (((y - 0.2) / 0.1) ** 2)); // eye sockets
+        pos.push(x, y, z);
+        const n = [x / 0.6, y / 1.0, z / 0.77]; const l = Math.hypot(...n); nrm.push(n[0] / l, n[1] / l, n[2] / l);
+      }
+    }
+    for (let i = 0; i < LAT; i++) for (let j = 0; j < LON; j++) {
+      const a = i * (LON + 1) + j, b = a + LON + 1;
+      idx.push(a, b, a + 1, a + 1, b, b + 1);
+    }
+    return { pos: new Float32Array(pos), nrm: new Float32Array(nrm), idx: new Uint16Array(idx) };
+  }
+  function bodyMesh() {
+    const pos = [], nrm = [], idx = [];
+    const R = 24, H = 6;
+    for (let i = 0; i <= H; i++) {
+      const t = i / H, y = -1.05 - t * 1.0, r = 0.28 + 0.9 * Math.pow(t, 0.55);
+      for (let j = 0; j <= R; j++) {
+        const a = Math.PI * (j / R) - Math.PI / 2 + Math.PI / 2;
+        const x = r * Math.cos(Math.PI - a) * 1.25, z = r * Math.sin(a) * 0.55;
+        pos.push(x, y, z - 0.15); nrm.push(Math.cos(Math.PI - a), 0.2, Math.sin(a));
+      }
+    }
+    for (let i = 0; i < H; i++) for (let j = 0; j < R; j++) { const a = i * (R + 1) + j, b = a + R + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+    return { pos: new Float32Array(pos), nrm: new Float32Array(nrm), idx: new Uint16Array(idx) };
+  }
+  const mat = {
+    persp(f, a, n, fa) { const t = 1 / Math.tan(f / 2); return [t / a, 0, 0, 0, 0, t, 0, 0, 0, 0, (fa + n) / (n - fa), -1, 0, 0, 2 * fa * n / (n - fa), 0]; },
+    mul(a, b) { const o = new Array(16).fill(0); for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) for (let k = 0; k < 4; k++) o[j * 4 + i] += a[k * 4 + i] * b[j * 4 + k]; return o; },
+    rot(yaw, pitch, roll) {
+      const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch), cr = Math.cos(roll), sr = Math.sin(roll);
+      const Ry = [cy, 0, -sy, 0, 0, 1, 0, 0, sy, 0, cy, 0, 0, 0, 0, 1];
+      const Rx = [1, 0, 0, 0, 0, cp, sp, 0, 0, -sp, cp, 0, 0, 0, 0, 1];
+      const Rz = [cr, sr, 0, 0, -sr, cr, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+      return mat.mul(Rz, mat.mul(Ry, Rx));
+    },
+    trans(x, y, z) { return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1]; }
+  };
+
+  function createHead(face, opts) {
+    opts = opts || {};
+    const W = opts.width || 640, H = opts.height || 360;
+    const out = document.createElement('canvas'); out.width = W; out.height = H;
+    const octx = out.getContext('2d');
+    const glc = document.createElement('canvas'); glc.width = W; glc.height = H;
+    const gl = glc.getContext('webgl', { alpha: true, premultipliedAlpha: false, preserveDrawingBuffer: true, antialias: true });
+    let levelFn = () => 0, open = 0, destroyed = false;
+    const imgs = {};
+    const loadImg = src => new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
+    const ready = (async () => {
+      for (const k of ['front', 'left', 'right', 'open', 'smile']) imgs[k] = face.photos[k] ? await loadImg(face.photos[k]) : null;
+      imgs.open = imgs.open || imgs.front; imgs.left = imgs.left || imgs.front; imgs.right = imgs.right || imgs.front;
+    })();
+    // hair colour: average of the top strip of the front photo
+    let hair = [0.25, 0.18, 0.12];
+    ready.then(() => {
+      const c = document.createElement('canvas'); c.width = 16; c.height = 16;
+      const x = c.getContext('2d'); x.drawImage(imgs.front, 120, 0, 144, 40, 0, 0, 16, 16);
+      const d = x.getImageData(0, 0, 16, 16).data; let r = 0, g = 0, b = 0;
+      for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; }
+      const n = d.length / 4; hair = [r / n / 255, g / n / 255, b / n / 255];
+    });
+
+    let prog, head, body, tex = {};
+    if (gl) {
+      const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s)); return s; };
+      prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog);
+      const buf = (data, target) => { const b = gl.createBuffer(); gl.bindBuffer(target || gl.ARRAY_BUFFER, b); gl.bufferData(target || gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW); return b; };
+      const m = headMesh(face.marks.mouthY);
+      head = { m, live: new Float32Array(m.pos), bPos: buf(m.pos), bRest: buf(m.pos), bN: buf(m.nrm), bI: buf(m.idx, gl.ELEMENT_ARRAY_BUFFER), n: m.idx.length };
+      const bm = bodyMesh();
+      body = { bPos: buf(bm.pos), bRest: buf(bm.pos), bN: buf(bm.nrm), bI: buf(bm.idx, gl.ELEMENT_ARRAY_BUFFER), n: bm.idx.length };
+      ready.then(() => {
+        for (const [unit, k] of [[0, 'front'], [1, 'left'], [2, 'right'], [3, 'open']]) {
+          const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imgs[k]);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); tex[k] = t;
+        }
+      });
+    }
+    const mk = face.marks;
+    function drawBg(t) {
+      const g = octx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#DCE7FF'); g.addColorStop(1, '#F6F1FF');
+      octx.fillStyle = g; octx.fillRect(0, 0, W, H);
+      octx.fillStyle = '#BFD4FF'; octx.fillRect(W * 0.62, H * 0.1, W * 0.28, H * 0.42);
+      octx.strokeStyle = '#fff'; octx.lineWidth = 6; octx.strokeRect(W * 0.62, H * 0.1, W * 0.28, H * 0.42);
+      octx.beginPath(); octx.moveTo(W * 0.76, H * 0.1); octx.lineTo(W * 0.76, H * 0.52); octx.stroke();
+      octx.fillStyle = '#19C79A'; octx.beginPath(); octx.ellipse(W * 0.12, H * 0.62, 26, 50, 0, 0, 7); octx.fill();
+    }
+    function frame() {
+      if (destroyed) return;
+      const t = performance.now() / 1000;
+      const lvl = Math.min(1, levelFn() * 2.2);
+      open += ((lvl > 0.05 ? lvl : 0) - open) * 0.45;
+      if (opts.background !== false) drawBg(t);
+      if (!gl || !tex.front) {
+        // 2D fallback: photo with a gentle sway
+        if (imgs.front) { octx.save(); octx.translate(W / 2, H / 2 + Math.sin(t * 2) * 3); octx.rotate(Math.sin(t * 0.7) * 0.03); const s = H * 0.95; octx.globalAlpha = 1; octx.drawImage(open > 0.3 && imgs.open ? imgs.open : imgs.front, -s / 2, -s / 2, s, s); octx.restore(); }
+      } else {
+        // jaw: move vertices below the mouth line down as the voice gets louder
+        const P = head.m.pos, L = head.live, my = 0.2 - (mk.mouthY - mk.eyeY) / (mk.eyeDist / 0.48);
+        for (let i = 0; i < P.length; i += 3) {
+          const x = P[i], y = P[i + 1], z = P[i + 2];
+          const below = y < my ? Math.min(1, (my - y) / 0.25) : 0;
+          const front = Math.max(0, z / 0.9);
+          L[i + 1] = y - open * 0.11 * below * front * Math.exp(-((x / 0.45) ** 2));
+        }
+        gl.bindBuffer(gl.ARRAY_BUFFER, head.bPos); gl.bufferSubData(gl.ARRAY_BUFFER, 0, L);
+        gl.viewport(0, 0, W, H); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.enable(gl.DEPTH_TEST); gl.useProgram(prog);
+        const yaw = 0.16 * Math.sin(t * 0.45) + 0.05 * Math.sin(t * 1.3), pitch = 0.06 * Math.sin(t * 0.7) - open * 0.05, roll = 0.03 * Math.sin(t * 0.5);
+        const R = mat.rot(yaw, pitch, roll);
+        const MVP = mat.mul(mat.persp(0.62, W / H, 0.1, 20), mat.mul(mat.trans(0, -0.08 + 0.02 * Math.sin(t * 2), -4.1), R));
+        const rot3 = [R[0], R[1], R[2], R[4], R[5], R[6], R[8], R[9], R[10]];
+        const U = n => gl.getUniformLocation(prog, n);
+        gl.uniformMatrix4fv(U('uMVP'), false, new Float32Array(MVP)); gl.uniformMatrix3fv(U('uRot'), false, new Float32Array(rot3));
+        gl.uniform4f(U('uMark'), mk.eyeY, mk.mouthY, mk.eyeDist, mk.cx);
+        gl.uniform1f(U('uOpen'), Math.min(1, open * 1.6)); gl.uniform3f(U('uHair'), hair[0], hair[1], hair[2]);
+        ['tF', 'tL', 'tR', 'tO'].forEach((n, i) => gl.uniform1i(U(n), i));
+        const draw = (o, isBody) => {
+          gl.uniform1f(U('uBody'), isBody ? 1 : 0);
+          for (const [name, b] of [['aPos', o.bPos], ['aRest', o.bRest], ['aNrm', o.bN]]) { const a = gl.getAttribLocation(prog, name); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 3, gl.FLOAT, false, 0, 0); }
+          gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, o.bI); gl.drawElements(gl.TRIANGLES, o.n, gl.UNSIGNED_SHORT, 0);
+        };
+        draw(body, true); draw(head, false);
+        octx.drawImage(glc, 0, 0);
+      }
+      // be open about it: everyone in the meeting can see this is an AI twin
+      octx.fillStyle = 'rgba(30,27,58,.78)'; octx.beginPath(); octx.roundRect ? octx.roundRect(22, 18, 178, 30, 15) : octx.rect(22, 18, 178, 30); octx.fill();
+      octx.fillStyle = '#fff'; octx.font = '800 15px system-ui, sans-serif'; octx.textAlign = 'left'; octx.fillText('🤖 AI-tvilling · Motey', 34, 38);
+    }
+    return { canvas: out, ready, frame, setLevel(f) { levelFn = f || (() => 0); }, destroy() { destroyed = true; }, webgl: !!gl };
+  }
+
+  window.Avatar = { renderScan, createHead, hasFace, load, POSES };
+})();
+
+</script>
+<script>
+/* Motey Live AI (example 2): replace a speaker with Motey – same sentences, new style.
+ * With Gemini connected this runs on Gemini 3.8 Flash Live: the lines (played
+ * back, typed, or heard live through the microphone) stream in and Motey says
+ * them again in the chosen style, in its own voice. Metered per minute.
+ * In the demo (or without Gemini) the offline engine and the system voice do it. */
 (function () {
   'use strict';
   const $ = (s, el) => (el || document).querySelector(s);
@@ -2429,13 +3295,67 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     </svg>`;
   }
 
-  let alive = false, rec = null, timer = null;
+  let alive = false, rec = null, timer = null, sess = null;
+
+  /* One Gemini Live session plus its speaker, meter and microphone. */
+  function liveSession(opts) {
+    const s = { live: null, player: Gemini.pcmPlayer(), mic: null, out: '', inp: '', waiters: [], minute: null, talkPoll: null };
+    s.open = async () => {
+      if (!Plans.allow('live_min')) return false;
+      s.live = new Gemini.Live({
+        system: opts.system, voice: opts.voice, modality: 'AUDIO', action: 'live',
+        onText: t => { s.out += t; opts.onOut(s.out); },
+        onIn: t => { s.inp += t; opts.onIn(s.inp); },
+        onAudio: (d, m) => s.player.play(d, m),
+        onInterrupt: () => s.player.flush(),
+        onTurn: () => { opts.onTurn(s.inp, s.out); s.inp = ''; s.out = ''; s.waiters.splice(0).forEach(f => f()); },
+        onError: e => { opts.onError(e); s.close(); },
+        onClose: () => { s.waiters.splice(0).forEach(f => f()); }
+      });
+      await s.live.open();
+      Plans.charge('live_min');
+      s.minute = setInterval(() => {
+        try { Plans.check('live_min'); Plans.charge('live_min'); }
+        catch (e) { s.close(); Plans.upgradeSheet(e); opts.onError(e); }
+      }, 60000);
+      s.talkPoll = setInterval(() => opts.onTalking(s.player.speaking()), 150);
+      return true;
+    };
+    s.say = text => new Promise(res => {
+      s.waiters.push(res);
+      s.live.text(text);
+      setTimeout(res, 25000);
+    }).then(() => new Promise(res => { const t = setInterval(() => { if (!s.player.speaking()) { clearInterval(t); res(); } }, 150); }));
+    s.listen = async () => {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+      s.micStream = stream;
+      s.mic = Gemini.pcmCapture(stream, b64 => s.live && !s.live.closed && s.live.audio(b64));
+    };
+    s.unlisten = () => { if (s.mic) s.mic.stop(); if (s.micStream) s.micStream.getTracks().forEach(t => t.stop()); s.mic = null; s.micStream = null; };
+    s.close = () => {
+      clearInterval(s.minute); clearInterval(s.talkPoll); s.unlisten();
+      if (s.live) s.live.close();
+      s.player.close(); opts.onTalking(false);
+    };
+    return s;
+  }
+
+  function locked(v, ui) {
+    v.innerHTML = `<h1>🎭 Motey Live AI</h1>
+      <div class="card empty">${Mascot.svg({ size: 110, mood: 'worried' })}
+        <p><b>AI-Live finns inte i Motey Lite.</b></p>
+        <p class="muted">Med Motey Plus tar jag chefens plats i realtid och säger samma sak i en stil du gillar – med min egen röst (Gemini 3.8 Flash Live).</p>
+        <div class="row" style="justify-content:center"><button class="btn" id="up">Uppgradera till Plus – 12 kr/mån</button><a class="btn ghost" href="#/plans">Jämför planer</a></div></div>`;
+    $('#up', v).addEventListener('click', () => Plans.buy('plus'));
+  }
 
   function render(v, meeting, ui) {
+    const S = Store.settings;
+    if (!S.demo && !Plans.can('live')) return locked(v, ui);
     if (!meeting) return ui.pickMeeting(v, 'live', '🎭 Motey Live AI', 'Har du en arg och sträng chef? Välj ett möte – Motey tar chefens plats och säger samma sak, fast i en stil du gillar.');
     alive = true;
     const esc = ui.esc;
-    const S = Store.settings;
+    const useLive = !S.demo && AI.hasKey();
     const t = meeting.transcript || [];
     const counts = {};
     t.forEach(l => { counts[l.who] = (counts[l.who] || 0) + 1; });
@@ -2444,17 +3364,19 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     let target = speakers.find(p => /chef/i.test(p)) || speakers.find(p => AI.firstName(p) === AI.firstName(meeting.boss)) ||
       speakers.filter(p => AI.firstName(p).toLowerCase() !== me).sort((a, b) => counts[b] - counts[a])[0] || speakers[0];
     let style = S.liveStyle || 'snall';
-    let showOrig = false;
-    const canListen = !!Platform.recognizer();
+    const canListen = useLive ? !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) : !!Platform.recognizer();
 
     v.innerHTML = `
-      <div class="row between"><a href="#/live" class="btn sm ghost">‹ Byt möte</a><span class="badge brand">${AI.hasKey() ? 'Claude' : 'Offline-AI'}</span></div>
+      <div class="row between"><a href="#/live" class="btn sm ghost">‹ Byt möte</a><span class="badge brand">${useLive ? 'Gemini 3.8 Flash Live' : S.demo ? 'Demo · offline-AI' : 'Offline-AI'}</span></div>
       <h1 style="margin-top:12px">🎭 Live AI – ${esc(meeting.title)}</h1>
+      ${useLive ? `<div class="card" style="padding:10px 14px">${Plans.meter()}<div class="small muted" style="margin-top:4px">AI-Live tar ${String(Math.round(1000 * Plans.COST.live_min / Plans.plan().quota) / 10).replace('.', ',')} % per påbörjad minut i ${esc(Plans.plan().name)}.</div></div>` : ''}
+      ${!useLive && !S.demo ? '<div class="demo-banner">Gemini är inte kopplat – Motey kör offline med datorns röst. Koppla under Mer → AI.</div>' : ''}
       <div class="card">
         <p class="small muted" style="margin:0 0 6px">Vem ska Motey ersätta?</p>
         <div class="row" id="who">${speakers.map(p => `<span class="chip ${p === target ? 'on' : ''}" data-p="${esc(p)}">${esc(AI.firstName(p))}</span>`).join('')}</div>
         <p class="small muted" style="margin:12px 0 6px">Stil</p>
         <div class="row" id="styles">${Object.entries(AI.STYLES).map(([k, s]) => `<span class="chip ${k === style ? 'on' : ''}" data-s="${k}">${s.icon} ${s.name}</span>`).join('')}</div>
+        ${useLive ? `<p class="small muted" style="margin:12px 0 6px">Moteys röst</p><div class="row" id="voices">${Gemini.VOICES.map(([id, n]) => `<span class="chip ${id === (S.liveVoice || 'Puck') ? 'on' : ''}" data-v="${id}">${n}</span>`).join('')}</div>` : ''}
       </div>
       <div class="live-stage">
         <div class="speaker-card original dim" id="orig">
@@ -2477,45 +3399,84 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     const log = $('#log', v);
     const addLog = html => { if (log.querySelector('.muted')) log.innerHTML = ''; log.insertAdjacentHTML('afterbegin', `<div class="pair">${html}</div>`); };
     const setTalking = on => { const svg = $('#mface .motey-svg', v); if (svg) svg.classList.toggle('is-talking', on); };
+    let pendingOrig = '';
+
+    const restart = () => { if (sess) { sess.close(); sess = null; } };
+    async function session() {
+      if (sess && sess.live && !sess.live.closed) return sess;
+      sess = liveSession({
+        system: AI.liveInstruction(style, AI.firstName(target)), voice: S.liveVoice || 'Puck',
+        onOut: txt => { $('#motey-say', v).textContent = txt; },
+        onIn: txt => { $('#orig-say', v).textContent = txt; },
+        onTurn: (inp, out) => {
+          if (!out) return;
+          Store.state.stats.restyled++; Store.save();
+          addLog(`<div class="o">${esc(AI.firstName(target))}: ${esc(inp || pendingOrig)}</div><div><b>Motey:</b> ${esc(out)}</div>`);
+          pendingOrig = '';
+        },
+        onTalking: setTalking,
+        onError: e => { if (!(e instanceof Plans.QuotaError)) ui.toast('Gemini Live: ' + e.message, 5000); stopAll(); }
+      });
+      $('#motey-say', v).innerHTML = '<span class="typing">Ansluter till Gemini Live</span>';
+      try { if (!(await sess.open())) { sess = null; return null; } }
+      catch (e) { ui.toast('Kunde inte starta Gemini Live: ' + e.message, 6000); sess = null; return null; }
+      $('#motey-say', v).textContent = 'Jag lyssnar! 🎧';
+      return sess;
+    }
 
     $$('#who .chip', v).forEach(c => c.addEventListener('click', () => {
       target = c.dataset.p; $$('#who .chip', v).forEach(x => x.classList.toggle('on', x === c));
-      $('#orig-name', v).textContent = AI.firstName(target);
+      $('#orig-name', v).textContent = AI.firstName(target); restart();
     }));
     $$('#styles .chip', v).forEach(c => c.addEventListener('click', () => {
       style = c.dataset.s; S.liveStyle = style; Store.save();
       $$('#styles .chip', v).forEach(x => x.classList.toggle('on', x === c));
-      $('#mstyle', v).textContent = `${AI.STYLES[style].icon} ${AI.STYLES[style].name}`;
+      $('#mstyle', v).textContent = `${AI.STYLES[style].icon} ${AI.STYLES[style].name}`; restart();
+    }));
+    $$('#voices .chip', v).forEach(c => c.addEventListener('click', () => {
+      S.liveVoice = c.dataset.v; Store.save();
+      $$('#voices .chip', v).forEach(x => x.classList.toggle('on', x === c)); restart();
     }));
     $('#showo', v).addEventListener('change', e => {
-      showOrig = e.target.checked;
-      $('#orig', v).classList.toggle('dim', !showOrig);
-      $('#orig .small', v).textContent = showOrig ? 'Originalet' : 'Originalet – dolt';
+      $('#orig', v).classList.toggle('dim', !e.target.checked);
+      $('#orig .small', v).textContent = e.target.checked ? 'Originalet' : 'Originalet – dolt';
     });
 
     async function convert(text, who) {
       $('#orig-say', v).textContent = text;
+      if (useLive) {
+        const s = await session(); if (!s || !alive) return;
+        pendingOrig = text;
+        await s.say(text);
+        return;
+      }
       $('#motey-say', v).innerHTML = '<span class="typing"></span>';
       const r = await AI.restyle(text, style);
       if (!alive) return;
       Store.state.stats.restyled++; Store.save();
       $('#motey-say', v).textContent = r.value;
-      addLog(`<div class="o">${ui.esc(AI.firstName(who || target))}: ${ui.esc(text)}</div><div><b>Motey:</b> ${ui.esc(r.value)}</div>`);
+      addLog(`<div class="o">${esc(AI.firstName(who || target))}: ${esc(text)}</div><div><b>Motey:</b> ${esc(r.value)}</div>`);
       setTalking(true);
       await new Promise(res => Platform.speak(r.value, { onend: res, pitch: 1.25 }));
       setTalking(false);
     }
 
     let playing = false;
+    function stopAll() {
+      playing = false; Platform.stopSpeaking();
+      const b = $('#play', v); if (b) b.textContent = '▶ Spela upp mötet live';
+      if (sess) { sess.close(); sess = null; }
+      const lb = $('#listen', v); if (lb) lb.innerHTML = '🎙 Lyssna på riktigt möte';
+    }
     $('#play', v).addEventListener('click', async () => {
       const btn = $('#play', v);
-      if (playing) { playing = false; Platform.stopSpeaking(); btn.textContent = '▶ Spela upp mötet live'; return; }
+      if (playing) return stopAll();
       playing = true; btn.textContent = '⏹ Stoppa';
       for (const l of t) {
         if (!playing || !alive) break;
         if (l.who === target) await convert(l.text, l.who);
         else {
-          addLog(`<div><b>${ui.esc(AI.firstName(l.who))}:</b> ${ui.esc(l.text)}</div>`);
+          addLog(`<div><b>${esc(AI.firstName(l.who))}:</b> ${esc(l.text)}</div>`);
           await new Promise(res => { timer = setTimeout(res, 1200 + l.text.length * 25); });
         }
       }
@@ -2525,7 +3486,15 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     $('#typed', v).addEventListener('keydown', e => { if (e.key === 'Enter') $('#conv', v).click(); });
 
     const lb = $('#listen', v);
-    if (lb) lb.addEventListener('click', () => {
+    if (lb) lb.addEventListener('click', async () => {
+      if (useLive) {
+        // the real thing: the boss's voice goes straight into Gemini 3.8 Flash Live
+        if (sess && sess.mic) { stopAll(); return; }
+        const s = await session(); if (!s) return;
+        try { await s.listen(); lb.innerHTML = '<span class="rec-dot"></span> Lyssnar… (tryck för att sluta)'; }
+        catch (e) { ui.toast('Kunde inte starta mikrofonen'); }
+        return;
+      }
       if (rec) { rec.stop(); rec = null; lb.innerHTML = '🎙 Lyssna på riktigt möte'; return; }
       rec = Platform.recognizer();
       rec.onresult = e => { const r = e.results[e.results.length - 1]; if (r.isFinal) convert(r[0].transcript.trim(), target); };
@@ -2538,10 +3507,11 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
   function destroy() {
     alive = false; clearTimeout(timer);
     if (rec) { const r = rec; rec = null; try { r.stop(); } catch (e) { /* ignore */ } }
+    if (sess) { sess.close(); sess = null; }
     Platform.stopSpeaking();
   }
 
-  window.LiveMode = { render, destroy, bossFace };
+  window.LiveMode = { render, destroy, bossFace, liveSession };
 })();
 
 </script>
@@ -2794,9 +3764,11 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
 
     async function build() {
       bar(0.05); status('Skriver manus…');
-      const r = await AI.videoScript(meeting);
+      let r;
+      try { r = await AI.videoScript(meeting); }
+      catch (e) { if (e instanceof Plans.QuotaError) { status('Kvoten räcker inte för en ny video den här månaden.'); bar(0); return; } throw e; }
       if (!alive) return;
-      $('#src', v).textContent = r.source === 'claude' ? 'Manus: Claude' : 'Manus: Offline-AI';
+      $('#src', v).textContent = r.source === 'gemini' ? 'Manus: Gemini 3.8 Flash' : 'Manus: Offline-AI';
       const scenes = r.value.map(s => Object.assign({}, s, { dur: Math.max(4.2, Math.min(7.5, s.caption.split(' ').length * 0.42 + 1.6)) }));
       $('#scenes', v).innerHTML = scenes.map(s => `<li>${esc(s.emoji || '')} ${esc(s.caption)}</li>`).join('');
       status('Hämtar bilder från internet…');
@@ -2935,10 +3907,12 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     };
 
     async function build() {
-      const r = await AI.gameLevel(meeting);
+      let r;
+      try { r = await AI.gameLevel(meeting); }
+      catch (e) { if (e instanceof Plans.QuotaError) { say('Månadens kvot räcker inte för en ny bana. Uppgradera så spelar vi! 🎮'); return; } throw e; }
       if (!alive) return;
       level = r.value;
-      $('#gsrc', v).textContent = r.source === 'claude' ? 'Bana: Claude' : 'Bana: Offline-AI';
+      $('#gsrc', v).textContent = r.source === 'gemini' ? 'Bana: Gemini 3.8 Flash' : 'Bana: Offline-AI';
       walls = level.walls.map((w, i) => Object.assign({}, w, { x: 520 + i * GAP, state: 'solid', shake: 0, t: 0 }));
       worldW = 520 + walls.length * GAP + 420;
       facts = level.facts.map((f, i) => ({ text: f, x: 330 + i * (worldW - 700) / Math.max(1, level.facts.length), y: FLOOR_TOP + 40 + ((i * 97) % (FLOOR_BOT - FLOOR_TOP - 90)), got: false }));
@@ -3172,7 +4146,8 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     $('#g-ask', v).addEventListener('click', async () => {
       const q = $('#g-q', v).value.trim(); if (!q) return;
       say('Motey tänker… 🤔');
-      const r = await AI.ask(q, meeting);
+      let r;
+      try { r = await AI.ask(q, meeting); } catch (e) { if (e instanceof Plans.QuotaError) return say('Kvoten är slut för den här månaden.'); throw e; }
       if (alive) say(r.value, { voice: true });
     });
     $('#g-q', v).addEventListener('keydown', e => { if (e.key === 'Enter') $('#g-ask', v).click(); });
@@ -3208,7 +4183,7 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
   const fmtDate = d => new Date(d).getDate();
   const fmtWhen = d => new Date(d).toLocaleString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
   const fileIcon = n => ({ pdf: '📕', xlsx: '📗', xls: '📗', csv: '📗', docx: '📘', doc: '📘', pptx: '📙' }[(n.split('.').pop() || '').toLowerCase()] || '📄');
-  const aiTag = src => src === 'claude' ? '<span class="ai-tag claude">Claude</span>' : '<span class="ai-tag">Offline-AI</span>';
+  const aiTag = src => src === 'gemini' ? '<span class="ai-tag gemini">Gemini 3.8 Flash</span>' : '<span class="ai-tag">Offline-AI</span>';
 
   /* ---------- router ---------- */
   const NAV = [
@@ -3224,9 +4199,11 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     if (current && current.destroy) current.destroy();
     current = null;
     Platform.stopSpeaking();
-    const tab = { m: 'home', new: 'home', call: 'chat' }[name] || name;
+    document.querySelectorAll('.overlay').forEach(o => o.remove());
+    const tab = { m: 'home', new: 'home', call: 'chat', plans: 'settings', scan: 'settings' }[name] || name;
     $$('.tabbar button, .rail button.nav').forEach(b => b.classList.toggle('on', b.dataset.go === tab));
     updateUnread();
+    Plans.paintPill();
     const v = $('#view');
     v.innerHTML = '';
     window.scrollTo(0, 0);
@@ -3234,6 +4211,8 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     if (name === 'm' && arg) return viewMeeting(v, arg);
     if (name === 'new') return viewNew(v);
     if (name === 'settings') return viewSettings(v);
+    if (name === 'plans') return Plans.render(v);
+    if (name === 'scan') return Avatar.renderScan(v, { toast, esc });
     if (name === 'chat') { current = ChatMode; return ChatMode.render(v, arg, { toast, esc }); }
     if (name === 'call' && arg) { current = CallMode; return CallMode.render(v, arg, { toast, esc }); }
     if (modes[name]) {
@@ -3421,7 +4400,9 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
       return;
     }
     c.innerHTML = `<div class="card"><p class="muted">Motey tänker…</p></div>`;
-    const r = await AI.summarize(m);
+    let r;
+    try { r = await AI.summarize(m, { charge: true }); }
+    catch (e) { if (!(e instanceof Plans.QuotaError)) throw e; c.innerHTML = `<div class="card empty">${Mascot.svg({ size: 80, mood: 'worried' })}<p><b>Kvoten är slut för den här månaden.</b></p><a class="btn" href="#/plans">Se planer</a></div>`; return; }
     if (!document.body.contains(c)) return;
     const s = r.value;
     c.innerHTML = `
@@ -3589,9 +4570,13 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     draw();
     $('#later', sh.el).addEventListener('click', sh.close);
     $('#auto', sh.el).addEventListener('click', async () => {
-      const btn = $('#auto', sh.el); btn.disabled = true; btn.textContent = 'Fixar…';
+      const btn = $('#auto', sh.el);
+      const todo = missing.filter(x => x.status === 'missing');
+      for (let i = 0; i < todo.length; i++) if (!Plans.allow('fix')) return;
+      btn.disabled = true; btn.textContent = 'Fixar…';
       const sum = (await AI.summarize(m)).value;
-      for (const f of missing.filter(x => x.status === 'missing')) {
+      for (const f of todo) {
+        Plans.charge('fix');
         const d = Docs.draftFor(m, sum, f.name);
         f.name = d.name; f.data = await Platform.blobToB64(d.blob); f.mime = d.blob.type; f.status = 'generated'; f.size = d.blob.size;
       }
@@ -3731,12 +4716,20 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
         <label class="field"><span>Hur</span><select id="s-method"><option value="email">E-post (öppnar e-postappen)</option><option value="webhook">Webhook – helt automatiskt</option></select></label>
         <label class="field" id="s-hook-w"><span>Webhook-URL (Zapier, Make, Power Automate, n8n…)</span><input type="url" id="s-hook" value="${esc(s.webhookUrl)}" placeholder="https://hooks.zapier.com/…"></label>
         <p class="small muted">Webhooken får JSON med mottagare, ämne, text och filerna i base64.</p></div>
-      <div class="card"><h3>AI</h3>
-        <p class="small muted">Motey fungerar helt offline. Med en Claude API-nyckel blir sammanfattningar, stilbyten, videomanus och spelbanor smartare.</p>
-        <label class="field"><span>Claude API-nyckel</span><input type="password" id="s-key" value="${esc(s.apiKey)}" placeholder="sk-ant-…" autocomplete="off"></label>
-        <label class="field"><span>Modell</span><input type="text" id="s-model" value="${esc(s.model)}"></label>
-        <button class="btn sm ghost" id="s-test">Testa nyckeln</button> <span id="s-testr" class="small muted"></span>
-        <p class="small muted" style="margin-top:8px">Nyckeln sparas bara på den här enheten och skickas enbart till api.anthropic.com.</p></div>
+      <div class="card"><div class="row between"><h3 style="margin:0">Prenumeration</h3><a class="btn sm" href="#/plans">Planer</a></div>
+        <div style="margin-top:10px">${Plans.meter(true)}</div>
+        <div class="row" style="margin-top:10px"><a class="btn ghost sm" href="#/scan">🏖️ Mitt 3D-ansikte (Pro)</a></div></div>
+      <div class="card"><h3>AI – Gemini</h3>
+        <p class="small muted">Motey drivs av Gemini: <b>3.8 Flash</b> för sammanfattningar, TikTok och spel, <b>3.8 Flash Live</b> för AI-Live och Live Replace. Utan Gemini kör Motey sin inbyggda offline-AI.</p>
+        <label class="field"><span>Motey-server (rekommenderas – håller API-nyckeln och prenumerationerna)</span><input type="url" id="s-server" value="${esc(s.serverUrl)}" placeholder="https://motey.example.se"></label>
+        <details ${s.geminiKey ? 'open' : ''}><summary class="small">…eller en egen Gemini API-nyckel (för test)</summary>
+          <label class="field" style="margin-top:8px"><span>Gemini API-nyckel</span><input type="password" id="s-gkey" value="${esc(s.geminiKey)}" placeholder="Din nyckel från Google AI Studio" autocomplete="off"></label>
+          <p class="small muted">Sparas bara på den här enheten och skickas bara till Google. Lägg den aldrig i en app du delar ut – använd Motey-servern för det.</p></details>
+        <details><summary class="small">Modeller (hittas automatiskt)</summary>
+          <div class="grid two" style="margin-top:8px"><label class="field"><span>Flash</span><input type="text" id="s-mflash" value="${esc(s.modelFlash)}" placeholder="${Gemini.DEFAULTS.flash}"></label>
+          <label class="field"><span>Flash Live</span><input type="text" id="s-mlive" value="${esc(s.modelLive)}" placeholder="${Gemini.DEFAULTS.live}"></label></div></details>
+        <button class="btn sm ghost" id="s-test">Testa Gemini</button> <span id="s-testr" class="small muted"></span>
+        ${s.serverUrl ? '' : `<label class="switch small" style="margin-top:10px"><input type="checkbox" id="s-testplans" ${s.testPlans ? 'checked' : ''}> Testläge: byt plan utan att betala (bara på den här enheten)</label>`}</div>
       ${s.demo ? '' : `<div class="card"><h3>Nätverk</h3>
         <p class="small muted">Meddelanden krypteras på din enhet och lämnas i en "brevlåda" på publika Nostr-reläer. Samtal går direkt mellan enheterna.</p>
         <div id="s-net" class="small"></div>
@@ -3750,14 +4743,14 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
         <label class="field"><span>Tema</span><select id="s-theme"><option value="auto">Följ systemet</option><option value="light">Ljust</option><option value="dark">Mörkt</option></select></label>
         <div class="row"><button class="btn ghost sm" id="s-reset">Återställ demomöten</button><button class="btn ghost sm" id="s-export">Exportera data</button></div></div>
       <div class="card"><h3>Utkorg</h3>${Store.state.outbox.slice(0, 10).map(o => `<div class="small" style="padding:6px 0;border-bottom:1px dashed var(--line)">📨 ${new Date(o.at).toLocaleString('sv-SE')} → <b>${esc(o.to)}</b>: ${esc(o.files.join(', '))}</div>`).join('') || '<p class="muted small">Inget skickat ännu.</p>'}</div>
-      <p class="center small muted" style="text-align:center">${Mascot.logo({ size: 26, animate: false })}<br>Version 1.1.0 · ${Platform.kind()}</p>`;
+      <p class="center small muted" style="text-align:center">${Mascot.logo({ size: 26, animate: false })}<br>Version 1.2.0 · ${Platform.kind()}</p>`;
     $('#s-method', v).value = s.sendMethod;
     $('#s-theme', v).value = s.theme;
     const hookVis = () => $('#s-hook-w', v).classList.toggle('hidden', $('#s-method', v).value !== 'webhook');
     hookVis();
     const bind = (id, key, prop) => $(id, v).addEventListener('change', e => { s[key] = e.target[prop || 'value']; if (typeof s[key] === 'string') s[key] = s[key].trim(); Store.save(); if (key === 'theme') applyTheme(); hookVis(); });
     bind('#s-name', 'name'); bind('#s-boss', 'bossName'); bind('#s-mail', 'bossEmail'); bind('#s-auto', 'autoSend', 'checked');
-    bind('#s-method', 'sendMethod'); bind('#s-hook', 'webhookUrl'); bind('#s-key', 'apiKey'); bind('#s-model', 'model');
+    bind('#s-method', 'sendMethod'); bind('#s-hook', 'webhookUrl'); bind('#s-gkey', 'geminiKey'); bind('#s-server', 'serverUrl'); bind('#s-mflash', 'modelFlash'); bind('#s-mlive', 'modelLive');
     bind('#s-voice', 'voice', 'checked'); bind('#s-theme', 'theme');
     const sr = $('#s-real', v); if (sr) sr.addEventListener('click', goReal);
     const sd = $('#s-demo', v); if (sd) sd.addEventListener('click', goDemo);
@@ -3769,14 +4762,16 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
       const net = () => { const st = MoteyNet.status(); const el = $('#s-net', v); if (el) el.innerHTML = st.relays.map(r => `<div>${r.status === 'open' ? '🟢' : r.status === 'connecting' ? '🟡' : '🔴'} ${esc(r.url)}</div>`).join(''); };
       net(); const off = MoteyNet.on('status', net); current = { destroy: off };
     }
+    ['#s-gkey', '#s-server', '#s-mflash', '#s-mlive'].forEach(id => $(id, v).addEventListener('change', () => { Gemini.reset(); Plans.refresh(); }));
+    const tp = $('#s-testplans', v); if (tp) tp.addEventListener('change', () => { s.testPlans = tp.checked; Store.save(); });
     $('#s-test', v).addEventListener('click', async () => {
-      s.apiKey = $('#s-key', v).value.trim(); Store.save();
+      s.geminiKey = $('#s-gkey', v).value.trim(); s.serverUrl = $('#s-server', v).value.trim(); Store.save(); Gemini.reset();
       const r = $('#s-testr', v); r.textContent = 'Testar…';
       try { r.textContent = '✅ ' + await AI.testKey(); } catch (e) { r.textContent = '❌ ' + e.message; }
     });
     $('#s-reset', v).addEventListener('click', () => { if (confirm('Återställ demomötena? Dina riktiga möten och chattar påverkas inte.')) { Store.reset(); toast('Demomöten återställda'); go('#/home'); } });
     $('#s-export', v).addEventListener('click', async () => {
-      const data = JSON.parse(JSON.stringify(Store.state)); data.settings.apiKey = '';
+      const data = JSON.parse(JSON.stringify(Store.state)); data.settings.geminiKey = '';
       toast(await Platform.saveFile('motey-data.json', new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })));
     });
   }
@@ -3822,6 +4817,10 @@ Gunnar (chef): Skärpning nu. Mötet är slut.`),
     applyTheme();
     $('#rail-logo').innerHTML = Mascot.logo({ size: 40 });
     $('#top-logo').innerHTML = Mascot.logo({ size: 30 });
+    $('.topbar .spacer').insertAdjacentHTML('afterend', '<a href="#/plans" id="planpill" class="planpill"></a>');
+    Plans.paintPill(); Plans.refresh();
+    // a blocked AI call has already shown the upgrade sheet
+    window.addEventListener('unhandledrejection', e => { if (e.reason instanceof Plans.QuotaError) e.preventDefault(); });
     const navHtml = cls => NAV.map(([k, ico, label]) => `<button class="${cls}" data-go="${k}"><span class="ico">${ico}</span><span>${label}</span></button>`).join('');
     $('#rail-nav').innerHTML = navHtml('nav');
     $('#tabbar').innerHTML = navHtml('');

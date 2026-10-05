@@ -2,7 +2,7 @@
 
 # Motey – AI-mötesappen
 
-Motey är en riktig mötesapp med en liten pratbubbla med två stora ögon som
+Motey är en riktig mötesapp, driven av Gemini, med en liten pratbubbla med två stora ögon som
 håller koll på allt. Ni har möten med video och ljud och skriver meddelanden
 direkt i Motey – ingen Teams, Zoom eller annan app behövs. Samma app finns för
 Android, Windows, macOS och webbläsaren.
@@ -92,13 +92,87 @@ förklarar Motey vad den betyder och hur man "förstör" den i verkligheten.
 Svara rätt på frågan och väggen rasar. Du kan också fråga Motey vad som helst
 under spelets gång.
 
-## AI
+## AI – Gemini
 
-Motey fungerar helt offline med en inbyggd svensk AI-motor (sammanfattning,
-beslut, att göra-listor, stilbyten, videomanus och spelbanor). Lägg in en
-**Claude API-nyckel** under *Mer → AI* så används Claude (`claude-opus-5-5`)
-i stället, med automatisk återgång till offline-motorn om något går fel.
-Nyckeln sparas bara på enheten och skickas bara till `api.anthropic.com`.
+Motey drivs av Googles Gemini API:
+
+| Vad | Modell |
+|---|---|
+| AI-Live (stilbytet – chefen blir snäll, pirat, sportkommentator …, med Moteys egen röst) | **Gemini 3.8 Flash Live** |
+| Live Replace (3D-du pratar i mötet) | **Gemini 3.8 Flash Live** |
+| TikTok-manus och spelbanor | **Gemini 3.8 Flash** |
+| Sammanfattningar, "vad hände förra gången", frågor, var ögon och mun sitter vid 3D-skanningen | **Gemini 3.8 Flash** |
+
+Motey slår upp de exakta modell-ID:na i Googles modellista första gången (de
+kan också skrivas in under *Mer → AI → Modeller*). AI-Live strömmar ljud åt
+båda hållen över Live-API:ts WebSocket: chefens röst går in, Moteys röst
+kommer ut. Utan Gemini kör Motey sin inbyggda offline-motor.
+
+### API-nyckeln
+
+Nyckeln ska **inte** byggas in i appen eller ligga i repot: allt som finns i en
+APK/EXE/DMG eller på GitHub kan plockas ut, och då betalar du för andras
+användning. Därför finns två sätt:
+
+1. **Motey-servern** (det riktiga sättet – se nedan) håller nyckeln och räknar
+   användningen per prenumeration. Appen får bara serverns adress.
+2. **Egen nyckel för test:** *Mer → AI → egen Gemini API-nyckel*. Den sparas
+   bara på enheten och skickas bara till Google.
+
+## Prenumerationer
+
+| | Pris | Användning | AI-Live | Live Replace |
+|---|---|---|---|---|
+| **Motey Lite** | gratis | 25 % av Plus – gräns på allting, även spel och TikTok | – | – |
+| **Motey Plus** | 12 kr/mån | 100 % (AI-Live tar 5 % per minut – passar för ca 4 online-möten i månaden) | ✓ | – |
+| **Motey Pro** | 310 kr/mån | 20 × Plus | ✓ | ✓ 3D-du |
+
+Allt räknas i procent av månadens kvot och nollställs den 1:a. Det här
+kostar saker (i procent av Plus): sammanfattning 1, "vad hände" 1, fråga 0,5,
+Motey fixar en fil 1, TikTok-video 4, spelbana 3, 3D-skanning 2, AI-Live 5
+per minut, Live Replace 5 per minut. Siffrorna finns i `app/js/plans.js` och
+`server/motey_server.py`. I demon räknas ingenting.
+
+### Live Replace (Pro)
+
+1. *Mer → Mitt 3D-ansikte*: kameran tar 8 bilder **automatiskt** (rakt fram,
+   vänster, höger, upp, ned, le, öppen mun, rakt fram) – den väntar tills du
+   håller still i varje läge. Gemini 3.8 Flash hittar ögon och mun i bilden.
+2. Motey bygger ett 3D-huvud (WebGL): bilderna projiceras på ett 3D-huvud från
+   vinkeln de togs i och blandas efter hur huvudet vrids. Käken och den
+   öppna munnen följer rösten.
+3. I ett samtal trycker du 🏖️. Gemini 3.8 Flash Live lyssnar på mötet och
+   pratar som du (med det du skrivit under "Det här ska 3D-du veta"). De andra
+   ser 3D-huvudet och hör rösten; du kan skriva till 3D-du vad den ska säga och
+   ta över när du vill. Allt den hör och säger hamnar i mötesprotokollet.
+
+3D-huvudet visar alltid märket **"🤖 AI-tvilling · Motey"**, Motey skriver i
+chatten när tvillingen tar över, och frågar någon om det är en AI svarar den
+ärligt. De andra i mötet ska veta vem de pratar med.
+
+### Motey-servern
+
+```sh
+GEMINI_API_KEY=… PUBLIC_URL=https://motey.example.se \
+STRIPE_SECRET_KEY=sk_live_… STRIPE_WEBHOOK_SECRET=whsec_… \
+STRIPE_PRICE_PLUS=price_… STRIPE_PRICE_PRO=price_… \
+python3 motey/server/motey_server.py --port 8787 --data motey-data
+```
+
+* Bara Pythons standardbibliotek. Kör den bakom HTTPS (Caddy, nginx eller en
+  molntjänst) och skriv in adressen i Motey under *Mer → AI → Motey-server*.
+* Den skickar vidare vanliga Gemini-anrop och Live-WebSocketen, kontrollerar
+  plan och kvot före varje anrop och räknar varje minut av Live.
+* Betalning: skapa två återkommande priser i Stripe (12 kr och 310 kr per
+  månad) och en webhook till `https://din-server/v1/stripe/webhook` för
+  `checkout.session.completed`, `customer.subscription.updated` och
+  `customer.subscription.deleted`. *Uppgradera* i appen öppnar Stripe
+  Checkout; webhooken (signaturen kontrolleras) byter plan. *Hantera
+  prenumeration* öppnar Stripes kundportal.
+* Utan Stripe kan planerna provas i appen i testläge (*Mer → AI*).
+* Ska appen ut på Google Play eller App Store gäller deras egna regler för
+  digitala prenumerationer (Play Billing / App Store-köp) i stället för Stripe
+  i appen.
 
 Transkript kan klistras in (`Namn: text` per rad) eller importeras som
 `.vtt`/`.srt`/`.txt` från Teams, Zoom eller Google Meet.
@@ -178,7 +252,17 @@ Hur det hänger ihop:
   fil via det inbyggda API:t. APK:n kontrollerades med aapt2/apktool och
   signaturen (v2/v3) verifierades.
 
+* **Gemini och prenumerationer** (mot en lokal Gemini-attrapp som talar samma
+  REST- och Live-protokoll, eftersom Google inte går att nå från byggmiljön):
+  modell-ID:n hittas i modellistan; sammanfattning, spelbana och TikTok-manus
+  går via Gemini 3.8 Flash och räknas (Lite 4 → 16 → 32 %); Lite får ingen
+  AI-Live och en spärr när kvoten tar slut; via Motey-servern nekas en
+  förfalskad Stripe-webhook och en korrekt ger Pro; AI-Live via servern
+  skriver om chefen och räknas per minut; 3D-skanningen tar 8 bilder av sig
+  själv och WebGL-huvudet byggs; i ett riktigt samtal hör 3D-tvillingen mötet,
+  svarar, syns hos den andra och hamnar i protokollet.
+
 Inte testat här: APK:n på en riktig telefon/emulator och EXE/DMG på riktiga
 Windows- och Mac-datorer (byggmiljön saknade dem), samt de publika reläerna
-och Wikipedia/Claude, som byggmiljön inte når. Nätverkstesterna kördes mot
+och Wikipedia/Gemini, som byggmiljön inte når. Nätverkstesterna kördes mot
 Moteys eget relä (`server/relay.py`), som talar samma protokoll.

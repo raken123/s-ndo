@@ -37,12 +37,18 @@
         <button class="cbtn" id="cam" title="Kamera">📷</button>
         <button class="cbtn" id="scr" title="Dela skärm">🖥️</button>
         <button class="cbtn" id="notes" title="Motey antecknar">📝</button>
+        <button class="cbtn" id="restyle" title="AI-Live: byt stil på någon">🎭</button>
+        <button class="cbtn" id="replace" title="Live Replace (Pro)">🏖️</button>
         <button class="cbtn" id="chat" title="Chatt">💬</button>
         <button class="cbtn end" id="end" title="Lämna">✆</button>
       </div>
       <div class="call-chat hidden" id="cchat"></div>
+      <div class="replace-panel hidden" id="rpanel"></div>
     </div>`;
-    const s = session = { r, pk: (await MoteyNet.roomSigner(r)).pk, peers: new Map(), local: null, alive: true, rec: null, offs: [] };
+    const s = session = { r, pk: (await MoteyNet.roomSigner(r)).pk, peers: new Map(), local: null, alive: true, rec: null, offs: [], out: {} };
+    // what we send: normally camera + microphone; Live Replace swaps in the 3D head and Gemini's voice
+    const outgoing = () => new MediaStream([s.out.audio || s.local.getAudioTracks()[0], s.out.video || (s.screen && s.screen.getVideoTracks()[0]) || s.local.getVideoTracks()[0]].filter(Boolean));
+    s.outgoing = outgoing;
     const status = t => { const e = $('#cstat', v); if (e) e.textContent = t; };
     const count = () => { const e = $('#ccount', v); if (e) e.textContent = (1 + [...s.peers.values()].filter(p => p.connected).length) + ' i samtalet'; };
 
@@ -84,12 +90,13 @@
       if (p.pc) try { p.pc.close(); } catch (e) { /* closed */ }
       const pc = new RTCPeerConnection({ iceServers: iceServers() });
       p.pc = pc; p.connected = false; p.started = Date.now();
-      s.local.getTracks().forEach(t => pc.addTrack(t, s.local));
+      const outS = outgoing(); outS.getTracks().forEach(t => pc.addTrack(t, outS));
       // make sure we can receive even if we send nothing
       if (!s.local.getAudioTracks().length) pc.addTransceiver('audio', { direction: 'recvonly' });
       if (!s.local.getVideoTracks().length) pc.addTransceiver('video', { direction: 'recvonly' });
       const remote = new MediaStream();
-      pc.ontrack = e => { remote.addTrack(e.track); e.track.onunmute = () => tile(p.pk, p.name, remote); tile(p.pk, p.name, remote); };
+      p.remote = remote;
+      pc.ontrack = e => { remote.addTrack(e.track); e.track.onunmute = () => tile(p.pk, p.name, remote); tile(p.pk, p.name, remote); if (e.track.kind === 'audio' && s.onRemoteAudio) s.onRemoteAudio(p, remote); };
       pc.onconnectionstatechange = () => {
         if (pc !== p.pc) return;
         p.connected = pc.connectionState === 'connected';
@@ -166,6 +173,7 @@
       try {
         s.screen = await navigator.mediaDevices.getDisplayMedia({ video: true });
         const track = s.screen.getVideoTracks()[0];
+        if (s.replace) { s.screen.getTracks().forEach(t => t.stop()); s.screen = null; return ui.toast('Stäng av Live Replace först'); }
         swapVideo(track); scr.classList.add('on');
         track.onended = stopScreen;
       } catch (e) { s.screen = null; }
@@ -198,6 +206,121 @@
       try { rec.start(); s.rec = rec; notes.classList.add('on'); $('#caps', v).classList.remove('hidden'); ui.toast('📝 Motey antecknar – allt sagt hamnar i mötesprotokollet'); }
       catch (e) { ui.toast('Kunde inte starta tal till text'); }
     });
+    /* ---------- AI-Live in the call: hear someone in another style ---------- */
+    $('#restyle', v).addEventListener('click', () => {
+      if (s.styler) return stopStyler();
+      if (!Plans.allow('live_min')) return;
+      if (!AI.hasKey()) return ui.toast('AI-Live behöver Gemini – koppla under Mer → AI', 5000);
+      const people = [...s.peers.values()].filter(p => p.remote);
+      if (!people.length) return ui.toast('Ingen annan är med i samtalet än');
+      const sh = App.sheet(`<h2>🎭 Byt stil på någon</h2><p class="muted small">Du hör Motey säga samma sak i stället för personen – bara du, de andra märker inget. Gemini 3.8 Flash Live.</p>
+        <p class="small muted">Vem?</p><div class="row" id="rp">${people.map((p, i) => `<span class="chip ${i ? '' : 'on'}" data-pk="${p.pk}">${esc(p.name)}</span>`).join('')}</div>
+        <p class="small muted" style="margin-top:12px">Stil</p><div class="row" id="rs">${Object.entries(AI.STYLES).map(([k, x]) => `<span class="chip ${k === (Store.settings.liveStyle || 'snall') ? 'on' : ''}" data-s="${k}">${x.icon} ${x.name}</span>`).join('')}</div>
+        <button class="btn block" id="rgo" style="margin-top:14px">Starta</button>`);
+      const pickOne = sel => sh.el.querySelectorAll(sel + ' .chip').forEach(c => c.addEventListener('click', () => sh.el.querySelectorAll(sel + ' .chip').forEach(x => x.classList.toggle('on', x === c))));
+      pickOne('#rp'); pickOne('#rs');
+      $('#rgo', sh.el).addEventListener('click', async () => {
+        const p = s.peers.get($('#rp .chip.on', sh.el).dataset.pk), style = $('#rs .chip.on', sh.el).dataset.s;
+        Store.settings.liveStyle = style; Store.save(); sh.close();
+        const vid = $('#t-' + p.pk + ' video', v); if (vid) vid.muted = true;
+        const caps = $('#caps', v); caps.classList.remove('hidden'); caps.textContent = `🎭 ${p.name} i stilen ${AI.STYLES[style].name}…`;
+        let out = '';
+        const sess = LiveMode.liveSession({
+          system: AI.liveInstruction(style, p.name), voice: Store.settings.liveVoice || 'Puck',
+          onOut: t => { caps.textContent = '🎭 ' + t; }, onIn: () => {}, onTurn: (i, o) => { out = o; },
+          onTalking: () => {}, onError: e => { if (!(e instanceof Plans.QuotaError)) ui.toast('AI-Live: ' + e.message); stopStyler(); }
+        });
+        try { if (!(await sess.open())) return; } catch (e) { ui.toast('Kunde inte starta AI-Live: ' + e.message); if (vid) vid.muted = false; return; }
+        const cap = Gemini.pcmCapture([p.remote], b64 => sess.live && !sess.live.closed && sess.live.audio(b64));
+        s.styler = { sess, cap, vid, pk: p.pk };
+        $('#restyle', v).classList.add('on');
+      });
+    });
+    function stopStyler() {
+      const x = s.styler; s.styler = null; if (!x) return;
+      x.cap.stop(); x.sess.close(); if (x.vid) x.vid.muted = false;
+      $('#restyle', v).classList.remove('on'); if (!s.rec) $('#caps', v).classList.add('hidden');
+    }
+    s.stopStyler = stopStyler;
+
+    /* ---------- Live Replace (Pro): a 3D you talks in the meeting ---------- */
+    $('#replace', v).addEventListener('click', () => s.replace ? stopReplace() : startReplace());
+    async function startReplace() {
+      if (!Plans.allow('replace_min')) return;
+      if (!Avatar.hasFace()) { ui.toast('Skanna ditt 3D-ansikte först (tar en halv minut)', 5000); return App.go('#/scan'); }
+      if (!AI.hasKey()) return ui.toast('Live Replace behöver Gemini – koppla under Mer → AI', 5000);
+      const me = MoteyNet.me().name, St = Store.settings;
+      const sofar = MoteyNet.messages(r.id).filter(m => (m.t === 'msg' || m.t === 'tr') && m.text).slice(-40).map(m => `${m.name}: ${m.text}`).join('\n');
+      const head = Avatar.createHead(Avatar.load(), { width: 640, height: 360 });
+      await head.ready;
+      const player = Gemini.pcmPlayer({ speakers: !!St.replaceHear });
+      head.setLevel(() => player.level());
+      let inp = '', out = '';
+      const panel = $('#rpanel', v);
+      const live = new Gemini.Live({
+        action: 'replace', modality: 'AUDIO', voice: St.replaceVoice || 'Charon',
+        system: `Du är ${me}s digitala 3D-tvilling i videomötet "${r.name}". ${me} är inte vid datorn just nu, så du pratar som ${me} – i första person, på svenska, kort och naturligt (en eller två meningar). ` +
+          `Det du hör är de andra i mötet. Svara bara när någon pratar till ${me} eller frågar alla; annars är du tyst. Lova inget och hitta inte på siffror – säg att du återkommer om du inte vet. ` +
+          `Om någon frågar om du är en AI svarar du ärligt att du är ${me}s AI-tvilling i Motey. Meddelanden som börjar med [Från ${me}] är instruktioner från riktiga ${me} – följ dem.\n\n` +
+          `Det här vet du: ${St.replaceNotes || '(inget särskilt)'}\n\nMötet hittills:\n${sofar || '(inget än)'}`,
+        onAudio: (d, m) => player.play(d, m),
+        onInterrupt: () => player.flush(),
+        onIn: t => { inp += t; },
+        onText: t => { out += t; const e = $('#r-said', v); if (e) e.textContent = out; },
+        onTurn: () => {
+          if (inp.trim()) MoteyNet.sendTranscript(r.id, 'Mötet: ' + inp.trim());
+          if (out.trim()) MoteyNet.sendTranscript(r.id, out.trim() + ' (3D-tvilling)');
+          inp = ''; out = '';
+        },
+        onError: e => { ui.toast('Live Replace: ' + e.message, 5000); stopReplace(); }
+      });
+      try { await live.open(); } catch (e) { head.destroy(); player.close(); return ui.toast('Kunde inte starta Gemini Live: ' + e.message, 6000); }
+      Plans.charge('replace_min');
+      const minute = setInterval(() => { try { Plans.check('replace_min'); Plans.charge('replace_min'); } catch (e) { stopReplace(); Plans.upgradeSheet(e); } }, 60000);
+      const cap = Gemini.pcmCapture([...s.peers.values()].map(p => p.remote).filter(Boolean), b64 => !live.closed && live.audio(b64));
+      s.onRemoteAudio = (p, st) => cap.add(st);
+      let raf = 0; const loop = () => { head.frame(); raf = requestAnimationFrame(loop); }; loop();
+      const vt = head.canvas.captureStream(25).getVideoTracks()[0];
+      const at = player.stream && player.stream.getAudioTracks()[0];
+      s.out = { audio: at, video: vt };
+      swapTracks();
+      tile('me', me + ' (3D-tvilling)', new MediaStream([vt]), false);
+      $('#t-me', v).classList.remove('self');
+      s.replace = { live, player, cap, head, minute, stop() { cancelAnimationFrame(raf); } };
+      $('#replace', v).classList.add('on');
+      panel.innerHTML = `<div class="row between"><b>🏖️ Live Replace är på</b><button class="btn sm" id="r-stop">Ta över själv</button></div>
+        <div class="small muted">3D-du pratar i mötet med Gemini 3.8 Flash Live. Ingen kan höra dig nu.</div>
+        <div class="r-said" id="r-said">…</div>
+        <div class="row"><input type="text" id="r-say" placeholder="Säg åt 3D-du, t.ex. ”säg att jag skickar rapporten i morgon”" style="flex:1"><button class="btn sm" id="r-send">Skicka</button></div>
+        <label class="switch small" style="margin:8px 0 0"><input type="checkbox" id="r-hear" ${St.replaceHear ? 'checked' : ''}> Hör vad 3D-du säger</label>`;
+      panel.classList.remove('hidden');
+      $('#r-stop', panel).addEventListener('click', stopReplace);
+      const send = () => { const t = $('#r-say', panel).value.trim(); if (!t) return; $('#r-say', panel).value = ''; live.text(`[Från ${me}] ${t}`); };
+      $('#r-send', panel).addEventListener('click', send);
+      $('#r-say', panel).addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+      $('#r-hear', panel).addEventListener('change', e => { St.replaceHear = e.target.checked; Store.save(); ui.toast('Gäller nästa gång du startar Live Replace'); });
+      MoteyNet.sendText(r.id, `🤖 ${me}s AI-tvilling tar mötet en stund (Motey Live Replace).`);
+    }
+    function stopReplace() {
+      const x = s.replace; s.replace = null; if (!x) return;
+      clearInterval(x.minute); x.stop(); x.cap.stop(); x.live.close(); x.player.close(); x.head.destroy();
+      s.onRemoteAudio = null; s.out = {};
+      swapTracks();
+      $('#t-me', v).classList.add('self');
+      tile('me', MoteyNet.me().name + ' (du)', s.local, true);
+      $('#replace', v).classList.remove('on'); $('#rpanel', v).classList.add('hidden');
+      MoteyNet.sendText(r.id, `🙋 ${MoteyNet.me().name} är tillbaka själv.`);
+    }
+    s.stopReplace = stopReplace;
+    function swapTracks() {
+      const o = outgoing();
+      const a = o.getAudioTracks()[0] || null, vtr = o.getVideoTracks()[0] || null;
+      for (const p of s.peers.values()) if (p.pc) p.pc.getTransceivers().forEach(x => {
+        const k = x.receiver.track.kind;
+        x.sender.replaceTrack(k === 'audio' ? a : vtr).catch(() => {});
+      });
+    }
+
     $('#chat', v).addEventListener('click', e => {
       const c = $('#cchat', v);
       const show = c.classList.toggle('hidden') === false;
@@ -214,6 +337,7 @@
     if (!s) return;
     s.alive = false;
     clearInterval(s.beat);
+    try { s.stopReplace && s.stopReplace(); s.stopStyler && s.stopStyler(); } catch (e) { /* closing anyway */ }
     if (s.rec) { const r = s.rec; s.rec = null; try { r.stop(); } catch (e) { /* stopped */ } }
     try { MoteyNet.signal(s.r.id, { t: 'rtc', type: 'bye' }); } catch (e) { /* offline */ }
     for (const p of s.peers.values()) try { p.pc && p.pc.close(); } catch (e) { /* closed */ }
