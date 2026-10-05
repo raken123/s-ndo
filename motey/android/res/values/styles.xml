@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="MoteyTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#ff6c4cf5</item>
+        <item name="android:navigationBarColor">#ffffffff</item>
+        <item name="android:windowBackground">#fff6f4ff</item>
+        <item name="android:colorAccent">#ff6c4cf5</item>
+    </style>
+</resources>

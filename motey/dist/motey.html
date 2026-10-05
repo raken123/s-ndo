@@ -1,0 +1,2571 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#6C4CF5">
+<title>Motey</title>
+<link rel="icon" href="data:image/png;base64,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">
+<style>
+/* Motey – stilmall */
+:root {
+  --bg: #F6F4FF;
+  --surface: #FFFFFF;
+  --surface-2: #EFEBFF;
+  --ink: #1E1B3A;
+  --ink-2: #5B5878;
+  --line: #E1DCF5;
+  --brand: #6C4CF5;
+  --brand-2: #8F75FF;
+  --brand-ink: #FFFFFF;
+  --coral: #FF7A59;
+  --mint: #19C79A;
+  --sun: #FFC93C;
+  --rose: #FF5C8A;
+  --danger: #E5484D;
+  --radius: 18px;
+  --shadow: 0 6px 24px rgba(40, 24, 120, .10);
+  --font: "Nunito", "Segoe UI", "SF Pro Rounded", system-ui, -apple-system, Roboto, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12101F; --surface: #1C1930; --surface-2: #252142; --ink: #F3F1FF; --ink-2: #ABA6CC;
+    --line: #322D55; --shadow: 0 6px 24px rgba(0, 0, 0, .35); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12101F; --surface: #1C1930; --surface-2: #252142; --ink: #F3F1FF; --ink-2: #ABA6CC;
+  --line: #322D55; --shadow: 0 6px 24px rgba(0, 0, 0, .35); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font);
+  font-size: 16px; line-height: 1.45; -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--brand); }
+h1, h2, h3 { line-height: 1.2; margin: 0 0 .4em; }
+h1 { font-size: 1.6rem; font-weight: 900; }
+h2 { font-size: 1.25rem; font-weight: 850; }
+h3 { font-size: 1.05rem; font-weight: 800; }
+p { margin: 0 0 .7em; }
+.muted { color: var(--ink-2); }
+.small { font-size: .86rem; }
+.hidden { display: none !important; }
+
+/* ---------- layout ---------- */
+.app { min-height: 100%; display: flex; }
+.rail {
+  display: none; flex-direction: column; gap: 6px; width: 230px; padding: 18px 14px;
+  background: var(--surface); border-right: 1px solid var(--line); position: sticky; top: 0; height: 100vh;
+}
+.rail .motey-logo { margin: 0 6px 18px; }
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.topbar {
+  position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px); border-bottom: 1px solid var(--line);
+}
+.topbar .spacer { flex: 1; }
+.view { padding: 16px 16px 96px; max-width: 980px; width: 100%; margin: 0 auto; }
+.tabbar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; display: flex;
+  background: var(--surface); border-top: 1px solid var(--line);
+  padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+}
+.tabbar button, .rail button.nav {
+  flex: 1; border: 0; background: none; border-radius: 12px; padding: 6px 4px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .72rem; font-weight: 700; color: var(--ink-2);
+}
+.tabbar button .ico, .rail button.nav .ico { font-size: 1.3rem; line-height: 1; }
+.tabbar button.on, .rail button.nav.on { color: var(--brand); background: var(--surface-2); }
+.rail button.nav { flex: none; flex-direction: row; gap: 12px; font-size: .98rem; padding: 10px 12px; justify-content: flex-start; }
+@media (min-width: 900px) {
+  .rail { display: flex; }
+  .tabbar { display: none; }
+  .topbar .motey-logo { display: none; }
+  .view { padding: 24px 28px 48px; }
+}
+
+/* ---------- logo ---------- */
+.motey-logo { display: inline-flex; align-items: center; gap: 8px; }
+.motey-word {
+  font-weight: 900; font-size: 1.45rem; letter-spacing: -.02em;
+  background: linear-gradient(90deg, var(--brand), var(--rose)); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+/* ---------- mascot animation ---------- */
+.motey-svg { overflow: visible; display: block; }
+.motey-svg.is-alive .mt-body { animation: mt-float 3.2s ease-in-out infinite; transform-origin: 100px 160px; }
+.motey-svg.is-alive .mt-shadow { animation: mt-shadow 3.2s ease-in-out infinite; transform-origin: 104px 190px; }
+.motey-svg.is-alive .mt-eye { animation: mt-blink 4.6s infinite; transform-origin: 100px 82px; }
+.motey-svg.is-talking .mt-smile { opacity: 0; }
+.motey-svg.is-talking .mt-talk { animation: mt-talk .28s ease-in-out infinite alternate; transform-origin: 100px 122px; }
+.motey-svg.is-talking .mt-body { animation: mt-bob .5s ease-in-out infinite alternate; }
+@keyframes mt-float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-7px) } }
+@keyframes mt-shadow { 0%,100% { transform: scaleX(1); opacity: 1 } 50% { transform: scaleX(.85); opacity: .7 } }
+@keyframes mt-blink { 0%,92%,100% { transform: scaleY(1) } 95% { transform: scaleY(.1) } }
+@keyframes mt-talk { from { opacity: 1; transform: scaleY(.25) } to { opacity: 1; transform: scaleY(1) } }
+@keyframes mt-bob { from { transform: translateY(0) rotate(-1.5deg) } to { transform: translateY(-4px) rotate(1.5deg) } }
+
+/* ---------- components ---------- */
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 16px; margin-bottom: 14px;
+}
+.card.hero {
+  display: flex; gap: 16px; align-items: center;
+  background: linear-gradient(135deg, var(--brand) 0%, #9B6BFF 55%, var(--rose) 130%);
+  color: #fff; border: 0;
+}
+.card.hero .muted { color: rgba(255,255,255,.85); }
+.card.hero .btn.ghost { color: #fff; border-color: rgba(255,255,255,.55); }
+.grid { display: grid; gap: 14px; }
+@media (min-width: 640px) { .grid.two { grid-template-columns: 1fr 1fr; } .grid.three { grid-template-columns: repeat(3, 1fr); } }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.row.between { justify-content: space-between; }
+.stack > * + * { margin-top: 10px; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 999px;
+  border: 2px solid transparent; padding: 10px 18px; font-weight: 800; cursor: pointer;
+  background: var(--brand); color: var(--brand-ink); transition: transform .08s, filter .15s; text-decoration: none;
+  min-height: 44px;
+}
+.btn:hover { filter: brightness(1.07); }
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.ghost { background: transparent; color: var(--brand); border-color: var(--line); }
+.btn.coral { background: var(--coral); }
+.btn.mint { background: var(--mint); }
+.btn.dark { background: var(--ink); color: var(--bg); }
+.btn.sm { padding: 6px 12px; min-height: 34px; font-size: .88rem; }
+.btn.block { width: 100%; }
+.icon-btn { border: 0; background: var(--surface-2); border-radius: 12px; width: 40px; height: 40px; cursor: pointer; font-size: 1.15rem; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  background: var(--surface-2); border: 2px solid transparent; font-weight: 700; font-size: .9rem; user-select: none;
+}
+.chip.on { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 14%, var(--surface)); color: var(--brand); }
+.badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .75rem; font-weight: 800; background: var(--surface-2); color: var(--ink-2); }
+.badge.warn { background: #FFE9E0; color: #C2410C; }
+.badge.ok { background: #DDFBEF; color: #047857; }
+.badge.brand { background: color-mix(in srgb, var(--brand) 16%, var(--surface)); color: var(--brand); }
+
+label.field { display: block; font-weight: 700; font-size: .9rem; margin-bottom: 10px; }
+label.field > span { display: block; margin-bottom: 4px; }
+input[type=text], input[type=email], input[type=password], input[type=url], input[type=datetime-local], select, textarea {
+  width: 100%; padding: 11px 13px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); outline: none;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--brand); }
+textarea { min-height: 120px; resize: vertical; }
+.switch { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 700; margin-bottom: 10px; }
+.switch input { width: 20px; height: 20px; accent-color: var(--brand); }
+
+/* meeting list */
+.meeting {
+  display: flex; gap: 14px; align-items: center; padding: 14px; border-radius: 16px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line); margin-bottom: 10px; transition: transform .1s;
+}
+.meeting:hover { transform: translateY(-1px); }
+.meeting .date {
+  width: 54px; flex: none; text-align: center; border-radius: 12px; padding: 6px 0; background: var(--surface-2); font-weight: 900; line-height: 1.1;
+}
+.meeting .date small { display: block; font-size: .7rem; color: var(--ink-2); font-weight: 800; text-transform: uppercase; }
+.meeting .info { flex: 1; min-width: 0; }
+.meeting .info .t { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* tabs inside a view */
+.tabs { display: flex; gap: 6px; overflow-x: auto; margin: 6px 0 14px; padding-bottom: 2px; }
+.tabs button { border: 0; background: var(--surface-2); padding: 8px 14px; border-radius: 999px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.tabs button.on { background: var(--ink); color: var(--bg); }
+
+.transcript .line { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+.transcript .who { font-weight: 800; min-width: 84px; color: var(--brand); }
+ul.clean { list-style: none; margin: 0; padding: 0; }
+ul.clean li { padding: 8px 0 8px 28px; position: relative; }
+ul.clean li::before { content: attr(data-ico); position: absolute; left: 0; top: 7px; }
+
+.file {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; background: var(--surface-2); margin-bottom: 8px;
+}
+.file .fi { font-size: 1.5rem; }
+.file .fn { flex: 1; min-width: 0; font-weight: 700; overflow-wrap: anywhere; }
+
+/* ---------- Motey pop-up (catch-up) ---------- */
+.overlay {
+  position: fixed; inset: 0; z-index: 100; display: flex; align-items: flex-end; justify-content: center;
+  background: rgba(18, 12, 48, .45); backdrop-filter: blur(3px); animation: fade .2s;
+}
+@media (min-width: 700px) { .overlay { align-items: center; } }
+.sheet {
+  width: 100%; max-width: 620px; max-height: 92vh; overflow: auto; background: var(--surface);
+  border-radius: 26px 26px 0 0; padding: 58px 18px calc(20px + env(safe-area-inset-bottom)); position: relative;
+  animation: rise .35s cubic-bezier(.2, 1.3, .4, 1);
+}
+@media (min-width: 700px) { .sheet { border-radius: 26px; } }
+.sheet .close { position: absolute; top: 12px; right: 12px; }
+.motey-stage { display: flex; gap: 14px; align-items: flex-start; }
+.motey-stage .motey-svg { flex: none; animation: pop .5s cubic-bezier(.2, 1.6, .4, 1); }
+.speech {
+  position: relative; background: var(--surface-2); border-radius: 20px; padding: 14px 16px; flex: 1; font-weight: 600;
+}
+.speech::before {
+  content: ""; position: absolute; left: -9px; top: 22px; border: 10px solid transparent; border-right-color: var(--surface-2); border-left: 0;
+}
+.typing::after { content: "▍"; animation: blinkc 1s steps(1) infinite; color: var(--brand); }
+@keyframes blinkc { 50% { opacity: 0 } }
+@keyframes fade { from { opacity: 0 } }
+@keyframes rise { from { transform: translateY(60px); opacity: 0 } }
+@keyframes pop { 0% { transform: scale(.2) rotate(-20deg); opacity: 0 } 100% { transform: none; opacity: 1 } }
+.steps { display: flex; gap: 6px; margin: 14px 0; }
+.steps i { flex: 1; height: 5px; border-radius: 3px; background: var(--line); }
+.steps i.on { background: var(--brand); }
+.sending { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 14px; background: var(--surface-2); margin-top: 10px; }
+.plane { font-size: 1.6rem; animation: fly 1.2s ease-in-out infinite; }
+@keyframes fly { 0% { transform: translate(0, 0) } 50% { transform: translate(14px, -8px) rotate(8deg) } 100% { transform: translate(0, 0) } }
+
+/* toast */
+.toasts { position: fixed; left: 50%; bottom: 86px; transform: translateX(-50%); z-index: 200; display: flex; flex-direction: column; gap: 8px; width: min(92vw, 420px); }
+.toast { background: var(--ink); color: var(--bg); padding: 12px 16px; border-radius: 14px; font-weight: 700; box-shadow: var(--shadow); animation: rise .3s; }
+
+/* ---------- Live AI ---------- */
+.live-stage { display: grid; gap: 14px; }
+@media (min-width: 760px) { .live-stage { grid-template-columns: 1fr 1fr; } }
+.speaker-card { border-radius: 22px; padding: 16px; min-height: 260px; display: flex; flex-direction: column; gap: 12px; position: relative; overflow: hidden; }
+.speaker-card.original { background: #2A2440; color: #EDEAFF; }
+.speaker-card.motey { background: linear-gradient(160deg, #EDE7FF, #FFE6EF); color: #1E1B3A; }
+.speaker-card .who { display: flex; gap: 10px; align-items: center; font-weight: 900; }
+.speaker-card .say { font-size: 1.15rem; font-weight: 700; line-height: 1.4; }
+.speaker-card.original.dim .say { filter: blur(5px); user-select: none; }
+.boss-face { width: 64px; height: 64px; flex: none; }
+.live-log { max-height: 300px; overflow: auto; }
+.live-log .pair { padding: 10px 0; border-bottom: 1px dashed var(--line); }
+.live-log .o { color: var(--ink-2); text-decoration: line-through; font-size: .9rem; }
+.rec-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); display: inline-block; animation: blinkc 1s steps(1) infinite; }
+
+/* ---------- TikTok ---------- */
+.tt-wrap { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
+.tt-phone {
+  position: relative; width: min(360px, 92vw); aspect-ratio: 9 / 16; border-radius: 28px; overflow: hidden; background: #000;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, .35); border: 6px solid #111;
+}
+.tt-phone canvas { width: 100%; height: 100%; display: block; }
+.tt-side { position: absolute; right: 8px; bottom: 90px; display: flex; flex-direction: column; gap: 14px; align-items: center; color: #fff; font-weight: 800; font-size: .75rem; text-shadow: 0 1px 3px #000; }
+.tt-side button { border: 0; background: rgba(255, 255, 255, .16); color: #fff; width: 46px; height: 46px; border-radius: 50%; font-size: 1.3rem; cursor: pointer; backdrop-filter: blur(4px); }
+.tt-side button.liked { background: var(--rose); }
+.tt-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, .25); border: 0; color: #fff; font-size: 4rem; cursor: pointer; }
+.tt-panel { flex: 1; min-width: 260px; max-width: 460px; }
+.progress { height: 10px; border-radius: 6px; background: var(--surface-2); overflow: hidden; }
+.progress > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--brand), var(--rose)); transition: width .2s; }
+.scene-list li { padding: 6px 0; border-bottom: 1px dashed var(--line); }
+
+/* ---------- Game ---------- */
+.game-shell { position: relative; border-radius: 20px; overflow: hidden; background: #0E0B22; box-shadow: var(--shadow); touch-action: none; user-select: none; }
+.game-shell canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+.game-hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; gap: 8px; flex-wrap: wrap; pointer-events: none; }
+.game-hud span { background: rgba(14, 11, 34, .75); color: #fff; padding: 4px 10px; border-radius: 999px; font-weight: 800; font-size: .85rem; }
+.game-say {
+  position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; gap: 10px; align-items: flex-end; pointer-events: none;
+}
+.game-say .speech { background: rgba(255, 255, 255, .96); color: #1E1B3A; font-size: .95rem; }
+.game-say .speech::before { border-right-color: rgba(255, 255, 255, .96); top: auto; bottom: 18px; }
+.game-say .btn { pointer-events: auto; }
+.dpad { position: absolute; right: 12px; bottom: 96px; display: grid; grid-template-columns: repeat(3, 48px); grid-template-rows: repeat(3, 48px); gap: 4px; }
+.dpad button { border: 0; border-radius: 12px; background: rgba(255, 255, 255, .18); color: #fff; font-size: 1.3rem; touch-action: none; }
+.dpad .act { background: var(--coral); font-size: .8rem; font-weight: 900; }
+@media (hover: hover) and (pointer: fine) { .dpad { display: none; } }
+.quiz-opt { display: block; width: 100%; text-align: left; margin: 8px 0; padding: 12px 14px; border-radius: 14px; border: 2px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 700; }
+.quiz-opt:hover { border-color: var(--brand); }
+.quiz-opt.right { border-color: var(--mint); background: #DDFBEF; color: #065F46; }
+.quiz-opt.wrong { border-color: var(--danger); background: #FFE4E6; color: #9F1239; animation: shake .3s; }
+@keyframes shake { 25% { transform: translateX(-6px) } 75% { transform: translateX(6px) } }
+
+.empty { text-align: center; padding: 30px 10px; }
+.empty .motey-svg { margin: 0 auto 10px; }
+kbd { background: var(--surface-2); border: 1px solid var(--line); border-bottom-width: 3px; border-radius: 6px; padding: 0 6px; font-size: .85em; }
+.ai-tag { font-size: .72rem; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); }
+.ai-tag.claude { background: #FCE7D6; color: #9A3412; }
+
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="rail" aria-label="Meny"><div id="rail-logo"></div><div id="rail-nav" style="display:flex;flex-direction:column;gap:4px"></div></nav>
+  <div class="main">
+    <header class="topbar"><div id="top-logo"></div><div class="spacer"></div><button class="icon-btn" onclick="App.go('#/settings')" aria-label="Inställningar">⚙️</button></header>
+    <main class="view" id="view"></main>
+  </div>
+</div>
+<nav class="tabbar" id="tabbar" aria-label="Meny"></nav>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<script>
+/* Motey – the speech-bubble mascot.
+ * One SVG, drawn as a real illustration of the hand-drawn sketch:
+ * a chat bubble with a tail, two big oval eyes and a small smile.
+ * CSS classes drive blinking, floating and talking (see motey.css). */
+(function () {
+  'use strict';
+  let uid = 0;
+
+  // Bubble body with the tail at the lower left, like the sketch.
+  const BODY = 'M100 20C152 20 184 50 184 88C184 127 151 153 104 155' +
+    'C92 155 81 153 71 150L45 178C40 183 33 179 35 173L45 142' +
+    'C27 130 16 111 16 88C16 50 48 20 100 20Z';
+
+  function svg(opts) {
+    opts = opts || {};
+    const id = 'mt' + (++uid);
+    const mood = opts.mood || 'happy';         // happy | wow | worried | wink
+    const cls = ['motey-svg'];
+    if (opts.animate !== false) cls.push('is-alive');
+    if (opts.talking) cls.push('is-talking');
+    if (opts.className) cls.push(opts.className);
+    const size = opts.size || 120;
+    const brow = mood === 'worried'
+      ? '<path class="mt-brow" d="M60 58l26-9M140 58l-26-9" stroke="#1E1B3A" stroke-width="6" stroke-linecap="round" fill="none"/>' : '';
+    const leftEye = mood === 'wink'
+      ? '<path d="M62 86q16-14 32 0" class="mt-wink" stroke="#1E1B3A" stroke-width="7" stroke-linecap="round" fill="none"/>'
+      : `<g class="mt-eye"><ellipse cx="78" cy="82" rx="15.5" ry="${mood === 'wow' ? 26 : 23}" fill="#1E1B3A"/>` +
+        '<circle cx="72.5" cy="71" r="5.5" fill="#fff"/><circle cx="82" cy="92" r="2.6" fill="#fff" opacity=".85"/></g>';
+    const rightEye = `<g class="mt-eye"><ellipse cx="122" cy="82" rx="15.5" ry="${mood === 'wow' ? 26 : 23}" fill="#1E1B3A"/>` +
+      '<circle cx="116.5" cy="71" r="5.5" fill="#fff"/><circle cx="126" cy="92" r="2.6" fill="#fff" opacity=".85"/></g>';
+    const mouth = mood === 'wow'
+      ? '<ellipse class="mt-mouth-o" cx="100" cy="121" rx="7" ry="8" fill="#1E1B3A"/>'
+      : '<path class="mt-smile" d="M89 118q11 10 22 0" stroke="#1E1B3A" stroke-width="5.5" stroke-linecap="round" fill="none"/>' +
+        '<ellipse class="mt-talk" cx="100" cy="122" rx="9" ry="7" fill="#1E1B3A" opacity="0"/>';
+    return `<svg class="${cls.join(' ')}" viewBox="0 0 200 200" width="${size}" height="${size}" role="img" aria-label="Motey">
+  <defs>
+    <linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E9E4FF"/>
+    </linearGradient>
+    <radialGradient id="${id}s" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#1E1B3A" stop-opacity=".22"/><stop offset="1" stop-color="#1E1B3A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse class="mt-shadow" cx="104" cy="190" rx="54" ry="7" fill="url(#${id}s)"/>
+  <g class="mt-body">
+    <path d="${BODY}" fill="url(#${id}g)" stroke="#1E1B3A" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M44 62C52 44 70 34 92 32" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".9"/>
+    ${brow}
+    <g class="mt-eyes">${leftEye}${rightEye}</g>
+    <ellipse cx="58" cy="110" rx="11" ry="6" fill="#FF8FB1" opacity=".55"/>
+    <ellipse cx="142" cy="110" rx="11" ry="6" fill="#FF8FB1" opacity=".55"/>
+    ${mouth}
+  </g>
+</svg>`;
+  }
+
+  function logo(opts) {
+    opts = opts || {};
+    return `<span class="motey-logo">${svg({ size: opts.size || 34, animate: opts.animate })}` +
+      `<span class="motey-word">Motey</span></span>`;
+  }
+
+  window.Mascot = { svg, logo, BODY };
+})();
+
+</script>
+<script>
+/* Motey – state, demo meetings and persistence (localStorage). */
+(function () {
+  'use strict';
+  const KEY = 'motey.v1';
+  const DAY = 864e5;
+
+  function at(daysFromToday, hh, mm) {
+    const d = new Date();
+    d.setHours(hh, mm || 0, 0, 0);
+    return new Date(d.getTime() + daysFromToday * DAY).toISOString();
+  }
+  function lines(txt) {
+    return txt.trim().split('\n').map(l => {
+      const i = l.indexOf(':');
+      return { who: l.slice(0, i).trim(), text: l.slice(i + 1).trim() };
+    });
+  }
+
+  function demoMeetings(user, boss) {
+    const lastWeekday = -6;
+    return [
+      {
+        id: 'nova-1', title: 'Veckomöte – Projekt Nova', series: 'nova', start: at(lastWeekday, 9), durationMin: 45,
+        attendees: [boss, 'Ali', 'Sara', user], boss, attended: false,
+        transcript: lines(`
+${boss}: Godmorgon allihop. ${user} är inte här idag, så vi tar det kort.
+Ali: Designen för appen är klar och testgruppen gillade den.
+${boss}: Bra. Då är designen godkänd. Vi bestämde att lanseringen flyttas till den 14 november.
+Sara: Kunderna i Göteborg vill ha en demo innan dess, helst vecka 44.
+${boss}: Sara ansvarar för demon i Göteborg. Budgeten för marknadsföring ligger på 120 000 kr.
+Ali: Vi har använt ungefär 45 procent av budgeten hittills.
+${boss}: ${user} ska skicka Kundrapport_Q3.pdf och Budget_Nova.xlsx till mig senast fredag.
+Sara: Vi behöver också uppdatera supportsidan innan lanseringen.
+${boss}: Viktigt: alla ska testa betalflödet på sina egna telefoner till nästa möte.
+Ali: Jag tar fram en checklista för testningen.
+${boss}: Toppen. Nästa möte är samma tid nästa vecka. Tack allihop!`),
+        files: [
+          { name: 'Kundrapport_Q3.pdf', status: 'missing', owner: user },
+          { name: 'Budget_Nova.xlsx', status: 'missing', owner: user }
+        ]
+      },
+      {
+        id: 'nova-2', title: 'Veckomöte – Projekt Nova', series: 'nova', start: at(0, new Date().getHours() + 1), durationMin: 45,
+        attendees: [boss, 'Ali', 'Sara', user], boss, attended: null, transcript: [], files: []
+      },
+      {
+        id: 'fin-1', title: 'Finansmöte – F-skatt, moms & budget', series: 'fin', start: at(-1, 13), durationMin: 60,
+        attendees: ['Lena (ekonomi)', boss, user], boss, attended: true,
+        transcript: lines(`
+Lena (ekonomi): Välkomna! Idag går vi igenom skatterna inför nästa kvartal.
+Lena (ekonomi): Först F-skatt. Konsulterna vi anlitar måste ha F-skatt, annars måste vi dra skatt och betala arbetsgivaravgifter åt dem.
+${boss}: Kolla alltid att leverantören har F-skatt innan vi betalar en faktura.
+Lena (ekonomi): Sen momsen. Vi lägger 25 procent moms på våra tjänster och momsdeklarationen ska in den 12:e varje månad.
+${user}: Kan vi dra av momsen på det nya kontorsmaterialet?
+Lena (ekonomi): Ja, ingående moms på inköp i verksamheten får vi dra av.
+Lena (ekonomi): Arbetsgivaravgifterna är ungefär 31 procent ovanpå bruttolönen, så en lön på 40 000 kr kostar runt 52 600 kr.
+${boss}: Budgeten för nästa kvartal är 2,4 miljoner kr och vi får inte gå över den.
+Lena (ekonomi): Likviditeten är okej, men kassaflödet blir tajt i december när bonusarna betalas ut.
+${boss}: Beslut: vi skickar alla fakturor inom 5 dagar efter leverans för att förbättra kassaflödet.
+Lena (ekonomi): Bokslutet görs i januari, så alla kvitton måste vara inne senast 15 januari.
+${boss}: ${user}, du ska gå igenom leverantörslistan och kontrollera F-skatt för alla konsulter.`),
+        files: [{ name: 'Leverantörslista.xlsx', status: 'missing', owner: user }]
+      },
+      {
+        id: 'boss-1', title: 'Kvartalsgenomgång med Gunnar', series: 'gunnar', start: at(-3, 15), durationMin: 30,
+        attendees: ['Gunnar (chef)', user], boss: 'Gunnar (chef)', attended: true,
+        transcript: lines(`
+Gunnar (chef): Det här är helt oacceptabelt! Försäljningen ligger 12 procent under målet.
+Gunnar (chef): Jag vill ha en ny plan på mitt bord i morgon bitti, inga ursäkter.
+${user}: Vi har haft problem med leveranserna från lagret.
+Gunnar (chef): Det är inte mitt problem. Ni måste lösa det själva, omedelbart!
+Gunnar (chef): Och varför har ingen svarat på mitt mejl från i måndags?
+Gunnar (chef): Från och med nu vill jag ha en statusrapport varje fredag klockan 15.
+Gunnar (chef): Om siffrorna inte är bättre nästa månad blir det en allvarlig diskussion.
+Gunnar (chef): Skärpning nu. Mötet är slut.`),
+        files: []
+      }
+    ];
+  }
+
+  const defaults = () => ({
+    version: 1,
+    onboarded: false,
+    settings: {
+      name: 'Ronny', bossName: 'Birgitta', bossEmail: '',
+      autoSend: true, sendMethod: 'email', webhookUrl: '',
+      apiKey: '', model: 'claude-opus-5-5',
+      voice: true, liveStyle: 'snall', theme: 'auto'
+    },
+    meetings: [],
+    outbox: [],
+    stats: { wallsBroken: 0, videos: 0, restyled: 0 }
+  });
+
+  let state;
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) state = Object.assign(defaults(), JSON.parse(raw));
+    } catch (e) { /* storage blocked – start fresh */ }
+    if (!state) state = defaults();
+    if (!state.meetings.length) state.meetings = demoMeetings(state.settings.name, state.settings.bossName);
+    return state;
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* quota or blocked */ }
+  }
+  function reset() {
+    const s = state ? state.settings : defaults().settings;
+    state = defaults();
+    state.settings = Object.assign(state.settings, { name: s.name, bossName: s.bossName, bossEmail: s.bossEmail, apiKey: s.apiKey });
+    state.onboarded = true;
+    state.meetings = demoMeetings(state.settings.name, state.settings.bossName);
+    save();
+  }
+
+  const byStart = (a, b) => new Date(a.start) - new Date(b.start);
+  function meeting(id) { return state.meetings.find(m => m.id === id); }
+  function sorted() { return state.meetings.slice().sort(byStart); }
+  function isPast(m) { return new Date(m.start).getTime() + (m.durationMin || 30) * 6e4 < Date.now(); }
+  function previousInSeries(m) {
+    if (!m.series) return null;
+    return sorted().filter(x => x.series === m.series && new Date(x.start) < new Date(m.start)).pop() || null;
+  }
+  // The next upcoming meeting whose previous session in the series was missed.
+  function pendingCatchUp() {
+    const upcoming = sorted().filter(m => !isPast(m));
+    for (const m of upcoming) {
+      const prev = previousInSeries(m);
+      if (prev && prev.attended === false && !prev.caughtUp) return { next: m, prev };
+    }
+    return null;
+  }
+  function addMeeting(m) {
+    m.id = m.id || 'm' + Date.now().toString(36);
+    state.meetings.push(m);
+    save();
+    return m;
+  }
+  function removeMeeting(id) {
+    state.meetings = state.meetings.filter(m => m.id !== id);
+    save();
+  }
+
+  /* Transcript import: plain "Namn: text", WebVTT (Teams/Zoom/Meet) and SRT. */
+  function parseTranscript(raw) {
+    const out = [];
+    const txt = String(raw || '').replace(/\r/g, '');
+    const blocks = txt.split(/\n\s*\n/);
+    const isCaption = /^WEBVTT/.test(txt) || /-->/.test(txt);
+    if (isCaption) {
+      for (const b of blocks) {
+        const ls = b.split('\n').filter(l => l.trim() && !/-->/.test(l) && !/^\d+$/.test(l.trim()) && !/^WEBVTT/.test(l) && !/^NOTE/.test(l));
+        if (!ls.length) continue;
+        let text = ls.join(' ');
+        let who = 'Talare';
+        const v = text.match(/<v\s+([^>]+)>/);
+        if (v) { who = v[1].trim(); text = text.replace(/<[^>]+>/g, ''); }
+        else {
+          const c = text.match(/^([^:]{2,40}):\s*(.+)$/);
+          if (c) { who = c[1].trim(); text = c[2]; }
+        }
+        text = text.replace(/<[^>]+>/g, '').trim();
+        const last = out[out.length - 1];
+        if (last && last.who === who) last.text += ' ' + text; else out.push({ who, text });
+      }
+      return out;
+    }
+    for (const l of txt.split('\n')) {
+      if (!l.trim()) continue;
+      const c = l.match(/^\s*([^:]{1,40}):\s*(.+)$/);
+      if (c) out.push({ who: c[1].trim(), text: c[2].trim() });
+      else if (out.length) out[out.length - 1].text += ' ' + l.trim();
+      else out.push({ who: 'Talare', text: l.trim() });
+    }
+    return out;
+  }
+
+  window.Store = {
+    load, save, reset, meeting, sorted, isPast, previousInSeries, pendingCatchUp,
+    addMeeting, removeMeeting, parseTranscript, demoMeetings,
+    get state() { return state; },
+    get settings() { return state.settings; }
+  };
+})();
+
+</script>
+<script>
+/* Motey – platform bridge.
+ * Same app runs in a browser, in the Android shell (window.MoteyAndroid,
+ * injected by the APK) and in the desktop shell (Neutralino: NL_TOKEN/NL_PORT
+ * globals and a WebSocket to the native core). */
+(function () {
+  'use strict';
+
+  const android = () => window.MoteyAndroid || null;
+  const desktop = () => !!(window.NL_TOKEN && window.NL_PORT);
+  const kind = () => android() ? 'android' : desktop() ? 'desktop' : 'web';
+
+  /* ---- minimal Neutralino native client (same wire format as neutralino.js) ---- */
+  let ws = null, wsReady = null;
+  const calls = {};
+  function nlConnect() {
+    if (wsReady) return wsReady;
+    wsReady = new Promise((resolve, reject) => {
+      const token = window.NL_TOKEN || '';
+      ws = new WebSocket(`ws://127.0.0.1:${window.NL_PORT}?connectToken=${token.split('.')[1] || ''}`);
+      ws.addEventListener('open', () => resolve(ws));
+      ws.addEventListener('error', reject);
+      ws.addEventListener('message', ev => {
+        let msg; try { msg = JSON.parse(ev.data); } catch (e) { return; }
+        const c = msg.id && calls[msg.id];
+        if (!c) return;
+        delete calls[msg.id];
+        if (msg.data && msg.data.error) c.reject(msg.data.error);
+        else c.resolve(msg.data && 'returnValue' in msg.data ? msg.data.returnValue : msg.data);
+      });
+    });
+    return wsReady;
+  }
+  async function nl(method, data) {
+    await nlConnect();
+    const id = (crypto.randomUUID && crypto.randomUUID()) || String(Date.now() + Math.random());
+    return new Promise((resolve, reject) => {
+      calls[id] = { resolve, reject };
+      ws.send(JSON.stringify({ id, method, data, accessToken: window.NL_TOKEN }));
+    });
+  }
+
+  function bufToB64(buf) {
+    const bytes = new Uint8Array(buf);
+    let s = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(s);
+  }
+  async function blobToB64(blob) { return bufToB64(await blob.arrayBuffer()); }
+
+  /* Save a file where the user can find it. Returns a short human message. */
+  async function saveFile(name, blob) {
+    if (android()) {
+      const msg = android().saveFile(name, await blobToB64(blob), blob.type || 'application/octet-stream');
+      return msg || `Sparad i Hämtade filer: ${name}`;
+    }
+    if (desktop()) {
+      try {
+        const path = await nl('os.showSaveDialog', { title: 'Spara ' + name, defaultPath: name });
+        if (!path) return 'Avbrutet';
+        await nl('filesystem.writeBinaryFile', { path, data: await blobToB64(blob) });
+        return 'Sparad: ' + path;
+      } catch (e) { /* fall through to browser download */ }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    return 'Nedladdad: ' + name;
+  }
+
+  async function openUrl(url) {
+    if (android()) { android().openUrl(url); return; }
+    if (desktop()) { try { await nl('os.open', { url }); return; } catch (e) { /* fallback */ } }
+    if (url.startsWith('mailto:')) location.href = url; else window.open(url, '_blank', 'noopener');
+  }
+
+  /* ---- speech ---- */
+  let voice = null;
+  function pickVoice() {
+    if (!('speechSynthesis' in window)) return null;
+    const vs = speechSynthesis.getVoices();
+    voice = vs.find(v => /^sv/i.test(v.lang)) || vs.find(v => /swed/i.test(v.name)) || null;
+    return voice;
+  }
+  if ('speechSynthesis' in window) {
+    pickVoice();
+    speechSynthesis.onvoiceschanged = pickVoice;
+  }
+  // Strip emoji so the voice doesn't read them out loud.
+  const clean = t => String(t).replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, '').trim();
+
+  function speak(text, opts) {
+    opts = opts || {};
+    const t = clean(text);
+    if (!t || (window.Store && Store.settings && !Store.settings.voice)) { opts.onend && setTimeout(opts.onend, 1200 + t.length * 45); return; }
+    if (android() && android().speak) {
+      android().speak(t, String(opts.rate || 1), String(opts.pitch || 1));
+      // Android TTS has no JS callback; estimate the duration.
+      opts.onend && setTimeout(opts.onend, 900 + t.length * 62 / (opts.rate || 1));
+      return;
+    }
+    if (!('speechSynthesis' in window)) { opts.onend && setTimeout(opts.onend, 900 + t.length * 55); return; }
+    const u = new SpeechSynthesisUtterance(t);
+    u.lang = 'sv-SE';
+    if (voice || pickVoice()) u.voice = voice;
+    u.rate = opts.rate || 1.02; u.pitch = opts.pitch || 1.15;
+    let done = false;
+    const end = () => { if (!done) { done = true; opts.onend && opts.onend(); } };
+    u.onend = end; u.onerror = end;
+    // Some engines never fire onend; never block the UI on it.
+    setTimeout(end, 2500 + t.length * 90);
+    speechSynthesis.speak(u);
+  }
+  function stopSpeaking() {
+    if (android() && android().stopSpeaking) android().stopSpeaking();
+    if ('speechSynthesis' in window) speechSynthesis.cancel();
+  }
+
+  /* ---- speech recognition (only where the engine offers it) ---- */
+  function recognizer() {
+    const R = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!R) return null;
+    const r = new R();
+    r.lang = 'sv-SE'; r.continuous = true; r.interimResults = false;
+    return r;
+  }
+
+  window.Platform = { kind, saveFile, openUrl, speak, stopSpeaking, recognizer, blobToB64, bufToB64, nl };
+})();
+
+</script>
+<script>
+/* Motey – builds real documents in the browser, no libraries:
+ * PDF (text, A4, Helvetica), XLSX and DOCX (Office Open XML in a stored ZIP). */
+(function () {
+  'use strict';
+
+  /* ---------- ZIP (stored, UTF-8 names) ---------- */
+  const CRC = (() => {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; }
+    return t;
+  })();
+  function crc32(u8) { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  function zip(files, mime) {
+    const enc = new TextEncoder();
+    const parts = [], central = [];
+    let offset = 0;
+    const d = new Date();
+    const dosTime = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+    const dosDate = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+    for (const f of files) {
+      const name = enc.encode(f.name);
+      const data = typeof f.data === 'string' ? enc.encode(f.data) : f.data;
+      const crc = crc32(data);
+      const h = new DataView(new ArrayBuffer(30));
+      h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+      h.setUint16(10, dosTime, true); h.setUint16(12, dosDate, true); h.setUint32(14, crc, true);
+      h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+      parts.push(new Uint8Array(h.buffer), name, data);
+      const c = new DataView(new ArrayBuffer(46));
+      c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
+      c.setUint16(12, dosTime, true); c.setUint16(14, dosDate, true); c.setUint32(16, crc, true);
+      c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, name.length, true);
+      c.setUint32(42, offset, true);
+      central.push(new Uint8Array(c.buffer), name);
+      offset += 30 + name.length + data.length;
+    }
+    const csize = central.reduce((s, p) => s + p.length, 0);
+    const e = new DataView(new ArrayBuffer(22));
+    e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true);
+    e.setUint32(12, csize, true); e.setUint32(16, offset, true);
+    return new Blob([...parts, ...central, new Uint8Array(e.buffer)], { type: mime || 'application/zip' });
+  }
+
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  /* ---------- PDF ---------- */
+  const WIN = { '€': 0x80, '‚': 0x82, '„': 0x84, '…': 0x85, '•': 0x95, '–': 0x96, '—': 0x97, '‘': 0x91, '’': 0x92, '“': 0x93, '”': 0x94, '™': 0x99 };
+  function pdfHex(s) {
+    let h = '';
+    for (const ch of String(s)) {
+      let c = ch.codePointAt(0);
+      if (WIN[ch]) c = WIN[ch]; else if (c > 255) c = 0x3F;
+      h += c.toString(16).padStart(2, '0');
+    }
+    return '<' + h + '>';
+  }
+  function wrap(text, size, width) {
+    const max = Math.max(10, Math.floor(width / (size * 0.52)));
+    const out = [];
+    for (const para of String(text).split('\n')) {
+      let line = '';
+      for (const w of para.split(/\s+/)) {
+        if ((line + ' ' + w).trim().length > max) { if (line) out.push(line); line = w; }
+        else line = (line + ' ' + w).trim();
+      }
+      out.push(line);
+    }
+    return out;
+  }
+  /* blocks: [{h1|h2|p|li: text}] */
+  function pdf(blocks) {
+    const W = 595, H = 842, M = 56, LW = W - 2 * M;
+    const pages = [[]];
+    let y = H - M;
+    const put = (font, size, text, x, gap) => {
+      for (const l of wrap(text, size, LW - (x - M))) {
+        if (y - size < M) { pages.push([]); y = H - M; }
+        y -= size * 1.35;
+        pages[pages.length - 1].push(`BT /${font} ${size} Tf ${x} ${y.toFixed(1)} Td ${pdfHex(l)} Tj ET`);
+      }
+      y -= gap || 0;
+    };
+    for (const b of blocks) {
+      if (b.h1) { put('F2', 20, b.h1, M, 6); pages[pages.length - 1].push(`0.42 0.30 0.96 RG 2 w ${M} ${y.toFixed(1)} m ${W - M} ${y.toFixed(1)} l S`); y -= 10; }
+      else if (b.h2) { y -= 6; put('F2', 13, b.h2, M, 2); }
+      else if (b.li) put('F1', 11, '• ' + b.li, M + 10, 1);
+      else if (b.small) put('F1', 9, b.small, M, 4);
+      else put('F1', 11, b.p || '', M, 5);
+    }
+    const objs = [];
+    objs[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+    objs[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+    objs[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+    const kids = [];
+    pages.forEach((ops, i) => {
+      const pid = 5 + i * 2, cid = 6 + i * 2;
+      const stream = ops.join('\n') + `\nBT /F1 8 Tf ${M} 30 Td ${pdfHex('Skapad av Motey – sida ' + (i + 1) + ' av ' + pages.length)} Tj ET`;
+      objs[pid] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${cid} 0 R >>`;
+      objs[cid] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
+      kids.push(`${pid} 0 R`);
+    });
+    objs[2] = `<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${pages.length} >>`;
+    let out = '%PDF-1.4\n';
+    const offs = [];
+    for (let i = 1; i < objs.length; i++) { offs[i] = out.length; out += `${i} 0 obj\n${objs[i]}\nendobj\n`; }
+    const xref = out.length;
+    out += `xref\n0 ${objs.length}\n0000000000 65535 f \n` + offs.slice(1).map(o => String(o).padStart(10, '0') + ' 00000 n \n').join('');
+    out += `trailer\n<< /Size ${objs.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+    return new Blob([out], { type: 'application/pdf' });
+  }
+
+  /* ---------- XLSX ---------- */
+  function colName(i) { let s = ''; i++; while (i) { const r = (i - 1) % 26; s = String.fromCharCode(65 + r) + s; i = Math.floor((i - 1) / 26); } return s; }
+  function xlsx(sheetName, rows) {
+    const body = rows.map((r, ri) => `<row r="${ri + 1}">` + r.map((v, ci) => {
+      const ref = colName(ci) + (ri + 1);
+      if (v && typeof v === 'object') {
+        return typeof v.n === 'number' ? `<c r="${ref}" s="1"><v>${v.n}</v></c>` : `<c r="${ref}" t="inlineStr" s="1"><is><t>${esc(v.b)}</t></is></c>`;
+      }
+      if (typeof v === 'number') return `<c r="${ref}"><v>${v}</v></c>`;
+      if (v === '' || v == null) return '';
+      return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${esc(v)}</t></is></c>`;
+    }).join('') + '</row>').join('');
+    const NS = 'http://schemas.openxmlformats.org';
+    return zip([
+      { name: '[Content_Types].xml', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="${NS}/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>` },
+      { name: '_rels/.rels', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="${NS}/package/2006/relationships"><Relationship Id="rId1" Type="${NS}/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
+      { name: 'xl/workbook.xml', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="${NS}/spreadsheetml/2006/main" xmlns:r="${NS}/officeDocument/2006/relationships"><sheets><sheet name="${esc(sheetName.slice(0, 31))}" sheetId="1" r:id="rId1"/></sheets></workbook>` },
+      { name: 'xl/_rels/workbook.xml.rels', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="${NS}/package/2006/relationships"><Relationship Id="rId1" Type="${NS}/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="${NS}/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
+      { name: 'xl/styles.xml', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="${NS}/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs></styleSheet>` },
+      { name: 'xl/worksheets/sheet1.xml', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="${NS}/spreadsheetml/2006/main"><cols><col min="1" max="1" width="60" customWidth="1"/><col min="2" max="4" width="18" customWidth="1"/></cols><sheetData>${body}</sheetData></worksheet>` }
+    ], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  }
+
+  /* ---------- DOCX ---------- */
+  function docx(blocks) {
+    const NS = 'http://schemas.openxmlformats.org';
+    const para = b => {
+      if (b.h1) return `<w:p><w:r><w:rPr><w:b/><w:sz w:val="40"/><w:color w:val="6C4CF5"/></w:rPr><w:t xml:space="preserve">${esc(b.h1)}</w:t></w:r></w:p>`;
+      if (b.h2) return `<w:p><w:r><w:rPr><w:b/><w:sz w:val="28"/></w:rPr><w:t xml:space="preserve">${esc(b.h2)}</w:t></w:r></w:p>`;
+      if (b.li) return `<w:p><w:pPr><w:ind w:left="360"/></w:pPr><w:r><w:t xml:space="preserve">• ${esc(b.li)}</w:t></w:r></w:p>`;
+      return `<w:p><w:r><w:rPr>${b.small ? '<w:sz w:val="18"/><w:color w:val="5B5878"/>' : ''}</w:rPr><w:t xml:space="preserve">${esc(b.p || b.small || '')}</w:t></w:r></w:p>`;
+    };
+    return zip([
+      { name: '[Content_Types].xml', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="${NS}/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>` },
+      { name: '_rels/.rels', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="${NS}/package/2006/relationships"><Relationship Id="rId1" Type="${NS}/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>` },
+      { name: 'word/document.xml', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="${NS}/wordprocessingml/2006/main"><w:body>${blocks.map(para).join('')}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="0" w:footer="0" w:gutter="0"/></w:sectPr></w:body></w:document>` }
+    ], 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  }
+
+  /* ---------- content for a meeting ---------- */
+  function amounts(meeting) {
+    const rx = /(\d{1,3}(?:[  ]\d{3})+|\d+(?:,\d+)?)\s*(miljoner|miljon|mkr|tkr|kronor|kr|procent|%)/gi;
+    const rows = [];
+    for (const l of meeting.transcript || []) {
+      let m;
+      rx.lastIndex = 0;
+      while ((m = rx.exec(l.text))) {
+        let n = parseFloat(m[1].replace(/[  ]/g, '').replace(',', '.'));
+        const unit = m[2].toLowerCase();
+        let enhet = 'kr';
+        if (/milj|mkr/.test(unit)) n *= 1e6;
+        else if (unit === 'tkr') n *= 1e3;
+        else if (/procent|%/.test(unit)) enhet = '%';
+        rows.push({ text: l.text, who: l.who, n, enhet });
+      }
+    }
+    return rows;
+  }
+
+  function reportBlocks(meeting, sum, fileName) {
+    const d = new Date(meeting.start).toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const b = [
+      { h1: fileName.replace(/\.[^.]+$/, '').replace(/_/g, ' ') },
+      { small: `${meeting.title} · ${d} · Utkast skapat av Motey utifrån mötet – granska innan det skickas vidare.` },
+      { h2: 'Sammanfattning' }, { p: sum.summary }
+    ];
+    if (sum.points.length) { b.push({ h2: 'Det viktigaste' }); sum.points.forEach(p => b.push({ li: p })); }
+    if (sum.decisions.length) { b.push({ h2: 'Beslut' }); sum.decisions.forEach(p => b.push({ li: p })); }
+    if (sum.actions.length) { b.push({ h2: 'Att göra' }); sum.actions.forEach(a => b.push({ li: (a.who ? a.who + ': ' : '') + a.what })); }
+    const nums = amounts(meeting);
+    if (nums.length) { b.push({ h2: 'Siffror från mötet' }); nums.forEach(r => b.push({ li: r.text })); }
+    b.push({ h2: 'Deltagare' }, { p: (meeting.attendees || []).join(', ') });
+    return b;
+  }
+
+  /* Build a draft of a missing file from what was said in the meeting. */
+  function draftFor(meeting, sum, fileName) {
+    const ext = (fileName.split('.').pop() || '').toLowerCase();
+    if (ext === 'xlsx' || ext === 'xls' || ext === 'csv') {
+      const nums = amounts(meeting);
+      const rows = [
+        [{ b: fileName.replace(/\.[^.]+$/, '').replace(/_/g, ' ') }],
+        [`${meeting.title} – utkast skapat av Motey`],
+        [],
+        [{ b: 'Beskrivning' }, { b: 'Värde' }, { b: 'Enhet' }, { b: 'Sagt av' }]
+      ];
+      nums.forEach(r => rows.push([r.text, r.n, r.enhet, r.who]));
+      if (!nums.length) sum.points.forEach(p => rows.push([p]));
+      rows.push([], [{ b: 'Att göra' }]);
+      sum.actions.forEach(a => rows.push([a.what, '', '', a.who || '']));
+      if (ext === 'csv') {
+        const csv = rows.map(r => r.map(v => v && typeof v === 'object' ? (v.b || v.n) : v).map(v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`).join(';')).join('\r\n');
+        return { name: fileName, blob: new Blob(['﻿' + csv], { type: 'text/csv' }) };
+      }
+      return { name: fileName.replace(/\.xls$/i, '.xlsx'), blob: xlsx('Motey', rows) };
+    }
+    const blocks = reportBlocks(meeting, sum, fileName);
+    if (ext === 'docx' || ext === 'doc') return { name: fileName.replace(/\.doc$/i, '.docx'), blob: docx(blocks) };
+    if (ext === 'pdf') return { name: fileName, blob: pdf(blocks) };
+    // Anything else (pptx, key, …): a PDF with the same base name.
+    return { name: fileName.replace(/\.[^.]+$/, '') + '.pdf', blob: pdf(blocks) };
+  }
+
+  window.Docs = { zip, pdf, xlsx, docx, draftFor, reportBlocks, amounts, crc32 };
+})();
+
+</script>
+<script>
+/* Motey – the AI engine.
+ * Every function works offline with a built-in Swedish engine. When the user
+ * adds a Claude API key in Inställningar, the same functions call Claude
+ * (Messages API) instead and fall back to the offline engine on any error. */
+(function () {
+  'use strict';
+
+  const STOP = new Set(('och i att det som en på är av för med till den har de inte om ett han men vi så kan man ' +
+    'från ska sig eller nu var du jag ni hon dem det här där när vad alla bara också efter mot vill hur blir ' +
+    'innan sen sedan då mer mycket under alltså får måste ha här kommer vara varit ut upp in över nästa ' +
+    'samma tar idag hittills ungefär helst runt gå går vår våra vårt deras min mitt mina din ditt dina sina ' +
+    'sitt egna egen alla allihop tack bra toppen okej ja nej först också annars åt dra inom senast vid ' +
+    'möte mötet godmorgon välkomna inför helt ligger kort igenom först annars procent kvartal dag vecka veckan tid gång heller ingen inga något några alltid aldrig blev blir bli ser gör göra gjort').split(' '));
+
+  /* ---------- glossary used by the game and TikTok images ---------- */
+  const GLOSSARY = {
+    'f-skatt': {
+      term: 'F-skatt', icon: '🧾', wiki: 'F-skatt',
+      explain: 'F-skatt är ett godkännande från Skatteverket som visar att du driver företag. Den som har F-skatt betalar själv sin preliminärskatt och sina egenavgifter, så kunden som köper tjänsten behöver inte dra skatt eller betala arbetsgivaravgifter.',
+      howTo: 'Kolla att leverantören har F-skatt innan ni betalar fakturan – det går att kontrollera hos Skatteverket. Har du eget företag ansöker du om F-skatt via verksamt.se.',
+      q: 'Ni köper en tjänst av en konsult som har F-skatt. Vem betalar konsultens skatt?',
+      opts: ['Ni drar skatten från fakturan', 'Konsulten betalar själv sin skatt och sina egenavgifter', 'Ingen behöver betala skatt'], a: 1
+    },
+    'moms': {
+      term: 'Moms', icon: '💶', wiki: 'Mervärdesskatt',
+      explain: 'Moms (mervärdesskatt) är en skatt på försäljning. I Sverige är normalskattesatsen 25 %, och vissa varor och tjänster har lägre moms. Företaget lägger på moms när det säljer och får dra av momsen på sina egna inköp.',
+      howTo: 'Lägg på rätt moms på fakturan, spara kvittona för inköpen och lämna momsdeklarationen i tid.',
+      q: 'Vad är normalskattesatsen för moms i Sverige?',
+      opts: ['12 %', '25 %', '6 %'], a: 1
+    },
+    'ingående moms': {
+      term: 'Ingående moms', icon: '🛒', wiki: 'Mervärdesskatt',
+      explain: 'Ingående moms är momsen du betalar när företaget köper något till verksamheten. Den får dras av mot den utgående momsen du tar ut av kunderna.',
+      howTo: 'Spara kvittot, bokför inköpet och dra av momsen i momsdeklarationen.',
+      q: 'Vad gör företaget med ingående moms på inköp till verksamheten?',
+      opts: ['Drar av den i momsdeklarationen', 'Betalar den två gånger', 'Skickar den till kunden'], a: 0
+    },
+    'arbetsgivaravgift': {
+      term: 'Arbetsgivaravgifter', icon: '👷', wiki: 'Arbetsgivaravgift',
+      explain: 'Arbetsgivaravgifter är en avgift som arbetsgivaren betalar ovanpå lönen – för de flesta anställda omkring 31 % av bruttolönen. De finansierar bland annat pension och sjukförsäkring.',
+      howTo: 'Räkna alltid med lön + arbetsgivaravgifter när ni budgeterar för en ny anställd.',
+      q: 'En lön är 40 000 kr. Ungefär vad kostar den för företaget med arbetsgivaravgifter?',
+      opts: ['40 000 kr', 'Cirka 52 600 kr', 'Cirka 80 000 kr'], a: 1
+    },
+    'budget': {
+      term: 'Budget', icon: '📊', wiki: 'Budget',
+      explain: 'En budget är en plan för hur mycket pengar som ska komma in och gå ut under en period. Den hjälper företaget att prioritera och att inte spendera mer än det har råd med.',
+      howTo: 'Följ upp utfallet mot budgeten varje månad och säg till i tid om något drar iväg.',
+      q: 'Vad är en budget?',
+      opts: ['En plan för intäkter och kostnader under en period', 'Ett kvitto från Skatteverket', 'En typ av lån'], a: 0
+    },
+    'likviditet': {
+      term: 'Likviditet', icon: '💧', wiki: 'Likviditet',
+      explain: 'Likviditet betyder hur lätt företaget kan betala sina räkningar när de ska betalas – alltså hur mycket pengar som finns tillgängligt just nu.',
+      howTo: 'Fakturera snabbt, ha koll på förfallodagar och spara en buffert.',
+      q: 'Vad betyder god likviditet?',
+      opts: ['Att företaget kan betala sina räkningar i tid', 'Att företaget har många anställda', 'Att momsen är låg'], a: 0
+    },
+    'kassaflöde': {
+      term: 'Kassaflöde', icon: '🌊', wiki: 'Kassaflöde',
+      explain: 'Kassaflöde är pengarna som faktiskt flyter in och ut ur företaget under en period. Ett företag kan gå med vinst men ändå få slut på pengar om kunderna betalar sent.',
+      howTo: 'Skicka fakturor direkt efter leverans och följ upp sena betalningar.',
+      q: 'Hur förbättrar man kassaflödet enligt mötet?',
+      opts: ['Skicka fakturor inom 5 dagar efter leverans', 'Vänta med att fakturera till bokslutet', 'Höja momsen'], a: 0
+    },
+    'faktura': {
+      term: 'Faktura', icon: '📨', wiki: 'Faktura',
+      explain: 'En faktura är en betalningsbegäran till kunden. Den ska bland annat innehålla datum, fakturanummer, vad som sålts, belopp, moms och företagets momsregistreringsnummer.',
+      howTo: 'Fyll i alla obligatoriska uppgifter, skicka den i tid och följ upp förfallodagen.',
+      q: 'Vad måste finnas med på en faktura?',
+      opts: ['Bara kundens namn', 'Bland annat belopp, moms och fakturanummer', 'Ett foto på varan'], a: 1
+    },
+    'bokslut': {
+      term: 'Bokslut', icon: '📚', wiki: 'Bokslut',
+      explain: 'Bokslut är när räkenskapsåret avslutas och företaget sammanställer resultat och ställning. Alla verifikationer och kvitton behöver vara bokförda.',
+      howTo: 'Lämna in alla kvitton i tid och stäm av konton innan bokslutet.',
+      q: 'Vad behöver vara inne inför bokslutet?',
+      opts: ['Alla kvitton och verifikationer', 'Bara julklapparna', 'Ingenting'], a: 0
+    },
+    'momsdeklaration': {
+      term: 'Momsdeklaration', icon: '🗓️', wiki: 'Mervärdesskatt',
+      explain: 'I momsdeklarationen redovisar företaget utgående och ingående moms till Skatteverket. Den lämnas månads-, kvartals- eller årsvis beroende på omsättning.',
+      howTo: 'Sätt en påminnelse före deadline och stäm av momskontona först.',
+      q: 'När ska momsdeklarationen in enligt mötet?',
+      opts: ['Den 12:e varje månad', 'En gång vart tionde år', 'När chefen ber om det'], a: 0
+    },
+    'preliminärskatt': {
+      term: 'Preliminärskatt', icon: '⏳', wiki: 'Preliminärskatt',
+      explain: 'Preliminärskatt är skatt som betalas in löpande under året. Den slutliga skatten räknas ut efter deklarationen.',
+      howTo: 'Gör en realistisk prognos av vinsten så att du inte får restskatt.',
+      q: 'När räknas den slutliga skatten ut?',
+      opts: ['Efter deklarationen', 'Innan året börjar', 'Aldrig'], a: 0
+    },
+    'vinst': {
+      term: 'Vinst', icon: '🏆', wiki: 'Vinst',
+      explain: 'Vinst är det som blir kvar när kostnaderna har dragits från intäkterna.',
+      howTo: 'Öka intäkterna eller minska kostnaderna – helst både och.',
+      q: 'Hur räknar man ut vinst?',
+      opts: ['Intäkter minus kostnader', 'Kostnader plus moms', 'Antal anställda gånger två'], a: 0
+    }
+  };
+  const ALIASES = {
+    'f-skatt': ['f-skatt', 'fskatt', 'f skatt'], 'moms': ['moms', 'mervärdesskatt'], 'ingående moms': ['ingående moms', 'dra av momsen'],
+    'arbetsgivaravgift': ['arbetsgivaravgift'], 'budget': ['budget'], 'likviditet': ['likviditet'], 'kassaflöde': ['kassaflöde'],
+    'faktura': ['faktura', 'fakturor'], 'bokslut': ['bokslut'], 'momsdeklaration': ['momsdeklaration'], 'preliminärskatt': ['preliminärskatt'],
+    'vinst': ['vinst']
+  };
+
+  /* ---------- helpers ---------- */
+  const words = t => (t.toLowerCase().match(/[a-zåäöé0-9-]{3,}/g) || []).filter(w => !STOP.has(w) && !/^\d+$/.test(w));
+  const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
+  const firstName = s => String(s || '').split(/[ (]/)[0];
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+
+  function keywords(meeting, n) {
+    const f = {};
+    const people = new Set((meeting.attendees || []).concat((meeting.transcript || []).map(l => l.who)).map(p => firstName(p).toLowerCase()));
+    for (const l of meeting.transcript || []) for (const w of words(l.text)) if (!people.has(w)) f[w] = (f[w] || 0) + 1;
+    const out = [];
+    for (const [w] of Object.entries(f).sort((a, b) => b[1] - a[1])) {
+      if (out.some(o => w.startsWith(o.slice(0, 4)) && o.length > 4)) continue; // moms/momsen, budget/budgeten
+      out.push(w);
+      if (out.length >= (n || 8)) break;
+    }
+    return out;
+  }
+  function concepts(meeting) {
+    const all = (meeting.transcript || []).map(l => l.text.toLowerCase()).join(' \n ');
+    const found = [];
+    for (const [k, al] of Object.entries(ALIASES)) {
+      const idx = Math.min(...al.map(a => { const i = all.indexOf(a); return i < 0 ? Infinity : i; }));
+      if (idx < Infinity) found.push({ k, idx });
+    }
+    return found.sort((a, b) => a.idx - b.idx).map(f => f.k);
+  }
+  const FILE_RX = /[\wåäöÅÄÖ.-]+\.(pdf|xlsx?|docx?|pptx?|csv|txt|key|numbers|zip)\b/gi;
+
+  /* ---------- offline engine ---------- */
+  function localSummary(meeting) {
+    const t = meeting.transcript || [];
+    if (!t.length) return { summary: 'Det finns inget transkript för det här mötet ännu.', points: [], decisions: [], actions: [], files: [], keywords: [] };
+    const kw = keywords(meeting, 12);
+    const weight = {}; kw.forEach((w, i) => { weight[w] = 12 - i; });
+    const cue = /(beslut|bestämde|godkänd|viktigt|flyttas|ska|måste|ansvarar|senast|budget|deadline|nästa möte)/i;
+    const scored = t.map((l, i) => ({ l, i, s: words(l.text).reduce((s, w) => s + (weight[w] || 0), 0) / Math.sqrt(words(l.text).length + 1) + (cue.test(l.text) ? 4 : 0) - (/^(godmorgon|välkomna|tack|hej|toppen)/i.test(l.text) ? 50 : 0) }));
+    const points = scored.slice().sort((a, b) => b.s - a.s).slice(0, Math.min(5, t.length)).sort((a, b) => a.i - b.i)
+      .map(x => clean(x.l));
+    const decisions = t.filter(l => /(beslut|bestämde|bestämt|godkänd|vi kör på|flyttas)/i.test(l.text)).map(clean);
+    const actions = [];
+    const people = [...new Set((meeting.attendees || []).concat(t.map(l => l.who)).map(firstName).filter(Boolean))];
+    for (const l of t) {
+      const tx = l.text;
+      let who = people.find(p => new RegExp('\\b' + p + '\\b,?\\s+(du\\s+)?(ska|ansvarar|tar|fixar|behöver)\\b', 'i').test(tx));
+      if (!who && /^jag (ska|tar|fixar|kollar|skickar|ordnar)\b/i.test(tx)) who = firstName(l.who);
+      if (!who && /\balla (ska|måste|behöver)\b/i.test(tx)) who = 'Alla';
+      if (!who) continue;
+      actions.push({ who, from: firstName(l.who), what: tx.replace(/^(Viktigt|Beslut):\s*/i, '') });
+    }
+    const files = [];
+    for (const l of t) { const m = l.text.match(FILE_RX); if (m) m.forEach(f => files.includes(f) || files.push(f)); }
+    (meeting.files || []).forEach(f => files.includes(f.name) || files.push(f.name));
+    const speakers = [...new Set(t.map(l => firstName(l.who)))];
+    const topics = kw.slice(0, 4).join(', ');
+    const summary = `${speakers.join(', ')} pratade om ${topics || 'flera saker'}. ` +
+      (decisions.length ? `Det togs ${decisions.length === 1 ? 'ett beslut' : decisions.length + ' beslut'}` : 'Inga tydliga beslut togs') +
+      (actions.length ? ` och ${actions.length === 1 ? 'en sak' : actions.length + ' saker'} ska göras till nästa gång.` : '.');
+    return { summary, points, decisions, actions, files, keywords: kw.slice(0, 8) };
+  }
+  function clean(l) { return `${firstName(l.who)}: ${l.text}`.replace(/\s+/g, ' '); }
+
+  /* Same sentence, different style. Step 1 softens harsh phrasing, step 2 dresses it up. */
+  const SOFTEN = [
+    [/det här är helt oacceptabelt/gi, 'det här är inte riktigt där vi vill vara än'],
+    [/helt oacceptabelt/gi, 'inte riktigt bra nog än'], [/oacceptabelt/gi, 'inte okej än'],
+    [/inga ursäkter/gi, 'jag vet att ni fixar det'], [/skärpning( nu)?/gi, 'nu växlar vi upp lite'],
+    [/det är inte mitt problem/gi, 'jag förstår att det är svårt'],
+    [/ni måste lösa det själva/gi, 'jag litar på att ni hittar en lösning'],
+    [/(ni|du) måste/gi, (m, p) => `det vore jättebra om ${p.toLowerCase()} kunde`],
+    [/omedelbart|genast|direkt nu/gi, 'så snart det går'],
+    [/varför har ingen/gi, 'kan någon hjälpa mig förstå varför ingen har'],
+    [/jag vill ha/gi, 'jag skulle gärna vilja ha'], [/jag kräver/gi, 'jag skulle uppskatta'],
+    [/blir det en allvarlig diskussion/gi, 'tar vi ett lugnt snack om hur vi går vidare'],
+    [/mötet är slut/gi, 'tack för idag'], [/katastrof(alt)?/gi, 'en utmaning'], [/värdelös\w*/gi, 'inte klar än'],
+    [/dåligt/gi, 'inte riktigt bra än'], [/\bidiot\w*/gi, 'kollega'], [/\bslarv\w*/gi, 'lite stressigt'],
+    [/!+/g, '.']
+  ];
+  const STYLES = {
+    snall: { name: 'Snäll & peppig', icon: '🥰', pre: ['Hej allihop! ', 'Tack för att ni är här! ', 'Fint jobbat hittills! '], post: [' Ni är grymma! 😊', ' Jag tror på er! 💜', ' 😊'] },
+    coach: { name: 'Lugn coach', icon: '🧘', pre: ['Okej team, andas in. ', 'Ingen stress. ', 'Vi tar det steg för steg. '], post: [' Vi fixar det här tillsammans. 💪', ' Ett steg i taget. 🌿'] },
+    pirat: { name: 'Pirat', icon: '🏴‍☠️', pre: ['Ahoj, besättning! ', 'Hör upp, landkrabbor! '], post: [' Arrr! 🏴‍☠️', ' Hissa seglen! ⚓'],
+      swap: [[/\brapporten\b/gi, 'skattkartan'], [/\bbudgeten\b/gi, 'skattkistan'], [/\bkr\b|kronor/gi, 'dubloner'], [/\bmötet\b/gi, 'rådslaget på däck'], [/\bkontoret\b/gi, 'skeppet'], [/\bmejl\b/gi, 'flaskpost']] },
+    saga: { name: 'Godnattsaga', icon: '🧚', wrap: t => `Det var en gång ett team. Och chefen sa vänligt: ”${t}” Och så levde de produktivt i alla sina dagar. ✨` },
+    sport: { name: 'Sportkommentator', icon: '⚽', wrap: t => `OCH HÄR KOMMER DET! Chefen tar bollen: ${t} VILKET DRAG, mina damer och herrar! ⚽🔥` },
+    poet: { name: 'Poet', icon: '🌹', wrap: t => `Hör mig, kära kollegor, i kvartalets ljus: ${t} Så viskar vinden genom kontorets hus. 🌹` },
+    robot: { name: 'Robot', icon: '🤖', wrap: t => `BIP BOP. MEDDELANDE MOTTAGET. ${t.toUpperCase()} SLUT PÅ ÖVERFÖRING. 🤖` },
+    genz: { name: 'Gen Z', icon: '💅', lower: true, pre: ['okej så ', 'lowkey ', 'no cap, '], post: [' fr fr 💅', ' slay 💯', ' periodt ✨'], swap: [[/\bbra\b/gi, 'helt goated'], [/\bviktigt\b/gi, 'main character-viktigt']] }
+  };
+  function localRestyle(text, style) {
+    let t = String(text);
+    for (const [rx, rep] of SOFTEN) t = t.replace(rx, rep);
+    t = t.replace(/\b([A-ZÅÄÖ]{4,})\b/g, w => w.toLowerCase());
+    t = t.replace(/\.\s*\./g, '.').trim();
+    const st = STYLES[style] || STYLES.snall;
+    (st.swap || []).forEach(([rx, rep]) => { t = t.replace(rx, rep); });
+    if (st.lower) t = t.toLowerCase().replace(/\.$/, '');
+    const sentences = x => x.replace(/([.!?]\s+)([a-zåäö])/g, (m, a, b) => a + b.toUpperCase());
+    if (st.wrap) return st.wrap(sentences(cap(t)));
+    if (st.lower) return pick(st.pre) + t + pick(st.post);
+    return sentences(cap(pick(st.pre || ['']) + cap(t) + pick(st.post || [''])));
+  }
+
+  function localVideoScript(meeting, sum) {
+    const scenes = [];
+    const cs = concepts(meeting);
+    const kws = sum.keywords || [];
+    scenes.push({ caption: `POV: du missade "${meeting.title}" 😅 Här är allt på 30 sekunder`, narration: `Du missade ${meeting.title}? Ingen fara, här är allt på trettio sekunder!`, query: cs[0] ? GLOSSARY[cs[0]].wiki : kws[0], emoji: '⏱️' });
+    const pts = sum.points.slice(0, 4);
+    pts.forEach((p, i) => {
+      const txt = p.replace(/^[^:]+:\s*/, '');
+      const c = cs.find(k => ALIASES[k].some(a => txt.toLowerCase().includes(a)));
+      const kw = c ? GLOSSARY[c].wiki : (words(txt).find(w => kws.includes(w)) || kws[i] || 'kontor');
+      scenes.push({ caption: shorten(txt, 90), narration: txt, query: kw, emoji: c ? GLOSSARY[c].icon : ['💡', '📌', '🚀', '🎯'][i % 4] });
+    });
+    if (sum.actions.length) {
+      const a = sum.actions.slice(0, 2).map(x => `${x.who}: ${shorten(x.what, 50)}`).join(' · ');
+      scenes.push({ caption: 'Att göra ✅ ' + a, narration: 'Att göra: ' + sum.actions.slice(0, 2).map(x => x.who + ' ' + x.what).join('. '), query: 'Checklista', emoji: '✅' });
+    }
+    scenes.push({ caption: 'Följ för fler möten du slipper sitta i 😎', narration: 'Följ Motey för fler möten du slipper sitta i!', query: null, emoji: '💜' });
+    return scenes;
+  }
+  const shorten = (s, n) => s.length > n ? s.slice(0, n - 1).replace(/\s\S*$/, '') + '…' : s;
+
+  function localLevel(meeting) {
+    let cs = concepts(meeting).map(k => Object.assign({ key: k }, GLOSSARY[k]));
+    const t = meeting.transcript || [];
+    // Meetings without finance words: build walls from the meeting's own keywords.
+    if (cs.length < 3) {
+      const kws = keywords(meeting, 10).filter(w => w.length > 4);
+      for (const w of kws) {
+        if (cs.length >= 4) break;
+        const line = t.find(l => l.text.toLowerCase().includes(w));
+        if (!line) continue;
+        const others = t.filter(l => l !== line && l.text.length > 20).map(l => shorten(l.text, 80));
+        const right = shorten(line.text, 80);
+        const opts = [right, pick(others) || 'Det pratade ingen om', 'Att mötet skulle ställas in'].filter((v, i, a) => a.indexOf(v) === i);
+        while (opts.length < 3) opts.push('Ingenting alls');
+        const order = opts.map((o, i) => ({ o, r: Math.random() + (i === 0 ? 0 : 0) })).sort((a, b) => a.r - b.r).map(x => x.o);
+        cs.push({ key: w, term: cap(w), icon: '🧱', wiki: w, explain: `På mötet sa ${firstName(line.who)}: ”${line.text}”`, howTo: 'Kom ihåg vad som sades – svara rätt så krossar du väggen!', q: `Vad sades om ”${w}” på mötet?`, opts: order, a: order.indexOf(right) });
+      }
+    }
+    const facts = localSummary(meeting).points.slice(0, 6).map(p => p.replace(/^[^:]+:\s*/, ''));
+    return { title: meeting.title, walls: cs.slice(0, 6), facts };
+  }
+
+  function localAnswer(question, meeting) {
+    const q = question.toLowerCase();
+    for (const [k, al] of Object.entries(ALIASES)) if (al.some(a => q.includes(a)) || q.includes(k)) {
+      const g = GLOSSARY[k];
+      return `${g.term}: ${g.explain} ${g.howTo}`;
+    }
+    const qs = words(q);
+    let best = null, bs = 0;
+    for (const l of meeting ? meeting.transcript || [] : []) {
+      const s = words(l.text).filter(w => qs.includes(w)).length;
+      if (s > bs) { bs = s; best = l; }
+    }
+    if (best) return `På mötet sa ${firstName(best.who)}: ”${best.text}”`;
+    return 'Det vet jag inte riktigt än! Lägg till en Claude-nyckel i Inställningar så kan jag svara på allt. 😊';
+  }
+
+  /* ---------- Claude (Messages API, raw fetch from the webview) ---------- */
+  const hasKey = () => !!(window.Store && Store.settings.apiKey);
+  async function claude({ system, prompt, schema, effort, maxTokens }) {
+    const s = Store.settings;
+    const body = {
+      model: s.model || 'claude-opus-5-5',
+      max_tokens: maxTokens || 16000,
+      system,
+      messages: [{ role: 'user', content: prompt }],
+      output_config: { effort: effort || 'low' },
+      // On a safety-classifier decline, let the API retry on its recommended fallback model.
+      fallbacks: 'default'
+    };
+    if (schema) body.output_config.format = { type: 'json_schema', schema };
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': s.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'server-side-fallback-2026-07-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error((data.error && data.error.message) || ('HTTP ' + res.status));
+    if (data.stop_reason === 'refusal') throw new Error('refusal');
+    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    if (!text) throw new Error('empty');
+    return schema ? JSON.parse(text) : text.trim();
+  }
+  const SYS = 'Du är Motey, en glad AI-mötesassistent formad som en pratbubbla. Du svarar alltid på svenska, kort och tydligt.';
+  const transcriptText = m => (m.transcript || []).map(l => `${l.who}: ${l.text}`).join('\n');
+  const obj = (props, req) => ({ type: 'object', properties: props, required: req || Object.keys(props), additionalProperties: false });
+  const str = { type: 'string' };
+  const arr = items => ({ type: 'array', items });
+
+  async function withFallback(fnClaude, fnLocal) {
+    if (!hasKey()) return { source: 'local', value: fnLocal() };
+    try { return { source: 'claude', value: await fnClaude() }; }
+    catch (e) { console.warn('Claude misslyckades, använder offline-motorn:', e.message); return { source: 'local', value: fnLocal(), error: e.message }; }
+  }
+
+  /* ---------- public API ---------- */
+  const cache = {};
+  async function summarize(meeting) {
+    const key = meeting.id + ':' + (meeting.transcript || []).length + ':' + hasKey();
+    if (cache[key]) return cache[key];
+    const r = await withFallback(async () => {
+      const v = await claude({
+        system: SYS, effort: 'medium',
+        prompt: `Sammanfatta mötet "${meeting.title}". Ge en kort sammanfattning (2–3 meningar), de viktigaste punkterna, beslut, att göra-punkter med ansvarig person, alla filer/dokument som nämns och 6–8 nyckelord.\n\nTranskript:\n${transcriptText(meeting)}`,
+        schema: obj({ summary: str, points: arr(str), decisions: arr(str), actions: arr(obj({ who: str, what: str })), files: arr(str), keywords: arr(str) })
+      });
+      (meeting.files || []).forEach(f => v.files.includes(f.name) || v.files.push(f.name));
+      return v;
+    }, () => localSummary(meeting));
+    if (!(meeting.transcript || []).length) r.value = localSummary(meeting);
+    cache[key] = r;
+    return r;
+  }
+
+  async function catchUp(prev, user) {
+    const sum = (await summarize(prev)).value;
+    const day = new Date(prev.start).toLocaleDateString('sv-SE', { weekday: 'long' }) + 's';
+    const mine = sum.actions.filter(a => firstName(a.who).toLowerCase() === firstName(user).toLowerCase() || a.who === 'Alla');
+    const r = await withFallback(
+      () => claude({
+        system: SYS, effort: 'low',
+        prompt: `${user} missade mötet "${prev.title}" i ${day}. Skriv en kort, varm och lite rolig uppdatering (max 70 ord) direkt till ${user}: vad som hände, vilka beslut som togs och vad ${user} själv ska göra. Ingen rubrik.\n\nTranskript:\n${transcriptText(prev)}`
+      }),
+      () => `Hej ${user}! Du missade "${prev.title}" i ${day}. ${sum.summary}` +
+        (sum.decisions.length ? ` Det viktigaste beslutet: ${sum.decisions[0].replace(/^[^:]+:\s*/, '').replace(/^((bra|toppen|okej|tack|beslut)[.!:,]?\s*)+/i, '')}` : '') +
+        (mine.length ? ` Och du ska: ${mine.map(a => a.what.replace(new RegExp('^' + firstName(user) + ',?\\s+(du\\s+)?ska\\s+', 'i'), '').replace(/^alla ska\s+/i, 'precis som alla andra ').replace(/\bsina\b/g, 'dina').replace(/\bsitt\b/g, 'ditt').replace(/\bsin\b/g, 'din').replace(/\btill mig\b/i, 'till ' + (a.from || 'chefen')).replace(/\.$/, '')).join(', och ')}.` : '')
+    );
+    return { text: r.value, source: r.source, sum, mine };
+  }
+
+  async function restyle(text, style) {
+    const st = STYLES[style] || STYLES.snall;
+    return withFallback(
+      () => claude({
+        system: SYS + ' Du ersätter en talare i ett möte i realtid.',
+        effort: 'low', maxTokens: 1024,
+        prompt: `Skriv om repliken i stilen "${st.name}". Behåll exakt samma budskap, fakta, siffror, datum och uppgifter – bara tonen ändras, och den ska vara vänlig. Svara endast med den nya repliken.\n\nReplik: ${text}`
+      }),
+      () => localRestyle(text, style)
+    );
+  }
+
+  async function videoScript(meeting) {
+    const sum = (await summarize(meeting)).value;
+    return withFallback(
+      () => claude({
+        system: SYS + ' Du gör korta, roliga vertikala videor (TikTok-stil) om möten.',
+        effort: 'low',
+        prompt: `Gör ett manus för en 30–40 sekunders TikTok-video om mötet "${meeting.title}". 5–7 scener. Varje scen: caption (max 90 tecken, gärna med emoji), narration (det som sägs, max 25 ord), query (ett sökord för en passande Wikipedia-bild, helst ett substantiv på svenska, eller tom sträng), emoji (en emoji). Första scenen är en hook, sista en uppmaning.\n\nTranskript:\n${transcriptText(meeting)}`,
+        schema: obj({ scenes: arr(obj({ caption: str, narration: str, query: str, emoji: str })) })
+      }).then(v => v.scenes),
+      () => localVideoScript(meeting, sum)
+    );
+  }
+
+  async function gameLevel(meeting) {
+    return withFallback(
+      () => claude({
+        system: SYS + ' Du bygger banor i ett pedagogiskt spel där varje vägg är ett begrepp från mötet.',
+        effort: 'medium',
+        prompt: `Gör 3–6 väggar till en spelbana om mötet "${meeting.title}". Varje vägg är ett viktigt begrepp från mötet (t.ex. F-skatt, moms). För varje: term, icon (en emoji), explain (förklara begreppet enkelt och korrekt, 2–3 meningar), howTo (så "förstör" man väggen = vad man konkret gör i verkligheten, 1–2 meningar), q (en kontrollfråga), opts (exakt 3 svarsalternativ), a (index 0–2 för rätt svar). Lägg också till 3–6 korta facts från mötet.\n\nTranskript:\n${transcriptText(meeting)}`,
+        schema: obj({ walls: arr(obj({ term: str, icon: str, explain: str, howTo: str, q: str, opts: arr(str), a: { type: 'integer' } })), facts: arr(str) })
+      }).then(v => ({ title: meeting.title, walls: v.walls.filter(w => w.opts.length >= 2 && w.a >= 0 && w.a < w.opts.length).slice(0, 6), facts: v.facts })),
+      () => localLevel(meeting)
+    );
+  }
+
+  async function ask(question, meeting) {
+    return withFallback(
+      () => claude({
+        system: SYS + ' Du är spelkompis i Motey-spelläget och förklarar saker enkelt.',
+        effort: 'low', maxTokens: 1024,
+        prompt: `Fråga: ${question}\n\nSvara kort (max 60 ord).` + (meeting ? `\n\nMötets transkript:\n${transcriptText(meeting)}` : '')
+      }),
+      () => localAnswer(question, meeting)
+    );
+  }
+
+  async function testKey() {
+    return claude({ system: SYS, prompt: 'Säg hej i max fem ord.', effort: 'low', maxTokens: 256 });
+  }
+
+  window.AI = { summarize, catchUp, restyle, videoScript, gameLevel, ask, testKey, hasKey, STYLES, GLOSSARY, keywords, concepts, localRestyle, localSummary, firstName };
+})();
+
+</script>
+<script>
+/* Motey Live AI (example 2): replace a speaker with Motey – same sentences, new style. */
+(function () {
+  'use strict';
+  const $ = (s, el) => (el || document).querySelector(s);
+  const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+
+  function bossFace() {
+    return `<svg class="boss-face" viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="34" r="24" fill="#F2C9A0" stroke="#1E1B3A" stroke-width="3"/>
+      <path d="M10 28c2-16 42-16 44 0-6-6-12-9-22-9S16 22 10 28z" fill="#5B3A29" stroke="#1E1B3A" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M18 30l10 4M46 30l-10 4" stroke="#1E1B3A" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="24" cy="38" r="2.6" fill="#1E1B3A"/><circle cx="40" cy="38" r="2.6" fill="#1E1B3A"/>
+      <path d="M24 50q8-6 16 0" fill="none" stroke="#1E1B3A" stroke-width="3" stroke-linecap="round"/>
+      <ellipse cx="17" cy="45" rx="4" ry="2.5" fill="#FF5C5C" opacity=".55"/><ellipse cx="47" cy="45" rx="4" ry="2.5" fill="#FF5C5C" opacity=".55"/>
+      <path d="M52 14l4-4M56 20l5-1M48 10l1-5" stroke="#FF5C5C" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>`;
+  }
+
+  let alive = false, rec = null, timer = null;
+
+  function render(v, meeting, ui) {
+    if (!meeting) return ui.pickMeeting(v, 'live', '🎭 Motey Live AI', 'Har du en arg och sträng chef? Välj ett möte – Motey tar chefens plats och säger samma sak, fast i en stil du gillar.');
+    alive = true;
+    const esc = ui.esc;
+    const S = Store.settings;
+    const t = meeting.transcript || [];
+    const counts = {};
+    t.forEach(l => { counts[l.who] = (counts[l.who] || 0) + 1; });
+    const speakers = Object.keys(counts);
+    const me = AI.firstName(S.name).toLowerCase();
+    let target = speakers.find(p => /chef/i.test(p)) || speakers.find(p => AI.firstName(p) === AI.firstName(meeting.boss)) ||
+      speakers.filter(p => AI.firstName(p).toLowerCase() !== me).sort((a, b) => counts[b] - counts[a])[0] || speakers[0];
+    let style = S.liveStyle || 'snall';
+    let showOrig = false;
+    const canListen = !!Platform.recognizer();
+
+    v.innerHTML = `
+      <div class="row between"><a href="#/live" class="btn sm ghost">‹ Byt möte</a><span class="badge brand">${AI.hasKey() ? 'Claude' : 'Offline-AI'}</span></div>
+      <h1 style="margin-top:12px">🎭 Live AI – ${esc(meeting.title)}</h1>
+      <div class="card">
+        <p class="small muted" style="margin:0 0 6px">Vem ska Motey ersätta?</p>
+        <div class="row" id="who">${speakers.map(p => `<span class="chip ${p === target ? 'on' : ''}" data-p="${esc(p)}">${esc(AI.firstName(p))}</span>`).join('')}</div>
+        <p class="small muted" style="margin:12px 0 6px">Stil</p>
+        <div class="row" id="styles">${Object.entries(AI.STYLES).map(([k, s]) => `<span class="chip ${k === style ? 'on' : ''}" data-s="${k}">${s.icon} ${s.name}</span>`).join('')}</div>
+      </div>
+      <div class="live-stage">
+        <div class="speaker-card original dim" id="orig">
+          <div class="who">${bossFace()}<div><div id="orig-name">${esc(AI.firstName(target))}</div><div class="small" style="opacity:.7">Originalet – dolt</div></div></div>
+          <div class="say" id="orig-say">…</div>
+          <label class="switch small" style="margin-top:auto"><input type="checkbox" id="showo"> Visa originalet</label>
+        </div>
+        <div class="speaker-card motey">
+          <div class="who"><span id="mface">${Mascot.svg({ size: 64 })}</span><div>Motey<div class="small" style="opacity:.7" id="mstyle">${AI.STYLES[style].icon} ${AI.STYLES[style].name}</div></div></div>
+          <div class="say" id="motey-say">Tryck på ▶ så tar jag över mötet!</div>
+        </div>
+      </div>
+      <div class="row" style="margin:14px 0">
+        <button class="btn" id="play">▶ Spela upp mötet live</button>
+        ${canListen ? '<button class="btn ghost" id="listen">🎙 Lyssna på riktigt möte</button>' : ''}
+      </div>
+      <div class="card"><div class="row"><input type="text" id="typed" placeholder="Skriv vad chefen säger…" style="flex:1"><button class="btn coral" id="conv">Byt stil</button></div></div>
+      <div class="card"><h3>Logg</h3><div class="live-log" id="log"><p class="muted small">Här hamnar allt som sägs.</p></div></div>`;
+
+    const log = $('#log', v);
+    const addLog = html => { if (log.querySelector('.muted')) log.innerHTML = ''; log.insertAdjacentHTML('afterbegin', `<div class="pair">${html}</div>`); };
+    const setTalking = on => { const svg = $('#mface .motey-svg', v); if (svg) svg.classList.toggle('is-talking', on); };
+
+    $$('#who .chip', v).forEach(c => c.addEventListener('click', () => {
+      target = c.dataset.p; $$('#who .chip', v).forEach(x => x.classList.toggle('on', x === c));
+      $('#orig-name', v).textContent = AI.firstName(target);
+    }));
+    $$('#styles .chip', v).forEach(c => c.addEventListener('click', () => {
+      style = c.dataset.s; S.liveStyle = style; Store.save();
+      $$('#styles .chip', v).forEach(x => x.classList.toggle('on', x === c));
+      $('#mstyle', v).textContent = `${AI.STYLES[style].icon} ${AI.STYLES[style].name}`;
+    }));
+    $('#showo', v).addEventListener('change', e => {
+      showOrig = e.target.checked;
+      $('#orig', v).classList.toggle('dim', !showOrig);
+      $('#orig .small', v).textContent = showOrig ? 'Originalet' : 'Originalet – dolt';
+    });
+
+    async function convert(text, who) {
+      $('#orig-say', v).textContent = text;
+      $('#motey-say', v).innerHTML = '<span class="typing"></span>';
+      const r = await AI.restyle(text, style);
+      if (!alive) return;
+      Store.state.stats.restyled++; Store.save();
+      $('#motey-say', v).textContent = r.value;
+      addLog(`<div class="o">${ui.esc(AI.firstName(who || target))}: ${ui.esc(text)}</div><div><b>Motey:</b> ${ui.esc(r.value)}</div>`);
+      setTalking(true);
+      await new Promise(res => Platform.speak(r.value, { onend: res, pitch: 1.25 }));
+      setTalking(false);
+    }
+
+    let playing = false;
+    $('#play', v).addEventListener('click', async () => {
+      const btn = $('#play', v);
+      if (playing) { playing = false; Platform.stopSpeaking(); btn.textContent = '▶ Spela upp mötet live'; return; }
+      playing = true; btn.textContent = '⏹ Stoppa';
+      for (const l of t) {
+        if (!playing || !alive) break;
+        if (l.who === target) await convert(l.text, l.who);
+        else {
+          addLog(`<div><b>${ui.esc(AI.firstName(l.who))}:</b> ${ui.esc(l.text)}</div>`);
+          await new Promise(res => { timer = setTimeout(res, 1200 + l.text.length * 25); });
+        }
+      }
+      playing = false; if (alive) btn.textContent = '▶ Spela upp mötet live';
+    });
+    $('#conv', v).addEventListener('click', () => { const x = $('#typed', v).value.trim(); if (x) { $('#typed', v).value = ''; convert(x, target); } });
+    $('#typed', v).addEventListener('keydown', e => { if (e.key === 'Enter') $('#conv', v).click(); });
+
+    const lb = $('#listen', v);
+    if (lb) lb.addEventListener('click', () => {
+      if (rec) { rec.stop(); rec = null; lb.innerHTML = '🎙 Lyssna på riktigt möte'; return; }
+      rec = Platform.recognizer();
+      rec.onresult = e => { const r = e.results[e.results.length - 1]; if (r.isFinal) convert(r[0].transcript.trim(), target); };
+      rec.onend = () => { if (rec) try { rec.start(); } catch (e) { /* already running */ } };
+      rec.onerror = ev => ui.toast('Mikrofonen: ' + ev.error);
+      try { rec.start(); lb.innerHTML = '<span class="rec-dot"></span> Lyssnar… (tryck för att sluta)'; } catch (e) { ui.toast('Kunde inte starta mikrofonen'); rec = null; }
+    });
+  }
+
+  function destroy() {
+    alive = false; clearTimeout(timer);
+    if (rec) { const r = rec; rec = null; try { r.stop(); } catch (e) { /* ignore */ } }
+    Platform.stopSpeaking();
+  }
+
+  window.LiveMode = { render, destroy, bossFace };
+})();
+
+</script>
+<script>
+/* Motey TikTok-läge (example 3): turns a meeting into a short vertical video
+ * with an animated presenter, pictures from Wikipedia, captions and a beat.
+ * Plays in the app (with voice) and exports as a video file. */
+(function () {
+  'use strict';
+  const $ = (s, el) => (el || document).querySelector(s);
+  const W = 720, H = 1280;
+  let alive = false, raf = 0, audio = null, state = null;
+
+  /* ---------- pictures from the internet ---------- */
+  async function wikiImage(q) {
+    if (!q) return null;
+    for (const lang of ['sv', 'en']) {
+      try {
+        const ctl = new AbortController();
+        const to = setTimeout(() => ctl.abort(), 6000);
+        const r = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q.replace(/ /g, '_'))}`, { signal: ctl.signal });
+        clearTimeout(to);
+        if (!r.ok) continue;
+        const j = await r.json();
+        let src = j.thumbnail && j.thumbnail.source;
+        if (!src) continue;
+        src = src.replace(/\/(\d+)px-/, '/720px-');
+        const img = await loadImg(src).catch(() => loadImg(j.thumbnail.source));
+        return { img, credit: 'Bild: Wikipedia / ' + (j.title || q) };
+      } catch (e) { /* offline or not found */ }
+    }
+    return null;
+  }
+  function loadImg(src) {
+    return new Promise((res, rej) => {
+      const i = new Image();
+      i.crossOrigin = 'anonymous'; // keeps the canvas exportable
+      i.onload = () => res(i); i.onerror = rej;
+      i.src = src;
+    });
+  }
+
+  /* ---------- music: a small generated beat (WebAudio) ---------- */
+  function makeAudio() {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    const ctx = new AC();
+    const out = ctx.createGain(); out.gain.value = 0.35;
+    out.connect(ctx.destination);
+    const rec = ctx.createMediaStreamDestination ? ctx.createMediaStreamDestination() : null;
+    if (rec) out.connect(rec);
+    const bpm = 104, beat = 60 / bpm;
+    const chords = [[57, 60, 64], [53, 57, 60], [55, 59, 62], [52, 55, 59]];
+    const f = n => 440 * Math.pow(2, (n - 69) / 12);
+    let next = ctx.currentTime + 0.05, step = 0, timer = null;
+    let noise = ctx.createBuffer(1, ctx.sampleRate * 0.2, ctx.sampleRate);
+    const nd = noise.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    function kick(t) { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.15); g.gain.setValueAtTime(0.9, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.25); o.connect(g).connect(out); o.start(t); o.stop(t + 0.3); }
+    function hat(t, v) { const s = ctx.createBufferSource(), g = ctx.createGain(), hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 7000; s.buffer = noise; g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.05); s.connect(hp).connect(g).connect(out); s.start(t); s.stop(t + 0.06); }
+    function pad(t, notes) { notes.forEach(n => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'triangle'; o.frequency.value = f(n); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.07, t + 0.05); g.gain.linearRampToValueAtTime(0, t + beat * 3.8); o.connect(g).connect(out); o.start(t); o.stop(t + beat * 4); }); }
+    function bass(t, n) { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sawtooth'; o.frequency.value = f(n - 24); const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 400; g.gain.setValueAtTime(0.18, t); g.gain.exponentialRampToValueAtTime(0.001, t + beat * 0.9); o.connect(lp).connect(g).connect(out); o.start(t); o.stop(t + beat); }
+    function sched() {
+      while (next < ctx.currentTime + 0.2) {
+        const s8 = step % 8;
+        if (s8 % 2 === 0) hat(next, 0.12); else hat(next, 0.05);
+        if (s8 === 0 || s8 === 4 || s8 === 5) kick(next);
+        const bar = Math.floor(step / 8) % 4;
+        if (s8 === 0) pad(next, chords[bar]);
+        if (s8 % 2 === 0) bass(next, chords[bar][0]);
+        next += beat / 2; step++;
+      }
+    }
+    return {
+      ctx, stream: rec && rec.stream,
+      start() { if (ctx.state === 'suspended') ctx.resume(); next = ctx.currentTime + 0.05; sched(); timer = setInterval(sched, 50); },
+      stop() { clearInterval(timer); },
+      close() { clearInterval(timer); try { ctx.close(); } catch (e) { /* closed */ } }
+    };
+  }
+
+  /* ---------- drawing ---------- */
+  const HUES = [262, 330, 200, 150, 28, 290, 190];
+  function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+  function wrapLines(c, text, maxW) {
+    const out = []; let line = '';
+    for (const w of text.split(/\s+/)) { const t = line ? line + ' ' + w : w; if (c.measureText(t).width > maxW && line) { out.push(line); line = w; } else line = t; }
+    if (line) out.push(line); return out;
+  }
+  // Path2D of the Motey bubble (same outline as the SVG mascot).
+  let bubble = null;
+  function drawMotey(c, x, y, s, t, talking) {
+    bubble = bubble || new Path2D(Mascot.BODY);
+    c.save(); c.translate(x, y + Math.sin(t * 3) * 4 * s); c.scale(s, s); c.translate(-100, -100);
+    c.fillStyle = '#fff'; c.strokeStyle = '#1E1B3A'; c.lineWidth = 7; c.lineJoin = 'round';
+    c.fill(bubble); c.stroke(bubble);
+    const blink = (t % 4) > 3.85 ? 0.12 : 1;
+    c.fillStyle = '#1E1B3A';
+    [[78, 82], [122, 82]].forEach(([ex, ey]) => { c.beginPath(); c.ellipse(ex, ey, 15.5, 23 * blink, 0, 0, 7); c.fill(); });
+    if (blink === 1) { c.fillStyle = '#fff'; [[72.5, 71], [116.5, 71]].forEach(([ex, ey]) => { c.beginPath(); c.arc(ex, ey, 5.5, 0, 7); c.fill(); }); }
+    c.fillStyle = 'rgba(255,143,177,.55)'; [[58, 110], [142, 110]].forEach(([ex, ey]) => { c.beginPath(); c.ellipse(ex, ey, 11, 6, 0, 0, 7); c.fill(); });
+    c.fillStyle = '#1E1B3A';
+    if (talking) { c.beginPath(); c.ellipse(100, 122, 9, 2 + 6 * Math.abs(Math.sin(t * 14)), 0, 0, 7); c.fill(); }
+    else { c.beginPath(); c.lineWidth = 5.5; c.lineCap = 'round'; c.moveTo(89, 118); c.quadraticCurveTo(100, 128, 111, 118); c.stroke(); }
+    c.restore();
+  }
+  // The animated presenter ("en animerad person").
+  function drawPresenter(c, x, y, t, talking) {
+    const bob = Math.sin(t * 2.2) * 5;
+    c.save(); c.translate(x, y + bob);
+    // body
+    c.fillStyle = '#6C4CF5'; rr(c, -95, 40, 190, 230, 80); c.fill();
+    c.fillStyle = '#fff'; c.beginPath(); c.moveTo(-26, 40); c.lineTo(0, 86); c.lineTo(26, 40); c.closePath(); c.fill();
+    // arms – one gestures while talking
+    const g = talking ? Math.sin(t * 5) * 0.5 : 0.1;
+    c.strokeStyle = '#6C4CF5'; c.lineWidth = 34; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(-80, 90); c.lineTo(-120, 190); c.stroke();
+    c.save(); c.translate(80, 90); c.rotate(-1.1 - g); c.beginPath(); c.moveTo(0, 0); c.lineTo(0, -95); c.stroke();
+    c.fillStyle = '#F2C29B'; c.beginPath(); c.arc(0, -108, 20, 0, 7); c.fill(); c.restore();
+    c.fillStyle = '#F2C29B'; c.beginPath(); c.arc(-120, 198, 20, 0, 7); c.fill();
+    // neck + head
+    c.fillStyle = '#F2C29B'; c.fillRect(-18, 10, 36, 36);
+    c.beginPath(); c.ellipse(0, -40, 66, 74, 0, 0, 7); c.fill();
+    // hair
+    c.fillStyle = '#2B1B12'; c.beginPath(); c.ellipse(0, -88, 70, 40, 0, Math.PI, 0); c.fill();
+    c.beginPath(); c.ellipse(-48, -60, 22, 40, 0.3, 0, 7); c.fill(); c.beginPath(); c.ellipse(46, -66, 18, 30, -0.3, 0, 7); c.fill();
+    // eyes
+    const blink = (t % 3.3) > 3.15 ? 0.1 : 1;
+    c.fillStyle = '#1E1B3A'; [-24, 24].forEach(ex => { c.beginPath(); c.ellipse(ex, -40, 8, 10 * blink, 0, 0, 7); c.fill(); });
+    c.fillStyle = '#fff'; if (blink === 1) [-27, 21].forEach(ex => { c.beginPath(); c.arc(ex, -44, 3, 0, 7); c.fill(); });
+    c.strokeStyle = '#2B1B12'; c.lineWidth = 6; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(-36, -62 - (talking ? Math.abs(Math.sin(t * 3)) * 5 : 0)); c.lineTo(-14, -64); c.moveTo(14, -64); c.lineTo(36, -62); c.stroke();
+    c.fillStyle = 'rgba(255,110,140,.45)'; [-40, 40].forEach(ex => { c.beginPath(); c.ellipse(ex, -16, 11, 7, 0, 0, 7); c.fill(); });
+    // mouth
+    c.fillStyle = '#7A1F2B';
+    const open = talking ? 4 + 13 * Math.abs(Math.sin(t * 13) * Math.sin(t * 7.3)) : 3;
+    c.beginPath(); c.ellipse(0, 4, 18, open, 0, 0, 7); c.fill();
+    c.restore();
+  }
+
+  function frame(c, st, time, talkingOverride) {
+    const scenes = st.scenes;
+    let acc = 0, i = 0;
+    while (i < scenes.length - 1 && time > acc + scenes[i].dur) { acc += scenes[i].dur; i++; }
+    const sc = scenes[i], lt = Math.min(time - acc, sc.dur), p = lt / sc.dur;
+    const hue = HUES[i % HUES.length];
+    // background
+    const g = c.createLinearGradient(0, 0, W, H);
+    g.addColorStop(0, `hsl(${hue},85%,62%)`); g.addColorStop(1, `hsl(${(hue + 50) % 360},80%,45%)`);
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    c.globalAlpha = 0.12; c.fillStyle = '#fff';
+    for (let k = 0; k < 7; k++) { c.beginPath(); c.arc((k * 173 + time * 30) % (W + 200) - 100, 200 + (k * 211) % 900, 40 + k * 12, 0, 7); c.fill(); }
+    c.globalAlpha = 1;
+    // story bars
+    scenes.forEach((s, k) => {
+      const bw = (W - 40 - (scenes.length - 1) * 6) / scenes.length, bx = 20 + k * (bw + 6);
+      c.fillStyle = 'rgba(255,255,255,.35)'; rr(c, bx, 22, bw, 6, 3); c.fill();
+      c.fillStyle = '#fff'; rr(c, bx, 22, bw * (k < i ? 1 : k === i ? p : 0), 6, 3); c.fill();
+    });
+    // picture card with a slow zoom
+    const cx = 50, cy = 120, cw = W - 100, ch = 600;
+    const enter = Math.min(1, lt / 0.35);
+    c.save(); c.translate(W / 2, cy + ch / 2); c.rotate((1 - enter) * 0.15 * (i % 2 ? 1 : -1)); c.scale(0.8 + 0.2 * enter, 0.8 + 0.2 * enter); c.translate(-W / 2, -(cy + ch / 2));
+    c.shadowColor = 'rgba(0,0,0,.35)'; c.shadowBlur = 30; c.shadowOffsetY = 12;
+    c.fillStyle = '#fff'; rr(c, cx - 10, cy - 10, cw + 20, ch + 20, 34); c.fill();
+    c.shadowColor = 'transparent';
+    c.save(); rr(c, cx, cy, cw, ch, 26); c.clip();
+    if (sc.image) {
+      const im = sc.image.img, z = 1.05 + 0.12 * p;
+      const sc2 = Math.max(cw / im.width, ch / im.height) * z;
+      c.drawImage(im, cx + (cw - im.width * sc2) / 2 - 20 * p, cy + (ch - im.height * sc2) / 2, im.width * sc2, im.height * sc2);
+      c.fillStyle = 'rgba(0,0,0,.45)'; c.fillRect(cx, cy + ch - 34, cw, 34);
+      c.fillStyle = '#fff'; c.font = '600 18px system-ui, sans-serif'; c.textAlign = 'left'; c.fillText(sc.image.credit, cx + 14, cy + ch - 11);
+    } else {
+      const gg = c.createLinearGradient(cx, cy, cx + cw, cy + ch);
+      gg.addColorStop(0, `hsl(${(hue + 180) % 360},90%,92%)`); gg.addColorStop(1, `hsl(${(hue + 210) % 360},90%,80%)`);
+      c.fillStyle = gg; c.fillRect(cx, cy, cw, ch);
+      if (i === scenes.length - 1) drawMotey(c, W / 2, cy + ch / 2 - 10, 2.2, time, false);
+      else { c.font = '220px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(sc.emoji || '💡', W / 2, cy + ch / 2 + Math.sin(time * 3) * 10); c.textBaseline = 'alphabetic'; }
+    }
+    c.restore();
+    // emoji sticker
+    c.font = '84px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; c.textAlign = 'center';
+    c.save(); c.translate(cx + cw - 20, cy + 20); c.rotate(Math.sin(time * 4) * 0.2); c.scale(1 + 0.1 * Math.sin(time * 6), 1 + 0.1 * Math.sin(time * 6)); c.fillText(sc.emoji || '✨', 0, 30); c.restore();
+    c.restore();
+    // captions, word by word
+    c.font = '900 50px "Nunito","Segoe UI",system-ui,sans-serif'; c.textAlign = 'center';
+    const lines = wrapLines(c, sc.caption, W - 90).slice(0, 4);
+    const total = lines.join(' ').split(' ').length;
+    const shown = Math.min(total, Math.floor(p * total * 1.6) + 1);
+    let n = 0;
+    lines.forEach((ln, k) => {
+      const y = 800 + k * 62;
+      const ws = ln.split(' ');
+      let x = W / 2 - c.measureText(ln).width / 2;
+      c.textAlign = 'left';
+      ws.forEach(w => {
+        n++;
+        if (n <= shown) {
+          c.lineWidth = 10; c.strokeStyle = '#1E1B3A'; c.lineJoin = 'round'; c.strokeText(w, x, y);
+          c.fillStyle = n === shown ? '#FFE14D' : '#fff'; c.fillText(w, x, y);
+        }
+        x += c.measureText(w + ' ').width;
+      });
+    });
+    c.textAlign = 'center';
+    // presenter + Motey
+    const talking = talkingOverride !== undefined ? talkingOverride : (lt > 0.3 && lt < sc.dur - 0.4);
+    drawPresenter(c, 190, 1120, time, talking);
+    drawMotey(c, 610, 1090, 0.62, time + 1, !talking && i % 2 === 1);
+    // footer
+    c.textAlign = 'left'; c.fillStyle = '#fff'; c.font = '800 28px system-ui, sans-serif';
+    c.shadowColor = 'rgba(0,0,0,.5)'; c.shadowBlur = 6;
+    c.fillText('@motey.ai', 330, 1165);
+    c.font = '600 22px system-ui, sans-serif';
+    c.fillText(('♫ Motey beats – ' + st.title).slice(0, 38), 330, 1200);
+    c.shadowColor = 'transparent';
+    return { i, lt, sc };
+  }
+
+  /* ---------- UI ---------- */
+  function render(v, meeting, ui) {
+    if (!meeting) return ui.pickMeeting(v, 'tiktok', '🎬 TikTok-läge', 'Orkar du inte läsa? Motey gör mötet till en kort video med en animerad presentatör, bilder från internet och text.');
+    alive = true;
+    const esc = ui.esc;
+    v.innerHTML = `<div class="row between"><a href="#/tiktok" class="btn sm ghost">‹ Byt möte</a><span class="badge brand" id="src">…</span></div>
+      <h1 style="margin-top:12px">🎬 ${esc(meeting.title)}</h1>
+      <div class="tt-wrap">
+        <div class="tt-phone"><canvas id="tt" width="${W}" height="${H}"></canvas>
+          <button class="tt-play hidden" id="ttplay" aria-label="Spela">▶</button>
+          <div class="tt-side"><button id="like" aria-label="Gilla">❤️</button><span id="likes">0</span>
+            <button id="cmt" aria-label="Sammanfattning">💬</button><span>Info</span>
+            <button id="dl" aria-label="Spara video">⬇️</button><span>Spara</span>
+            <button id="again" aria-label="Ny video">🔄</button><span>Ny</span></div></div>
+        <div class="tt-panel card">
+          <h3>Så här gör Motey videon</h3>
+          <div class="progress"><i id="bar"></i></div><p class="small muted" id="status" style="margin-top:6px">Skriver manus…</p>
+          <ol class="scene-list small" id="scenes"></ol>
+          <p class="small muted">Presentatören och Motey animeras i realtid. Bilderna hämtas från Wikipedia när det finns nät. Den sparade videon har text och musik – rösten hörs bara i appen.</p>
+        </div>
+      </div>`;
+    const canvas = $('#tt', v), c = canvas.getContext('2d');
+    const status = t => { const s = $('#status', v); if (s) s.textContent = t; };
+    const bar = x => { const b = $('#bar', v); if (b) b.style.width = Math.round(x * 100) + '%'; };
+    let likes = 0;
+    $('#like', v).addEventListener('click', e => { likes++; e.currentTarget.classList.add('liked'); $('#likes', v).textContent = likes; });
+    $('#cmt', v).addEventListener('click', () => ui.toast(state ? state.scenes.map(s => s.caption).join(' · ').slice(0, 300) : '…', 6000));
+    $('#again', v).addEventListener('click', () => { stop(); build(); });
+    $('#dl', v).addEventListener('click', () => exportVideo());
+    $('#ttplay', v).addEventListener('click', () => play());
+
+    async function build() {
+      bar(0.05); status('Skriver manus…');
+      const r = await AI.videoScript(meeting);
+      if (!alive) return;
+      $('#src', v).textContent = r.source === 'claude' ? 'Manus: Claude' : 'Manus: Offline-AI';
+      const scenes = r.value.map(s => Object.assign({}, s, { dur: Math.max(4.2, Math.min(7.5, s.caption.split(' ').length * 0.42 + 1.6)) }));
+      $('#scenes', v).innerHTML = scenes.map(s => `<li>${esc(s.emoji || '')} ${esc(s.caption)}</li>`).join('');
+      status('Hämtar bilder från internet…');
+      let done = 0;
+      await Promise.all(scenes.map(async s => { s.image = await wikiImage(s.query); done++; bar(0.1 + 0.8 * done / scenes.length); }));
+      if (!alive) return;
+      const imgs = scenes.filter(s => s.image).length;
+      bar(1); status(`Klar! ${scenes.length} scener, ${imgs} bilder från internet.`);
+      state = { scenes, title: meeting.title, total: scenes.reduce((a, s) => a + s.dur, 0) };
+      Store.state.stats.videos++; Store.save();
+      frame(c, state, 0.01, false);
+      $('#ttplay', v).classList.remove('hidden');
+    }
+
+    let t0 = 0, lastScene = -1;
+    function play() {
+      if (!state) return;
+      $('#ttplay', v).classList.add('hidden');
+      if (!audio) audio = makeAudio();
+      if (audio) audio.start();
+      t0 = performance.now(); lastScene = -1;
+      const loop = now => {
+        if (!alive) return;
+        const time = (now - t0) / 1000;
+        if (time >= state.total) { stop(); frame(c, state, state.total - 0.01, false); $('#ttplay', v).classList.remove('hidden'); return; }
+        const f = frame(c, state, time);
+        if (f.i !== lastScene) { lastScene = f.i; Platform.stopSpeaking(); Platform.speak(f.sc.narration || f.sc.caption, { rate: 1.08 }); }
+        raf = requestAnimationFrame(loop);
+      };
+      raf = requestAnimationFrame(loop);
+    }
+    function stop() { cancelAnimationFrame(raf); if (audio) audio.stop(); Platform.stopSpeaking(); }
+
+    async function exportVideo() {
+      if (!state) return ui.toast('Vänta tills videon är klar');
+      if (!window.MediaRecorder || !canvas.captureStream) return ui.toast('Den här enheten kan inte spela in video 😕');
+      stop();
+      $('#ttplay', v).classList.add('hidden');
+      if (!audio) audio = makeAudio();
+      const stream = canvas.captureStream(30);
+      if (audio && audio.stream) audio.stream.getAudioTracks().forEach(tr => stream.addTrack(tr));
+      const types = ['video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+      const type = types.find(x => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(x)) || '';
+      let rec;
+      try { rec = new MediaRecorder(stream, type ? { mimeType: type, videoBitsPerSecond: 4e6 } : undefined); }
+      catch (e) { return ui.toast('Kunde inte starta inspelningen: ' + e.message); }
+      const chunks = [];
+      rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+      const finished = new Promise(res => { rec.onstop = res; });
+      rec.start(500);
+      if (audio) audio.start();
+      const start = performance.now();
+      await new Promise(res => {
+        const loop = now => {
+          if (!alive) return res();
+          const time = (now - start) / 1000;
+          if (time >= state.total) return res();
+          frame(c, state, time);
+          bar(time / state.total); status(`Spelar in video… ${Math.round(100 * time / state.total)} %`);
+          raf = requestAnimationFrame(loop);
+        };
+        raf = requestAnimationFrame(loop);
+      });
+      if (audio) audio.stop();
+      rec.stop(); await finished;
+      if (!alive) return;
+      const mime = (rec.mimeType || type || 'video/webm').split(';')[0];
+      const blob = new Blob(chunks, { type: mime });
+      const name = `Motey-${meeting.title.replace(/[^\wåäöÅÄÖ-]+/g, '_')}.${mime.includes('mp4') ? 'mp4' : 'webm'}`;
+      status('Video klar (' + (blob.size / 1e6).toFixed(1) + ' MB)');
+      ui.toast(await Platform.saveFile(name, blob));
+      $('#ttplay', v).classList.remove('hidden');
+    }
+
+    build();
+  }
+
+  function destroy() {
+    alive = false; cancelAnimationFrame(raf);
+    if (audio) { audio.close(); audio = null; }
+    state = null;
+  }
+
+  window.TikTokMode = { render, destroy, frame, drawMotey };
+})();
+
+</script>
+<script>
+/* Motey Spelläge (example 4): the meeting becomes a side-scrolling office level.
+ * Every wall is a concept from the meeting (F-skatt, moms …). Motey walks with
+ * you, explains the wall and how to break it; answer right and it crumbles. */
+(function () {
+  'use strict';
+  const $ = (s, el) => (el || document).querySelector(s);
+  const VW = 960, VH = 540, FLOOR_TOP = 150, FLOOR_BOT = 480, GAP = 560;
+  let alive = false, raf = 0, keyHandlers = null;
+
+  function render(v, meeting, ui) {
+    if (!meeting) return ui.pickMeeting(v, 'game', '🎮 Spelläge', 'Mötet blir ett dataspel. Spring runt med Motey, hitta väggarna (som F-skatt) och lär dig hur man krossar dem.');
+    alive = true;
+    const esc = ui.esc;
+    const S = Store.settings;
+    v.innerHTML = `<div class="row between"><a href="#/game" class="btn sm ghost">‹ Byt möte</a><span class="badge brand" id="gsrc">Bygger banan…</span></div>
+      <h1 style="margin-top:12px">🎮 ${esc(meeting.title)}</h1>
+      <div class="game-shell" id="shell">
+        <canvas id="gc" width="${VW}" height="${VH}"></canvas>
+        <div class="game-hud"><span id="h-xp">⭐ 0 XP</span><span id="h-walls">🧱 0/0</span><span id="h-facts">📄 0</span><span id="h-time">⏱ 0:00</span></div>
+        <div class="game-say"><div id="g-motey"></div><div class="speech" id="g-say">Laddar…</div></div>
+        <div class="dpad">
+          <span></span><button data-k="up">▲</button><span></span>
+          <button data-k="left">◀</button><button class="act" data-k="act">KROSSA</button><button data-k="right">▶</button>
+          <span></span><button data-k="down">▼</button><span></span>
+        </div>
+      </div>
+      <p class="small muted" style="margin-top:8px">Styr med <kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> eller <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>. Tryck <kbd>E</kbd> eller <kbd>Mellanslag</kbd> vid en vägg.</p>
+      <div class="card"><h3>💬 Fråga Motey (Live AI)</h3><div class="row"><input type="text" id="g-q" placeholder="Vad är skillnaden på F-skatt och A-skatt?" style="flex:1"><button class="btn" id="g-ask">Fråga</button></div></div>`;
+    $('#g-motey', v).innerHTML = Mascot.svg({ size: 70 });
+    const canvas = $('#gc', v), c = canvas.getContext('2d');
+    const keys = {};
+    let level = null, walls = [], facts = [], props = [], particles = [], won = false, busy = false;
+    const player = { x: 120, y: 300, w: 34, h: 52, dir: 1, step: 0 };
+    const buddy = { x: 60, y: 250 };
+    let xp = 0, factsGot = 0, startT = performance.now(), cam = 0, worldW = 2000, sayTimer = 0;
+
+    function say(text, opts) {
+      const el = $('#g-say', v); if (!el) return;
+      el.textContent = text;
+      const svg = $('#g-motey .motey-svg', v);
+      if (opts && opts.voice) { svg && svg.classList.add('is-talking'); Platform.stopSpeaking(); Platform.speak(text, { onend: () => svg && svg.classList.remove('is-talking') }); }
+      clearTimeout(sayTimer);
+    }
+    const hud = () => {
+      $('#h-xp', v).textContent = `⭐ ${xp} XP`;
+      $('#h-walls', v).textContent = `🧱 ${walls.filter(w => w.state !== 'solid').length}/${walls.length}`;
+      $('#h-facts', v).textContent = `📄 ${factsGot}`;
+    };
+
+    async function build() {
+      const r = await AI.gameLevel(meeting);
+      if (!alive) return;
+      level = r.value;
+      $('#gsrc', v).textContent = r.source === 'claude' ? 'Bana: Claude' : 'Bana: Offline-AI';
+      walls = level.walls.map((w, i) => Object.assign({}, w, { x: 520 + i * GAP, state: 'solid', shake: 0, t: 0 }));
+      worldW = 520 + walls.length * GAP + 420;
+      facts = level.facts.map((f, i) => ({ text: f, x: 330 + i * (worldW - 700) / Math.max(1, level.facts.length), y: FLOOR_TOP + 40 + ((i * 97) % (FLOOR_BOT - FLOOR_TOP - 90)), got: false }));
+      props = [];
+      for (let x = 260; x < worldW - 300; x += 190) {
+        if (walls.some(w => Math.abs(w.x - x) < 120)) continue;
+        const k = (x / 190) % 3 | 0;
+        props.push({ kind: ['desk', 'plant', 'coffee'][k], x, y: k === 0 ? 400 : k === 1 ? 190 : 410 });
+      }
+      hud();
+      const name = AI.firstName(S.name);
+      say(walls.length
+        ? `Välkommen till ${meeting.title}, ${name}! Det känns som ett dataspel, men allt är på riktigt. Vi måste ta oss förbi ${walls.length} väggar. Den första är ${walls[0].term}. Spring åt höger!`
+        : 'Hmm, jag hittade inga begrepp i mötet. Lägg till ett transkript så bygger jag en bana!', { voice: true });
+      startT = performance.now();
+      loop(performance.now());
+    }
+
+    /* ---------- physics ---------- */
+    function update(dt) {
+      if (busy || won) return;
+      const sp = 260 * dt;
+      let dx = 0, dy = 0;
+      if (keys.left) dx -= sp; if (keys.right) dx += sp; if (keys.up) dy -= sp; if (keys.down) dy += sp;
+      if (dx && dy) { dx *= 0.707; dy *= 0.707; }
+      if (dx) player.dir = Math.sign(dx);
+      player.step += (dx || dy) ? dt * 10 : 0;
+      let nx = Math.max(10, Math.min(worldW - player.w - 10, player.x + dx));
+      const ny = Math.max(FLOOR_TOP, Math.min(FLOOR_BOT - player.h, player.y + dy));
+      for (const w of walls) if (w.state === 'solid' && player.x < w.x && nx + player.w > w.x - 4) nx = w.x - 4 - player.w;
+      player.x = nx; player.y = ny;
+      // buddy follows
+      buddy.x += (player.x - 60 * player.dir - buddy.x) * Math.min(1, dt * 3);
+      buddy.y += (player.y - 50 - buddy.y) * Math.min(1, dt * 3);
+      cam += (Math.max(0, Math.min(worldW - VW, player.x - VW * 0.4)) - cam) * Math.min(1, dt * 6);
+      // facts
+      for (const f of facts) if (!f.got && Math.abs(f.x - player.x) < 40 && Math.abs(f.y - player.y - 10) < 50) {
+        f.got = true; factsGot++; xp += 25; hud();
+        say('📄 Fakta från mötet: ' + f.text);
+        burst(f.x, f.y, '#FFE14D', 14);
+      }
+      // near a wall?
+      const near = nearWall();
+      if (near && !near.hinted) { near.hinted = true; say(`${near.icon} Det här är ${near.term}-väggen! Tryck KROSSA (E) så förklarar jag hur vi förstör den.`, { voice: true }); }
+      // goal
+      if (!walls.some(w => w.state === 'solid') && player.x > worldW - 300 && walls.length) win();
+      for (const w of walls) { if (w.shake > 0) w.shake -= dt; if (w.state === 'breaking') { w.t += dt; if (w.t > 0.6) w.state = 'broken'; } }
+      particles = particles.filter(p => (p.life -= dt) > 0);
+      particles.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 900 * dt; p.r *= 0.995; });
+      $('#h-time', v).textContent = '⏱ ' + fmtTime((performance.now() - startT) / 1000);
+    }
+    const fmtTime = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+    const nearWall = () => walls.find(w => w.state === 'solid' && w.x - (player.x + player.w) < 50 && w.x - (player.x + player.w) > -10);
+    function burst(x, y, color, n) {
+      for (let i = 0; i < n; i++) particles.push({ x, y, vx: (Math.random() - 0.5) * 600, vy: -Math.random() * 500, r: 6 + Math.random() * 8, life: 0.8 + Math.random() * 0.6, color });
+    }
+
+    /* ---------- the wall challenge ---------- */
+    function challenge(w) {
+      busy = true;
+      Object.keys(keys).forEach(k => { keys[k] = false; });
+      const sh = App.sheet(`<div class="motey-stage">${Mascot.svg({ size: 84, mood: 'wow', talking: true })}<div class="speech"><b>${esc(w.icon)} ${esc(w.term)}</b><br>${esc(w.explain)}</div></div>
+        <div class="card" style="margin-top:14px;box-shadow:none"><h3>🔨 Så förstör du väggen</h3><p style="margin:0">${esc(w.howTo)}</p></div>
+        <h3>${esc(w.q)}</h3><div id="opts">${w.opts.map((o, i) => `<button class="quiz-opt" data-i="${i}">${esc(o)}</button>`).join('')}</div>`);
+      Platform.speak(`${w.term}. ${w.explain} Så förstör du väggen: ${w.howTo} ${w.q}`);
+      const done = () => { busy = false; Platform.stopSpeaking(); };
+      const origClose = sh.close;
+      sh.el.parentElement.querySelector('.close').addEventListener('click', done);
+      sh.el.querySelectorAll('.quiz-opt').forEach(b => b.addEventListener('click', () => {
+        const i = +b.dataset.i;
+        if (i === w.a) {
+          b.classList.add('right');
+          setTimeout(() => {
+            origClose(); done();
+            w.state = 'breaking'; w.t = 0; xp += 100; hud();
+            Store.state.stats.wallsBroken++; Store.save();
+            for (let k = 0; k < 4; k++) burst(w.x + 30, FLOOR_TOP + 40 + k * 80, k % 2 ? '#C2410C' : '#F97316', 16);
+            const left = walls.filter(x => x.state === 'solid');
+            say(left.length ? `BOOM! 💥 ${w.term}-väggen är krossad! Nästa: ${left[0].term}.` : 'BOOM! 💥 Alla väggar är borta! Spring till mötesrummet längst till höger! 🏁', { voice: true });
+          }, 650);
+        } else {
+          b.classList.add('wrong'); xp = Math.max(0, xp - 10); hud(); w.shake = 0.4;
+          Platform.stopSpeaking(); Platform.speak('Nästan! Läs förklaringen en gång till.');
+        }
+      }));
+    }
+
+    function win() {
+      won = true;
+      const secs = (performance.now() - startT) / 1000;
+      Platform.speak(`Grattis ${AI.firstName(S.name)}! Du klarade ${meeting.title} på ${Math.round(secs)} sekunder.`);
+      const sh = App.sheet(`<div style="text-align:center">${Mascot.svg({ size: 120, mood: 'wink' })}<h1>Banan klarad! 🏆</h1>
+        <p class="muted">⭐ ${xp} XP · 🧱 ${walls.length} väggar · 📄 ${factsGot} fakta · ⏱ ${fmtTime(secs)}</p></div>
+        <h3>Det här lärde du dig</h3><ul class="clean">${walls.map(w => `<li data-ico="${esc(w.icon)}"><b>${esc(w.term)}</b> – ${esc(w.howTo)}</li>`).join('')}</ul>
+        <div class="row" style="margin-top:12px"><button class="btn" id="again">Spela igen</button><a class="btn ghost" href="#/m/${meeting.id}">Till mötet</a></div>`);
+      $('#again', sh.el).addEventListener('click', () => { sh.close(); App.go('#/game/' + meeting.id); });
+    }
+
+    /* ---------- drawing ---------- */
+    function draw(now) {
+      const t = now / 1000;
+      c.save();
+      c.fillStyle = '#2A2350'; c.fillRect(0, 0, VW, VH);
+      c.translate(-Math.round(cam), 0);
+      // back wall with windows and posters
+      c.fillStyle = '#3B3170'; c.fillRect(cam - 10, 0, VW + 20, FLOOR_TOP);
+      for (let x = Math.floor(cam / 240) * 240; x < cam + VW + 240; x += 240) {
+        c.fillStyle = '#8EC5FF'; c.fillRect(x + 40, 26, 120, 80);
+        c.fillStyle = '#B9DCFF'; c.fillRect(x + 40, 26, 58, 80);
+        c.strokeStyle = '#1E1B3A'; c.lineWidth = 6; c.strokeRect(x + 40, 26, 120, 80);
+        c.beginPath(); c.moveTo(x + 100, 26); c.lineTo(x + 100, 106); c.stroke();
+      }
+      // floor tiles
+      for (let x = Math.floor(cam / 60) * 60; x < cam + VW + 60; x += 60) for (let y = FLOOR_TOP; y < FLOOR_BOT + 60; y += 60) {
+        c.fillStyle = ((x / 60 + y / 60) & 1) ? '#E7E2FF' : '#D9D2FB'; c.fillRect(x, y, 60, 60);
+      }
+      c.fillStyle = '#1E1B3A'; c.fillRect(cam - 10, FLOOR_BOT + 20, VW + 20, VH);
+      // goal
+      const gx = worldW - 230;
+      c.fillStyle = '#19C79A'; c.fillRect(gx, FLOOR_TOP - 110, 150, 110);
+      c.fillStyle = '#fff'; c.font = '900 22px system-ui'; c.textAlign = 'center'; c.fillText('🏁 MÖTES-', gx + 75, FLOOR_TOP - 62); c.fillText('RUMMET', gx + 75, FLOOR_TOP - 34);
+      // props
+      for (const p of props) drawProp(p, t);
+      // facts
+      for (const f of facts) if (!f.got) {
+        const y = f.y + Math.sin(t * 3 + f.x) * 6;
+        c.fillStyle = 'rgba(255,225,77,.35)'; c.beginPath(); c.arc(f.x, y, 26, 0, 7); c.fill();
+        c.font = '30px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; c.fillText('📄', f.x, y + 10);
+      }
+      // walls
+      for (const w of walls) drawWall(w, t);
+      // characters (sorted by y for depth)
+      drawPlayer(t);
+      TikTokMode.drawMotey(c, buddy.x + 10, buddy.y + Math.sin(t * 4) * 6, 0.36, t, false);
+      // particles
+      for (const p of particles) { c.fillStyle = p.color; c.globalAlpha = Math.min(1, p.life * 2); c.fillRect(p.x - p.r / 2, p.y - p.r / 2, p.r, p.r); }
+      c.globalAlpha = 1;
+      c.restore();
+      if (!busy && nearWall()) {
+        c.fillStyle = 'rgba(255,122,89,.95)'; c.font = '900 20px system-ui'; c.textAlign = 'center';
+        const tx = player.x - cam + 17, ty = player.y - 34 + Math.sin(t * 6) * 4;
+        rrect(tx - 74, ty - 22, 148, 32, 16); c.fill(); c.fillStyle = '#fff'; c.fillText('E = KROSSA!', tx, ty);
+      }
+    }
+    function rrect(x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+    function drawWall(w, t) {
+      if (w.state === 'broken') {
+        c.fillStyle = '#B45309'; for (let i = 0; i < 6; i++) c.fillRect(w.x - 20 + i * 18, FLOOR_BOT - 6 - (i % 2) * 8, 16, 10);
+        return;
+      }
+      const sx = w.shake > 0 ? Math.sin(t * 80) * 6 : 0;
+      const k = w.state === 'breaking' ? 1 - w.t / 0.6 : 1;
+      c.save(); c.translate(w.x + sx, 0); c.globalAlpha = Math.max(0, k);
+      const top = FLOOR_TOP - 110, h = FLOOR_BOT - top + 20;
+      for (let row = 0; row * 26 < h; row++) for (let col = -1; col < 3; col++) {
+        const bx = col * 30 + (row % 2) * 15, by = top + row * 26;
+        if (bx < 0 || bx > 45) continue;
+        c.fillStyle = (row + col) % 3 ? '#E2683C' : '#C2410C'; c.fillRect(bx, by, 28, 24);
+      }
+      c.strokeStyle = '#1E1B3A'; c.lineWidth = 4; c.strokeRect(0, top, 60, h);
+      // label
+      c.save(); c.translate(30, (top + FLOOR_BOT) / 2); c.rotate(-Math.PI / 2);
+      c.fillStyle = '#fff'; c.strokeStyle = '#1E1B3A'; c.lineWidth = 6; c.font = '900 30px system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      const label = (w.term || '').toUpperCase();
+      c.strokeText(label, 0, 0); c.fillText(label, 0, 0); c.restore();
+      c.font = '34px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; c.textAlign = 'center'; c.fillText(w.icon || '🧱', 30, top - 8);
+      c.restore();
+    }
+    function drawProp(p, t) {
+      c.save(); c.translate(p.x, p.y);
+      if (p.kind === 'desk') {
+        c.fillStyle = '#8B5E3C'; c.fillRect(-50, 0, 100, 18); c.fillRect(-44, 18, 10, 40); c.fillRect(34, 18, 10, 40);
+        c.fillStyle = '#1E1B3A'; c.fillRect(-22, -38, 44, 30); c.fillStyle = '#8EC5FF'; c.fillRect(-18, -34, 36, 22); c.fillStyle = '#1E1B3A'; c.fillRect(-4, -8, 8, 8);
+      } else if (p.kind === 'plant') {
+        c.fillStyle = '#C2410C'; c.fillRect(-16, 10, 32, 30);
+        c.fillStyle = '#19C79A'; for (let i = -2; i <= 2; i++) { c.beginPath(); c.ellipse(i * 9, -6 - Math.abs(i) * -4, 8, 24, i * 0.35 + Math.sin(t * 2) * 0.05, 0, 7); c.fill(); }
+      } else {
+        c.fillStyle = '#5B5878'; c.fillRect(-20, -40, 40, 70); c.fillStyle = '#FFC93C'; c.fillRect(-12, -30, 24, 10);
+        c.fillStyle = '#fff'; c.fillRect(-8, 0, 16, 18); c.globalAlpha = 0.6; c.fillStyle = '#fff'; c.beginPath(); c.arc(0, -6 - (t * 20 % 14), 4, 0, 7); c.fill(); c.globalAlpha = 1;
+      }
+      c.restore();
+    }
+    function drawPlayer(t) {
+      const x = player.x, y = player.y, d = player.dir, sw = Math.sin(player.step) * 8;
+      c.save(); c.translate(x + 17, y);
+      c.fillStyle = 'rgba(0,0,0,.18)'; c.beginPath(); c.ellipse(0, 54, 22, 6, 0, 0, 7); c.fill();
+      c.strokeStyle = '#1E1B3A'; c.lineWidth = 9; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(-7, 34); c.lineTo(-7 + sw, 52); c.moveTo(7, 34); c.lineTo(7 - sw, 52); c.stroke();
+      c.fillStyle = '#FF7A59'; rrect(-17, 8, 34, 32, 10); c.fill();
+      c.strokeStyle = '#F2C29B'; c.lineWidth = 7; c.beginPath(); c.moveTo(-15, 14); c.lineTo(-20, 30 - sw / 2); c.moveTo(15, 14); c.lineTo(20, 30 + sw / 2); c.stroke();
+      c.fillStyle = '#F2C29B'; c.beginPath(); c.arc(0, -6, 16, 0, 7); c.fill();
+      c.fillStyle = '#6C4CF5'; c.beginPath(); c.arc(0, -10, 16, Math.PI, 0); c.fill(); c.fillRect(d > 0 ? 4 : -22, -12, 18, 5);
+      c.fillStyle = '#1E1B3A'; c.beginPath(); c.arc(5 * d, -4, 2.6, 0, 7); c.fill(); c.beginPath(); c.arc(-6 * d, -4, 2.6, 0, 7); c.fill();
+      c.fillStyle = '#fff'; c.font = '800 13px system-ui'; c.textAlign = 'center'; c.fillText(AI.firstName(S.name), 0, -30);
+      c.restore();
+    }
+
+    let last = performance.now();
+    function loop(now) {
+      if (!alive) return;
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      update(dt); draw(now);
+      raf = requestAnimationFrame(loop);
+    }
+
+    /* ---------- input ---------- */
+    const map = { ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right', ArrowUp: 'up', w: 'up', W: 'up', ArrowDown: 'down', s: 'down', S: 'down' };
+    const act = () => { if (busy || won) return; const w = nearWall(); if (w) challenge(w); else say('Gå fram till en vägg först! 🧱'); };
+    const kd = e => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (map[e.key]) { keys[map[e.key]] = true; e.preventDefault(); }
+      if (e.key === 'e' || e.key === 'E' || e.key === ' ' || e.key === 'Enter') { e.preventDefault(); act(); }
+    };
+    const ku = e => { if (map[e.key]) keys[map[e.key]] = false; };
+    window.addEventListener('keydown', kd); window.addEventListener('keyup', ku);
+    keyHandlers = [kd, ku];
+    v.querySelectorAll('.dpad button').forEach(b => {
+      const k = b.dataset.k;
+      b.addEventListener('pointerdown', e => { e.preventDefault(); if (k === 'act') act(); else keys[k] = true; });
+      ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => b.addEventListener(ev, () => { if (k !== 'act') keys[k] = false; }));
+    });
+    // tap on the canvas walks toward the tap
+    canvas.addEventListener('pointerdown', e => {
+      const r = canvas.getBoundingClientRect();
+      const tx = (e.clientX - r.left) / r.width * VW + cam, ty = (e.clientY - r.top) / r.height * VH;
+      const w = nearWall();
+      if (w && Math.abs(tx - w.x) < 90) return act();
+      keys.left = tx < player.x; keys.right = tx > player.x + player.w; keys.up = ty < player.y; keys.down = ty > player.y + player.h;
+      setTimeout(() => { keys.left = keys.right = keys.up = keys.down = false; }, 350);
+    });
+    $('#g-ask', v).addEventListener('click', async () => {
+      const q = $('#g-q', v).value.trim(); if (!q) return;
+      say('Motey tänker… 🤔');
+      const r = await AI.ask(q, meeting);
+      if (alive) say(r.value, { voice: true });
+    });
+    $('#g-q', v).addEventListener('keydown', e => { if (e.key === 'Enter') $('#g-ask', v).click(); });
+
+    build();
+  }
+
+  function destroy() {
+    alive = false; cancelAnimationFrame(raf);
+    if (keyHandlers) { window.removeEventListener('keydown', keyHandlers[0]); window.removeEventListener('keyup', keyHandlers[1]); keyHandlers = null; }
+  }
+
+  window.GameMode = { render, destroy };
+})();
+
+</script>
+<script>
+/* Motey – app shell: routing, home, meetings, catch-up pop-up, settings. */
+(function () {
+  'use strict';
+  const $ = (s, el) => (el || document).querySelector(s);
+  const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const S = () => Store.settings;
+
+  function toast(msg, ms) {
+    const t = document.createElement('div');
+    t.className = 'toast'; t.textContent = msg;
+    $('#toasts').appendChild(t);
+    setTimeout(() => t.remove(), ms || 3200);
+  }
+  const fmtDay = d => new Date(d).toLocaleDateString('sv-SE', { weekday: 'short' }).replace('.', '');
+  const fmtDate = d => new Date(d).getDate();
+  const fmtWhen = d => new Date(d).toLocaleString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+  const fileIcon = n => ({ pdf: '📕', xlsx: '📗', xls: '📗', csv: '📗', docx: '📘', doc: '📘', pptx: '📙' }[(n.split('.').pop() || '').toLowerCase()] || '📄');
+  const aiTag = src => src === 'claude' ? '<span class="ai-tag claude">Claude</span>' : '<span class="ai-tag">Offline-AI</span>';
+
+  /* ---------- router ---------- */
+  const NAV = [
+    ['home', '🏠', 'Hem'], ['live', '🎭', 'Live AI'], ['tiktok', '🎬', 'TikTok'], ['game', '🎮', 'Spelläge'], ['settings', '⚙️', 'Mer']
+  ];
+  let current = null;
+  function go(hash) { if (location.hash === hash) route(); else location.hash = hash; }
+  function route() {
+    const [, name = 'home', arg] = (location.hash || '#/home').split('/');
+    if (current && current.destroy) current.destroy();
+    current = null;
+    Platform.stopSpeaking();
+    $$('.tabbar button, .rail button.nav').forEach(b => b.classList.toggle('on', b.dataset.go === name || (name === 'm' && b.dataset.go === 'home') || (name === 'new' && b.dataset.go === 'home')));
+    const v = $('#view');
+    v.innerHTML = '';
+    window.scrollTo(0, 0);
+    const modes = { live: window.LiveMode, tiktok: window.TikTokMode, game: window.GameMode };
+    if (name === 'm' && arg) return viewMeeting(v, arg);
+    if (name === 'new') return viewNew(v);
+    if (name === 'settings') return viewSettings(v);
+    if (modes[name]) {
+      const meeting = arg ? Store.meeting(arg) : null;
+      current = modes[name];
+      return current.render(v, meeting, { pickMeeting, toast, esc });
+    }
+    return viewHome(v);
+  }
+
+  /* Pick a meeting with a transcript (used by the three modes). */
+  function pickMeeting(v, mode, title, intro) {
+    const list = Store.sorted().filter(m => (m.transcript || []).length).reverse();
+    v.innerHTML = `<h1>${title}</h1><p class="muted">${intro}</p>` +
+      list.map(m => meetingRow(m)).join('') +
+      `<a class="btn ghost" href="#/new">＋ Lägg till ett möte</a>`;
+    $$('.meeting', v).forEach(el => el.addEventListener('click', () => go(`#/${mode}/${el.dataset.id}`)));
+  }
+
+  function meetingRow(m) {
+    const missing = (m.files || []).filter(f => f.status === 'missing').length;
+    const past = Store.isPast(m);
+    const badges = [
+      m.attended === false ? '<span class="badge warn">Missad</span>' : '',
+      !past ? '<span class="badge brand">Kommande</span>' : '',
+      missing ? `<span class="badge warn">${missing} fil${missing > 1 ? 'er' : ''} saknas</span>` : '',
+      past && (m.transcript || []).length ? `<span class="badge">${m.transcript.length} repliker</span>` : ''
+    ].join(' ');
+    return `<div class="meeting" data-id="${m.id}" role="button" tabindex="0">
+      <div class="date"><small>${fmtDay(m.start)}</small>${fmtDate(m.start)}</div>
+      <div class="info"><div class="t">${esc(m.title)}</div>
+      <div class="small muted">${new Date(m.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })} · ${esc((m.attendees || []).map(AI.firstName).join(', '))}</div>
+      <div class="row" style="margin-top:4px;gap:6px">${badges}</div></div>
+      <div aria-hidden="true">›</div></div>`;
+  }
+
+  /* ---------- home ---------- */
+  function viewHome(v) {
+    const all = Store.sorted();
+    const upcoming = all.filter(m => !Store.isPast(m));
+    const past = all.filter(m => Store.isPast(m)).reverse();
+    const pending = Store.pendingCatchUp();
+    const h = new Date().getHours();
+    const hello = h < 10 ? 'God morgon' : h < 18 ? 'Hej' : 'God kväll';
+    v.innerHTML = `
+      <div class="card hero">
+        ${Mascot.svg({ size: 96, mood: pending ? 'wow' : 'happy' })}
+        <div style="flex:1">
+          <h1 style="margin:0">${hello}, ${esc(S().name)}!</h1>
+          <p class="muted" style="margin:.2em 0 .6em">${pending ? `Du missade förra ”${esc(pending.prev.title)}”. Jag har koll på allt!` : 'Jag lyssnar, sammanfattar och fixar – du gör det roliga.'}</p>
+          ${pending ? '<button class="btn coral" id="catch">👀 Vad hände förra gången?</button>' : '<a class="btn ghost" href="#/new">＋ Nytt möte</a>'}
+        </div>
+      </div>
+      <div class="grid three" style="margin-bottom:14px">
+        <a class="card" href="#/live" style="text-decoration:none;color:inherit;margin:0"><h3>🎭 Motey Live AI</h3><p class="small muted" style="margin:0">Byt ut en arg chef mot Motey. Samma meningar, ny stil.</p></a>
+        <a class="card" href="#/tiktok" style="text-decoration:none;color:inherit;margin:0"><h3>🎬 TikTok-läge</h3><p class="small muted" style="margin:0">Mötet som en kort video med animerad presentatör och bilder.</p></a>
+        <a class="card" href="#/game" style="text-decoration:none;color:inherit;margin:0"><h3>🎮 Spelläge</h3><p class="small muted" style="margin:0">Spring genom mötet, krossa väggar som F-skatt och lär dig på köpet.</p></a>
+      </div>
+      <div class="row between"><h2>Kommande</h2><a class="btn sm ghost" href="#/new">＋ Nytt möte</a></div>
+      ${upcoming.map(meetingRow).join('') || '<p class="muted">Inga kommande möten.</p>'}
+      <h2 style="margin-top:18px">Tidigare</h2>
+      ${past.map(meetingRow).join('') || '<p class="muted">Inga tidigare möten.</p>'}`;
+    $$('.meeting', v).forEach(el => {
+      const open = () => go('#/m/' + el.dataset.id);
+      el.addEventListener('click', open);
+      el.addEventListener('keydown', e => { if (e.key === 'Enter') open(); });
+    });
+    const c = $('#catch', v);
+    if (c) c.addEventListener('click', () => catchUpFlow(pending.prev, pending.next));
+  }
+
+  /* ---------- meeting detail ---------- */
+  async function viewMeeting(v, id) {
+    const m = Store.meeting(id);
+    if (!m) return go('#/home');
+    const prev = Store.previousInSeries(m);
+    const past = Store.isPast(m);
+    v.innerHTML = `
+      <div class="row between"><a href="#/home" class="btn sm ghost">‹ Tillbaka</a>
+        <div class="row">${past ? `<label class="switch small" style="margin:0"><input type="checkbox" id="att" ${m.attended === false ? '' : 'checked'}> Jag var med</label>` : ''}
+        <button class="icon-btn" id="del" title="Ta bort mötet">🗑️</button></div></div>
+      <h1 style="margin-top:12px">${esc(m.title)}</h1>
+      <p class="muted">${fmtWhen(m.start)} · ${esc((m.attendees || []).join(', '))}</p>
+      ${!past && prev && prev.attended === false ? `<div class="card" style="display:flex;gap:12px;align-items:center">${Mascot.svg({ size: 64, mood: 'wow' })}<div style="flex:1"><b>Du missade förra mötet.</b><div class="small muted">Motey berättar vad som hände och fixar filerna.</div></div><button class="btn coral sm" id="cu">Kör!</button></div>` : ''}
+      <div class="row" style="margin-bottom:6px">
+        <a class="btn sm" href="#/live/${m.id}">🎭 Live AI</a>
+        <a class="btn sm coral" href="#/tiktok/${m.id}">🎬 TikTok</a>
+        <a class="btn sm mint" href="#/game/${m.id}">🎮 Spela mötet</a>
+      </div>
+      <div class="tabs" role="tablist">
+        <button data-t="sum" class="on">Sammanfattning</button><button data-t="tr">Transkript</button><button data-t="files">Filer</button>
+      </div>
+      <div id="tabc"></div>`;
+    const cu = $('#cu', v); if (cu) cu.addEventListener('click', () => catchUpFlow(prev, m));
+    const att = $('#att', v); if (att) att.addEventListener('change', () => { m.attended = att.checked; Store.save(); });
+    $('#del', v).addEventListener('click', () => { if (confirm('Ta bort mötet?')) { Store.removeMeeting(m.id); go('#/home'); } });
+    const tabs = { sum: () => tabSummary(m), tr: () => tabTranscript(m), files: () => tabFiles(m) };
+    $$('.tabs button', v).forEach(b => b.addEventListener('click', () => {
+      $$('.tabs button', v).forEach(x => x.classList.toggle('on', x === b));
+      tabs[b.dataset.t]();
+    }));
+    tabSummary(m);
+  }
+
+  async function tabSummary(m) {
+    const c = $('#tabc');
+    if (!(m.transcript || []).length) {
+      c.innerHTML = `<div class="card empty">${Mascot.svg({ size: 90 })}<p><b>Mötet har inget transkript ännu.</b></p><p class="muted small">Klistra in anteckningar eller importera en .vtt/.srt/.txt från Teams, Zoom eller Meet.</p><button class="btn" id="addtr">Lägg till transkript</button></div>`;
+      $('#addtr').addEventListener('click', () => { $$('.tabs button')[1].click(); });
+      return;
+    }
+    c.innerHTML = `<div class="card"><p class="muted">Motey tänker…</p></div>`;
+    const r = await AI.summarize(m);
+    if (!document.body.contains(c)) return;
+    const s = r.value;
+    c.innerHTML = `
+      <div class="card"><div class="row between"><h2 style="margin:0">Kort sagt</h2><div class="row">${aiTag(r.source)}<button class="icon-btn" id="say" title="Läs upp">🔊</button></div></div>
+        <p style="margin-top:8px">${esc(s.summary)}</p></div>
+      <div class="grid two">
+        <div class="card"><h3>📌 Det viktigaste</h3><ul class="clean">${s.points.map(p => `<li data-ico="•">${esc(p)}</li>`).join('')}</ul></div>
+        <div class="card"><h3>✅ Beslut</h3><ul class="clean">${s.decisions.map(p => `<li data-ico="✔">${esc(p)}</li>`).join('') || '<li class="muted" data-ico="–">Inga beslut</li>'}</ul>
+          <h3 style="margin-top:12px">📝 Att göra</h3><ul class="clean">${s.actions.map(a => `<li data-ico="☐"><b>${esc(a.who)}</b> – ${esc(a.what)}</li>`).join('') || '<li class="muted" data-ico="–">Inget</li>'}</ul></div>
+      </div>
+      <div class="card"><h3>🏷️ Nyckelord</h3><div class="row">${s.keywords.map(k => `<span class="chip">${esc(k)}</span>`).join('')}</div></div>`;
+    $('#say').addEventListener('click', () => Platform.speak(s.summary + ' ' + s.decisions.join('. ')));
+  }
+
+  function tabTranscript(m) {
+    const c = $('#tabc');
+    c.innerHTML = `
+      <div class="card transcript">${(m.transcript || []).map(l => `<div class="line"><div class="who">${esc(AI.firstName(l.who))}</div><div>${esc(l.text)}</div></div>`).join('') || '<p class="muted">Tomt.</p>'}</div>
+      <div class="card"><h3>Lägg till / ersätt transkript</h3>
+        <p class="small muted">En replik per rad: <code>Namn: text</code>. Eller importera undertexter från Teams, Zoom eller Google Meet.</p>
+        <textarea id="trtxt" placeholder="Birgitta: Vi bestämde att…"></textarea>
+        <div class="row" style="margin-top:10px"><button class="btn" id="trsave">Spara</button>
+        <label class="btn ghost">📂 Importera fil<input type="file" id="trfile" accept=".txt,.vtt,.srt,text/plain" hidden></label></div></div>`;
+    $('#trsave').addEventListener('click', () => {
+      const t = Store.parseTranscript($('#trtxt').value);
+      if (!t.length) return toast('Inget att spara');
+      m.transcript = t; Store.save(); toast('Transkriptet sparat ✨'); tabTranscript(m);
+    });
+    $('#trfile').addEventListener('change', async e => {
+      const f = e.target.files[0]; if (!f) return;
+      $('#trtxt').value = await f.text();
+      toast('Fil inläst – tryck Spara');
+    });
+  }
+
+  function tabFiles(m) {
+    const c = $('#tabc');
+    const files = m.files || (m.files = []);
+    const label = { missing: '<span class="badge warn">Saknas</span>', attached: '<span class="badge ok">Bifogad</span>', generated: '<span class="badge brand">Utkast av Motey</span>', sent: '<span class="badge ok">Skickad ✓</span>' };
+    c.innerHTML = `<div class="card">
+      ${files.map((f, i) => `<div class="file"><div class="fi">${fileIcon(f.name)}</div><div class="fn">${esc(f.name)}<div>${label[f.status] || ''}</div></div>
+        ${f.data ? `<button class="btn sm ghost" data-dl="${i}">⬇</button>` : ''}</div>`).join('') || '<p class="muted">Inga filer kopplade till mötet.</p>'}
+      <div class="row" style="margin-top:10px">
+        ${files.some(f => f.status === 'missing') ? '<button class="btn coral" id="fix">🪄 Motey, fixa det</button>' : ''}
+        ${files.some(f => f.data && f.status !== 'sent') ? `<button class="btn" id="send">📨 Skicka till ${esc(S().bossName)}</button>` : ''}
+      </div></div>
+      <div class="card"><h3>Kräv en fil till mötet</h3><div class="row"><input type="text" id="fname" placeholder="t.ex. Rapport.pdf" style="flex:1"><button class="btn ghost" id="fadd">Lägg till</button></div></div>`;
+    $$('[data-dl]', c).forEach(b => b.addEventListener('click', async () => {
+      const f = files[+b.dataset.dl];
+      toast(await Platform.saveFile(f.name, b64Blob(f.data, f.mime)));
+    }));
+    const fix = $('#fix', c); if (fix) fix.addEventListener('click', () => filesFlow(m, null));
+    const send = $('#send', c); if (send) send.addEventListener('click', async () => { await sendToBoss(m); tabFiles(m); });
+    $('#fadd', c).addEventListener('click', () => {
+      const n = $('#fname', c).value.trim(); if (!n) return;
+      files.push({ name: n, status: 'missing', owner: S().name }); Store.save(); tabFiles(m);
+    });
+  }
+
+  function b64Blob(b64, mime) {
+    const bin = atob(b64); const u = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    return new Blob([u], { type: mime || 'application/octet-stream' });
+  }
+
+  /* ---------- Example 1: catch-up + fix files + send to boss ---------- */
+  function sheet(html) {
+    const o = document.createElement('div');
+    o.className = 'overlay';
+    o.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><button class="icon-btn close" aria-label="Stäng">✕</button>${html}</div>`;
+    document.body.appendChild(o);
+    const close = () => { Platform.stopSpeaking(); o.remove(); };
+    $('.close', o).addEventListener('click', close);
+    o.addEventListener('click', e => { if (e.target === o) close(); });
+    return { el: $('.sheet', o), close };
+  }
+  function typeInto(el, text, done) {
+    el.classList.add('typing'); el.textContent = '';
+    let i = 0;
+    const step = () => {
+      if (!document.body.contains(el)) return;
+      i += Math.max(1, Math.round(text.length / 160));
+      el.textContent = text.slice(0, i);
+      if (i < text.length) setTimeout(step, 18); else { el.classList.remove('typing'); done && done(); }
+    };
+    step();
+  }
+  function moteySays(container, text, mood) {
+    container.innerHTML = `<div class="motey-stage">${Mascot.svg({ size: 92, mood: mood || 'happy', talking: true })}<div class="speech" id="sp"></div></div>`;
+    const svg = $('.motey-svg', container);
+    typeInto($('#sp', container), text);
+    Platform.speak(text, { onend: () => svg && svg.classList.remove('is-talking') });
+  }
+
+  async function catchUpFlow(prev, next) {
+    const sh = sheet(`<div class="steps"><i class="on"></i><i></i><i></i></div><div id="cu-body"><div class="motey-stage">${Mascot.svg({ size: 92 })}<div class="speech typing">Hämtar vad som hände</div></div></div><div id="cu-actions" class="row" style="margin-top:14px"></div>`);
+    const r = await AI.catchUp(prev, S().name);
+    const body = $('#cu-body', sh.el);
+    moteySays(body, r.text, 'happy');
+    body.insertAdjacentHTML('beforeend', `<div class="card" style="margin-top:14px;box-shadow:none">
+      <div class="row between"><h3 style="margin:0">${esc(prev.title)}</h3>${aiTag(r.source)}</div>
+      ${r.sum.decisions.length ? `<p class="small muted" style="margin:.5em 0 .2em">Beslut</p><ul class="clean">${r.sum.decisions.map(d => `<li data-ico="✔">${esc(d)}</li>`).join('')}</ul>` : ''}
+      ${r.mine.length ? `<p class="small muted" style="margin:.5em 0 .2em">Du ska</p><ul class="clean">${r.mine.map(a => `<li data-ico="☐">${esc(a.what)}</li>`).join('')}</ul>` : ''}</div>`);
+    const missing = (prev.files || []).filter(f => f.status === 'missing');
+    const acts = $('#cu-actions', sh.el);
+    prev.caughtUp = true; Store.save();
+    if (missing.length) {
+      acts.innerHTML = `<button class="btn coral block" id="next">Fortsätt ›</button>`;
+      $('#next', acts).addEventListener('click', () => { sh.close(); filesFlow(prev, next); });
+    } else {
+      acts.innerHTML = `<button class="btn block" id="ok">Tack Motey! 💜</button>`;
+      $('#ok', acts).addEventListener('click', sh.close);
+    }
+  }
+
+  function filesFlow(m, next) {
+    const missing = (m.files || []).filter(f => f.status === 'missing');
+    const sh = sheet(`<div class="steps"><i class="on"></i><i class="on"></i><i></i></div><div id="ff"></div>
+      <div id="flist" style="margin-top:12px"></div>
+      <div class="row" style="margin-top:12px"><button class="btn coral" id="auto">🪄 Låt Motey fixa allt</button><button class="btn ghost" id="later">Senare</button></div>`);
+    moteySays($('#ff', sh.el), `Psst… du glömde ${missing.length === 1 ? 'en fil' : missing.length + ' filer'} till ${AI.firstName(S().bossName)}: ${missing.map(f => f.name).join(' och ')}. Jag fixar det! Bifoga din egen fil, eller så gör jag ett utkast från mötet och skickar det${S().autoSend ? ' automatiskt' : ''}.`, 'wow');
+    const list = $('#flist', sh.el);
+    const draw = () => {
+      list.innerHTML = m.files.filter(f => missing.includes(f)).map(f => `<div class="file"><div class="fi">${fileIcon(f.name)}</div><div class="fn">${esc(f.name)}<div>${f.status === 'missing' ? '<span class="badge warn">Saknas</span>' : f.status === 'attached' ? '<span class="badge ok">Din fil ✓</span>' : '<span class="badge brand">Motey-utkast ✓</span>'}</div></div>
+        <label class="btn sm ghost">📎<input type="file" data-n="${esc(f.name)}" hidden></label></div>`).join('');
+      $$('input[type=file]', list).forEach(inp => inp.addEventListener('change', async () => {
+        const file = inp.files[0]; if (!file) return;
+        const f = m.files.find(x => x.name === inp.dataset.n);
+        f.data = await Platform.blobToB64(file); f.mime = file.type; f.status = 'attached'; f.size = file.size;
+        Store.save(); draw();
+      }));
+    };
+    draw();
+    $('#later', sh.el).addEventListener('click', sh.close);
+    $('#auto', sh.el).addEventListener('click', async () => {
+      const btn = $('#auto', sh.el); btn.disabled = true; btn.textContent = 'Fixar…';
+      const sum = (await AI.summarize(m)).value;
+      for (const f of missing.filter(x => x.status === 'missing')) {
+        const d = Docs.draftFor(m, sum, f.name);
+        f.name = d.name; f.data = await Platform.blobToB64(d.blob); f.mime = d.blob.type; f.status = 'generated'; f.size = d.blob.size;
+      }
+      Store.save(); draw();
+      const ff = $('#ff', sh.el);
+      $('.steps i:last-child', sh.el).classList.add('on');
+      if (S().autoSend) {
+        ff.innerHTML = `<div class="sending"><span class="plane">✈️</span><div><b>Skickar till ${esc(S().bossName)}…</b><div class="small muted">${missing.map(f => esc(f.name)).join(', ')}</div></div></div>`;
+        const res = await sendToBoss(m, true);
+        ff.innerHTML = '';
+        moteySays(ff, res.text, 'wink');
+      } else {
+        moteySays(ff, 'Klart! Filerna ligger under Filer i mötet. Tryck på Skicka när du vill.', 'happy');
+      }
+      $('#auto', sh.el).replaceWith(Object.assign(document.createElement('button'), { className: 'btn', textContent: 'Klart 💜', onclick: () => { sh.close(); route(); } }));
+      $('#later', sh.el).remove();
+    });
+  }
+
+  /* Sends every file that has content. Webhook = fully automatic (Zapier, Make,
+   * Power Automate, n8n …). E-post = opens the mail app pre-filled and saves the
+   * files so they can be attached. */
+  async function sendToBoss(m, auto) {
+    const s = S();
+    const files = (m.files || []).filter(f => f.data && f.status !== 'sent');
+    if (!files.length) return { ok: false, text: 'Det finns inga filer att skicka.' };
+    const sum = (await AI.summarize(m)).value;
+    const subject = `${m.title}: ${files.map(f => f.name).join(', ')}`;
+    const body = `Hej ${AI.firstName(s.bossName)}!\n\nHär kommer ${files.length === 1 ? 'filen' : 'filerna'} från "${m.title}":\n${files.map(f => '• ' + f.name + (f.status === 'generated' ? ' (utkast från Motey)' : '')).join('\n')}\n\nKort sammanfattning: ${sum.summary}\n\nHälsningar,\n${s.name}\n(skickat med Motey)`;
+    let text;
+    try {
+      if (s.sendMethod === 'webhook' && s.webhookUrl) {
+        const res = await fetch(s.webhookUrl, {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ to: s.bossEmail, toName: s.bossName, from: s.name, subject, body, files: files.map(f => ({ name: f.name, mime: f.mime, base64: f.data })) })
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        text = `Klart! Jag skickade ${files.map(f => f.name).join(' och ')} till ${s.bossName}. Du är räddad! 😎`;
+      } else {
+        for (const f of files) await Platform.saveFile(f.name, b64Blob(f.data, f.mime));
+        await Platform.openUrl(`mailto:${encodeURIComponent(s.bossEmail || '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body + '\n\n(Bifoga filerna från Hämtade filer.)')}`);
+        text = `Klart! Mejlet till ${s.bossName} är ifyllt och filerna är sparade – dra in dem i mejlet och tryck skicka. Vill du att det går helt automatiskt? Lägg in en webhook under Mer. 😎`;
+      }
+      files.forEach(f => { f.status = 'sent'; f.sentAt = new Date().toISOString(); });
+      Store.state.outbox.unshift({ at: new Date().toISOString(), to: s.bossName, subject, files: files.map(f => f.name), method: s.sendMethod });
+      Store.save();
+      if (!auto) toast('📨 Skickat till ' + s.bossName);
+      return { ok: true, text };
+    } catch (e) {
+      return { ok: false, text: `Oj, det gick inte att skicka (${e.message}). Filerna finns kvar under Filer i mötet.` };
+    }
+  }
+
+  /* ---------- new meeting ---------- */
+  function viewNew(v) {
+    const now = new Date(Date.now() + 36e5); now.setMinutes(0, 0, 0);
+    const local = new Date(now.getTime() - now.getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
+    v.innerHTML = `<a href="#/home" class="btn sm ghost">‹ Tillbaka</a><h1 style="margin-top:12px">Nytt möte</h1>
+      <div class="card">
+        <label class="field"><span>Titel</span><input type="text" id="nt" placeholder="Veckomöte – Projekt Nova"></label>
+        <label class="field"><span>Serie (samma namn kopplar ihop återkommande möten)</span><input type="text" id="ns" placeholder="nova"></label>
+        <label class="field"><span>Tid</span><input type="datetime-local" id="nd" value="${local}"></label>
+        <label class="field"><span>Deltagare (kommaseparerade)</span><input type="text" id="na" value="${esc(S().bossName)}, ${esc(S().name)}"></label>
+        <label class="switch"><input type="checkbox" id="nmiss"> Jag missade det här mötet</label>
+        <label class="field"><span>Transkript eller anteckningar (valfritt)</span><textarea id="ntr" placeholder="Namn: text – en replik per rad"></textarea></label>
+        <label class="btn ghost sm" style="margin-bottom:10px">📂 Importera .vtt/.srt/.txt<input type="file" id="nf" accept=".txt,.vtt,.srt" hidden></label>
+        <label class="field"><span>Filer som ska med (kommaseparerade)</span><input type="text" id="nfiles" placeholder="Rapport.pdf, Budget.xlsx"></label>
+        <button class="btn block" id="nsave">Spara mötet</button>
+      </div>`;
+    $('#nf', v).addEventListener('change', async e => { const f = e.target.files[0]; if (f) $('#ntr', v).value = await f.text(); });
+    $('#nsave', v).addEventListener('click', () => {
+      const title = $('#nt', v).value.trim() || 'Möte';
+      const m = Store.addMeeting({
+        title, series: ($('#ns', v).value.trim() || title).toLowerCase(), start: new Date($('#nd', v).value || Date.now()).toISOString(), durationMin: 45,
+        attendees: $('#na', v).value.split(',').map(s => s.trim()).filter(Boolean), boss: S().bossName,
+        attended: $('#nmiss', v).checked ? false : true, transcript: Store.parseTranscript($('#ntr', v).value),
+        files: $('#nfiles', v).value.split(',').map(s => s.trim()).filter(Boolean).map(n => ({ name: n, status: 'missing', owner: S().name }))
+      });
+      toast('Mötet sparat ✨');
+      go('#/m/' + m.id);
+    });
+  }
+
+  /* ---------- settings ---------- */
+  function viewSettings(v) {
+    const s = S();
+    v.innerHTML = `<h1>Inställningar</h1>
+      <div class="card"><h3>Du och din chef</h3>
+        <label class="field"><span>Ditt namn</span><input type="text" id="s-name" value="${esc(s.name)}"></label>
+        <label class="field"><span>Chefens namn</span><input type="text" id="s-boss" value="${esc(s.bossName)}"></label>
+        <label class="field"><span>Chefens e-post</span><input type="email" id="s-mail" value="${esc(s.bossEmail)}" placeholder="chef@foretag.se"></label></div>
+      <div class="card"><h3>Skicka filer</h3>
+        <label class="switch"><input type="checkbox" id="s-auto" ${s.autoSend ? 'checked' : ''}> Skicka automatiskt när Motey har fixat filerna</label>
+        <label class="field"><span>Hur</span><select id="s-method"><option value="email">E-post (öppnar e-postappen)</option><option value="webhook">Webhook – helt automatiskt</option></select></label>
+        <label class="field" id="s-hook-w"><span>Webhook-URL (Zapier, Make, Power Automate, n8n…)</span><input type="url" id="s-hook" value="${esc(s.webhookUrl)}" placeholder="https://hooks.zapier.com/…"></label>
+        <p class="small muted">Webhooken får JSON med mottagare, ämne, text och filerna i base64.</p></div>
+      <div class="card"><h3>AI</h3>
+        <p class="small muted">Motey fungerar helt offline. Med en Claude API-nyckel blir sammanfattningar, stilbyten, videomanus och spelbanor smartare.</p>
+        <label class="field"><span>Claude API-nyckel</span><input type="password" id="s-key" value="${esc(s.apiKey)}" placeholder="sk-ant-…" autocomplete="off"></label>
+        <label class="field"><span>Modell</span><input type="text" id="s-model" value="${esc(s.model)}"></label>
+        <button class="btn sm ghost" id="s-test">Testa nyckeln</button> <span id="s-testr" class="small muted"></span>
+        <p class="small muted" style="margin-top:8px">Nyckeln sparas bara på den här enheten och skickas enbart till api.anthropic.com.</p></div>
+      <div class="card"><h3>Övrigt</h3>
+        <label class="switch"><input type="checkbox" id="s-voice" ${s.voice ? 'checked' : ''}> Motey pratar högt</label>
+        <label class="field"><span>Tema</span><select id="s-theme"><option value="auto">Följ systemet</option><option value="light">Ljust</option><option value="dark">Mörkt</option></select></label>
+        <div class="row"><button class="btn ghost sm" id="s-reset">Återställ demomöten</button><button class="btn ghost sm" id="s-export">Exportera data</button></div></div>
+      <div class="card"><h3>Utkorg</h3>${Store.state.outbox.slice(0, 10).map(o => `<div class="small" style="padding:6px 0;border-bottom:1px dashed var(--line)">📨 ${new Date(o.at).toLocaleString('sv-SE')} → <b>${esc(o.to)}</b>: ${esc(o.files.join(', '))}</div>`).join('') || '<p class="muted small">Inget skickat ännu.</p>'}</div>
+      <p class="center small muted" style="text-align:center">${Mascot.logo({ size: 26, animate: false })}<br>Version 1.0.0 · ${Platform.kind()}</p>`;
+    $('#s-method', v).value = s.sendMethod;
+    $('#s-theme', v).value = s.theme;
+    const hookVis = () => $('#s-hook-w', v).classList.toggle('hidden', $('#s-method', v).value !== 'webhook');
+    hookVis();
+    const bind = (id, key, prop) => $(id, v).addEventListener('change', e => { s[key] = e.target[prop || 'value']; if (typeof s[key] === 'string') s[key] = s[key].trim(); Store.save(); if (key === 'theme') applyTheme(); hookVis(); });
+    bind('#s-name', 'name'); bind('#s-boss', 'bossName'); bind('#s-mail', 'bossEmail'); bind('#s-auto', 'autoSend', 'checked');
+    bind('#s-method', 'sendMethod'); bind('#s-hook', 'webhookUrl'); bind('#s-key', 'apiKey'); bind('#s-model', 'model');
+    bind('#s-voice', 'voice', 'checked'); bind('#s-theme', 'theme');
+    $('#s-test', v).addEventListener('click', async () => {
+      s.apiKey = $('#s-key', v).value.trim(); Store.save();
+      const r = $('#s-testr', v); r.textContent = 'Testar…';
+      try { r.textContent = '✅ ' + await AI.testKey(); } catch (e) { r.textContent = '❌ ' + e.message; }
+    });
+    $('#s-reset', v).addEventListener('click', () => { if (confirm('Ersätt alla möten med demomötena?')) { Store.reset(); toast('Demomöten återställda'); go('#/home'); } });
+    $('#s-export', v).addEventListener('click', async () => {
+      const data = JSON.parse(JSON.stringify(Store.state)); data.settings.apiKey = '';
+      toast(await Platform.saveFile('motey-data.json', new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })));
+    });
+  }
+
+  function applyTheme() {
+    const t = S().theme;
+    if (t === 'auto') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', t);
+  }
+
+  /* ---------- first run ---------- */
+  function onboarding() {
+    const sh = sheet(`<div style="text-align:center">${Mascot.svg({ size: 130, mood: 'happy' })}</div>
+      <h1 style="text-align:center">Hej! Jag heter Motey.</h1>
+      <p class="muted" style="text-align:center">Jag är din AI-mötespolare. Jag berättar vad du missade, fixar filerna, byter stil på arga chefer, gör TikToks och spel av tråkiga möten.</p>
+      <label class="field"><span>Vad heter du?</span><input type="text" id="o-name" value="${esc(S().name)}"></label>
+      <label class="field"><span>Vad heter din chef?</span><input type="text" id="o-boss" value="${esc(S().bossName)}"></label>
+      <label class="field"><span>Chefens e-post (valfritt)</span><input type="email" id="o-mail" placeholder="chef@foretag.se"></label>
+      <button class="btn block" id="o-go">Kör igång 🚀</button>`);
+    $('#o-go', sh.el).addEventListener('click', () => {
+      const s = S();
+      s.name = $('#o-name', sh.el).value.trim() || 'Du';
+      s.bossName = $('#o-boss', sh.el).value.trim() || 'Chefen';
+      s.bossEmail = $('#o-mail', sh.el).value.trim();
+      Store.state.onboarded = true;
+      Store.state.meetings = Store.demoMeetings(s.name, s.bossName);
+      Store.save();
+      sh.close();
+      route();
+      const p = Store.pendingCatchUp();
+      if (p) setTimeout(() => catchUpFlow(p.prev, p.next), 500);
+    });
+  }
+
+  /* ---------- boot ---------- */
+  function boot() {
+    Store.load();
+    applyTheme();
+    $('#rail-logo').innerHTML = Mascot.logo({ size: 40 });
+    $('#top-logo').innerHTML = Mascot.logo({ size: 30 });
+    const navHtml = cls => NAV.map(([k, ico, label]) => `<button class="${cls}" data-go="${k}"><span class="ico">${ico}</span><span>${label}</span></button>`).join('');
+    $('#rail-nav').innerHTML = navHtml('nav');
+    $('#tabbar').innerHTML = navHtml('');
+    $$('[data-go]').forEach(b => b.addEventListener('click', () => go('#/' + b.dataset.go)));
+    window.addEventListener('hashchange', route);
+    route();
+    if (!Store.state.onboarded) onboarding();
+    else {
+      // Example 1: Motey pops up by itself when the next meeting follows a missed one.
+      const p = Store.pendingCatchUp();
+      if (p) setTimeout(() => catchUpFlow(p.prev, p.next), 900);
+    }
+  }
+
+  window.App = { toast, go, sheet, moteySays, esc, catchUpFlow, sendToBoss };
+  document.addEventListener('DOMContentLoaded', boot);
+})();
+
+</script>
+</body>
+</html>

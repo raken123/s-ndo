@@ -1,0 +1,25 @@
+name: Build Motey (APK, EXE, DMG)
+
+on:
+  push:
+    paths: ["motey/**", ".github/workflows/motey-build.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Build every platform
+        run: python3 motey/build/build.py all
+      - uses: actions/upload-artifact@v4
+        with:
+          name: motey
+          path: motey/dist/*
