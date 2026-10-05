@@ -20,7 +20,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 APP = os.path.join(ROOT, 'app')
 ANDROID = os.path.join(ROOT, 'android')
-DIST = os.path.join(ROOT, 'dist')
+# MOTEY_GEMINI_KEY builds a private version with the key built in. It goes to
+# dist-private/ (git-ignored) – never commit it: anyone can pull the key out of
+# the app, and Google revokes keys that show up on GitHub.
+BUILTIN_KEY = os.environ.get('MOTEY_GEMINI_KEY', '').strip()
+DIST = os.path.join(ROOT, 'dist-private' if BUILTIN_KEY else 'dist')
 WORK = os.path.join(HERE, '.work')
 TOOLS = os.environ.get('MOTEY_TOOLS', os.path.join(HERE, '.tools'))
 ICONS = os.path.join(HERE, 'icons')
@@ -91,6 +95,9 @@ def web_files():
         for f in sorted(files):
             p = os.path.join(base, f)
             out[os.path.relpath(p, APP).replace(os.sep, '/')] = open(p, 'rb').read()
+    if BUILTIN_KEY:
+        out['js/builtin.js'] = ('window.MOTEY_BUILTIN = ' + json.dumps({'geminiKey': BUILTIN_KEY}) + ';\n').encode()
+        out['index.html'] = out['index.html'].replace(b'<script src="js/gemini.js"></script>', b'<script src="js/builtin.js"></script>\n<script src="js/gemini.js"></script>')
     return out
 
 

@@ -554,6 +554,7 @@
         <div class="row" style="margin-top:10px"><a class="btn ghost sm" href="#/scan">🏖️ Mitt 3D-ansikte (Pro)</a></div></div>
       <div class="card"><h3>AI – Gemini</h3>
         <p class="small muted">Motey drivs av Gemini: <b>3.8 Flash</b> för sammanfattningar, TikTok och spel, <b>3.8 Flash Live</b> för AI-Live och Live Replace. Utan Gemini kör Motey sin inbyggda offline-AI.</p>
+        ${window.MOTEY_BUILTIN ? '<p class="small"><b>✅ Den här versionen har en inbyggd Gemini-nyckel – AI:n fungerar direkt.</b></p>' : ''}
         <label class="field"><span>Motey-server (rekommenderas – håller API-nyckeln och prenumerationerna)</span><input type="url" id="s-server" value="${esc(s.serverUrl)}" placeholder="https://motey.example.se"></label>
         <details ${s.geminiKey ? 'open' : ''}><summary class="small">…eller en egen Gemini API-nyckel (för test)</summary>
           <label class="field" style="margin-top:8px"><span>Gemini API-nyckel</span><input type="password" id="s-gkey" value="${esc(s.geminiKey)}" placeholder="Din nyckel från Google AI Studio" autocomplete="off"></label>

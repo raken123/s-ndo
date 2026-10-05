@@ -15,7 +15,8 @@
   const DEFAULTS = { flash: 'gemini-3.8-flash', live: 'gemini-3.8-flash-live' };
   const S = () => Store.settings;
   const server = () => (S().serverUrl || '').replace(/\/+$/, '');
-  const key = () => S().geminiKey || '';
+  // a private build can carry a built-in key (window.MOTEY_BUILTIN, see build.py)
+  const key = () => S().geminiKey || (window.MOTEY_BUILTIN && window.MOTEY_BUILTIN.geminiKey) || '';
   const available = () => !!(server() || key());
 
   class GeminiError extends Error { constructor(msg, status, kind) { super(msg); this.status = status; this.kind = kind; } }
