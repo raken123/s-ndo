@@ -1,0 +1,15 @@
+__pycache__/
+*.sqlite3
+cloud/.env
+desktop/node_modules/
+desktop/www/
+desktop/release/
+android/.gradle/
+android/build/
+android/app/build/
+android/app/src/main/assets/www/
+android/local.properties
+ios/build/
+ios/OneAI.xcodeproj/
+ios/OneAI/www/
+dist/

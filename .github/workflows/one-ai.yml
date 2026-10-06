@@ -1,0 +1,215 @@
+name: One AI
+
+# Builds every One AI app on each push that changes one-ai/: Windows (EXE),
+# macOS (DMG), Linux (DEB), Android (APK and AAB), iOS (unsigned IPA) and the
+# single-file web app (HTML), and publishes them on the one-ai-v1.0.0 release.
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+    paths:
+      - "one-ai/**"
+      - ".github/workflows/one-ai.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: one-ai-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test One AI Cloud
+        working-directory: one-ai/cloud
+        run: python -m unittest discover -s tests -v
+      - name: Check the web app's scripts
+        run: for f in one-ai/web/js/*.js one-ai/desktop/*.js one-ai/desktop/scripts/*.js; do node --check "$f"; done
+      # Set the repository variable ONEAI_CLOUD_URL to your deployed server and
+      # every app connects to it without any setup.
+      - name: Build the single-file web app
+        env:
+          ONEAI_CLOUD_URL: ${{ vars.ONEAI_CLOUD_URL }}
+        run: python one-ai/scripts/build-html.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: one-ai-html
+          path: one-ai/dist/OneAI-1.0.0.html
+          if-no-files-found: error
+
+  android:
+    needs: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: one-ai/android
+    steps:
+      - uses: actions/checkout@v4
+      - name: Point the app at One AI Cloud
+        if: vars.ONEAI_CLOUD_URL != ''
+        env:
+          CLOUD_URL: ${{ vars.ONEAI_CLOUD_URL }}
+        run: node -e "console.log('window.ONE_CONFIG = { cloudUrl: ' + JSON.stringify(process.env.CLOUD_URL) + ' };')" > ../web/js/config.js
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build APK and AAB
+        run: ./gradlew --no-daemon assembleRelease bundleRelease
+      - name: Collect
+        run: |
+          mkdir -p ../dist
+          cp app/build/outputs/apk/release/app-release.apk ../dist/OneAI-1.0.0.apk
+          cp app/build/outputs/bundle/release/app-release.aab ../dist/OneAI-1.0.0.aab
+          ls -l ../dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: one-ai-android
+          if-no-files-found: error
+          path: |
+            one-ai/dist/OneAI-1.0.0.apk
+            one-ai/dist/OneAI-1.0.0.aab
+
+  ios:
+    needs: test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Point the app at One AI Cloud
+        if: vars.ONEAI_CLOUD_URL != ''
+        env:
+          CLOUD_URL: ${{ vars.ONEAI_CLOUD_URL }}
+        run: node -e "console.log('window.ONE_CONFIG = { cloudUrl: ' + JSON.stringify(process.env.CLOUD_URL) + ' };')" > one-ai/web/js/config.js
+      - name: Build unsigned IPA
+        run: one-ai/ios/build-ipa.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: one-ai-ios
+          path: one-ai/dist/OneAI-1.0.0.ipa
+          if-no-files-found: error
+
+  desktop:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: mac
+          - os: windows-latest
+            target: win
+          - os: ubuntu-latest
+            target: linux
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: one-ai/desktop
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Electron and electron-builder
+        run: npm install --no-audit --no-fund
+      - name: Point the app at One AI Cloud
+        if: vars.ONEAI_CLOUD_URL != ''
+        shell: bash
+        env:
+          CLOUD_URL: ${{ vars.ONEAI_CLOUD_URL }}
+        run: node -e "console.log('window.ONE_CONFIG = { cloudUrl: ' + JSON.stringify(process.env.CLOUD_URL) + ' };')" > ../web/js/config.js
+
+      # A local One AI Cloud with stand-in models, so the smoke tests below
+      # can chat and make a file through the real API.
+      - name: Start a test One AI Cloud
+        if: matrix.target != 'win'
+        shell: bash
+        working-directory: one-ai/cloud
+        run: |
+          ONEAI_FAKE_MODELS=1 ONEAI_QUIET=1 nohup python3 -m onecloud --host 127.0.0.1 --port 8799 --db "$RUNNER_TEMP/oneai.sqlite3" > "$RUNNER_TEMP/cloud.log" 2>&1 &
+          for i in $(seq 1 20); do curl -fs http://127.0.0.1:8799/v1/health && exit 0; sleep 1; done
+          cat "$RUNNER_TEMP/cloud.log"; exit 1
+
+      - name: Build installers
+        run: npm run dist:${{ matrix.target }}
+
+      - name: List output
+        shell: bash
+        run: ls -l release
+
+      # An unsigned or badly signed app is what makes macOS call it
+      # "damaged". Check every DMG the way a Mac would, and start the Apple
+      # Silicon app (the runner is arm64).
+      - name: Verify macOS apps
+        if: matrix.target == 'mac'
+        run: |
+          set -euo pipefail
+          for dmg in release/*.dmg; do
+            echo "== $dmg"
+            hdiutil verify "$dmg"
+            mnt=$(mktemp -d)
+            hdiutil attach -nobrowse -readonly -mountpoint "$mnt" "$dmg"
+            app="$mnt/One AI.app"
+            codesign --verify --deep --strict --verbose=2 "$app"
+            lipo -archs "$app/Contents/MacOS/One AI"
+            if [[ "$dmg" == *arm64* ]]; then
+              code=0
+              ONEAI_SAVE_DIR=$(mktemp -d) ONEAI_SMOKE=1 ONEAI_SMOKE_OUT="$PWD/smoke.log" ONEAI_SMOKE_CLOUD=http://127.0.0.1:8799 \
+                perl -e 'alarm 120; exec { $ARGV[0] } @ARGV or die "exec failed: $!"' "$app/Contents/MacOS/One AI" 2>&1 | tail -40 || code=$?
+              echo "app exit: $code"
+              cat smoke.log || true
+              grep -q SMOKE_OK smoke.log
+            fi
+            hdiutil detach "$mnt"
+          done
+
+      - name: Start the Linux app
+        if: matrix.target == 'linux'
+        run: |
+          ONEAI_SAVE_DIR=$(mktemp -d) ONEAI_SMOKE=1 ONEAI_SMOKE_OUT="$PWD/smoke.log" ONEAI_SMOKE_CLOUD=http://127.0.0.1:8799 \
+            timeout 120 xvfb-run -a release/linux-unpacked/one-ai --no-sandbox || true
+          cat smoke.log
+          grep -q SMOKE_OK smoke.log
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: one-ai-${{ matrix.target }}
+          if-no-files-found: error
+          path: |
+            one-ai/desktop/release/*.dmg
+            one-ai/desktop/release/*.exe
+            one-ai/desktop/release/*.deb
+
+  release:
+    needs: [test, android, ios, desktop]
+    if: always() && needs.test.result == 'success'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: one-ai-v1.0.0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - name: Publish to the One AI release
+        run: |
+          ls -l out
+          (cd out && sha256sum * > SHA256SUMS.txt)
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --target "$GITHUB_SHA" --prerelease \
+              --title "One AI 1.0.0" --notes-file one-ai/RELEASE_NOTES.md
+          else
+            gh release edit "$TAG" --notes-file one-ai/RELEASE_NOTES.md
+          fi
+          gh release upload "$TAG" out/* --clobber

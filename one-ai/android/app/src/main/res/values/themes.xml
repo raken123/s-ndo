@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="one_bg">#FFFFFF</color>
+    <color name="one_icon_bg">#0D0D0D</color>
+
+    <style name="Theme.OneAI" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/one_bg</item>
+        <item name="android:colorBackground">@color/one_bg</item>
+        <item name="android:colorAccent">#0D0D0D</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>

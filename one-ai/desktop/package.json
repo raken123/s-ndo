@@ -1,0 +1,104 @@
+{
+  "name": "one-ai",
+  "productName": "One AI",
+  "version": "1.0.0",
+  "description": "One AI: chatta och skapa filer, appar, bilder, video, musik, presentationer, design och 3D-modeller.",
+  "author": {
+    "name": "One AI",
+    "email": "oneai@users.noreply.github.com"
+  },
+  "homepage": "https://github.com/raken123/s-ndo/tree/main/one-ai",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "sync": "node scripts/sync-www.js",
+    "start": "npm run sync && electron .",
+    "dist:mac": "npm run sync && electron-builder --mac --publish never",
+    "dist:win": "npm run sync && electron-builder --win --publish never",
+    "dist:linux": "npm run sync && electron-builder --linux --publish never"
+  },
+  "devDependencies": {
+    "electron": "43.2.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.oneai.app",
+    "productName": "One AI",
+    "copyright": "One AI",
+    "publish": null,
+    "files": [
+      "main.js",
+      "preload.js",
+      "scripts/smoke.js",
+      "build/icon.png",
+      "www/**/*"
+    ],
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "electronLanguages": [
+      "en-US",
+      "sv"
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.png",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "format": "UDZO",
+      "sign": false,
+      "artifactName": "OneAI-${version}-mac-${arch}.${ext}"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "One AI",
+      "artifactName": "OneAI-Setup-${version}.${ext}"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "Utility",
+      "maintainer": "One AI <oneai@users.noreply.github.com>",
+      "synopsis": "Chatta och skapa vad som helst med One AI",
+      "executableName": "one-ai"
+    },
+    "deb": {
+      "artifactName": "one-ai_${version}_amd64.${ext}"
+    }
+  },
+  "desktopName": "one-ai.desktop"
+}
