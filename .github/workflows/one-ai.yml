@@ -56,7 +56,8 @@ jobs:
         if: vars.ONEAI_CLOUD_URL != ''
         env:
           CLOUD_URL: ${{ vars.ONEAI_CLOUD_URL }}
-        run: node -e "console.log('window.ONE_CONFIG = { cloudUrl: ' + JSON.stringify(process.env.CLOUD_URL) + ' };')" > ../web/js/config.js
+        run: |
+          node -e "console.log('window.ONE_CONFIG = { cloudUrl: ' + JSON.stringify(process.env.CLOUD_URL) + ' };')" > ../web/js/config.js
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -87,7 +88,8 @@ jobs:
         if: vars.ONEAI_CLOUD_URL != ''
         env:
           CLOUD_URL: ${{ vars.ONEAI_CLOUD_URL }}
-        run: node -e "console.log('window.ONE_CONFIG = { cloudUrl: ' + JSON.stringify(process.env.CLOUD_URL) + ' };')" > one-ai/web/js/config.js
+        run: |
+          node -e "console.log('window.ONE_CONFIG = { cloudUrl: ' + JSON.stringify(process.env.CLOUD_URL) + ' };')" > one-ai/web/js/config.js
       - name: Build unsigned IPA
         run: one-ai/ios/build-ipa.sh
       - uses: actions/upload-artifact@v4
@@ -126,7 +128,8 @@ jobs:
         shell: bash
         env:
           CLOUD_URL: ${{ vars.ONEAI_CLOUD_URL }}
-        run: node -e "console.log('window.ONE_CONFIG = { cloudUrl: ' + JSON.stringify(process.env.CLOUD_URL) + ' };')" > ../web/js/config.js
+        run: |
+          node -e "console.log('window.ONE_CONFIG = { cloudUrl: ' + JSON.stringify(process.env.CLOUD_URL) + ' };')" > ../web/js/config.js
 
       # A local One AI Cloud with stand-in models, so the smoke tests below
       # can chat and make a file through the real API.
