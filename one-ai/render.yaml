@@ -1,0 +1,24 @@
+# One AI Cloud on Render (render.com): New → Blueprint, pick this repository
+# and the branch with one-ai/, and set the Blueprint path to one-ai/render.yaml.
+# Render asks for GEMINI_API_KEY; the server also serves the web app at /.
+services:
+  - type: web
+    name: one-ai-cloud
+    runtime: docker
+    dockerContext: ./one-ai
+    dockerfilePath: ./one-ai/cloud/Dockerfile
+    # The free plan sleeps when idle (the first request then takes up to a
+    # minute) and has no disk, so accounts and bought plans are reset when it
+    # restarts. For a real service, switch to `plan: starter` and uncomment
+    # the disk below.
+    plan: free
+    healthCheckPath: /v1/health
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ONEAI_ADMIN_KEY
+        generateValue: true
+    # disk:
+    #   name: oneai-data
+    #   mountPath: /data
+    #   sizeGB: 1

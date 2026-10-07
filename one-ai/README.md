@@ -139,9 +139,12 @@ docker build -f cloud/Dockerfile -t one-ai .
 docker run -p 8788:8788 -e GEMINI_API_KEY=... -v oneai-data:/data one-ai
 ```
 
-På Render: New → Web Service → det här repot, Root Directory `one-ai`,
-Dockerfile `cloud/Dockerfile`, miljövariabeln `GEMINI_API_KEY` och en disk på
-`/data`.
+**På Render med ett klick:** Render → New → Blueprint → välj det här repot och
+grenen med `one-ai/`, sätt Blueprint path till `one-ai/render.yaml` och klistra
+in din `GEMINI_API_KEY` när Render frågar. Gratisplanen somnar när den inte
+används (första anropet tar då upp till en minut) och saknar disk, så konton
+och köpta planer nollställs vid omstart; byt till `plan: starter` och ta med
+disken i `render.yaml` för riktig drift.
 
 Sätt sedan repo-variabeln **`ONEAI_CLOUD_URL`** (Settings → Secrets and
 variables → Actions → Variables) till serverns adress, så ansluter alla appar

@@ -30,6 +30,17 @@ jobs:
       - name: Test One AI Cloud
         working-directory: one-ai/cloud
         run: python -m unittest discover -s tests -v
+      # The image Render (one-ai/render.yaml) deploys: build it, start it the
+      # way Render does (PORT set) and check the API and the web app answer.
+      - name: Build and start the server image
+        run: |
+          docker build -f one-ai/cloud/Dockerfile -t one-ai-cloud one-ai
+          docker run -d --name one -p 10000:10000 -e PORT=10000 -e ONEAI_FAKE_MODELS=1 one-ai-cloud
+          for i in $(seq 1 20); do curl -fs http://127.0.0.1:10000/v1/health && break; sleep 1; done
+          curl -fs http://127.0.0.1:10000/v1/config > /dev/null
+          curl -fs http://127.0.0.1:10000/ | grep -q "<title>One AI</title>"
+          docker logs one
+          docker rm -f one
       - name: Check the web app's scripts
         run: for f in one-ai/web/js/*.js one-ai/desktop/*.js one-ai/desktop/scripts/*.js; do node --check "$f"; done
       # Set the repository variable ONEAI_CLOUD_URL to your deployed server and
