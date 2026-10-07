@@ -1,3 +1,5 @@
+import java.util.Base64
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -11,7 +13,7 @@ val geminiModel = (findProperty("GEMINI_MODEL") as String?) ?: "gemini-3.8-live"
 // Fixed sideload key so new builds install as updates over old ones. Kept as base64 text in the repo.
 val sideloadKeystore = layout.buildDirectory.file("chargamo-sideload.jks").get().asFile.also {
     it.parentFile.mkdirs()
-    it.writeBytes(java.util.Base64.getMimeDecoder().decode(file("chargamo-sideload.jks.b64").readText()))
+    it.writeBytes(Base64.getMimeDecoder().decode(file("chargamo-sideload.jks.b64").readText()))
 }
 
 android {
