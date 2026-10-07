@@ -18,9 +18,8 @@ APK: [`apk/Chargamo.apk`](../apk/Chargamo.apk) (byggs automatiskt av GitHub Acti
 2. Öppna appen och godkänn kamera, mikrofon och aviseringar. Appen öppnar sedan systeminställningar för
    **Användningsåtkomst**, **Visa över andra appar** och **Batterioptimering** – slå på Chargamo i alla tre.
    Är Användningsåtkomst gråmarkerad: Inställningar → Appar → Chargamo → ⋮ → *Tillåt begränsade inställningar*.
-3. Ge AI:n en Gemini API-nyckel: skapa en på <https://aistudio.google.com/apikey>, markera nyckeln
-   (börjar med `AIza…`), välj **Dela** och dela den till **Chargamo AI-nyckel**. Ögonen blinkar två gånger när den är sparad.
-   Utan nyckel tittar ögonen fram och tillbaka när mobilen laddar.
+3. En Gemini API-nyckel är inbyggd i appen. Vill du byta: markera en ny nyckel (börjar med `AIza…` eller `AQ.…`),
+   välj **Dela** och dela den till **Chargamo AI-nyckel**. Ögonen blinkar två gånger när den är sparad.
 
 ## Att veta
 
@@ -28,6 +27,7 @@ APK: [`apk/Chargamo.apk`](../apk/Chargamo.apk) (byggs automatiskt av GitHub Acti
   så Chargamo skriver till laddarens kernel-filer via `su`. Utan root blir straffet att AI:n vägrar vakna i en timme
   och aviseringen visar när laddningen tillåts igen – men strömmen fortsätter gå in i batteriet.
 - Facebook och TikTok upptäcks via deras appar (inte via webbläsaren).
-- Nyckeln byggs aldrig in i APK:n från det här publika repot. För ett privat bygge:
-  `gradle assembleRelease -PGEMINI_API_KEY=AIza...` (Gradle 8.14, JDK 17, Android SDK 35) (och `-PGEMINI_MODEL=...` för en annan modell).
+- Den inbyggda nyckeln ligger i `app/build.gradle.kts` och är synlig för alla eftersom repot är publikt.
+  Bygg med en annan nyckel: `gradle assembleRelease -PGEMINI_API_KEY=...` (Gradle 8.14, JDK 17, Android SDK 35)
+  (och `-PGEMINI_MODEL=...` för en annan modell).
 - APK:n signeras med nyckeln i `app/chargamo-sideload.jks.b64` (lösenord `chargamo`) så att nya byggen installeras som uppdateringar.

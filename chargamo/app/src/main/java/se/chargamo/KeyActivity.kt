@@ -6,7 +6,7 @@ import android.os.Bundle
 import android.widget.Toast
 
 /**
- * Share a Gemini API key (text starting with "AIza") to Chargamo from any app.
+ * Share a Gemini API key (text starting with "AIza" or "AQ.") to Chargamo from any app.
  * Keeps the main screen free of buttons and text fields.
  */
 class KeyActivity : Activity() {
@@ -29,6 +29,6 @@ class KeyActivity : Activity() {
     }
 
     companion object {
-        private val KEY_PATTERN = Regex("AIza[0-9A-Za-z_\\-]{35}")
+        private val KEY_PATTERN = Regex("AIza[0-9A-Za-z_\\-]{35}|AQ\\.[0-9A-Za-z_\\-]{20,}")
     }
 }

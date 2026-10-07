@@ -5,9 +5,10 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-// The API key is never baked into builds from this public repo. Share the key
-// to the app instead (see README), or pass -PGEMINI_API_KEY=... for a private build.
-val geminiKey = (findProperty("GEMINI_API_KEY") as String?) ?: ""
+// Built-in Gemini API key, base64-encoded (the owner chose to keep it in this public repo).
+// A key shared to the app (see README) or -PGEMINI_API_KEY=... overrides it.
+val geminiKey = (findProperty("GEMINI_API_KEY") as String?)
+    ?: String(Base64.getDecoder().decode("QVEuQWI4Uk42S0VYQ25rNFBadzB2N1N5clNsMGpDb0xvY0doTWsyelhxTDg3R0NnWENDb2c="))
 val geminiModel = (findProperty("GEMINI_MODEL") as String?) ?: "gemini-3.8-live"
 
 // Fixed sideload key so new builds install as updates over old ones. Kept as base64 text in the repo.
