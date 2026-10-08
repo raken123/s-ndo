@@ -1,0 +1,60 @@
+name: Build Chargamo IPA
+
+on:
+  push:
+    paths:
+      - "chargamo-ios/**"
+      - ".github/workflows/chargamo-ipa.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: chargamo-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: chargamo-ios
+        run: xcodegen generate
+
+      # Unsigned build: Sideloadly / AltStore / SideStore sign it with the user's free Apple ID.
+      - name: Build unsigned app
+        working-directory: chargamo-ios
+        run: |
+          xcodebuild -project Chargamo.xcodeproj -target Chargamo -configuration Release \
+            -sdk iphoneos SYMROOT="$PWD/build" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package IPA
+        run: |
+          mkdir -p ipa Payload
+          cp -R chargamo-ios/build/Release-iphoneos/Chargamo.app Payload/
+          zip -qry ipa/Chargamo.ipa Payload
+          ls -l ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Chargamo-ipa
+          path: ipa/Chargamo.ipa
+
+      # Pushes made with GITHUB_TOKEN do not trigger workflows, so this cannot loop.
+      - name: Commit IPA to the branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add ipa/Chargamo.ipa
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Build ipa/Chargamo.ipa from ${GITHUB_SHA::7}"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
