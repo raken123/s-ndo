@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Chargamo</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; cursor: none;
+    -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; touch-action: none; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  video { display: none; }
+</style>
+</head>
+<body>
+<canvas id="eyes"></canvas>
+<video id="cam" playsinline muted></video>
+<script>
+"use strict";
+// Chargamo web: two square blue eyes on black. Nothing else.
+// While the device charges, Gemini Live watches through the camera and listens through the microphone.
+// A slow 180° turn darkens the screen and closes the eyes. Tap the screen once to wake Chargamo
+// (browsers only allow sound, camera, fullscreen and motion sensors after a tap).
+
+const MODEL = "models/gemini-3.8-live";
+const ENDPOINT = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
+// Built-in Gemini API key, base64-encoded (the owner chose to keep it in this public repo).
+const BUILT_IN_KEY = atob("QVEuQWI4Uk42S0VYQ25rNFBadzB2N1N5clNsMGpDb0xvY0doTWsyelhxTDg3R0NnWENDb2c=");
+const LOCKOUT_MS = 60 * 60 * 1000;
+const BLUE = [30, 123, 255];
+
+const SYSTEM_PROMPT =
+  "Du är Chargamo, en AI som bor i en magnetisk mobilladdare. " +
+  "Du vaknar när mobilen börjar laddas. Du ser användaren genom kameran och hör dem genom mikrofonen. " +
+  "På skärmen syns du bara som två fyrkantiga blå ögon på svart bakgrund. " +
+  "Prata svenska om inte användaren pratar ett annat språk. Var varm, lite lekfull och kortfattad: " +
+  "oftast en eller två meningar, eftersom allt du säger läses upp. " +
+  "Om användaren öppnar Facebook eller TikTok medan mobilen laddar vägrar du vakna i en timme; " +
+  "det får du gärna påminna om med glimten i ögat. " +
+  "Om mobilen vrids långsamt ett halvt varv somnar du.";
+const GREETING = "(Mobilen har precis kopplats till laddaren och du har vaknat. Hälsa kort.)";
+
+// ---------------------------------------------------------------- storage
+
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch { /* private mode */ } },
+};
+const apiKey = () => store.get("chargamo_key") || BUILT_IN_KEY;
+const lockUntil = () => Number(store.get("chargamo_lock_until") || 0);
+const isLockedOut = () => Date.now() < lockUntil();
+
+// ---------------------------------------------------------------- eyes
+
+const canvas = document.getElementById("eyes");
+const g = canvas.getContext("2d");
+const eyes = { closed: false, voice: 0, lid: 1, shownVoice: 0, last: 0,
+  nextBlink: performance.now() + 2500, extraBlinks: [] };
+const BLINK_MS = 180;
+
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(innerWidth * dpr);
+  canvas.height = Math.round(innerHeight * dpr);
+}
+addEventListener("resize", resize);
+resize();
+
+function blinkTwice() {
+  const now = performance.now();
+  eyes.extraBlinks.push(now + 200, now + 550);
+}
+
+function draw(now) {
+  const dt = eyes.last ? Math.min((now - eyes.last) / 1000, 0.1) : 0;
+  eyes.last = now;
+  const target = eyes.closed ? 0 : 1;
+  const speed = eyes.closed ? 0.9 : 2.5;
+  eyes.lid = eyes.lid < target ? Math.min(target, eyes.lid + speed * dt) : Math.max(target, eyes.lid - speed * dt);
+
+  let blink = 1;
+  if (!eyes.closed) {
+    if (now > eyes.nextBlink + BLINK_MS) eyes.nextBlink = now + 2500 + Math.random() * 4500;
+    eyes.extraBlinks = eyes.extraBlinks.filter(t => now <= t + BLINK_MS);
+    const first = eyes.extraBlinks[0];
+    const start = first !== undefined && now >= first ? first : eyes.nextBlink;
+    const p = (now - start) / BLINK_MS;
+    if (p >= 0 && p <= 1) blink = Math.abs(1 - 2 * p);
+  }
+
+  eyes.voice = audioOut ? audioOut.level() : 0;
+  eyes.shownVoice += (eyes.voice - eyes.shownVoice) * Math.min(1, dt * 14);
+
+  const w = canvas.width, h = canvas.height, m = Math.min(w, h);
+  const size = m * 0.24 * (1 + 0.12 * eyes.shownVoice);
+  const gap = m * 0.13;
+  const eyeH = Math.max(size * eyes.lid * blink, size * 0.05);
+  const cx = w / 2, cy = h / 2;
+  g.fillStyle = "#000";
+  g.fillRect(0, 0, w, h);
+  // Asleep: the light goes dark along with the lids.
+  const a = 0.18 + 0.82 * eyes.lid;
+  g.fillStyle = `rgba(${BLUE[0]},${BLUE[1]},${BLUE[2]},${a})`;
+  g.fillRect(cx - gap / 2 - size, cy - eyeH / 2, size, eyeH);
+  g.fillRect(cx + gap / 2, cy - eyeH / 2, size, eyeH);
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+
+// ---------------------------------------------------------------- audio
+
+let ctx = null;
+let audioOut = null;
+
+function makeAudioOut(ctx) {
+  const gain = ctx.createGain();
+  const analyser = ctx.createAnalyser();
+  analyser.fftSize = 1024;
+  gain.connect(analyser);
+  analyser.connect(ctx.destination);
+  const data = new Float32Array(analyser.fftSize);
+  const sources = new Set();
+  let nextTime = 0;
+  return {
+    play(b64) {
+      const bin = atob(b64);
+      const n = bin.length >> 1;
+      if (!n) return;
+      const buf = ctx.createBuffer(1, n, 24000);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) {
+        let v = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8);
+        if (v >= 32768) v -= 65536;
+        d[i] = v / 32768;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(gain);
+      const t = Math.max(ctx.currentTime + 0.05, nextTime);
+      src.start(t);
+      nextTime = t + buf.duration;
+      sources.add(src);
+      src.onended = () => sources.delete(src);
+    },
+    /** The user interrupted the AI: drop what it was saying. */
+    flush() {
+      for (const s of sources) { try { s.stop(); } catch { /* already stopped */ } }
+      sources.clear();
+      nextTime = 0;
+    },
+    level() {
+      analyser.getFloatTimeDomainData(data);
+      let sum = 0;
+      for (let i = 0; i < data.length; i++) sum += data[i] * data[i];
+      return Math.min(1, Math.sqrt(sum / data.length) * 4);
+    },
+  };
+}
+
+// Resamples the microphone to 16 kHz 16-bit mono and posts 100 ms chunks.
+const MIC_WORKLET = `
+class MicCapture extends AudioWorkletProcessor {
+  constructor() { super(); this.ratio = sampleRate / 16000; this.pos = 0; this.out = new Int16Array(1600); this.n = 0; }
+  process(inputs) {
+    const ch = inputs[0] && inputs[0][0];
+    if (!ch) return true;
+    while (this.pos < ch.length) {
+      const i = Math.floor(this.pos), f = this.pos - i;
+      const a = ch[i], b = i + 1 < ch.length ? ch[i + 1] : a;
+      const v = Math.max(-1, Math.min(1, a + (b - a) * f));
+      this.out[this.n++] = v * 32767;
+      if (this.n === this.out.length) { this.port.postMessage(this.out.buffer.slice(0)); this.n = 0; }
+      this.pos += this.ratio;
+    }
+    this.pos -= ch.length;
+    return true;
+  }
+}
+registerProcessor("mic-capture", MicCapture);`;
+let workletReady = null;
+
+function bytesToB64(buffer) {
+  const b = new Uint8Array(buffer);
+  let s = "";
+  for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
+// ---------------------------------------------------------------- Gemini Live
+
+class GeminiLive {
+  constructor(key) {
+    this.key = key;
+    this.ws = null;
+    this.ready = false;
+    this.running = false;
+    this.retries = 0;
+    this.resumeHandle = null;
+    this.greeted = false;
+    this.timer = null;
+  }
+
+  start() { this.running = true; this.connect(); }
+
+  stop() {
+    this.running = false;
+    this.ready = false;
+    clearTimeout(this.timer);
+    const ws = this.ws;
+    this.ws = null;
+    if (ws) ws.close(1000);
+    if (audioOut) audioOut.flush();
+  }
+
+  send(obj) { if (this.ws && this.ws.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify(obj)); }
+
+  sendRealtime(kind, mimeType, data) {
+    if (this.ready) this.send({ realtimeInput: { [kind]: { mimeType, data } } });
+  }
+
+  connect() {
+    if (!this.running) return;
+    const ws = new WebSocket(`${ENDPOINT}?key=${encodeURIComponent(this.key)}`);
+    this.ws = ws;
+    ws.onopen = () => {
+      const setup = {
+        model: MODEL,
+        generationConfig: { responseModalities: ["AUDIO"] },
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        // Audio + video sessions are cut after a couple of minutes without compression.
+        contextWindowCompression: { slidingWindow: {} },
+        sessionResumption: this.resumeHandle ? { handle: this.resumeHandle } : {},
+      };
+      ws.send(JSON.stringify({ setup }));
+    };
+    ws.onmessage = async ev => {
+      if (ws !== this.ws) return;
+      const text = typeof ev.data === "string" ? ev.data : await ev.data.text();
+      let msg;
+      try { msg = JSON.parse(text); } catch { return; }
+      this.handle(msg);
+    };
+    ws.onclose = ev => { if (ws === this.ws) this.dropped(`closed ${ev.code} ${ev.reason}`); };
+  }
+
+  dropped(why) {
+    console.warn("Chargamo: Gemini connection dropped:", why);
+    this.ready = false;
+    this.ws = null;
+    if (!this.running) return;
+    const delay = Math.min(30000, 1000 * 2 ** Math.min(this.retries, 5));
+    this.retries++;
+    this.timer = setTimeout(() => this.connect(), delay);
+  }
+
+  handle(msg) {
+    if (msg.setupComplete) {
+      this.ready = true;
+      this.retries = 0;
+      if (!this.greeted) {
+        this.greeted = true;
+        this.send({ realtimeInput: { text: GREETING } });
+      }
+    }
+    const content = msg.serverContent;
+    if (content) {
+      if (content.interrupted && audioOut) audioOut.flush();
+      const parts = (content.modelTurn && content.modelTurn.parts) || [];
+      for (const p of parts) {
+        const d = p.inlineData;
+        if (d && d.mimeType && d.mimeType.startsWith("audio/pcm") && audioOut) audioOut.play(d.data);
+      }
+    }
+    const upd = msg.sessionResumptionUpdate;
+    if (upd && upd.resumable && upd.newHandle) this.resumeHandle = upd.newHandle;
+    if (msg.goAway && this.ws) {
+      // The server is about to end this connection: move to a fresh one now.
+      const old = this.ws;
+      this.ready = false;
+      this.ws = null;
+      old.close(1000);
+      this.connect();
+    }
+  }
+}
+
+// ---------------------------------------------------------------- AI lifecycle
+
+let started = false;      // the first tap happened
+let live = null;
+let media = null;         // { stream, micNode, frameTimer }
+let battery = null;
+let sleeping = false;
+
+const charging = () => (battery ? battery.charging : true); // no Battery API (Safari, Firefox): always "charging"
+
+async function startAi() {
+  const session = new GeminiLive(apiKey());
+  live = session;
+  session.start();
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+    });
+    if (live !== session) { stream.getTracks().forEach(t => t.stop()); return; }
+    await workletReady;
+    const micNode = new AudioWorkletNode(ctx, "mic-capture");
+    micNode.port.onmessage = ev => session.sendRealtime("audio", "audio/pcm;rate=16000", bytesToB64(ev.data));
+    const silent = ctx.createGain();
+    silent.gain.value = 0;
+    const source = ctx.createMediaStreamSource(stream);
+    source.connect(micNode);
+    micNode.connect(silent);
+    silent.connect(ctx.destination);
+
+    const video = document.getElementById("cam");
+    video.srcObject = stream;
+    await video.play().catch(() => {});
+    const frame = document.createElement("canvas");
+    const fctx = frame.getContext("2d");
+    const frameTimer = setInterval(() => {
+      if (!video.videoWidth) return;
+      const scale = Math.min(1, 640 / Math.max(video.videoWidth, video.videoHeight));
+      frame.width = Math.round(video.videoWidth * scale);
+      frame.height = Math.round(video.videoHeight * scale);
+      fctx.drawImage(video, 0, 0, frame.width, frame.height);
+      const jpeg = frame.toDataURL("image/jpeg", 0.6).split(",")[1];
+      session.sendRealtime("video", "image/jpeg", jpeg);
+    }, 1000);
+    media = { stream, source, micNode, silent, frameTimer };
+  } catch (e) {
+    console.warn("Chargamo: no camera/microphone:", e);
+  }
+}
+
+function stopAi() {
+  if (live) { live.stop(); live = null; }
+  if (media) {
+    clearInterval(media.frameTimer);
+    media.source.disconnect();
+    media.micNode.disconnect();
+    media.silent.disconnect();
+    media.stream.getTracks().forEach(t => t.stop());
+    document.getElementById("cam").srcObject = null;
+    media = null;
+  }
+}
+
+/** Starts or stops the AI so that it runs exactly while it should. */
+function update() {
+  const wanted = started && !document.hidden && charging() && !sleeping && !isLockedOut();
+  if (wanted && !live) startAi();
+  else if (!wanted && live) stopAi();
+}
+
+document.addEventListener("visibilitychange", () => { update(); if (!document.hidden) requestWakeLock(); });
+setInterval(update, 30000); // wakes the AI again when a lockout runs out
+
+// ---------------------------------------------------------------- slow 180° turn
+
+const flip = { ref: null, refTime: 0, last: null, lastTime: 0, speed: 0, stillFor: 0, cooldownUntil: 0 };
+
+function quatFromOrientation(alpha, beta, gamma) {
+  const d = Math.PI / 180;
+  const x = beta * d / 2, y = gamma * d / 2, z = alpha * d / 2;
+  const cX = Math.cos(x), cY = Math.cos(y), cZ = Math.cos(z);
+  const sX = Math.sin(x), sY = Math.sin(y), sZ = Math.sin(z);
+  return [
+    cX * cY * cZ - sX * sY * sZ,
+    sX * cY * cZ - cX * sY * sZ,
+    cX * sY * cZ + sX * cY * sZ,
+    cX * cY * sZ + sX * sY * cZ,
+  ];
+}
+
+function quatAngle(a, b) {
+  const dot = Math.abs(a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3]);
+  return 2 * Math.acos(Math.min(1, dot));
+}
+
+function onOrientation(ev) {
+  if (ev.alpha === null || ev.beta === null || ev.gamma === null) return;
+  const q = quatFromOrientation(ev.alpha, ev.beta, ev.gamma);
+  const t = performance.now() / 1000;
+  if (!flip.ref || !flip.last) { Object.assign(flip, { ref: q, refTime: t, last: q, lastTime: t }); return; }
+  const dt = t - flip.lastTime;
+  if (dt <= 0) return;
+  const w = quatAngle(flip.last, q) / dt;
+  flip.speed += (w - flip.speed) * Math.min(1, dt * 8);
+  flip.last = q;
+  flip.lastTime = t;
+  if (flip.speed > 2.6) { flip.ref = q; flip.refTime = t; return; } // too fast: not a slow turn
+  if (flip.speed < 0.12) {
+    flip.stillFor += dt;
+    if (flip.stillFor > 0.8) { flip.ref = q; flip.refTime = t; return; }
+  } else {
+    flip.stillFor = 0;
+  }
+  const turned = quatAngle(flip.ref, q);
+  const took = t - flip.refTime;
+  if (turned >= 160 * Math.PI / 180 && took >= 1.0 && t >= flip.cooldownUntil) {
+    flip.cooldownUntil = t + 1.5;
+    flip.ref = q;
+    flip.refTime = t;
+    sleeping = !sleeping;
+    eyes.closed = sleeping;
+    update();
+  } else if (took > 15) {
+    flip.ref = q;
+    flip.refTime = t;
+  }
+}
+
+// ---------------------------------------------------------------- links: #penalty and #key=...
+
+function handleHash() {
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (!h) return;
+  if (h === "penalty") {
+    if (charging()) store.set("chargamo_lock_until", String(Date.now() + LOCKOUT_MS));
+  } else if (h.startsWith("key=") && h.length > 4) {
+    store.set("chargamo_key", h.slice(4));
+    blinkTwice();
+    if (live) stopAi();
+  }
+  history.replaceState(null, "", location.pathname + location.search);
+  update();
+}
+addEventListener("hashchange", handleHash);
+handleHash();
+
+// ---------------------------------------------------------------- wake up on the first tap
+
+let wakeLock = null;
+async function requestWakeLock() {
+  try { if (started && navigator.wakeLock && !document.hidden) wakeLock = await navigator.wakeLock.request("screen"); }
+  catch { /* not allowed right now */ }
+}
+
+async function wake() {
+  if (started) return;
+  started = true;
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  await ctx.resume().catch(() => {});
+  audioOut = makeAudioOut(ctx);
+  const url = URL.createObjectURL(new Blob([MIC_WORKLET], { type: "application/javascript" }));
+  workletReady = ctx.audioWorklet.addModule(url);
+  if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+    try { await DeviceOrientationEvent.requestPermission(); } catch { /* denied */ }
+  }
+  addEventListener("deviceorientation", onOrientation);
+  const el = document.documentElement;
+  (el.requestFullscreen || el.webkitRequestFullscreen || (() => {})).call(el);
+  requestWakeLock();
+  blinkTwice();
+  update();
+}
+addEventListener("pointerdown", wake);
+addEventListener("keydown", wake);
+
+if (navigator.getBattery) {
+  navigator.getBattery().then(b => {
+    battery = b;
+    b.addEventListener("chargingchange", update);
+    update();
+  }).catch(() => {});
+}
+</script>
+</body>
+</html>
