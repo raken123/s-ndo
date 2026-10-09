@@ -48,6 +48,10 @@ npm test
 
 Requires Node 20+. Data (users, projects, generated assets) lives in `nezos/data/`, which is git-ignored.
 
+## Native apps and downloads
+
+`downloads/` has Nezos as a Windows `.exe`, macOS `.dmg`, Linux `.deb`, Android `.apk` and `.aab`, iOS `.ipa` and a single-file `.html`, plus a downloads page (`downloads/index.html`). See [packaging/README.md](packaging/README.md) for how they're built.
+
 ## Before going live
 
 - **Billing:** `BILLING_MODE=demo` lets users switch plans for free. Connect a payment provider (for example Stripe Checkout plus webhooks that call `changePlan()` in `src/auth.js`), then set `BILLING_MODE=live`.
