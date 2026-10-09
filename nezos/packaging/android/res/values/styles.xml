@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Nezos" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/nezos_bg</item>
+        <item name="android:colorPrimary">@color/nezos_bg</item>
+        <item name="android:colorAccent">@color/nezos_brand</item>
+        <item name="android:statusBarColor">@color/nezos_bg</item>
+        <item name="android:navigationBarColor">@color/nezos_bg</item>
+        <!-- keep content out from under the system bars on Android 15+ -->
+        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
+    </style>
+    <color name="nezos_bg">#0b0d17</color>
+    <color name="nezos_brand">#7c5cff</color>
+</resources>

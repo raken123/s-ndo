@@ -1,4 +1,5 @@
 :root {
+  color-scheme: dark; /* dark native controls (selects, scrollbars) in WebKit/Safari too */
   --bg: #0b0d17;
   --bg-2: #11142280;
   --panel: #151827;
@@ -40,6 +41,7 @@ img { max-width: 100%; }
 .btn-lg { padding: 14px 26px; font-size: 16px; border-radius: 12px; }
 
 .input, select.input, textarea.input {
+  color-scheme: dark;
   width: 100%; padding: 11px 13px; border-radius: 10px; border: 1px solid var(--line);
   background: #0f1220; color: var(--ink); outline: none; transition: border-color .15s, box-shadow .15s;
 }

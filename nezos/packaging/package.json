@@ -1,0 +1,13 @@
+{
+  "name": "nezos-packaging",
+  "private": true,
+  "type": "module",
+  "description": "Builds Nezos as native apps: DEB, EXE, DMG, APK, AAB (and IPA via CI)",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "@neutralinojs/neu": "11.8.0",
+    "resedit": "2.0.3"
+  }
+}

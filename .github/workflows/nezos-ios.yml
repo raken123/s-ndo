@@ -1,0 +1,56 @@
+# Builds the Nezos iOS app (.ipa). iOS binaries can only be compiled with
+# Apple's SDK, so this runs on a macOS runner and commits the result to
+# nezos/downloads/ next to the other platform builds.
+name: Nezos iOS build
+
+on:
+  push:
+    branches: ['claude/fervent-wozniak-kgljg7']
+    paths:
+      - 'nezos/packaging/ios/**'
+      - 'nezos/packaging/icons/**'
+      - 'nezos/standalone/**'
+      - 'nezos/public/**'
+      - 'nezos/src/**'
+      - '.github/workflows/nezos-ios.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nezos-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ipa:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build the single-file app
+        run: node nezos/standalone/build.mjs nezos/dist/nezos.html
+
+      - name: Build the IPA
+        run: |
+          V=$(node -p "require('./nezos/package.json').version")
+          bash nezos/packaging/ios/build-ipa.sh nezos/dist/nezos.html "nezos/downloads/Nezos-$V.ipa" "$V"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nezos-ipa
+          path: nezos/downloads/*.ipa
+
+      - name: Commit the IPA to the branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add nezos/downloads/*.ipa
+          if git diff --cached --quiet; then echo "IPA unchanged"; exit 0; fi
+          git commit -m "Build Nezos iOS app (.ipa)"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

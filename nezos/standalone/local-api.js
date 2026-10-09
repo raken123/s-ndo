@@ -449,9 +449,22 @@ new Runtime(document.getElementById('game'), doc, { onLog: (level, text) => cons
 </script>
 </body>
 </html>`;
+  saveFile(`${p.name.replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '') || 'game'}.html`, 'text/html', html);
+}
+
+/** Save a file: native bridge in the Android/iOS apps, a download everywhere else. */
+function saveFile(name, mime, text) {
+  const b64 = () => {
+    const bytes = new TextEncoder().encode(text);
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return btoa(bin);
+  };
+  if (window.NezosAndroid?.saveFile) return window.NezosAndroid.saveFile(name, mime, b64());
+  if (window.webkit?.messageHandlers?.nezosSave) return window.webkit.messageHandlers.nezosSave.postMessage({ name, mime, base64: b64() });
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-  a.download = `${p.name.replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '') || 'game'}.html`;
+  a.href = URL.createObjectURL(new Blob([text], { type: mime }));
+  a.download = name;
   a.dataset.nzDownload = '1';
   document.body.appendChild(a);
   a.click();
