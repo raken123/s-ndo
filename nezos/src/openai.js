@@ -14,7 +14,7 @@ function key() {
   return k;
 }
 
-async function call(path, { method = 'POST', body, form, raw = false, timeout = 300_000 } = {}) {
+export async function call(path, { method = 'POST', body, form, raw = false, timeout = 300_000 } = {}) {
   const headers = { Authorization: `Bearer ${key()}` };
   if (body) headers['Content-Type'] = 'application/json';
   const res = await fetch(BASE + path, {

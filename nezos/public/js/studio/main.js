@@ -90,9 +90,10 @@ const assets = new Assets(document.getElementById('assets'), {
 const seen = new Set();
 const found = [];
 JSON.stringify(project.scene, (k, v) => {
-  if (typeof v === 'string' && v.startsWith('/assets/') && !seen.has(v)) {
+  if (typeof v === 'string' && (v.startsWith('/assets/') || /^data:(image|audio|video)\//.test(v)) && !seen.has(v)) {
     seen.add(v);
-    found.push({ kind: v.endsWith('.mp3') ? 'audio' : v.endsWith('.mp4') ? 'video' : 'image', url: v });
+    const kind = /\.mp3$|^data:audio/.test(v) ? 'audio' : /\.mp4$|^data:video/.test(v) ? 'video' : 'image';
+    found.push({ kind, url: v });
   }
   return v;
 });
