@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nezos — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<link rel="icon" href="/favicon.svg">
+</head>
+<body>
+<nav class="nav">
+  <a class="brand" href="/"><span id="logo"></span>Nezos</a>
+  <div class="links"><a href="/dashboard">Projects</a><a href="/models">Models</a></div>
+  <div class="right">
+    <span class="badge badge-credits" id="credits">— credits</span>
+    <span class="badge" id="planBadge">Free</span>
+    <button class="btn btn-ghost btn-sm" id="logout">Log out</button>
+  </div>
+</nav>
+
+<main class="dash">
+  <div class="dash-head">
+    <div><h1 id="hello">Your games</h1><div style="color:var(--muted)" id="email"></div></div>
+    <button class="btn btn-primary" id="newBtn">＋ New game</button>
+  </div>
+  <div class="tabs" id="tabs">
+    <button class="on" data-tab="projects">Projects</button>
+    <button data-tab="plans">Plans &amp; credits</button>
+    <button data-tab="history">Credit history</button>
+  </div>
+
+  <section data-panel="projects">
+    <div class="projects" id="projects"></div>
+  </section>
+
+  <section data-panel="plans" hidden>
+    <div class="stats" id="stats"></div>
+    <div class="pricing" id="pricing"></div>
+  </section>
+
+  <section data-panel="history" hidden>
+    <div class="stat" style="padding:0;overflow:auto"><table class="tx"><thead><tr><th>When</th><th>What</th><th>Credits</th><th>Balance</th></tr></thead><tbody id="tx"></tbody></table></div>
+  </section>
+</main>
+
+<script type="module">
+import { api, requireLogin, logout, esc, h, toast, fmtCredits, timeAgo, LOGO } from '/js/api.js';
+import { renderPricing } from '/js/pricing.js';
+
+document.getElementById('logo').innerHTML = LOGO;
+document.getElementById('logout').onclick = logout;
+const info = await requireLogin();
+
+function paintUser() {
+  document.getElementById('credits').textContent = `${fmtCredits(info.user.credits)} credits`;
+  document.getElementById('planBadge').textContent = info.plan.name;
+  document.getElementById('hello').textContent = `${info.user.name}'s games`;
+  document.getElementById('email').textContent = info.user.email;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="k">Credits</div><div class="v">${fmtCredits(info.user.credits)}</div></div>
+    <div class="stat"><div class="k">Plan</div><div class="v">${esc(info.plan.name)}</div></div>
+    <div class="stat"><div class="k">Monthly credits</div><div class="v">${fmtCredits(info.plan.monthlyCredits)}</div></div>
+    <div class="stat"><div class="k">Next refill</div><div class="v" style="font-size:20px">${new Date(info.user.nextRefillAt).toLocaleDateString()}</div></div>`;
+}
+paintUser();
+
+// ---- tabs
+const tabs = document.getElementById('tabs');
+tabs.addEventListener('click', (e) => {
+  const t = e.target.dataset.tab;
+  if (!t) return;
+  tabs.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.tab === t));
+  document.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== t; });
+  if (t === 'history') loadHistory();
+  history.replaceState(null, '', `#${t}`);
+});
+if (location.hash) tabs.querySelector(`[data-tab="${location.hash.slice(1)}"]`)?.click();
+
+// ---- projects
+async function loadProjects() {
+  const { projects } = await api('/api/projects');
+  const grid = document.getElementById('projects');
+  grid.innerHTML = '';
+  const add = h('<div class="proj new"><span>＋</span>New game</div>');
+  add.onclick = newProject;
+  grid.appendChild(add);
+  for (const p of projects) {
+    const card = h(`<a class="proj" href="/studio/${encodeURIComponent(p.id)}">
+      <div class="thumb">${p.thumbnail ? `<img alt="" src="${esc(p.thumbnail)}">` : '🎮'}</div>
+      <div class="meta"><div style="min-width:0"><b>${esc(p.name)}</b><br><small>${p.objects} objects · ${timeAgo(p.updatedAt)}</small></div>
+      <button class="icon-btn" title="Delete">🗑</button></div></a>`);
+    card.querySelector('.icon-btn').onclick = async (e) => {
+      e.preventDefault();
+      if (!confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
+      await api(`/api/projects/${p.id}`, { method: 'DELETE' });
+      loadProjects();
+    };
+    grid.appendChild(card);
+  }
+}
+
+async function newProject() {
+  const { templates } = await api('/api/templates');
+  const back = h(`<div class="modal-back"><form class="modal">
+    <h2>New game</h2><p class="sub">Start blank or from a template. The AI can take it from there.</p>
+    <label class="field"><span>Name</span><input class="input" name="name" value="My game" maxlength="80"></label>
+    <label class="field"><span>Start from</span><select class="input" name="template">${templates.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></label>
+    <div class="actions"><button type="button" class="btn" data-x>Cancel</button><button class="btn btn-primary">Create</button></div>
+  </form></div>`);
+  document.body.appendChild(back);
+  const form = back.querySelector('form');
+  form.name.select();
+  back.querySelector('[data-x]').onclick = () => back.remove();
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const { project } = await api('/api/projects', { method: 'POST', body: { name: form.name.value, template: form.template.value } });
+      location.href = `/studio/${project.id}`;
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  };
+}
+document.getElementById('newBtn').onclick = newProject;
+
+async function loadHistory() {
+  const { transactions } = await api('/api/billing/transactions');
+  document.getElementById('tx').innerHTML = transactions.map((t) => `<tr>
+    <td>${new Date(t.at).toLocaleString()}</td><td>${esc(t.reason)}</td>
+    <td class="${t.amount >= 0 ? 'pos' : 'neg'}">${t.amount >= 0 ? '+' : ''}${t.amount}</td><td>${fmtCredits(t.balance)}</td></tr>`).join('')
+    || '<tr><td colspan="4" style="color:var(--muted)">No activity yet.</td></tr>';
+}
+
+renderPricing(document.getElementById('pricing'), info, { onChange: () => paintUser() });
+loadProjects();
+</script>
+</body>
+</html>

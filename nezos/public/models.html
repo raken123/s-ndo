@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nezos — Models</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<link rel="icon" href="/favicon.svg">
+</head>
+<body>
+<nav class="nav">
+  <a class="brand" href="/"><span id="logo"></span>Nezos</a>
+  <div class="links"><a href="/#features">Features</a><a href="/#pricing">Pricing</a><a href="/models">Models</a></div>
+  <div class="right" id="navRight"><a class="btn btn-ghost btn-sm" href="/login">Log in</a><a class="btn btn-primary btn-sm" href="/signup">Get started</a></div>
+</nav>
+<main class="dash">
+  <div class="dash-head">
+    <div><h1>Every OpenAI model</h1><div style="color:var(--muted)" id="summary">Loading…</div></div>
+    <input class="input" id="q" placeholder="Search models…" style="max-width:280px">
+  </div>
+  <div id="groups"></div>
+</main>
+<script type="module">
+import { api, me, esc, LOGO } from '/js/api.js';
+document.getElementById('logo').innerHTML = LOGO;
+const info = await me();
+if (info.user) document.getElementById('navRight').innerHTML = `<span class="badge">${esc(info.plan.name)} plan</span><a class="btn btn-primary btn-sm" href="/dashboard">Open studio</a>`;
+
+const { models, status } = await api('/api/models');
+const KINDS = [
+  ['text', 'Text & code: game generation, scenes, 3D models, scripts, architecture, playtesting'],
+  ['image', 'Images: textures, skyboxes, sprites, billboards'],
+  ['video', 'Video: Sora cutscenes'],
+  ['tts', 'Speech: voice lines & narration'],
+  ['transcribe', 'Transcription: voice prompts'],
+  ['moderation', 'Safety'],
+  ['api-only', 'Other API models, unlocked on Elite for API access but not used by the studio'],
+];
+const TIER_ORDER = ['nano', 'mini', 'standard', 'advanced', 'frontier', 'image-mini', 'image', 'image-pro', 'image-ultra', 'video', 'video-pro', 'utility'];
+const live = models.filter((m) => !m.snapshotOf);
+document.getElementById('summary').textContent = `${models.length} models (${live.length} families + ${models.length - live.length} dated snapshots)${status.live ? ', synced live from OpenAI' : ''}. Each model shows the cheapest plan that unlocks it.`;
+
+function render(q = '') {
+  const ql = q.toLowerCase();
+  document.getElementById('groups').innerHTML = KINDS.map(([kind, title]) => {
+    const list = models
+      .filter((m) => m.kind === kind && (!ql || m.id.includes(ql) || m.name.toLowerCase().includes(ql)))
+      .filter((m) => ql || !m.snapshotOf)
+      .sort((a, b) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier) || a.id.localeCompare(b.id));
+    if (!list.length) return '';
+    return `<div class="model-group"><h3>${esc(title)} <span class="badge">${list.length}</span></h3><div class="model-grid">${list.map(card).join('')}</div></div>`;
+  }).join('');
+}
+function card(m) {
+  const locked = info.user && !m.allowed && m.studio;
+  return `<div class="model-card ${locked ? 'locked' : ''}">
+    <b>${esc(m.name)}</b><div class="id">${esc(m.id)}</div>
+    <div class="row"><span>${m.cost} credit${m.cost === 1 ? '' : 's'}${m.kind === 'video' ? ' / 4s' : ''}</span>
+    <span class="${locked ? 'lock' : ''}">${locked ? '🔒 ' : ''}${esc(m.minPlanName)}+</span></div>
+    ${m.apiOnly ? `<div class="row"><span>${esc(m.apiOnly)}</span></div>` : ''}
+    ${m.legacy ? '<div class="row"><span>Legacy</span></div>' : ''}
+  </div>`;
+}
+render();
+document.getElementById('q').addEventListener('input', (e) => render(e.target.value.trim()));
+</script>
+</body>
+</html>

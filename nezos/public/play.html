@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nezos Player</title>
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#0b0d17}#game{position:fixed;inset:0}</style>
+<script type="importmap">{"imports":{"three":"/vendor/three/build/three.module.js","three/addons/":"/vendor/three/examples/jsm/"}}</script>
+</head>
+<body>
+<div id="game"></div>
+<script type="module">
+// Runs inside a sandboxed iframe (opaque origin): game scripts can't touch the
+// studio, the user's session or the API. We only talk via postMessage.
+import { Runtime, attachPlaytester } from '/js/engine/engine.js';
+
+const container = document.getElementById('game');
+const post = (msg) => window.parent.postMessage(msg, '*');
+let rt = null;
+
+window.addEventListener('error', (e) => post({ type: 'log', level: 'error', text: e.message }));
+window.addEventListener('unhandledrejection', (e) => post({ type: 'log', level: 'error', text: String(e.reason?.message || e.reason) }));
+
+window.addEventListener('message', (e) => {
+  if (e.source !== window.parent) return;
+  const { type, scene, options = {} } = e.data || {};
+  if (type === 'load') {
+    rt?.dispose();
+    rt = new Runtime(container, scene, {
+      preserveDrawingBuffer: !!options.playtest,
+      onLog: (level, text) => post({ type: 'log', level, text }),
+      onEvent: (event, data) => post({ type: 'event', event, data }),
+    });
+    rt.renderer.domElement.focus();
+    if (options.playtest) {
+      attachPlaytester(rt, { duration: options.duration || 12, onDone: (report) => post({ type: 'report', report }) });
+    }
+  }
+  if (type === 'stop') { rt?.dispose(); rt = null; }
+  if (type === 'focus') rt?.renderer.domElement.focus();
+});
+post({ type: 'ready' });
+</script>
+</body>
+</html>

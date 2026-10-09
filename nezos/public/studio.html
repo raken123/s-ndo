@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nezos Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<link rel="stylesheet" href="/css/studio.css">
+<link rel="icon" href="/favicon.svg">
+<script type="importmap">{"imports":{"three":"/vendor/three/build/three.module.js","three/addons/":"/vendor/three/examples/jsm/"}}</script>
+</head>
+<body class="studio">
+<header class="topbar">
+  <a class="tb-logo" href="/dashboard" title="Back to dashboard"><span id="logo"></span></a>
+  <input class="tb-name" id="projectName" value="Loading…" spellcheck="false" aria-label="Project name">
+  <span class="tb-save" id="saveState"></span>
+
+  <div class="tb-group" id="gizmoModes" role="toolbar" aria-label="Transform tools">
+    <button class="tb-btn on" data-gizmo="translate" title="Move (W)">✥</button>
+    <button class="tb-btn" data-gizmo="rotate" title="Rotate (E)">⟳</button>
+    <button class="tb-btn" data-gizmo="scale" title="Scale (R)">⤢</button>
+    <button class="tb-btn" id="snapBtn" title="Snap to grid">⌗</button>
+  </div>
+
+  <div class="tb-group tb-create" role="toolbar" aria-label="Create">
+    <div class="dd">
+      <button class="tb-tool" data-menu="model"><i>🧊</i><span class="lbl">3D Model</span><b>▾</b></button>
+      <div class="dd-menu" data-for="model">
+        <button data-act="ai-model">✨ Generate 3D model with AI…</button>
+        <hr>
+        <button data-add="box">▣ Box</button><button data-add="sphere">● Sphere</button><button data-add="cylinder">▮ Cylinder</button>
+        <button data-add="cone">▲ Cone</button><button data-add="capsule">⬮ Capsule</button><button data-add="plane">▭ Plane</button><button data-add="torus">◯ Torus</button>
+        <hr><button data-add="empty">⌖ Empty / spawn point</button>
+      </div>
+    </div>
+    <button class="tb-tool" data-act="image"><i>🖼️</i><span class="lbl">Image</span></button>
+    <div class="dd">
+      <button class="tb-tool" data-menu="scene"><i>🌄</i><span class="lbl">Scene</span><b>▾</b></button>
+      <div class="dd-menu" data-for="scene">
+        <button data-act="ai-scene">✨ Generate scene with AI…</button>
+        <button data-act="ai-game">🎮 Generate a whole game…</button>
+        <button data-act="scene-settings">⚙ Scene settings</button>
+        <button data-act="sky">🌌 AI skybox…</button>
+      </div>
+    </div>
+    <div class="dd">
+      <button class="tb-tool" data-menu="light"><i>💡</i><span class="lbl">Light</span><b>▾</b></button>
+      <div class="dd-menu" data-for="light">
+        <button data-light="directional">☀ Sun (directional)</button><button data-light="point">💡 Point</button>
+        <button data-light="spot">🔦 Spot</button><button data-light="hemisphere">🌗 Hemisphere</button>
+      </div>
+    </div>
+    <button class="tb-tool" data-add="text"><i>🔤</i><span class="lbl">Text</span></button>
+    <button class="tb-tool" data-act="audio"><i>🎙️</i><span class="lbl">Audio</span></button>
+    <button class="tb-tool" data-act="video"><i>🎬</i><span class="lbl">Video</span></button>
+    <button class="tb-tool" data-act="script"><i>⌨️</i><span class="lbl">Code</span></button>
+    <div class="dd">
+      <button class="tb-tool" data-menu="more"><i>⋯</i><span class="lbl">More</span><b>▾</b></button>
+      <div class="dd-menu" data-for="more">
+        <button data-act="ai-architect">🧭 Architect a game plan…</button>
+        <button data-act="playtest">🧪 AI playtest</button>
+        <button data-act="export">⬇ Export HTML game</button>
+        <button data-act="share">🔗 Share playable link</button>
+        <button data-act="shortcuts">⌨ Keyboard shortcuts</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tb-right">
+    <button class="tb-btn" id="undoBtn" title="Undo (Ctrl+Z)">↶</button>
+    <button class="tb-btn" id="redoBtn" title="Redo (Ctrl+Shift+Z)">↷</button>
+    <button class="btn btn-sm tb-playtest" data-act="playtest" title="Let the AI playtest your game">🧪 Playtest</button>
+    <button class="btn btn-primary btn-sm" id="playBtn">▶ Play</button>
+    <a class="badge badge-credits" id="credits" href="/dashboard#plans" title="Credits, click to get more">— cr</a>
+  </div>
+</header>
+
+<div class="workspace">
+  <aside class="panel left">
+    <div class="panel-head"><span>Layers</span><span class="count" id="layerCount"></span></div>
+    <div class="layers" id="layers"></div>
+    <div class="panel-head"><span>Assets</span></div>
+    <div class="assets" id="assets"></div>
+  </aside>
+
+  <main class="viewport-wrap">
+    <div class="viewport" id="viewport"></div>
+    <div class="vp-hint" id="vpHint">Click to select · drag to orbit · right-drag to pan · scroll to zoom</div>
+    <div class="play-layer" id="playLayer" hidden>
+      <div class="play-bar">
+        <span class="play-status" id="playStatus">▶ Playing</span>
+        <button class="btn btn-sm" id="restartBtn">↻ Restart</button>
+        <button class="btn btn-sm" id="fullBtn">⛶</button>
+        <button class="btn btn-sm" id="stopBtn">■ Stop</button>
+      </div>
+    </div>
+    <div class="console" id="console" hidden>
+      <div class="console-head"><b>Console</b><span id="consoleCount"></span><button class="icon-btn" id="consoleClear">Clear</button><button class="icon-btn" id="consoleClose">✕</button></div>
+      <div class="console-body" id="consoleBody"></div>
+    </div>
+  </main>
+
+  <aside class="panel inspector" id="inspector"></aside>
+
+  <aside class="panel chat" id="chat">
+    <div class="chat-head">
+      <div class="chat-title"><span class="spark">✦</span> Nezos AI</div>
+      <div class="modes" id="modes"></div>
+    </div>
+    <div class="messages" id="messages"></div>
+    <form class="composer" id="composer">
+      <div class="ctx" id="ctx"></div>
+      <textarea id="prompt" rows="3" placeholder="Describe what to build… e.g. “a neon racing game on a floating track”"></textarea>
+      <div class="composer-row">
+        <select id="modelSelect" class="mini-select" title="Model"></select>
+        <select id="effortSelect" class="mini-select" title="Reasoning effort">
+          <option value="low">Fast</option><option value="medium">Think</option><option value="high">Think hard</option>
+        </select>
+        <span class="cost" id="costHint"></span>
+        <button type="button" class="icon-round" id="micBtn" title="Voice prompt">🎙</button>
+        <button class="icon-round send" id="sendBtn" title="Send (Enter)">➤</button>
+      </div>
+    </form>
+  </aside>
+</div>
+
+<script type="module" src="/js/studio/main.js"></script>
+</body>
+</html>

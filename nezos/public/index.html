@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nezos — Build 3D games with AI</title>
+<meta name="description" content="Nezos is an AI game studio. Describe a game and Nezos designs, models, codes and playtests it in a Figma-like 3D editor.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<link rel="icon" href="/favicon.svg">
+<script type="importmap">{"imports":{"three":"/vendor/three/build/three.module.js","three/addons/":"/vendor/three/examples/jsm/"}}</script>
+</head>
+<body>
+<nav class="nav">
+  <a class="brand" href="/"><span id="logo"></span>Nezos</a>
+  <div class="links">
+    <a href="#features">Features</a>
+    <a href="#pricing">Pricing</a>
+    <a href="/models">Models</a>
+  </div>
+  <div class="right" id="navRight">
+    <a class="btn btn-ghost btn-sm" href="/login">Log in</a>
+    <a class="btn btn-primary btn-sm" href="/signup">Get started</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <span class="badge">✦ Powered by every OpenAI model — GPT-6, GPT-5.5, GPT Image 2.5, Sora 2</span>
+  <h1>Describe a game.<br><span class="grad">Nezos builds it in 3D.</span></h1>
+  <p class="lead">A Figma-style studio for 3D games with an AI co-developer next to the canvas. It generates the models, textures, scenes, code and architecture, then playtests the result for you.</p>
+  <div class="cta">
+    <a class="btn btn-primary btn-lg" href="/signup">Start building, free</a>
+    <a class="btn btn-lg" href="#pricing">See plans</a>
+  </div>
+  <div class="note">100 free credits when you create your account. No card needed.</div>
+
+  <div class="mock">
+    <div class="bar"><i></i><i></i><i></i>&nbsp;&nbsp;<span class="tool">3D Model</span><span class="tool">Image</span><span class="tool">Scene</span><span class="tool">Light</span><span class="tool">Text</span><span class="tool">Audio</span><span style="margin-left:auto" class="tool">▶ Play</span></div>
+    <div class="body">
+      <div class="layers"><div>☀ Sun</div><div>▭ Ground</div><div class="sel">◆ Player</div><div>◯ Coin 1</div><div>◯ Coin 2</div><div>▣ Castle</div><div>{ } Game script</div></div>
+      <canvas id="heroCanvas"></canvas>
+      <div class="chat">
+        <div class="m u">Make a floating-island platformer with coins and a castle at the end</div>
+        <div class="m">Built it! 4 islands, 12 coins, a moving platform and a castle goal. WASD to move, Space to jump. Want enemies next?</div>
+        <div class="compose">Ask Nezos to build anything…</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="block" id="features">
+  <h2>Your whole game team, in one chat bar</h2>
+  <p class="sub">Pick a tool from the toolbar or just say what you want. Nezos plans the work and edits the scene live.</p>
+  <div class="features">
+    <div class="feature"><div class="ic">🧊</div><h3>3D Model</h3><p>Generate low-poly characters, props and vehicles from text, or drop in primitives and edit them with gizmos.</p></div>
+    <div class="feature"><div class="ic">🖼️</div><h3>Image</h3><p>AI textures, skyboxes, sprites and billboards with GPT Image 1, 1.5, 2 and 2.5.</p></div>
+    <div class="feature"><div class="ic">🌄</div><h3>Scene</h3><p>Whole worlds with terrain, buildings, lighting, fog and physics in a single prompt.</p></div>
+    <div class="feature"><div class="ic">⌨️</div><h3>Code</h3><p>Gameplay scripts on a simple engine API: controllers, collisions, HUD, sound effects and particles.</p></div>
+    <div class="feature"><div class="ic">🧭</div><h3>Architecting</h3><p>Get a full design doc with the core loop, entities and build order before writing a single line.</p></div>
+    <div class="feature"><div class="ic">🧪</div><h3>Playtesting</h3><p>A bot plays your game, collects errors and telemetry, and the AI fixes what it finds.</p></div>
+    <div class="feature"><div class="ic">🎙️</div><h3>Voice &amp; audio</h3><p>Narration and character voice lines with OpenAI TTS. Talk to the chat bar to prompt by voice.</p></div>
+    <div class="feature"><div class="ic">🎬</div><h3>Cutscenes</h3><p>Sora 2 video clips that play on in-game screens. Available on Pro and Elite.</p></div>
+    <div class="feature"><div class="ic">🚀</div><h3>Share &amp; export</h3><p>Publish a playable link or download a single-file HTML game.</p></div>
+  </div>
+</section>
+
+<section class="block" id="pricing">
+  <h2>Plans for every builder</h2>
+  <p class="sub">Every account starts with 100 credits. Bigger plans add monthly credits and unlock stronger models.</p>
+  <div class="pricing" id="pricingGrid"></div>
+  <p class="sub" style="margin-top:22px;font-size:13px">Credits per request: nano models 1 · mini 2 · standard 5 · advanced 10 · frontier 25–60 · images 3–15 · Sora video 60–150. <a href="/models">See every model →</a></p>
+</section>
+
+<footer class="foot">
+  <div>© <span id="yr"></span> Nezos. Build worlds, not boilerplate.</div>
+  <div><a href="/models">Models</a> · <a href="#pricing">Pricing</a> · <a href="/login">Log in</a></div>
+</footer>
+
+<script type="module">
+import { me, esc, LOGO } from '/js/api.js';
+import { renderPricing } from '/js/pricing.js';
+document.getElementById('logo').innerHTML = LOGO;
+document.getElementById('yr').textContent = new Date().getFullYear();
+const m = await me();
+if (m.user) {
+  document.getElementById('navRight').innerHTML = `<a class="btn btn-primary btn-sm" href="/dashboard">Open studio</a>`;
+}
+renderPricing(document.getElementById('pricingGrid'), m);
+
+// Spinning preview in the mock editor.
+import('/js/hero.js').then((mod) => mod.hero(document.getElementById('heroCanvas'))).catch(() => {});
+</script>
+</body>
+</html>

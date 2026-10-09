@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nezos — Sign in</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<link rel="icon" href="/favicon.svg">
+</head>
+<body>
+<div class="auth-wrap">
+  <form class="auth-card" id="form" novalidate>
+    <a class="brand" href="/"><span id="logo"></span>Nezos</a>
+    <h1 id="title">Create your account</h1>
+    <p class="sub" id="sub">Start building 3D games with AI.</p>
+    <div class="perk" id="perk">🎁 You get <b>100 free credits</b> when you sign up.</div>
+    <label class="field" id="nameField"><span>Name</span><input class="input" name="name" autocomplete="name" placeholder="Ada Lovelace"></label>
+    <label class="field"><span>Email</span><input class="input" name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
+    <label class="field"><span>Password</span><input class="input" name="password" type="password" autocomplete="new-password" required minlength="8" placeholder="At least 8 characters"></label>
+    <div class="err" id="err"></div>
+    <button class="btn btn-primary" style="width:100%" id="submit">Create account</button>
+    <div class="switch" id="switch"></div>
+  </form>
+</div>
+<script type="module">
+import { api, LOGO } from '/js/api.js';
+document.getElementById('logo').innerHTML = LOGO;
+const form = document.getElementById('form');
+const err = document.getElementById('err');
+let mode = location.pathname === '/login' ? 'login' : 'signup';
+const next = new URLSearchParams(location.search).get('next');
+const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard';
+
+function render() {
+  const signup = mode === 'signup';
+  document.getElementById('title').textContent = signup ? 'Create your account' : 'Welcome back';
+  document.getElementById('sub').textContent = signup ? 'Start building 3D games with AI.' : 'Log in to your Nezos studio.';
+  document.getElementById('perk').style.display = signup ? '' : 'none';
+  document.getElementById('nameField').style.display = signup ? '' : 'none';
+  document.getElementById('submit').textContent = signup ? 'Create account' : 'Log in';
+  form.password.autocomplete = signup ? 'new-password' : 'current-password';
+  document.getElementById('switch').innerHTML = signup
+    ? 'Already have an account? <a data-to="login">Log in</a>'
+    : 'New to Nezos? <a data-to="signup">Create an account</a>';
+  document.title = `Nezos — ${signup ? 'Sign up' : 'Log in'}`;
+  err.textContent = '';
+}
+document.getElementById('switch').addEventListener('click', (e) => {
+  const to = e.target.dataset.to;
+  if (!to) return;
+  mode = to;
+  history.replaceState(null, '', `/${to}${location.search}`);
+  render();
+});
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  err.textContent = '';
+  const btn = document.getElementById('submit');
+  btn.disabled = true;
+  try {
+    const body = { email: form.email.value, password: form.password.value };
+    if (mode === 'signup') body.name = form.name.value;
+    await api(`/api/auth/${mode}`, { method: 'POST', body });
+    location.href = safeNext;
+  } catch (ex) {
+    err.textContent = ex.message;
+    btn.disabled = false;
+  }
+});
+render();
+</script>
+</body>
+</html>
