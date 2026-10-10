@@ -10,20 +10,20 @@ variables (HUBAI_MODEL_<AGENT>, comma-separated for several).
 
 import os
 
-# id, display name, provider, default API model id(s), credit cost, and what
-# it makes ("text" agents build hubs; "image" draws and edits pictures).
-# Order is the order shown in the apps.
+# id, display name, provider, default API model id(s), reasoning effort,
+# credit cost, and what it makes ("text" agents build hubs; "image" draws and
+# edits pictures). Order is the order shown in the apps.
 ENGINES = [
-    {"id": "spark", "name": "Hub V1 Spark", "provider": "gemini", "models": ["gemini-3.1-flash-lite"], "cost": 1, "makes": "text"},
-    {"id": "flux", "name": "Hub V1 Flux", "provider": "gemini", "models": ["gemini-2.5-flash"], "cost": 1, "makes": "text"},
-    {"id": "volt", "name": "Hub V1 Volt", "provider": "gemini", "models": ["gemini-3-flash-preview"], "cost": 2, "makes": "text"},
-    {"id": "prism", "name": "Hub V1 Prism", "provider": "gemini", "models": ["gemini-2.5-pro"], "cost": 3, "makes": "text"},
-    {"id": "titan", "name": "Hub V1 Titan", "provider": "gemini", "models": ["gemini-3.1-pro-preview"], "cost": 6, "makes": "text"},
-    {"id": "pixel", "name": "Hub V1 Pixel", "provider": "gemini", "models": ["gemini-2.5-flash-image"], "cost": 4, "makes": "image"},
+    {"id": "spark", "name": "Hub V1 Spark", "provider": "openai", "models": ["gpt-5.6-luna"], "effort": "low", "cost": 1, "makes": "text"},
+    {"id": "flux", "name": "Hub V1 Flux", "provider": "openai", "models": ["gpt-5.6-luna"], "effort": "medium", "cost": 1, "makes": "text"},
+    {"id": "volt", "name": "Hub V1 Volt", "provider": "openai", "models": ["gpt-5.6-terra"], "effort": "medium", "cost": 2, "makes": "text"},
+    {"id": "prism", "name": "Hub V1 Prism", "provider": "openai", "models": ["gpt-5.6-sol"], "effort": "medium", "cost": 3, "makes": "text"},
+    {"id": "titan", "name": "Hub V1 Titan", "provider": "openai", "models": ["gpt-5.6-sol"], "effort": "high", "cost": 6, "makes": "text"},
+    {"id": "pixel", "name": "Hub V1 Pixel", "provider": "openai", "models": ["gpt-image-2"], "effort": None, "cost": 4, "makes": "image"},
     # Secret: never listed in /v1/config, only shown to accounts whose plan
     # includes it. Two passes: the first model builds, the second reviews
     # and fixes.
-    {"id": "v2max", "name": "Hub V2 Max", "provider": "gemini", "models": ["gemini-3.1-pro-preview", "gemini-3.1-pro-preview"],
+    {"id": "v2max", "name": "Hub V2 Max", "provider": "openai", "models": ["gpt-5.6-sol", "gpt-5.6-sol"], "effort": "high",
      "cost": 100, "makes": "text", "secret": True},
 ]
 
@@ -146,6 +146,15 @@ def models_for(engine_id):
     if env:
         return [m.strip() for m in env.split(",") if m.strip()]
     return list(engine(engine_id)["models"])
+
+
+def effort_for(engine_id):
+    """Reasoning effort for an engine: HUBAI_EFFORT_<AGENT> ("none" turns it
+    off, for models that don't take it), else the default."""
+    env = os.environ.get("HUBAI_EFFORT_" + engine_id.upper())
+    if env:
+        return None if env.lower() == "none" else env
+    return engine(engine_id).get("effort")
 
 
 def engine(engine_id):

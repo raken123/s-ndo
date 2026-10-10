@@ -2,11 +2,11 @@
 
 The server the Hub AI apps talk to. The Hub agents run here; plans, credits
 and daily caps are enforced here too. It only needs Python 3.10+ (standard
-library only) and a Gemini API key.
+library only) and an OpenAI API key.
 
 ## Agents
 
-Every Hub agent is a Gemini model plus Hub's instructions for each creation
+Every Hub agent is an OpenAI model plus Hub's instructions for each creation
 type (app, animation, slides, card, 3D model, UI design, picture, game,
 website, infographic, logo, diagram, document) and a polish level per agent.
 **The apps never learn this**: `/v1/config`, `/v1/me` and `/v1/generate` only
@@ -16,15 +16,19 @@ themselves only by their Hub V1 name, and model errors reach the apps as
 Keep it that way when you change things: `tests/test_server.py` checks that
 no API answer mentions the provider.
 
-| Agent | Default model id | Makes | Credits |
-|---|---|---|---|
-| Hub V1 Spark | `gemini-3.1-flash-lite` | everything but pictures | 1 |
-| Hub V1 Flux | `gemini-2.5-flash` | everything but pictures | 1 |
-| Hub V1 Volt | `gemini-3-flash-preview` | everything but pictures | 2 |
-| Hub V1 Prism | `gemini-2.5-pro` | everything but pictures | 3 |
-| Hub V1 Titan | `gemini-3.1-pro-preview` | everything but pictures | 6 |
-| Hub V1 Pixel | `gemini-2.5-flash-image` | pictures and photo edits | 4 |
-| Hub V2 Max 🤫 | `gemini-3.1-pro-preview`, twice | everything but pictures | 100 |
+| Agent | Default model id | Reasoning effort | Makes | Credits |
+|---|---|---|---|---|
+| Hub V1 Spark | `gpt-5.6-luna` | low | everything but pictures | 1 |
+| Hub V1 Flux | `gpt-5.6-luna` | medium | everything but pictures | 1 |
+| Hub V1 Volt | `gpt-5.6-terra` | medium | everything but pictures | 2 |
+| Hub V1 Prism | `gpt-5.6-sol` | medium | everything but pictures | 3 |
+| Hub V1 Titan | `gpt-5.6-sol` | high | everything but pictures | 6 |
+| Hub V1 Pixel | `gpt-image-2` | — | pictures and photo edits | 4 |
+| Hub V2 Max 🤫 | `gpt-5.6-sol`, twice | high | everything but pictures | 100 |
+
+Text agents use Chat Completions (`/v1/chat/completions`, with
+`reasoning_effort`); Pixel uses `/v1/images/generations` for new pictures
+and `/v1/images/edits` for photo edits.
 
 Hub V2 Max is secret: `/v1/config` never lists it, and for accounts outside
 Hub Enterprise it answers "Unknown engine". Enterprise accounts get it in
@@ -35,15 +39,15 @@ second reviews it and returns a fixed version.
 `hubcloud/viewer3d.py` checks the scene and wraps it in a self-contained
 WebGL viewer that exports GLB and OBJ.
 
-**Check the model ids before you deploy.** Gemini models are renamed and
-retired often: `gemini-2.5-pro` is scheduled to shut down on the Gemini
-API on 16 October 2026, `gemini-3-flash-preview` is deprecated, and the
-`-preview` ids change when models go stable. Point an agent at another model
-without code changes:
+**Check the model ids before you deploy.** They are the current OpenAI
+names as far as could be checked from here (the API itself was not
+reachable), and `gpt-image-2` in particular is unconfirmed. Point an agent at
+another model, or change its effort, without code changes:
 
 ```sh
-HUBAI_MODEL_PRISM=gemini-3.5-flash
-HUBAI_MODEL_V2MAX=gemini-3.1-pro-preview,gemini-3.1-pro-preview   # builder, reviewer
+HUBAI_MODEL_PIXEL=gpt-image-1.5
+HUBAI_MODEL_V2MAX=gpt-5.6-sol,gpt-5.6-terra   # builder, reviewer
+HUBAI_EFFORT_SPARK=none                       # for a model that doesn't take reasoning_effort
 ```
 
 If a model id doesn't exist, generating with that agent fails and the
@@ -72,16 +76,16 @@ Users find their account id in the app under Settings.
 ## Run it
 
 ```sh
-export GEMINI_API_KEY=...          # every Hub agent
+export OPENAI_API_KEY=sk-...       # every Hub agent
 export HUBAI_ADMIN_KEY=$(openssl rand -hex 24)   # optional, for /v1/admin/plan
 python -m hubcloud --port 8787     # data in ./hubai.sqlite3 (or HUBAI_DB)
 ```
 
 Or put the settings in `hub-ai/cloud/.env` (one `KEY=value` per line, e.g.
-`GEMINI_API_KEY=...`). The server reads it at start-up for anything not set
+`OPENAI_API_KEY=...`). The server reads it at start-up for anything not set
 in the environment. It is git-ignored and kept out of the Docker image,
 because this repository is public: a key committed here can be used by
-anyone and is disabled by Google once it is found.
+anyone, and OpenAI disables keys it finds published.
 
 Try it without keys: `HUBAI_FAKE_MODELS=1 python -m hubcloud` returns small
 placeholder results (a small page, a 3D rocket, a gradient picture) that
@@ -94,7 +98,7 @@ Any host that runs a Docker image or a Python process works. With Docker:
 ```sh
 docker build -t hub-ai-cloud hub-ai/cloud
 docker run -p 8787:8787 -v hubai-data:/data \
-  -e GEMINI_API_KEY -e HUBAI_ADMIN_KEY hub-ai-cloud
+  -e OPENAI_API_KEY -e HUBAI_ADMIN_KEY hub-ai-cloud
 ```
 
 On Render, Railway, Fly.io and similar: create a web service from this

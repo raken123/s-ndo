@@ -143,8 +143,8 @@ def _scene(engine_id, prompt, html, mode, data, data_name):
             "\n\nKeep everything else the same and reply with the complete updated JSON."
     if data:
         request += DATA.format(name=data_name or "data.csv", data=data)
-    text = providers.gemini(config.models_for(engine_id)[0], SCENE.format(name=e["name"], tier=TIER.get(engine_id, "")),
-                            request, json_mode=True)
+    text = providers.chat(config.models_for(engine_id)[0], SCENE.format(name=e["name"], tier=TIER.get(engine_id, "")),
+                          request, json_mode=True, effort=config.effort_for(engine_id))
     m = re.search(r"\{[\s\S]*\}", text or "")
     try:
         scene = viewer3d.clean(json.loads(m.group(0) if m else text))
@@ -170,7 +170,7 @@ def _image(engine_id, prompt, image):
                "same framing and quality.")
     else:
         ask = "Create an image: " + prompt
-    mime, b64 = providers.gemini_image(model, ask, image)
+    mime, b64 = providers.image(model, ask, image)
     title = (prompt.strip().split("\n")[0] or "Image")[:40]
     return {"html": image_page(title, mime, b64, engine_id), "title": title, "image": "data:%s;base64,%s" % (mime, b64)}
 
@@ -187,11 +187,12 @@ def generate(engine_id, prompt, mode="create", html="", lang="", data="", data_n
     models = config.models_for(engine_id)
     system = system_prompt(engine_id, kind)
     request = build_request(mode, prompt, html, lang, data, data_name)
-    page = clean_html(providers.gemini(models[0], system, request))
+    effort = config.effort_for(engine_id)
+    page = clean_html(providers.chat(models[0], system, request, effort=effort))
     # Hub V2 Max: the second pass reviews and fixes the first one's hub.
     for reviewer in models[1:]:
         review = REVIEW.format(name=e["name"], rules=system)
-        page = clean_html(providers.gemini(reviewer, review, "Request:\n" + request + "\n\nHub:\n" + page))
+        page = clean_html(providers.chat(reviewer, review, "Request:\n" + request + "\n\nHub:\n" + page, effort=effort))
     return {"html": page, "title": title_of(page, (prompt or mode)[:40])}
 
 

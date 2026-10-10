@@ -77,8 +77,8 @@ class ServerTest(unittest.TestCase):
     def test_each_agent_runs_its_model(self):
         a = self.api()
         a.call("POST", "/v1/subscribe", {"plan": "plus"})
-        for engine, model in (("spark", "gemini-3.1-flash-lite"), ("flux", "gemini-2.5-flash"), ("volt", "gemini-3-flash-preview"),
-                              ("prism", "gemini-2.5-pro"), ("titan", "gemini-3.1-pro-preview")):
+        for engine, model in (("spark", "gpt-5.6-luna"), ("flux", "gpt-5.6-luna"), ("volt", "gpt-5.6-terra"),
+                              ("prism", "gpt-5.6-sol"), ("titan", "gpt-5.6-sol")):
             s, d = a.call("POST", "/v1/generate", {"engine": engine, "prompt": "x"})
             self.assertEqual(s, 200, d)
             self.assertIn('data-model="%s"' % model, d["html"])
@@ -133,7 +133,7 @@ class ServerTest(unittest.TestCase):
         s, d = a.call("POST", "/v1/subscribe", {"plan": "enterprise"})
         self.assertEqual((s, d["plan"]), (200, "enterprise"), d)
         self.assertEqual([e["id"] for e in d["secretEngines"]], ["v2max"])
-        self.assertNotIn("gemini", json.dumps(d).lower())
+        self.assertNotIn("gpt", json.dumps(d).lower())
         self.assertEqual(len(d["features"]), 20)
         self.assertGreater(d["renews"], (time.time() + 300 * 86400) * 1000, "Enterprise renews yearly")
         s, d = a.call("POST", "/v1/generate", {"engine": "v2max", "prompt": "a crm"})
@@ -159,7 +159,7 @@ class ServerTest(unittest.TestCase):
         self.assertIn('<script type="application/json" id="model">', d["html"])
         self.assertIn("Download GLB", d["html"])
         self.assertIn("Made with Hub AI · Hub V1 Flux", d["html"])
-        self.assertNotIn("gemini", d["html"].lower())
+        self.assertNotIn("gpt", d["html"].lower())
         s, d2 = a.call("POST", "/v1/generate", {"engine": "flux", "prompt": "make it blue", "kind": "model3d", "mode": "refine", "html": d["html"]})
         self.assertEqual(s, 200, d2)
         s, d2 = a.call("POST", "/v1/generate", {"engine": "flux", "prompt": "x", "kind": "model3d", "mode": "refine", "html": "<html></html>"})
@@ -229,13 +229,13 @@ class ServerTest(unittest.TestCase):
     def test_failed_generation_is_refunded_and_says_nothing_about_the_model(self):
         a = self.api()
         os.environ["HUBAI_FAKE_MODELS"] = "0"
-        old = os.environ.pop("GEMINI_API_KEY", None)
+        old = os.environ.pop("OPENAI_API_KEY", None)
         try:
             s, d = a.call("POST", "/v1/generate", {"engine": "spark", "prompt": "x"})
         finally:
             os.environ["HUBAI_FAKE_MODELS"] = "1"
             if old:
-                os.environ["GEMINI_API_KEY"] = old
+                os.environ["OPENAI_API_KEY"] = old
         self.assertEqual((s, d["code"]), (502, "model"))
         self.assertEqual(d["error"], "Hub V1 Spark couldn't finish this one. Try again, or pick another agent.")
         self.assertEqual(a.call("GET", "/v1/me")[1]["credits"], 10)
@@ -260,9 +260,9 @@ class ServerTest(unittest.TestCase):
                              "Run `python -m hubcloud.export_config` after changing hubcloud/config.py")
 
     def test_model_override_from_env(self):
-        os.environ["HUBAI_MODEL_PRISM"] = "gemini-3.5-flash"
+        os.environ["HUBAI_MODEL_PRISM"] = "gpt-5.5"
         try:
-            self.assertEqual(config.models_for("prism"), ["gemini-3.5-flash"])
+            self.assertEqual(config.models_for("prism"), ["gpt-5.5"])
         finally:
             del os.environ["HUBAI_MODEL_PRISM"]
 

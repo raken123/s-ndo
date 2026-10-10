@@ -9,7 +9,7 @@ services:
     plan: starter            # a disk (below) needs a paid instance
     healthCheckPath: /v1/health
     envVars:
-      - key: GEMINI_API_KEY
+      - key: OPENAI_API_KEY
         sync: false
       - key: HUBAI_ADMIN_KEY
         generateValue: true

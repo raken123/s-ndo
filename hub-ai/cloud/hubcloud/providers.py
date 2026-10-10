@@ -1,8 +1,8 @@
-"""Calls to the model API, using only the standard library.
+"""Calls to the model API (OpenAI), using only the standard library.
 
-GEMINI_API_KEY comes from the environment. With HUBAI_FAKE_MODELS=1 no
-network is used: every call returns a small stand-in result that names the
-model, which is what the tests run against.
+OPENAI_API_KEY comes from the environment (or hub-ai/cloud/.env). With
+HUBAI_FAKE_MODELS=1 no network is used: every call returns a small stand-in
+result that names the model, which is what the tests run against.
 
 Error messages here are for the server log. The apps never see them (they
 would name the provider); server.py answers with a neutral message.
@@ -15,6 +15,7 @@ import re
 import struct
 import urllib.error
 import urllib.request
+import uuid
 import zlib
 
 TIMEOUT = int(os.environ.get("HUBAI_MODEL_TIMEOUT", "300"))
@@ -24,15 +25,21 @@ class ProviderError(Exception):
     pass
 
 
-# GEMINI_BASE_URL points at a proxy or a test stand-in.
-def _gemini_url(model):
-    base = os.environ.get("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta")
-    return base.rstrip("/") + "/models/%s:generateContent" % model
+# OPENAI_BASE_URL points at a proxy or a test stand-in.
+def _url(path):
+    return os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/") + path
 
 
-def _post(url, headers, body):
-    req = urllib.request.Request(url, data=json.dumps(body).encode(), method="POST",
-                                 headers=dict(headers, **{"Content-Type": "application/json"}))
+def _key():
+    key = os.environ.get("OPENAI_API_KEY")
+    if not key:
+        raise ProviderError("The server has no OPENAI_API_KEY.")
+    return key
+
+
+def _send(path, data, content_type):
+    req = urllib.request.Request(_url(path), data=data, method="POST",
+                                 headers={"Authorization": "Bearer " + _key(), "Content-Type": content_type})
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
             return json.loads(r.read().decode())
@@ -46,52 +53,65 @@ def _post(url, headers, body):
         raise ProviderError("Could not reach the model API: %s" % getattr(e, "reason", e))
 
 
+def _post(path, body):
+    return _send(path, json.dumps(body).encode(), "application/json")
+
+
+def _multipart(path, fields, files):
+    """files: [(field, filename, mime, bytes)]"""
+    bound = "hub-" + uuid.uuid4().hex
+    out = []
+    for k, v in fields.items():
+        out.append(("--%s\r\nContent-Disposition: form-data; name=\"%s\"\r\n\r\n%s\r\n" % (bound, k, v)).encode())
+    for field, name, mime, data in files:
+        out.append(("--%s\r\nContent-Disposition: form-data; name=\"%s\"; filename=\"%s\"\r\nContent-Type: %s\r\n\r\n"
+                    % (bound, field, name, mime)).encode() + data + b"\r\n")
+    out.append(("--%s--\r\n" % bound).encode())
+    return _send(path, b"".join(out), "multipart/form-data; boundary=" + bound)
+
+
 def fake():
     return os.environ.get("HUBAI_FAKE_MODELS") == "1"
 
 
-def _call(model, body):
-    key = os.environ.get("GEMINI_API_KEY")
-    if not key:
-        raise ProviderError("The server has no GEMINI_API_KEY.")
-    data = _post(_gemini_url(model), {"x-goog-api-key": key}, body)
-    parts = (((data.get("candidates") or [{}])[0].get("content") or {}).get("parts")) or []
-    if not parts:
-        why = (data.get("promptFeedback") or {}).get("blockReason")
-        raise ProviderError("Blocked (%s)." % why if why else "No answer.")
-    return parts
-
-
-def gemini(model, system, prompt, json_mode=False):
-    """Text (or, with json_mode, a JSON document) from a text model."""
+def chat(model, system, prompt, json_mode=False, effort=None):
+    """Text (or, with json_mode, a JSON document) from a chat model.
+    effort: reasoning effort ("low" | "medium" | "high"), or None."""
     if fake():
         return _fake_json(model, prompt) if json_mode else _fake_html(model, prompt, system)
-    config = {"maxOutputTokens": 65536}
+    body = {"model": model, "messages": [{"role": "system", "content": system}, {"role": "user", "content": prompt}]}
     if json_mode:
-        config["responseMimeType"] = "application/json"
-    parts = _call(model, {
-        "systemInstruction": {"parts": [{"text": system}]},
-        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": config,
-    })
-    return "".join(p.get("text", "") for p in parts if not p.get("thought"))
+        body["response_format"] = {"type": "json_object"}
+    if effort:
+        body["reasoning_effort"] = effort
+    data = _post("/chat/completions", body)
+    try:
+        choice = data["choices"][0]
+        text = choice["message"].get("content") or ""
+    except (KeyError, IndexError, TypeError):
+        raise ProviderError("No answer.")
+    if not text:
+        raise ProviderError("Empty answer (%s)." % choice.get("finish_reason"))
+    return text
 
 
-def gemini_image(model, prompt, image=None):
-    """A picture from an image model: drawn from the prompt, or `image`
+def image(model, prompt, picture=None):
+    """A picture from an image model: drawn from the prompt, or `picture`
     ((mime, base64)) edited as the prompt says. Returns (mime, base64)."""
     if fake():
-        return image if image else ("image/png", _fake_png(prompt))
-    parts = [{"text": prompt}]
-    if image:
-        parts.append({"inlineData": {"mimeType": image[0], "data": image[1]}})
-    out = _call(model, {"contents": [{"role": "user", "parts": parts}],
-                        "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]}})
-    for p in out:
-        d = p.get("inlineData") or p.get("inline_data")
-        if d and d.get("data"):
-            return d.get("mimeType") or d.get("mime_type") or "image/png", d["data"]
-    raise ProviderError("No image in the answer: " + " ".join(p.get("text", "") for p in out)[:200])
+        return picture if picture else ("image/png", _fake_png(prompt))
+    if picture:
+        ext = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}.get(picture[0], "png")
+        data = _multipart("/images/edits", {"model": model, "prompt": prompt},
+                          [("image", "photo." + ext, picture[0], base64.b64decode(picture[1]))])
+    else:
+        data = _post("/images/generations", {"model": model, "prompt": prompt, "size": "1024x1024"})
+    try:
+        b64 = data["data"][0]["b64_json"]
+    except (KeyError, IndexError, TypeError):
+        raise ProviderError("No image in the answer.")
+    fmt = (data.get("output_format") or "png").lower()
+    return {"jpeg": "image/jpeg", "jpg": "image/jpeg", "webp": "image/webp"}.get(fmt, "image/png"), b64
 
 
 def _fake_png(prompt):
