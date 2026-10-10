@@ -1,0 +1,1932 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Producter AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{
+  --bg:#0b0b10;--panel:#13131b;--panel2:#1a1a25;--panel3:#222231;--line:#2a2a3c;
+  --text:#ececf3;--muted:#9a9ab0;--dim:#6c6c84;
+  --accent:#8b5cf6;--accent2:#ec4899;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;
+  --r:14px;--grad:linear-gradient(135deg,#8b5cf6,#ec4899);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font:14px/1.5 Inter,system-ui,sans-serif;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:#c4b5fd}
+h1,h2,h3,h4{margin:0;font-weight:600}
+.serif{font-family:Fraunces,Georgia,serif}
+
+/* top bar */
+.top{height:58px;display:flex;align-items:center;gap:16px;padding:0 18px;border-bottom:1px solid var(--line);background:rgba(11,11,16,.9);backdrop-filter:blur(8px)}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:-.01em;white-space:nowrap}
+.logo .mark{width:28px;height:28px;border-radius:8px;background:var(--grad);display:grid;place-items:center;font-size:15px;box-shadow:0 0 24px rgba(139,92,246,.5)}
+.logo b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.top-controls{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:nowrap;overflow-x:auto}
+.top-controls label{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;white-space:nowrap}
+select,input[type=text],input[type=password],input[type=number],textarea{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;outline:none;transition:border-color .15s}
+select:focus,input:focus,textarea:focus{border-color:var(--accent)}
+.top select{padding:6px 8px;max-width:180px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:8px 14px;cursor:pointer;font-weight:500;white-space:nowrap;transition:.15s}
+.btn:hover{border-color:#3d3d55;background:var(--panel3)}
+.btn.primary{background:var(--grad);border:0;color:#fff;font-weight:600;box-shadow:0 6px 24px rgba(139,92,246,.35)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.primary:disabled{opacity:.6;cursor:wait}
+.btn.ghost{background:transparent}
+.btn.sm{padding:5px 10px;font-size:12px;border-radius:8px}
+.icon-btn{width:36px;height:36px;padding:0}
+
+/* layout */
+.app{display:grid;grid-template-columns:360px 1fr;height:calc(100% - 58px)}
+.side{border-right:1px solid var(--line);overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;background:var(--panel)}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.side h2{font-size:15px;margin-bottom:4px}
+.side .sub{color:var(--muted);font-size:12px;margin-bottom:12px}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.field>span{font-size:12px;color:var(--muted);font-weight:500}
+.field textarea{min-height:84px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.check{display:flex;align-items:center;gap:8px;font-size:13px;margin:6px 0;cursor:pointer}
+.check input{accent-color:var(--accent);width:16px;height:16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 10px;font-size:12px;cursor:pointer}
+.chip:hover{border-color:var(--accent)}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.steps li{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.steps li .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);flex:none;display:grid;place-items:center;font-size:10px}
+.steps li.run{color:var(--text)}
+.steps li.run .dot{border-color:var(--accent);border-top-color:transparent;animation:spin .8s linear infinite}
+.steps li.done{color:var(--text)}
+.steps li.done .dot{background:var(--ok);border-color:var(--ok);color:#06200f}
+.steps li.done .dot::after{content:"✓"}
+.steps li.err .dot{background:var(--err);border-color:var(--err)}
+.steps li.err .dot::after{content:"!";color:#fff}
+.steps li.skip{opacity:.5}
+.steps li .note{margin-left:auto;font-size:11px;color:var(--dim)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.log{margin-top:12px;max-height:150px;overflow-y:auto;font:11px/1.5 ui-monospace,Menlo,monospace;color:var(--dim);border-top:1px solid var(--line);padding-top:8px}
+.log .e{color:#fca5a5}.log .w{color:#fcd34d}.log .o{color:#86efac}
+
+main{display:flex;flex-direction:column;min-width:0;min-height:0}
+.tabs{display:flex;gap:2px;padding:8px 14px 0;border-bottom:1px solid var(--line);overflow-x:auto;flex:none}
+.tab-btn{background:none;border:0;padding:10px 14px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-weight:500}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--text);border-bottom-color:var(--accent)}
+.tab-btn:disabled{opacity:.35;cursor:default}
+.panes{flex:1;overflow:hidden;position:relative}
+.pane{position:absolute;inset:0;overflow-y:auto;padding:22px;display:none}
+.pane.active{display:block}
+.pane.full{padding:0}
+
+/* empty state */
+.empty{max-width:880px;margin:30px auto;text-align:center}
+.empty h1{font-family:Fraunces,Georgia,serif;font-size:46px;line-height:1.1;letter-spacing:-.02em;margin:18px 0 12px}
+.empty h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.empty p.lead{color:var(--muted);font-size:16px;max-width:620px;margin:0 auto 26px}
+.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:12px;color:var(--muted);background:var(--panel)}
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:34px;text-align:left}
+.feat{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.feat .ic{font-size:22px}
+.feat h4{margin:8px 0 4px;font-size:14px}
+.feat p{margin:0;color:var(--muted);font-size:12.5px}
+
+/* brand */
+.brand-hero{display:grid;grid-template-columns:1.1fr 1fr;gap:20px;margin-bottom:20px}
+.logo-box{background:#fff;border-radius:var(--r);display:grid;place-items:center;padding:30px;min-height:220px}
+.logo-box svg{max-width:100%;height:auto;max-height:200px}
+.sec-title{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:0 0 10px;font-weight:600}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.swatches{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.sw{border-radius:12px;overflow:hidden;border:1px solid var(--line);cursor:pointer}
+.sw .c{height:80px}
+.sw .t{padding:6px 8px;font-size:11px;background:var(--panel)}
+.sw .t b{display:block;font-size:12px}
+.muted{color:var(--muted)}
+.tag{display:inline-block;padding:3px 9px;border-radius:999px;background:var(--panel3);border:1px solid var(--line);font-size:11.5px;margin:2px 4px 2px 0}
+ul.clean{margin:0;padding-left:18px}
+ul.clean li{margin:3px 0}
+
+/* products */
+.prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.prod{background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column}
+.prod .img{height:240px;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,#2a2a3c,#15151d)}
+.prod .img img{max-height:230px;max-width:100%}
+.prod .body{padding:16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.prod h3{font-size:17px}
+.prod .meta{display:flex;justify-content:space-between;color:var(--muted);font-size:12.5px}
+.prod .price{color:var(--text);font-weight:600;font-size:15px}
+table.ing{width:100%;border-collapse:collapse;font-size:12px}
+table.ing th{text-align:left;color:var(--muted);font-weight:500;padding:4px 6px;border-bottom:1px solid var(--line)}
+table.ing td{padding:4px 6px;border-bottom:1px solid #20202e;vertical-align:top}
+details summary{cursor:pointer;color:#c4b5fd;font-size:13px;margin:4px 0}
+
+/* studio */
+.studio{display:grid;grid-template-columns:220px 1fr 300px;height:100%}
+.studio-list{border-right:1px solid var(--line);overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.studio-item{display:flex;gap:10px;align-items:center;padding:8px;border-radius:10px;border:1px solid transparent;cursor:pointer;background:var(--panel)}
+.studio-item.active{border-color:var(--accent);background:var(--panel2)}
+.studio-item img{width:44px;height:44px;object-fit:contain;background:#1d1d29;border-radius:8px}
+.studio-item .n{font-size:13px;font-weight:500;line-height:1.25}
+.studio-item .k{font-size:11px;color:var(--muted)}
+.viewport{position:relative;min-height:300px;background:#15151d}
+.viewport canvas{display:block;width:100%!important;height:100%!important;touch-action:none}
+.vp-bar{position:absolute;left:12px;bottom:12px;right:12px;display:flex;gap:8px;flex-wrap:wrap;pointer-events:none}
+.vp-bar>*{pointer-events:auto}
+.vp-hint{position:absolute;top:12px;left:12px;font-size:12px;color:var(--muted);background:rgba(0,0,0,.45);padding:4px 10px;border-radius:999px;pointer-events:none}
+.studio-info{border-left:1px solid var(--line);overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.color-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;font-size:13px}
+.color-row input[type=color]{width:44px;height:30px;border:1px solid var(--line);border-radius:8px;background:none;padding:2px;cursor:pointer}
+.no3d{display:grid;place-items:center;height:100%;color:var(--muted);text-align:center;padding:30px}
+
+/* store */
+.store-wrap{position:relative;height:100%;background:#000}
+.store-wrap .viewport{height:100%}
+.crosshair{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;pointer-events:none;display:none}
+.crosshair::before,.crosshair::after{content:"";position:absolute;background:rgba(255,255,255,.85)}
+.crosshair::before{left:6px;top:0;width:2px;height:14px}.crosshair::after{top:6px;left:0;height:2px;width:14px}
+.locked .crosshair{display:block}
+.store-hud{position:absolute;top:12px;right:12px;display:flex;gap:8px}
+.store-hint{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.store-hint .box{background:rgba(10,10,16,.78);border:1px solid var(--line);border-radius:16px;padding:20px 26px;text-align:center;max-width:420px;backdrop-filter:blur(6px)}
+.store-hint kbd{background:var(--panel3);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:12px}
+.locked .store-hint{display:none}
+.popup{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);width:min(440px,calc(100% - 32px));background:rgba(19,19,27,.96);border:1px solid var(--line);border-radius:16px;padding:16px;display:none;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.popup.show{display:flex}
+.popup img{width:96px;height:96px;object-fit:contain;background:#1d1d29;border-radius:12px;flex:none}
+.pad{position:absolute;left:16px;bottom:16px;display:none;grid-template-columns:repeat(3,48px);gap:6px}
+.pad button{height:48px;border-radius:12px;background:rgba(20,20,30,.7);border:1px solid var(--line);font-size:18px;touch-action:none}
+@media (pointer:coarse){.pad{display:grid}}
+
+/* website */
+.site-bar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.browser{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;height:calc(100% - 60px);min-height:500px;display:flex;flex-direction:column}
+.browser .chrome{background:#1d1d29;padding:8px 12px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.browser .chrome i{width:10px;height:10px;border-radius:50%;background:#3a3a50;display:inline-block}
+.browser .url{flex:1;background:#13131b;border-radius:8px;padding:4px 10px;margin-left:8px}
+.browser iframe{border:0;width:100%;flex:1;background:#fff}
+#pane-website{display:none;flex-direction:column}
+#pane-website.active{display:flex}
+
+/* merch */
+.merch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.merch{background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.merch canvas{width:100%;display:block;aspect-ratio:1}
+.merch .body{padding:14px}
+
+/* marketing */
+.mk-card{background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:16px}
+.timeline{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.phase{border-left:3px solid var(--accent);padding:4px 0 4px 12px}
+.post{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+.post .pf{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#c4b5fd;font-weight:600}
+table.budget{width:100%;border-collapse:collapse}
+table.budget td{padding:6px 4px;border-bottom:1px solid var(--line)}
+table.budget td:last-child{text-align:right}
+
+/* agent chat */
+.chat{max-width:860px;margin:0 auto;display:flex;flex-direction:column;height:100%}
+.msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-bottom:12px}
+.msg{max-width:80%;padding:10px 14px;border-radius:14px;white-space:pre-wrap;word-wrap:break-word}
+.msg.user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:4px}
+.msg.ai{align-self:flex-start;background:var(--panel2);border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg.ai.thinking{color:var(--muted);font-style:italic}
+.chat-input{display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--line)}
+.chat-input textarea{flex:1;min-height:46px;max-height:140px;resize:none}
+#pane-agent{display:none}
+#pane-agent.active{display:block}
+
+/* modal/menu/toast */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;place-items:center;z-index:50;padding:16px}
+.modal.show{display:grid}
+.modal .card{width:min(520px,100%);background:var(--panel)}
+.menu{position:absolute;right:0;top:calc(100% + 6px);background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:6px;min-width:220px;display:none;z-index:40;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.menu.show{display:block}
+.menu button{display:block;width:100%;text-align:left;background:none;border:0;padding:8px 10px;border-radius:8px;cursor:pointer}
+.menu button:hover{background:var(--panel3)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel3);border:1px solid var(--line);padding:10px 16px;border-radius:12px;opacity:0;transition:.25s;z-index:60;pointer-events:none;max-width:calc(100% - 32px)}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.toast.err{border-color:var(--err)}
+
+@media (max-width:1100px){.studio{grid-template-columns:180px 1fr}.studio-info{display:none}}
+@media (max-width:860px){
+  body{overflow:auto}
+  .app{grid-template-columns:1fr;height:auto}
+  .side{border-right:0;border-bottom:1px solid var(--line)}
+  main{height:calc(100vh - 58px)}
+  .brand-hero,.grid2,.grid3{grid-template-columns:1fr}
+  .swatches{grid-template-columns:repeat(3,1fr)}
+  .studio{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .studio-list{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}
+  .studio-item{min-width:170px}
+  .top .lbl-text{display:none}
+  .pane{padding:16px}
+  .empty h1{font-size:34px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="logo"><span class="mark">◆</span><span>Producter <b>AI</b></span></div>
+  <div class="top-controls">
+    <label><span class="lbl-text">Model</span> <select id="model" title="ChatGPT model used by the agent"></select></label>
+    <label><span class="lbl-text">Images</span> <select id="imageModel" title="Image model used for AI textures & artwork"></select></label>
+    <label id="effortWrap"><span class="lbl-text">Reasoning</span>
+      <select id="effort" title="Reasoning effort (only for reasoning models like o3, o4, GPT-5)">
+        <option value="auto">auto</option><option value="minimal">minimal</option><option value="low" selected>low</option><option value="medium">medium</option><option value="high">high</option>
+      </select></label>
+    <div style="position:relative">
+      <button class="btn sm" id="exportBtn">Export ▾</button>
+      <div class="menu" id="exportMenu">
+        <button data-export="json">Brand kit (.json)</button>
+        <button data-export="site">Website (.html)</button>
+        <button data-export="renders">Product renders (.png)</button>
+        <button data-export="merch">Merch mockups (.png)</button>
+      </div>
+    </div>
+    <button class="btn icon-btn" id="settingsBtn" title="Settings">⚙</button>
+  </div>
+</header>
+
+<div class="app">
+  <aside class="side">
+    <section class="card">
+      <h2>Product brief</h2>
+      <div class="sub">Tell Producter about your brand. The agent builds the rest.</div>
+      <div class="chips">
+        <button class="chip" data-example="zirein">💄 Zirein makeup</button>
+        <button class="chip" data-example="coffee">☕ Nomad coffee</button>
+        <button class="chip" data-example="kombucha">🫧 Kōji kombucha</button>
+        <button class="chip" data-example="skincare">🌿 Verda skincare</button>
+      </div>
+      <label class="field"><span>Brand name</span><input type="text" id="bName" placeholder="e.g. Zirein"></label>
+      <label class="field"><span>What do you sell?</span><input type="text" id="bCategory" placeholder="e.g. Makeup & cosmetics"></label>
+      <label class="field"><span>Describe your brand / what you need</span><textarea id="bDesc" placeholder="I just started my brand and need everything: products, packaging, website, merch…"></textarea></label>
+      <label class="field"><span>Target audience</span><input type="text" id="bAudience" placeholder="Who is it for?"></label>
+      <label class="field"><span>Vibe & aesthetic</span><input type="text" id="bVibe" placeholder="e.g. Luxe minimal, rose gold, Parisian"></label>
+      <div class="row2">
+        <label class="field"><span>Price tier</span>
+          <select id="bTier"><option value="budget">Budget</option><option value="mid" selected>Mid-range</option><option value="premium">Premium</option><option value="luxury">Luxury</option></select></label>
+        <label class="field"><span>Products</span><input type="number" id="bCount" min="3" max="8" value="5"></label>
+      </div>
+      <label class="check"><input type="checkbox" id="optTextures" checked> AI-generated packaging textures</label>
+      <label class="check"><input type="checkbox" id="optMerchArt" checked> AI-generated merch artwork</label>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+        <button class="btn primary" id="genBtn">✨ Generate my whole brand</button>
+        <button class="btn ghost sm" id="demoBtn">Load offline demo (no API calls)</button>
+      </div>
+    </section>
+    <section class="card">
+      <h2 style="margin-bottom:10px">Agent progress</h2>
+      <ol class="steps" id="steps"></ol>
+      <div class="log" id="log"></div>
+    </section>
+  </aside>
+
+  <main>
+    <nav class="tabs" id="tabs">
+      <button class="tab-btn active" data-tab="home">Home</button>
+      <button class="tab-btn" data-tab="brand" disabled>Brand</button>
+      <button class="tab-btn" data-tab="products" disabled>Products</button>
+      <button class="tab-btn" data-tab="studio" disabled>3D Studio</button>
+      <button class="tab-btn" data-tab="store" disabled>3D Store</button>
+      <button class="tab-btn" data-tab="website" disabled>Website</button>
+      <button class="tab-btn" data-tab="merch" disabled>Merch</button>
+      <button class="tab-btn" data-tab="marketing" disabled>Marketing</button>
+      <button class="tab-btn" data-tab="agent" disabled>Agent chat</button>
+    </nav>
+    <div class="panes">
+      <section class="pane active" id="pane-home">
+        <div class="empty">
+          <span class="pill">Runs on every ChatGPT model · GPT‑5, GPT‑4.1, GPT‑4o, o3, o4‑mini…</span>
+          <h1>Your whole brand,<br><em>built by one agent.</em></h1>
+          <p class="lead">Describe your product. Producter AI generates the brand identity, formulas & ingredients, 3D packaging with AI textures, a website, a walkable 3D store, merch and a launch plan.</p>
+          <button class="btn primary" id="heroExample">💄 Try it: build “Zirein” for Mira</button>
+          <div class="feat-grid">
+            <div class="feat"><div class="ic">🎨</div><h4>Brand identity</h4><p>Name, story, logo, palette, typography and voice.</p></div>
+            <div class="feat"><div class="ic">🧪</div><h4>Products & ingredients</h4><p>Full product line with INCI ingredient lists, claims and pricing.</p></div>
+            <div class="feat"><div class="ic">🧊</div><h4>3D packaging</h4><p>Interactive 3D models wrapped in AI-generated textures.</p></div>
+            <div class="feat"><div class="ic">🏬</div><h4>Walkable 3D store</h4><p>Playtest your retail space in first person on your computer.</p></div>
+            <div class="feat"><div class="ic">🌐</div><h4>Website</h4><p>A complete, responsive storefront you can download.</p></div>
+            <div class="feat"><div class="ic">👕</div><h4>Merch</h4><p>Tees, hoodies, totes, caps and more with AI artwork.</p></div>
+            <div class="feat"><div class="ic">📣</div><h4>Launch plan</h4><p>Social posts, emails, ads, budget and KPIs.</p></div>
+            <div class="feat"><div class="ic">💬</div><h4>Agent chat</h4><p>Ask for changes — the agent edits your brand live.</p></div>
+          </div>
+        </div>
+      </section>
+      <section class="pane" id="pane-brand"></section>
+      <section class="pane" id="pane-products"></section>
+      <section class="pane full" id="pane-studio">
+        <div class="studio">
+          <div class="studio-list" id="studioList"></div>
+          <div class="viewport" id="studioView"><div class="vp-hint">Drag to rotate · scroll to zoom</div>
+            <div class="vp-bar">
+              <label class="btn sm"><input type="checkbox" id="autoRotate" checked style="accent-color:var(--accent)"> Auto-rotate</label>
+              <button class="btn sm" id="studioPng">⬇ PNG</button>
+              <button class="btn sm" id="studioRetexture">🎨 New AI texture</button>
+            </div>
+          </div>
+          <div class="studio-info" id="studioInfo"></div>
+        </div>
+      </section>
+      <section class="pane full" id="pane-store">
+        <div class="store-wrap" id="storeWrap">
+          <div class="viewport" id="storeView"></div>
+          <div class="crosshair"></div>
+          <div class="store-hint"><div class="box">
+            <h3 style="margin-bottom:8px">🏬 Walk your store</h3>
+            <div class="muted" style="font-size:13px;line-height:1.9">
+              <b>Click</b> to enter · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to walk · <kbd>Shift</kbd> to run<br>
+              Mouse to look · <b>Click</b> a product to inspect · <kbd>Esc</kbd> to exit
+            </div></div></div>
+          <div class="store-hud">
+            <span class="btn sm" id="cartBadge">🛍 0 · $0</span>
+            <button class="btn sm" id="storeFs">⛶ Fullscreen</button>
+            <button class="btn sm" id="storeReset">↺ Reset</button>
+          </div>
+          <div class="popup" id="storePopup"></div>
+          <div class="pad" id="pad">
+            <span></span><button data-key="KeyW">▲</button><span></span>
+            <button data-key="KeyA">◀</button><button data-key="KeyS">▼</button><button data-key="KeyD">▶</button>
+          </div>
+        </div>
+      </section>
+      <section class="pane" id="pane-website">
+        <div class="site-bar">
+          <button class="btn sm" id="siteOpen">↗ Open in new tab</button>
+          <button class="btn sm" id="siteDownload">⬇ Download HTML</button>
+          <span class="muted" style="font-size:12px">Testimonials are placeholders for layout — replace them with real customer reviews before launch.</span>
+        </div>
+        <div class="browser">
+          <div class="chrome"><i></i><i></i><i></i><div class="url" id="siteUrl">https://yourbrand.com</div></div>
+          <iframe id="siteFrame" sandbox="allow-popups" title="Generated website preview"></iframe>
+        </div>
+      </section>
+      <section class="pane" id="pane-merch"></section>
+      <section class="pane" id="pane-marketing"></section>
+      <section class="pane" id="pane-agent">
+        <div class="chat">
+          <div class="msgs" id="msgs"></div>
+          <div class="chips" id="chatChips" style="margin:8px 0 0">
+            <button class="chip">Add a vegan lip balm to the line</button>
+            <button class="chip">Make the palette warmer</button>
+            <button class="chip">Write 5 TikTok hooks for launch</button>
+            <button class="chip">Change the hero product to a matte red</button>
+          </div>
+          <div class="chat-input">
+            <textarea id="chatInput" placeholder="Ask Producter to change anything… (Enter to send)"></textarea>
+            <button class="btn primary" id="chatSend">Send</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="modal" id="settingsModal">
+  <div class="card">
+    <h2 style="margin-bottom:14px">Settings</h2>
+    <label class="field"><span>OpenAI API key</span><input type="password" id="setKey" placeholder="sk-…" autocomplete="off"></label>
+    <div class="row2">
+      <label class="field"><span>Image quality (gpt-image)</span>
+        <select id="setQuality"><option value="low">Low (fast)</option><option value="medium">Medium</option><option value="high">High</option></select></label>
+      <label class="field"><span>Parallel image jobs</span><input type="number" id="setConc" min="1" max="6" value="3"></label>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:space-between;margin-top:8px;flex-wrap:wrap">
+      <button class="btn sm ghost" id="setClear">Clear saved project</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn sm" id="setCancel">Cancel</button>
+        <button class="btn sm primary" id="setSave">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================================
+   Producter AI — single-file brand-building agent
+   ===================================================================== */
+
+// Test key is loaded from config.js (gitignored, sits next to this file) so it never
+// gets committed. You can also paste a key in ⚙ Settings.
+const OPENAI_API_KEY = (window.PRODUCTER_CONFIG || {}).OPENAI_API_KEY || "";
+const API = "https://api.openai.com/v1";
+
+/* ---------- tiny helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const arr = x => Array.isArray(x) ? x : [];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); return true; } catch { return false; } };
+const lsDel = k => { try { localStorage.removeItem(k); } catch {} };
+const hexOk = h => typeof h === "string" && /^#[0-9a-f]{6}$/i.test(h.trim()) ? h.trim() : null;
+const slug = s => String(s || "item").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "item";
+const money = n => "$" + (Number(n) || 0).toFixed(Number(n) % 1 ? 2 : 0);
+const fontName = s => String(s || "").replace(/[^A-Za-z0-9 ]/g, "").trim();
+const has3D = () => typeof THREE !== "undefined";
+
+function hexRgb(h) { h = hexOk(h) || "#888888"; return [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); }
+function rgbHex(r, g, b) { return "#" + [r, g, b].map(v => clamp(Math.round(v), 0, 255).toString(16).padStart(2, "0")).join(""); }
+function lum(h) { const [r, g, b] = hexRgb(h).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }); return .2126 * r + .7152 * g + .0722 * b; }
+function ink(h) { return lum(h) > .4 ? "#141414" : "#ffffff"; }
+function shade(h, amt) { const [r, g, b] = hexRgb(h); const t = amt < 0 ? 0 : 255, p = Math.abs(amt); return rgbHex(r + (t - r) * p, g + (t - g) * p, b + (t - b) * p); }
+function mix(a, b, t) { const A = hexRgb(a), B = hexRgb(b); return rgbHex(A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, A[2] + (B[2] - A[2]) * t); }
+function rgba(h, a) { const [r, g, b] = hexRgb(h); return `rgba(${r},${g},${b},${a})`; }
+function hash(s) { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function rng(seed) { let s = seed || 1; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; }
+
+function toast(msg, err) {
+  const t = $("#toast"); t.textContent = msg; t.className = "toast show" + (err ? " err" : "");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.className = "toast", err ? 6000 : 3000);
+}
+function log(msg, cls = "") {
+  const el = document.createElement("div"); el.className = cls;
+  el.textContent = new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", second:"2-digit"}) + "  " + msg;
+  $("#log").appendChild(el); $("#log").scrollTop = 1e9;
+}
+function download(name, data, type = "text/plain") {
+  const url = typeof data === "string" && data.startsWith("data:") ? data : URL.createObjectURL(new Blob([data], {type}));
+  const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  if (!url.startsWith("data:")) setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+const imgCache = new Map();
+function loadImg(src) {
+  if (!src) return Promise.resolve(null);
+  if (imgCache.has(src)) return imgCache.get(src);
+  const p = new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
+  imgCache.set(src, p); return p;
+}
+async function pool(items, n, fn) {
+  let i = 0;
+  await Promise.all(Array.from({length: Math.min(n, items.length)}, async () => { while (i < items.length) { const k = i++; await fn(items[k], k); } }));
+}
+function canvas(w, h) { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; }
+function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function drawCover(g, img, x, y, w, h) { const s = Math.max(w / img.width, h / img.height), iw = img.width * s, ih = img.height * s; g.drawImage(img, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih); }
+function drawContain(g, img, x, y, w, h) { const s = Math.min(w / img.width, h / img.height), iw = img.width * s, ih = img.height * s; g.drawImage(img, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih); }
+function spacing(g, px) { if ("letterSpacing" in g) g.letterSpacing = px + "px"; }
+function wrapText(g, text, x, y, maxW, lh, maxLines = 3) {
+  const words = String(text || "").split(/\s+/); let line = "", lines = [];
+  for (const w of words) { const t = line ? line + " " + w : w; if (g.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t; }
+  if (line) lines.push(line);
+  lines = lines.slice(0, maxLines);
+  lines.forEach((l, i) => g.fillText(l, x, y + i * lh));
+  return lines.length;
+}
+function fitFont(g, text, weight, family, maxSize, maxW) {
+  let s = maxSize; do { g.font = `${weight} ${s}px ${family}`; s -= 2; } while (g.measureText(text).width > maxW && s > 10);
+}
+
+/* ---------- state ---------- */
+const S = {
+  key: lsGet("pai_key") || OPENAI_API_KEY,
+  model: lsGet("pai_model") || "",
+  imageModel: lsGet("pai_imgmodel") || "",
+  effort: lsGet("pai_effort") || "low",
+  quality: lsGet("pai_quality") || "low",
+  conc: +(lsGet("pai_conc") || 3),
+  brand: null,       // { brief, identity, products, site_copy, merch, marketing }
+  art: {},           // productId -> dataURL (AI texture)
+  merchArt: {},      // merch index -> dataURL
+  tex: {},           // productId -> { label, badge, labelCanvas, badgeCanvas }
+  snaps: {},         // productId -> dataURL render
+  merchCanvas: [],   // rendered mockups
+  dirty: {studio: true, store: true, site: true},
+  busy: false, tab: "home", chat: [], cart: [],
+};
+
+/* =====================================================================
+   OpenAI API layer — works with every ChatGPT model
+   Tries the Responses API first, then falls back to Chat Completions.
+   ===================================================================== */
+async function api(path, body, method = "POST") {
+  if (!S.key) { const e = new Error("No OpenAI API key set — add one in Settings."); e.status = 401; throw e; }
+  const r = await fetch(API + path, {
+    method, headers: {"Authorization": "Bearer " + S.key, "Content-Type": "application/json"},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(j.error?.message || `HTTP ${r.status}`); e.status = r.status; e.code = j.error?.code; throw e; }
+  return j;
+}
+const isReasoning = m => /^(o\d|gpt-5)/.test(m) && !/chat/.test(m);
+const fatal = e => e.status === 401 || e.code === "insufficient_quota" || e.code === "invalid_api_key";
+
+function responsesText(j) {
+  if (typeof j.output_text === "string") return j.output_text;
+  let t = "";
+  for (const item of arr(j.output)) if (item.type === "message") for (const c of arr(item.content)) if (c.type === "output_text") t += c.text;
+  return t;
+}
+function parseLooseJSON(text) {
+  if (!text) throw new Error("Empty model response");
+  try { return JSON.parse(text); } catch {}
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced) { try { return JSON.parse(fenced[1]); } catch {} }
+  const a = text.indexOf("{"), b = text.lastIndexOf("}");
+  if (a >= 0 && b > a) return JSON.parse(text.slice(a, b + 1));
+  throw new Error("Model did not return JSON");
+}
+
+async function askJSON(system, user) {
+  const model = S.model || "gpt-4o-mini";
+  let text;
+  try {
+    const body = {model, instructions: system, input: user, text: {format: {type: "json_object"}}};
+    if (isReasoning(model) && S.effort !== "auto") body.reasoning = {effort: S.effort};
+    const j = await api("/responses", body);
+    text = responsesText(j);
+    if (!text) throw new Error("No text in Responses output");
+  } catch (e) {
+    if (fatal(e)) throw e;
+    log(`Responses API: ${e.message} → trying Chat Completions`, "w");
+    try {
+      const j = await api("/chat/completions", {model, messages: [{role: "system", content: system}, {role: "user", content: user}], response_format: {type: "json_object"}});
+      text = j.choices?.[0]?.message?.content;
+    } catch (e2) {
+      if (fatal(e2)) throw e2;
+      log(`JSON mode unsupported (${e2.message}) → plain mode`, "w");
+      const j = await api("/chat/completions", {model, messages: [{role: "user", content: system + "\n\n" + user}]});
+      text = j.choices?.[0]?.message?.content;
+    }
+  }
+  return parseLooseJSON(text);
+}
+
+async function genImage(prompt, {transparent = false} = {}) {
+  const m = S.imageModel || "gpt-image-1";
+  const body = {model: m, prompt, n: 1};
+  if (/gpt-image/.test(m)) { body.size = "1024x1024"; body.quality = S.quality; if (transparent) body.background = "transparent"; }
+  else if (/dall-e-3/.test(m)) { body.size = "1024x1024"; body.response_format = "b64_json"; }
+  else { body.size = "512x512"; body.response_format = "b64_json"; }
+  const j = await api("/images/generations", body);
+  const d = j.data?.[0] || {};
+  if (d.b64_json) return "data:image/png;base64," + d.b64_json;
+  if (d.url) return d.url;
+  throw new Error("No image returned");
+}
+
+const FALLBACK_CHAT = ["gpt-5", "gpt-5-mini", "gpt-5-nano", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "gpt-4o", "gpt-4o-mini", "o3", "o4-mini", "o3-mini", "gpt-4-turbo", "gpt-3.5-turbo"];
+const FALLBACK_IMG = ["gpt-image-1", "gpt-image-1-mini", "dall-e-3", "dall-e-2"];
+const PREF_CHAT = ["gpt-4.1-mini", "gpt-4o-mini", "gpt-5-mini", "gpt-4o", "gpt-4.1"];
+const PREF_IMG = ["gpt-image-1", "gpt-image-1-mini", "dall-e-3"];
+
+async function loadModels() {
+  let chat = FALLBACK_CHAT, img = FALLBACK_IMG;
+  try {
+    const j = await api("/models", null, "GET");
+    const ids = arr(j.data).map(m => m.id);
+    const c = ids.filter(id => /^(gpt-|o\d|chatgpt-)/.test(id) && !/(audio|realtime|tts|transcribe|image|embedding|instruct|moderation|search|whisper|dall-e|davinci|babbage|diariz|codex|computer-use|deep-research)/.test(id));
+    const i = ids.filter(id => /(gpt-image|dall-e)/.test(id));
+    if (c.length) chat = c.sort((a, b) => b.localeCompare(a, undefined, {numeric: true}));
+    if (i.length) img = i.sort((a, b) => b.localeCompare(a, undefined, {numeric: true}));
+    log(`Found ${c.length} chat models and ${i.length} image models on your account`, "o");
+  } catch (e) {
+    log(`Could not list models (${e.message}) — showing defaults`, "w");
+  }
+  fillSelect($("#model"), chat, S.model, PREF_CHAT);
+  fillSelect($("#imageModel"), img, S.imageModel, PREF_IMG);
+  S.model = $("#model").value; S.imageModel = $("#imageModel").value;
+  updateEffortVisibility();
+}
+function fillSelect(sel, list, current, prefs) {
+  sel.innerHTML = list.map(id => `<option value="${esc(id)}">${esc(id)}</option>`).join("");
+  const pick = list.includes(current) ? current : prefs.find(p => list.includes(p)) || list[0];
+  sel.value = pick;
+}
+function updateEffortVisibility() { $("#effortWrap").style.display = isReasoning(S.model) ? "" : "none"; }
+
+/* =====================================================================
+   Prompts
+   ===================================================================== */
+const SYS = `You are Producter AI, an elite autonomous brand-building agent that combines a creative director, product developer, formulation chemist, packaging engineer, web designer and growth marketer.
+You produce concrete, realistic, specific, launch-ready output — never placeholders like "Lorem ipsum" or "TBD".
+Always respond with a single valid JSON object and nothing else.`;
+const SHAPES = ["lipstick", "bottle", "dropper", "jar", "tube", "compact", "box", "can", "pouch"];
+
+function brandSummary() {
+  const id = S.brand.identity || {};
+  return JSON.stringify({brief: S.brand.brief, name: id.name, tagline: id.tagline, pitch: id.elevator_pitch, palette: id.palette, fonts: id.fonts, voice: id.voice, audience: id.audience});
+}
+function productSummary() {
+  return JSON.stringify(arr(S.brand.products).map(p => ({id: p.id, name: p.name, type: p.type, price_usd: p.price_usd, tagline: p.tagline, key_ingredients: arr(p.ingredients).slice(0, 4).map(i => i.common || i.inci)})));
+}
+
+const P = {
+  identity: b => `Create the complete brand identity for this new brand.
+BRIEF: ${JSON.stringify(b)}
+Keep the brand name exactly as given (if given). Return JSON with this exact shape:
+{"name":"","tagline":"short memorable tagline","elevator_pitch":"1-2 sentences","story":"2 short paragraphs founder/brand story","mission":"","values":["4 values"],
+"audience":{"primary":"","persona":{"name":"","age":28,"description":""}},
+"voice":{"tone":["3 adjectives"],"do":["3 items"],"dont":["3 items"]},
+"palette":[{"name":"evocative color name","hex":"#RRGGBB","role":"primary|secondary|accent|neutral|dark"}],
+"fonts":{"heading":"Google Font family","body":"Google Font family"},
+"logo":{"concept":"one sentence","svg":"<svg ...>...</svg>"}}
+Rules: palette has exactly 5 distinct colors (one per role) as 6-digit hex. Fonts must be real Google Fonts families.
+logo.svg must be a complete, self-contained SVG with viewBox="0 0 480 160": a simple geometric brand mark on the left plus a <text> wordmark using font-family="<heading font>, serif" in palette colors, transparent background, no scripts, no images, no external references.`,
+
+  products: n => `Design the product line for this brand.
+BRAND: ${brandSummary()}
+Create exactly ${n} hero products appropriate for the category. Return JSON:
+{"products":[{"id":"kebab-case-id","name":"","type":"e.g. Matte Lipstick","shape":"${SHAPES.join("|")}","tagline":"","description":"2-3 sentences",
+"price_usd":0,"size":"e.g. 3.5 g / 0.12 oz","body_hex":"#RRGGBB packaging body color","accent_hex":"#RRGGBB cap/metal/trim color","shade_hex":"#RRGGBB color of the product itself",
+"finish":"matte|gloss|metallic|frosted",
+"ingredients":[{"inci":"official INCI or standard ingredient name","common":"common name","purpose":"function","percent":"approx. %"}],
+"claims":["3-4 claims"],"how_to_use":"","packaging":{"material":"","sustainability":"","dimensions":""},
+"unit_cost_usd":0,"art_direction":"visual description of the packaging surface artwork/pattern (no text)"}]}
+Rules: ingredient lists are realistic for the product type, 6-12 items ordered by concentration (INCI order), percentages sum to ~100.
+Pick the "shape" that best matches each product's physical packaging (lipstick bullet, perfume bottle, dropper serum, cream jar, squeeze tube, powder compact, carton box, beverage can, pouch/bag).
+Use the brand palette for packaging colors. Prices fit the "${S.brand.brief.tier}" tier.`,
+
+  website: () => `Write the website copy for the brand's e-commerce site.
+BRAND: ${brandSummary()}
+PRODUCTS: ${productSummary()}
+Return JSON:
+{"seo":{"title":"","description":""},"announcement":"short top-bar message","hero":{"eyebrow":"","headline":"","subheadline":"","cta":""},
+"features":[{"icon":"single emoji","title":"","body":""}],
+"collection_intro":"","ingredient_spotlight":{"title":"","body":""},
+"about":{"title":"","body":"2 paragraphs"},
+"testimonials":[{"quote":"","name":"first name + last initial"}],
+"faqs":[{"q":"","a":""}],"newsletter":{"title":"","body":"","cta":""},"footer_blurb":""}
+Use 4 features, 3 testimonials, 5 FAQs. Match the brand voice.`,
+
+  merch: () => `Design a branded merchandise collection.
+BRAND: ${brandSummary()}
+Return JSON:
+{"items":[{"type":"tshirt|hoodie|tote|cap|mug|sticker|phonecase","name":"","garment_hex":"#RRGGBB","print_hex":"#RRGGBB","print_text":"short slogan or wordmark, max 4 words","art_prompt":"description of the graphic artwork to print (no text)","price_usd":0,"description":"1 sentence","material":""}]}
+Create 6 items with 6 different types. Colors come from the palette and contrast well.`,
+
+  marketing: () => `Create the go-to-market and launch plan.
+BRAND: ${brandSummary()}
+PRODUCTS: ${productSummary()}
+Return JSON:
+{"positioning":"2 sentences","competitors":[{"name":"real comparable brand","difference":""}],
+"launch_plan":[{"phase":"","timing":"","goal":"","actions":["",""]}],
+"social_posts":[{"platform":"Instagram|TikTok|Pinterest|X|LinkedIn","caption":"","hashtags":["#tag"],"visual_idea":""}],
+"email":{"subject":"","preview":"","body":"launch email, 120-180 words"},
+"ad_copy":[{"headline":"","body":"","cta":""}],
+"influencer_brief":"",
+"business":{"channels":[""],"pricing_strategy":"","launch_budget":[{"item":"","usd":0}],"kpis":[""]},
+"compliance_checklist":["category-specific regulatory/labeling items to verify"]}
+Use 4 launch phases, 6 social posts, 3 ads, 3 competitors, 6-8 budget lines.`,
+
+  productArt: p => `Packaging surface artwork for "${p.name}" (${p.type}) by the brand ${S.brand.identity.name}. ${p.art_direction || ""}. ` +
+    `Color palette: ${arr(S.brand.identity.palette).map(c => c.hex).join(", ")}, base color ${p.body_hex}. ` +
+    `A flat, seamless, print-ready luxury packaging pattern texture that fills the entire square edge to edge. No text, no letters, no logos, no product photo, no mockup, no borders.`,
+
+  merchArt: it => `${it.art_prompt}. Bold graphic artwork for a ${it.type} print for the brand ${S.brand.identity.name}, ` +
+    `centered composition, screen-print style, limited palette of ${it.print_hex} and ${arr(S.brand.identity.palette).map(c => c.hex).slice(0, 3).join(", ")}, isolated on a plain background. No text, no letters.`,
+};
+
+/* ---------- normalizers ---------- */
+const DEFAULT_PAL = [
+  {name: "Iris", hex: "#7c5cff", role: "primary"}, {name: "Blush", hex: "#f4a7b9", role: "secondary"},
+  {name: "Gold", hex: "#d4a64a", role: "accent"}, {name: "Ivory", hex: "#f7f2ea", role: "neutral"}, {name: "Ink", hex: "#1c1b22", role: "dark"}];
+
+function normIdentity(x, brief) {
+  x = x && typeof x === "object" ? x : {};
+  x.name = x.name || brief.name || "Untitled";
+  x.palette = arr(x.palette).filter(c => hexOk(c?.hex)).map(c => ({...c, hex: hexOk(c.hex)})).slice(0, 6);
+  for (let i = x.palette.length; i < 5; i++) x.palette.push(DEFAULT_PAL[i]);
+  x.fonts = x.fonts || {};
+  x.fonts.heading = fontName(x.fonts.heading) || "Playfair Display";
+  x.fonts.body = fontName(x.fonts.body) || "Inter";
+  x.values = arr(x.values); x.voice = x.voice || {}; x.audience = x.audience || {}; x.logo = x.logo || {};
+  x.logo.svg = sanitizeSVG(x.logo.svg) || fallbackLogo(x);
+  return x;
+}
+function guessShape(t) {
+  t = String(t).toLowerCase();
+  const rules = [[/lipstick|lip stick|balm stick|stick/, "lipstick"], [/serum|oil|dropper|tincture|essence/, "dropper"], [/perfume|fragrance|parfum|mist|toner|spray|cologne/, "bottle"],
+    [/cream|butter|balm|mask|scrub|candle|jar|pomade/, "jar"], [/gloss|tube|cleanser|lotion|gel|paste|sunscreen|spf/, "tube"],
+    [/palette|powder|blush|highlight|compact|bronzer|eyeshadow/, "compact"], [/kombucha|soda|drink|beverage|seltzer|energy|beer/, "can"],
+    [/coffee|tea|snack|granola|bean|chips|pouch|bag/, "pouch"]];
+  for (const [re, s] of rules) if (re.test(t)) return s;
+  return "box";
+}
+function normProducts(list) {
+  const pal = palette(), seen = new Set();
+  return arr(list).slice(0, 10).map((p, i) => {
+    p = p && typeof p === "object" ? p : {};
+    let id = slug(p.id || p.name || "product-" + i); while (seen.has(id)) id += "-" + i; seen.add(id);
+    return {
+      ...p, id, name: p.name || "Product " + (i + 1), type: p.type || "",
+      shape: SHAPES.includes(p.shape) ? p.shape : guessShape((p.type || "") + " " + (p.name || "")),
+      price_usd: Number(p.price_usd) || 0, unit_cost_usd: Number(p.unit_cost_usd) || 0,
+      body_hex: hexOk(p.body_hex) || pal.all[i % pal.all.length], accent_hex: hexOk(p.accent_hex) || pal.accent,
+      shade_hex: hexOk(p.shade_hex) || pal.secondary, finish: ["matte", "gloss", "metallic", "frosted"].includes(p.finish) ? p.finish : "gloss",
+      ingredients: arr(p.ingredients), claims: arr(p.claims), packaging: p.packaging || {},
+    };
+  });
+}
+function normMerch(x) {
+  const pal = palette();
+  const ok = ["tshirt", "hoodie", "tote", "cap", "mug", "sticker", "phonecase"];
+  return {items: arr(x?.items).slice(0, 8).map((it, i) => ({
+    ...it, type: ok.includes(it.type) ? it.type : ok[i % ok.length], name: it.name || "Merch item",
+    garment_hex: hexOk(it.garment_hex) || pal.light, print_hex: hexOk(it.print_hex) || pal.primary, price_usd: Number(it.price_usd) || 0}))};
+}
+function palette() {
+  const p = arr(S.brand?.identity?.palette).length ? S.brand.identity.palette : DEFAULT_PAL;
+  const by = r => p.find(c => c.role === r)?.hex;
+  const sorted = [...p].sort((a, b) => lum(a.hex) - lum(b.hex));
+  return {primary: by("primary") || p[0].hex, secondary: by("secondary") || p[1 % p.length].hex, accent: by("accent") || p[2 % p.length].hex,
+    light: sorted[sorted.length - 1].hex, dark: sorted[0].hex, all: p.map(c => c.hex)};
+}
+const HF = () => `"${S.brand?.identity?.fonts?.heading || "Fraunces"}", Georgia, serif`;
+const BF = () => `"${S.brand?.identity?.fonts?.body || "Inter"}", system-ui, sans-serif`;
+
+function sanitizeSVG(s) {
+  if (typeof s !== "string" || !/<svg[\s>]/i.test(s)) return null;
+  try {
+    const doc = new DOMParser().parseFromString(s.slice(s.search(/<svg[\s>]/i)), "image/svg+xml");
+    const svg = doc.documentElement;
+    if (svg.nodeName.toLowerCase() !== "svg" || doc.querySelector("parsererror")) return null;
+    svg.querySelectorAll("script,foreignObject,iframe,image,a,style").forEach(n => n.remove());
+    [svg, ...svg.querySelectorAll("*")].forEach(el => [...el.attributes].forEach(a => {
+      if (/^on/i.test(a.name) || /javascript:|url\(\s*['"]?(?!#)/i.test(a.value) || (/href$/i.test(a.name) && !a.value.startsWith("#"))) el.removeAttribute(a.name);
+    }));
+    if (!svg.getAttribute("viewBox")) svg.setAttribute("viewBox", "0 0 480 160");
+    svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    svg.setAttribute("width", "480"); svg.setAttribute("height", "160");
+    return new XMLSerializer().serializeToString(svg);
+  } catch { return null; }
+}
+function fallbackLogo(id) {
+  const pal = arr(id.palette).length ? id.palette : DEFAULT_PAL;
+  const c1 = pal[0].hex, c2 = (pal[2] || pal[1]).hex, dark = [...pal].sort((a, b) => lum(a.hex) - lum(b.hex))[0].hex;
+  const n = esc(id.name || "Brand"), m = esc((id.name || "B")[0].toUpperCase());
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 160" width="480" height="160"><circle cx="80" cy="80" r="54" fill="${c1}"/><circle cx="80" cy="80" r="40" fill="none" stroke="${c2}" stroke-width="3"/><text x="80" y="98" text-anchor="middle" font-family="${esc(id.fonts?.heading || "Georgia")}, serif" font-size="52" fill="#fff">${m}</text><text x="156" y="98" font-family="${esc(id.fonts?.heading || "Georgia")}, serif" font-size="54" letter-spacing="4" fill="${dark}">${n}</text></svg>`;
+}
+
+/* ---------- fonts ---------- */
+async function applyFonts() {
+  const f = S.brand?.identity?.fonts; if (!f) return;
+  for (const fam of [f.heading, f.body]) {
+    if (!fam || document.querySelector(`link[data-font="${fam}"]`)) continue;
+    const q = encodeURIComponent(fam).replace(/%20/g, "+");
+    for (const href of [`https://fonts.googleapis.com/css2?family=${q}:wght@400;700&display=swap`, `https://fonts.googleapis.com/css2?family=${q}&display=swap`]) {
+      const l = document.createElement("link"); l.rel = "stylesheet"; l.href = href; l.dataset.font = fam; document.head.appendChild(l);
+    }
+  }
+  const wait = Promise.all([`700 40px "${f.heading}"`, `400 40px "${f.heading}"`, `400 20px "${f.body}"`].map(s => document.fonts.load(s).catch(() => {})));
+  await Promise.race([wait, new Promise(r => setTimeout(r, 2500))]);
+}
+
+/* =====================================================================
+   Progress UI
+   ===================================================================== */
+const STEPS = [["identity", "Brand identity & logo"], ["products", "Products & ingredients"], ["packaging", "3D packaging"], ["textures", "AI textures"],
+  ["website", "Website"], ["merch", "Merch"], ["marketing", "Marketing & business plan"], ["store", "Walkable 3D store"]];
+function renderSteps() { $("#steps").innerHTML = STEPS.map(([id, t]) => `<li id="st-${id}"><span class="dot"></span>${t}<span class="note"></span></li>`).join(""); }
+function setStep(id, state, note = "") { const li = $("#st-" + id); if (!li) return; li.className = state; $(".note", li).textContent = note; }
+async function runStep(id, fn) {
+  setStep(id, "run");
+  try { const r = await fn(); if (r !== "skip") setStep(id, "done"); return true; }
+  catch (e) { if (fatal(e)) throw e; setStep(id, "err", "failed"); log(`${id}: ${e.message}`, "e"); return false; }
+}
+
+/* =====================================================================
+   Main pipeline
+   ===================================================================== */
+function readBrief() {
+  return {name: $("#bName").value.trim(), category: $("#bCategory").value.trim(), description: $("#bDesc").value.trim(),
+    audience: $("#bAudience").value.trim(), vibe: $("#bVibe").value.trim(), tier: $("#bTier").value, product_count: clamp(+$("#bCount").value || 5, 3, 8)};
+}
+
+async function generate() {
+  if (S.busy) return;
+  const brief = readBrief();
+  if (!brief.name && !brief.description && !brief.category) { toast("Describe your brand first — or tap an example chip.", true); return; }
+  if (!S.key) { openSettings(); toast("Add your OpenAI API key first.", true); return; }
+  S.busy = true; $("#genBtn").disabled = true; $("#genBtn").textContent = "Agent is working…";
+  S.brand = {brief}; S.art = {}; S.merchArt = {}; S.tex = {}; S.snaps = {}; S.merchCanvas = []; S.chat = []; S.cart = [];
+  renderSteps(); $("#log").innerHTML = "";
+  log(`Starting agent with ${S.model}${isReasoning(S.model) ? ` (reasoning: ${S.effort})` : ""}`);
+  const t0 = performance.now();
+  try {
+    await runStep("identity", async () => {
+      S.brand.identity = normIdentity(await askJSON(SYS, P.identity(brief)), brief);
+      await applyFonts(); renderBrand(); enableTabs(["brand"]); showTab("brand");
+      log(`Identity ready: ${S.brand.identity.name} — “${S.brand.identity.tagline || ""}”`, "o");
+    });
+    if (!S.brand.identity) throw new Error("Could not create the brand identity.");
+
+    await runStep("products", async () => {
+      const r = await askJSON(SYS, P.products(brief.product_count));
+      S.brand.products = normProducts(r.products || r);
+      if (!S.brand.products.length) throw new Error("No products returned");
+      renderProducts(); enableTabs(["products"]);
+      log(`${S.brand.products.length} products designed`, "o");
+    });
+    if (!arr(S.brand.products).length) throw new Error("Could not create products.");
+
+    await runStep("packaging", async () => {
+      await refreshTextures(); await snapshotAll(); renderProducts();
+      markDirty(); enableTabs(["studio"]);
+    });
+
+    // these run in parallel
+    await Promise.all([
+      runStep("textures", async () => {
+        if (!$("#optTextures").checked) { setStep("textures", "skip", "off"); return "skip"; }
+        await genAllProductArt();
+        await refreshTextures(); await snapshotAll(); renderProducts(); markDirty();
+      }),
+      runStep("website", async () => { S.brand.site_copy = await askJSON(SYS, P.website()); }),
+      runStep("merch", async () => {
+        S.brand.merch = normMerch(await askJSON(SYS, P.merch()));
+        await renderMerch(); enableTabs(["merch"]);
+        if ($("#optMerchArt").checked) { await genAllMerchArt(); await renderMerch(); }
+      }),
+      runStep("marketing", async () => { S.brand.marketing = await askJSON(SYS, P.marketing()); renderMarketing(); enableTabs(["marketing"]); }),
+    ]);
+
+    renderWebsite(); enableTabs(["website", "agent"]);
+    await runStep("store", async () => { S.dirty.store = true; enableTabs(["store"]); setStep("store", "done", "open tab"); return "skip"; });
+    save();
+    const secs = Math.round((performance.now() - t0) / 1000);
+    log(`Done in ${secs}s — your brand is ready.`, "o");
+    toast(`✨ ${S.brand.identity.name} is ready! Explore the tabs.`);
+    S.chat = [{role: "ai", text: `Hi! I built ${S.brand.identity.name} for you — ${arr(S.brand.products).length} products, packaging, a website, a 3D store, merch and a launch plan. Tell me anything you want changed.`}];
+    renderChat();
+  } catch (e) {
+    log(e.message, "e");
+    toast(fatal(e) ? "OpenAI rejected the API key or quota: " + e.message : "Agent stopped: " + e.message, true);
+    if (fatal(e)) openSettings();
+  } finally {
+    S.busy = false; $("#genBtn").disabled = false; $("#genBtn").textContent = "✨ Generate my whole brand";
+  }
+}
+
+async function genAllProductArt() {
+  const ps = S.brand.products; let done = 0;
+  setStep("textures", "run", `0/${ps.length}`);
+  await pool(ps, S.conc, async p => {
+    try { S.art[p.id] = await genImage(P.productArt(p)); }
+    catch (e) { if (fatal(e)) throw e; log(`Texture for ${p.name}: ${e.message}`, "w"); }
+    setStep("textures", "run", `${++done}/${ps.length}`);
+  });
+}
+async function genAllMerchArt() {
+  const items = S.brand.merch.items; let done = 0;
+  const transparent = /gpt-image/.test(S.imageModel);
+  await pool(items, S.conc, async (it, i) => {
+    try { S.merchArt[i] = await genImage(P.merchArt(it), {transparent}); }
+    catch (e) { if (fatal(e)) throw e; log(`Merch art for ${it.name}: ${e.message}`, "w"); }
+    setStep("merch", "run", `art ${++done}/${items.length}`);
+  });
+}
+function markDirty() { S.dirty.studio = S.dirty.store = S.dirty.site = true; if (S.tab === "studio") ensureStudio(); }
+
+function enableTabs(names) { names.forEach(n => { const b = $(`.tab-btn[data-tab="${n}"]`); if (b) b.disabled = false; }); }
+function showTab(name) {
+  S.tab = name;
+  $$(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
+  $$(".pane").forEach(p => p.classList.toggle("active", p.id === "pane-" + name));
+  if (name === "studio") ensureStudio();
+  if (name === "store") ensureStore();
+  if (name === "website" && S.dirty.site) { snapshotAll().then(renderWebsite); }
+  if (name !== "store" && document.pointerLockElement) document.exitPointerLock();
+}
+
+/* =====================================================================
+   Renderers — Brand / Products / Merch / Marketing
+   ===================================================================== */
+function renderBrand() {
+  const id = S.brand.identity, v = id.voice || {}, per = id.audience?.persona || {};
+  $("#pane-brand").innerHTML = `
+    <div class="brand-hero">
+      <div class="logo-box">${id.logo.svg}</div>
+      <div class="card">
+        <div class="sec-title">Brand</div>
+        <h1 style="font-family:${esc(HF())};font-size:40px;line-height:1.1">${esc(id.name)}</h1>
+        <p style="font-size:18px;margin:8px 0 12px;font-family:${esc(HF())};font-style:italic">${esc(id.tagline)}</p>
+        <p class="muted">${esc(id.elevator_pitch)}</p>
+        ${id.logo.concept ? `<p class="muted" style="font-size:12px;margin-top:10px">Logo concept: ${esc(id.logo.concept)}</p>` : ""}
+        <div style="margin-top:12px"><button class="btn sm" id="dlLogo">⬇ Logo SVG</button></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="sec-title">Color palette · click to copy</div>
+      <div class="swatches">${id.palette.map(c => `<div class="sw" data-hex="${esc(c.hex)}"><div class="c" style="background:${esc(c.hex)}"></div><div class="t"><b>${esc(c.name)}</b>${esc(c.hex)} · ${esc(c.role || "")}</div></div>`).join("")}</div>
+    </div>
+    <div class="grid2" style="margin-bottom:16px">
+      <div class="card"><div class="sec-title">Typography</div>
+        <div style="font-family:${esc(HF())};font-size:34px;line-height:1.1">${esc(id.fonts.heading)}</div>
+        <div class="muted" style="font-size:12px;margin-bottom:12px">Headings</div>
+        <div style="font-family:${esc(BF())};font-size:18px">${esc(id.fonts.body)} — The quick brown fox jumps over the lazy dog.</div>
+        <div class="muted" style="font-size:12px">Body</div></div>
+      <div class="card"><div class="sec-title">Audience</div>
+        <p>${esc(id.audience?.primary)}</p>
+        ${per.name ? `<p class="muted" style="margin-top:8px"><b style="color:var(--text)">Persona: ${esc(per.name)}${per.age ? ", " + esc(per.age) : ""}</b><br>${esc(per.description)}</p>` : ""}</div>
+    </div>
+    <div class="grid2" style="margin-bottom:16px">
+      <div class="card"><div class="sec-title">Story</div><p style="white-space:pre-line">${esc(id.story)}</p></div>
+      <div class="card"><div class="sec-title">Mission</div><p>${esc(id.mission)}</p>
+        <div class="sec-title" style="margin-top:16px">Values</div><div>${id.values.map(x => `<span class="tag">${esc(x)}</span>`).join("")}</div></div>
+    </div>
+    <div class="card"><div class="sec-title">Brand voice</div>
+      <div style="margin-bottom:10px">${arr(v.tone).map(x => `<span class="tag">${esc(x)}</span>`).join("")}</div>
+      <div class="grid2"><div><b>Do</b><ul class="clean">${arr(v.do).map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>
+      <div><b>Don't</b><ul class="clean">${arr(v.dont).map(x => `<li>${esc(x)}</li>`).join("")}</ul></div></div></div>`;
+  $$("#pane-brand .sw").forEach(el => el.onclick = () => { navigator.clipboard?.writeText(el.dataset.hex); toast("Copied " + el.dataset.hex); });
+  $("#dlLogo").onclick = () => download(slug(id.name) + "-logo.svg", id.logo.svg, "image/svg+xml");
+}
+
+function renderProducts() {
+  const ps = arr(S.brand.products);
+  const totalCost = ps.reduce((a, p) => a + (p.unit_cost_usd || 0), 0), totalPrice = ps.reduce((a, p) => a + (p.price_usd || 0), 0);
+  $("#pane-products").innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:end;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <div><div class="sec-title">Product line</div><h2 style="font-size:24px">${esc(S.brand.identity.name)} · ${ps.length} products</h2></div>
+      ${totalCost ? `<div class="muted">Avg. gross margin <b style="color:var(--ok)">${Math.round((1 - totalCost / totalPrice) * 100)}%</b></div>` : ""}
+    </div>
+    <div class="prod-grid">${ps.map(p => `
+      <article class="prod">
+        <div class="img">${S.snaps[p.id] ? `<img src="${S.snaps[p.id]}" alt="${esc(p.name)}">` : `<span class="muted">Rendering…</span>`}</div>
+        <div class="body">
+          <div class="meta"><span>${esc(p.type)}</span><span class="price">${money(p.price_usd)}</span></div>
+          <h3>${esc(p.name)}</h3>
+          ${p.tagline ? `<div style="font-style:italic;color:#d8b4fe">${esc(p.tagline)}</div>` : ""}
+          <p class="muted" style="margin:0">${esc(p.description)}</p>
+          <div>${p.claims.map(c => `<span class="tag">${esc(c)}</span>`).join("")}</div>
+          <div class="meta"><span>${esc(p.size)}</span><span>${p.unit_cost_usd ? "Unit cost " + money(p.unit_cost_usd) : ""}</span></div>
+          <details open><summary>Ingredients (${p.ingredients.length})</summary>
+            <table class="ing"><tr><th>INCI</th><th>Purpose</th><th>%</th></tr>
+            ${p.ingredients.map(i => `<tr><td>${esc(i.inci)}${i.common && i.common !== i.inci ? `<div class="muted">${esc(i.common)}</div>` : ""}</td><td>${esc(i.purpose)}</td><td>${esc(i.percent)}</td></tr>`).join("")}</table></details>
+          ${p.how_to_use ? `<details><summary>How to use</summary><p class="muted" style="margin:0">${esc(p.how_to_use)}</p></details>` : ""}
+          ${p.packaging?.material ? `<details><summary>Packaging</summary><p class="muted" style="margin:0">${esc(p.packaging.material)}${p.packaging.dimensions ? " · " + esc(p.packaging.dimensions) : ""}<br>${esc(p.packaging.sustainability)}</p></details>` : ""}
+          <div style="margin-top:auto;padding-top:6px"><button class="btn sm" data-view3d="${esc(p.id)}">🧊 View in 3D</button></div>
+        </div>
+      </article>`).join("")}</div>
+    <p class="muted" style="font-size:12px;margin-top:16px">Formulas are AI-generated starting points. Have a qualified cosmetic chemist / regulatory expert validate formulas, safety and labeling before production.</p>`;
+  $$("[data-view3d]").forEach(b => b.onclick = () => { S.studioSel = b.dataset.view3d; S.dirty.studio = true; showTab("studio"); });
+}
+
+/* ---------- merch mockups ---------- */
+const PRINT_AREA = {tshirt: [300, 245, 200, 230], hoodie: [305, 255, 190, 190], tote: [255, 340, 290, 320], cap: [335, 330, 130, 100], mug: [255, 300, 250, 260], sticker: [175, 175, 450, 450], phonecase: [270, 290, 260, 330]};
+function garment(g, type) {
+  g.beginPath();
+  switch (type) {
+    case "tshirt": g.moveTo(330, 150); g.quadraticCurveTo(400, 205, 470, 150); g.lineTo(565, 170); g.lineTo(690, 255); g.lineTo(635, 335); g.lineTo(565, 300); g.lineTo(565, 705); g.lineTo(235, 705); g.lineTo(235, 300); g.lineTo(165, 335); g.lineTo(110, 255); g.lineTo(235, 170); g.closePath(); break;
+    case "hoodie": g.moveTo(300, 175); g.quadraticCurveTo(400, 230, 500, 175); g.lineTo(570, 190); g.lineTo(650, 285); g.lineTo(715, 610); g.lineTo(650, 632); g.lineTo(585, 380); g.lineTo(580, 705); g.lineTo(220, 705); g.lineTo(215, 380); g.lineTo(150, 632); g.lineTo(85, 610); g.lineTo(150, 285); g.lineTo(230, 190); g.closePath(); break;
+    case "tote": rr(g, 210, 290, 380, 430, 10); break;
+    case "cap": g.moveTo(215, 470); g.bezierCurveTo(215, 240, 585, 240, 585, 470); g.closePath(); break;
+    case "mug": g.moveTo(220, 230); g.lineTo(540, 230); g.lineTo(540, 610); g.quadraticCurveTo(540, 640, 510, 640); g.lineTo(250, 640); g.quadraticCurveTo(220, 640, 220, 610); g.closePath(); break;
+    case "sticker": g.arc(400, 400, 270, 0, Math.PI * 2); break;
+    case "phonecase": rr(g, 250, 110, 300, 580, 56); break;
+  }
+}
+async function drawMerch(it, i, {bg = true} = {}) {
+  const c = canvas(800, 800), g = c.getContext("2d"), pal = palette();
+  const col = it.garment_hex, dk = shade(col, -.25);
+  if (bg) { const gr = g.createLinearGradient(0, 0, 0, 800); gr.addColorStop(0, mix("#f4f2ef", pal.light, .5)); gr.addColorStop(1, mix("#e4e0da", pal.light, .3)); g.fillStyle = gr; g.fillRect(0, 0, 800, 800); }
+  g.save(); g.shadowColor = "rgba(0,0,0,.25)"; g.shadowBlur = 40; g.shadowOffsetY = 18;
+  // pre-shapes behind the garment
+  if (it.type === "tote") { g.strokeStyle = dk; g.lineWidth = 24; g.beginPath(); g.moveTo(300, 300); g.bezierCurveTo(300, 110, 500, 110, 500, 300); g.stroke(); }
+  if (it.type === "hoodie") { g.fillStyle = dk; g.beginPath(); g.ellipse(400, 170, 125, 80, 0, 0, Math.PI * 2); g.fill(); }
+  if (it.type === "mug") { g.strokeStyle = col; g.lineWidth = 42; g.beginPath(); g.arc(555, 435, 85, -1.3, 1.3); g.stroke(); }
+  if (it.type === "sticker") { g.fillStyle = "#fff"; g.beginPath(); g.arc(400, 400, 300, 0, Math.PI * 2); g.fill(); }
+  g.fillStyle = col; garment(g, it.type); g.fill(); g.restore();
+  // shading
+  g.save(); garment(g, it.type); g.clip();
+  const sh = g.createLinearGradient(150, 0, 650, 0); sh.addColorStop(0, "rgba(0,0,0,.16)"); sh.addColorStop(.45, "rgba(255,255,255,.08)"); sh.addColorStop(1, "rgba(0,0,0,.18)");
+  g.fillStyle = sh; g.fillRect(0, 0, 800, 800); g.restore();
+  // details
+  g.strokeStyle = rgba(dk, .8); g.lineWidth = 3;
+  if (it.type === "tshirt") { g.beginPath(); g.moveTo(330, 150); g.quadraticCurveTo(400, 205, 470, 150); g.stroke(); }
+  if (it.type === "hoodie") { g.beginPath(); g.moveTo(285, 540); g.lineTo(515, 540); g.lineTo(545, 660); g.lineTo(255, 660); g.closePath(); g.stroke(); g.beginPath(); g.moveTo(375, 215); g.lineTo(370, 330); g.moveTo(425, 215); g.lineTo(430, 330); g.stroke(); }
+  if (it.type === "cap") { g.fillStyle = dk; g.beginPath(); g.ellipse(430, 478, 235, 52, 0.04, 0, Math.PI * 2); g.fill(); g.fillStyle = col; g.beginPath(); g.arc(400, 268, 13, 0, Math.PI * 2); g.fill(); g.beginPath(); g.moveTo(400, 270); g.quadraticCurveTo(330, 350, 320, 465); g.moveTo(400, 270); g.quadraticCurveTo(470, 350, 480, 465); g.stroke(); }
+  if (it.type === "mug") { g.fillStyle = dk; g.beginPath(); g.ellipse(380, 232, 160, 26, 0, 0, Math.PI * 2); g.fill(); }
+  if (it.type === "phonecase") { g.fillStyle = dk; rr(g, 280, 140, 110, 130, 26); g.fill(); g.fillStyle = "#111"; [[312, 175], [358, 175], [312, 235]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y, 17, 0, 7); g.fill(); }); }
+  // print
+  const [px, py, pw, ph] = PRINT_AREA[it.type];
+  g.save();
+  if (it.type === "sticker") { g.beginPath(); g.arc(400, 400, 255, 0, 7); g.clip(); } else { garment(g, it.type); g.clip(); }
+  const art = await loadImg(S.merchArt[i]);
+  const text = it.print_text || S.brand.identity.name;
+  const textH = text ? Math.min(60, ph * .22) : 0;
+  if (art) {
+    const transparentArt = /gpt-image/.test(S.imageModel || "") && S.merchArt[i]?.startsWith("data:");
+    if (!transparentArt) { g.save(); rr(g, px, py, pw, ph - textH, 12); g.clip(); drawCover(g, art, px, py, pw, ph - textH); g.restore(); }
+    else drawContain(g, art, px, py, pw, ph - textH);
+  } else proceduralArt(g, px, py, pw, ph - textH, it.print_hex, col, hash(it.name + i));
+  if (text) { g.fillStyle = it.print_hex; g.textAlign = "center"; g.textBaseline = "middle"; spacing(g, 2); fitFont(g, text.toUpperCase(), 700, HF(), textH * .8, pw); g.fillText(text.toUpperCase(), px + pw / 2, py + ph - textH / 2); spacing(g, 0); }
+  g.restore();
+  return c;
+}
+function proceduralArt(g, x, y, w, h, c1, base, seed) {
+  const R = rng(seed), cx = x + w / 2, cy = y + h / 2, r = Math.min(w, h) * .42;
+  g.save(); g.strokeStyle = c1; g.fillStyle = c1;
+  g.lineWidth = Math.max(2, r * .05); g.beginPath(); g.arc(cx, cy, r, 0, 7); g.stroke();
+  for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2 + R(); g.globalAlpha = .5 + R() * .5; g.beginPath(); g.arc(cx + Math.cos(a) * r * .62, cy + Math.sin(a) * r * .62, r * (.08 + R() * .1), 0, 7); g.fill(); }
+  g.globalAlpha = 1; g.textAlign = "center"; g.textBaseline = "middle"; g.font = `700 ${r * .9}px ${HF()}`;
+  g.fillText((S.brand.identity.name || "B")[0].toUpperCase(), cx, cy + r * .04); g.restore();
+}
+async function renderMerch() {
+  const items = arr(S.brand.merch?.items); if (!items.length) return;
+  S.merchCanvas = await Promise.all(items.map((it, i) => drawMerch(it, i)));
+  const pane = $("#pane-merch");
+  pane.innerHTML = `<div class="sec-title">Merch collection</div><h2 style="font-size:24px;margin-bottom:16px">${esc(S.brand.identity.name)} merch drop</h2><div class="merch-grid">${items.map((it, i) => `
+    <div class="merch"><div data-mc="${i}"></div><div class="body">
+      <div style="display:flex;justify-content:space-between"><b>${esc(it.name)}</b><span>${money(it.price_usd)}</span></div>
+      <div class="muted" style="font-size:12.5px;margin:4px 0">${esc(it.description)}</div>
+      <div class="muted" style="font-size:11.5px">${esc(it.type)}${it.material ? " · " + esc(it.material) : ""}</div>
+      <div style="display:flex;gap:6px;margin-top:8px"><button class="btn sm" data-mdl="${i}">⬇ PNG</button><button class="btn sm" data-mregen="${i}">🎨 New art</button></div>
+    </div></div>`).join("")}</div>`;
+  S.merchCanvas.forEach((c, i) => $(`[data-mc="${i}"]`, pane).appendChild(c));
+  $$("[data-mdl]", pane).forEach(b => b.onclick = () => download(slug(items[b.dataset.mdl].name) + ".png", S.merchCanvas[b.dataset.mdl].toDataURL("image/png")));
+  $$("[data-mregen]", pane).forEach(b => b.onclick = async () => {
+    const i = +b.dataset.mregen; b.disabled = true; b.textContent = "Generating…";
+    try { S.merchArt[i] = await genImage(P.merchArt(items[i]), {transparent: /gpt-image/.test(S.imageModel)}); await renderMerch(); S.dirty.store = S.dirty.site = true; save(); }
+    catch (e) { toast("Image generation failed: " + e.message, true); b.disabled = false; b.textContent = "🎨 New art"; }
+  });
+}
+
+function renderMarketing() {
+  const m = S.brand.marketing || {}, biz = m.business || {};
+  const budget = arr(biz.launch_budget), total = budget.reduce((a, b) => a + (Number(b.usd) || 0), 0);
+  $("#pane-marketing").innerHTML = `
+    <div class="sec-title">Go-to-market</div><h2 style="font-size:24px;margin-bottom:8px">Launch plan</h2>
+    <p class="muted" style="max-width:760px;margin:0 0 16px">${esc(m.positioning)}</p>
+    <div class="mk-card"><div class="sec-title">Phases</div><div class="timeline">${arr(m.launch_plan).map(ph => `
+      <div class="phase"><b>${esc(ph.phase)}</b><div class="muted" style="font-size:12px">${esc(ph.timing)}</div><div style="margin:6px 0;font-size:13px">${esc(ph.goal)}</div>
+      <ul class="clean muted" style="font-size:12.5px">${arr(ph.actions).map(a => `<li>${esc(a)}</li>`).join("")}</ul></div>`).join("")}</div></div>
+    <div class="mk-card"><div class="sec-title">Social posts</div><div class="grid3">${arr(m.social_posts).map(p => `
+      <div class="post"><div class="pf">${esc(p.platform)}</div><p style="margin:6px 0;white-space:pre-line">${esc(p.caption)}</p>
+      <div style="color:#c4b5fd;font-size:12px">${arr(p.hashtags).map(esc).join(" ")}</div>
+      ${p.visual_idea ? `<div class="muted" style="font-size:12px;margin-top:6px">🎬 ${esc(p.visual_idea)}</div>` : ""}</div>`).join("")}</div></div>
+    <div class="grid2">
+      <div class="mk-card"><div class="sec-title">Launch email</div>
+        <b>${esc(m.email?.subject)}</b><div class="muted" style="font-size:12px;margin-bottom:8px">${esc(m.email?.preview)}</div>
+        <p style="white-space:pre-line;margin:0">${esc(m.email?.body)}</p></div>
+      <div class="mk-card"><div class="sec-title">Ad copy</div>${arr(m.ad_copy).map(a => `
+        <div class="post" style="margin-bottom:8px"><b>${esc(a.headline)}</b><p style="margin:4px 0" class="muted">${esc(a.body)}</p><span class="tag">${esc(a.cta)}</span></div>`).join("")}
+        ${m.influencer_brief ? `<div class="sec-title" style="margin-top:14px">Influencer brief</div><p class="muted" style="margin:0">${esc(m.influencer_brief)}</p>` : ""}</div>
+    </div>
+    <div class="grid2">
+      <div class="mk-card"><div class="sec-title">Launch budget</div>
+        <table class="budget">${budget.map(b => `<tr><td>${esc(b.item)}</td><td>${money(b.usd)}</td></tr>`).join("")}<tr><td><b>Total</b></td><td><b>${money(total)}</b></td></tr></table>
+        <div class="sec-title" style="margin-top:14px">Channels</div><div>${arr(biz.channels).map(c => `<span class="tag">${esc(c)}</span>`).join("")}</div>
+        ${biz.pricing_strategy ? `<div class="sec-title" style="margin-top:14px">Pricing strategy</div><p class="muted" style="margin:0">${esc(biz.pricing_strategy)}</p>` : ""}</div>
+      <div class="mk-card"><div class="sec-title">KPIs</div><ul class="clean">${arr(biz.kpis).map(k => `<li>${esc(k)}</li>`).join("")}</ul>
+        <div class="sec-title" style="margin-top:14px">Competitors</div>${arr(m.competitors).map(c => `<div style="margin-bottom:6px"><b>${esc(c.name)}</b> <span class="muted">— ${esc(c.difference)}</span></div>`).join("")}
+        <div class="sec-title" style="margin-top:14px">Compliance checklist</div><ul class="clean muted">${arr(m.compliance_checklist).map(k => `<li>${esc(k)}</li>`).join("")}</ul>
+        <p class="muted" style="font-size:11.5px">AI-generated guidance — confirm requirements with a regulatory professional.</p></div>
+    </div>`;
+}
+
+/* =====================================================================
+   Packaging textures (AI art + brand typography composited on canvas)
+   ===================================================================== */
+function proceduralPattern(g, w, h, p) {
+  const R = rng(hash(p.id)), pal = palette(), kind = hash(p.id) % 4;
+  const cols = [p.accent_hex, pal.primary, pal.secondary, pal.light];
+  g.save();
+  for (let k = 0; k < 60; k++) {
+    g.globalAlpha = .08 + R() * .14; g.fillStyle = g.strokeStyle = cols[k % cols.length];
+    if (kind === 0) { g.beginPath(); g.arc(R() * w, R() * h, 10 + R() * 70, 0, 7); g.fill(); }
+    else if (kind === 1) { g.lineWidth = 2 + R() * 6; g.beginPath(); const y = R() * h; g.moveTo(0, y); for (let x = 0; x <= w; x += 32) g.lineTo(x, y + Math.sin(x / 60 + k) * 24); g.stroke(); }
+    else if (kind === 2) { g.fillRect((k % 16) * (w / 16), 0, w / 64, h); }
+    else { g.lineWidth = 2; g.beginPath(); g.arc(R() * w, R() * h, 20 + R() * 120, 0, 7); g.stroke(); }
+  }
+  g.restore();
+}
+async function composeTextures(p) {
+  const id = S.brand.identity, pal = palette(), old = S.tex[p.id];
+  const art = await loadImg(S.art[p.id]);
+  const panel = lum(p.body_hex) > .6 ? pal.dark : pal.light, txt = ink(panel);
+  // wrap-around label (1024x512)
+  const L = canvas(1024, 512), g = L.getContext("2d");
+  g.fillStyle = p.body_hex; g.fillRect(0, 0, 1024, 512);
+  if (art) { g.globalAlpha = .95; drawCover(g, art, 0, 0, 1024, 512); g.globalAlpha = 1; } else proceduralPattern(g, 1024, 512, p);
+  g.save(); g.shadowColor = "rgba(0,0,0,.25)"; g.shadowBlur = 18; g.fillStyle = rgba(panel, .9); rr(g, 342, 96, 340, 320, 18); g.fill(); g.restore();
+  g.strokeStyle = rgba(p.accent_hex, .9); g.lineWidth = 3; rr(g, 354, 108, 316, 296, 12); g.stroke();
+  g.fillStyle = txt; g.textAlign = "center"; g.textBaseline = "alphabetic";
+  spacing(g, 6); fitFont(g, id.name.toUpperCase(), 700, HF(), 52, 280); g.fillText(id.name.toUpperCase(), 512, 190); spacing(g, 0);
+  g.fillStyle = p.accent_hex; g.fillRect(472, 210, 80, 3);
+  g.fillStyle = txt; g.font = `600 28px ${BF()}`; const n = wrapText(g, p.name, 512, 258, 280, 32, 2);
+  g.globalAlpha = .75; g.font = `400 20px ${BF()}`; wrapText(g, p.type, 512, 258 + n * 32 + 6, 290, 24, 1);
+  g.font = `500 18px ${BF()}`; g.fillText(p.size || "", 512, 390); g.globalAlpha = 1;
+  // square badge (lids, box fronts, compacts)
+  const B = canvas(512, 512), b = B.getContext("2d");
+  b.fillStyle = p.body_hex; b.fillRect(0, 0, 512, 512);
+  if (art) drawCover(b, art, 0, 0, 512, 512); else proceduralPattern(b, 512, 512, p);
+  b.fillStyle = rgba(panel, .9); b.beginPath(); b.arc(256, 256, 150, 0, 7); b.fill();
+  b.strokeStyle = p.accent_hex; b.lineWidth = 4; b.beginPath(); b.arc(256, 256, 138, 0, 7); b.stroke();
+  b.fillStyle = txt; b.textAlign = "center"; spacing(b, 4); fitFont(b, id.name.toUpperCase(), 700, HF(), 46, 230); b.fillText(id.name.toUpperCase(), 256, 250); spacing(b, 0);
+  b.font = `500 20px ${BF()}`; wrapText(b, p.name, 256, 290, 220, 24, 2);
+  const mk = c => { if (!has3D()) return null; const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; return t; };
+  const label = mk(L); if (label) { label.wrapS = THREE.RepeatWrapping; label.offset.x = .5; }
+  S.tex[p.id] = {labelCanvas: L, badgeCanvas: B, label, badge: mk(B)};
+  if (old) { old.label?.dispose(); old.badge?.dispose(); } // free GPU memory; meshes still using them re-upload on demand
+}
+async function refreshTextures() { await applyFonts(); await Promise.all(arr(S.brand.products).map(composeTextures)); }
+
+/* =====================================================================
+   3D — shared helpers
+   ===================================================================== */
+function makeEnv(renderer) {
+  const pm = new THREE.PMREMGenerator(renderer), sc = new THREE.Scene();
+  sc.add(new THREE.Mesh(new THREE.BoxGeometry(10, 10, 10), new THREE.MeshBasicMaterial({color: 0x4a4a55, side: THREE.BackSide})));
+  const lm = new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.DoubleSide});
+  [[0, 4.9, 0, Math.PI / 2, 0, 5, 5], [4.9, 1, 0, 0, -Math.PI / 2, 2.5, 3.5], [-4.9, 1.5, 1, 0, Math.PI / 2, 2.5, 3], [0, 1, 4.9, 0, Math.PI, 4, 2]].forEach(([x, y, z, rx, ry, w, h]) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), lm); m.position.set(x, y, z); m.rotation.set(rx, ry, 0); sc.add(m);
+  });
+  const tex = pm.fromScene(sc, .04).texture; pm.dispose(); return tex;
+}
+function setupRenderer(r) {
+  r.outputEncoding = THREE.sRGBEncoding; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05;
+  r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+}
+function studioLights(scene) {
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x404050, .55));
+  const key = new THREE.DirectionalLight(0xffffff, 1.1); key.position.set(3, 5, 4); key.castShadow = true; key.shadow.mapSize.set(1024, 1024);
+  Object.assign(key.shadow.camera, {left: -2, right: 2, top: 2, bottom: -2, near: .5, far: 20}); key.shadow.bias = -.0005; key.shadow.camera.updateProjectionMatrix();
+  const fill = new THREE.DirectionalLight(0xffffff, .35); fill.position.set(-4, 2, 2);
+  const rim = new THREE.DirectionalLight(0xffffff, .6); rim.position.set(0, 3, -5);
+  scene.add(key, fill, rim);
+}
+class Viewer {
+  constructor(el, {fov = 35, alpha = false} = {}) {
+    this.el = el; this.updaters = [];
+    this.renderer = new THREE.WebGLRenderer({antialias: true, alpha});
+    setupRenderer(this.renderer);
+    el.prepend(this.renderer.domElement);
+    this.scene = new THREE.Scene(); this.scene.environment = makeEnv(this.renderer);
+    this.camera = new THREE.PerspectiveCamera(fov, 1, .01, 200);
+    this.clock = new THREE.Clock();
+    new ResizeObserver(() => this.resize()).observe(el); this.resize();
+    const loop = () => {
+      requestAnimationFrame(loop);
+      const dt = Math.min(.05, this.clock.getDelta());
+      if (!this.el.offsetParent) return;
+      this.updaters.forEach(f => f(dt)); this.renderer.render(this.scene, this.camera);
+    };
+    loop();
+  }
+  resize() { const w = this.el.clientWidth || 1, h = this.el.clientHeight || 1; this.renderer.setSize(w, h, false); this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); }
+  png() { this.renderer.render(this.scene, this.camera); return this.renderer.domElement.toDataURL("image/png"); }
+}
+function orbit(v, target) {
+  const st = {theta: .5, phi: 1.25, r: 3.2, target, auto: true, drag: false};
+  const c = v.renderer.domElement;
+  c.addEventListener("pointerdown", e => { st.drag = true; st.x = e.clientX; st.y = e.clientY; c.setPointerCapture(e.pointerId); });
+  c.addEventListener("pointermove", e => {
+    if (!st.drag) return; st.theta -= (e.clientX - st.x) * .008; st.phi = clamp(st.phi - (e.clientY - st.y) * .008, .2, Math.PI / 2 + .25);
+    st.x = e.clientX; st.y = e.clientY;
+  });
+  c.addEventListener("pointerup", () => st.drag = false);
+  c.addEventListener("wheel", e => { e.preventDefault(); st.r = clamp(st.r * (1 + Math.sign(e.deltaY) * .1), .6, 14); }, {passive: false});
+  v.updaters.push(dt => {
+    if (st.auto && !st.drag) st.theta += dt * .45;
+    const t = st.target, s = Math.sin(st.phi);
+    v.camera.position.set(t.x + st.r * s * Math.sin(st.theta), t.y + st.r * Math.cos(st.phi), t.z + st.r * s * Math.cos(st.theta));
+    v.camera.lookAt(t);
+  });
+  return st;
+}
+function frameObject(obj) {
+  const box = new THREE.Box3().setFromObject(obj), size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
+  return {center, size, max: Math.max(size.x, size.y, size.z)};
+}
+
+/* =====================================================================
+   3D — procedural packaging models
+   ===================================================================== */
+function resample(pts, n) {
+  const segs = []; let total = 0;
+  for (let i = 1; i < pts.length; i++) { const d = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); segs.push(d); total += d; }
+  const out = [];
+  for (let k = 0; k <= n; k++) {
+    let t = k / n * total, i = 0;
+    while (i < segs.length - 1 && t > segs[i]) { t -= segs[i]; i++; }
+    const f = segs[i] ? t / segs[i] : 0, a = pts[i], b = pts[i + 1];
+    out.push(new THREE.Vector2(Math.max(0, a[0] + (b[0] - a[0]) * f), a[1] + (b[1] - a[1]) * f));
+  }
+  return out;
+}
+const FIN = {matte: {roughness: .78, metalness: 0}, gloss: {roughness: .16, metalness: 0}, metallic: {roughness: .3, metalness: .85}, frosted: {roughness: .5, metalness: 0}};
+const Mat = (color, o = {}) => new THREE.MeshStandardMaterial({color: new THREE.Color(color), ...o});
+
+function buildProduct(p) {
+  const g = new THREE.Group(), t = S.tex[p.id] || {}, fin = FIN[p.finish] || FIN.gloss;
+  const metal = Mat(p.accent_hex, {roughness: .22, metalness: .95});
+  const plain = Mat(p.body_hex, fin);
+  const labelM = t.label ? new THREE.MeshStandardMaterial({map: t.label, roughness: fin.roughness, metalness: Math.min(fin.metalness, .35)}) : plain;
+  const badgeM = t.badge ? new THREE.MeshStandardMaterial({map: t.badge, roughness: fin.roughness, metalness: Math.min(fin.metalness, .35)}) : plain;
+  const add = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; g.add(m); return m; };
+  const Cyl = (rt, rb, h, seg = 64, hs = 1, open = false) => new THREE.CylinderGeometry(rt, rb, h, seg, hs, open);
+
+  switch (p.shape) {
+    case "lipstick": {
+      add(Cyl(.2, .2, .62), [labelM, metal, metal], 0, .31);
+      add(Cyl(.165, .165, .22), metal, 0, .73);
+      const bg = Cyl(.13, .13, .42, 64, 8), pos = bg.attributes.position;
+      for (let i = 0; i < pos.count; i++) { const y = pos.getY(i); if (y > .2) pos.setY(i, y - (pos.getX(i) + .13) / .26 * .16); }
+      pos.needsUpdate = true; bg.computeVertexNormals();
+      add(bg, Mat(p.shade_hex, {roughness: p.finish === "matte" ? .55 : .15}), 0, 1.05);
+      add(Cyl(.21, .21, .66), [badgeM, metal, metal], .58, .33).rotation.y = Math.PI;
+      break;
+    }
+    case "dropper": {
+      add(new THREE.LatheGeometry(resample([[0, 0], [.3, 0], [.33, .03], [.33, .62], [.28, .72], [.12, .78], [.12, .84], [0, .84]], 48), 64), labelM);
+      add(Cyl(.15, .15, .18), metal, 0, .93);
+      const bulb = add(new THREE.SphereGeometry(.12, 32, 24), Mat(shade(p.accent_hex, -.55), {roughness: .6}), 0, 1.13); bulb.scale.y = 1.5;
+      break;
+    }
+    case "bottle": {
+      add(new THREE.LatheGeometry(resample([[0, 0], [.42, 0], [.45, .04], [.45, .62], [.4, .72], [.14, .8], [.14, .86], [0, .86]], 48), 64), labelM);
+      add(Cyl(.1, .1, .08), metal, 0, .9);
+      add(new THREE.BoxGeometry(.36, .3, .36), [metal, metal, badgeM, metal, metal, metal], 0, 1.09);
+      break;
+    }
+    case "jar": {
+      add(Cyl(.55, .55, .45), [labelM, plain, plain], 0, .225);
+      add(Cyl(.57, .57, .22), [metal, badgeM, metal], 0, .56);
+      break;
+    }
+    case "tube": {
+      add(Cyl(.17, .2, .22), metal, 0, .11);
+      const tg = Cyl(.24, .24, 1, 48, 24, true), pos = tg.attributes.position;
+      for (let i = 0; i < pos.count; i++) { const tt = (pos.getY(i) + .5); pos.setZ(i, pos.getZ(i) * (1 - .9 * tt ** 1.4)); pos.setX(i, pos.getX(i) * (1 + .28 * tt)); }
+      pos.needsUpdate = true; tg.computeVertexNormals();
+      const lm = labelM.clone(); lm.side = THREE.DoubleSide;
+      add(tg, lm, 0, .72);
+      add(new THREE.BoxGeometry(.64, .07, .05), plain, 0, 1.2);
+      break;
+    }
+    case "compact": {
+      add(Cyl(.6, .6, .14), metal, 0, .07);
+      add(Cyl(.5, .5, .03), Mat(p.shade_hex, {roughness: .85}), 0, .155);
+      const hinge = new THREE.Group(); hinge.position.set(0, .14, -.6); hinge.rotation.x = -1.8; g.add(hinge);
+      const lid = new THREE.Mesh(Cyl(.6, .6, .1), [metal, badgeM, metal]); lid.position.set(0, .05, .6); lid.castShadow = true; hinge.add(lid);
+      const mirror = new THREE.Mesh(Cyl(.52, .52, .012), Mat("#e8e8ee", {metalness: 1, roughness: .03})); mirror.position.set(0, -.007, .6); hinge.add(mirror);
+      break;
+    }
+    case "can": {
+      add(Cyl(.33, .33, 1), [labelM, metal, metal], 0, .52);
+      [.02, 1.02].forEach(y => { const r = add(new THREE.TorusGeometry(.315, .025, 12, 64), metal, 0, y); r.rotation.x = Math.PI / 2; });
+      break;
+    }
+    case "pouch": {
+      add(new THREE.BoxGeometry(.8, 1, .14), [plain, plain, plain, plain, badgeM, badgeM], 0, .5);
+      add(new THREE.BoxGeometry(.82, .08, .03), Mat(p.accent_hex, {roughness: .5}), 0, 1.0);
+      break;
+    }
+    default: { // box
+      add(new THREE.BoxGeometry(.7, 1.05, .42), [plain, plain, plain, plain, badgeM, badgeM], 0, .525);
+    }
+  }
+  g.userData.product = p;
+  return g;
+}
+
+/* ---------- product snapshots (transparent PNG renders) ---------- */
+let snapR = null;
+async function snapshotAll() {
+  if (!has3D() || !arr(S.brand?.products).length) { S.dirty.site = true; return; }
+  try {
+    if (!snapR) {
+      const r = new THREE.WebGLRenderer({antialias: true, alpha: true, preserveDrawingBuffer: true});
+      setupRenderer(r); r.setPixelRatio(1); r.setSize(640, 640, false);
+      const sc = new THREE.Scene(); sc.environment = makeEnv(r); studioLights(sc);
+      snapR = {r, sc, cam: new THREE.PerspectiveCamera(30, 1, .01, 100)};
+    }
+    for (const p of S.brand.products) {
+      if (!S.tex[p.id]) await composeTextures(p);
+      const obj = buildProduct(p); snapR.sc.add(obj);
+      obj.rotation.y = -.35;
+      const f = frameObject(obj), d = f.max / (2 * Math.tan(15 * Math.PI / 180)) * 1.25;
+      snapR.cam.position.set(f.center.x + d * .25, f.center.y + d * .28, f.center.z + d);
+      snapR.cam.lookAt(f.center);
+      snapR.r.render(snapR.sc, snapR.cam);
+      S.snaps[p.id] = snapR.r.domElement.toDataURL("image/png");
+      snapR.sc.remove(obj);
+    }
+  } catch (e) { log("Render: " + e.message, "w"); }
+}
+
+/* =====================================================================
+   3D Studio tab
+   ===================================================================== */
+function ensureStudio() {
+  if (!arr(S.brand?.products).length) return;
+  if (!has3D()) { $("#studioView").innerHTML = `<div class="no3d">3D engine (three.js) could not load — check your internet connection.</div>`; return; }
+  if (!S.studio) {
+    const v = S.studio = new Viewer($("#studioView"));
+    v.scene.background = new THREE.Color("#16161f");
+    studioLights(v.scene);
+    const ped = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.32, .12, 96), Mat("#24242f", {roughness: .35, metalness: .1}));
+    ped.position.y = -.06; ped.receiveShadow = true; v.scene.add(ped); v.ped = ped;
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({opacity: .25}));
+    floor.rotation.x = -Math.PI / 2; floor.position.y = -.12; floor.receiveShadow = true; v.scene.add(floor);
+    v.ctrl = orbit(v, new THREE.Vector3(0, .5, 0));
+    $("#autoRotate").onchange = e => v.ctrl.auto = e.target.checked;
+  }
+  if (S.dirty.studio) {
+    S.dirty.studio = false;
+    S.studio.ped.material.color.set(shade(palette().dark, .12));
+    renderStudioList();
+    showStudioProduct(S.brand.products.find(p => p.id === S.studioSel) ? S.studioSel : S.brand.products[0].id);
+  }
+}
+function renderStudioList() {
+  $("#studioList").innerHTML = S.brand.products.map(p => `
+    <div class="studio-item ${p.id === S.studioSel ? "active" : ""}" data-sid="${esc(p.id)}">
+      ${S.snaps[p.id] ? `<img src="${S.snaps[p.id]}" alt="">` : `<img alt="">`}
+      <div><div class="n">${esc(p.name)}</div><div class="k">${esc(p.shape)} · ${money(p.price_usd)}</div></div></div>`).join("");
+  $$("#studioList .studio-item").forEach(el => el.onclick = () => showStudioProduct(el.dataset.sid));
+}
+function showStudioProduct(id) {
+  const v = S.studio, p = S.brand.products.find(x => x.id === id); if (!p) return;
+  S.studioSel = id;
+  $$("#studioList .studio-item").forEach(el => el.classList.toggle("active", el.dataset.sid === id));
+  if (v.obj) v.scene.remove(v.obj);
+  v.obj = buildProduct(p); v.scene.add(v.obj);
+  const f = frameObject(v.obj);
+  v.ctrl.target.copy(f.center); v.ctrl.r = Math.max(1.6, f.max * 2.6);
+  const ped = Math.max(.7, Math.max(f.size.x, f.size.z) * .85); v.ped.scale.set(ped, 1, ped);
+  renderStudioInfo(p);
+}
+function renderStudioInfo(p) {
+  $("#studioInfo").innerHTML = `
+    <div><div class="sec-title">${esc(p.type)}</div><h3 style="font-size:20px">${esc(p.name)}</h3><div class="muted">${money(p.price_usd)} · ${esc(p.size)}</div></div>
+    <p class="muted" style="margin:0;font-size:13px">${esc(p.description)}</p>
+    <div class="sec-title" style="margin:6px 0 0">Customize packaging</div>
+    <label class="field"><span>Shape</span><select id="stShape">${SHAPES.map(s => `<option ${s === p.shape ? "selected" : ""}>${s}</option>`).join("")}</select></label>
+    <label class="field"><span>Finish</span><select id="stFinish">${Object.keys(FIN).map(s => `<option ${s === p.finish ? "selected" : ""}>${s}</option>`).join("")}</select></label>
+    <div class="color-row">Packaging color <input type="color" id="stBody" value="${p.body_hex}"></div>
+    <div class="color-row">Cap / trim color <input type="color" id="stAccent" value="${p.accent_hex}"></div>
+    <div class="color-row">Product shade <input type="color" id="stShade" value="${p.shade_hex}"></div>
+    <div class="sec-title" style="margin:6px 0 0">Texture</div>
+    <img src="${S.tex[p.id]?.labelCanvas?.toDataURL("image/jpeg", .8) || ""}" style="width:100%;border-radius:10px;border:1px solid var(--line)" alt="Label texture">
+    <div class="muted" style="font-size:12px">${S.art[p.id] ? "AI-generated artwork + brand typography" : "Procedural pattern (generate an AI texture with the button on the left)"}</div>`;
+  const upd = async (k, val) => {
+    p[k] = val; await composeTextures(p); showStudioProduct(p.id);
+    S.dirty.store = S.dirty.site = true; clearTimeout(upd.t); upd.t = setTimeout(async () => { await snapshotAll(); renderStudioList(); renderProducts(); save(); }, 600);
+  };
+  $("#stShape").onchange = e => upd("shape", e.target.value);
+  $("#stFinish").onchange = e => upd("finish", e.target.value);
+  $("#stBody").oninput = e => upd("body_hex", e.target.value);
+  $("#stAccent").oninput = e => upd("accent_hex", e.target.value);
+  $("#stShade").oninput = e => upd("shade_hex", e.target.value);
+}
+
+/* =====================================================================
+   3D Store tab — walkable first-person retail space
+   ===================================================================== */
+function signTexture(w, h, draw) {
+  const c = canvas(w, h), g = c.getContext("2d"); draw(g, w, h);
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; return t;
+}
+async function ensureStore() {
+  if (!arr(S.brand?.products).length) return;
+  if (!has3D()) { $("#storeView").innerHTML = `<div class="no3d">3D engine (three.js) could not load — check your internet connection.</div>`; return; }
+  if (!S.store) {
+    const v = S.store = new Viewer($("#storeView"), {fov: 70});
+    v.spin = []; v.picks = [];
+    v.ctrl = fpsControls(v);
+    v.updaters.push(dt => v.spin.forEach(o => o.rotation.y += dt * .6));
+  }
+  if (S.dirty.store) { S.dirty.store = false; await buildStore(S.store); }
+}
+async function buildStore(v) {
+  const sc = v.scene, pal = palette(), id = S.brand.identity, ps = S.brand.products;
+  sc.clear(); v.spin = []; v.picks = [];
+  sc.background = new THREE.Color(pal.dark); sc.fog = new THREE.Fog(pal.dark, 18, 40);
+  const W = 16, D = 20, H = 4.4;
+  const wallC = mix(pal.light, "#ffffff", .3), trim = pal.primary, wood = mix(pal.secondary, "#8a6a4a", .5);
+
+  // lights
+  sc.add(new THREE.HemisphereLight(0xffffff, 0x555566, .65));
+  [[0, -6], [0, 0], [0, 6]].forEach(([x, z]) => { const l = new THREE.PointLight(0xfff4e8, .55, 16, 2); l.position.set(x, H - .3, z); sc.add(l); });
+  const sun = new THREE.DirectionalLight(0xffffff, .5); sun.position.set(4, 8, 6); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, {left: -10, right: 10, top: 12, bottom: -12, near: 1, far: 30}); sun.shadow.camera.updateProjectionMatrix(); sc.add(sun);
+
+  // floor
+  const fl = signTexture(512, 512, (g, w, h) => {
+    const a = mix(pal.light, "#d8d2ca", .5), b = shade(a, -.08);
+    for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { g.fillStyle = (x + y) % 2 ? a : b; g.fillRect(x * 128, y * 128, 128, 128); }
+    g.strokeStyle = "rgba(0,0,0,.08)"; for (let i = 0; i <= 4; i++) { g.beginPath(); g.moveTo(i * 128, 0); g.lineTo(i * 128, 512); g.moveTo(0, i * 128); g.lineTo(512, i * 128); g.stroke(); }
+  });
+  fl.wrapS = fl.wrapT = THREE.RepeatWrapping; fl.repeat.set(W / 2, D / 2);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), new THREE.MeshStandardMaterial({map: fl, roughness: .35, metalness: .05}));
+  floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor);
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(W, D), Mat(shade(wallC, -.05), {roughness: .9}));
+  ceil.rotation.x = Math.PI / 2; ceil.position.y = H; sc.add(ceil);
+  [[-6], [0], [6]].forEach(([z]) => { const pnl = new THREE.Mesh(new THREE.PlaneGeometry(3, .6), new THREE.MeshBasicMaterial({color: 0xfffaf0})); pnl.rotation.x = Math.PI / 2; pnl.position.set(0, H - .01, z); sc.add(pnl); });
+
+  // walls
+  const wallM = Mat(wallC, {roughness: .85});
+  const box = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; sc.add(m); return m; };
+  box(W, H, .2, wallM, 0, H / 2, -D / 2); box(W, H, .2, wallM, 0, H / 2, D / 2);
+  box(.2, H, D, wallM, -W / 2, H / 2, 0); box(.2, H, D, wallM, W / 2, H / 2, 0);
+  box(W, .25, .25, Mat(trim, {roughness: .4}), 0, .125, -D / 2 + .12);
+
+  // back-wall sign with logo
+  const logoImg = await loadImg("data:image/svg+xml;charset=utf-8," + encodeURIComponent(id.logo.svg));
+  const signT = signTexture(2048, 640, (g, w, h) => {
+    g.fillStyle = pal.dark; g.fillRect(0, 0, w, h);
+    g.fillStyle = "#fff"; rr(g, 60, 60, w - 120, h - 120, 40); g.globalAlpha = .06; g.fill(); g.globalAlpha = 1;
+    if (logoImg) { g.fillStyle = pal.light; rr(g, 120, 140, 720, 240, 30); g.fill(); drawContain(g, logoImg, 140, 150, 680, 220); }
+    g.fillStyle = pal.light; g.textAlign = logoImg ? "left" : "center"; spacing(g, 18);
+    fitFont(g, id.name.toUpperCase(), 700, HF(), 170, logoImg ? 1050 : 1700); g.fillText(id.name.toUpperCase(), logoImg ? 920 : w / 2, 330); spacing(g, 2);
+    g.fillStyle = pal.accent; fitFont(g, id.tagline || "", 400, BF(), 56, logoImg ? 1050 : 1700); g.fillText(id.tagline || "", logoImg ? 920 : w / 2, 450);
+  });
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(9, 2.8), new THREE.MeshBasicMaterial({map: signT})); sign.position.set(0, 2.85, -D / 2 + .12); sc.add(sign);
+
+  // product instances (cloned from master models)
+  const masters = {}; ps.forEach(p => masters[p.id] = buildProduct(p));
+  const place = (p, x, y, z, height, rotY = 0, spin = false) => {
+    const o = masters[p.id].clone(); const f = frameObject(o), s = height / f.size.y;
+    o.scale.setScalar(s); o.position.set(x, y, z); o.rotation.y = rotY; o.userData.product = p;
+    if (height < .5) o.traverse(m => m.castShadow = false); // small shelf items: skip shadow pass
+    sc.add(o); v.picks.push(o); if (spin) v.spin.push(o); return o;
+  };
+
+  // wall shelving (left & right)
+  const shelfM = Mat(trim, {roughness: .45}), backM = Mat(shade(pal.light, -.06), {roughness: .8}), woodM = Mat(wood, {roughness: .6});
+  let k = 0;
+  [-1, 1].forEach(side => {
+    const x = side * (W / 2 - .45);
+    for (let u = 0; u < 4; u++) {
+      const z = -6.5 + u * 3.1;
+      box(.08, 2.7, 2.9, backM, side * (W / 2 - .14), 1.45, z);
+      box(.9, .1, 2.9, shelfM, x, .1, z);
+      [.75, 1.45, 2.15].forEach((y, tier) => {
+        box(.85, .05, 2.9, woodM, x, y, z);
+        for (let s = 0; s < 4; s++) place(ps[(k++) % ps.length], x, y + .025, z - 1.05 + s * .7, .42 + (tier === 1 ? .04 : 0), -side * Math.PI / 2);
+      });
+      box(.92, .3, 2.9, shelfM, x, 2.85, z);
+    }
+  });
+
+  // center displays
+  const tableM = Mat(pal.light, {roughness: .3}), tableTop = Mat(trim, {roughness: .25, metalness: .2});
+  [[-2.6, -1.5], [2.6, -1.5], [-2.6, 3], [2.6, 3]].forEach(([x, z], i) => {
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(.85, .95, .95, 48), tableM); t.position.set(x, .475, z); t.castShadow = t.receiveShadow = true; sc.add(t);
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(.9, .9, .06, 48), tableTop); top.position.set(x, .98, z); sc.add(top);
+    place(ps[i % ps.length], x, 1.01, z, .75, 0, true);
+    [0, 1, 2].forEach(j => { const a = j / 3 * Math.PI * 2 + .5; place(ps[(i + j + 1) % ps.length], x + Math.cos(a) * .6, 1.01, z + Math.sin(a) * .6, .32, -a + Math.PI / 2); });
+  });
+  // hero plinth with spotlight
+  const pl = new THREE.Mesh(new THREE.CylinderGeometry(.7, .8, 1.15, 48), Mat(pal.dark, {roughness: .2, metalness: .3})); pl.position.set(0, .575, -6.6); pl.castShadow = true; sc.add(pl);
+  const hero = place(ps[0], 0, 1.15, -6.6, 1.1, 0, true);
+  const spot = new THREE.SpotLight(0xffffff, 1.2, 8, .45, .5); spot.position.set(0, H - .1, -5.6); spot.target = hero; sc.add(spot);
+
+  // counter
+  box(3.2, 1.05, .9, Mat(pal.dark, {roughness: .35}), 4.6, .525, 6.6);
+  box(3.3, .06, 1, tableTop, 4.6, 1.08, 6.6);
+  const cs = new THREE.Mesh(new THREE.PlaneGeometry(2.6, .5), new THREE.MeshBasicMaterial({map: signTexture(1024, 200, (g, w, h) => { g.fillStyle = pal.dark; g.fillRect(0, 0, w, h); g.fillStyle = pal.light; g.textAlign = "center"; g.textBaseline = "middle"; spacing(g, 10); g.font = `700 90px ${HF()}`; g.fillText("CHECKOUT", w / 2, h / 2); })}));
+  cs.position.set(4.6, .6, 6.14); cs.rotation.y = Math.PI; sc.add(cs); // faces into the room
+
+  // merch rack
+  const items = arr(S.brand.merch?.items);
+  if (items.length) {
+    const rx = -4.6, rz = 6.8;
+    box(.06, 1.9, .06, metalM(pal), rx - 1.6, .95, rz); box(.06, 1.9, .06, metalM(pal), rx + 1.6, .95, rz); box(3.3, .05, .05, metalM(pal), rx, 1.9, rz);
+    const cvs = await Promise.all(items.slice(0, 5).map((it, i) => drawMerch(it, i, {bg: false})));
+    cvs.forEach((c, i) => {
+      const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding;
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(.95, .95), new THREE.MeshStandardMaterial({map: t, transparent: true, alphaTest: .05, side: THREE.DoubleSide, roughness: .9}));
+      m.position.set(rx - 1.3 + i * .65, 1.35, rz - .02 + i * .03); m.rotation.y = Math.PI; sc.add(m);
+    });
+  }
+
+  // posters: AI art or product renders, framed on the walls
+  const posters = ps.map(p => S.art[p.id] || S.snaps[p.id]).filter(Boolean).slice(0, 4);
+  const slots = [{x: -W / 2 + .11, z: 6.3, ry: Math.PI / 2}, {x: W / 2 - .11, z: 4.6, ry: -Math.PI / 2}, {x: -6.1, z: -D / 2 + .11, ry: 0}, {x: 6.1, z: -D / 2 + .11, ry: 0}];
+  for (let i = 0; i < posters.length; i++) {
+    const img = await loadImg(posters[i]); if (!img) continue;
+    const t = signTexture(512, 640, (g, w, h) => { g.fillStyle = pal.light; g.fillRect(0, 0, w, h); drawCover(g, img, 24, 24, w - 48, h - 120); g.fillStyle = pal.dark; g.textAlign = "center"; g.font = `700 40px ${HF()}`; g.fillText(id.name.toUpperCase(), w / 2, h - 44); });
+    const sl = slots[i], nx = Math.sin(sl.ry), nz = Math.cos(sl.ry);
+    const frame = new THREE.Mesh(new THREE.PlaneGeometry(1.34, 1.64), Mat(pal.dark, {roughness: .4}));
+    const poster = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.5), new THREE.MeshBasicMaterial({map: t}));
+    frame.position.set(sl.x + nx * .02, 2.2, sl.z + nz * .02); poster.position.set(sl.x + nx * .03, 2.2, sl.z + nz * .03);
+    frame.rotation.y = poster.rotation.y = sl.ry; sc.add(frame, poster);
+  }
+
+  // plants (simple stylised)
+  [[-7, 9], [7, -9.2], [-7, -9.2]].forEach(([x, z]) => {
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(.32, .25, .55, 24), Mat(pal.dark, {roughness: .5})); pot.position.set(x, .275, z); sc.add(pot);
+    for (let j = 0; j < 7; j++) { const lf = new THREE.Mesh(new THREE.SphereGeometry(.28, 12, 10), Mat("#3f7a4a", {roughness: .8})); lf.position.set(x + Math.sin(j * 2.1) * .2, .8 + j * .12, z + Math.cos(j * 2.1) * .2); lf.scale.set(1, 1.3, .6); sc.add(lf); }
+  });
+
+  v.colliders = [...[[-2.6, -1.5], [2.6, -1.5], [-2.6, 3], [2.6, 3]].map(([x, z]) => ({x, z, r: 1.25})), {x: 0, z: -6.6, r: 1.1}];
+  v.boxes = [{x0: 2.8, x1: 6.4, z0: 5.9, z1: 7.3}, {x0: -6.4, x1: -2.8, z0: 6.4, z1: 7.2}];
+  v.bounds = {x: W / 2 - 1.25, z: D / 2 - .6};
+  resetStorePos(v);
+}
+function metalM(pal) { return Mat(pal.accent, {roughness: .25, metalness: .9}); }
+function resetStorePos(v = S.store) { if (!v) return; v.camera.position.set(0, 1.65, 8.7); v.ctrl.yaw = 0; v.ctrl.pitch = -.05; }
+
+function fpsControls(v) {
+  const cam = v.camera, c = v.renderer.domElement, wrap = $("#storeWrap");
+  cam.rotation.order = "YXZ";
+  const st = {yaw: 0, pitch: 0, keys: {}, locked: false};
+  document.addEventListener("pointerlockchange", () => { st.locked = document.pointerLockElement === c; wrap.classList.toggle("locked", st.locked); });
+  document.addEventListener("mousemove", e => { if (!st.locked) return; st.yaw -= e.movementX * .0022; st.pitch = clamp(st.pitch - e.movementY * .0022, -1.25, 1.25); });
+  let down = null;
+  c.addEventListener("pointerdown", e => { down = {x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, moved: 0}; c.setPointerCapture(e.pointerId); });
+  c.addEventListener("pointermove", e => {
+    if (!down || st.locked) return;
+    const dx = e.clientX - down.lx, dy = e.clientY - down.ly; down.lx = e.clientX; down.ly = e.clientY; down.moved += Math.abs(dx) + Math.abs(dy);
+    st.yaw += dx * .004; st.pitch = clamp(st.pitch + dy * .004, -1.25, 1.25);
+  });
+  c.addEventListener("pointerup", e => {
+    if (!down) return; const click = down.moved < 6; down = null; if (!click) return;
+    if (st.locked) { pick(0, 0); return; }
+    const r = c.getBoundingClientRect();
+    const hit = pick(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    if (!hit && e.pointerType === "mouse" && c.requestPointerLock) { $("#storePopup").classList.remove("show"); c.requestPointerLock(); }
+  });
+  const typing = e => /input|textarea|select/i.test(e.target.tagName);
+  addEventListener("keydown", e => {
+    if (S.tab !== "store" || typing(e)) return;
+    st.keys[e.code] = true;
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) e.preventDefault();
+    if (e.code === "KeyE") pick(0, 0);
+  });
+  addEventListener("keyup", e => st.keys[e.code] = false);
+  addEventListener("blur", () => st.keys = {});
+  $$("#pad button").forEach(b => {
+    b.addEventListener("pointerdown", e => { e.preventDefault(); st.keys[b.dataset.key] = true; });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(ev => b.addEventListener(ev, () => st.keys[b.dataset.key] = false));
+  });
+  const ray = new THREE.Raycaster(), tmp = new THREE.Vector2();
+  function pick(x, y) {
+    tmp.set(x, y); ray.setFromCamera(tmp, cam); ray.far = 6;
+    const hits = ray.intersectObjects(v.picks, true);
+    for (const h of hits) { let o = h.object; while (o && !o.userData.product) o = o.parent; if (o) { showStorePopup(o.userData.product); return true; } }
+    return false;
+  }
+  v.updaters.push(dt => {
+    const k = st.keys, sp = (k.ShiftLeft || k.ShiftRight ? 5.2 : 2.6) * dt;
+    let f = (k.KeyW || k.ArrowUp ? 1 : 0) - (k.KeyS || k.ArrowDown ? 1 : 0), s = (k.KeyD ? 1 : 0) - (k.KeyA ? 1 : 0);
+    if (k.ArrowLeft) st.yaw += dt * 1.8; if (k.ArrowRight) st.yaw -= dt * 1.8;
+    if (f || s) {
+      const len = Math.hypot(f, s); f /= len; s /= len;
+      const p = cam.position, sin = Math.sin(st.yaw), cos = Math.cos(st.yaw);
+      p.x += (-sin * f + cos * s) * sp; p.z += (-cos * f - sin * s) * sp;
+      if (v.bounds) { p.x = clamp(p.x, -v.bounds.x, v.bounds.x); p.z = clamp(p.z, -v.bounds.z, v.bounds.z); }
+      for (const o of v.colliders || []) { const dx = p.x - o.x, dz = p.z - o.z, d = Math.hypot(dx, dz); if (d < o.r && d > 0) { p.x = o.x + dx / d * o.r; p.z = o.z + dz / d * o.r; } }
+      for (const b of v.boxes || []) if (p.x > b.x0 && p.x < b.x1 && p.z > b.z0 && p.z < b.z1) {
+        const opts = [[p.x - b.x0, "x", b.x0], [b.x1 - p.x, "x", b.x1], [p.z - b.z0, "z", b.z0], [b.z1 - p.z, "z", b.z1]].sort((a, b2) => a[0] - b2[0]);
+        p[opts[0][1]] = opts[0][2];
+      }
+      p.y = 1.65 + Math.sin(performance.now() / 140) * .015;
+    }
+    cam.rotation.set(st.pitch, st.yaw, 0);
+  });
+  return st;
+}
+function showStorePopup(p) {
+  if (document.pointerLockElement) document.exitPointerLock();
+  const el = $("#storePopup");
+  el.innerHTML = `<img src="${S.snaps[p.id] || ""}" alt="">
+    <div style="flex:1;min-width:0"><div class="muted" style="font-size:12px">${esc(p.type)}</div><h3>${esc(p.name)}</h3>
+      <div style="margin:2px 0 6px"><b>${money(p.price_usd)}</b> <span class="muted">· ${esc(p.size)}</span></div>
+      <div class="muted" style="font-size:12.5px;max-height:54px;overflow:hidden">${esc(p.description)}</div>
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn sm primary" id="popAdd">Add to bag</button><button class="btn sm" id="popView">View in 3D Studio</button><button class="btn sm ghost" id="popClose">Close</button></div></div>`;
+  el.classList.add("show");
+  $("#popAdd").onclick = () => { S.cart.push(p); updateCart(); toast(`Added ${p.name} to bag`); el.classList.remove("show"); };
+  $("#popView").onclick = () => { S.studioSel = p.id; S.dirty.studio = true; showTab("studio"); };
+  $("#popClose").onclick = () => el.classList.remove("show");
+}
+function updateCart() { $("#cartBadge").textContent = `🛍 ${S.cart.length} · ${money(S.cart.reduce((a, p) => a + p.price_usd, 0))}`; }
+
+/* =====================================================================
+   Website builder
+   ===================================================================== */
+function buildSiteHTML() {
+  const b = S.brand, id = b.identity, c = b.site_copy || {}, pal = palette(), ps = arr(b.products);
+  const hero = c.hero || {}, seo = c.seo || {};
+  const H = id.fonts.heading, Bd = id.fonts.body, q = f => encodeURIComponent(f).replace(/%20/g, "+");
+  const items = arr(b.merch?.items);
+  const merchImgs = S.merchCanvas.map(cv => { try { return cv.toDataURL("image/jpeg", .85); } catch { return ""; } });
+  const heroImg = S.snaps[ps[0]?.id] || "";
+  const allIngr = [...new Set(ps.flatMap(p => p.ingredients.slice(0, 4).map(i => i.common || i.inci)))].slice(0, 14);
+  const onP = ink(pal.primary);
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(seo.title || id.name + " — " + (id.tagline || ""))}</title>
+<meta name="description" content="${esc(seo.description || id.elevator_pitch || "")}">
+<!-- Generated by Producter AI. Testimonials below are placeholders: replace them with real customer reviews before publishing. -->
+<link href="https://fonts.googleapis.com/css2?family=${q(H)}:wght@400;700&family=${q(Bd)}:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=${q(H)}&family=${q(Bd)}&display=swap" rel="stylesheet">
+<style>
+:root{--p:${pal.primary};--s:${pal.secondary};--a:${pal.accent};--l:${pal.light};--d:${pal.dark};--on-p:${onP}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:"${Bd}",system-ui,sans-serif;color:var(--d);background:var(--l);line-height:1.6}
+h1,h2,h3{font-family:"${H}",Georgia,serif;line-height:1.1;margin:0 0 .4em;font-weight:700}
+a{color:inherit}img{max-width:100%;display:block}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+.announce{background:var(--d);color:var(--l);text-align:center;font-size:13px;padding:8px 16px;letter-spacing:.04em}
+nav{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;max-width:1180px;margin:0 auto;gap:16px}
+nav .logo svg{height:46px;width:auto}nav .links{display:flex;gap:26px;font-size:14px}nav .links a{text-decoration:none;opacity:.8}
+.btn{display:inline-block;background:var(--p);color:var(--on-p);padding:14px 28px;border-radius:999px;text-decoration:none;font-weight:600;border:2px solid var(--p);cursor:pointer;font-size:15px}
+.btn.ghost{background:transparent;color:var(--d);border-color:currentColor}
+.hero{display:grid;grid-template-columns:1.05fr 1fr;gap:48px;align-items:center;padding:40px 24px 80px}
+.eyebrow{text-transform:uppercase;letter-spacing:.18em;font-size:12px;font-weight:600;color:var(--p)}
+.hero h1{font-size:clamp(40px,6vw,74px);margin:14px 0 18px}.hero p{font-size:18px;opacity:.8;max-width:520px;margin:0 0 30px}
+.hero-img{background:radial-gradient(circle at 50% 45%,#fff 0,color-mix(in srgb,var(--s) 35%,var(--l)) 70%);border-radius:32px;aspect-ratio:1;display:grid;place-items:center;padding:30px}
+.hero-img img{max-height:100%;filter:drop-shadow(0 30px 40px rgba(0,0,0,.18))}
+section{padding:80px 0}.center{text-align:center}.lead{max-width:640px;margin:0 auto 40px;opacity:.75;font-size:17px}
+h2{font-size:clamp(30px,4vw,46px)}
+.features{background:#fff}.fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}.fgrid .ic{font-size:30px}.fgrid h3{font-size:20px;margin-top:10px}.fgrid p{opacity:.75;margin:0;font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:26px}
+.card{background:#fff;border-radius:24px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 30px rgba(0,0,0,.05)}
+.card .im{background:color-mix(in srgb,var(--s) 22%,#fff);aspect-ratio:1;display:grid;place-items:center;padding:20px}
+.card .bd{padding:20px;display:flex;flex-direction:column;gap:6px;flex:1}.card h3{font-size:21px;margin:0}
+.card .type{font-size:12px;text-transform:uppercase;letter-spacing:.1em;opacity:.6}.card .price{font-weight:700;font-size:18px}
+.card p{margin:0;font-size:14px;opacity:.78}.card details{font-size:13px;opacity:.85}.card summary{cursor:pointer;font-weight:600;margin:6px 0}
+.card .btn{margin-top:auto;text-align:center;padding:11px}
+.spot{background:var(--d);color:var(--l)}.spot .eyebrow{color:var(--a)}.chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:24px}
+.chip{border:1px solid color-mix(in srgb,var(--l) 30%,transparent);padding:8px 16px;border-radius:999px;font-size:14px}
+.story{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}.story p{white-space:pre-line;opacity:.85}
+.vals{display:grid;grid-template-columns:1fr 1fr;gap:14px}.val{background:#fff;border-radius:18px;padding:22px;font-weight:600;font-family:"${H}",serif;font-size:19px}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:20px}.mgrid .card .im{padding:0}
+.quotes{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}.quote{background:#fff;border-radius:24px;padding:28px;font-size:17px}.quote b{display:block;margin-top:14px;font-size:14px;opacity:.7}
+.faq{max-width:760px;margin:0 auto}.faq details{border-bottom:1px solid color-mix(in srgb,var(--d) 15%,transparent);padding:18px 0}.faq summary{cursor:pointer;font-weight:600;font-size:17px}
+.news{background:var(--p);color:var(--on-p);border-radius:32px;padding:56px;text-align:center}
+.news form{display:flex;gap:10px;max-width:460px;margin:24px auto 0}.news input{flex:1;padding:14px 18px;border-radius:999px;border:0;font:inherit}
+.news .btn{background:var(--d);border-color:var(--d);color:var(--l)}
+footer{padding:50px 24px;text-align:center;font-size:14px;opacity:.7}
+@media(max-width:860px){.hero,.story{grid-template-columns:1fr}.fgrid{grid-template-columns:1fr 1fr}.quotes{grid-template-columns:1fr}nav .links{display:none}.news{padding:36px 20px}.news form{flex-direction:column}}
+</style></head><body>
+<div class="announce">${esc(c.announcement || "Free shipping on your first order · " + (id.tagline || ""))}</div>
+<nav><div class="logo">${id.logo.svg}</div><div class="links"><a href="#shop">Shop</a><a href="#ingredients">Ingredients</a><a href="#story">Story</a>${items.length ? '<a href="#merch">Merch</a>' : ""}<a href="#faq">FAQ</a></div><a class="btn ghost" href="#shop" style="padding:9px 18px">Bag (0)</a></nav>
+<header class="hero wrap"><div><div class="eyebrow">${esc(hero.eyebrow || b.brief.category || "New collection")}</div><h1>${esc(hero.headline || id.tagline || id.name)}</h1><p>${esc(hero.subheadline || id.elevator_pitch || "")}</p>
+<a class="btn" href="#shop">${esc(hero.cta || "Shop the collection")}</a> &nbsp; <a class="btn ghost" href="#story">Our story</a></div>
+<div class="hero-img">${heroImg ? `<img src="${heroImg}" alt="${esc(ps[0]?.name)}">` : ""}</div></header>
+${arr(c.features).length ? `<section class="features"><div class="wrap fgrid">${arr(c.features).map(f => `<div><div class="ic">${esc(f.icon)}</div><h3>${esc(f.title)}</h3><p>${esc(f.body)}</p></div>`).join("")}</div></section>` : ""}
+<section id="shop"><div class="wrap"><div class="center"><div class="eyebrow">The collection</div><h2>Shop ${esc(id.name)}</h2><p class="lead">${esc(c.collection_intro || "")}</p></div>
+<div class="grid">${ps.map(p => `<div class="card"><div class="im">${S.snaps[p.id] ? `<img src="${S.snaps[p.id]}" alt="${esc(p.name)}">` : ""}</div><div class="bd">
+<div class="type">${esc(p.type)}</div><h3>${esc(p.name)}</h3><div class="price">${money(p.price_usd)} <small style="font-weight:400;opacity:.6">${esc(p.size)}</small></div><p>${esc(p.description)}</p>
+<details><summary>Ingredients</summary>${esc(p.ingredients.map(i => i.inci).join(", "))}</details>
+<a class="btn" href="#shop">Add to bag</a></div></div>`).join("")}</div></div></section>
+<section class="spot" id="ingredients"><div class="wrap center"><div class="eyebrow">Ingredients</div><h2>${esc(c.ingredient_spotlight?.title || "What's inside")}</h2><p class="lead" style="opacity:.8">${esc(c.ingredient_spotlight?.body || "")}</p>
+<div class="chips">${allIngr.map(i => `<span class="chip">${esc(i)}</span>`).join("")}</div></div></section>
+<section id="story"><div class="wrap story"><div><div class="eyebrow">Our story</div><h2>${esc(c.about?.title || "Why " + id.name)}</h2><p>${esc(c.about?.body || id.story || "")}</p></div>
+<div><p style="font-family:'${H}',serif;font-size:24px;line-height:1.35;margin-top:0">“${esc(id.mission || "")}”</p><div class="vals">${id.values.slice(0, 4).map(v => `<div class="val">${esc(v)}</div>`).join("")}</div></div></div></section>
+${items.length ? `<section id="merch" style="background:#fff"><div class="wrap"><div class="center"><div class="eyebrow">Merch</div><h2>Wear the brand</h2></div>
+<div class="mgrid">${items.map((it, i) => `<div class="card"><div class="im">${merchImgs[i] ? `<img src="${merchImgs[i]}" alt="${esc(it.name)}">` : ""}</div><div class="bd"><h3 style="font-size:18px">${esc(it.name)}</h3><div class="price">${money(it.price_usd)}</div></div></div>`).join("")}</div></div></section>` : ""}
+${arr(c.testimonials).length ? `<section><div class="wrap"><div class="center"><div class="eyebrow">Loved by</div><h2>Kind words</h2></div><div class="quotes">${arr(c.testimonials).map(t => `<div class="quote">“${esc(t.quote)}”<b>— ${esc(t.name)}</b></div>`).join("")}</div></div></section>` : ""}
+${arr(c.faqs).length ? `<section id="faq"><div class="wrap"><div class="center"><div class="eyebrow">FAQ</div><h2>Questions, answered</h2></div><div class="faq">${arr(c.faqs).map(f => `<details><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join("")}</div></div></section>` : ""}
+<section><div class="wrap"><div class="news"><h2>${esc(c.newsletter?.title || "Join the list")}</h2><p style="opacity:.85;margin:0">${esc(c.newsletter?.body || "Early access, launches and rituals — straight to your inbox.")}</p>
+<form action="#"><input type="email" placeholder="Your email" aria-label="Email"><button class="btn" type="submit">${esc(c.newsletter?.cta || "Subscribe")}</button></form></div></div></section>
+<footer><div style="margin-bottom:10px;font-family:'${H}',serif;font-size:22px;opacity:1">${esc(id.name)}</div>${esc(c.footer_blurb || id.tagline || "")}<br>© ${new Date().getFullYear()} ${esc(id.name)}. All rights reserved.</footer>
+</body></html>`;
+}
+function renderWebsite() {
+  if (!S.brand?.identity || !arr(S.brand.products).length) return;
+  S.siteHTML = buildSiteHTML(); S.dirty.site = false;
+  $("#siteFrame").srcdoc = S.siteHTML;
+  $("#siteUrl").textContent = `https://${slug(S.brand.identity.name).replace(/-/g, "")}.com`;
+}
+
+/* =====================================================================
+   Agent chat — edit the brand conversationally
+   ===================================================================== */
+function brandForChat() {
+  const b = JSON.parse(JSON.stringify(S.brand));
+  if (b.identity?.logo) b.identity.logo.svg = "(svg omitted — return a new svg only if the user asks to change the logo)";
+  return b;
+}
+function renderChat() {
+  $("#msgs").innerHTML = S.chat.map(m => `<div class="msg ${m.role}${m.thinking ? " thinking" : ""}">${esc(m.text)}</div>`).join("");
+  $("#msgs").scrollTop = 1e9;
+}
+async function sendChat(text) {
+  text = text.trim(); if (!text || S.busy) return;
+  if (!S.brand?.identity) { toast("Generate a brand first.", true); return; }
+  S.chat.push({role: "user", text}); const thinking = {role: "ai", text: "Working on it…", thinking: true}; S.chat.push(thinking); renderChat();
+  $("#chatInput").value = ""; S.busy = true;
+  try {
+    const history = S.chat.filter(m => !m.thinking).slice(-8).map(m => `${m.role === "user" ? "User" : "Producter"}: ${m.text}`).join("\n");
+    const r = await askJSON(SYS, `You are editing an existing brand that you generated.
+CURRENT BRAND JSON:
+${JSON.stringify(brandForChat())}
+
+RECENT CHAT:
+${history}
+
+USER REQUEST: ${text}
+
+Respond as JSON: {"reply":"friendly plain-text answer; if you changed things, summarize what changed",
+"updates":{ "identity"?: {...}, "products"?: [...], "merch"?: {...}, "marketing"?: {...}, "site_copy"?: {...} },
+"regenerate_art_for":["product ids whose AI packaging artwork should be regenerated"]}
+Only include sections you actually changed, and return each changed section COMPLETE using the same schema as the current JSON. Questions that need no changes: return "updates":{}.`);
+    const u = r.updates || {}, changed = [];
+    if (u.identity) { const keepSvg = S.brand.identity.logo.svg; S.brand.identity = normIdentity({...S.brand.identity, ...u.identity, logo: {...S.brand.identity.logo, ...(u.identity.logo || {})}}, S.brand.brief); if (!u.identity.logo?.svg || /omitted/.test(u.identity.logo.svg)) S.brand.identity.logo.svg = keepSvg; await applyFonts(); renderBrand(); changed.push("identity"); }
+    if (u.products) { S.brand.products = normProducts(u.products); changed.push("products"); }
+    if (u.merch) { S.brand.merch = normMerch(u.merch); changed.push("merch"); }
+    if (u.marketing) { S.brand.marketing = u.marketing; renderMarketing(); changed.push("marketing"); }
+    if (u.site_copy) { S.brand.site_copy = u.site_copy; changed.push("website"); }
+    thinking.text = r.reply || "Done."; thinking.thinking = false; renderChat();
+    const regen = arr(r.regenerate_art_for).filter(id => S.brand.products.some(p => p.id === id));
+    if (regen.length && $("#optTextures").checked) {
+      thinking.text += `\n\n🎨 Generating new artwork for ${regen.length} product(s)…`; renderChat();
+      await pool(regen, S.conc, async id => { try { S.art[id] = await genImage(P.productArt(S.brand.products.find(p => p.id === id))); } catch (e) { if (fatal(e)) throw e; log(e.message, "w"); } });
+    }
+    if (changed.includes("identity") || changed.includes("products") || regen.length) {
+      await refreshTextures(); await snapshotAll(); renderProducts();
+    }
+    if (changed.includes("identity") || changed.includes("merch") || regen.length) await renderMerch();
+    if (changed.length || regen.length) { markDirty(); renderWebsite(); save(); toast("Updated: " + [...changed, ...(regen.length ? ["textures"] : [])].join(", ")); }
+  } catch (e) {
+    thinking.text = "Sorry — that failed: " + e.message; thinking.thinking = false; renderChat();
+  } finally { S.busy = false; }
+}
+
+/* =====================================================================
+   Persistence, export, settings
+   ===================================================================== */
+function save() {
+  if (!S.brand) return;
+  lsSet("pai_project", JSON.stringify(S.brand));
+  if (!lsSet("pai_art", JSON.stringify({art: S.art, merch: S.merchArt}))) lsDel("pai_art");
+}
+async function loadProject(brand, art = {}, merchArt = {}, {fromDemo = false} = {}) {
+  S.brand = brand; S.art = art; S.merchArt = merchArt; S.tex = {}; S.snaps = {}; S.cart = []; updateCart();
+  S.brand.identity = normIdentity(S.brand.identity, S.brand.brief || {});
+  S.brand.products = normProducts(S.brand.products);
+  if (S.brand.merch) S.brand.merch = normMerch(S.brand.merch);
+  renderSteps(); STEPS.forEach(([id]) => setStep(id, "done"));
+  await applyFonts();
+  renderBrand(); await refreshTextures(); await snapshotAll(); renderProducts();
+  if (S.brand.merch) await renderMerch();
+  if (S.brand.marketing) renderMarketing();
+  markDirty(); renderWebsite();
+  enableTabs(["brand", "products", "studio", "store", "website", "merch", "marketing", "agent"]);
+  S.chat = [{role: "ai", text: fromDemo ? `This is the offline demo of Zirein. Ask me to change anything (this uses your API key and selected model).` : `Welcome back! ${S.brand.identity.name} is loaded. What should we change?`}];
+  renderChat();
+  showTab("brand");
+}
+function exportAs(kind) {
+  if (!S.brand?.identity) { toast("Nothing to export yet.", true); return; }
+  const n = slug(S.brand.identity.name);
+  if (kind === "json") download(n + "-brand-kit.json", JSON.stringify({...S.brand, ai_art: S.art, merch_art: S.merchArt, renders: S.snaps}, null, 2), "application/json");
+  if (kind === "site") { if (S.dirty.site || !S.siteHTML) renderWebsite(); download(n + "-website.html", S.siteHTML, "text/html"); }
+  if (kind === "renders") Object.entries(S.snaps).forEach(([id, url], i) => setTimeout(() => download(`${n}-${id}.png`, url), i * 250));
+  if (kind === "merch") S.merchCanvas.forEach((c, i) => setTimeout(() => download(`${n}-merch-${i + 1}.png`, c.toDataURL("image/png")), i * 250));
+}
+function openSettings() {
+  $("#setKey").value = S.key; $("#setQuality").value = S.quality; $("#setConc").value = S.conc;
+  $("#settingsModal").classList.add("show");
+}
+
+/* =====================================================================
+   Examples & offline demo data
+   ===================================================================== */
+const EXAMPLES = {
+  zirein: {name: "Zirein", category: "Makeup & cosmetics", description: "I'm Mira and I just started Zirein, my makeup brand. Generate my whole brand: a hero lipstick, a skin-tint serum, a blush/highlighter compact, a lip gloss and a setting spray — plus everything around it.", audience: "Women 18–35 who want clean, skin-first makeup that still feels luxurious", vibe: "Luxe minimal, rose & champagne gold, modern Parisian, soft-focus", tier: "premium", count: 5},
+  coffee: {name: "Nomad Roast", category: "Specialty coffee", description: "Small-batch single-origin coffee beans, drip bags and cold brew for travelers and remote workers.", audience: "Remote workers and travelers aged 22–40", vibe: "Earthy, adventurous, retro travel posters, terracotta & sand", tier: "mid", count: 4},
+  kombucha: {name: "Kōji Kombucha", category: "Craft kombucha & sparkling drinks", description: "Japanese-inspired craft kombucha in cans with flavors like yuzu-ginger and shiso-peach.", audience: "Health-conscious urban 20–35 year olds who want a fun alternative to alcohol", vibe: "Playful Japanese minimalism, bold pastel colors, sunset gradients", tier: "mid", count: 4},
+  skincare: {name: "Verda", category: "Plant-based skincare", description: "Minimalist plant-powered skincare routine: cleanser, serum, moisturizer, eye cream and body oil.", audience: "Eco-conscious adults 25–45 with sensitive skin", vibe: "Botanical, calm, sage green and cream, Scandinavian apothecary", tier: "premium", count: 5},
+};
+function fillExample(k) {
+  const e = EXAMPLES[k]; if (!e) return;
+  $("#bName").value = e.name; $("#bCategory").value = e.category; $("#bDesc").value = e.description;
+  $("#bAudience").value = e.audience; $("#bVibe").value = e.vibe; $("#bTier").value = e.tier; $("#bCount").value = e.count;
+}
+function demoBrand() {
+  const pal = [{name: "Rosé Petal", hex: "#e8a5a8", role: "primary"}, {name: "Champagne", hex: "#d9b77e", role: "accent"}, {name: "Bordeaux", hex: "#7a2a3a", role: "secondary"}, {name: "Porcelain", hex: "#faf3ee", role: "neutral"}, {name: "Noir Velours", hex: "#231a1e", role: "dark"}];
+  const I = (inci, common, purpose, percent) => ({inci, common, purpose, percent});
+  return {
+    brief: {...EXAMPLES.zirein, product_count: 5},
+    identity: {
+      name: "Zirein", tagline: "Skin first. Color second. Confidence always.",
+      elevator_pitch: "Zirein is clean, skin-caring makeup with Parisian restraint — luminous color that treats your skin as well as it looks on it.",
+      story: "Mira started Zirein at her kitchen table, frustrated that the makeup she loved left her skin tired and the 'clean' brands she tried felt clinical.\n\nZirein is her answer: formulas built around skin-loving botanicals and peptides, wrapped in packaging soft enough to leave on your vanity like jewellery.",
+      mission: "To make every application an act of skincare — and every face feel like the best version of itself.",
+      values: ["Skin-first formulas", "Radical ingredient transparency", "Quiet luxury", "Refill over landfill"],
+      audience: {primary: "Women 18–35 who want clean, skin-first makeup that still feels luxurious", persona: {name: "Léa", age: 27, description: "A design-studio project manager who wears 'no-makeup makeup' to work and a bold lip on weekends. Reads ingredient labels and values products that earn their place in her bag."}},
+      voice: {tone: ["warm", "assured", "softly witty"], do: ["Speak like a knowledgeable friend", "Explain ingredients simply", "Celebrate real skin texture"], dont: ["Use fear-based beauty claims", "Overpromise results", "Use jargon without explaining it"]},
+      palette: pal, fonts: {heading: "Cormorant Garamond", body: "DM Sans"},
+      logo: {concept: "A crescent 'Z' formed by two overlapping petals, paired with an airy serif wordmark.",
+        svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 160"><g transform="translate(80 80)"><circle r="56" fill="#e8a5a8"/><path d="M-26 -22 H24 L-24 22 H26" fill="none" stroke="#faf3ee" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><circle r="64" fill="none" stroke="#d9b77e" stroke-width="2.5"/></g><text x="162" y="100" font-family="Cormorant Garamond, serif" font-size="66" letter-spacing="10" fill="#231a1e">ZIREIN</text><text x="166" y="128" font-family="DM Sans, sans-serif" font-size="13" letter-spacing="6" fill="#7a2a3a">PARIS · SKIN FIRST</text></svg>`},
+    },
+    products: [
+      {id: "velours-lipstick", name: "Velours Satin Lipstick — Bordeaux Kiss", type: "Satin Lipstick", shape: "lipstick", tagline: "A kiss of velvet that cares.", description: "A creamy satin lipstick with squalane and peptides that keeps lips cushioned for hours. Buildable, blurring color in a deep Bordeaux.", price_usd: 32, size: "3.5 g / 0.12 oz", body_hex: "#e8a5a8", accent_hex: "#d9b77e", shade_hex: "#7a1f30", finish: "metallic",
+        ingredients: [I("Ricinus Communis Seed Oil", "Castor oil", "Emollient / shine", "32%"), I("Squalane", "Olive squalane", "Moisturizer", "18%"), I("Candelilla Cera", "Candelilla wax", "Structure", "14%"), I("Caprylic/Capric Triglyceride", "Coconut-derived oil", "Slip", "12%"), I("Butyrospermum Parkii Butter", "Shea butter", "Nourishing", "8%"), I("Mica", "Mica", "Luminosity", "6%"), I("Iron Oxides (CI 77491)", "Red iron oxide", "Pigment", "5%"), I("Palmitoyl Tripeptide-1", "Peptide", "Lip plumping care", "0.5%"), I("Tocopherol", "Vitamin E", "Antioxidant", "0.5%")],
+        claims: ["8-hour comfort wear", "Vegan & cruelty-free", "Refillable case"], how_to_use: "Glide directly onto lips from the center outward. Blot and reapply for deeper color.", packaging: {material: "Anodized aluminium case with refill bullet", sustainability: "Refill uses 70% less material", dimensions: "8.6 × 2.2 cm"}, unit_cost_usd: 4.8, art_direction: "soft rose silk drapery with champagne gold foil petals"},
+      {id: "lumiere-skin-tint", name: "Lumière Skin Tint Serum", type: "Tinted Serum", shape: "dropper", tagline: "Your skin, but well-rested.", description: "A weightless serum-tint with 3% niacinamide and hyaluronic acid. Sheer, luminous coverage that evens tone while it hydrates.", price_usd: 42, size: "30 ml / 1 fl oz", body_hex: "#f1d3c4", accent_hex: "#d9b77e", shade_hex: "#d9a98a", finish: "frosted",
+        ingredients: [I("Aqua", "Water", "Solvent", "58%"), I("Squalane", "Squalane", "Emollient", "10%"), I("Glycerin", "Glycerin", "Humectant", "7%"), I("Titanium Dioxide (CI 77891)", "Mineral pigment", "Coverage", "6%"), I("Niacinamide", "Vitamin B3", "Tone evening", "3%"), I("Iron Oxides", "Mineral pigments", "Tint", "3%"), I("Sodium Hyaluronate", "Hyaluronic acid", "Hydration", "1%"), I("Rosa Damascena Flower Water", "Rose water", "Soothing", "1%"), I("Phenoxyethanol", "Preservative", "Preservation", "0.9%")],
+        claims: ["Sheer-to-medium buildable", "Non-comedogenic", "12 inclusive shades"], how_to_use: "Shake well. Warm 2–3 drops between fingertips and press into skin.", packaging: {material: "Frosted glass bottle, aluminium collar", sustainability: "Recyclable glass, PCR bulb", dimensions: "10 × 3.5 cm"}, unit_cost_usd: 6.2, art_direction: "blurred morning light through linen curtains in peach and champagne"},
+      {id: "aube-blush-compact", name: "Aube Blush & Glow Duo", type: "Pressed Blush Compact", shape: "compact", tagline: "Dawn, pressed into powder.", description: "A silky blush and highlighter duo infused with rosehip oil for a soft-focus flush that never looks powdery.", price_usd: 38, size: "2 × 4 g", body_hex: "#e8a5a8", accent_hex: "#d9b77e", shade_hex: "#e58e95", finish: "metallic",
+        ingredients: [I("Mica", "Mica", "Base / glow", "45%"), I("Talc-free Silica", "Silica", "Soft-focus", "15%"), I("Zinc Stearate", "Zinc stearate", "Adhesion", "8%"), I("Caprylic/Capric Triglyceride", "Coconut oil", "Binder", "8%"), I("Rosa Canina Fruit Oil", "Rosehip oil", "Nourishing", "4%"), I("Iron Oxides", "Pigments", "Color", "8%"), I("Tin Oxide", "Tin oxide", "Pearl", "2%"), I("Tocopherol", "Vitamin E", "Antioxidant", "0.5%")],
+        claims: ["Talc-free", "Blurs texture", "Mirror compact"], how_to_use: "Sweep blush on the apples of cheeks; tap glow on cheekbones and cupid's bow.", packaging: {material: "Metal compact with mirror, refill pans", sustainability: "Magnetic refill pans", dimensions: "Ø 7 cm"}, unit_cost_usd: 5.4, art_direction: "rose-gold marble with soft blush watercolor clouds"},
+      {id: "glace-lip-gloss", name: "Glacé Plumping Gloss", type: "Lip Gloss", shape: "tube", tagline: "Mirror shine, zero stick.", description: "A non-sticky, glass-shine gloss with hyaluronic spheres and a gentle peppermint tingle for fuller-looking lips.", price_usd: 24, size: "8 ml / 0.27 fl oz", body_hex: "#faf3ee", accent_hex: "#d9b77e", shade_hex: "#e8a5a8", finish: "gloss",
+        ingredients: [I("Hydrogenated Polyisobutene", "Gloss base", "Shine", "55%"), I("Ricinus Communis Seed Oil", "Castor oil", "Emollient", "15%"), I("Squalane", "Squalane", "Moisture", "10%"), I("Silica Dimethyl Silylate", "Silica", "Texture", "5%"), I("Sodium Hyaluronate Crosspolymer", "HA spheres", "Plumping hydration", "2%"), I("Mentha Piperita Oil", "Peppermint oil", "Tingle", "0.5%"), I("Mica", "Mica", "Shimmer", "2%"), I("Tocopherol", "Vitamin E", "Antioxidant", "0.5%")],
+        claims: ["Non-sticky", "Visibly plumps", "Wear alone or over lipstick"], how_to_use: "Squeeze a little onto lips and spread evenly.", packaging: {material: "Soft-touch squeeze tube", sustainability: "50% PCR plastic", dimensions: "11 × 2.5 cm"}, unit_cost_usd: 2.9, art_direction: "glossy liquid rose glass ripples with champagne highlights"},
+      {id: "brume-setting-spray", name: "Brume Rose Setting Mist", type: "Setting Spray", shape: "bottle", tagline: "Lock the look, keep the glow.", description: "A fine rose-water mist that sets makeup for 16 hours while calming skin with centella and aloe.", price_usd: 30, size: "100 ml / 3.4 fl oz", body_hex: "#f6d6d8", accent_hex: "#d9b77e", shade_hex: "#f6d6d8", finish: "frosted",
+        ingredients: [I("Rosa Damascena Flower Water", "Rose water", "Soothing base", "70%"), I("Aqua", "Water", "Solvent", "15%"), I("Glycerin", "Glycerin", "Humectant", "5%"), I("Aloe Barbadensis Leaf Juice", "Aloe", "Calming", "4%"), I("PVP", "Film former", "Long wear", "2%"), I("Centella Asiatica Extract", "Cica", "Soothing", "1%"), I("Panthenol", "Pro-vitamin B5", "Hydration", "1%"), I("Sodium Benzoate", "Preservative", "Preservation", "0.5%")],
+        claims: ["16-hour hold", "Ultra-fine mist", "Alcohol-free"], how_to_use: "Shake, close eyes and mist in an X and T shape 20 cm from face.", packaging: {material: "Frosted glass with gold cap", sustainability: "Recyclable glass", dimensions: "12 × 5 cm"}, unit_cost_usd: 3.8, art_direction: "dewy rose petals with soft mist and gold light leaks"},
+    ],
+    site_copy: {
+      seo: {title: "Zirein — Skin-first makeup, made in Paris", description: "Clean, skin-caring makeup with Parisian restraint. Lipstick, skin tint, blush and more."},
+      announcement: "Launch week: free shipping + a mini Glacé gloss with every order",
+      hero: {eyebrow: "Clean makeup · Paris", headline: "Makeup that cares for your skin.", subheadline: "Zirein blends luminous color with skincare-grade ingredients — so your skin looks better with it, and after it.", cta: "Shop the collection"},
+      features: [{icon: "🌹", title: "Skin-first formulas", body: "Peptides, squalane and botanicals in every product."}, {icon: "♻️", title: "Refill, don't rebuy", body: "Refills for our lipstick and blush cases."}, {icon: "🐰", title: "Vegan & cruelty-free", body: "Never tested on animals. Ever."}, {icon: "🔍", title: "Total transparency", body: "Every ingredient, every percentage."}],
+      collection_intro: "Five essentials for an effortless, luminous face — from first light to last call.",
+      ingredient_spotlight: {title: "Squalane, peptides & rose", body: "Our formulas are built around ingredients your skin recognizes: olive-derived squalane for comfort, peptides for bounce and rose water to calm."},
+      about: {title: "Born at a kitchen table in Paris", body: "Mira started Zirein because she wanted makeup that felt like skincare and looked like art.\n\nEvery formula is developed with cosmetic chemists and tested on real people with real skin."},
+      testimonials: [{quote: "The skin tint is the only base I've ever forgotten I was wearing.", name: "Camille R."}, {quote: "Bordeaux Kiss lasted through dinner and my lips felt amazing.", name: "Aïcha B."}, {quote: "That compact is too pretty to keep in my bag.", name: "Sofia M."}],
+      faqs: [{q: "Is Zirein vegan?", a: "Yes — every product is vegan and certified cruelty-free."}, {q: "How do refills work?", a: "Lipstick bullets and blush pans pop into your original case. Simple."}, {q: "Is it suitable for sensitive skin?", a: "Our formulas are fragrance-light and dermatologist-tested, but always patch test first."}, {q: "Where do you ship?", a: "Across the EU, UK and US, with carbon-neutral delivery."}, {q: "Can I return opened products?", a: "Yes, within 30 days — we'll make it right."}],
+      newsletter: {title: "Join the Zirein circle", body: "Be first to new shades, refills and Mira's rituals.", cta: "Join"}, footer_blurb: "Skin first. Color second. Confidence always.",
+    },
+    merch: {items: [
+      {type: "tshirt", name: "Skin First Tee", garment_hex: "#faf3ee", print_hex: "#7a2a3a", print_text: "Skin First", art_prompt: "line art rose", price_usd: 38, description: "Heavyweight organic cotton tee.", material: "100% organic cotton"},
+      {type: "hoodie", name: "Noir Velours Hoodie", garment_hex: "#231a1e", print_hex: "#d9b77e", print_text: "Zirein Paris", art_prompt: "gold crescent", price_usd: 78, description: "Brushed fleece, oversized fit.", material: "Organic cotton fleece"},
+      {type: "tote", name: "Market Tote", garment_hex: "#e8a5a8", print_hex: "#231a1e", print_text: "Zirein", art_prompt: "petals", price_usd: 26, description: "Canvas tote for everything.", material: "Recycled canvas"},
+      {type: "cap", name: "Bordeaux Cap", garment_hex: "#7a2a3a", print_hex: "#faf3ee", print_text: "Z", art_prompt: "monogram", price_usd: 32, description: "Washed cotton dad cap.", material: "Washed cotton"},
+      {type: "mug", name: "Morning Ritual Mug", garment_hex: "#faf3ee", print_hex: "#e8a5a8", print_text: "Glow Slow", art_prompt: "sun rays", price_usd: 22, description: "Stoneware mug for slow mornings.", material: "Stoneware"},
+      {type: "sticker", name: "Petal Sticker", garment_hex: "#e8a5a8", print_hex: "#faf3ee", print_text: "Zirein", art_prompt: "rose", price_usd: 4, description: "Glossy vinyl sticker.", material: "Vinyl"},
+    ]},
+    marketing: {
+      positioning: "Zirein sits between clinical clean beauty and luxury color: skincare-grade formulas with the emotional pull of a Parisian maison, at a premium-accessible price.",
+      competitors: [{name: "Ilia", difference: "Zirein leans more luxurious and Parisian in aesthetic, with refillable metal cases."}, {name: "Rare Beauty", difference: "Zirein focuses on skin-care actives and ingredient transparency."}, {name: "Kosas", difference: "Zirein offers a more editorial, jewellery-like packaging experience."}],
+      launch_plan: [{phase: "Tease", timing: "Weeks -6 to -3", goal: "Build a 5,000-person waitlist", actions: ["Mira's founder story reels", "Ingredient close-up series", "Waitlist with early-access code"]}, {phase: "Seed", timing: "Weeks -3 to 0", goal: "Get products into 60 creators' hands", actions: ["PR boxes with handwritten notes", "Micro-creator affiliate program"]}, {phase: "Launch", timing: "Week 0–2", goal: "Sell out Bordeaux Kiss", actions: ["Launch live shopping event", "Free mini gloss with orders", "Paris pop-up weekend"]}, {phase: "Sustain", timing: "Weeks 3–12", goal: "35% repeat purchase", actions: ["Refill reminder emails", "Shade-match quiz", "UGC reviews campaign"]}],
+      social_posts: [{platform: "Instagram", caption: "Skin first. Color second. Meet Zirein. 🌹", hashtags: ["#Zirein", "#cleanbeauty"], visual_idea: "Slow pan across the lipstick in morning light"}, {platform: "TikTok", caption: "POV: your lipstick has peptides in it", hashtags: ["#makeuptok", "#Zirein"], visual_idea: "Before/after lip texture close-up"}, {platform: "Instagram", caption: "The compact you'll never hide in your bag.", hashtags: ["#blush", "#Zirein"], visual_idea: "Compact opening in slow motion"}, {platform: "Pinterest", caption: "The 5-minute Parisian face, with Zirein.", hashtags: ["#frenchgirlmakeup"], visual_idea: "Step-by-step flat lay"}, {platform: "TikTok", caption: "Mira reads you every ingredient. Every. Single. One.", hashtags: ["#ingredients", "#Zirein"], visual_idea: "Founder talking to camera"}, {platform: "Instagram", caption: "Refill day 💛 Less waste, same love.", hashtags: ["#refill", "#sustainablebeauty"], visual_idea: "Clicking a refill bullet into the case"}],
+      email: {subject: "Zirein is here 🌹", preview: "Makeup that cares for your skin — and a little gift.", body: "Bonjour,\n\nToday, Zirein is finally yours. We created five essentials that treat your skin as beautifully as they color it — from the Velours lipstick with peptides to the Lumière skin tint that feels like nothing at all.\n\nFor launch week, every order comes with a free mini Glacé gloss and free shipping.\n\nWith love from Paris,\nMira"},
+      ad_copy: [{headline: "Makeup that cares.", body: "Peptides, squalane and rose — in color you'll love.", cta: "Shop Zirein"}, {headline: "The lipstick that moisturizes.", body: "Velours Satin Lipstick: 8 hours of comfort.", cta: "Find your shade"}, {headline: "Refill, don't rebuy.", body: "Beautiful cases designed to last.", cta: "Learn more"}],
+      influencer_brief: "Show Zirein in a real morning routine — natural light, real skin texture, no filters. Highlight one ingredient and how the product feels.",
+      business: {channels: ["DTC website", "Instagram & TikTok Shop", "Paris pop-ups", "Select concept stores"], pricing_strategy: "Premium-accessible ($24–$42) with refills priced 30% lower to drive loyalty.", launch_budget: [{item: "First production run", usd: 18000}, {item: "Packaging & refills", usd: 6500}, {item: "Creator seeding", usd: 4000}, {item: "Paid social", usd: 8000}, {item: "Photography & content", usd: 3500}, {item: "Pop-up event", usd: 5000}, {item: "Website & tools", usd: 1200}], kpis: ["5,000 waitlist sign-ups", "3.5% site conversion", "35% 90-day repeat rate", "CAC under $28"]},
+      compliance_checklist: ["EU Cosmetic Regulation 1223/2009 safety assessment (CPSR)", "Register products on the EU CPNP portal", "Appoint an EU Responsible Person", "FDA MoCRA facility registration & product listing (US)", "INCI-compliant ingredient labels", "Substantiate claims like '8-hour wear' with testing"],
+    },
+  };
+}
+
+/* =====================================================================
+   Wire up UI
+   ===================================================================== */
+function init() {
+  renderSteps();
+  $$(".tab-btn").forEach(b => b.onclick = () => !b.disabled && showTab(b.dataset.tab));
+  $$("[data-example]").forEach(b => b.onclick = () => fillExample(b.dataset.example));
+  $("#heroExample").onclick = () => { fillExample("zirein"); generate(); };
+  $("#genBtn").onclick = generate;
+  $("#demoBtn").onclick = async () => { if (S.busy) return; fillExample("zirein"); await loadProject(demoBrand(), {}, {}, {fromDemo: true}); save(); toast("Loaded the offline Zirein demo."); };
+  $("#model").onchange = e => { S.model = e.target.value; lsSet("pai_model", S.model); updateEffortVisibility(); log(`Model → ${S.model}`); };
+  $("#imageModel").onchange = e => { S.imageModel = e.target.value; lsSet("pai_imgmodel", S.imageModel); };
+  $("#effort").value = S.effort; $("#effort").onchange = e => { S.effort = e.target.value; lsSet("pai_effort", S.effort); };
+  $("#exportBtn").onclick = e => { e.stopPropagation(); $("#exportMenu").classList.toggle("show"); };
+  document.addEventListener("click", () => $("#exportMenu").classList.remove("show"));
+  $$("[data-export]").forEach(b => b.onclick = () => exportAs(b.dataset.export));
+  $("#settingsBtn").onclick = openSettings;
+  $("#setCancel").onclick = () => $("#settingsModal").classList.remove("show");
+  $("#setSave").onclick = () => {
+    const k = $("#setKey").value.trim(); const changed = k !== S.key;
+    S.key = k; S.quality = $("#setQuality").value; S.conc = clamp(+$("#setConc").value || 3, 1, 6);
+    if (k && k !== OPENAI_API_KEY) lsSet("pai_key", k); else lsDel("pai_key");
+    lsSet("pai_quality", S.quality); lsSet("pai_conc", S.conc);
+    $("#settingsModal").classList.remove("show"); toast("Settings saved"); if (changed) loadModels();
+  };
+  $("#setClear").onclick = () => { lsDel("pai_project"); lsDel("pai_art"); toast("Saved project cleared"); };
+  $("#studioPng").onclick = () => S.studio && download(`${slug(S.brand.identity.name)}-${S.studioSel}-3d.png`, S.studio.png());
+  $("#studioRetexture").onclick = async e => {
+    const p = S.brand?.products?.find(x => x.id === S.studioSel); if (!p) return;
+    const b = e.currentTarget; b.disabled = true; b.textContent = "Generating…";
+    try { S.art[p.id] = await genImage(P.productArt(p)); await composeTextures(p); showStudioProduct(p.id); await snapshotAll(); renderStudioList(); renderProducts(); S.dirty.store = S.dirty.site = true; save(); toast("New AI texture applied"); }
+    catch (err) { toast("Image generation failed: " + err.message, true); }
+    finally { b.disabled = false; b.textContent = "🎨 New AI texture"; }
+  };
+  $("#storeFs").onclick = () => { const w = $("#storeWrap"); document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen?.(); };
+  $("#storeReset").onclick = () => resetStorePos();
+  $("#siteOpen").onclick = () => { if (!S.siteHTML) return; const u = URL.createObjectURL(new Blob([S.siteHTML], {type: "text/html"})); window.open(u, "_blank"); setTimeout(() => URL.revokeObjectURL(u), 60000); };
+  $("#siteDownload").onclick = () => exportAs("site");
+  $("#chatSend").onclick = () => sendChat($("#chatInput").value);
+  $("#chatInput").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat($("#chatInput").value); } });
+  $$("#chatChips .chip").forEach(c => c.onclick = () => sendChat(c.textContent));
+  if (!has3D()) log("three.js failed to load — 3D views disabled (check internet connection)", "w");
+
+  loadModels();
+  const saved = lsGet("pai_project");
+  if (saved) {
+    try {
+      const art = JSON.parse(lsGet("pai_art") || "{}");
+      const brand = JSON.parse(saved);
+      if (brand?.brief) { const e = brand.brief; $("#bName").value = e.name || ""; $("#bCategory").value = e.category || ""; $("#bDesc").value = e.description || ""; $("#bAudience").value = e.audience || ""; $("#bVibe").value = e.vibe || ""; }
+      loadProject(brand, art.art || {}, art.merch || {}).then(() => toast("Restored your last project"));
+    } catch (e) { log("Could not restore saved project: " + e.message, "w"); }
+  }
+}
+init();
+</script>
+</body>
+</html>
