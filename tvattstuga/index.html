@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d17">
+<meta name="color-scheme" content="dark">
+<title>Tvätt-OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0d17; --bg2:#121629; --panel:#1a1f36; --panel2:#232a48;
+    --ink:#e9ecf5; --muted:#8a91a8; --dim:#4a516b; --line:#323a5e;
+    --cyan:#22d3ee; --violet:#7c5cff; --gold:#f5c542; --pink:#ec4899;
+    --green:#34d399; --red:#ef4444; --orange:#fb923c;
+    --px:4px;
+    --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  [hidden]{display:none!important}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(110% 70% at 20% 0%,#1d1840 0%,transparent 60%),
+      radial-gradient(90% 60% at 100% 100%,#0f2733 0%,transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'VT323',ui-monospace,Menlo,Consolas,monospace;
+    font-size:21px;line-height:1.15;
+    -webkit-font-smoothing:none;font-smooth:never;
+    overflow:hidden;
+  }
+  .h,button,.btn,label.lbl,.tag,.pxf{font-family:'Press Start 2P',ui-monospace,monospace;letter-spacing:0}
+  img.pix,canvas{image-rendering:pixelated;image-rendering:crisp-edges}
+  ::selection{background:var(--pink);color:#fff}
+
+  /* ---------- CRT overlay ---------- */
+  #crt{pointer-events:none;position:fixed;inset:0;z-index:200;
+    background:
+      repeating-linear-gradient(to bottom,rgba(0,0,0,.22) 0 1px,transparent 1px 3px),
+      radial-gradient(120% 100% at 50% 50%,transparent 60%,rgba(0,0,0,.55) 100%);
+    animation:flicker 4s steps(2) infinite}
+  body.nocrt #crt{display:none}
+  @keyframes flicker{0%,100%{opacity:1}50%{opacity:.93}}
+
+  /* ---------- pixel boxes & buttons ---------- */
+  .pbox{background:var(--panel);margin:var(--px);
+    box-shadow:0 calc(-1*var(--px)) 0 0 var(--line),0 var(--px) 0 0 var(--line),
+               calc(-1*var(--px)) 0 0 0 var(--line),var(--px) 0 0 0 var(--line)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    font-size:10px;line-height:1.4;padding:12px 14px;margin:var(--px);border:none;cursor:pointer;
+    color:#fff;background:var(--violet);text-transform:uppercase;
+    box-shadow:0 -4px 0 0 #0b0d17,0 4px 0 0 #0b0d17,-4px 0 0 0 #0b0d17,4px 0 0 0 #0b0d17,
+               inset -4px -4px 0 0 rgba(0,0,0,.35),inset 4px 4px 0 0 rgba(255,255,255,.18)}
+  .btn:hover{filter:brightness(1.15)}
+  .btn:active{transform:translate(2px,2px);
+    box-shadow:0 -4px 0 0 #0b0d17,0 4px 0 0 #0b0d17,-4px 0 0 0 #0b0d17,4px 0 0 0 #0b0d17,
+               inset 4px 4px 0 0 rgba(0,0,0,.35)}
+  .btn:disabled{opacity:.45;cursor:default;filter:none;transform:none}
+  .btn.ghost{background:var(--panel2);color:var(--ink)}
+  .btn.cyan{background:#0e7490}
+  .btn.gold{background:var(--gold);color:#241a00}
+  .btn.pink{background:var(--pink)}
+  .btn.green{background:#059669}
+  .btn.red{background:#b91c1c}
+  .btn.small{font-size:8px;padding:9px 10px}
+  .btn.big{font-size:12px;padding:16px 20px}
+  .btn.block{display:flex;width:calc(100% - 8px)}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .btns{margin-top:14px}
+  .muted{color:var(--muted)}
+  .center{text-align:center}
+  .glow{text-shadow:0 0 8px rgba(34,211,238,.55)}
+
+  input,textarea,select{font-family:'VT323',ui-monospace,monospace;font-size:21px;color:var(--ink);
+    background:#0e1122;border:none;outline:none;padding:10px 12px;width:100%;margin:var(--px);
+    box-shadow:0 -4px 0 0 var(--line),0 4px 0 0 var(--line),-4px 0 0 0 var(--line),4px 0 0 0 var(--line)}
+  input:focus,textarea:focus,select:focus{box-shadow:0 -4px 0 0 var(--cyan),0 4px 0 0 var(--cyan),-4px 0 0 0 var(--cyan),4px 0 0 0 var(--cyan)}
+  textarea{min-height:84px;resize:vertical}
+  label.lbl{display:block;font-size:8px;color:var(--muted);margin:16px 4px 6px;text-transform:uppercase}
+  input[type=checkbox]{width:auto;margin:0 10px 0 4px;accent-color:var(--pink);transform:scale(1.3)}
+  .check{display:flex;align-items:center;margin:10px 0;cursor:pointer}
+
+  /* ---------- typewriter ---------- */
+  .tw{white-space:pre-wrap;min-height:1.15em}
+  .cur{display:inline-block;width:.55em;height:.95em;background:var(--cyan);vertical-align:-2px;margin-left:1px;
+    animation:blink .8s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .typing{cursor:pointer}
+  .think{color:var(--pink);font-family:'Press Start 2P',monospace;font-size:10px;margin:14px 4px}
+  .think::after{content:'';animation:dots 1.2s steps(4) infinite}
+  @keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+
+  /* ---------- screens ---------- */
+  .screen{position:fixed;inset:0;display:none;overflow-y:auto;
+    padding:calc(18px + var(--safe-t)) 16px calc(18px + var(--safe-b))}
+  .screen.on{display:block}
+  .wrap{max-width:560px;margin:0 auto}
+
+  /* boot */
+  #boot{cursor:pointer}
+  #boot-log{font-size:22px;color:var(--green);text-shadow:0 0 6px rgba(52,211,153,.5);margin-top:6vh}
+  #boot-go{margin-top:28px;font-family:'Press Start 2P',monospace;font-size:12px;color:var(--gold);
+    visibility:hidden;animation:blink 1s steps(1) infinite}
+  #boot-go.on{visibility:visible}
+  .logo-big{font-size:clamp(22px,7vw,40px);line-height:1.25;text-align:center;
+    background:linear-gradient(90deg,var(--violet),var(--cyan) 55%,var(--pink));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(4px 4px 0 #000)}
+  .logo-sub{text-align:center;color:var(--muted);margin-top:8px}
+
+  /* washer with spinning drum */
+  .washer{position:relative;margin:26px auto 18px;--s:8px;width:calc(14*var(--s));height:calc(14*var(--s))}
+  .washer img{position:absolute;left:0;top:0;width:100%;height:100%}
+  .washer .drum{left:calc(4*var(--s));top:calc(6*var(--s));width:calc(6*var(--s));height:calc(6*var(--s));
+    animation:spin .9s steps(4) infinite}
+  .washer.fast .drum{animation-duration:.35s}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .washer.shake{animation:shake .12s steps(2) infinite}
+  @keyframes shake{50%{transform:translateX(4px)}}
+
+  /* login */
+  #login-msg{text-align:center;font-size:23px;min-height:3.6em;margin:6px 0 14px}
+  #whoami{margin-top:16px;padding:16px}
+  #whoami:empty{display:none}
+  #whoami .tw{font-size:23px}
+
+  /* scanner modal */
+  .scanner{position:relative;width:max-content;margin:18px auto}
+  .waves{position:absolute;right:-34px;top:50%;transform:translateY(-50%);display:flex;gap:6px}
+  .waves i{display:block;width:6px;height:22px;background:var(--cyan);animation:wave 1.2s steps(1) infinite}
+  .waves i:nth-child(2){height:36px;animation-delay:.2s}
+  .waves i:nth-child(3){height:50px;animation-delay:.4s}
+  @keyframes wave{0%,60%{opacity:.15}20%{opacity:1}}
+  .scanner.ok .waves i{background:var(--green);animation:none;opacity:1}
+  .sim{margin-top:14px;padding:12px;background:#0e1122}
+  .sim p{font-size:18px;margin-bottom:8px}
+
+  /* ---------- app ---------- */
+  #app{padding:0;display:none;flex-direction:column;overflow:hidden}
+  #app.on{display:flex}
+  #top{display:flex;align-items:center;gap:10px;padding:calc(10px + var(--safe-t)) 16px 10px;
+    background:#0e1122;border-bottom:4px solid var(--line);flex-shrink:0}
+  #top .h.logo{font-size:12px;color:var(--cyan);white-space:nowrap}
+  #top .who{margin-left:auto;font-size:19px;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #top .btn{margin:4px}
+  #view{flex:1;overflow-y:auto;padding:18px 16px 30px}
+  #view > .wrap{max-width:980px}
+  #status{flex-shrink:0;display:flex;gap:18px;padding:7px 16px calc(7px + var(--safe-b));background:#0e1122;
+    border-top:4px solid var(--line);font-size:18px;color:var(--muted);white-space:nowrap;overflow:hidden}
+  #status b{color:var(--green);font-weight:normal}
+  #status .warn{color:var(--pink)}
+
+  .vhead{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .vhead h2{font-size:14px;color:var(--ink);margin-left:6px}
+  .vintro{color:var(--muted);margin:0 4px 14px}
+
+  .hello{margin:4px 4px 14px}
+  .hello .big{font-family:'Press Start 2P',monospace;font-size:clamp(12px,3.6vw,18px);line-height:1.5;color:var(--ink)}
+  .hello #nexttxt{color:var(--gold);margin-top:6px;font-size:22px}
+  .tip{display:flex;gap:14px;align-items:flex-start;padding:14px;margin-bottom:22px}
+  .tip img{flex-shrink:0}
+  .tip .tag{font-size:8px;color:var(--pink);display:block;margin-bottom:6px}
+
+  .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+  .tile{display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 8px 14px;cursor:pointer;
+    border:none;color:var(--ink);background:var(--panel);text-align:center;
+    animation:pop .35s steps(3) both;animation-delay:calc(var(--d)*70ms)}
+  .tile span{font-size:10px;line-height:1.4}
+  .tile small{font-family:'VT323',monospace;font-size:18px;color:var(--muted)}
+  .tile:hover{background:var(--panel2);transform:translate(-2px,-2px)}
+  .tile:hover span{color:var(--cyan)}
+  .tile:active{transform:translate(2px,2px)}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+
+  /* schedule */
+  .weeknav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .weeknav .h{font-size:12px;text-align:center}
+  .weeknav .h small{display:block;font-size:8px;color:var(--pink);margin-top:6px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:18px;color:var(--muted);margin:0 4px 10px}
+  .legend i{display:inline-block;width:14px;height:14px;margin-right:5px;vertical-align:-1px}
+  .sched{display:grid;grid-template-columns:52px repeat(5,minmax(0,1fr));gap:5px}
+  .sh{font-size:17px;text-align:center;color:var(--muted);padding-bottom:2px}
+  .dl{font-family:'Press Start 2P',monospace;font-size:8px;line-height:1.6;display:flex;flex-direction:column;justify-content:center;color:var(--ink)}
+  .dl small{font-family:'VT323',monospace;font-size:17px;color:var(--muted)}
+  .dl.today{color:var(--gold)}
+  .cell{height:46px;border:none;cursor:pointer;font-family:'VT323',monospace;font-size:18px;line-height:1;
+    display:grid;place-items:center;padding:0 2px;overflow:hidden}
+  .cell.free{background:#0f2a21;color:var(--green);box-shadow:inset 0 0 0 3px #1d6b51}
+  .cell.free:hover{background:#174a38}
+  .cell.mine{background:var(--gold);color:#241a00;box-shadow:inset -3px -3px 0 rgba(0,0,0,.3)}
+  .cell.busy{background:#1a1e32;color:#5c6379}
+  .cell.past{background:repeating-linear-gradient(45deg,#121522 0 4px,#0d1019 4px 8px);color:#343a52;cursor:default}
+  .cell.past.was-mine{color:#8a7a3a}
+  .cell.hint{box-shadow:inset 0 0 0 3px var(--pink);animation:blink 1s steps(1) 4}
+
+  .sugg{padding:14px;margin:12px 4px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+    animation:pop .3s steps(3) both}
+  .sugg .when{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--gold);line-height:1.5}
+  .sugg .why{flex:1 1 220px;color:var(--ink)}
+  .sugg.booked{opacity:.6}
+  .out{padding:14px;margin-top:14px;font-size:21px}
+  .out:empty{display:none}
+
+  /* memories */
+  .mem{display:flex;gap:10px;align-items:flex-start;padding:12px;margin:10px 4px}
+  .mem p{flex:1;white-space:pre-wrap}
+  .mem small{display:block;color:var(--dim);font-size:16px;margin-top:4px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+  .chip{text-align:left;font-family:'VT323',monospace;font-size:18px;background:#0e1122;color:var(--cyan);border:none;
+    padding:5px 9px;cursor:pointer;box-shadow:inset 0 0 0 2px #164e63}
+  .chip:hover{background:#164e63;color:#fff}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;align-items:start}
+  .section{padding:14px}
+  .section > .h{font-size:10px;color:var(--cyan);margin-bottom:10px;line-height:1.5}
+
+  /* chat */
+  .chat{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;min-height:180px}
+  .msg{max-width:88%;padding:10px 12px;white-space:pre-wrap}
+  .msg.me{align-self:flex-end;background:#2b2160;box-shadow:0 0 0 3px #4b3aa8}
+  .msg.bot{align-self:flex-start;background:#0f2730;box-shadow:0 0 0 3px #155e75}
+  .msg .tag{font-size:7px;display:block;margin-bottom:6px;color:var(--muted)}
+  .chatbar{display:flex;gap:6px;align-items:center;position:sticky;bottom:-30px;background:var(--bg);padding:8px 0}
+  .chatbar input{flex:1}
+
+  /* tabs */
+  .tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
+  .tabs .btn.on{background:var(--pink)}
+
+  /* games */
+  .players{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .players .btn.on{background:var(--gold);color:#241a00}
+  .socks{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:380px;margin:10px auto}
+  .sock{aspect-ratio:1;border:none;background:#232a48;cursor:pointer;display:grid;place-items:center;
+    box-shadow:inset -4px -4px 0 rgba(0,0,0,.35),inset 4px 4px 0 rgba(255,255,255,.08)}
+  .sock .q{font-family:'Press Start 2P',monospace;font-size:16px;color:var(--dim)}
+  .sock.open{background:#0e1122}
+  .sock.done{background:#0f2a21;box-shadow:inset 0 0 0 3px #1d6b51}
+  .sock img{width:60%;height:auto}
+  .gstat{display:flex;justify-content:space-between;max-width:384px;margin:8px auto;font-family:'Press Start 2P',monospace;font-size:10px}
+  .gstat .lives{color:var(--red)}
+  #gc{display:block;width:100%;max-width:384px;margin:0 auto;background:#0e1122;touch-action:none;
+    box-shadow:0 -4px 0 0 var(--line),0 4px 0 0 var(--line),-4px 0 0 0 var(--line),4px 0 0 0 var(--line)}
+  .gamearea{margin-top:14px}
+  .riddle{font-size:24px;color:var(--ink)}
+  .win{font-family:'Press Start 2P',monospace;font-size:12px;color:var(--gold);text-align:center;margin:12px 0;line-height:1.6;
+    animation:blink .5s steps(1) 6}
+
+  .preview{max-width:220px;margin:10px 4px;display:block}
+  .warnbox{padding:12px;margin:12px 4px;background:#2a0f1f;box-shadow:inset 0 0 0 3px #7a1f48;font-size:19px}
+  .okbox{padding:12px;margin:12px 4px;background:#0f2a21;box-shadow:inset 0 0 0 3px #1d6b51;font-size:19px}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:19px}
+  .kv dt{color:var(--muted)}
+
+  /* modal / toast */
+  #modal{position:fixed;inset:0;z-index:150;background:rgba(5,6,10,.8);display:flex;align-items:center;justify-content:center;padding:16px}
+  #modal.hide{display:none}
+  .mbox{width:100%;max-width:470px;max-height:calc(100% - 20px);overflow-y:auto;padding:20px;animation:pop .25s steps(3) both}
+  .mbox h3{font-size:12px;color:var(--cyan);margin-bottom:12px;line-height:1.5}
+  #toast{position:fixed;left:50%;bottom:calc(60px + var(--safe-b));transform:translateX(-50%);z-index:180;
+    font-family:'Press Start 2P',monospace;font-size:9px;line-height:1.5;padding:12px 16px;background:var(--gold);color:#241a00;
+    box-shadow:0 -4px 0 #000,0 4px 0 #000,-4px 0 0 #000,4px 0 0 #000;display:none;max-width:calc(100% - 40px);text-align:center}
+  #toast.on{display:block;animation:pop .2s steps(2) both}
+  #toast.err{background:var(--red);color:#fff}
+
+  @media (max-width:520px){
+    body{font-size:20px}
+    #top .h.logo{font-size:9px}
+    .sched{grid-template-columns:40px repeat(5,minmax(0,1fr));gap:4px}
+    .cell{height:42px;font-size:16px}
+    .sh{font-size:15px}
+    .tiles{grid-template-columns:repeat(2,1fr);gap:10px}
+    .tile{padding:14px 6px 12px}
+    .tile span{font-size:9px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:0s!important;animation-iteration-count:1!important}
+  }
+</style>
+</head>
+<body>
+<div id="crt"></div>
+
+<!-- ============ BOOT ============ -->
+<section id="boot" class="screen on" aria-live="polite">
+  <div class="wrap">
+    <div id="boot-log" class="tw"></div>
+    <div id="boot-go">▶ TRYCK FÖR ATT STARTA</div>
+  </div>
+</section>
+
+<!-- ============ LOGIN ============ -->
+<section id="login" class="screen">
+  <div class="wrap">
+    <h1 class="h logo-big">TVÄTT-OS</h1>
+    <p class="logo-sub">Tvättstugans smarta launcher</p>
+    <div class="washer" id="login-washer"></div>
+    <p id="login-msg" class="tw"></p>
+    <button class="btn big block pink" id="btn-scan">▣ SKANNA NFC-KORT</button>
+    <button class="btn block ghost" id="btn-new">+ NYTT KONTO</button>
+    <div id="whoami" class="pbox"></div>
+  </div>
+</section>
+
+<!-- ============ REGISTER ============ -->
+<section id="register" class="screen">
+  <div class="wrap">
+    <div class="vhead"><button class="btn small ghost" id="reg-back">◄ TILLBAKA</button><h2 class="h">NYTT KONTO</h2></div>
+    <p class="tw vintro" id="reg-intro"></p>
+    <label class="lbl" for="reg-name">Förnamn</label>
+    <input id="reg-name" autocomplete="given-name" maxlength="30" placeholder="t.ex. Johan">
+    <label class="lbl" for="reg-apt">Lägenhetsnummer</label>
+    <input id="reg-apt" inputmode="numeric" maxlength="8" placeholder="t.ex. 1104">
+    <label class="lbl" for="reg-pin">PIN-kod (valfri, 4–6 siffror)</label>
+    <input id="reg-pin" type="password" inputmode="numeric" maxlength="6" placeholder="Extra skydd om kortet tappas bort">
+    <label class="lbl" for="reg-kid">Barn som ska kunna spela (valfritt)</label>
+    <div class="row" style="flex-wrap:nowrap">
+      <input id="reg-kid" maxlength="20" placeholder="Namn, t.ex. Liam">
+      <input id="reg-kidlikes" maxlength="80" placeholder="Gillar… t.ex. dinosaurier">
+    </div>
+    <label class="lbl">NFC-kort</label>
+    <div class="pbox" style="padding:12px;display:flex;align-items:center;gap:12px">
+      <span id="reg-cardimg"></span>
+      <span id="reg-cardstate" class="muted">Inget kort kopplat ännu.</span>
+    </div>
+    <button class="btn block cyan" id="reg-scan">▣ SKANNA KORT ATT KOPPLA</button>
+    <button class="btn big block pink" id="reg-go" disabled>✓ SKAPA KONTO</button>
+  </div>
+</section>
+
+<!-- ============ APP ============ -->
+<section id="app" class="screen">
+  <header id="top">
+    <span class="h logo">TVÄTT-OS</span>
+    <span class="who" id="top-who"></span>
+    <button class="btn small ghost" id="top-sound" title="Ljud av/på">♪</button>
+    <button class="btn small red" id="top-out" title="Logga ut">⏻</button>
+  </header>
+  <main id="view"></main>
+  <footer id="status"></footer>
+</section>
+
+<div id="modal" class="hide"><div class="mbox pbox"></div></div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   Tvätt-OS — tvättstugans launcher
+   Allt sparas lokalt i webbläsaren (localStorage). AI = Google Gemini,
+   nyckeln läggs in under Inställningar och lagras bara på enheten.
+   ===================================================================== */
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+/* ---------------- storage ---------------- */
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+let users = LS.get('tvos_users', null);
+let bookings = LS.get('tvos_bookings', []);
+const settings = Object.assign({
+  apiKey: '', model: 'gemini-2.5-flash', endpoint: 'auto', working: null,
+  speed: 'slow', sound: true, crt: true, autoLogout: true
+}, LS.get('tvos_settings', {}));
+let scores = LS.get('tvos_scores', {});
+const saveUsers = () => LS.set('tvos_users', users);
+const saveBookings = () => LS.set('tvos_bookings', bookings);
+const saveSettings = () => LS.set('tvos_settings', settings);
+const saveScores = () => LS.set('tvos_scores', scores);
+let me = null;
+
+/* ---------------- time & slots ---------------- */
+const SLOTS = [['07', '10'], ['10', '13'], ['13', '16'], ['16', '19'], ['19', '22']];
+const MAX_ACTIVE = 2;
+const DAYS = ['sön', 'mån', 'tis', 'ons', 'tor', 'fre', 'lör'];
+const DAYS_L = ['söndag', 'måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag'];
+const MON = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseYmd = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const monday = d => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); return addDays(x, -((x.getDay() + 6) % 7)); };
+function isoWeek(d) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return Math.ceil(((t - y0) / 864e5 + 1) / 7);
+}
+const parity = w => (w % 2 ? 'udda' : 'jämn');
+const fmtDate = s => { const d = parseYmd(s); return `${DAYS[d.getDay()]} ${d.getDate()} ${MON[d.getMonth()]}`; };
+const slotLabel = i => `${SLOTS[i][0]}–${SLOTS[i][1]}`;
+const slotAt = (s, i, end) => { const d = parseYmd(s); d.setHours(+SLOTS[i][end ? 1 : 0], 0, 0, 0); return d; };
+const isWeekend = s => { const g = parseYmd(s).getDay(); return g === 0 || g === 6; };
+const clock = () => { const n = new Date(); return `${pad(n.getHours())}:${pad(n.getMinutes())}`; };
+
+function fnv(s) { let h = 2166136261; for (const c of s) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+const NEIGH = ['1101', '1102', '1103', '1201', '1202', '1203', '1301', '1302', '1303', '1401', '1402', '1403'];
+/* Grannarnas bokningar simuleras deterministiskt så att schemat ser levande ut. */
+function neighbor(date, i) {
+  const h = fnv('n' + date + '#' + i);
+  const pct = [28, 20, 24, 45, 52][i] + (isWeekend(date) ? 14 : 0);
+  if (h % 100 >= pct) return null;
+  const mine = new Set((users || []).map(u => u.apt));
+  const pool = NEIGH.filter(a => !mine.has(a));
+  return pool[(h >>> 8) % pool.length] || NEIGH[0];
+}
+function slotInfo(date, i) {
+  const past = slotAt(date, i, true) <= new Date();
+  const b = bookings.find(x => x.date === date && x.slot === i);
+  if (b) {
+    if (me && b.userId === me.id) return { st: 'mine', past, b };
+    const u = users.find(u => u.id === b.userId);
+    return { st: 'busy', who: u ? u.apt : '?', past, b };
+  }
+  const n = neighbor(date, i);
+  if (n) return { st: 'busy', who: n, past };
+  return { st: 'free', past };
+}
+const isFree = (date, i) => { const s = slotInfo(date, i); return s.st === 'free' && !s.past; };
+function freeSlots(days = 14) {
+  const out = []; const t = new Date();
+  for (let k = 0; k < days; k++) { const s = ymd(addDays(t, k)); for (let i = 0; i < 5; i++) if (isFree(s, i)) out.push({ date: s, slot: i }); }
+  return out;
+}
+const myFuture = () => bookings.filter(b => me && b.userId === me.id && slotAt(b.date, b.slot, true) > new Date())
+  .sort((a, b) => (a.date + a.slot).localeCompare(b.date + b.slot));
+
+/* ---------------- pixel art ---------------- */
+const PAL = { k: '#0b0d17', w: '#e9ecf5', c: '#22d3ee', v: '#7c5cff', y: '#f5c542', p: '#ec4899', g: '#34d399',
+  s: '#8a91a8', b: '#1e3a8a', r: '#ef4444', t: '#7a4a20', o: '#fb923c', d: '#3a4058', x: '#ec4899', n: '#5b3a1a' };
+const BM = {
+  washer: ['kkkkkkkkkkkkkk', 'kwwwwwwwwwwwwk', 'kwpwywwwkggkwk', 'kwwwwwwwwwwwwk', 'kkkkkkkkkkkkkk', 'kwwwwkkkkwwwwk',
+    'kwwwkbbbbkwwwk', 'kwwkbbbbbbkwwk', 'kwwkbbbbbbkwwk', 'kwwkbbbbbbkwwk', 'kwwkbbbbbbkwwk', 'kwwwkbbbbkwwwk', 'kwwwwkkkkwwwwk', 'kkkkkkkkkkkkkk'],
+  drum: ['.cc...', 'cvvc..', 'cvvvc.', '.cvppc', '..cppc', '...cc.'],
+  cal: ['...y....y...', '...y....y...', 'kkkykkkkykkk', 'kppppppppppk', 'kppppppppppk', 'kwwwwwwwwwwk',
+    'kwdwdwdwdwwk', 'kwwwwwwwwwwk', 'kwdwdwgwdwwk', 'kwwwwwwwwwwk', 'kwdwdwdwwwwk', 'kkkkkkkkkkkk'],
+  robot: ['.....yy.....', '.....kk.....', '.kkkkkkkkkk.', '.kcccccccck.', '.kcwkccwkck.', '.kcwwccwwck.',
+    '.kcccccccck.', '.kccppppcck.', '.kcccccccck.', '.kkkkkkkkkk.', '..kvk..kvk..', '..kkk..kkk..'],
+  floppy: ['kkkkkkkkkkk.', 'kvvssssssvvk', 'kvvsskssvvvk', 'kvvsskssvvvk', 'kvvssssssvvk', 'kvvvvvvvvvvk',
+    'kvwwwwwwwwvk', 'kvwddddddwvk', 'kvwwwwwwwwvk', 'kvwddddwwwvk', 'kvwwwwwwwwvk', 'kkkkkkkkkkkk'],
+  chat: ['............', '.kkkkkkkkkk.', 'kccccccccccck', 'kcwwcwwwccck', 'kcccccccccck', 'kcwwwwcwwcck',
+    'kcccccccccck', '.kkkcckkkkk.', '...kck......', '...kk.......', '............', '............'],
+  drop: ['.....kk.....', '....kcck....', '....kcck....', '...kccwck...', '...kcwccck..', '..kccccccck.',
+    '..kcccccccck', '.kcccccccck.', '.kcccccccck.', '..kcccccck..', '...kkkkkk...', '............'],
+  pad: ['............', '............', '.kkkkkkkkkk.', 'kvvvvvvvvvvk', 'kvvkvvvvpvvk', 'kvkkkvvpvyvk',
+    'kvvkvvvvyvvk', 'kvvvvvvvvvvk', 'kvvvkkkkvvvk', 'kkkk....kkkk', '............', '............'],
+  bell: ['.....kk.....', '....kyyk....', '...kyyyyk...', '..kyywyyyk..', '..kywyyyyk..', '..kyyyyyyk..',
+    '..kyyyyyyk..', '.kyyyyyyyyk.', 'kkkkkkkkkkkk', '.....kk.....', '....kppk....', '.....kk.....'],
+  gear: ['.....kk.....', '..kk.ss.kk..', '..kssssssk..', '.ksssssssk..', 'kssskkksssk.', '.sssk..ksss.',
+    '.sssk..ksss.', 'kssskkksssk.', '.ksssssssk..', '..kssssssk..', '..kk.ss.kk..', '.....kk.....'],
+  card: ['kkkkkkkkkkkkkkkk', 'kvvvvvvvvvvvvvvk', 'kvyyyvvvvvvvvvvk', 'kvykyvvvvvvcvvvk', 'kvyyyvvvvvcvvcvk',
+    'kvvvvvvvvcvvcvvk', 'kvvvvvvvvvcvvcvk', 'kvvvvvvvvvvcvvvk', 'kvwwwwwwvvvvvvvk', 'kvvvvvvvvvvvvvvk', 'kkkkkkkkkkkkkkkk'],
+  sock: ['..kkkk..', '..kwwk..', '..kxxk..', '..kxxk..', '..kxxk..', '..kxxk..', '.kxxxk..', 'kxxxxk..', 'kxxxxxk.', '.kkkkkk.'],
+  shirt: ['.kk....kk.', 'kxxk..kxxk', 'kxxxkkxxxk', '.kkxxxxkk.', '..kxxxxk..', '..kxxxxk..', '..kxxxxk..', '..kkkkkk..'],
+  pants: ['kkkkkkkk', 'kxxxxxxk', 'kxxxxxxk', 'kxxkkxxk', 'kxxkkxxk', 'kxxkkxxk', 'kxxkkxxk', 'kkkkkkkk'],
+  mud: ['..kkkk..', '.knnnnk.', 'knnnnnnk', 'knkknkkk', 'knnnnnnk', 'knrrrrnk', '.knnnnk.', '..kkkk..'],
+  basket: ['k..............k', 'kyyyyyyyyyyyyyyk', 'kyoyoyoyoyoyoyyk', 'kyyyyyyyyyyyyyyk', '.kyoyyoyyoyyoyk.', '..kkkkkkkkkkkk..']
+};
+const pixCache = {};
+function pix(name, over) {
+  const key = name + (over ? JSON.stringify(over) : '');
+  if (pixCache[key]) return pixCache[key];
+  const rows = BM[name]; const w = Math.max(...rows.map(r => r.length)), h = rows.length;
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const x = cv.getContext('2d');
+  rows.forEach((r, j) => [...r].forEach((ch, i) => {
+    if (ch === '.') return; const col = (over && over[ch]) || PAL[ch]; if (!col) return;
+    x.fillStyle = col; x.fillRect(i, j, 1, 1);
+  }));
+  return (pixCache[key] = { url: cv.toDataURL(), w, h, canvas: cv });
+}
+const img = (name, scale = 4, over, cls = '') => { const p = pix(name, over); return `<img class="pix ${cls}" src="${p.url}" width="${p.w * scale}" height="${p.h * scale}" alt="">`; };
+const washerHTML = () => `${img('washer', 8)}${img('drum', 8, null, 'drum')}`;
+
+/* ---------------- sound ---------------- */
+let ac = null;
+function beep(f = 880, d = 0.04, type = 'square', vol = 0.025, delay = 0) {
+  if (!settings.sound) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const t = ac.currentTime + delay;
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t + d + 0.02);
+  } catch {}
+}
+const blip = () => beep(520 + Math.random() * 260, 0.018, 'square', 0.012);
+const sfx = {
+  click: () => beep(660, 0.03),
+  ok: () => { beep(523, 0.08, 'square', 0.03); beep(659, 0.08, 'square', 0.03, 0.08); beep(784, 0.14, 'square', 0.03, 0.16); },
+  err: () => { beep(220, 0.12, 'sawtooth', 0.03); beep(165, 0.2, 'sawtooth', 0.03, 0.12); },
+  coin: () => { beep(988, 0.05, 'square', 0.025); beep(1319, 0.12, 'square', 0.025, 0.05); }
+};
+
+/* ---------------- typewriter ---------------- */
+const SPEED = { slow: 24, normal: 60, fast: 400 };
+async function typeInto(el, text, { append = false, cursor = true } = {}) {
+  if (!el) return false;
+  const tok = {}; el._tw = tok; el.classList.add('typing');
+  if (!append) el.textContent = '';
+  const tn = document.createTextNode(''); el.appendChild(tn);
+  const cur = document.createElement('span'); cur.className = 'cur';
+  if (cursor) el.appendChild(cur);
+  text = String(text ?? '');
+  const base = SPEED[settings.speed] || 24;
+  const cps = text.length > 260 ? Math.max(base, text.length / 14) : base;
+  let i = 0, n = 0;
+  while (i < text.length) {
+    if (el._tw !== tok) { cur.remove(); return false; }
+    if (tok.skip || !el.isConnected) { tn.data += text.slice(i); break; }
+    const ch = text[i++]; tn.data += ch;
+    if (ch.trim() && n++ % 3 === 0) blip();
+    await sleep(/[.!?]/.test(ch) ? 7000 / cps : /[,:\n]/.test(ch) ? 3500 / cps : 1000 / cps);
+  }
+  cur.remove(); el.classList.remove('typing'); return true;
+}
+document.addEventListener('click', e => { const t = e.target.closest('.typing'); if (t && t._tw) t._tw.skip = true; });
+
+/* ---------------- toast & modal ---------------- */
+let toastT;
+function toast(msg, err) {
+  const t = $('#toast'); t.textContent = msg; t.className = 'on' + (err ? ' err' : '');
+  clearTimeout(toastT); toastT = setTimeout(() => (t.className = ''), 2600);
+}
+let modalClose = null;
+function openModal(html, { onClose } = {}) {
+  $('#modal .mbox').innerHTML = html; $('#modal').classList.remove('hide'); modalClose = onClose || null;
+}
+function closeModal() { $('#modal').classList.add('hide'); const f = modalClose; modalClose = null; f && f(); }
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal' || e.target.closest('[data-close]')) closeModal(); });
+function ask(html, btns) {
+  return new Promise(res => {
+    openModal(html + `<div class="row btns">${btns.map((b, i) => `<button class="btn ${b.cls || ''}" data-ask="${i}">${esc(b.label)}</button>`).join('')}</div>`,
+      { onClose: () => res(null) });
+    $$('[data-ask]', $('#modal')).forEach(el => el.onclick = () => { modalClose = null; $('#modal').classList.add('hide'); sfx.click(); res(btns[+el.dataset.ask].value); });
+  });
+}
+
+/* ---------------- Gemini ---------------- */
+const FALLBACK_MODELS = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-3-flash-preview', 'gemini-2.0-flash'];
+const ENDPOINTS = {
+  studio: (m, k) => ({ url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent`, headers: { 'x-goog-api-key': k } }),
+  vertex: (m, k) => ({ url: `https://aiplatform.googleapis.com/v1/publishers/google/models/${encodeURIComponent(m)}:generateContent?key=${encodeURIComponent(k)}`, headers: {} })
+};
+const hasKey = () => !!settings.apiKey.trim();
+class NoKey extends Error { constructor() { super('Ingen Gemini-nyckel inlagd'); this.nokey = true; } }
+function combos() {
+  const k = settings.apiKey.trim();
+  const eps = settings.endpoint === 'auto' ? (k.startsWith('AQ.') ? ['vertex', 'studio'] : ['studio', 'vertex']) : [settings.endpoint];
+  const models = [...new Set([settings.model.trim() || FALLBACK_MODELS[0], ...FALLBACK_MODELS])];
+  const list = [];
+  for (const e of eps) for (const m of models) list.push({ ep: e, model: m });
+  const w = settings.working;
+  if (w && w.key === fnv(k)) {
+    const i = list.findIndex(c => c.ep === w.ep && c.model === w.model);
+    if (i > 0) list.unshift(list.splice(i, 1)[0]);
+  }
+  return list;
+}
+async function gemini({ system, contents, prompt, json = false, temperature = 0.7, image }) {
+  if (!hasKey()) throw new NoKey();
+  const k = settings.apiKey.trim();
+  if (!contents) {
+    const parts = [{ text: prompt }];
+    if (image) parts.unshift({ inlineData: { mimeType: image.mime, data: image.data } });
+    contents = [{ role: 'user', parts }];
+  }
+  const body = JSON.stringify({
+    ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
+    contents,
+    generationConfig: { temperature, ...(json ? { responseMimeType: 'application/json' } : {}) }
+  });
+  let lastErr;
+  for (const c of combos()) {
+    const { url, headers } = ENDPOINTS[c.ep](c.model, k);
+    let res, data;
+    try {
+      res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body });
+      data = await res.json().catch(() => ({}));
+    } catch (e) { lastErr = new Error('Nätverksfel mot ' + c.ep + ' (' + e.message + ')'); continue; }
+    if (!res.ok) {
+      const msg = data?.error?.message || ('HTTP ' + res.status);
+      lastErr = new Error(msg);
+      // fel modell/fel endpoint för den här nyckeln → prova nästa kombination
+      if ([400, 401, 403, 404].includes(res.status) && !/safety|blocked/i.test(msg)) continue;
+      throw lastErr;
+    }
+    const cand = data.candidates?.[0];
+    const text = (cand?.content?.parts || []).map(p => p.text || '').join('').trim();
+    if (!text) throw new Error('Tomt svar från AI:n (' + (cand?.finishReason || data.promptFeedback?.blockReason || 'okänt') + ')');
+    if (!settings.working || settings.working.ep !== c.ep || settings.working.model !== c.model) {
+      settings.working = { ep: c.ep, model: c.model, key: fnv(k) }; saveSettings(); renderStatus();
+    }
+    return json ? parseJSON(text) : text;
+  }
+  throw lastErr || new Error('AI:n svarade inte');
+}
+function parseJSON(t) {
+  t = t.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+  try { return JSON.parse(t); } catch {}
+  const a = t.indexOf('{'), b = t.lastIndexOf('}');
+  if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch {} }
+  throw new Error('AI:n svarade i fel format — försök igen');
+}
+const clean = t => String(t || '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/^#+\s*/gm, '').replace(/^\s*[*-]\s+/gm, '• ').trim();
+function aiErrorHTML(e) {
+  if (e && e.nokey) return `<div class="warnbox">AI-KÄRNAN ÄR OFFLINE. Lägg in din Gemini-nyckel under Inställningar för att aktivera AI.<div class="row btns"><button class="btn small gold" data-go="settings">⚙ INSTÄLLNINGAR</button></div></div>`;
+  return `<div class="warnbox">AI-FEL: ${esc(e && e.message || e)}</div>`;
+}
+
+function aiContext() {
+  const n = new Date(); const w = isoWeek(n);
+  const mem = me.memories.length ? me.memories.map(m => '- ' + m.text).join('\n') : '- (inga minnen sparade än)';
+  const kids = me.kids.length ? me.kids.map(k => `${k.name}${k.likes ? ' (gillar ' + k.likes + ')' : ''}`).join(', ') : 'inga angivna';
+  const mine = myFuture().map(b => `${b.date} ${DAYS_L[parseYmd(b.date).getDay()]} ${slotLabel(b.slot)}`).join('; ') || 'inga';
+  return `Idag: ${ymd(n)} (${DAYS_L[n.getDay()]}), klockan ${clock()}, ISO-vecka ${w} (${parity(w)} vecka).
+Användare: ${me.name}, lägenhet ${me.apt}. Barn: ${kids}.
+Användarens minnen (följ dessa noga):
+${mem}
+Användarens bokade tvättider: ${mine}.
+Regler: max ${MAX_ACTIVE} framtida bokningar per hushåll. Passen är [0] 07–10, [1] 10–13, [2] 13–16, [3] 16–19, [4] 19–22.`;
+}
+function calendarText(days = 14) {
+  const t = new Date(); const lines = [];
+  for (let k = 0; k < days; k++) {
+    const d = addDays(t, k); const s = ymd(d); const w = isoWeek(d);
+    const free = [0, 1, 2, 3, 4].filter(i => isFree(s, i)).map(i => `[${i}] ${slotLabel(i)}`);
+    lines.push(`${s} ${DAYS_L[d.getDay()]} v${w} (${parity(w)}): ${free.length ? free.join(', ') : 'inga lediga'}`);
+  }
+  return lines.join('\n');
+}
+function validSuggestions(list) {
+  const seen = new Set();
+  return (Array.isArray(list) ? list : []).map(s => ({ date: String(s.date || ''), slot: Number(s.slot), reason: String(s.reason || '') }))
+    .filter(s => /^\d{4}-\d{2}-\d{2}$/.test(s.date) && s.slot >= 0 && s.slot < 5 && isFree(s.date, s.slot) && !seen.has(s.date + s.slot) && seen.add(s.date + s.slot))
+    .slice(0, 3);
+}
+const suggHTML = list => list.map(s => `<div class="sugg pbox"><div class="when">${esc(fmtDate(s.date).toUpperCase())}<br>KL ${slotLabel(s.slot)}</div>
+  <div class="why">${esc(s.reason)}</div><button class="btn small green" data-book="${s.date}|${s.slot}">✓ BOKA</button></div>`).join('');
+
+/* ---------------- NFC ---------------- */
+const hasNFC = 'NDEFReader' in window;
+async function hashCard(raw) {
+  const s = 'tvos:' + String(raw).trim().toUpperCase();
+  try {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+    return [...new Uint8Array(buf)].slice(0, 12).map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch { return fnv(s).toString(16).padStart(8, '0') + fnv(s + '#').toString(16).padStart(8, '0'); }
+}
+function readNFC(signal) {
+  return new Promise(async (res, rej) => {
+    try {
+      const r = new NDEFReader();
+      signal.addEventListener('abort', () => rej(new DOMException('avbrutet', 'AbortError')));
+      r.onreading = e => {
+        let id = e.serialNumber;
+        if (!id && e.message) { try { id = [...e.message.records].map(x => new TextDecoder().decode(x.data)).join('|'); } catch {} }
+        id ? res(id) : rej(new Error('Kortet saknar ID'));
+      };
+      r.onreadingerror = () => rej(new Error('Kunde inte läsa kortet — håll det stilla och försök igen'));
+      await r.scan({ signal });
+    } catch (e) { rej(e); }
+  });
+}
+function scanCard(mode) {
+  return new Promise(resolve => {
+    const ctrl = new AbortController(); let done = false;
+    const finish = v => { if (done) return; done = true; ctrl.abort(); if (!$('#modal').classList.contains('hide')) closeModal(); resolve(v); };
+    const virt = users.filter(u => u.virtualCard);
+    openModal(`<h3 class="h">${mode === 'login' ? '▣ LOGGA IN MED KORT' : '▣ KOPPLA NFC-KORT'}</h3>
+      <div class="scanner" id="scanner">${img('card', 6)}<div class="waves"><i></i><i></i><i></i></div></div>
+      <p class="tw center" id="scan-msg"></p>
+      <div class="sim">
+        <p class="muted">${hasNFC ? 'Inget kort till hands? Använd ett virtuellt kort:' : 'Den här webbläsaren saknar Web NFC (finns i Chrome på Android, via https). Använd ett virtuellt kort:'}</p>
+        <div class="row">${mode === 'login'
+          ? virt.map(u => `<button class="btn small ghost" data-vcard="${esc(u.virtualCard)}">▣ ${esc(u.name)}${u.demo ? ' (demo)' : ''}</button>`).join('') || '<span class="muted">Inga virtuella kort än.</span>'
+          : `<button class="btn small cyan" data-vnew>▣ SKAPA VIRTUELLT KORT</button>`}</div>
+        <div class="row" style="flex-wrap:nowrap;margin-top:6px"><input id="scan-manual" placeholder="…eller skriv kort-ID" autocomplete="off"><button class="btn small ghost" data-vmanual>OK</button></div>
+      </div>
+      <div class="row btns"><button class="btn ghost" data-close>AVBRYT</button></div>`, { onClose: () => finish(null) });
+    const msg = $('#scan-msg');
+    typeInto(msg, hasNFC ? 'HÅLL KORTET MOT BAKSIDAN AV TELEFONEN...' : 'VÄNTAR PÅ KORT...');
+    const got = async id => {
+      if (done) return;
+      $('#scanner').classList.add('ok'); sfx.coin();
+      await typeInto(msg, 'KORT LÄST ✓'); await sleep(350); finish(id);
+    };
+    $$('[data-vcard]', $('#modal')).forEach(b => b.onclick = () => got(b.dataset.vcard));
+    const vn = $('[data-vnew]', $('#modal')); if (vn) vn.onclick = () => got('VIRT-' + Math.random().toString(36).slice(2, 10).toUpperCase());
+    const man = () => { const v = $('#scan-manual').value.trim(); if (v) got(v); };
+    $('[data-vmanual]', $('#modal')).onclick = man;
+    $('#scan-manual').onkeydown = e => { if (e.key === 'Enter') man(); };
+    if (hasNFC) readNFC(ctrl.signal).then(got).catch(e => {
+      if (e.name === 'AbortError' || done) return;
+      sfx.err(); typeInto(msg, e.name === 'NotAllowedError' ? 'NFC NEKAD. TILLÅT NFC FÖR SIDAN OCH FÖRSÖK IGEN.' : 'NFC-FEL: ' + e.message);
+    });
+  });
+}
+
+/* ---------------- boot ---------------- */
+async function seed() {
+  if (users) return;
+  users = [{
+    id: 'u_demo_johan', demo: true, name: 'Johan', apt: '1104', pin: '', virtualCard: 'DEMO-JOHAN',
+    cardHash: await hashCard('DEMO-JOHAN'), created: Date.now(),
+    kids: [{ name: 'Liam', likes: 'dinosaurier, rymden och Minecraft' }],
+    memories: [
+      { id: uid('m'), ts: Date.now(), text: 'Varannan vecka jobbar jag helg (jämna veckor), varannan vecka jobbar jag vardagar 07–16 (udda veckor).' },
+      { id: uid('m'), ts: Date.now(), text: 'Jag hämtar Liam på förskolan 16:30 på vardagar, så 16–19 funkar dåligt då.' },
+      { id: uid('m'), ts: Date.now(), text: 'Jag tvättar helst på kvällen 19–22, och en gång i veckan räcker oftast.' }
+    ]
+  }];
+  saveUsers();
+}
+let bootDone = false;
+async function boot() {
+  document.body.classList.toggle('nocrt', !settings.crt);
+  await seed();
+  const el = $('#boot-log');
+  const lines = [
+    'TVÄTT-OS BIOS v1.0', 'TVÄTTSTUGAN · HUS 7', '',
+    'MINNESTEST .......... 640K OK',
+    'NFC-LÄSARE .......... ' + (hasNFC ? 'HITTAD' : 'SIMULERAD'),
+    'AI-KÄRNA ............ ' + (hasKey() ? 'GEMINI REDO' : 'OFFLINE'),
+    'BOENDE .............. ' + users.length + ' KONTON',
+    'TRUMMA .............. SNURRAR',
+    'TVÄTTMEDEL .......... 73%', '',
+    'SYSTEMET ÄR REDO.'
+  ];
+  el.textContent = '';
+  for (const l of lines) {
+    if (bootDone) return;
+    await typeInto(el, l + '\n', { append: true, cursor: true });
+    await sleep(l ? 120 : 60);
+  }
+  $('#boot-go').classList.add('on');
+}
+function show(id) { $$('.screen').forEach(s => s.classList.toggle('on', s.id === id)); }
+function leaveBoot() {
+  if (bootDone) return; bootDone = true; sfx.ok(); toLogin();
+}
+$('#boot').addEventListener('click', leaveBoot);
+document.addEventListener('keydown', e => { if ($('#boot').classList.contains('on') && (e.key === 'Enter' || e.key === ' ')) leaveBoot(); });
+
+/* ---------------- login ---------------- */
+function toLogin(msg) {
+  me = null; show('login');
+  $('#login-washer').innerHTML = washerHTML();
+  $('#whoami').innerHTML = '';
+  typeInto($('#login-msg'), msg || 'HÅLL DITT NFC-KORT MOT LÄSAREN\nFÖR ATT SE OM DET ÄR DU.');
+}
+$('#btn-scan').onclick = async () => {
+  sfx.click();
+  const raw = await scanCard('login'); if (!raw) return;
+  const h = await hashCard(raw);
+  const u = users.find(x => x.cardHash === h);
+  const box = $('#whoami');
+  box.innerHTML = `<p class="tw" id="who-msg"></p><div class="row btns" id="who-btns" style="visibility:hidden"></div>`;
+  const btns = $('#who-btns');
+  $('#login-washer').firstElementChild && $('#login-washer').classList.add('fast');
+  if (!u) {
+    sfx.err();
+    btns.innerHTML = `<button class="btn pink" id="w-new">+ SKAPA KONTO MED KORTET</button><button class="btn ghost" id="w-no">AVBRYT</button>`;
+    await typeInto($('#who-msg'), `KORT-ID …${h.slice(-4).toUpperCase()}\nOKÄNT KORT. DET HÄR KORTET TILLHÖR INGEN ÄN.`);
+    btns.style.visibility = 'visible';
+    $('#w-new').onclick = () => toRegister(h);
+    $('#w-no').onclick = () => toLogin();
+  } else {
+    sfx.ok();
+    btns.innerHTML = `<button class="btn green big" id="w-yes">✓ JA, DET ÄR JAG</button><button class="btn ghost" id="w-no">✗ NEJ</button>`;
+    await typeInto($('#who-msg'), `KORT-ID …${h.slice(-4).toUpperCase()}\nMATCHAR: ${u.name.toUpperCase()} · LGH ${u.apt}\n\nÄR DET DU, ${u.name.toUpperCase()}?`);
+    btns.style.visibility = 'visible';
+    $('#w-yes').onclick = async () => { if (await checkPin(u)) login(u); };
+    $('#w-no').onclick = () => { sfx.err(); toLogin('OK. LÄMNA TILLBAKA KORTET TILL SIN ÄGARE 🙂\nHÅLL DITT EGET KORT MOT LÄSAREN.'); };
+  }
+  $('#login-washer').classList.remove('fast');
+};
+async function checkPin(u) {
+  if (!u.pin) return true;
+  for (let tries = 3; tries > 0; tries--) {
+    const v = await new Promise(res => {
+      openModal(`<h3 class="h">🔒 PIN-KOD</h3><p>Skriv din PIN, ${esc(u.name)}. (${tries} försök kvar)</p>
+        <input id="pin-in" type="password" inputmode="numeric" maxlength="6" autocomplete="off">
+        <div class="row btns"><button class="btn green" id="pin-ok">OK</button><button class="btn ghost" data-close>AVBRYT</button></div>`, { onClose: () => res(null) });
+      const i = $('#pin-in'); i.focus();
+      const ok = () => { modalClose = null; $('#modal').classList.add('hide'); res(i.value); };
+      $('#pin-ok').onclick = ok; i.onkeydown = e => { if (e.key === 'Enter') ok(); };
+    });
+    if (v === null) return false;
+    if (v === u.pin) return true;
+    sfx.err(); toast('FEL PIN', true);
+  }
+  toLogin('FÖR MÅNGA FELAKTIGA PIN-FÖRSÖK.\nFÖRSÖK IGEN SENARE.');
+  return false;
+}
+$('#btn-new').onclick = () => { sfx.click(); toRegister(null); };
+
+/* ---------------- register ---------------- */
+let regCard = null, regCard_raw = null;
+function toRegister(cardHash) {
+  show('register'); regCard = cardHash;
+  ['reg-name', 'reg-apt', 'reg-pin', 'reg-kid', 'reg-kidlikes'].forEach(i => ($('#' + i).value = ''));
+  updRegCard();
+  typeInto($('#reg-intro'), 'VÄLKOMMEN TILL TVÄTTSTUGAN. FYLL I DINA UPPGIFTER OCH KOPPLA DITT NFC-KORT — SEN LOGGAR DU IN MED ETT BLIP.');
+}
+function updRegCard() {
+  $('#reg-cardimg').innerHTML = img('card', 3, regCard ? null : { v: '#3a4058', y: '#4a516b', c: '#4a516b', w: '#4a516b' });
+  $('#reg-cardstate').textContent = regCard ? `KORT KOPPLAT ✓ (ID …${regCard.slice(-4).toUpperCase()})` : 'Inget kort kopplat ännu.';
+  $('#reg-cardstate').style.color = regCard ? 'var(--green)' : '';
+  $('#reg-go').disabled = !(regCard && $('#reg-name').value.trim() && $('#reg-apt').value.trim());
+}
+['reg-name', 'reg-apt'].forEach(i => $('#' + i).addEventListener('input', updRegCard));
+$('#reg-back').onclick = () => toLogin();
+$('#reg-scan').onclick = async () => {
+  const raw = await scanCard('register'); if (!raw) return;
+  const h = await hashCard(raw);
+  const owner = users.find(u => u.cardHash === h);
+  if (owner) { sfx.err(); toast(`KORTET ÄR REDAN KOPPLAT TILL ${owner.name.toUpperCase()}`, true); return; }
+  regCard = h; regCard_raw = raw; updRegCard();
+};
+$('#reg-go').onclick = () => {
+  const name = $('#reg-name').value.trim(), apt = $('#reg-apt').value.trim(), pin = $('#reg-pin').value.trim();
+  if (pin && !/^\d{4,6}$/.test(pin)) { sfx.err(); toast('PIN MÅSTE VARA 4–6 SIFFROR', true); return; }
+  const kid = $('#reg-kid').value.trim();
+  const u = {
+    id: uid('u'), name, apt, pin, cardHash: regCard, created: Date.now(),
+    virtualCard: regCard_raw && /^VIRT-/.test(regCard_raw) ? regCard_raw : null,
+    kids: kid ? [{ name: kid, likes: $('#reg-kidlikes').value.trim() }] : [], memories: []
+  };
+  users.push(u); saveUsers(); regCard_raw = null; sfx.ok();
+  login(u, true);
+};
+
+/* ---------------- app shell ---------------- */
+let lastInput = Date.now(), cleanup = null, current = 'home';
+['pointerdown', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, () => (lastInput = Date.now()), { passive: true }));
+function login(u, fresh) {
+  me = u; show('app'); lastInput = Date.now(); chatLog = [];
+  $('#top-who').textContent = `${u.name.toUpperCase()} · LGH ${u.apt}`;
+  renderSound(); renderStatus();
+  go(fresh ? 'memories' : 'home', { fresh });
+}
+function logout(msg) { if (cleanup) { cleanup(); cleanup = null; } closeModalSilently(); toLogin(msg); }
+function closeModalSilently() { modalClose = null; $('#modal').classList.add('hide'); }
+$('#top-out').onclick = () => { sfx.click(); logout('UTLOGGAD. HEJ DÅ!\nHÅLL ETT KORT MOT LÄSAREN FÖR ATT LOGGA IN.'); };
+function renderSound() { $('#top-sound').textContent = settings.sound ? '♪' : '×'; }
+$('#top-sound').onclick = () => { settings.sound = !settings.sound; saveSettings(); renderSound(); sfx.click(); };
+
+function renderStatus() {
+  if (!me) return;
+  const nb = myFuture()[0];
+  const idle = settings.autoLogout ? Math.max(0, 300 - Math.floor((Date.now() - lastInput) / 1000)) : null;
+  $('#status').innerHTML = `<span>${clock()}</span>
+    <span>V${isoWeek(new Date())} ${parity(isoWeek(new Date())).toUpperCase()}</span>
+    <span>NÄSTA: <b>${nb ? esc(fmtDate(nb.date)) + ' ' + slotLabel(nb.slot) : '—'}</b></span>
+    <span>AI: ${hasKey() ? '<b>ONLINE</b>' : '<span class="warn">OFFLINE</span>'}</span>
+    <span>NFC: ${hasNFC ? '<b>JA</b>' : 'SIM'}</span>
+    ${idle !== null && idle <= 60 ? `<span class="warn">UTLOGGNING OM ${idle}s</span>` : ''}`;
+}
+setInterval(() => {
+  if (!me) return;
+  if (settings.autoLogout && Date.now() - lastInput > 300000) { logout('DU LOGGADES UT EFTER 5 MIN INAKTIVITET.\nHÅLL DITT KORT MOT LÄSAREN IGEN.'); return; }
+  renderStatus();
+}, 1000);
+
+const TITLES = { schedule: 'BOKA TID', planner: 'AI-PLANERAREN', memories: 'MINNEN', chat: 'TVÄTTBOT', expert: 'FLÄCKHJÄLP', games: 'SPEL', mine: 'MINA TIDER', settings: 'INSTÄLLNINGAR' };
+const TILES = [
+  { id: 'schedule', icon: 'cal', label: 'BOKA TID', sub: 'Veckoschemat' },
+  { id: 'planner', icon: 'robot', label: 'AI-PLANERA', sub: 'AI:n väljer tid' },
+  { id: 'memories', icon: 'floppy', label: 'MINNEN', sub: 'Ditt AI-minne' },
+  { id: 'chat', icon: 'chat', label: 'TVÄTTBOT', sub: 'Fråga vad som helst' },
+  { id: 'expert', icon: 'drop', label: 'FLÄCKHJÄLP', sub: 'Fläck · program · symbol' },
+  { id: 'games', icon: 'pad', label: 'SPEL', sub: 'För barnen' },
+  { id: 'mine', icon: 'bell', label: 'MINA TIDER', sub: 'Avboka · kalender' },
+  { id: 'settings', icon: 'gear', label: 'INSTÄLLN.', sub: 'AI-nyckel m.m.' }
+];
+function frame(id, inner) {
+  return `<div class="wrap"><div class="vhead"><button class="btn small ghost" data-go="home">◄ HEM</button>
+    ${img(TILES.find(t => t.id === id).icon, 3)}<h2 class="h">${TITLES[id]}</h2></div>${inner}</div>`;
+}
+function go(id, opts = {}) {
+  if (cleanup) { cleanup(); cleanup = null; }
+  current = id; sfx.click();
+  const v = $('#view'); v.scrollTop = 0;
+  (VIEWS[id] || VIEWS.home)(v, opts);
+}
+$('#view').addEventListener('click', async e => {
+  const g = e.target.closest('[data-go]'); if (g) { go(g.dataset.go); return; }
+  const b = e.target.closest('[data-book]');
+  if (b) {
+    const [date, slot] = b.dataset.book.split('|');
+    if (book(date, +slot)) { b.disabled = true; b.textContent = '✓ BOKAD'; b.closest('.sugg')?.classList.add('booked'); }
+  }
+});
+$('#modal').addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g && me) { closeModalSilently(); go(g.dataset.go); } });
+
+function book(date, slot) {
+  if (!isFree(date, slot)) { sfx.err(); toast('TIDEN ÄR INTE LEDIG LÄNGRE', true); return false; }
+  if (myFuture().length >= MAX_ACTIVE) { sfx.err(); toast(`MAX ${MAX_ACTIVE} BOKNINGAR. AVBOKA EN FÖRST.`, true); return false; }
+  bookings.push({ id: uid('b'), date, slot, userId: me.id, ts: Date.now() }); saveBookings();
+  sfx.ok(); toast(`BOKAT: ${fmtDate(date).toUpperCase()} ${slotLabel(slot)}`); renderStatus();
+  return true;
+}
+function unbook(b) { bookings = bookings.filter(x => x.id !== b.id); saveBookings(); renderStatus(); toast('AVBOKAD'); }
+function downloadICS(b) {
+  const s = slotAt(b.date, b.slot), e = slotAt(b.date, b.slot, true);
+  const f = d => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+  const now = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Tvatt-OS//SV', 'BEGIN:VEVENT', `UID:${b.id}@tvatt-os`, `DTSTAMP:${now}`,
+    `DTSTART:${f(s)}`, `DTEND:${f(e)}`, `SUMMARY:Tvättid ${slotLabel(b.slot)}`, 'LOCATION:Tvättstugan',
+    'BEGIN:VALARM', 'TRIGGER:-PT30M', 'ACTION:DISPLAY', 'DESCRIPTION:Tvättid om 30 minuter', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' })); a.download = `tvattid-${b.date}.ics`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+/* =====================================================================
+   VIEWS
+   ===================================================================== */
+const OFFLINE_TIPS = [
+  'Vänd jeansen ut och in — färgen håller längre.',
+  'Töm luddfiltret i torktumlaren efter varje pass. Grannarna tackar dig.',
+  'Fyll trumman till ungefär en handbredd från toppen — inte mer.',
+  'Kalla tvättprogram på 30–40° räcker för det mesta och sparar energi.',
+  'Lägg en tennisboll i torktumlaren med täcket så blir det fluffigt.'
+];
+const greeting = () => { const h = new Date().getHours(); return h < 10 ? 'GOD MORGON' : h < 17 ? 'HEJ' : h < 22 ? 'GOD KVÄLL' : 'GOD NATT'; };
+let chatLog = [];
+const VIEWS = {};
+
+VIEWS.home = async v => {
+  const nb = myFuture()[0];
+  v.innerHTML = `<div class="wrap">
+    <div class="hello"><p class="tw big" id="greet"></p><p class="tw" id="nexttxt"></p></div>
+    <div class="tip pbox">${img('robot', 4)}<div style="flex:1"><span class="tag">AI-TIPS FÖR DIG</span><p class="tw" id="tiptxt"></p></div></div>
+    <div class="tiles">${TILES.map((t, i) => `<button class="tile pbox" data-go="${t.id}" style="--d:${i}">${img(t.icon, 4)}<span>${t.label}</span><small>${t.sub}</small></button>`).join('')}</div></div>`;
+  await typeInto($('#greet'), `${greeting()}, ${me.name.toUpperCase()}.`);
+  await typeInto($('#nexttxt'), nb ? `NÄSTA TVÄTTID: ${fmtDate(nb.date).toUpperCase()} KL ${slotLabel(nb.slot)}.` : 'DU HAR INGEN BOKAD TID. LÅT AI:N PLANERA?');
+  const tipEl = $('#tiptxt'); if (!tipEl) return;
+  const today = ymd(new Date());
+  if (me.tip && me.tip.date === today) { typeInto(tipEl, me.tip.text); return; }
+  if (!hasKey()) { typeInto(tipEl, OFFLINE_TIPS[new Date().getDate() % OFFLINE_TIPS.length] + '\n(Lägg in en Gemini-nyckel för personliga tips.)'); return; }
+  tipEl.innerHTML = '<span class="think" style="margin:0">AI:N TÄNKER</span>';
+  try {
+    const t = await gemini({ system: 'Du är en vänlig AI-assistent i en svensk tvättstuga. Svara på svenska utan markdown.',
+      prompt: aiContext() + '\n\nGe ETT kort, personligt och konkret tips för dagen (max 25 ord) utifrån minnena, veckan och bokningarna. Bara tipset.', temperature: 0.9 });
+    me.tip = { date: today, text: clean(t) }; saveUsers();
+    typeInto(tipEl, me.tip.text);
+  } catch (e) { tipEl.innerHTML = ''; typeInto(tipEl, e.nokey ? OFFLINE_TIPS[0] : 'AI-kärnan svarar inte just nu. ' + OFFLINE_TIPS[1]); }
+};
+
+/* ---- schedule ---- */
+let weekOff = 0;
+VIEWS.schedule = (v, { hint } = {}) => {
+  const mon = addDays(monday(new Date()), weekOff * 7); const w = isoWeek(mon); const today = ymd(new Date());
+  let grid = `<div></div>${SLOTS.map((s, i) => `<div class="sh">${slotLabel(i)}</div>`).join('')}`;
+  for (let k = 0; k < 7; k++) {
+    const d = addDays(mon, k); const s = ymd(d);
+    grid += `<div class="dl ${s === today ? 'today' : ''}">${DAYS[d.getDay()].toUpperCase()}<small>${d.getDate()}</small></div>`;
+    for (let i = 0; i < 5; i++) {
+      const inf = slotInfo(s, i);
+      const cls = inf.past ? 'past' + (inf.st === 'mine' ? ' was-mine' : '') : inf.st;
+      const txt = inf.past ? (inf.st === 'mine' ? 'DIN' : '·') : inf.st === 'free' ? 'LEDIG' : inf.st === 'mine' ? 'DIN ★' : inf.who;
+      grid += `<button class="cell ${cls}${hint === s + '|' + i ? ' hint' : ''}" data-cell="${s}|${i}" ${inf.past ? 'disabled' : ''} aria-label="${fmtDate(s)} ${slotLabel(i)}: ${txt}">${txt}</button>`;
+    }
+  }
+  v.innerHTML = frame('schedule', `
+    <div class="weeknav"><button class="btn small ghost" data-wk="-1" ${weekOff <= 0 ? 'disabled' : ''}>◄</button>
+      <div class="h">VECKA ${w}<small>${parity(w).toUpperCase()} VECKA · ${mon.getDate()} ${MON[mon.getMonth()].toUpperCase()}–${addDays(mon, 6).getDate()} ${MON[addDays(mon, 6).getMonth()].toUpperCase()}</small></div>
+      <button class="btn small ghost" data-wk="1" ${weekOff >= 3 ? 'disabled' : ''}>►</button></div>
+    <div class="legend"><span><i style="background:#0f2a21;box-shadow:inset 0 0 0 2px #1d6b51"></i>Ledig</span><span><i style="background:var(--gold)"></i>Din</span>
+      <span><i style="background:#1a1e32"></i>Upptagen (lgh)</span><span>Max ${MAX_ACTIVE} bokningar</span></div>
+    <div class="sched">${grid}</div>
+    <div class="row btns"><button class="btn pink" data-go="planner">${img('robot', 2)} LÅT AI:N VÄLJA ÅT MIG</button></div>`);
+  $$('[data-wk]', v).forEach(b => b.onclick = () => { weekOff = Math.max(0, Math.min(3, weekOff + +b.dataset.wk)); sfx.click(); VIEWS.schedule(v); });
+  $$('[data-cell]', v).forEach(c => c.onclick = () => cellClick(c.dataset.cell));
+};
+async function cellClick(key) {
+  const [date, si] = key.split('|'); const i = +si; const inf = slotInfo(date, i);
+  const when = `${fmtDate(date).toUpperCase()} KL ${slotLabel(i)}`;
+  if (inf.st === 'free') {
+    const r = await ask(`<h3 class="h">BOKA TVÄTTID?</h3><p>${when}</p>`, [{ label: '✓ BOKA', value: 1, cls: 'green' }, { label: 'AVBRYT', value: 0, cls: 'ghost' }]);
+    if (r && book(date, i)) VIEWS.schedule($('#view'));
+  } else if (inf.st === 'mine') {
+    const r = await ask(`<h3 class="h">DIN TVÄTTID</h3><p>${when}</p>`, [{ label: '📅 KALENDER', value: 'ics', cls: 'cyan' }, { label: '✗ AVBOKA', value: 'del', cls: 'red' }, { label: 'STÄNG', value: 0, cls: 'ghost' }]);
+    if (r === 'ics') downloadICS(inf.b);
+    if (r === 'del') { unbook(inf.b); VIEWS.schedule($('#view')); }
+  } else {
+    const r = await ask(`<h3 class="h">UPPTAGEN</h3><p>${when} är bokad av lgh ${esc(inf.who)}.</p><p class="muted">Vill du att AI:n skriver en vänlig lapp och frågar om ni kan byta tid?</p>`,
+      [{ label: '✎ SKRIV BYTESLAPP', value: 1, cls: 'pink' }, { label: 'STÄNG', value: 0, cls: 'ghost' }]);
+    if (r) swapNote(date, i, inf.who);
+  }
+}
+async function swapNote(date, i, who) {
+  openModal(`<h3 class="h">✎ BYTESLAPP TILL LGH ${esc(who)}</h3><div id="swap-out"><p class="think">AI:N SKRIVER</p></div>
+    <div class="row btns"><button class="btn cyan" id="swap-copy" disabled>⧉ KOPIERA</button><button class="btn ghost" data-close>STÄNG</button></div>`);
+  const offline = `Hej lgh ${who}!\n\nJag heter ${me.name} och bor i lgh ${me.apt}. Skulle vi kunna byta tvättid? Jag skulle behöva ${fmtDate(date)} kl ${slotLabel(i)}. ${myFuture()[0] ? `Du kan få min tid ${fmtDate(myFuture()[0].date)} kl ${slotLabel(myFuture()[0].slot)} om den passar.` : 'Säg till vilken tid som passar dig så hjälper jag gärna till.'}\n\nTack på förhand!\n/${me.name}, lgh ${me.apt}`;
+  let text = offline;
+  try {
+    text = clean(await gemini({ system: 'Du skriver korta, vänliga lappar på svenska mellan grannar i ett flerbostadshus. Ingen markdown.',
+      prompt: `${aiContext()}\n\nSkriv en kort lapp (max 70 ord) till grannen i lgh ${who} där ${me.name} frågar om att byta till tvättiden ${fmtDate(date)} kl ${slotLabel(i)}. Erbjud gärna någon av användarens egna bokade tider i utbyte om det finns. Avsluta med namn och lägenhet.` }));
+  } catch (e) { if (!e.nokey) toast('AI-FEL — VISAR STANDARDLAPP', true); }
+  const out = $('#swap-out'); if (!out) return;
+  out.innerHTML = '<p class="tw pbox" style="padding:12px" id="swap-txt"></p>';
+  $('#swap-copy').disabled = false;
+  $('#swap-copy').onclick = () => { navigator.clipboard?.writeText(text).then(() => toast('KOPIERAT'), () => toast('KUNDE INTE KOPIERA', true)); };
+  typeInto($('#swap-txt'), text);
+}
+
+/* ---- AI planner ---- */
+VIEWS.planner = v => {
+  v.innerHTML = frame('planner', `
+    <p class="tw vintro" id="pl-intro"></p>
+    <div class="grid2">
+      <div class="section pbox"><div class="h">${img('floppy', 2)} MINNEN SOM ANVÄNDS</div>
+        ${me.memories.length ? me.memories.map(m => `<p style="margin:6px 0">• ${esc(m.text)}</p>`).join('') : '<p class="muted">Inga minnen än. AI:n planerar bättre om du berättar om din vardag.</p>'}
+        <button class="btn small ghost" data-go="memories">✎ ÄNDRA MINNEN</button></div>
+      <div class="section pbox"><div class="h">${img('robot', 2)} ÖNSKEMÅL JUST NU</div>
+        <textarea id="pl-wish" placeholder="Valfritt. T.ex. &quot;Jag har mycket tvätt efter semestern, behöver två pass nästa vecka.&quot;"></textarea>
+        <div class="chips">${['Snarast möjligt', 'Två pass nästa vecka', 'Helst på helgen', 'Inte före 19'].map(c => `<button class="chip" data-wish="${c}">${c}</button>`).join('')}</div>
+        <button class="btn big block pink" id="pl-go">▶ LÅT AI:N PLANERA</button></div>
+    </div>
+    <div id="pl-out"></div>`);
+  typeInto($('#pl-intro'), `AI:N LÄSER DINA MINNEN, KOLLAR VECKA ${isoWeek(new Date())} (${parity(isoWeek(new Date())).toUpperCase()}) OCH ALLA LEDIGA PASS 14 DAGAR FRAMÅT — SEN FÖRESLÅR DEN DE BÄSTA TIDERNA ÅT DIG.`);
+  $$('[data-wish]', v).forEach(c => c.onclick = () => { const t = $('#pl-wish'); t.value = (t.value ? t.value + '. ' : '') + c.dataset.wish; });
+  $('#pl-go').onclick = runPlanner;
+};
+async function runPlanner() {
+  const out = $('#pl-out'); const btn = $('#pl-go'); btn.disabled = true;
+  out.innerHTML = `<div class="washer fast shake" style="--s:5px">${washerHTML()}</div><p class="think center">AI:N PLANERAR</p>`;
+  const wish = $('#pl-wish').value.trim();
+  let summary, list;
+  try {
+    const r = await gemini({
+      json: true, temperature: 0.4,
+      system: 'Du är AI-planeraren i en svensk tvättstuga. Du väljer de bästa tvättiderna åt användaren utifrån deras minnen (arbetsschema med udda/jämna ISO-veckor, barn, preferenser) och väljer ENDAST bland de lediga pass som listas. Räkna noga ut om en vecka är udda eller jämn utifrån ISO-veckonumret som anges. Svara på svenska, vänligt och kort. Svara ENBART med JSON: {"summary":"1–2 meningar om hur du resonerat","suggestions":[{"date":"YYYY-MM-DD","slot":0,"reason":"kort motivering, max 18 ord"}]} med 1–3 förslag, bäst först.',
+      prompt: `${aiContext()}\n\nLediga pass kommande 14 dagar:\n${calendarText()}\n\nAnvändarens önskemål just nu: ${wish || '(inga särskilda)'}`
+    });
+    summary = clean(r.summary); list = validSuggestions(r.suggestions);
+    if (!list.length) summary += '\n(AI:n hittade inga giltiga lediga pass — prova schemat manuellt.)';
+  } catch (e) {
+    if (!e.nokey) { out.innerHTML = aiErrorHTML(e); btn.disabled = false; return; }
+    ({ summary, list } = offlinePlan());
+    summary = 'AI-KÄRNAN ÄR OFFLINE — ENKEL PLANERING UTAN AI:\n' + summary;
+  }
+  if (!out.isConnected) return;
+  out.innerHTML = `<div class="out pbox"><p class="tw" id="pl-sum"></p></div><div id="pl-list"></div>`;
+  await typeInto($('#pl-sum'), summary);
+  const l = $('#pl-list'); if (l) l.innerHTML = suggHTML(list) + (list.length ? '' : '<p class="muted">Inga förslag.</p>');
+  if (btn.isConnected) btn.disabled = false;
+}
+function offlinePlan() {
+  const txt = me.memories.map(m => m.text.toLowerCase()).join(' ');
+  const pref = /kväll/.test(txt) ? [4, 3] : /morgon|förmiddag/.test(txt) ? [0, 1] : /helg/.test(txt) ? [1, 2] : [3, 4, 2];
+  const free = freeSlots(10);
+  const ranked = free.map(s => ({ ...s, score: (pref.includes(s.slot) ? 10 - pref.indexOf(s.slot) : 0) - (parseYmd(s.date) - new Date()) / 864e5 * 0.3 }))
+    .sort((a, b) => b.score - a.score).slice(0, 3)
+    .map(s => ({ date: s.date, slot: s.slot, reason: pref.includes(s.slot) ? 'Matchar tiden på dygnet du föredrar.' : 'Första lediga pass.' }));
+  return { summary: 'Jag valde lediga pass som matchar den tid på dygnet dina minnen nämner.', list: ranked };
+}
+
+/* ---- memories ---- */
+const MEM_EXAMPLES = [
+  'Varannan vecka jobbar jag helg, varannan vecka vardagar.',
+  'Jag jobbar natt måndag–onsdag.',
+  'Jag hämtar barnen kl 16 på vardagar.',
+  'Jag föredrar att tvätta tidigt på morgonen.',
+  'Vi är fyra i hushållet och tvättar två gånger i veckan.',
+  'Jag är allergisk mot parfym i tvättmedel.'
+];
+VIEWS.memories = (v, { fresh } = {}) => {
+  v.innerHTML = frame('memories', `
+    <p class="tw vintro" id="mem-intro"></p>
+    <div class="grid2">
+      <div>
+        <div class="section pbox"><div class="h">+ NYTT MINNE</div>
+          <textarea id="mem-new" maxlength="300" placeholder="Berätta om din vardag, t.ex. arbetstider, barn, när du helst tvättar…"></textarea>
+          <div class="chips">${MEM_EXAMPLES.map(t => `<button class="chip" data-ex="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+          <button class="btn block green" id="mem-add">✓ SPARA MINNE</button></div>
+        <div class="section pbox" style="margin-top:18px"><div class="h">${img('robot', 2)} AI-INTERVJU</div>
+          <p class="muted">Låt AI:n ställa frågor som gör planeringen smartare.</p>
+          <div id="iv"></div>
+          <div class="row"><button class="btn pink" id="iv-go">? FRÅGA MIG</button><button class="btn ghost" id="iv-sum">VAD VET AI:N OM MIG?</button></div></div>
+      </div>
+      <div>
+        <div class="section pbox"><div class="h">${img('floppy', 2)} SPARADE MINNEN (${me.memories.length})</div><div id="mem-list"></div></div>
+        <div class="section pbox" style="margin-top:18px"><div class="h">${img('pad', 2)} BARN I HUSHÅLLET</div>
+          <div id="kid-list"></div>
+          <div class="row" style="flex-wrap:nowrap"><input id="kid-name" maxlength="20" placeholder="Namn"><input id="kid-likes" maxlength="80" placeholder="Gillar…"></div>
+          <button class="btn small cyan" id="kid-add">+ LÄGG TILL BARN</button></div>
+      </div>
+    </div>`);
+  typeInto($('#mem-intro'), fresh
+    ? `VÄLKOMMEN ${me.name.toUpperCase()}! DET HÄR ÄR DITT AI-MINNE. SKRIV IN HUR DIN VARDAG SER UT — SÅ PLANERAR AI:N DINA TVÄTTIDER ÅT DIG ISTÄLLET FÖR ATT DU SKA LETA I SCHEMAT.`
+    : 'ALLT DU SKRIVER HÄR KOMMER AI:N IHÅG NÄR DEN PLANERAR, SVARAR OCH GER TIPS. MINNENA SPARAS BARA PÅ DEN HÄR ENHETEN.');
+  const drawMem = () => {
+    $('#mem-list').innerHTML = me.memories.length ? me.memories.map(m => `<div class="mem pbox"><p>${esc(m.text)}<small>${new Date(m.ts).toLocaleDateString('sv-SE')}</small></p>
+      <button class="btn small red" data-del="${m.id}" title="Glöm">✗</button></div>`).join('') : '<p class="muted">Inga minnen än.</p>';
+    $('.h', $('#mem-list').parentElement).innerHTML = `${img('floppy', 2)} SPARADE MINNEN (${me.memories.length})`;
+    $$('[data-del]', v).forEach(b => b.onclick = () => { me.memories = me.memories.filter(m => m.id !== b.dataset.del); me.tip = null; saveUsers(); sfx.click(); drawMem(); });
+  };
+  const drawKids = () => {
+    $('#kid-list').innerHTML = me.kids.length ? me.kids.map((k, i) => `<div class="mem pbox"><p><b style="color:var(--gold)">${esc(k.name)}</b>${k.likes ? ' — gillar ' + esc(k.likes) : ''}</p><button class="btn small red" data-kdel="${i}">✗</button></div>`).join('') : '<p class="muted">Inga barn tillagda.</p>';
+    $$('[data-kdel]', v).forEach(b => b.onclick = () => { me.kids.splice(+b.dataset.kdel, 1); saveUsers(); drawKids(); });
+  };
+  drawMem(); drawKids();
+  const addMem = text => { text = text.trim(); if (!text) return; me.memories.push({ id: uid('m'), ts: Date.now(), text }); me.tip = null; saveUsers(); sfx.ok(); drawMem(); };
+  $$('[data-ex]', v).forEach(c => c.onclick = () => { $('#mem-new').value = c.dataset.ex; $('#mem-new').focus(); });
+  $('#mem-add').onclick = () => { addMem($('#mem-new').value); $('#mem-new').value = ''; };
+  $('#kid-add').onclick = () => {
+    const n = $('#kid-name').value.trim(); if (!n) return;
+    me.kids.push({ name: n, likes: $('#kid-likes').value.trim() }); saveUsers(); sfx.ok(); $('#kid-name').value = $('#kid-likes').value = ''; drawKids();
+  };
+  $('#iv-go').onclick = async () => {
+    const iv = $('#iv'); iv.innerHTML = '<p class="think">AI:N FUNDERAR</p>';
+    let q;
+    try {
+      q = clean(await gemini({ system: 'Du intervjuar en boende i en svensk tvättstuga för att lära dig deras vardag så att du kan planera tvättider. Svara bara med frågan.',
+        prompt: aiContext() + '\n\nStäll EN kort, vänlig fråga (max 20 ord) om något som SAKNAS i minnena och som hjälper att planera tvättider (t.ex. arbetstider, barnens tider, mängd tvätt, husdjur, allergier, föredragen tid).', temperature: 0.9 }));
+    } catch (e) { iv.innerHTML = aiErrorHTML(e); return; }
+    iv.innerHTML = `<p class="tw" id="iv-q" style="color:var(--cyan);margin:8px 4px"></p><textarea id="iv-a" placeholder="Ditt svar…"></textarea><button class="btn small green" id="iv-save">✓ SPARA SVARET SOM MINNE</button>`;
+    typeInto($('#iv-q'), q);
+    $('#iv-save').onclick = async () => {
+      const a = $('#iv-a').value.trim(); if (!a) return;
+      $('#iv-save').disabled = true;
+      let memo = `${q} — ${a}`;
+      try { memo = clean(await gemini({ prompt: `Fråga: ${q}\nSvar: ${a}\n\nSkriv om detta till ETT kort minne i jag-form på svenska (max 25 ord). Svara bara med minnet.`, temperature: 0.2 })); } catch {}
+      addMem(memo); iv.innerHTML = '<p class="okbox">SPARAT ✓ Tryck "FRÅGA MIG" igen för en ny fråga.</p>';
+    };
+  };
+  $('#iv-sum').onclick = async () => {
+    const iv = $('#iv'); iv.innerHTML = '<p class="think">AI:N SAMMANFATTAR</p>';
+    try {
+      const t = clean(await gemini({ system: 'Du är en AI i en svensk tvättstuga. Svara på svenska utan markdown.',
+        prompt: aiContext() + '\n\nSammanfatta kort (max 60 ord) vad du vet om användaren och hur det påverkar när de bör tvätta. Nämn om något verkar motsägelsefullt eller saknas.' }));
+      iv.innerHTML = '<p class="tw out pbox" id="iv-s"></p>'; typeInto($('#iv-s'), t);
+    } catch (e) { iv.innerHTML = aiErrorHTML(e); }
+  };
+};
+
+/* ---- chat ---- */
+VIEWS.chat = v => {
+  v.innerHTML = frame('chat', `
+    <div class="chat" id="chat-log"></div>
+    <div class="chips">${['Hitta en tid åt mig nästa vecka', 'Hur tvättar jag ett täcke?', 'Vad betyder en balja med två streck?', 'Hur får jag bort lukt ur träningskläder?'].map(c => `<button class="chip" data-q="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+    <div class="chatbar"><input id="chat-in" placeholder="Skriv till Tvättbot…" maxlength="500" autocomplete="off"><button class="btn pink" id="chat-send">►</button></div>`);
+  const log = $('#chat-log');
+  const add = (who, text, sugg) => {
+    const d = document.createElement('div'); d.className = 'msg ' + who;
+    d.innerHTML = `<span class="tag">${who === 'me' ? esc(me.name.toUpperCase()) : 'TVÄTTBOT'}</span><span class="tw"></span>`;
+    log.appendChild(d);
+    const t = $('.tw', d);
+    if (who === 'me') t.textContent = text;
+    return { d, t, done: who === 'bot' ? typeInto(t, text).then(() => { if (sugg && sugg.length) d.insertAdjacentHTML('beforeend', suggHTML(sugg)); }) : null };
+  };
+  if (!chatLog.length) add('bot', `HEJ ${me.name.toUpperCase()}! JAG ÄR TVÄTTBOT. FRÅGA MIG OM TVÄTT, FLÄCKAR — ELLER BE MIG HITTA EN TID ÅT DIG.`);
+  else chatLog.forEach(m => { const x = add(m.role === 'user' ? 'me' : 'bot', m.text); if (x.t._tw) x.t._tw.skip = true; });
+  const send = async text => {
+    text = (text || '').trim(); if (!text) return;
+    $('#chat-in').value = ''; add('me', text); chatLog.push({ role: 'user', text }); sfx.click();
+    const wait = document.createElement('p'); wait.className = 'think'; wait.textContent = 'TVÄTTBOT SKRIVER'; log.appendChild(wait);
+    v.scrollTop = v.scrollHeight;
+    try {
+      const r = await gemini({
+        json: true,
+        system: `Du är Tvättbot, en hjälpsam och lite lekfull AI i en svensk tvättstuga. Svara på svenska, kort (max 90 ord), utan markdown. Du kan tvättråd, fläckborttagning, tvättsymboler och tvättstugans schema.
+${aiContext()}
+Lediga pass kommande 14 dagar:
+${calendarText()}
+Om användaren vill boka eller frågar efter tider: föreslå 1–3 lediga pass i "suggestions" (bara pass som finns i listan ovan). Annars lämna "suggestions" tom.
+Svara ENBART med JSON: {"reply":"text","suggestions":[{"date":"YYYY-MM-DD","slot":0,"reason":"kort"}]}`,
+        contents: chatLog.slice(-12).map(m => ({ role: m.role, parts: [{ text: m.text }] }))
+      });
+      wait.remove();
+      const reply = clean(r.reply) || '…';
+      chatLog.push({ role: 'model', text: reply });
+      const x = add('bot', reply, validSuggestions(r.suggestions));
+      await x.done;
+    } catch (e) {
+      wait.remove(); chatLog.pop();
+      const d = document.createElement('div'); d.innerHTML = aiErrorHTML(e); log.appendChild(d);
+    }
+    v.scrollTop = v.scrollHeight;
+  };
+  $('#chat-send').onclick = () => send($('#chat-in').value);
+  $('#chat-in').onkeydown = e => { if (e.key === 'Enter') send($('#chat-in').value); };
+  $$('[data-q]', v).forEach(c => c.onclick = () => send(c.dataset.q));
+};
+
+/* ---- expert: stain / program / symbol ---- */
+const STAINS = {
+  kaffe: 'Skölj direkt med kallt vatten från baksidan. Gnid in flytande tvättmedel, låt verka 10 min och tvätta på högsta tillåtna temperatur.',
+  rödvin: 'Torka upp, strö salt eller skölj med kallt vatten. Behandla med fläckmedel eller diskmedel + ättika, tvätta sedan. Undvik varmt vatten innan fläcken är borta.',
+  gräs: 'Gnid in flytande tvättmedel eller lite T-sprit (inte på syntet/acetat). Låt verka 15 min och tvätta på 40°.',
+  blod: 'Använd ALLTID kallt vatten — värme bränner fast blodet. Blötlägg i kallt saltvatten, gnid med tvål och tvätta på 40°.',
+  fett: 'Diskmedel löser fett: gnid in, låt verka 15 min och tvätta så varmt plagget tål.',
+  choklad: 'Skrapa bort det som går, skölj med kallt vatten från baksidan, gnid in tvättmedel och tvätta på 40°.',
+  tomat: 'Skölj kallt från baksidan, gnid in diskmedel. Sol eller en droppe citron hjälper mot färgen innan tvätt.'
+};
+VIEWS.expert = v => {
+  let tab = 'stain';
+  v.innerHTML = frame('expert', `
+    <div class="tabs"><button class="btn small on" data-tab="stain">FLÄCK</button><button class="btn small ghost" data-tab="prog">PROGRAM</button><button class="btn small ghost" data-tab="symbol">TVÄTTSYMBOL</button></div>
+    <div id="ex-body"></div><div id="ex-out"></div>`);
+  const body = $('#ex-body');
+  const draw = () => {
+    $$('[data-tab]', v).forEach(b => { b.classList.toggle('on', b.dataset.tab === tab); b.classList.toggle('ghost', b.dataset.tab !== tab); });
+    $('#ex-out').innerHTML = '';
+    if (tab === 'stain') body.innerHTML = `<p class="vintro">Beskriv fläcken så ger AI:n en steg-för-steg-plan.</p>
+      <label class="lbl">Vad är det för fläck?</label><input id="st-what" list="st-list" placeholder="t.ex. rödvin, gräs, bläck…">
+      <datalist id="st-list">${Object.keys(STAINS).map(k => `<option value="${k}">`).join('')}</datalist>
+      <div class="row" style="flex-wrap:nowrap">
+        <div style="flex:1"><label class="lbl">Material</label><select id="st-mat">${['Bomull', 'Syntet', 'Ull', 'Siden', 'Jeans', 'Linne', 'Vet ej'].map(o => `<option>${o}</option>`).join('')}</select></div>
+        <div style="flex:1"><label class="lbl">Hur gammal?</label><select id="st-age"><option>Helt färsk</option><option>Några timmar</option><option>Flera dagar</option><option>Redan tvättad en gång</option></select></div></div>
+      <button class="btn block pink" id="ex-go">▶ FRÅGA AI:N</button>`;
+    if (tab === 'prog') body.innerHTML = `<p class="vintro">Berätta vad som ska tvättas så föreslår AI:n program, temperatur, centrifug och dosering.</p>
+      <textarea id="pr-what" placeholder="t.ex. Vita lakan, två handdukar och Liams fotbollskläder med gräsfläckar"></textarea>
+      <label class="check"><input type="checkbox" id="pr-allergy">Allergiker i hushållet</label>
+      <label class="check"><input type="checkbox" id="pr-eco">Prioritera energisnålt</label>
+      <button class="btn block pink" id="ex-go">▶ FÖRESLÅ PROGRAM</button>`;
+    if (tab === 'symbol') body.innerHTML = `<p class="vintro">Fota tvättlappen så tolkar AI:n symbolerna åt dig.</p>
+      <input type="file" id="sy-file" accept="image/*" capture="environment">
+      <img id="sy-prev" class="preview pix" alt="" hidden>
+      <button class="btn block pink" id="ex-go" disabled>▶ TOLKA SYMBOLERNA</button>`;
+    let image = null;
+    const f = $('#sy-file');
+    if (f) f.onchange = async () => {
+      const file = f.files[0]; if (!file) return;
+      image = await shrinkImage(file); $('#sy-prev').src = 'data:' + image.mime + ';base64,' + image.data; $('#sy-prev').hidden = false; $('#ex-go').disabled = false;
+    };
+    $('#ex-go').onclick = async () => {
+      const out = $('#ex-out'); const btn = $('#ex-go'); btn.disabled = true;
+      out.innerHTML = '<p class="think">AI:N ANALYSERAR</p>';
+      const sys = 'Du är en erfaren tvättexpert i en svensk tvättstuga. Svara på svenska, konkret, max 120 ord, i korta numrerade steg. Ingen markdown (inga asterisker).';
+      let text;
+      try {
+        if (tab === 'stain') {
+          const what = $('#st-what').value.trim(); if (!what) { out.innerHTML = ''; btn.disabled = false; return; }
+          try { text = await gemini({ system: sys, prompt: `Fläck: ${what}. Material: ${$('#st-mat').value}. Ålder: ${$('#st-age').value}. Hur får jag bort den? Varna för vanliga misstag.` }); }
+          catch (e) { if (!e.nokey) throw e; const k = Object.keys(STAINS).find(k => what.toLowerCase().includes(k)); text = k ? 'OFFLINE-TIPS:\n' + STAINS[k] : null; if (!text) throw e; }
+        } else if (tab === 'prog') {
+          const what = $('#pr-what').value.trim(); if (!what) { out.innerHTML = ''; btn.disabled = false; return; }
+          text = await gemini({ system: sys, prompt: `${aiContext()}\n\nTvätt: ${what}.${$('#pr-allergy').checked ? ' Allergiker i hushållet.' : ''}${$('#pr-eco').checked ? ' Prioritera energisnålt.' : ''} Ska något sorteras isär? Föreslå program, temperatur, centrifugering och dosering per maskin. Ta hänsyn till minnena (t.ex. allergier).` });
+        } else {
+          text = await gemini({ system: sys, image, prompt: 'Tolka tvättsymbolerna på bilden. Förklara varje symbol kort och avsluta med en rad: "Så tvättar du:" med en sammanfattning. Om bilden inte visar tvättsymboler, säg det.' });
+        }
+        out.innerHTML = '<div class="out pbox"><p class="tw" id="ex-txt"></p></div>'; await typeInto($('#ex-txt'), clean(text));
+      } catch (e) { out.innerHTML = aiErrorHTML(e); }
+      if (btn.isConnected) btn.disabled = false;
+    };
+  };
+  $$('[data-tab]', v).forEach(b => b.onclick = () => { tab = b.dataset.tab; sfx.click(); draw(); });
+  draw();
+};
+function shrinkImage(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => {
+      const im = new Image();
+      im.onload = () => {
+        const m = 1024, sc = Math.min(1, m / Math.max(im.width, im.height));
+        const c = document.createElement('canvas'); c.width = Math.round(im.width * sc); c.height = Math.round(im.height * sc);
+        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+        res({ mime: 'image/jpeg', data: c.toDataURL('image/jpeg', 0.85).split(',')[1] });
+      };
+      im.onerror = () => rej(new Error('Kunde inte läsa bilden')); im.src = r.result;
+    };
+    r.onerror = () => rej(r.error); r.readAsDataURL(file);
+  });
+}
+
+/* ---- games ---- */
+let player = null;
+VIEWS.games = v => {
+  const players = [...me.kids.map(k => ({ name: k.name, likes: k.likes, kid: true })), { name: me.name, likes: '', kid: false }];
+  if (!player || !players.some(p => p.name === player.name)) player = players[0];
+  v.innerHTML = frame('games', `
+    <p class="tw vintro" id="g-intro"></p>
+    <label class="lbl">Vem spelar?</label>
+    <div class="players">${players.map((p, i) => `<button class="btn small ${p.name === player.name ? 'on' : 'ghost'}" data-pl="${i}">${esc(p.name.toUpperCase())}</button>`).join('')}
+      ${me.kids.length ? '' : '<button class="btn small cyan" data-go="memories">+ LÄGG TILL BARN</button>'}</div>
+    <div class="tiles" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
+      <button class="tile pbox" data-game="socks" style="--d:0">${img('sock', 5, { x: '#ec4899' })}<span>STRUMP-MEMORY</span><small>Hitta paren</small></button>
+      <button class="tile pbox" data-game="catch" style="--d:1">${img('basket', 4)}<span>FÅNGA TVÄTTEN</span><small>Undvik leran!</small></button>
+      <button class="tile pbox" data-game="riddle" style="--d:2">${img('robot', 4)}<span>AI-GÅTA</span><small>Kan du lösa den?</small></button>
+      <button class="tile pbox" data-game="story" style="--d:3">${img('floppy', 4)}<span>AI-SAGA</span><small>Med dig i huvudrollen</small></button>
+    </div>
+    <div class="gamearea" id="game"></div>`);
+  typeInto($('#g-intro'), `MEDAN TVÄTTEN SNURRAR: VÄLJ ETT SPEL, ${player.name.toUpperCase()}!`);
+  $$('[data-pl]', v).forEach(b => b.onclick = () => { player = players[+b.dataset.pl]; VIEWS.games(v); });
+  $$('[data-game]', v).forEach(b => b.onclick = () => {
+    if (cleanup) { cleanup(); cleanup = null; }
+    sfx.click(); const area = $('#game');
+    ({ socks: gameSocks, catch: gameCatch, riddle: gameRiddle, story: gameStory })[b.dataset.game](area);
+    area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+};
+const scoreKey = g => `${me.id}:${player.name}:${g}`;
+function gameSocks(area) {
+  const colors = ['#ec4899', '#22d3ee', '#f5c542', '#34d399', '#7c5cff', '#ef4444', '#fb923c', '#e9ecf5'];
+  const deck = [...colors, ...colors].map((c, i) => ({ c, i })).sort(() => Math.random() - 0.5);
+  let open = [], done = new Set(), moves = 0, lock = false;
+  const best = scores[scoreKey('socks')];
+  area.innerHTML = `<div class="gstat"><span>DRAG: <span id="sk-m">0</span></span><span>REKORD: ${best ?? '—'}</span></div>
+    <div class="socks">${deck.map((d, k) => `<button class="sock" data-k="${k}"><span class="q">?</span></button>`).join('')}</div><div id="sk-win"></div>`;
+  const face = (k, show) => { const b = $(`[data-k="${k}"]`, area); b.classList.toggle('open', show); b.innerHTML = show ? img('sock', 5, { x: deck[k].c }) : '<span class="q">?</span>'; };
+  $$('.sock', area).forEach(b => b.onclick = async () => {
+    const k = +b.dataset.k; if (lock || open.includes(k) || done.has(k)) return;
+    face(k, true); beep(440 + k * 30, 0.04); open.push(k);
+    if (open.length < 2) return;
+    moves++; $('#sk-m').textContent = moves;
+    const [a, c] = open; open = [];
+    if (deck[a].c === deck[c].c) {
+      done.add(a); done.add(c); sfx.coin();
+      [a, c].forEach(x => $(`[data-k="${x}"]`, area).classList.add('done'));
+      if (done.size === deck.length) {
+        sfx.ok();
+        const rec = best === undefined || moves < best; if (rec) { scores[scoreKey('socks')] = moves; saveScores(); }
+        $('#sk-win').innerHTML = `<p class="win">ALLA PAR HITTADE!<br>${moves} DRAG${rec ? ' · NYTT REKORD!' : ''}</p><div class="center"><button class="btn gold" id="sk-again">SPELA IGEN</button></div>`;
+        $('#sk-again').onclick = () => gameSocks(area);
+      }
+    } else { lock = true; await sleep(700); face(a, false); face(c, false); lock = false; }
+  });
+}
+function gameCatch(area) {
+  const W = 128, H = 160;
+  const best = scores[scoreKey('catch')] || 0;
+  area.innerHTML = `<div class="gstat"><span>POÄNG: <span id="gc-s">0</span></span><span>REKORD: ${best}</span><span class="lives" id="gc-l">♥♥♥</span></div>
+    <canvas id="gc" width="${W}" height="${H}"></canvas><p class="muted center" style="margin-top:8px">Dra med fingret eller använd ◄ ► · Fånga kläder, undvik lera!</p>
+    <div class="center"><button class="btn gold" id="gc-go">▶ START</button></div>`;
+  const cv = $('#gc'), ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false;
+  const CLOTH = ['#ec4899', '#22d3ee', '#f5c542', '#34d399', '#7c5cff', '#fb923c'];
+  let raf = 0, running = false, bx = W / 2 - 8, items = [], score = 0, lives = 3, t = 0, keys = {}, last = 0;
+  const drawBg = () => {
+    ctx.fillStyle = '#0e1122'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#151a30'; for (let y = 0; y < H; y += 16) for (let x = (y / 16) % 2 * 8; x < W; x += 16) ctx.fillRect(x, y, 8, 8);
+    ctx.fillStyle = '#323a5e'; ctx.fillRect(0, H - 6, W, 6);
+  };
+  const draw = () => {
+    drawBg();
+    items.forEach(it => ctx.drawImage(pix(it.kind, it.kind === 'mud' ? null : { x: it.c }).canvas, Math.round(it.x), Math.round(it.y)));
+    ctx.drawImage(pix('basket').canvas, Math.round(bx), H - 13);
+  };
+  const spawn = () => {
+    const kind = Math.random() < Math.min(0.35, 0.15 + score * 0.01) ? 'mud' : ['shirt', 'sock', 'pants'][Math.floor(Math.random() * 3)];
+    const p = pix(kind); items.push({ kind, c: CLOTH[Math.floor(Math.random() * CLOTH.length)], x: Math.random() * (W - p.w), y: -p.h, w: p.w, h: p.h, vy: 0.5 + Math.random() * 0.4 + score * 0.03 });
+  };
+  const loop = ts => {
+    const dt = Math.min(3, (ts - last) / 16.7 || 1); last = ts; t += dt;
+    if (keys.ArrowLeft) bx -= 2.4 * dt; if (keys.ArrowRight) bx += 2.4 * dt;
+    bx = Math.max(0, Math.min(W - 16, bx));
+    if (t > Math.max(22, 60 - score * 1.5)) { t = 0; spawn(); }
+    for (const it of items) {
+      it.y += it.vy * dt;
+      if (it.y + it.h >= H - 12 && it.y < H - 6 && it.x + it.w > bx + 1 && it.x < bx + 15) {
+        it.gone = true;
+        if (it.kind === 'mud') { lives--; sfx.err(); } else { score++; sfx.coin(); }
+      } else if (it.y > H) { it.gone = true; if (it.kind !== 'mud') { lives--; beep(180, 0.1, 'sawtooth', 0.02); } }
+    }
+    items = items.filter(i => !i.gone);
+    $('#gc-s').textContent = score; $('#gc-l').textContent = '♥'.repeat(Math.max(0, lives)) || '—';
+    draw();
+    if (lives <= 0) return over();
+    raf = requestAnimationFrame(loop);
+  };
+  const over = () => {
+    running = false; sfx.err();
+    ctx.fillStyle = 'rgba(11,13,23,.75)'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#f5c542'; ctx.font = '8px "Press Start 2P", monospace'; ctx.textAlign = 'center';
+    ctx.fillText('GAME OVER', W / 2, H / 2 - 6); ctx.fillStyle = '#e9ecf5'; ctx.fillText(score + ' P', W / 2, H / 2 + 10);
+    if (score > best) { scores[scoreKey('catch')] = score; saveScores(); toast('NYTT REKORD: ' + score); }
+    $('#gc-go').textContent = '▶ IGEN'; $('#gc-go').hidden = false;
+  };
+  const start = () => { items = []; score = 0; lives = 3; t = 0; bx = W / 2 - 8; running = true; last = performance.now(); $('#gc-go').hidden = true; raf = requestAnimationFrame(loop); };
+  const kd = e => { if (['ArrowLeft', 'ArrowRight'].includes(e.key) && running) { keys[e.key] = true; e.preventDefault(); } };
+  const ku = e => { keys[e.key] = false; };
+  const pm = e => { if (!running) return; const r = cv.getBoundingClientRect(); bx = (e.clientX - r.left) / r.width * W - 8; };
+  document.addEventListener('keydown', kd); document.addEventListener('keyup', ku);
+  cv.addEventListener('pointermove', pm); cv.addEventListener('pointerdown', pm);
+  $('#gc-go').onclick = start; draw();
+  cleanup = () => { cancelAnimationFrame(raf); running = false; document.removeEventListener('keydown', kd); document.removeEventListener('keyup', ku); };
+}
+const RIDDLES = [
+  { riddle: 'Jag har en stor rund mun men äter aldrig. Jag snurrar och snurrar men blir aldrig yr. Vad är jag?', hint: 'Jag bor i tvättstugan.', answer: 'tvättmaskin' },
+  { riddle: 'Vi är alltid två, men en av oss försvinner jämt i tvätten. Vilka är vi?', hint: 'Du har oss på fötterna.', answer: 'strumpor' },
+  { riddle: 'Ju mer jag torkar, desto blötare blir jag. Vad är jag?', hint: 'Du använder mig efter badet.', answer: 'handduk' },
+  { riddle: 'Jag håller hårt i tvätten på linan hela dagen men blir aldrig trött. Vad är jag?', hint: 'Jag har två små ben som nyper.', answer: 'klädnypa' }
+];
+async function gameRiddle(area) {
+  area.innerHTML = '<p class="think">AI:N HITTAR PÅ EN GÅTA</p>';
+  let r;
+  try {
+    r = await gemini({ json: true, temperature: 1,
+      prompt: `Hitta på en rolig gåta på enkel svenska för ett barn som heter ${player.name}${player.likes ? ' och gillar ' + player.likes : ''}. Gärna med koppling till intressena eller till tvätt. Svaret ska vara ETT ord. Svara ENBART med JSON: {"riddle":"...","hint":"...","answer":"ett ord"}` });
+    if (!r.riddle || !r.answer) throw new Error('fel format');
+  } catch (e) { r = RIDDLES[Math.floor(Math.random() * RIDDLES.length)]; if (!e.nokey) toast('AI:N SVARADE INTE — HÄR ÄR EN EGEN GÅTA'); }
+  area.innerHTML = `<div class="out pbox"><p class="tw riddle" id="rd-q"></p>
+    <div class="row" style="flex-wrap:nowrap;margin-top:12px"><input id="rd-a" placeholder="Ditt svar…" autocomplete="off"><button class="btn green" id="rd-ok">GISSA</button></div>
+    <div class="row"><button class="btn small ghost" id="rd-hint">💡 LEDTRÅD</button><button class="btn small ghost" id="rd-show">VISA SVARET</button><button class="btn small pink" id="rd-new">NY GÅTA</button></div>
+    <p class="tw" id="rd-msg" style="margin-top:10px;color:var(--gold)"></p></div>`;
+  typeInto($('#rd-q'), r.riddle);
+  const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+  const guess = () => {
+    const a = norm($('#rd-a').value), ans = norm(r.answer); if (!a) return;
+    const right = a === ans || (a.length > 3 && (ans.includes(a) || a.includes(ans)));
+    if (right) { sfx.ok(); typeInto($('#rd-msg'), `RÄTT, ${player.name.toUpperCase()}! SVARET ÄR: ${String(r.answer).toUpperCase()} ★`); }
+    else { sfx.err(); typeInto($('#rd-msg'), 'INTE RIKTIGT… FÖRSÖK IGEN!'); }
+  };
+  $('#rd-ok').onclick = guess; $('#rd-a').onkeydown = e => { if (e.key === 'Enter') guess(); };
+  $('#rd-hint').onclick = () => typeInto($('#rd-msg'), 'LEDTRÅD: ' + (r.hint || 'Tänk efter lite till!'));
+  $('#rd-show').onclick = () => typeInto($('#rd-msg'), 'SVARET ÄR: ' + String(r.answer).toUpperCase());
+  $('#rd-new').onclick = () => gameRiddle(area);
+}
+async function gameStory(area) {
+  area.innerHTML = `<div class="section pbox"><label class="lbl" style="margin-top:0">Vad ska sagan handla om? (valfritt)</label>
+    <input id="sg-theme" placeholder="${esc(player.likes ? 'T.ex. ' + player.likes.split(',')[0] : 'T.ex. en strumpa som rymmer')}">
+    <button class="btn block pink" id="sg-go">▶ BERÄTTA EN SAGA</button></div><div id="sg-out"></div>`;
+  $('#sg-go').onclick = async () => {
+    const out = $('#sg-out'); out.innerHTML = '<p class="think">AI:N SKRIVER EN SAGA</p>';
+    const theme = $('#sg-theme').value.trim() || player.likes || 'ett äventyr i tvättstugan';
+    let text;
+    try {
+      text = clean(await gemini({ temperature: 1, system: 'Du skriver korta, roliga och trygga godnattsagor på enkel svenska för barn 4–9 år. Ingen markdown.',
+        prompt: `Skriv en saga (130–170 ord) där ${player.name} är huvudperson. Tema: ${theme}. Sagan ska börja i tvättstugan och sluta lyckligt. Ge den en rubrik på första raden.` }));
+    } catch (e) {
+      if (!e.nokey) { out.innerHTML = aiErrorHTML(e); return; }
+      text = `${player.name.toUpperCase()} OCH DEN FÖRSVUNNA STRUMPAN\n\nEn kväll när tvättmaskinen snurrade som snabbast hörde ${player.name} en liten röst: "Hjälp, jag har tappat bort min kompis!" Det var en randig strumpa. Tillsammans letade de bakom torktumlaren, under bänken och i luddfiltret. Där! Kompisstrumpan satt och fnissade i en påslakan. ${theme ? 'Den hade drömt om ' + theme + '. ' : ''}Strumporna kramades så hårt att de blev ett par igen, och ${player.name} fick bära hem dem i tvättkorgen. Sedan dess försvinner inga strumpor i den här tvättstugan. Nästan aldrig. Snipp snapp snut!`;
+    }
+    out.innerHTML = '<div class="out pbox"><p class="tw" id="sg-txt"></p></div>';
+    typeInto($('#sg-txt'), text);
+  };
+}
+
+/* ---- my bookings ---- */
+VIEWS.mine = v => {
+  const list = myFuture();
+  const pastN = bookings.filter(b => b.userId === me.id && slotAt(b.date, b.slot, true) <= new Date()).length;
+  v.innerHTML = frame('mine', `
+    <p class="tw vintro" id="mi-intro"></p>
+    ${list.map(b => `<div class="sugg pbox"><div class="when">${esc(fmtDate(b.date).toUpperCase())}<br>KL ${slotLabel(b.slot)}</div>
+      <div class="why">v${isoWeek(parseYmd(b.date))} · ${parity(isoWeek(parseYmd(b.date)))} vecka</div>
+      <button class="btn small cyan" data-ics="${b.id}">📅 KALENDER</button><button class="btn small red" data-un="${b.id}">✗ AVBOKA</button></div>`).join('')
+      || `<div class="section pbox"><p>Inga bokade tider.</p><div class="row btns"><button class="btn pink" data-go="planner">LÅT AI:N PLANERA</button><button class="btn ghost" data-go="schedule">ÖPPNA SCHEMAT</button></div></div>`}
+    <p class="muted" style="margin:14px 4px">Tidigare tvättider: ${pastN} · Kalenderfilen (.ics) påminner dig 30 min innan.</p>`);
+  typeInto($('#mi-intro'), list.length ? `DU HAR ${list.length} AV ${MAX_ACTIVE} MÖJLIGA BOKNINGAR.` : 'INGA KOMMANDE TVÄTTIDER.');
+  $$('[data-ics]', v).forEach(b => b.onclick = () => downloadICS(bookings.find(x => x.id === b.dataset.ics)));
+  $$('[data-un]', v).forEach(b => b.onclick = async () => {
+    const bk = bookings.find(x => x.id === b.dataset.un);
+    if (await ask(`<h3 class="h">AVBOKA?</h3><p>${esc(fmtDate(bk.date))} kl ${slotLabel(bk.slot)}</p>`, [{ label: '✗ AVBOKA', value: 1, cls: 'red' }, { label: 'BEHÅLL', value: 0, cls: 'ghost' }])) { unbook(bk); VIEWS.mine(v); }
+  });
+};
+
+/* ---- settings ---- */
+VIEWS.settings = v => {
+  v.innerHTML = frame('settings', `
+    <div class="grid2">
+      <div class="section pbox"><div class="h">${img('robot', 2)} AI-KÄRNA (GEMINI)</div>
+        <label class="lbl" for="s-key">API-nyckel</label>
+        <div class="row" style="flex-wrap:nowrap"><input id="s-key" type="password" autocomplete="off" spellcheck="false" placeholder="Klistra in din Gemini-nyckel"><button class="btn small ghost" id="s-eye">👁</button></div>
+        <p class="muted" style="font-size:17px;margin:6px 4px">Nyckeln sparas bara i den här webbläsaren och skickas direkt till Google. Lägg aldrig in den i koden.</p>
+        <label class="lbl" for="s-model">Modell</label>
+        <input id="s-model" list="s-models" spellcheck="false">
+        <datalist id="s-models">${FALLBACK_MODELS.map(m => `<option value="${m}">`).join('')}<option value="gemini-2.5-flash-lite"><option value="gemini-2.5-pro"></datalist>
+        <label class="lbl" for="s-ep">Endpoint</label>
+        <select id="s-ep"><option value="auto">Automatiskt</option><option value="studio">Google AI Studio (generativelanguage)</option><option value="vertex">Vertex AI express (aiplatform)</option></select>
+        <div class="row btns"><button class="btn green" id="s-save">✓ SPARA</button><button class="btn cyan" id="s-test">▶ TESTA AI</button></div>
+        <div id="s-res"></div></div>
+      <div>
+        <div class="section pbox"><div class="h">${img('gear', 2)} LAUNCHER</div>
+          <label class="lbl" for="s-speed">Textladdning</label>
+          <select id="s-speed"><option value="slow">Långsam (retro)</option><option value="normal">Normal</option><option value="fast">Snabb</option></select>
+          <label class="check"><input type="checkbox" id="s-sound">Pip-ljud</label>
+          <label class="check"><input type="checkbox" id="s-crt">CRT-skanlinjer</label>
+          <label class="check"><input type="checkbox" id="s-idle">Logga ut efter 5 min inaktivitet</label></div>
+        <div class="section pbox" style="margin-top:18px"><div class="h">${img('card', 2)} MITT KONTO</div>
+          <dl class="kv"><dt>Namn</dt><dd>${esc(me.name)}</dd><dt>Lägenhet</dt><dd>${esc(me.apt)}</dd><dt>Kort-ID</dt><dd>…${esc(me.cardHash.slice(-4).toUpperCase())}</dd>
+            <dt>NFC</dt><dd>${hasNFC ? 'Web NFC tillgängligt' : 'Simulerat (ingen läsare)'}</dd></dl>
+          <label class="lbl" for="s-pin">PIN-kod (tom = ingen)</label>
+          <div class="row" style="flex-wrap:nowrap"><input id="s-pin" type="password" inputmode="numeric" maxlength="6" placeholder="${me.pin ? '•••• (satt)' : 'ingen'}"><button class="btn small green" id="s-pinsave">SPARA</button></div>
+          <div class="row btns"><button class="btn small cyan" id="s-card">▣ BYT KORT</button><button class="btn small red" id="s-del">✗ RADERA KONTO</button></div></div>
+      </div>
+    </div>`);
+  $('#s-key').value = settings.apiKey; $('#s-model').value = settings.model; $('#s-ep').value = settings.endpoint;
+  $('#s-speed').value = settings.speed; $('#s-sound').checked = settings.sound; $('#s-crt').checked = settings.crt; $('#s-idle').checked = settings.autoLogout;
+  $('#s-eye').onclick = () => { const i = $('#s-key'); i.type = i.type === 'password' ? 'text' : 'password'; };
+  const saveAI = () => {
+    settings.apiKey = $('#s-key').value.trim(); settings.model = $('#s-model').value.trim() || 'gemini-2.5-flash'; settings.endpoint = $('#s-ep').value;
+    saveSettings(); renderStatus();
+  };
+  $('#s-save').onclick = () => { saveAI(); sfx.ok(); toast('SPARAT'); };
+  $('#s-test').onclick = async () => {
+    saveAI(); const r = $('#s-res'); r.innerHTML = '<p class="think">TESTAR</p>';
+    try {
+      const t = await gemini({ prompt: 'Svara med exakt en kort hälsning på svenska till en tvättstuga, max 6 ord.', temperature: 0.5 });
+      r.innerHTML = `<div class="okbox">ONLINE ✓ (${esc(settings.working?.ep)} · ${esc(settings.working?.model)})<br><span class="tw" id="s-hi"></span></div>`; sfx.ok(); typeInto($('#s-hi'), clean(t));
+    } catch (e) { sfx.err(); r.innerHTML = aiErrorHTML(e); }
+  };
+  $('#s-speed').onchange = e => { settings.speed = e.target.value; saveSettings(); };
+  $('#s-sound').onchange = e => { settings.sound = e.target.checked; saveSettings(); renderSound(); };
+  $('#s-crt').onchange = e => { settings.crt = e.target.checked; saveSettings(); document.body.classList.toggle('nocrt', !settings.crt); };
+  $('#s-idle').onchange = e => { settings.autoLogout = e.target.checked; saveSettings(); };
+  $('#s-pinsave').onclick = () => {
+    const p = $('#s-pin').value.trim();
+    if (p && !/^\d{4,6}$/.test(p)) { sfx.err(); toast('PIN MÅSTE VARA 4–6 SIFFROR', true); return; }
+    me.pin = p; saveUsers(); sfx.ok(); toast(p ? 'PIN SPARAD' : 'PIN BORTTAGEN'); VIEWS.settings(v);
+  };
+  $('#s-card').onclick = async () => {
+    const raw = await scanCard('register'); if (!raw) return;
+    const h = await hashCard(raw);
+    if (users.some(u => u.cardHash === h && u.id !== me.id)) { sfx.err(); toast('KORTET TILLHÖR NÅGON ANNAN', true); return; }
+    me.cardHash = h; me.virtualCard = /^VIRT-/.test(raw) ? raw : null; saveUsers(); sfx.ok(); toast('NYTT KORT KOPPLAT'); VIEWS.settings(v);
+  };
+  $('#s-del').onclick = async () => {
+    if (!(await ask(`<h3 class="h">RADERA KONTO?</h3><p>Ditt konto, dina minnen och dina bokningar tas bort från den här enheten. Det går inte att ångra.</p>`,
+      [{ label: '✗ RADERA', value: 1, cls: 'red' }, { label: 'AVBRYT', value: 0, cls: 'ghost' }]))) return;
+    const id = me.id; users = users.filter(u => u.id !== id); bookings = bookings.filter(b => b.userId !== id);
+    saveUsers(); saveBookings(); logout('KONTOT ÄR RADERAT.');
+  };
+};
+
+boot();
+</script>
+</body>
+</html>
