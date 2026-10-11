@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tvätt-OS Plus</title>
+<style>
+  :root{
+    --bg:#f5f6fa; --card:#ffffff; --ink:#15192b; --muted:#646b80; --line:#e3e6ee;
+    --accent:#5b45f0; --accent-ink:#ffffff; --ok:#11845b; --ok-bg:#e7f6ef; --warn-bg:#fff6e0; --warn-ink:#7a5800;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--bg:#0f111a;--card:#191c28;--ink:#eceef5;--muted:#9aa1b5;--line:#2a2f40;
+      --accent:#8b7bff;--accent-ink:#0f111a;--ok:#4fd1a0;--ok-bg:#12291f;--warn-bg:#2b2410;--warn-ink:#f2cf6b}
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:16px;line-height:1.5;min-height:100vh;padding:24px 16px calc(32px + env(safe-area-inset-bottom,0px))}
+  main{max-width:440px;margin:0 auto}
+  .brand{font-size:14px;color:var(--muted);font-weight:600;letter-spacing:.02em}
+  h1{font-size:26px;line-height:1.25;margin:6px 0 4px}
+  .lead{color:var(--muted)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:20px}
+  .plan{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+  .plan h2{font-size:20px}
+  .price{font-size:22px;font-weight:700}
+  .price small{font-size:14px;font-weight:400;color:var(--muted)}
+  ul{list-style:none;margin:16px 0 4px}
+  li{display:flex;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+  li:first-child{border-top:none}
+  li .tick{color:var(--ok);font-weight:700;flex-shrink:0}
+  li span{display:block}
+  li small{display:block;color:var(--muted);font-size:14px}
+  button{font:inherit;font-weight:600;width:100%;border:none;border-radius:12px;padding:14px 16px;cursor:pointer;margin-top:16px}
+  .primary{background:var(--accent);color:var(--accent-ink)}
+  .primary:disabled{opacity:.5;cursor:default}
+  .secondary{background:transparent;color:var(--ink);border:1px solid var(--line);margin-top:10px}
+  .note{font-size:14px;color:var(--muted);margin-top:12px;text-align:center}
+  .demo{background:var(--warn-bg);color:var(--warn-ink);border-radius:10px;padding:10px 12px;font-size:14px;margin-top:16px}
+  .row{display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--line)}
+  .row:first-of-type{border-top:none}
+  .row span:first-child{color:var(--muted)}
+  .done{text-align:center}
+  .done .icon{width:56px;height:56px;border-radius:50%;background:var(--ok-bg);color:var(--ok);font-size:30px;line-height:56px;margin:0 auto 10px}
+  .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:32px;font-weight:700;letter-spacing:.2em;
+    background:var(--bg);border:1px dashed var(--line);border-radius:12px;padding:12px;margin:14px 0 6px}
+  .spinner{width:28px;height:28px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);
+    margin:8px auto;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">TVÄTT-OS</div>
+  <h1>Mer AI-åtkomst i tvättstugan</h1>
+  <p class="lead" id="hello">Uppgradera ditt konto till Plus.</p>
+
+  <!-- 1. plan -->
+  <section class="card" id="step-plan">
+    <div class="plan"><h2>Plus</h2><div class="price">29 kr<small>/mån</small></div></div>
+    <ul>
+      <li><span class="tick">✓</span><span>Åtkomst till Gemini 3.8 Flash</span></li>
+      <li><span class="tick">✓</span><span>Smartare AI<small>Tänker igenom svaren och planerar 30 dagar framåt i stället för 14.</small></span></li>
+      <li><span class="tick">✓</span><span>Autoplanering<small>Den planerar när du inte är där och bokar en tid åt dig varje vecka.</small></span></li>
+      <li><span class="tick">✓</span><span>Fler AI-frågor<small>Obegränsat i stället för 10 per dag.</small></span></li>
+    </ul>
+    <button class="primary" id="pay">Betala 29 kr (demo)</button>
+    <p class="note" id="nouser" hidden>Skanna QR-koden på tvättstugans skärm så kopplas köpet till ditt konto.</p>
+    <div class="demo">Det här är en demo. Inga pengar dras och inga kortuppgifter efterfrågas.</div>
+  </section>
+
+  <!-- 2. confirm -->
+  <section class="card" id="step-confirm" hidden>
+    <h2 style="font-size:20px;margin-bottom:10px">Bekräfta betalning</h2>
+    <div class="row"><span>Produkt</span><span>Tvätt-OS Plus</span></div>
+    <div class="row"><span>Konto</span><span id="c-user"></span></div>
+    <div class="row"><span>Pris</span><span>29 kr/mån</span></div>
+    <div class="row"><span>Betalsätt</span><span>Demo</span></div>
+    <button class="primary" id="confirm">Bekräfta (demo)</button>
+    <button class="secondary" id="cancel">Avbryt</button>
+  </section>
+
+  <!-- 3. processing -->
+  <section class="card" id="step-wait" hidden>
+    <div class="spinner"></div>
+    <p class="note">Behandlar demobetalningen…</p>
+  </section>
+
+  <!-- 4. done -->
+  <section class="card done" id="step-done" hidden>
+    <div class="icon">✓</div>
+    <h2 style="font-size:20px">Plus är aktiverat</h2>
+    <p class="lead" id="d-user"></p>
+    <p style="margin-top:16px">Din aktiveringskod:</p>
+    <div class="code" id="d-code"></div>
+    <p class="note">Skriv in koden på tvättstugans skärm under <b>PLUS</b>. Har du betalat på samma enhet som launchern aktiveras Plus automatiskt.</p>
+  </section>
+</main>
+
+<script>
+'use strict';
+// Måste räkna exakt som plusCode() i index.html.
+function fnv(s) { let h = 2166136261; for (const c of s) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+const plusCode = id => (fnv('tvos-plus:' + id).toString(36).toUpperCase() + 'QWERTY').slice(0, 6);
+
+const q = new URLSearchParams(location.search);
+const userId = (q.get('u') || '').trim();
+const name = (q.get('n') || '').trim().slice(0, 30);
+const $ = id => document.getElementById(id);
+const show = id => ['step-plan', 'step-confirm', 'step-wait', 'step-done'].forEach(s => ($(s).hidden = s !== id));
+
+if (name) $('hello').textContent = `Hej ${name}! Uppgradera ditt konto i tvättstugan till Plus.`;
+if (!userId) { $('pay').disabled = true; $('nouser').hidden = false; }
+
+function done() {
+  const code = plusCode(userId);
+  try {
+    const st = JSON.parse(localStorage.getItem('tvos_plus') || '{}');
+    st[userId] = { since: Date.now(), code };
+    localStorage.setItem('tvos_plus', JSON.stringify(st));
+  } catch {}
+  $('d-user').textContent = name ? `Kontot ${name} har nu Plus.` : 'Ditt konto har nu Plus.';
+  $('d-code').textContent = code;
+  show('step-done');
+}
+
+$('pay').onclick = () => { $('c-user').textContent = name || userId; show('step-confirm'); };
+$('cancel').onclick = () => show('step-plan');
+$('confirm').onclick = () => { show('step-wait'); setTimeout(done, 1400); };
+
+// redan köpt på den här enheten → visa koden direkt
+try { if (userId && JSON.parse(localStorage.getItem('tvos_plus') || '{}')[userId]) done(); } catch {}
+</script>
+</body>
+</html>

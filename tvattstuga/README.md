@@ -22,3 +22,23 @@ enkla offlinesvar som reserv.
 
 Alla data (konton, minnen, bokningar) sparas lokalt på enheten. Grannarnas bokningar i
 schemat är simulerade.
+
+## Plus (demo)
+
+Under **PLUS** i launchern visas en QR-kod och texten "Gå in på
+https://raken123.github.io/s-ndo/tvattstuga/plus.html för att få mer AI-åtkomst." QR-koden
+leder till `plus.html`, en vanlig mobilsida (ingen pixelstil) med planen **Plus 29 kr/mån**:
+Gemini 3.8 Flash, smartare AI, autoplanering och obegränsade AI-frågor (gratis: 10 per dag).
+
+Betalningen är en demo: inga pengar dras och inga kortuppgifter efterfrågas. Efter
+"betalningen" visas en aktiveringskod som skrivs in på tvättstugans skärm. På samma enhet
+aktiveras Plus direkt via localStorage.
+
+- **Gemini 3.8 Flash** – Plus-konton provar `gemini-3.8-flash` först. Finns modellen inte för
+  nyckeln går launchern vidare till nästa modell.
+- **Autoplanering** – skärmen i tvättstugan kollar var 30:e minut om ett Plus-konto saknar tid
+  den kommande veckan och bokar då ett pass utifrån minnena. Nästa gång personen loggar in
+  visas "Medan du var borta bokade AI:n …". Det kräver att launchern är öppen någonstans.
+
+QR-länken fungerar först när `tvattstuga/` finns på `main`, eftersom GitHub Pages publicerar
+från `main`.
