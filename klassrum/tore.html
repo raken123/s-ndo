@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sändo Lärare – Tore</title>
+<style>
+  :root {
+    --bg: #f6f7fb; --panel: #ffffff; --ink: #1c2333; --muted: #6b7280;
+    --brand: #4f46e5; --brand-dark: #4338ca; --brand-soft: #eef2ff; --accent: #06b6d4;
+    --ok: #16a34a; --ok-soft: #dcfce7; --warn: #b45309; --warn-soft: #fef3c7; --danger: #dc2626;
+    --border: #e5e7eb; --radius: 14px; --shadow: 0 4px 20px rgba(28, 35, 51, .07);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+  header { background: var(--panel); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; position: sticky; top: 0; z-index: 10; }
+  .logo-mark { width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg, var(--brand), var(--accent)); display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 20px; }
+  header h1 { font-size: 19px; letter-spacing: -.4px; }
+  header small { display: block; color: var(--muted); font-size: 12px; font-weight: 400; }
+  nav { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
+  nav button { border: none; background: none; padding: 9px 13px; border-radius: 10px; cursor: pointer; font: inherit; font-size: 14px; color: var(--ink); }
+  nav button:hover { background: var(--bg); }
+  nav button.active { background: var(--brand-soft); color: var(--brand); font-weight: 600; }
+  main { max-width: 1100px; margin: 0 auto; padding: 28px 20px 80px; }
+  .view { display: none; } .view.active { display: block; }
+  .view-head { margin-bottom: 20px; }
+  .view-head h2 { font-size: 25px; letter-spacing: -.5px; }
+  .view-head p { color: var(--muted); margin-top: 4px; font-size: 14.5px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 18px; }
+  .card h3 { font-size: 16px; margin-bottom: 12px; }
+  .grid { display: grid; gap: 16px; }
+  .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 760px) { .g2, .g3 { grid-template-columns: 1fr; } main { padding: 20px 14px 80px; } nav { margin-left: 0; } }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 10px 0 5px; color: #374151; }
+  input[type=text], input[type=number], textarea, select { padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; font: inherit; font-size: 14px; background: var(--panel); color: var(--ink); width: 100%; }
+  textarea { resize: vertical; min-height: 70px; line-height: 1.45; }
+  input:focus, textarea:focus, select:focus { outline: 2px solid var(--brand-soft); border-color: var(--brand); }
+  .btn { padding: 10px 16px; border: none; border-radius: 10px; background: var(--brand); color: #fff; font-weight: 600; cursor: pointer; font: inherit; font-size: 14px; font-weight: 600; }
+  .btn:hover { background: var(--brand-dark); }
+  .btn:disabled { opacity: .55; cursor: wait; }
+  .btn.ghost { background: var(--panel); color: var(--ink); border: 1px solid var(--border); }
+  .btn.ghost:hover { background: var(--bg); }
+  .btn.ai { background: linear-gradient(135deg, var(--brand), var(--accent)); }
+  .btn.small { padding: 6px 11px; font-size: 13px; }
+  .btn.danger { background: #fee2e2; color: var(--danger); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .row.end { justify-content: flex-end; }
+  .muted { color: var(--muted); font-size: 13.5px; }
+  .pill { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 20px; background: var(--brand-soft); color: var(--brand); }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); } .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .group-card { border: 1px solid var(--border); border-radius: 12px; padding: 14px; background: var(--panel); }
+  .group-card h4 { font-size: 15px; margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+  .group-card h4 input { font-weight: 700; font-size: 15px; padding: 5px 8px; }
+  .member { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--border); font-size: 14px; }
+  .member:last-child { border-bottom: none; }
+  .member select { width: auto; padding: 4px 6px; font-size: 12.5px; }
+  .member .mv { border: none; background: none; cursor: pointer; font-size: 13px; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { border: 1px solid var(--border); padding: 8px; text-align: left; vertical-align: top; }
+  th { background: var(--bg); font-size: 13px; }
+  td textarea { min-height: 60px; border: none; padding: 4px; }
+  .code-box { font-family: ui-monospace, Menlo, monospace; font-size: 12px; word-break: break-all; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; max-height: 160px; overflow: auto; }
+  .sub-item { display: flex; gap: 12px; align-items: center; padding: 12px 4px; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .sub-item:hover { background: var(--bg); }
+  .sub-item:last-child { border-bottom: none; }
+  .part { border-left: 4px solid var(--brand); background: var(--bg); padding: 12px 14px; border-radius: 0 10px 10px 0; margin-bottom: 10px; }
+  .part h5 { font-size: 14.5px; margin-bottom: 4px; }
+  .part p { white-space: pre-wrap; font-size: 14px; line-height: 1.5; }
+  .bar { height: 10px; background: var(--brand-soft); border-radius: 6px; overflow: hidden; }
+  .bar > div { height: 100%; background: linear-gradient(90deg, var(--brand), var(--accent)); }
+  .ai-out { white-space: pre-wrap; background: var(--brand-soft); border-radius: 10px; padding: 14px; font-size: 14px; line-height: 1.5; }
+  #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--ink); color: #fff; padding: 11px 18px; border-radius: 10px; font-size: 14px; transition: transform .25s; z-index: 100; max-width: 90vw; }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  .overlay { position: fixed; inset: 0; background: rgba(15, 18, 30, .55); display: none; place-items: center; z-index: 50; padding: 16px; }
+  .overlay.on { display: grid; }
+  .modal { background: var(--panel); border-radius: var(--radius); padding: 22px; width: min(520px, 100%); max-height: 90vh; overflow: auto; }
+  #projector { position: fixed; inset: 0; background: #0f1220; color: #fff; z-index: 60; display: none; padding: 32px; overflow: auto; }
+  #projector.on { display: block; }
+  #projector h2 { font-size: 34px; margin-bottom: 24px; }
+  #projector .grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  #projector .pg { background: #1c2140; border-radius: 16px; padding: 18px; }
+  #projector .pg h3 { font-size: 22px; margin-bottom: 10px; color: #a5b4fc; }
+  #projector .pg div { font-size: 19px; padding: 4px 0; }
+  #projector .pg span { font-size: 14px; color: #94a3b8; }
+  #projector .close { position: fixed; top: 16px; right: 20px; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.5); border-top-color: #fff; border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -2px; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">S</div>
+  <div><h1>Sändo Klassrum <small>Lärarvy · Tore</small></h1></div>
+  <nav id="nav">
+    <button data-view="groups" class="active">👥 Grupper</button>
+    <button data-view="task">📝 Uppdrag</button>
+    <button data-view="share">📤 Dela</button>
+    <button data-view="subs">📥 Inlämningar</button>
+    <button data-view="settings">⚙️</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ============ GRUPPER ============ -->
+  <section class="view active" id="view-groups">
+    <div class="view-head"><h2>Grupper</h2><p>Klistra in klasslistan, välj gruppstorlek och låt Sändo dela in klassen. Du kan flytta elever och byta roller efteråt.</p></div>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Klasslista</h3>
+        <textarea id="students" rows="10" placeholder="Ett namn per rad (eller separerade med komma)"></textarea>
+        <div class="grid g2">
+          <div><label>Elever per grupp</label><input type="number" id="groupSize" min="2" max="8" value="4"></div>
+          <div><label>Roller</label><select id="roleMode"><option value="auto">Fördela roller automatiskt</option><option value="none">Inga roller</option></select></div>
+        </div>
+        <div class="row" style="margin-top:14px">
+          <button class="btn" onclick="makeGroups()">🎲 Skapa grupper</button>
+          <button class="btn ghost" onclick="openProjector()">📽️ Visa på projektor</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Roller i grupperna</h3>
+        <p class="muted">En roll per rad. Rollerna skickas med till eleverna så att alla vet vad de ansvarar för.</p>
+        <textarea id="roles" rows="8"></textarea>
+        <div class="row" style="margin-top:10px"><button class="btn ghost small" onclick="saveRoles()">Spara roller</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h3 style="margin:0">Klassens grupper</h3><span class="muted" id="groupCount"></span></div>
+      <div class="grid g3" id="groupList" style="margin-top:14px"></div>
+    </div>
+  </section>
+
+  <!-- ============ UPPDRAG ============ -->
+  <section class="view" id="view-task">
+    <div class="view-head"><h2>Uppdrag</h2><p>Beskriv vad grupperna ska producera. AI kan skriva ett färdigt uppdrag med arbetsgång och bedömningsmatris som du sedan justerar.</p></div>
+    <div class="card">
+      <div class="grid g3">
+        <div><label>Ämne</label><input type="text" id="t-subject" placeholder="t.ex. Historia"></div>
+        <div><label>Årskurs</label><input type="text" id="t-grade" placeholder="t.ex. Åk 8"></div>
+        <div><label>Produkt</label>
+          <select id="t-product">
+            <option>Presentation</option><option>Artikel</option><option>Podcastmanus</option><option>Filmmanus</option><option>Affisch</option><option>Debattartikel</option><option>Faktahäfte</option><option>Reklamkampanj</option>
+          </select></div>
+      </div>
+      <div class="grid g2">
+        <div><label>Tema / område</label><input type="text" id="t-theme" placeholder="t.ex. Industriella revolutionen"></div>
+        <div><label>Tid</label><input type="text" id="t-time" placeholder="t.ex. 3 lektioner à 60 min"></div>
+      </div>
+      <label>Mål / centralt innehåll (valfritt)</label>
+      <textarea id="t-goals" rows="2" placeholder="Vad ska eleverna lära sig och visa?"></textarea>
+      <label>Hur mycket får AI hjälpa eleverna?</label>
+      <select id="t-ailevel">
+        <option value="coach">Coach – AI ställer frågor och ger feedback, skriver aldrig åt eleverna</option>
+        <option value="hjalp">Hjälp – AI får ge förslag och exempelformuleringar</option>
+        <option value="fri">Fri – AI får även skriva utkast</option>
+      </select>
+      <div class="row" style="margin-top:14px">
+        <button class="btn ai" id="genBtn" onclick="generateTask()">✨ Skapa uppdrag med AI</button>
+        <button class="btn ghost" onclick="blankTask()">Skriv själv</button>
+      </div>
+    </div>
+
+    <div class="card" id="taskEditor" style="display:none">
+      <h3>Uppdraget som eleverna ser</h3>
+      <label>Rubrik</label><input type="text" id="e-title">
+      <label>Beskrivning</label><textarea id="e-desc" rows="5"></textarea>
+      <label>Arbetsgång (ett steg per rad)</label><textarea id="e-steps" rows="5"></textarea>
+      <label>Produktens delar – startmall för eleverna (en del per rad, t.ex. bildrubriker)</label><textarea id="e-parts" rows="5"></textarea>
+      <label>Bedömningsmatris</label>
+      <table><thead><tr><th style="width:22%">Förmåga</th><th>E</th><th>C</th><th>A</th><th style="width:40px"></th></tr></thead><tbody id="rubricBody"></tbody></table>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost small" onclick="addCriterion()">+ Lägg till förmåga</button>
+      </div>
+      <div class="row end" style="margin-top:16px">
+        <button class="btn" onclick="saveTask(true)">💾 Spara uppdrag</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DELA ============ -->
+  <section class="view" id="view-share">
+    <div class="view-head"><h2>Dela med eleverna</h2><p>Eleverna öppnar <b>elev.html</b> och klistrar in uppdragskoden – eller öppnar uppdragsfilen. Då får de uppdraget, sina grupper och sina roller.</p></div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h3 style="margin:0">Uppdragskod</h3><span id="shareStatus"></span></div>
+      <p class="muted" style="margin:6px 0 12px">Klistra in koden i lärplattformen, ett mejl eller en chatt.</p>
+      <div class="code-box" id="shareCode"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" onclick="copyShare()">📋 Kopiera kod</button>
+        <button class="btn ghost" onclick="downloadShare()">⬇️ Ladda ner uppdragsfil</button>
+        <button class="btn ghost" onclick="openProjector()">📽️ Visa grupper på projektor</button>
+      </div>
+    </div>
+    <div class="card" id="sharePreview"></div>
+  </section>
+
+  <!-- ============ INLÄMNINGAR ============ -->
+  <section class="view" id="view-subs">
+    <div class="view-head"><h2>Inlämningar</h2><p>Grupperna lämnar in en fil (eller kod) från elev.html. Läs produkten, se vem som gjort vad och ge återkoppling med AI-stöd.</p></div>
+    <div class="card">
+      <div class="row">
+        <label class="btn" style="margin:0;color:#fff">📂 Öppna inlämningsfiler<input type="file" id="subFiles" accept=".json,.txt" multiple hidden onchange="importFiles(this.files)"></label>
+        <button class="btn ghost" onclick="pasteSubmission()">📋 Klistra in inlämningskod</button>
+      </div>
+      <div id="subList" style="margin-top:14px"></div>
+    </div>
+    <div id="subDetail"></div>
+  </section>
+
+  <!-- ============ INSTÄLLNINGAR ============ -->
+  <section class="view" id="view-settings">
+    <div class="view-head"><h2>Inställningar</h2></div>
+    <div class="card">
+      <h3>AI-nyckel</h3>
+      <p class="muted">Nyckeln ligger inbyggd i filen. Om den slutar fungera kan du klistra in en ny här – den sparas bara i den här webbläsaren.</p>
+      <label>Ny OpenAI-nyckel (lämna tomt för att använda den inbyggda)</label>
+      <input type="text" id="keyOverride" placeholder="sk-...">
+      <div class="row" style="margin-top:12px">
+        <button class="btn" onclick="saveKeyOverride()">Spara</button>
+        <button class="btn ghost" onclick="testAI()">Testa AI</button>
+        <span id="aiTest" class="muted"></span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Rensa</h3>
+      <p class="muted">Tar bort grupper, uppdrag och inlämningar från den här webbläsaren.</p>
+      <button class="btn danger" style="margin-top:10px" onclick="resetAll()">Rensa allt</button>
+    </div>
+  </section>
+</main>
+
+<div id="projector">
+  <button class="btn ghost close" onclick="closeProjector()">✕ Stäng</button>
+  <h2 id="projTitle"></h2>
+  <div class="grid" id="projGroups"></div>
+</div>
+
+<div class="overlay" id="keyModal">
+  <div class="modal">
+    <h3>AI-nyckeln fungerar inte</h3>
+    <p class="muted" style="margin:8px 0" id="keyModalMsg"></p>
+    <label>Klistra in en fungerande OpenAI-nyckel</label>
+    <input type="text" id="keyModalInput" placeholder="sk-...">
+    <div class="row end" style="margin-top:14px">
+      <button class="btn ghost" onclick="closeKeyModal()">Avbryt</button>
+      <button class="btn" onclick="saveKeyFromModal()">Spara och försök igen</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ================= AI ================= */
+// Nyckeln ligger medvetet i koden (beslut av ägaren). Byt den här om den roteras.
+const OPENAI_API_KEY = 'T3BlbkFJSiwlfvqpK7x312prpiVC1wX2o77whZxaSDypJSMQNC2v7lqrgAXWjzoRoijShFUlADCjDa3cMA';
+const OPENAI_MODELS = ['gpt-4.1-mini', 'gpt-4o-mini'];
+const KEY_STORE = 'sando-klassrum:key';
+
+function apiKey() {
+  try { return localStorage.getItem(KEY_STORE) || OPENAI_API_KEY; } catch { return OPENAI_API_KEY; }
+}
+
+async function ai(messages, { json = false, temperature = 0.7 } = {}) {
+  let lastErr;
+  for (const model of OPENAI_MODELS) {
+    let res, data;
+    try {
+      res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey() },
+        body: JSON.stringify({ model, messages, temperature, ...(json ? { response_format: { type: 'json_object' } } : {}) })
+      });
+      data = await res.json().catch(() => ({}));
+    } catch (e) {
+      throw new Error('Kunde inte nå OpenAI. Kontrollera internetanslutningen.');
+    }
+    if (res.ok) {
+      const text = data.choices?.[0]?.message?.content ?? '';
+      return json ? JSON.parse(text) : text;
+    }
+    const msg = data.error?.message || ('HTTP ' + res.status);
+    lastErr = new Error(msg);
+    if (res.status === 401 || res.status === 403 || res.status === 429 && /quota/i.test(msg)) { lastErr.auth = true; break; }
+    if (!(res.status === 404 || /model/i.test(msg))) break;
+  }
+  if (lastErr.auth) openKeyModal(lastErr.message);
+  throw lastErr;
+}
+
+function openKeyModal(msg) { document.getElementById('keyModalMsg').textContent = msg; document.getElementById('keyModal').classList.add('on'); }
+function closeKeyModal() { document.getElementById('keyModal').classList.remove('on'); }
+function saveKeyFromModal() {
+  const v = document.getElementById('keyModalInput').value.trim();
+  if (!v) return;
+  try { localStorage.setItem(KEY_STORE, v); } catch {}
+  closeKeyModal(); toast('Nyckeln sparad – försök igen.');
+}
+function saveKeyOverride() {
+  const v = document.getElementById('keyOverride').value.trim();
+  try { v ? localStorage.setItem(KEY_STORE, v) : localStorage.removeItem(KEY_STORE); } catch {}
+  toast(v ? 'Egen nyckel sparad.' : 'Använder den inbyggda nyckeln.');
+}
+async function testAI() {
+  const out = document.getElementById('aiTest');
+  out.textContent = 'Testar…';
+  try { const r = await ai([{ role: 'user', content: 'Svara bara: Det fungerar!' }]); out.textContent = '✅ ' + r; }
+  catch (e) { out.textContent = '❌ ' + e.message; }
+}
+
+/* ================= Hjälpare ================= */
+const store = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem('sando-tore:' + k)) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('sando-tore:' + k, JSON.stringify(v)); } catch {} }
+};
+const uid = () => Math.random().toString(36).slice(2, 9);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2800);
+}
+function encodeCode(prefix, obj) { return prefix + btoa(unescape(encodeURIComponent(JSON.stringify(obj)))); }
+function decodeCode(prefix, str) {
+  str = str.trim();
+  if (str.startsWith('{')) return JSON.parse(str);
+  if (!str.startsWith(prefix)) throw new Error('Koden har fel format.');
+  return JSON.parse(decodeURIComponent(escape(atob(str.slice(prefix.length).replace(/\s/g, '')))));
+}
+function download(name, content, mime = 'application/json') {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+async function busy(btn, label, fn) {
+  const old = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>' + label;
+  try { return await fn(); }
+  catch (e) { toast('⚠️ ' + e.message); }
+  finally { btn.disabled = false; btn.innerHTML = old; }
+}
+const safeName = s => String(s).toLowerCase().replace(/[^a-z0-9åäö]+/gi, '-').replace(/^-|-$/g, '');
+
+/* ================= Tillstånd ================= */
+const DEFAULT_ROLES = ['Projektledare', 'Skribent', 'Faktagranskare', 'Formgivare', 'Presentatör'];
+const GROUP_NAMES = ['Ugglorna', 'Rävarna', 'Vargarna', 'Lodjuren', 'Örnarna', 'Bävrarna', 'Älgarna', 'Delfinerna', 'Falkarna', 'Björnarna', 'Igelkottarna', 'Sälarna', 'Tranorna', 'Mårdarna'];
+let state = {
+  students: store.get('students', ''),
+  roles: store.get('roles', DEFAULT_ROLES),
+  groups: store.get('groups', []),
+  task: store.get('task', null),
+  subs: store.get('subs', [])
+};
+const save = k => store.set(k, state[k]);
+
+/* ================= Navigering ================= */
+function go(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  if (view === 'share') renderShare();
+  if (view === 'subs') renderSubs();
+  if (view === 'settings') { try { document.getElementById('keyOverride').value = localStorage.getItem(KEY_STORE) || ''; } catch {} }
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('#nav button').forEach(b => b.addEventListener('click', () => go(b.dataset.view)));
+
+/* ================= Grupper ================= */
+function parseStudents() {
+  return state.students.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean);
+}
+function shuffle(a) { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+function makeGroups() {
+  state.students = document.getElementById('students').value; save('students');
+  const names = shuffle(parseStudents());
+  const size = Math.max(2, Math.min(8, +document.getElementById('groupSize').value || 4));
+  if (names.length < 2) return toast('Skriv in minst två elever.');
+  const count = Math.max(1, Math.round(names.length / size));
+  const groups = Array.from({ length: count }, (_, i) => ({ id: uid(), name: GROUP_NAMES[i] || 'Grupp ' + (i + 1), members: [] }));
+  names.forEach((n, i) => groups[i % count].members.push({ name: n, role: '' }));
+  if (document.getElementById('roleMode').value === 'auto') groups.forEach(assignRoles);
+  state.groups = groups; save('groups');
+  renderGroups();
+  toast(`${count} grupper skapade.`);
+}
+function assignRoles(g) {
+  const roles = shuffle(state.roles);
+  g.members.forEach((m, i) => m.role = roles[i % roles.length] || '');
+}
+function saveRoles() {
+  state.roles = document.getElementById('roles').value.split('\n').map(s => s.trim()).filter(Boolean);
+  save('roles'); renderGroups(); toast('Roller sparade.');
+}
+function renderGroups() {
+  const list = document.getElementById('groupList');
+  document.getElementById('groupCount').textContent = state.groups.length ? `${state.groups.length} grupper · ${state.groups.reduce((n, g) => n + g.members.length, 0)} elever` : '';
+  if (!state.groups.length) { list.innerHTML = '<p class="muted">Inga grupper ännu. Klistra in klasslistan och klicka på ”Skapa grupper”.</p>'; return; }
+  const roleOpts = r => ['<option value="">– ingen roll –</option>', ...state.roles.map(x => `<option ${x === r ? 'selected' : ''}>${esc(x)}</option>`)].join('');
+  list.innerHTML = state.groups.map((g, gi) => `
+    <div class="group-card">
+      <h4><input type="text" value="${esc(g.name)}" onchange="renameGroup(${gi}, this.value)"><button class="btn ghost small" title="Slumpa roller" onclick="assignRoles(state.groups[${gi}]); save('groups'); renderGroups()">🎲</button></h4>
+      ${g.members.map((m, mi) => `
+        <div class="member">
+          <span>${esc(m.name)}</span>
+          <span class="row" style="gap:4px">
+            <select onchange="setRole(${gi},${mi},this.value)">${roleOpts(m.role)}</select>
+            <button class="mv" title="Flytta till nästa grupp" onclick="moveMember(${gi},${mi})">➜</button>
+          </span>
+        </div>`).join('')}
+    </div>`).join('');
+}
+function renameGroup(gi, v) { state.groups[gi].name = v.trim() || state.groups[gi].name; save('groups'); }
+function setRole(gi, mi, v) { state.groups[gi].members[mi].role = v; save('groups'); }
+function moveMember(gi, mi) {
+  const [m] = state.groups[gi].members.splice(mi, 1);
+  state.groups[(gi + 1) % state.groups.length].members.push(m);
+  save('groups'); renderGroups();
+}
+function openProjector() {
+  if (!state.groups.length) return toast('Skapa grupper först.');
+  document.getElementById('projTitle').textContent = state.task?.title || 'Grupper';
+  document.getElementById('projGroups').innerHTML = state.groups.map(g => `
+    <div class="pg"><h3>${esc(g.name)}</h3>${g.members.map(m => `<div>${esc(m.name)} ${m.role ? `<span>· ${esc(m.role)}</span>` : ''}</div>`).join('')}</div>`).join('');
+  document.getElementById('projector').classList.add('on');
+}
+function closeProjector() { document.getElementById('projector').classList.remove('on'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeProjector(); });
+
+/* ================= Uppdrag ================= */
+function taskInputs() {
+  const v = id => document.getElementById(id).value.trim();
+  return { subject: v('t-subject'), grade: v('t-grade'), product: v('t-product'), theme: v('t-theme'), time: v('t-time'), goals: v('t-goals'), aiLevel: v('t-ailevel') };
+}
+async function generateTask() {
+  const inp = taskInputs();
+  if (!inp.theme) return toast('Skriv ett tema eller område först.');
+  await busy(document.getElementById('genBtn'), 'Skapar uppdrag…', async () => {
+    const r = await ai([
+      { role: 'system', content: 'Du är en erfaren svensk lärare som skriver tydliga grupparbetsuppdrag enligt Lgr22. Svara alltid på svenska och endast med JSON.' },
+      { role: 'user', content: `Skapa ett grupparbete.
+Ämne: ${inp.subject || '(valfritt)'}
+Årskurs: ${inp.grade || '(ej angiven)'}
+Produkt som grupperna ska producera: ${inp.product}
+Tema: ${inp.theme}
+Tid: ${inp.time || '(ej angiven)'}
+Mål: ${inp.goals || '(välj lämpliga mål)'}
+Roller i grupperna: ${state.roles.join(', ')}
+
+Returnera JSON:
+{"title": "kort, inspirerande rubrik",
+ "description": "uppdraget riktat direkt till eleverna, 4-7 meningar, inklusive vad produkten ska innehålla och hur rollerna samarbetar",
+ "steps": ["arbetsgångens steg, 4-7 st, korta"],
+ "parts": ["rubriker för produktens delar som startmall, 4-8 st (t.ex. bildrubriker för presentation, avsnitt för manus)"],
+ "rubric": [{"criterion": "förmåga", "E": "nivåbeskrivning", "C": "...", "A": "..."}] (3-4 förmågor)}` }
+    ], { json: true, temperature: 0.6 });
+    state.task = { id: state.task?.id || uid(), ...inp, title: r.title, description: r.description, steps: r.steps || [], parts: r.parts || [], rubric: r.rubric || [] };
+    save('task'); renderTaskEditor(); toast('Uppdraget är klart – justera det om du vill.');
+  });
+}
+function blankTask() {
+  const inp = taskInputs();
+  state.task = state.task || { id: uid(), ...inp, title: inp.theme || '', description: '', steps: [], parts: [], rubric: [{ criterion: '', E: '', C: '', A: '' }] };
+  Object.assign(state.task, inp);
+  renderTaskEditor();
+}
+function renderTaskEditor() {
+  const t = state.task; if (!t) return;
+  ['subject', 'grade', 'product', 'theme', 'time', 'goals'].forEach(k => { if (t[k] != null) document.getElementById('t-' + k).value = t[k]; });
+  document.getElementById('t-ailevel').value = t.aiLevel || 'coach';
+  document.getElementById('taskEditor').style.display = '';
+  document.getElementById('e-title').value = t.title || '';
+  document.getElementById('e-desc').value = t.description || '';
+  document.getElementById('e-steps').value = (t.steps || []).join('\n');
+  document.getElementById('e-parts').value = (t.parts || []).join('\n');
+  renderRubric();
+}
+function renderRubric() {
+  document.getElementById('rubricBody').innerHTML = state.task.rubric.map((r, i) => `
+    <tr>${['criterion', 'E', 'C', 'A'].map(k => `<td><textarea data-i="${i}" data-k="${k}">${esc(r[k])}</textarea></td>`).join('')}
+    <td><button class="btn ghost small" onclick="readRubric(); state.task.rubric.splice(${i},1); renderRubric()">✕</button></td></tr>`).join('');
+}
+function readRubric() {
+  document.querySelectorAll('#rubricBody textarea').forEach(t => state.task.rubric[+t.dataset.i][t.dataset.k] = t.value.trim());
+}
+function addCriterion() { readRubric(); state.task.rubric.push({ criterion: '', E: '', C: '', A: '' }); renderRubric(); }
+function saveTask(notify) {
+  if (!state.task) return;
+  readRubric();
+  const lines = id => document.getElementById(id).value.split('\n').map(s => s.trim()).filter(Boolean);
+  Object.assign(state.task, taskInputs(), {
+    title: document.getElementById('e-title').value.trim(),
+    description: document.getElementById('e-desc').value.trim(),
+    steps: lines('e-steps'), parts: lines('e-parts'),
+    rubric: state.task.rubric.filter(r => r.criterion || r.E || r.C || r.A)
+  });
+  save('task');
+  if (notify) toast('Uppdraget sparat. Gå till ”Dela” för att skicka det till eleverna.');
+}
+
+/* ================= Dela ================= */
+function sharePayload() {
+  return { kind: 'sando-uppdrag', v: 1, teacher: 'Tore', task: state.task, groups: state.groups, roles: state.roles, created: new Date().toISOString() };
+}
+function renderShare() {
+  if (document.getElementById('taskEditor').style.display !== 'none') saveTask(false);
+  const ok = !!state.task?.title;
+  document.getElementById('shareStatus').innerHTML = ok
+    ? `<span class="pill ok">Uppdrag klart</span> ${state.groups.length ? `<span class="pill ok">${state.groups.length} grupper</span>` : '<span class="pill warn">Inga grupper – eleverna bildar egna</span>'}`
+    : '<span class="pill warn">Skapa ett uppdrag först</span>';
+  document.getElementById('shareCode').textContent = ok ? encodeCode('SANDO-U:', sharePayload()) : '—';
+  const t = state.task;
+  document.getElementById('sharePreview').innerHTML = ok ? `
+    <h3>Förhandsvisning</h3>
+    <h2 style="font-size:21px;margin-bottom:6px">${esc(t.title)}</h2>
+    <p class="muted">${esc([t.subject, t.grade, t.product, t.time].filter(Boolean).join(' · '))}</p>
+    <p style="margin:12px 0;white-space:pre-wrap;line-height:1.5">${esc(t.description)}</p>
+    ${t.steps.length ? `<b>Arbetsgång</b><ol style="margin:6px 0 12px 22px">${t.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>` : ''}
+    <span class="pill">AI-nivå: ${({ coach: 'Coach', hjalp: 'Hjälp', fri: 'Fri' })[t.aiLevel || 'coach']}</span>` : '<p class="muted">Inget att visa ännu.</p>';
+}
+function copyShare() {
+  if (!state.task?.title) return toast('Skapa ett uppdrag först.');
+  navigator.clipboard.writeText(encodeCode('SANDO-U:', sharePayload())).then(() => toast('Koden kopierad!'), () => toast('Markera koden och kopiera manuellt.'));
+}
+function downloadShare() {
+  if (!state.task?.title) return toast('Skapa ett uppdrag först.');
+  download(`uppdrag-${safeName(state.task.title) || 'sando'}.json`, JSON.stringify(sharePayload(), null, 2));
+}
+
+/* ================= Inlämningar ================= */
+function addSubmission(obj) {
+  if (obj.kind !== 'sando-inlamning') throw new Error('Det här är inte en inlämning från elev.html.');
+  const key = obj.group?.name + '|' + (obj.task?.id || '');
+  const existing = state.subs.findIndex(s => s.group?.name + '|' + (s.task?.id || '') === key);
+  const sub = { ...obj, sid: existing >= 0 ? state.subs[existing].sid : uid(), review: existing >= 0 ? state.subs[existing].review : null };
+  if (existing >= 0) state.subs[existing] = sub; else state.subs.push(sub);
+  save('subs');
+  return sub;
+}
+async function importFiles(files) {
+  let n = 0;
+  for (const f of files) {
+    try { addSubmission(decodeCode('SANDO-I:', await f.text())); n++; }
+    catch (e) { toast(`${f.name}: ${e.message}`); }
+  }
+  document.getElementById('subFiles').value = '';
+  if (n) { toast(`${n} inlämning(ar) inlästa.`); renderSubs(); }
+}
+function pasteSubmission() {
+  const code = prompt('Klistra in inlämningskoden från gruppen:');
+  if (!code) return;
+  try { const s = addSubmission(decodeCode('SANDO-I:', code)); renderSubs(); openSub(s.sid); }
+  catch (e) { toast('⚠️ ' + e.message); }
+}
+function contributions(sub) {
+  const by = {};
+  (sub.group?.members || []).forEach(m => by[m.name] = 0);
+  (sub.log || []).forEach(l => { if (!l.ai) by[l.who] = (by[l.who] || 0) + Math.max(0, l.chars || 0) + (l.chars ? 0 : 20); });
+  const total = Object.values(by).reduce((a, b) => a + b, 0) || 1;
+  return Object.entries(by).map(([name, v]) => ({ name, pct: Math.round(v / total * 100) }));
+}
+function renderSubs() {
+  const list = document.getElementById('subList');
+  if (!state.subs.length) { list.innerHTML = '<p class="muted">Inga inlämningar ännu.</p>'; document.getElementById('subDetail').innerHTML = ''; return; }
+  const expected = state.groups.map(g => g.name).filter(n => !state.subs.some(s => s.group?.name === n));
+  list.innerHTML = state.subs.map(s => `
+    <div class="sub-item" onclick="openSub('${s.sid}')">
+      <div style="font-size:22px">📦</div>
+      <div style="flex:1;min-width:0"><b>${esc(s.group?.name)}</b> <span class="muted">· ${esc((s.group?.members || []).map(m => m.name).join(', '))}</span>
+        <div class="muted">${esc(s.task?.title || 'Egen uppgift')} · inlämnad ${new Date(s.submittedAt).toLocaleString('sv-SE')}</div></div>
+      ${s.review?.sent ? '<span class="pill ok">Återkoppling klar</span>' : s.review ? '<span class="pill">Påbörjad</span>' : '<span class="pill warn">Ej bedömd</span>'}
+    </div>`).join('') +
+    (expected.length ? `<p class="muted" style="margin-top:12px">Saknas: ${expected.map(esc).join(', ')}</p>` : '');
+}
+function openSub(sid) {
+  const s = state.subs.find(x => x.sid === sid); if (!s) return;
+  const contrib = contributions(s);
+  const r = s.review || {};
+  document.getElementById('subDetail').innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h3 style="margin:0">${esc(s.group.name)} – ${esc(s.product?.title || s.task?.title || '')}</h3>
+        <span class="row"><button class="btn ghost small" onclick="presentSub('${sid}')">▶ Visa produkt</button>
+        <button class="btn danger small" onclick="delSub('${sid}')">Ta bort</button></span>
+      </div>
+      <p class="muted" style="margin:4px 0 14px">${esc(s.product?.type || '')} · ${(s.product?.parts || []).length} delar</p>
+      ${(s.product?.parts || []).map(p => `<div class="part"><h5>${esc(p.title || '(utan rubrik)')} <span class="muted" style="font-weight:400">– ${esc(p.who || 'ingen ansvarig')}</span></h5><p>${esc(p.text)}</p></div>`).join('')}
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Vem gjorde vad?</h3>
+        ${contrib.map(c => `<div style="margin-bottom:10px"><div class="row" style="justify-content:space-between;font-size:14px"><span>${esc(c.name)} <span class="muted">${esc((s.group.members.find(m => m.name === c.name) || {}).role || '')}</span></span><span>${c.pct}%</span></div><div class="bar"><div style="width:${c.pct}%"></div></div></div>`).join('')}
+        <p class="muted">Baserat på gruppens arbetslogg (${(s.log || []).length} händelser). AI-användning: ${(s.aiUses || 0)} gånger.</p>
+        ${(s.plan || []).length ? `<h3 style="margin-top:16px">Planering</h3>${s.plan.map(p => `<div style="font-size:14px;padding:3px 0">${p.done ? '✅' : '⬜'} ${esc(p.text)} <span class="muted">– ${esc(p.who || '')}</span></div>`).join('')}` : ''}
+      </div>
+      <div class="card">
+        <h3>Gruppens reflektion</h3>
+        ${[['good', 'Det här gick bra'], ['hard', 'Det här var svårt'], ['next', 'Nästa gång']].map(([k, l]) => `<label>${l}</label><p style="font-size:14px;white-space:pre-wrap">${esc(s.reflection?.[k] || '–')}</p>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h3 style="margin:0">Bedömning & återkoppling</h3>
+        <button class="btn ai" id="reviewBtn" onclick="aiReview('${sid}')">✨ Föreslå bedömning med AI</button></div>
+      ${rubricOf(s).length ? `<table style="margin-top:14px"><thead><tr><th>Förmåga</th><th style="width:110px">Nivå</th><th>Motivering</th></tr></thead><tbody>
+        ${rubricOf(s).map((c, i) => {
+          const cr = (r.criteria || [])[i] || {};
+          return `<tr><td>${esc(c.criterion)}</td><td><select id="lvl-${i}">${['', 'F', 'E', 'D', 'C', 'B', 'A'].map(l => `<option ${l === cr.level ? 'selected' : ''}>${l}</option>`).join('')}</select></td><td><textarea id="mot-${i}">${esc(cr.motivation || '')}</textarea></td></tr>`;
+        }).join('')}</tbody></table>` : ''}
+      <label>Återkoppling till gruppen</label>
+      <textarea id="fbText" rows="7" placeholder="Styrkor, vad som kan utvecklas och nästa steg…">${esc(r.text || '')}</textarea>
+      <label>Privata anteckningar (följer inte med till eleverna)</label>
+      <textarea id="fbPrivate" rows="3">${esc(r.private || '')}</textarea>
+      <div class="row end" style="margin-top:14px">
+        <button class="btn ghost" onclick="saveReview('${sid}', true)">💾 Spara</button>
+        <button class="btn" onclick="sendFeedback('${sid}')">📤 Skapa återkopplingskod</button>
+      </div>
+      <div id="fbCodeWrap" style="display:none;margin-top:14px"><p class="muted" style="margin-bottom:6px">Ge koden till gruppen – de klistrar in den under ”Återkoppling” i elev.html.</p><div class="code-box" id="fbCode"></div></div>
+    </div>`;
+  document.getElementById('subDetail').scrollIntoView({ behavior: 'smooth' });
+}
+function rubricOf(s) { return s.task?.rubric?.length ? s.task.rubric : (state.task?.rubric || []); }
+function saveReview(sid, notify) {
+  const s = state.subs.find(x => x.sid === sid);
+  s.review = {
+    ...(s.review || {}),
+    criteria: rubricOf(s).map((c, i) => ({ criterion: c.criterion, level: document.getElementById('lvl-' + i)?.value || '', motivation: document.getElementById('mot-' + i)?.value.trim() || '' })),
+    text: document.getElementById('fbText').value.trim(),
+    private: document.getElementById('fbPrivate').value.trim()
+  };
+  save('subs'); renderSubs();
+  if (notify) toast('Bedömningen sparad.');
+}
+async function aiReview(sid) {
+  const s = state.subs.find(x => x.sid === sid);
+  await busy(document.getElementById('reviewBtn'), 'Läser arbetet…', async () => {
+    const rubric = rubricOf(s);
+    const product = (s.product?.parts || []).map(p => `## ${p.title} (ansvarig: ${p.who || '-'})\n${p.text}`).join('\n\n');
+    const r = await ai([
+      { role: 'system', content: 'Du är en noggrann och uppmuntrande svensk lärare. Du föreslår bedömning åt läraren Tore, som fattar det slutliga beslutet. Svara endast med JSON på svenska.' },
+      { role: 'user', content: `Uppdrag: ${s.task?.title}\n${s.task?.description || ''}\nÅrskurs: ${s.task?.grade || '-'}\n
+Bedömningsmatris:\n${rubric.map(c => `- ${c.criterion}: E: ${c.E} | C: ${c.C} | A: ${c.A}`).join('\n')}\n
+Gruppens produkt (${s.product?.type}):\n${product}\n
+Gruppens reflektion: Bra: ${s.reflection?.good || '-'} / Svårt: ${s.reflection?.hard || '-'} / Nästa gång: ${s.reflection?.next || '-'}
+Fördelning av arbete: ${contributions(s).map(c => c.name + ' ' + c.pct + '%').join(', ')}
+
+Returnera JSON: {"criteria":[{"level":"F|E|D|C|B|A","motivation":"1-2 meningar med konkret belägg i texten"}] (samma ordning som matrisen),
+"feedback":"återkoppling direkt till gruppen: 2 styrkor, 2 konkreta utvecklingsområden och ett nästa steg, 80-140 ord, uppmuntrande ton",
+"note":"kort privat notering till läraren, t.ex. om arbetsfördelningen eller om något verkar AI-skrivet"}` }
+    ], { json: true, temperature: 0.3 });
+    (r.criteria || []).forEach((c, i) => {
+      const l = document.getElementById('lvl-' + i), m = document.getElementById('mot-' + i);
+      if (l && c.level) l.value = c.level; if (m) m.value = c.motivation || '';
+    });
+    document.getElementById('fbText').value = r.feedback || '';
+    const priv = document.getElementById('fbPrivate');
+    if (r.note && !priv.value.includes(r.note)) priv.value = (priv.value ? priv.value + '\n' : '') + 'AI: ' + r.note;
+    saveReview(sid, false);
+    toast('Förslag klart – läs igenom och justera innan du skickar.');
+  });
+}
+function sendFeedback(sid) {
+  saveReview(sid, false);
+  const s = state.subs.find(x => x.sid === sid);
+  if (!s.review.text) return toast('Skriv återkoppling först.');
+  const code = encodeCode('SANDO-A:', { kind: 'sando-aterkoppling', taskId: s.task?.id, group: s.group.name, teacher: 'Tore', text: s.review.text, criteria: s.review.criteria.filter(c => c.level || c.motivation), date: new Date().toISOString() });
+  s.review.sent = true; save('subs'); renderSubs();
+  document.getElementById('fbCodeWrap').style.display = '';
+  document.getElementById('fbCode').textContent = code;
+  navigator.clipboard.writeText(code).then(() => toast('Återkopplingskoden kopierad!'), () => {});
+}
+function delSub(sid) {
+  if (!confirm('Ta bort inlämningen?')) return;
+  state.subs = state.subs.filter(s => s.sid !== sid); save('subs');
+  document.getElementById('subDetail').innerHTML = ''; renderSubs();
+}
+function presentSub(sid) {
+  const s = state.subs.find(x => x.sid === sid);
+  const parts = s.product?.parts || [];
+  document.getElementById('projTitle').textContent = `${s.group.name}: ${s.product?.title || s.task?.title || ''}`;
+  document.getElementById('projGroups').innerHTML = parts.map((p, i) => `<div class="pg"><span>${i + 1} · ${esc(p.who || '')}</span><h3>${esc(p.title)}</h3><div style="font-size:16px;white-space:pre-wrap">${esc(p.text)}</div></div>`).join('');
+  document.getElementById('projector').classList.add('on');
+}
+
+/* ================= Rensa ================= */
+function resetAll() {
+  if (!confirm('Ta bort alla grupper, uppdrag och inlämningar?')) return;
+  ['students', 'roles', 'groups', 'task', 'subs'].forEach(k => { try { localStorage.removeItem('sando-tore:' + k); } catch {} });
+  location.reload();
+}
+
+/* ================= Start ================= */
+document.getElementById('students').value = state.students;
+document.getElementById('roles').value = state.roles.join('\n');
+renderGroups();
+if (state.task) renderTaskEditor();
+</script>
+</body>
+</html>
