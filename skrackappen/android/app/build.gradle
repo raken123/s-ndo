@@ -1,0 +1,46 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'se.skrackappen.spel'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'se.skrackappen.spel'
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+    }
+
+    signingConfigs {
+        // Demonyckel som ligger i projektet, så att varje bygge kan installeras
+        // över det förra. Sätt SKRACK_KEYSTORE (+ _PASSWORD, _ALIAS) för en egen nyckel.
+        demo {
+            storeFile file(System.getenv('SKRACK_KEYSTORE') ?: 'skrackappen-demo.jks')
+            storePassword System.getenv('SKRACK_KEYSTORE_PASSWORD') ?: 'skrackappen'
+            keyAlias System.getenv('SKRACK_KEY_ALIAS') ?: 'skrackappen'
+            keyPassword System.getenv('SKRACK_KEY_PASSWORD') ?: System.getenv('SKRACK_KEYSTORE_PASSWORD') ?: 'skrackappen'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.demo
+        }
+    }
+
+    // Spelet (skrackappen/www) packas direkt som appens assets.
+    sourceSets {
+        main {
+            assets.srcDirs = ['../../www']
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

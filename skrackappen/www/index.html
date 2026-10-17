@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#050407">
+<title>Skräckappen</title>
+<link rel="icon" href="icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="stage">
+  <canvas id="view" width="320" height="180"></canvas>
+
+  <!-- spelets HUD under banorna -->
+  <div id="hud" class="hidden">
+    <div id="hud-goal"></div>
+    <div id="hud-items"></div>
+    <div id="hud-timer"></div>
+    <div id="hud-bars">
+      <div class="bar" id="bar-stamina"><i></i><span>ORK</span></div>
+      <div class="bar" id="bar-battery"><i></i><span>BATTERI</span></div>
+    </div>
+    <div id="hud-hint"></div>
+    <button id="hud-pause" class="icon-btn" aria-label="Paus">II</button>
+  </div>
+
+  <!-- berättelsen -->
+  <div id="dialog" class="hidden">
+    <div id="dlg-name"></div>
+    <div id="dlg-text"></div>
+    <div id="dlg-more">▼</div>
+  </div>
+  <div id="choices" class="hidden"></div>
+
+  <!-- Panterappen i Kaspers mobil -->
+  <div id="phone" class="hidden">
+    <div class="ph-notch"></div>
+    <div class="ph-top"><span id="ph-clock">07:13</span><span class="ph-icons">▂▄▆ 87%</span></div>
+    <div class="ph-head"><div class="ph-logo"></div><div><b>Panterappen</b><small id="ph-sub">Pantern skyddar dig</small></div></div>
+    <div id="ph-feed"></div>
+    <div id="ph-actions"></div>
+  </div>
+
+  <div id="mini" class="hidden"></div>
+  <div id="card" class="hidden"></div>
+  <div id="punish" class="hidden"></div>
+  <div id="overlay" class="hidden"></div>
+  <div id="menu" class="hidden"></div>
+  <div id="touch" class="hidden">
+    <div id="stick"><div id="stick-knob"></div></div>
+    <button id="t-run" data-k="run">SPRING</button>
+    <button id="t-light" data-k="light">LJUS</button>
+    <button id="t-act" data-k="act">E</button>
+  </div>
+  <div id="fx"></div>
+  <div id="toast" class="hidden"></div>
+</div>
+<div id="boot">Laddar Skräckappen…</div>
+
+<script src="js/util.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/art.js"></script>
+<script src="js/scenes.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/minigames.js"></script>
+<script src="js/story.js"></script>
+<script src="js/director.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

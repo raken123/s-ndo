@@ -1,0 +1,73 @@
+{
+  "name": "skrackappen",
+  "productName": "Skräckappen",
+  "version": "1.0.0",
+  "description": "Ett skräckspel om Kasper, Panterappen och tystnaden.",
+  "author": { "name": "Skräckappen", "email": "skrackappen@users.noreply.github.com" },
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "sync": "node scripts/sync-www.js",
+    "start": "npm run sync && electron .",
+    "dist:mac": "npm run sync && electron-builder --mac --publish never",
+    "dist:win": "npm run sync && electron-builder --win --publish never",
+    "dist:linux": "npm run sync && electron-builder --linux --publish never"
+  },
+  "devDependencies": {
+    "electron": "43.2.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "se.skrackappen.spel",
+    "productName": "Skräckappen",
+    "executableName": "Skrackappen",
+    "copyright": "Skräckappen",
+    "files": ["main.js", "www/**/*"],
+    "directories": { "output": "release", "buildResources": "build" },
+    "electronLanguages": ["sv", "en-US"],
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
+      "category": "public.app-category.games",
+      "icon": "build/icon.png",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "format": "UDZO",
+      "sign": false,
+      "title": "Skräckappen",
+      "artifactName": "Skrackappen-${version}-mac-${arch}.${ext}"
+    },
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Skräckappen",
+      "artifactName": "Skrackappen-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "Skrackappen-${version}-portable.${ext}"
+    },
+    "linux": {
+      "target": [{ "target": "deb", "arch": ["x64"] }],
+      "icon": "build/icon.png",
+      "category": "Game",
+      "executableName": "skrackappen",
+      "maintainer": "Skräckappen <skrackappen@users.noreply.github.com>",
+      "synopsis": "Ett skräckspel om Panterappen"
+    },
+    "deb": {
+      "artifactName": "skrackappen_${version}_amd64.${ext}"
+    }
+  }
+}

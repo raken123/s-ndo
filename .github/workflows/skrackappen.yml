@@ -1,0 +1,168 @@
+name: Skräckappen
+
+on:
+  push:
+    branches: ["main", "ccr-**", "claude/**"]
+    paths:
+      - "skrackappen/**"
+      - ".github/workflows/skrackappen.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: skrackappen-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: mac
+          - os: windows-latest
+            target: win
+          - os: ubuntu-latest
+            target: linux
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: skrackappen/desktop
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Electron and electron-builder
+        run: npm install --no-audit --no-fund
+
+      - name: Build
+        run: npm run dist:${{ matrix.target }}
+
+      - name: List output
+        shell: bash
+        run: ls -l release
+
+      # Ett osignerat eller trasigt signerat program är det som får macOS att
+      # kalla appen "skadad". Kontrollera varje DMG som en Mac skulle se den och
+      # starta Apple Silicon-versionen (runnern är arm64).
+      - name: Verify macOS apps
+        if: matrix.target == 'mac'
+        run: |
+          set -euo pipefail
+          for dmg in release/*.dmg; do
+            echo "== $dmg"
+            hdiutil verify "$dmg"
+            mnt=$(mktemp -d)
+            hdiutil attach -nobrowse -readonly -mountpoint "$mnt" "$dmg"
+            app=$(ls -d "$mnt"/*.app | head -1)
+            echo "app: $app"
+            codesign --verify --deep --strict --verbose=2 "$app"
+            lipo -archs "$app/Contents/MacOS/"*
+            if [[ "$dmg" == *arm64* ]]; then
+              code=0
+              SKRACK_SMOKE=1 SKRACK_SMOKE_OUT="$PWD/smoke.log" \
+                perl -e 'alarm 120; exec { $ARGV[0] } @ARGV or die "exec failed: $!"' "$app/Contents/MacOS/"* 2>&1 | tail -20 || code=$?
+              echo "app exit: $code"
+              cat smoke.log
+              grep -q SMOKE_OK smoke.log
+            fi
+            hdiutil detach "$mnt"
+          done
+
+      # Windows-runnern har ingen riktig skärm; testet får misslyckas utan att stoppa bygget.
+      - name: Start the Windows app
+        if: matrix.target == 'win'
+        continue-on-error: true
+        shell: bash
+        run: |
+          ls release/win-unpacked
+          exe=$(ls release/win-unpacked/Skr*ckappen.exe | head -1)
+          SKRACK_SMOKE=1 SKRACK_SMOKE_OUT="$PWD/smoke.log" timeout 120 "$exe" || true
+          cat smoke.log
+          grep -q SMOKE_OK smoke.log
+
+      - name: Start the Linux app
+        if: matrix.target == 'linux'
+        run: |
+          SKRACK_SMOKE=1 SKRACK_SMOKE_OUT="$PWD/smoke.log" timeout 120 xvfb-run -a release/linux-unpacked/skrackappen --no-sandbox || true
+          cat smoke.log
+          grep -q SMOKE_OK smoke.log
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: skrackappen-${{ matrix.target }}
+          if-no-files-found: error
+          path: |
+            skrackappen/desktop/release/*.dmg
+            skrackappen/desktop/release/*.exe
+            skrackappen/desktop/release/*.deb
+
+  android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: skrackappen/android
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build APK
+        run: ./gradlew --no-daemon assembleRelease
+
+      - name: Verify APK
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp app/build/outputs/apk/release/app-release.apk dist/Skrackappen-1.0.0.apk
+          bt=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$bt/apksigner" verify --verbose --print-certs dist/Skrackappen-1.0.0.apk | head -12
+          "$bt/aapt2" dump badging dist/Skrackappen-1.0.0.apk | head -8
+          unzip -l dist/Skrackappen-1.0.0.apk | grep -E "assets/(index.html|js/story.js)"
+          ls -l dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: skrackappen-android
+          if-no-files-found: error
+          path: skrackappen/android/dist/Skrackappen-1.0.0.apk
+
+  release:
+    needs: [desktop, android]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: skrackappen-v1.0.0
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+
+      - name: Publish the Skräckappen release
+        run: |
+          ls -l out
+          (cd out && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt)
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --target "$GITHUB_SHA" --prerelease \
+              --title "Skräckappen 1.0.0" --notes-file skrackappen/RELEASE_NOTES.md
+          else
+            gh release edit "$TAG" --notes-file skrackappen/RELEASE_NOTES.md
+          fi
+          gh release upload "$TAG" out/* --clobber
