@@ -1,0 +1,2263 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wille – Rasten som försvann</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one 16:9 film stage with a slim control bar under it, centred in a dark screening room. */
+:root{
+  --room:#0e0b16; --bar:#191427; --barline:#2c2440; --fg:#f3efff; --muted:#a49cbc;
+  --tq:#1fd3c4; --lila:#a46bff; --focus:#ffe066;
+  --ui:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--room);color:var(--fg);font-family:var(--ui);overflow-x:hidden}
+#app{box-sizing:border-box;min-height:100%;display:flex;align-items:center;justify-content:center;
+  padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:var(--room)}
+#player{width:min(100%, calc((100vh - 96px) * 16 / 9));min-width:0;display:flex;flex-direction:column;gap:8px}
+@supports (height:100dvh){#player{width:min(100%, calc((100dvh - 96px) * 16 / 9))}}
+#stage{position:relative;width:100%;max-width:100%;aspect-ratio:16/9;background:#000;border-radius:6px;overflow:hidden;
+  box-shadow:0 18px 60px rgba(0,0,0,.55)}
+#c{display:block;width:100%;height:100%}
+#ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.2%;
+  background:radial-gradient(ellipse at 50% 40%,rgba(60,30,110,.55),rgba(5,3,10,.88));text-align:center;padding:4%}
+#ov h1{margin:0;font-size:clamp(20px,5.2vw,64px);line-height:1.02;letter-spacing:.02em;font-weight:900;text-wrap:balance;
+  color:#fff;text-shadow:0 .06em 0 #5b2bb0,0 .12em .3em rgba(0,0,0,.6)}
+#ov h1 span{display:block;font-size:.42em;letter-spacing:.32em;color:var(--tq);text-shadow:none;margin-bottom:.4em}
+#ov p{margin:0;color:var(--muted);font-size:clamp(11px,1.5vw,17px);max-width:46ch}
+#big{font:800 clamp(14px,2.2vw,24px) var(--ui);color:#170f26;background:var(--focus);border:0;border-radius:999px;
+  padding:.7em 1.6em;cursor:pointer;display:flex;align-items:center;gap:.5em;box-shadow:0 6px 0 #b38f12}
+#big:hover{filter:brightness(1.06)}
+#big:active{transform:translateY(3px);box-shadow:0 3px 0 #b38f12}
+#bar{display:flex;align-items:center;gap:6px;background:var(--bar);border:1px solid var(--barline);border-radius:10px;padding:5px 8px;min-width:0}
+#bar button{flex:none;width:38px;height:38px;border:0;border-radius:8px;background:transparent;color:var(--fg);cursor:pointer;display:grid;place-items:center;padding:0}
+#bar button:hover{background:#2a2240}
+#bar svg{width:22px;height:22px;fill:currentColor}
+button:focus-visible,input:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+#time{flex:none;font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted);min-width:84px;text-align:center}
+#seek{flex:1;min-width:40px;accent-color:var(--tq);height:24px;cursor:pointer}
+#app:fullscreen{padding:0}
+#app:fullscreen #player{width:min(100vw, calc((100vh - 54px) * 16 / 9));gap:4px}
+#app:fullscreen #stage{border-radius:0}
+#app:-webkit-full-screen{padding:0}
+@media (max-width:520px){#bar{gap:2px;padding:4px}#bar button{width:34px;height:34px}#time{min-width:70px;font-size:12px}}
+@media (prefers-reduced-motion:reduce){#big{transition:none}}
+</style>
+<div id="app">
+  <div id="player">
+    <div id="stage">
+      <canvas id="c" width="1920" height="1080" aria-label="Animerad film: Wille – Rasten som försvann"></canvas>
+      <div id="ov">
+        <h1><span>EN ANIMERAD KORTFILM</span>WILLE – RASTEN<br>SOM FÖRSVANN</h1>
+        <p id="ovtext">5 minuter · svenska undertexter · ljud skapas i webbläsaren</p>
+        <button id="big" type="button"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg><span id="bigtxt">Spela filmen</span></button>
+      </div>
+    </div>
+    <div id="bar">
+      <button id="bPlay" type="button" aria-label="Spela"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="iPlay" d="M7 4.5v15l13-7.5z"/></svg></button>
+      <button id="bRe" type="button" aria-label="Spela om från början"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg></button>
+      <span id="time">0:00 / 5:00</span>
+      <input id="seek" type="range" min="0" max="300" step="0.1" value="0" aria-label="Tidslinje">
+      <button id="bMute" type="button" aria-label="Stäng av ljud"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="iMute" d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg></button>
+      <button id="bFs" type="button" aria-label="Helskärm"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5v2H6v3H4zm10-5h6v5h-2V6h-4V4zM6 15v3h3v2H4v-5h2zm12 0h2v5h-5v-2h3v-3z"/></svg></button>
+    </div>
+  </div>
+</div>
+<script>
+"use strict";
+// ===================== KÄRNA =====================
+const W = 1920, H = 1080, DUR = 300, TAU = Math.PI * 2;
+const cv = document.getElementById('c');
+const g = cv.getContext('2d');
+let T = 0;            // filmens gemensamma klocka i sekunder
+let SC = 1;           // skalning från 1920-koordinater till canvas-pixlar
+const FONT = 'system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif';
+const INK = '#241a33';
+
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const ss = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+const eio = t => { t = clamp(t, 0, 1); return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+const eout = t => { t = clamp(t, 0, 1); return 1 - Math.pow(1 - t, 3); };
+const ein = t => { t = clamp(t, 0, 1); return t * t * t; };
+const lin = t => clamp(t, 0, 1);
+const prog = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+const bump = (t, a, b) => Math.sin(prog(t, a, b) * Math.PI);
+const R = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
+// keyframes: [[t, v], ...]  v kan vara tal eller array
+function kf(t, K, ease = ss) {
+  if (t <= K[0][0]) return K[0][1];
+  for (let i = 0; i < K.length - 1; i++) {
+    const [a, va] = K[i], [b, vb] = K[i + 1];
+    if (t <= b) {
+      const p = ease((t - a) / (b - a || 1));
+      return Array.isArray(va) ? va.map((v, j) => lerp(v, vb[j], p)) : lerp(va, vb, p);
+    }
+  }
+  return K[K.length - 1][1];
+}
+// rörelsebana: [[t, x, y], ...]
+function path(t, K, ease = lin) {
+  const segA = i => { for (let j = i; j >= 0 && j < K.length - 1; j--) { const dx = K[j + 1][1] - K[j][1], dy = K[j + 1][2] - K[j][2]; if (Math.hypot(dx, dy) > 1) return Math.atan2(dy, dx); } for (let j = i; j < K.length - 1; j++) { const dx = K[j + 1][1] - K[j][1], dy = K[j + 1][2] - K[j][2]; if (Math.hypot(dx, dy) > 1) return Math.atan2(dy, dx); } return 0; };
+  if (t <= K[0][0]) return { x: K[0][1], y: K[0][2], ang: segA(0), v: 0 };
+  for (let i = 0; i < K.length - 1; i++) {
+    const a = K[i], b = K[i + 1];
+    if (t <= b[0]) {
+      const p = ease((t - a[0]) / (b[0] - a[0]));
+      const dx = b[1] - a[1], dy = b[2] - a[2], d = Math.hypot(dx, dy);
+      return { x: a[1] + dx * p, y: a[2] + dy * p, ang: d > 1 ? Math.atan2(dy, dx) : segA(i), v: d / (b[0] - a[0]) };
+    }
+  }
+  const L = K[K.length - 1];
+  return { x: L[1], y: L[2], ang: segA(K.length - 2), v: 0 };
+}
+
+// ---------- ritprimitiver ----------
+function rect(x, y, w, h, c) { g.fillStyle = c; g.fillRect(x, y, w, h); }
+function circ(x, y, r, c) { g.beginPath(); g.arc(x, y, Math.max(0, r), 0, TAU); g.fillStyle = c; g.fill(); }
+function ell(x, y, rx, ry, c, rot = 0) { g.beginPath(); g.ellipse(x, y, Math.abs(rx), Math.abs(ry), rot, 0, TAU); g.fillStyle = c; g.fill(); }
+function rrect(x, y, w, h, r) {
+  r = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
+  g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+function rr(x, y, w, h, r, c, stroke, lw) { rrect(x, y, w, h, r); if (c) { g.fillStyle = c; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 4; g.stroke(); } }
+function line(x1, y1, x2, y2, c, w) { g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.strokeStyle = c; g.lineWidth = w; g.lineCap = 'round'; g.stroke(); }
+function inkS(w = 5) { g.strokeStyle = INK; g.lineWidth = w; g.lineJoin = 'round'; g.stroke(); }
+function text(s, x, y, size, c, align = 'center', weight = 800) {
+  g.font = `${weight} ${size}px ${FONT}`; g.textAlign = align; g.textBaseline = 'middle'; g.fillStyle = c; g.fillText(s, x, y);
+}
+function textO(s, x, y, size, c, oc, ow, align = 'center', weight = 900) {
+  g.font = `${weight} ${size}px ${FONT}`; g.textAlign = align; g.textBaseline = 'middle';
+  g.lineJoin = 'round'; g.strokeStyle = oc; g.lineWidth = ow; g.strokeText(s, x, y); g.fillStyle = c; g.fillText(s, x, y);
+}
+function limb(x1, y1, x2, y2, w, col) { line(x1, y1, x2, y2, INK, w + 9); line(x1, y1, x2, y2, col, w); }
+function glow(x, y, r, col, a = 1) {
+  const gr = g.createRadialGradient(x, y, 0, x, y, r);
+  gr.addColorStop(0, col); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  g.globalAlpha = a; g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); g.globalAlpha = 1;
+}
+function cam(cx, cy, z = 1, rot = 0) {
+  g.translate(W / 2, H / 2); if (rot) g.rotate(rot); g.scale(z, z); g.translate(-cx, -cy);
+}
+function shake(a, f = 23) { return [Math.sin(T * f) * a + Math.sin(T * f * 1.7) * a * .5, Math.cos(T * f * 1.3) * a]; }
+function speedLines(n, col, a, seed = 1, horiz = true) {
+  g.globalAlpha = a;
+  for (let i = 0; i < n; i++) {
+    const y = R(i * 3.1 + seed) * H, len = 200 + R(i * 7.3) * 500;
+    const x = ((R(i * 1.7) * W * 2 - T * 2600 * (0.6 + R(i))) % (W + len) + W + len) % (W + len) - len;
+    if (horiz) line(x, y, x + len, y, col, 3 + R(i) * 5); else line(y * 16 / 9, x * 9 / 16, y * 16 / 9, x * 9 / 16 + len * .6, col, 4);
+  }
+  g.globalAlpha = 1;
+}
+function rays(x, y, n, col, a, spin, r = 1600) {
+  g.save(); g.translate(x, y); g.rotate(T * spin); g.globalAlpha = a; g.fillStyle = col;
+  for (let i = 0; i < n; i++) { g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, r, i / n * TAU, (i + .5) / n * TAU); g.closePath(); g.fill(); }
+  g.restore(); g.globalAlpha = 1;
+}
+
+// ===================== FIGURER =====================
+const CH = {
+  raken: { name: 'Raken', sw: '#17c3b6', swD: '#0d958b', pants: '#33456a', skin: '#d39b74', skinD: '#b07a55', hair: '#2f1d10', shoe: '#f2f2f2', leg: 82, tor: 104, tw: 84, hr: 56, arm: 86, hs: 'curly', blink: 0.3 },
+  wille: { name: 'Wille', sw: '#8c4de4', swD: '#6532b2', pants: '#2b2f40', skin: '#f3c8a2', skinD: '#d6a07a', hair: '#f4c443', shoe: '#e2423a', leg: 66, tor: 96, tw: 100, hr: 61, arm: 78, hs: 'spiky', bag: true, freckles: true, blink: 1.9 },
+  froken: { name: 'Fröken', sw: '#df4f5b', swD: '#ad3742', pants: '#3a2c4a', skin: '#e8b995', skinD: '#c99472', hair: '#7d4f33', shoe: '#5a2a2a', leg: 120, tor: 142, tw: 96, hr: 52, arm: 112, hs: 'bun', glasses: true, skirt: '#6b3f8f', blink: 1.1 },
+  vakt: { name: 'Vaktmästaren', sw: '#4a6890', swD: '#34507a', pants: '#4a6890', skin: '#d7a587', skinD: '#b5836a', hair: '#9b9b9b', shoe: '#3b2a20', leg: 104, tor: 134, tw: 126, hr: 55, arm: 106, hs: 'cap', mustache: true, overall: true, blink: 2.6 },
+  k1: { name: '', sw: '#f2a23a', swD: '#c47c1f', pants: '#3d4a5c', skin: '#8d5a3b', skinD: '#6e4229', hair: '#1b1210', shoe: '#444', leg: 72, tor: 96, tw: 88, hr: 54, arm: 78, hs: 'round', blink: .7 },
+  k2: { name: '', sw: '#58b84a', swD: '#3d8a32', pants: '#5c3d3d', skin: '#f0c7a8', skinD: '#d19f7e', hair: '#b4462b', shoe: '#333', leg: 72, tor: 96, tw: 86, hr: 54, arm: 78, hs: 'pony', blink: 2.2 },
+  k3: { name: '', sw: '#ff7aa8', swD: '#d65383', pants: '#2f3c55', skin: '#c88b62', skinD: '#a56d47', hair: '#3a2416', shoe: '#555', leg: 72, tor: 96, tw: 86, hr: 54, arm: 78, hs: 'round', blink: 3.1 },
+  k4: { name: '', sw: '#3f8ef0', swD: '#2a68bd', pants: '#3b3b3b', skin: '#f5d0b0', skinD: '#d8a988', hair: '#e8d9a0', shoe: '#222', leg: 72, tor: 96, tw: 86, hr: 54, arm: 78, hs: 'pony', blink: 1.4 },
+};
+
+// vem pratar just nu (styr munrörelser från undertexterna)
+let SUBS = [];
+function isTalking(who) {
+  const n = CH[who] ? CH[who].name : who;
+  for (const s of SUBS) if (T >= s[0] && T < s[1] - 0.15 && s[2] === n && !s[4]) return true;
+  return false;
+}
+
+function person(o) {
+  const c = CH[o.who], s = o.s ?? 1;
+  const f = clamp(o.face ?? 1, -1, 1), fs = f >= 0 ? 1 : -1, af = Math.abs(f);
+  const ph = o.ph ?? 0, amp = o.amp ?? 0;
+  const bob = Math.abs(Math.sin(ph)) * 8 * amp;
+  g.save(); g.translate(o.x, o.y); g.scale(s, s);
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  if (!o.noShadow) { g.globalAlpha = .2; ell(0, 2, c.tw * .75, 13, '#000'); g.globalAlpha = 1; }
+  g.translate(0, -(o.jump || 0) - bob);
+  if (o.rot) g.rotate(o.rot);
+  if (o.lean) { g.translate(0, -c.leg); g.rotate(o.lean); g.translate(0, c.leg); }
+  const hipY = -c.leg, topY = hipY - c.tor, shY = topY + 22, headY = topY - c.hr * .72 + (o.squash || 0);
+  // ben
+  if (!o.noLegs) {
+    const sw = Math.sin(ph) * .8 * amp;
+    for (const [lx, a] of [[-c.tw * .18, -sw], [c.tw * .18, sw]]) {
+      const la = a * (af > .2 ? 1 : .5) + (o.legA || 0) * fs;
+      const ex = lx + Math.sin(la) * c.leg, ey = hipY + Math.cos(la) * c.leg;
+      limb(lx, hipY, ex, ey, c.tw * .27, c.pants);
+      ell(ex + fs * 9 * af, ey - 3, 22, 12, c.shoe); g.beginPath(); g.ellipse(ex + fs * 9 * af, ey - 3, 22, 12, 0, 0, TAU); inkS(4);
+    }
+  }
+  // väska bakom
+  const showBag = c.bag && o.bag !== false;
+  if (showBag && af > .25) {
+    const bx = -fs * c.tw * .5;
+    rr(bx - 34, shY - 12, 68, c.tor - 6, 20, '#3da35e', INK, 5);
+    rr(bx - 24 - fs * 6, shY + 34, 40, 34, 10, '#f39a33', INK, 4);
+  }
+  // kjol
+  if (c.skirt) {
+    g.beginPath(); g.moveTo(-c.tw * .5, hipY - 16); g.lineTo(c.tw * .5, hipY - 16); g.lineTo(c.tw * .72, hipY + 58); g.lineTo(-c.tw * .72, hipY + 58); g.closePath();
+    g.fillStyle = c.skirt; g.fill(); inkS(5);
+  }
+  // kropp
+  rr(-c.tw / 2, topY, c.tw, c.tor + 8, 34, c.sw, INK, 5);
+  if (o.who === 'raken') { g.save(); rrect(-c.tw / 2, topY, c.tw, c.tor + 8, 34); g.clip(); rect(-c.tw / 2, shY + 26, c.tw, 13, '#e9fffb'); rect(-c.tw / 2, hipY - 8, c.tw, 16, c.swD); g.restore(); }
+  if (o.who === 'wille') { g.save(); g.translate(f * 12, shY + 40); g.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 9 : 20, a = -Math.PI / 2 + i * TAU / 10; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fillStyle = '#ffd84a'; g.fill(); inkS(3); g.restore(); rect(-c.tw / 2 + 4, hipY - 6, c.tw - 8, 12, c.swD); }
+  if (o.who === 'froken') { line(f * 6, topY + 10, f * 6, hipY - 18, '#ad3742', 4); for (let i = 0; i < 3; i++) circ(f * 6 + 10, topY + 40 + i * 28, 5, '#ffd27a'); }
+  if (c.overall) { rr(-c.tw * .3 + f * 6, topY + 24, c.tw * .6, 64, 10, '#5f80aa', INK, 4); line(-c.tw * .3 + f * 6 + 6, topY + 24, -c.tw * .42, topY + 4, '#5f80aa', 9); line(c.tw * .3 + f * 6 - 6, topY + 24, c.tw * .42, topY + 4, '#5f80aa', 9); rect(c.tw * .1 + f * 6, topY + 34, 8, 26, '#e33'); rect(-c.tw / 2 + 3, hipY - 14, c.tw - 6, 12, '#2c3b55'); circ(c.tw * .36, hipY - 2, 10, '#d8b13a'); circ(c.tw * .4, hipY + 14, 7, '#bbb'); }
+  // hals/krage
+  ell(f * 6, topY + 4, c.tw * .22, 12, c.skinD);
+  if (showBag && af <= .25) { line(-c.tw * .28, topY + 6, -c.tw * .3, hipY - 20, '#2d7a45', 10); line(c.tw * .28, topY + 6, c.tw * .3, hipY - 20, '#2d7a45', 10); }
+  // armar
+  const swA = Math.sin(ph) * .9 * amp;
+  const arms = [
+    { side: -1, a: o.aL ?? (.14 + swA * (fs > 0 ? 1 : -1) * .7 + amp * .2), e: o.eL ?? (.15 + amp * .8), item: o.itemL },
+    { side: 1, a: o.aR ?? (.14 - swA * (fs > 0 ? 1 : -1) * .7 + amp * .2), e: o.eR ?? (.15 + amp * .8), item: o.itemR },
+  ];
+  const hands = {};
+  for (const A of arms) {
+    const sx = A.side * (c.tw / 2 - 10), sy = shY;
+    const u = c.arm * .52, l = c.arm * .5;
+    const ex = sx + A.side * Math.sin(A.a) * u, ey = sy + Math.cos(A.a) * u;
+    const hx = ex + A.side * Math.sin(A.a + A.e) * l, hy = ey + Math.cos(A.a + A.e) * l;
+    limb(sx, sy, ex, ey, c.tw * .24, c.sw); limb(ex, ey, hx, hy, c.tw * .22, c.sw);
+    if (A.item) A.item(hx, hy, A.side);
+    circ(hx, hy, c.hr * .24 + 3, INK); circ(hx, hy, c.hr * .24, c.skin);
+    hands[A.side] = [hx, hy];
+  }
+  // huvud
+  const hx = f * c.hr * .12, hy = headY;
+  if (af < .85) { circ(hx - c.hr * .96, hy + 6, c.hr * .22 + 3, INK); circ(hx - c.hr * .96, hy + 6, c.hr * .22, c.skin); circ(hx + c.hr * .96, hy + 6, c.hr * .22 + 3, INK); circ(hx + c.hr * .96, hy + 6, c.hr * .22, c.skin); }
+  else { circ(hx - fs * c.hr * .88, hy + 6, c.hr * .22 + 3, INK); circ(hx - fs * c.hr * .88, hy + 6, c.hr * .22, c.skin); }
+  hairBack(c, hx, hy, fs, f);
+  circ(hx, hy, c.hr + 3, INK); circ(hx, hy, c.hr, c.skin);
+  face(o, c, hx, hy, f, fs, af);
+  hairFront(c, hx, hy, fs, f, o);
+  if (o.extra) o.extra(hx, hy, hands);
+  g.restore();
+}
+
+function hairBack(c, hx, hy, fs, f) {
+  const r = c.hr;
+  if (c.hs === 'bun') { circ(hx - fs * r * .25, hy - r * 1.02, r * .48 + 4, INK); circ(hx - fs * r * .25, hy - r * 1.02, r * .48, c.hair); line(hx - fs * r * .25 - 30, hy - r * 1.3, hx - fs * r * .25 + 26, hy - r * .8, '#f2c94c', 7); }
+  if (c.hs === 'pony') { ell(hx - fs * r * 1.05, hy + r * .1, r * .3 + 4, r * .55 + 4, INK, fs * .4); ell(hx - fs * r * 1.05, hy + r * .1, r * .3, r * .55, c.hair, fs * .4); }
+}
+function hairFront(c, hx, hy, fs, f, o) {
+  const r = c.hr;
+  g.save();
+  if (c.hs === 'curly') {
+    const pts = [];
+    for (let i = 0; i <= 7; i++) { const a = Math.PI * 1.04 + i / 7 * Math.PI * .92; pts.push([hx + Math.cos(a) * r * .86 - f * 4, hy + Math.sin(a) * r * .86, r * .36]); }
+    pts.push([hx - f * 6, hy - r * 1.12, r * .44], [hx - r * .45 - f * 6, hy - r * 1.02, r * .38], [hx + r * .45 - f * 6, hy - r * 1.02, r * .38], [hx + f * r * .45, hy - r * .62, r * .3]);
+    for (const p of pts) circ(p[0], p[1], p[2] + 4, INK);
+    for (const p of pts) circ(p[0], p[1], p[2], c.hair);
+    circ(hx - r * .2, hy - r * 1.18, r * .12, '#5a3a22');
+  } else if (c.hs === 'spiky') {
+    g.beginPath();
+    const n = 9;
+    for (let i = 0; i <= n * 2; i++) {
+      const a = Math.PI * 1.02 + i / (n * 2) * Math.PI * .96;
+      const rad = i % 2 ? r * 1.42 + (i % 4 === 1 ? r * .12 : 0) : r * .92;
+      g.lineTo(hx + Math.cos(a) * rad - f * 3, hy + Math.sin(a) * rad + 4);
+    }
+    g.lineTo(hx + r * .9, hy - r * .1); g.quadraticCurveTo(hx + f * r * .3, hy - r * 1.0, hx - r * .9, hy - r * .1); g.closePath();
+    g.fillStyle = c.hair; g.fill(); inkS(5);
+    g.beginPath(); g.moveTo(hx + f * r * .1 - 20, hy - r * .55); g.quadraticCurveTo(hx + f * r * .55, hy - r * .55, hx + f * r * .62, hy - r * .2); g.quadraticCurveTo(hx + f * r * .3, hy - r * .42, hx + f * r * .1 - 20, hy - r * .55); g.fillStyle = c.hair; g.fill(); inkS(4);
+  } else if (c.hs === 'bun' || c.hs === 'round' || c.hs === 'pony') {
+    g.beginPath(); g.arc(hx, hy, r + 2, Math.PI * 1.02, Math.PI * 1.98); g.quadraticCurveTo(hx + f * r * .4, hy - r * .35, hx - r * .98, hy - r * .1); g.closePath();
+    g.fillStyle = c.hair; g.fill(); inkS(4);
+  } else if (c.hs === 'cap') {
+    ell(hx - fs * r * .7, hy + r * .1, r * .35, r * .5, c.hair);
+    g.beginPath(); g.arc(hx, hy - r * .2, r * 1.02, Math.PI, 0); g.closePath(); g.fillStyle = '#e8892b'; g.fill(); inkS(5);
+    g.beginPath(); g.ellipse(hx + fs * r * .7 * Math.max(.35, Math.abs(f)), hy - r * .2, r * .75, r * .16, 0, 0, TAU); g.fillStyle = '#c96d17'; g.fill(); inkS(4);
+    circ(hx, hy - r * 1.2, 7, '#c96d17');
+  }
+  g.restore();
+}
+
+function face(o, c, hx, hy, f, fs, af) {
+  const r = c.hr, fx = hx + f * r * .3, ey = hy - r * .04;
+  const eyeMode = o.eyes || 'n';
+  const blinking = eyeMode === 'n' && ((T + c.blink * 1.7) % 4.1) < .11;
+  const lx = o.lx ?? f * .5, ly = o.ly ?? 0;
+  const sp = r * .34;
+  const wide = eyeMode === 'w' ? 1.3 : 1;
+  const ex = [fx - sp * (1 - .2 * af) - (f > 0 ? 0 : 0), fx + sp * (1 - .2 * af)];
+  for (let i = 0; i < 2; i++) {
+    const far = (f > .3 && i === 0) || (f < -.3 && i === 1);
+    const k = far ? .82 : 1, X = ex[i], rx = r * .17 * wide * k, ry = r * .22 * wide * k;
+    if (blinking || eyeMode === 'c') { g.beginPath(); g.moveTo(X - rx, ey); g.quadraticCurveTo(X, ey + ry * .7, X + rx, ey); inkS(5); continue; }
+    if (eyeMode === 'hap') { g.beginPath(); g.moveTo(X - rx, ey + 4); g.quadraticCurveTo(X, ey - ry * 1.1, X + rx, ey + 4); inkS(6); continue; }
+    ell(X, ey, rx + 2.5, ry + 2.5, INK); ell(X, ey, rx, ry, '#fff');
+    const pr = r * .1 * (eyeMode === 'w' ? .75 : 1) * k;
+    circ(X + lx * rx * .5, ey + ly * ry * .5, pr, INK);
+    circ(X + lx * rx * .5 - pr * .35, ey + ly * ry * .5 - pr * .35, pr * .3, '#fff');
+    if (eyeMode === 'h' || eyeMode === 'sly' || eyeMode === 'sad') {
+      g.save(); g.beginPath(); g.ellipse(X, ey, rx + 3, ry + 3, 0, 0, TAU); g.clip();
+      const lid = eyeMode === 'sad' ? .15 : .05;
+      rect(X - rx - 4, ey - ry - 4, rx * 2 + 8, ry + 4 + ry * lid * 2, c.skin);
+      g.restore(); line(X - rx, ey + ry * lid * 2 - 1, X + rx, ey + ry * lid * 2 - 1 + (eyeMode === 'sad' ? (i ? 5 : -5) : 0), INK, 5);
+    }
+  }
+  // ögonbryn
+  const brow = o.brow ?? 0, up = (o.bUp ?? 0) * r * .12 + (eyeMode === 'w' ? r * .1 : 0);
+  for (let i = 0; i < 2; i++) {
+    const X = ex[i], dir = i ? -1 : 1, by = ey - r * .34 - up - (o.raise && i === 1 ? r * .14 : 0);
+    const inner = by + brow * r * .1, outer = by - brow * r * .04;
+    line(X - dir * r * .17, outer, X + dir * r * .12, inner, c.hs === 'cap' ? '#777' : c.hair, 6.5);
+  }
+  if (c.freckles) { for (let i = 0; i < 3; i++) { circ(ex[0] - 6 + i * 7, ey + r * .32 + (i % 2) * 5, 2.6, '#c98a5a'); circ(ex[1] - 6 + i * 7, ey + r * .32 + (i % 2) * 5, 2.6, '#c98a5a'); } }
+  if (o.blush) { g.globalAlpha = .35; ell(ex[0] - 4, ey + r * .36, 13, 7, '#ff5a6a'); ell(ex[1] + 4, ey + r * .36, 13, 7, '#ff5a6a'); g.globalAlpha = 1; }
+  // näsa
+  ell(fx + f * r * .14, hy + r * .17, r * .1 + f * f * 3, r * .08, c.skinD);
+  if (c.mustache) { ell(fx - r * .14 + f * 6, hy + r * .34, r * .2, r * .09, '#8d8d8d', -.2); ell(fx + r * .14 + f * 6, hy + r * .34, r * .2, r * .09, '#8d8d8d', .2); }
+  // mun
+  const mx = fx + f * r * .05, my = hy + r * .48 + (c.mustache ? 6 : 0), w = r * .42;
+  let m = o.mouth || 'smile';
+  let open = 0;
+  if ((o.talk ?? isTalking(o.who)) && !o.mouthLock) { open = .25 + .75 * Math.abs(Math.sin(T * 12.5 + c.blink)) * (.6 + .4 * Math.sin(T * 3.1)); m = 'talk'; }
+  g.lineCap = 'round';
+  if (m === 'smile') { g.beginPath(); g.moveTo(mx - w * .8, my - 3); g.quadraticCurveTo(mx, my + r * .2, mx + w * .8, my - 3); inkS(5.5); }
+  else if (m === 'flat') { line(mx - w * .6, my, mx + w * .6, my, INK, 5.5); }
+  else if (m === 'frown') { g.beginPath(); g.moveTo(mx - w * .65, my + 7); g.quadraticCurveTo(mx, my - r * .14, mx + w * .65, my + 7); inkS(5.5); }
+  else if (m === 'wavy') { g.beginPath(); for (let i = 0; i <= 8; i++) g.lineTo(mx - w * .7 + i * w * .175, my + Math.sin(i * 1.6) * 4); inkS(5); }
+  else if (m === 'o') { ell(mx, my + 4, r * .11 + 2, r * .14 + 2, INK); ell(mx, my + 4, r * .1, r * .13, '#5a1f2a'); }
+  else if (m === 'smirk') { g.beginPath(); g.moveTo(mx - w * .6, my + 2); g.quadraticCurveTo(mx + w * .1, my + r * .12, mx + w * .8 * fs, my - 9); inkS(5.5); }
+  else if (m === 'grin' || m === 'open' || m === 'shout' || m === 'talk') {
+    const hh = m === 'talk' ? r * (.06 + .24 * open) : m === 'grin' ? r * .26 : m === 'shout' ? r * .46 : r * .32;
+    const ww = m === 'shout' ? w * .85 : m === 'talk' ? w * .7 : w * .95;
+    g.beginPath();
+    if (m === 'grin') { g.moveTo(mx - ww, my - 4); g.lineTo(mx + ww, my - 4); g.quadraticCurveTo(mx + ww * .9, my + hh * 1.5, mx, my + hh * 1.4); g.quadraticCurveTo(mx - ww * .9, my + hh * 1.5, mx - ww, my - 4); }
+    else g.ellipse(mx, my + hh * .5, ww, hh, 0, 0, TAU);
+    g.fillStyle = '#5a1f2a'; g.fill(); inkS(5);
+    g.save(); g.clip();
+    if (m !== 'talk' || open > .5) rect(mx - ww, my - 6, ww * 2, m === 'grin' ? 13 : 8, '#fff');
+    ell(mx, my + hh * 1.25, ww * .6, hh * .5, '#e5677a');
+    g.restore();
+  }
+  // glasögon
+  if (c.glasses && o.glasses !== false) {
+    g.beginPath(); g.arc(ex[0], ey, r * .27, 0, TAU); g.moveTo(ex[1] + r * .27, ey); g.arc(ex[1], ey, r * .27, 0, TAU);
+    g.moveTo(ex[0] + r * .27, ey); g.lineTo(ex[1] - r * .27, ey); g.strokeStyle = '#2a1b3a'; g.lineWidth = 5; g.stroke();
+  }
+}
+
+// ---------- top-down-figur ----------
+function topP(who, x, y, ang, ph, amp, s = 1, o = {}) {
+  const c = CH[who];
+  g.save(); g.translate(x, y); g.scale(s, s);
+  g.globalAlpha = .22; ell(6, 9, 32, 28, '#000'); g.globalAlpha = 1;
+  g.rotate(ang);
+  if (o.lie) g.scale(1.25, .9);
+  const k = Math.sin(ph) * 15 * amp;
+  for (const [fx, fy] of [[k + 4, -11], [-k + 4, 11]]) { ell(fx, fy, 12, 7.5, INK); ell(fx, fy, 10, 6, c.shoe); }
+  for (const [ax, ay] of [[-k * .9 + 2, -27], [k * .9 + 2, 27]]) { circ(ax, ay, 10, INK); circ(ax, ay, 8, c.sw); circ(ax + 7, ay, 5.5, c.skin); }
+  if (c.bag) { rr(-31, -17, 20, 34, 7, '#3da35e', INK, 3); }
+  ell(0, 0, 18, 27, INK); ell(0, 0, 15.5, 24.5, c.sw);
+  circ(3, 0, 18.5, INK); circ(3, 0, 16, c.skin);
+  if (c.hs === 'curly') { for (let i = 0; i < 7; i++) { const a = Math.PI * .45 + i / 6 * Math.PI * 1.1; circ(3 + Math.cos(a) * 9, Math.sin(a) * 9, 8.5, c.hair); } circ(-2, 0, 10, c.hair); }
+  else if (c.hs === 'spiky') { g.beginPath(); for (let i = 0; i < 14; i++) { const a = Math.PI * .4 + i / 13 * Math.PI * 1.2, rr2 = i % 2 ? 22 : 13; g.lineTo(2 + Math.cos(a) * rr2, Math.sin(a) * rr2); } g.lineTo(6, 0); g.closePath(); g.fillStyle = c.hair; g.fill(); inkS(2.5); }
+  else if (c.hs === 'cap') { circ(1, 0, 15, '#e8892b'); ell(13, 0, 8, 13, '#c96d17'); }
+  else { g.beginPath(); g.arc(3, 0, 16, Math.PI * .5, Math.PI * 1.5); g.closePath(); g.fillStyle = c.hair; g.fill(); if (c.hs === 'bun' || c.hs === 'pony') circ(-12, 0, 8, c.hair); }
+  g.restore();
+}
+
+// ===================== REKVISITA =====================
+function potato(x, y, r, rot = 0, seed = 1, shine = 0) {
+  g.save(); g.translate(x, y); g.rotate(rot);
+  g.beginPath();
+  for (let i = 0; i <= 16; i++) { const a = i / 16 * TAU, w = 1 + (R(seed + i % 16) - .5) * .16; g.lineTo(Math.cos(a) * r * 1.25 * w, Math.sin(a) * r * w); }
+  g.closePath(); g.fillStyle = '#c99a58'; g.fill(); g.strokeStyle = '#6d4a24'; g.lineWidth = Math.max(1.5, r * .09); g.stroke();
+  ell(-r * .35, -r * .35, r * .45, r * .22, 'rgba(255,240,200,.45)', -.3);
+  for (let i = 0; i < 3; i++) circ((R(seed * 3 + i) - .5) * r * 1.6, (R(seed * 5 + i) - .5) * r * 1.1, r * .07, '#8a6232');
+  if (shine) glow(-r * .3, -r * .4, r * 1.2, 'rgba(255,240,180,.9)', shine);
+  g.restore();
+}
+// Potatiskungen. o: {s, mouth(0-1), bulge, eyes:'n'|'w'|'c'|'sly', cup, crumbs}
+function king(x, y, o = {}) {
+  const s = o.s ?? 1, b = o.bulge ?? 1, m = o.mouth ?? 0;
+  g.save(); g.translate(x, y); g.scale(s, s);
+  // bricka (tronen)
+  rr(-230, -10, 460, 40, 12, '#9aa6b8', INK, 6); rr(-210, -4, 140, 24, 6, '#b8c3d3'); rr(-60, -4, 120, 24, 6, '#b8c3d3'); rr(70, -4, 140, 24, 6, '#b8c3d3');
+  // mantel
+  g.beginPath(); g.moveTo(-150 * b, -40); g.quadraticCurveTo(-210 * b, -230 * b, -60, -300 * b); g.lineTo(60, -300 * b); g.quadraticCurveTo(210 * b, -230 * b, 150 * b, -40); g.closePath();
+  g.fillStyle = '#b3243b'; g.fill(); inkS(6);
+  for (let i = -3; i <= 3; i++) { circ(i * 44 * b, -38, 13, '#fff'); circ(i * 44 * b, -38, 4, INK); }
+  g.save(); g.translate(0, -150 * b); if (o.wob) g.rotate(Math.sin(T * 9) * o.wob);
+  // kropp
+  g.beginPath(); for (let i = 0; i <= 24; i++) { const a = i / 24 * TAU, w = 1 + (R(40 + i % 24) - .5) * .08; g.lineTo(Math.cos(a) * 150 * b * w, Math.sin(a) * 125 * b * w); }
+  g.closePath(); g.fillStyle = '#cf9f5c'; g.fill(); g.strokeStyle = INK; g.lineWidth = 7; g.stroke();
+  ell(-60 * b, -55 * b, 55 * b, 25 * b, 'rgba(255,240,200,.4)', -.4);
+  for (let i = 0; i < 6; i++) circ((R(90 + i) - .5) * 220 * b, (R(70 + i) - .3) * 150 * b, 6, '#8a6232');
+  // ögon
+  const em = o.eyes || 'n';
+  for (const sx of [-1, 1]) {
+    const X = sx * 50 * b, Y = -30 * b;
+    if (em === 'c') { g.beginPath(); g.moveTo(X - 24, Y); g.quadraticCurveTo(X, Y + 16, X + 24, Y); inkS(7); continue; }
+    ell(X, Y, 28, 32 * (em === 'w' ? 1.2 : 1), INK); ell(X, Y, 24, 28 * (em === 'w' ? 1.2 : 1), '#fff');
+    circ(X + (o.lx || 0) * 8, Y + 4 + (o.ly || 0) * 8, 12, INK); circ(X - 4, Y - 2, 4, '#fff');
+    if (em === 'sly' || em === 'h') { g.save(); g.beginPath(); g.ellipse(X, Y, 27, 31, 0, 0, TAU); g.clip(); rect(X - 30, Y - 34, 60, 30, '#cf9f5c'); g.restore(); line(X - 25, Y - 4, X + 25, Y - 4, INK, 6); }
+    line(X - sx * 30, Y - 50 - (o.browUp || 0), X + sx * 22, Y - 38 + (o.angry ? 10 : 0) - (o.browUp || 0), INK, 9);
+  }
+  // mun
+  if (m > .05) { ell(0, 55 * b, 70 * (.6 + m * .4), 60 * m, INK); ell(0, 55 * b, 62 * (.6 + m * .4), 52 * m, '#5a1f2a'); ell(0, 55 * b + 30 * m, 40 * m, 18 * m, '#e5677a'); rect(-40 * m, 55 * b - 52 * m, 80 * m, 12 * m, '#fff'); }
+  else { g.beginPath(); g.moveTo(-50, 50 * b); g.quadraticCurveTo(0, (o.smile ? 80 : 62) * b, 50, 50 * b); inkS(7); }
+  // krona
+  g.save(); g.translate(0, -120 * b);
+  g.beginPath(); g.moveTo(-80, 10); g.lineTo(-90, -70); g.lineTo(-45, -25); g.lineTo(0, -90); g.lineTo(45, -25); g.lineTo(90, -70); g.lineTo(80, 10); g.closePath();
+  g.fillStyle = '#f4c430'; g.fill(); inkS(6);
+  circ(0, -10, 13, '#e2304d'); circ(-50, -5, 9, '#2f7de1'); circ(50, -5, 9, '#2fbf6a'); circ(0, -90, 9, '#fff3b0'); circ(-90, -70, 8, '#fff3b0'); circ(90, -70, 8, '#fff3b0');
+  g.restore();
+  // små armar + gaffel som spira
+  limb(135 * b, 10, 200 * b, -40, 10, '#cf9f5c');
+  if (!o.cup) { line(205 * b, -40, 205 * b, -190, '#d0d6e0', 9); for (let i = -1; i <= 1; i++) line(205 * b + i * 14, -190, 205 * b + i * 14, -235, '#d0d6e0', 6); line(191 * b, -190, 219 * b, -190, '#d0d6e0', 8); }
+  limb(-135 * b, 10, -195 * b, -20, 10, '#cf9f5c');
+  if (o.cup) { g.save(); g.translate(195 * b, -55); rr(-18, -26, 36, 34, 6, '#fff', INK, 4); g.beginPath(); g.arc(20, -10, 10, -1.2, 1.2); inkS(4); ell(0, -26, 16, 5, '#6b3d1e'); for (let i = 0; i < 2; i++) { g.globalAlpha = .5; g.beginPath(); g.moveTo(-6 + i * 12, -36); g.bezierCurveTo(-14 + i * 12, -50 - Math.sin(T * 3 + i) * 6, 4 + i * 12, -60, -4 + i * 12, -78); g.strokeStyle = '#fff'; g.lineWidth = 4; g.stroke(); g.globalAlpha = 1; } g.restore(); }
+  g.restore(); g.restore();
+}
+function token(x, y, r, glw = 0, rot = 0) {
+  if (glw) glow(x, y, r * 3, 'rgba(255,214,90,.9)', glw);
+  g.save(); g.translate(x, y); g.rotate(rot);
+  circ(0, 0, r + 4, INK); circ(0, 0, r, '#f2b21e'); circ(0, 0, r * .8, '#ffd34d');
+  g.beginPath(); g.arc(0, -r * .1, r * .32, Math.PI, 0); g.lineTo(r * .4, r * .28); g.lineTo(-r * .4, r * .28); g.closePath(); g.fillStyle = '#c47d00'; g.fill();
+  circ(0, r * .36, r * .1, '#c47d00');
+  if (r > 18) text('RAST', 0, r * .6, r * .26, '#8a5200');
+  ell(-r * .35, -r * .45, r * .25, r * .1, 'rgba(255,255,255,.6)', -.5);
+  g.restore();
+}
+function bucket(x, y, s = 1, eyes = 0) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  g.globalAlpha = .2; ell(0, 2, 80, 12, '#000'); g.globalAlpha = 1;
+  line(30, -60, 80, -230, '#b07b45', 12); ell(84, -238, 10, 6, '#7a522a');
+  g.beginPath(); g.moveTo(-60, -110); g.lineTo(60, -110); g.lineTo(48, 0); g.lineTo(-48, 0); g.closePath(); g.fillStyle = '#ffcf33'; g.fill(); inkS(5);
+  rr(-66, -122, 132, 18, 6, '#f2b400', INK, 4); rect(-50, -80, 100, 10, '#e0a800');
+  circ(-45, 6, 9, INK); circ(45, 6, 9, INK);
+  ell(25, -112, 40, 10, '#d9e6ee');
+  if (eyes) { g.globalAlpha = eyes; ell(-18, -55, 9, 12, '#fff'); ell(14, -55, 9, 12, '#fff'); circ(-15, -53, 4, INK); circ(17, -53, 4, INK); g.globalAlpha = 1; }
+  g.restore();
+}
+function bucketTop(x, y, rot = 0, s = 1) {
+  g.save(); g.translate(x, y); g.rotate(rot); g.scale(s, s);
+  g.globalAlpha = .2; circ(6, 8, 48, '#000'); g.globalAlpha = 1;
+  circ(0, 0, 46, INK); circ(0, 0, 42, '#ffcf33'); circ(0, 0, 32, '#9fd0e8'); circ(-8, -8, 8, 'rgba(255,255,255,.6)');
+  line(10, 0, 70, -10, '#b07b45', 9);
+  g.restore();
+}
+function plane(x, y, s = 1, rot = 0) {
+  g.save(); g.translate(x, y); g.rotate(rot); g.scale(s, s);
+  g.beginPath(); g.moveTo(60, 0); g.lineTo(-50, -34); g.lineTo(-30, 0); g.lineTo(-50, 26); g.closePath(); g.fillStyle = '#fff'; g.fill(); inkS(4);
+  g.beginPath(); g.moveTo(60, 0); g.lineTo(-30, 0); g.lineTo(-40, 12); g.closePath(); g.fillStyle = '#dfe6f2'; g.fill(); inkS(3);
+  g.restore();
+}
+function gear(cx, cy, r, teeth, ang, col, dark) {
+  g.save(); g.translate(cx, cy); g.rotate(ang);
+  g.beginPath();
+  const tw = TAU / teeth;
+  for (let i = 0; i < teeth; i++) {
+    const a = i * tw;
+    g.lineTo(Math.cos(a) * r * .86, Math.sin(a) * r * .86);
+    g.lineTo(Math.cos(a + tw * .12) * r, Math.sin(a + tw * .12) * r);
+    g.lineTo(Math.cos(a + tw * .45) * r, Math.sin(a + tw * .45) * r);
+    g.lineTo(Math.cos(a + tw * .57) * r * .86, Math.sin(a + tw * .57) * r * .86);
+  }
+  g.closePath(); g.fillStyle = col; g.fill(); inkS(Math.max(3, r * .025));
+  circ(0, 0, r * .62, dark);
+  for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; circ(Math.cos(a) * r * .42, Math.sin(a) * r * .42, r * .1, '#1b1426'); }
+  circ(0, 0, r * .18, col); circ(0, 0, r * .07, INK);
+  g.restore();
+}
+function book(x, y, w, h, col, rot = 0) {
+  g.save(); g.translate(x, y); g.rotate(rot);
+  rr(-w / 2, -h / 2, w, h, 4, col, INK, 4); rect(-w / 2 + 6, -h / 2 + 10, w - 12, 6, 'rgba(255,255,255,.5)'); rect(-w / 2 + 6, h / 2 - 16, w - 12, 6, 'rgba(255,255,255,.5)');
+  g.restore();
+}
+function marker(x, y, s = 1, rot = 0) {
+  g.save(); g.translate(x, y); g.rotate(rot); g.scale(s, s);
+  rr(-16, -110, 32, 150, 10, '#2b2b2b', INK, 4); rr(-16, -110, 32, 40, 10, '#1e6fe0', INK, 4); g.beginPath(); g.moveTo(-10, 40); g.lineTo(10, 40); g.lineTo(0, 64); g.closePath(); g.fillStyle = '#1e6fe0'; g.fill();
+  g.restore();
+}
+function device(x, y, s = 1, label = 'FÖRLÄNG RESTEN', pressed = 0, lit = 0, col = '#e23b3b') {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  rr(-70, -40, 140, 80, 16, '#6c7486', INK, 5); rr(-62, -32, 124, 64, 12, '#848da2');
+  if (lit) glow(0, -40, 90, 'rgba(255,90,90,.8)', lit);
+  ell(0, -36 + pressed * 10, 40, 14, '#9c1f1f'); g.beginPath(); g.ellipse(0, -44 + pressed * 12, 38, 26 - pressed * 10, 0, Math.PI, 0); g.closePath(); g.fillStyle = col; g.fill(); inkS(4);
+  ell(-12, -56 + pressed * 12, 12, 5, 'rgba(255,255,255,.6)');
+  g.save(); g.rotate(-.03); rr(-64, 6, 128, 26, 3, '#f5f0d8', INK, 2.5);
+  g.font = `900 13px ${FONT}`; const lw = g.measureText(label).width;
+  text(label, 0, 19.5, Math.min(13, 13 * 116 / lw), '#2a2a2a', 'center', 900); g.restore();
+  g.restore();
+}
+function backpackSide(x, y, s = 1, open = 0) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  rr(-80, -150, 160, 150, 40, '#3da35e', INK, 6); rr(-55, -80, 110, 60, 16, '#f39a33', INK, 5); line(-50, -50, 50, -50, '#c46f12', 4);
+  g.beginPath(); g.arc(0, -150, 46, Math.PI, 0); inkS(10); g.strokeStyle = '#2d7a45'; g.lineWidth = 6; g.stroke();
+  if (open) { ell(0, -146, 70 * open, 14 * open, '#1a2b20'); }
+  g.restore();
+}
+function chairSide(x, y, s = 1, spin = 0) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  for (const wx of [-70, 0, 70]) { circ(wx, -12, 14, INK); circ(wx, -12, 9, '#555'); line(wx, -12, wx + Math.cos(spin * 20 + wx) * 8, -12 + Math.sin(spin * 20 + wx) * 8, '#999', 3); }
+  line(-70, -26, 70, -26, '#333', 10); line(0, -26, 0, -110, '#777', 12);
+  rr(-80, -140, 160, 34, 14, '#2d2d3a', INK, 5);
+  rr(-96, -300, 34, 180, 14, '#2d2d3a', INK, 5); line(-62, -150, -79, -130, '#333', 10);
+  g.restore();
+}
+function cartTop(x, y, s = 1) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  g.globalAlpha = .2; rr(-90, -55, 190, 120, 10, '#000'); g.globalAlpha = 1;
+  rr(-95, -60, 190, 120, 12, '#2f6fd1', INK, 5); circ(-45, 0, 34, '#ffcf33'); circ(-45, 0, 25, '#9fd0e8'); rr(10, -45, 70, 90, 8, '#d8dde6', INK, 3);
+  for (let i = 0; i < 3; i++) rr(18, -38 + i * 28, 54, 20, 4, ['#ff6f91', '#7bd88f', '#ffd84a'][i]);
+  line(-95, -60, -120, -75, '#888', 8);
+  g.restore();
+}
+function cartSide(x, y, s = 1) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  circ(-90, -15, 16, INK); circ(90, -15, 16, INK);
+  rr(-130, -170, 260, 140, 12, '#2f6fd1', INK, 5); rect(-120, -160, 240, 8, '#5a8fe6');
+  bucket(-60, -30, .6); rr(30, -230, 80, 70, 8, '#d8dde6', INK, 3);
+  line(-130, -170, -170, -230, '#888', 9);
+  g.restore();
+}
+function speakerBox(x, y, s = 1, talk = 0, red = 0) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  rr(-120, -90, 240, 180, 26, '#4b4f5e', INK, 6); rr(-104, -74, 208, 148, 18, '#363a47');
+  for (let i = 0; i < 7; i++) for (let j = 0; j < 5; j++) circ(-78 + i * 26, -52 + j * 26, 7, '#1d2029');
+  circ(92, 66, 7, red > 0 ? `rgba(255,${60 + 60 * (1 - red)},60,1)` : '#3fdc6c');
+  if (red) glow(92, 66, 60, 'rgba(255,40,40,.9)', red);
+  g.restore();
+  if (talk > 0) {
+    for (let i = 0; i < 3; i++) {
+      const k = ((T * 1.6 + i / 3) % 1), rad = (150 + k * 220) * s;
+      g.globalAlpha = (1 - k) * .7 * talk; g.strokeStyle = '#fff'; g.lineWidth = 9 * s;
+      g.beginPath(); g.arc(x, y, rad, -.5, .5); g.stroke(); g.beginPath(); g.arc(x, y, rad, Math.PI - .5, Math.PI + .5); g.stroke();
+    }
+    g.globalAlpha = 1;
+  }
+}
+function clockFace(cx, cy, r, secs, opt = {}) {
+  // secs = sekunder efter 09:00:00
+  const s = secs % 60, mins = secs / 60, hrs = 9 + mins / 60;
+  g.save();
+  g.globalAlpha = .25; circ(cx + r * .06, cy + r * .08, r * 1.08, '#000'); g.globalAlpha = 1;
+  circ(cx, cy, r * 1.1, INK); circ(cx, cy, r * 1.04, opt.rim || '#e9484f'); circ(cx, cy, r * .95, '#fffdf4');
+  for (let i = 0; i < 60; i++) { const a = i / 60 * TAU, big = i % 5 === 0; line(cx + Math.sin(a) * r * (big ? .78 : .86), cy - Math.cos(a) * r * (big ? .78 : .86), cx + Math.sin(a) * r * .9, cy - Math.cos(a) * r * .9, INK, big ? r * .04 : r * .015); }
+  if (r > 120) for (let i = 1; i <= 12; i++) { const a = i / 12 * TAU; text(String(i), cx + Math.sin(a) * r * .64, cy - Math.cos(a) * r * .64, r * .15, INK); }
+  const ha = (hrs % 12) / 12 * TAU, ma = (mins % 60) / 60 * TAU, sa = s / 60 * TAU;
+  line(cx, cy, cx + Math.sin(ha) * r * .45, cy - Math.cos(ha) * r * .45, INK, r * .07);
+  line(cx, cy, cx + Math.sin(ma) * r * .7, cy - Math.cos(ma) * r * .7, INK, r * .05);
+  line(cx - Math.sin(sa) * r * .15, cy + Math.cos(sa) * r * .15, cx + Math.sin(sa) * r * .82, cy - Math.cos(sa) * r * .82, '#e2304d', r * .022);
+  circ(cx, cy, r * .05, '#e2304d');
+  g.restore();
+}
+// klockans tid som funktion av filmtiden (sekunder efter 09:00)
+function clockSecs(t) {
+  const base = 59 * 60;
+  if (t < 27.45) return base + clamp(t - 6, 0, 40);
+  if (t < 249.5) return base + 21.45 - (t - 27.45) * 1.4;
+  return base + 52 + clamp(t - 250, 0, 8);
+}
+function schoolBell(x, y, s, ring) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  rr(-30, -150, 60, 40, 8, '#666', INK, 4);
+  const sh = ring ? Math.sin(T * 60) * 4 * ring : 0;
+  g.translate(sh, 0);
+  g.beginPath(); g.arc(0, 0, 120, Math.PI, 0); g.lineTo(130, 20); g.lineTo(-130, 20); g.closePath(); g.fillStyle = '#e9b52c'; g.fill(); inkS(6);
+  ell(-40, -60, 30, 14, 'rgba(255,255,255,.5)', -.5);
+  line(0, -110, 0, -120, INK, 8);
+  const ha = ring ? Math.sin(T * 50) * .5 * ring : 0;
+  g.save(); g.translate(0, 70); g.rotate(ha); line(0, -60, 0, 40, '#555', 10); circ(0, 46, 20, '#555'); g.restore();
+  g.restore();
+}
+// ===================== MILJÖER =====================
+// ---------- korridor, sidovy (världsbredd ca 4600) ----------
+const CORR = {
+  doors: [[1350, 'SLÖJD', '#c0763a'], [1700, 'VAKTMÄSTARE', '#6f7f8f'], [2600, '5B', '#c0763a'], [3400, 'BIBLIOTEK', '#8a5a9a']],
+  lockers: [[150, 1000], [2250, 2530], [2900, 3330], [3700, 4500]],
+};
+function locker(x, y, w, h, col, open = 0) {
+  rr(x, y, w - 4, h, 4, col, INK, 4);
+  for (let i = 0; i < 4; i++) rect(x + 14, y + 22 + i * 12, w - 32, 5, 'rgba(0,0,0,.25)');
+  rr(x + w - 22, y + h * .45, 8, 34, 3, '#e6e6e6');
+  if (open) { rr(x - 2, y, (w - 4) * (1 - open * .8), h, 4, col, INK, 4); }
+}
+function poster(x, y, t1, t2, rot, col) {
+  g.save(); g.translate(x, y); g.rotate(rot);
+  g.globalAlpha = .25; rect(-86, -106, 180, 220, '#000'); g.globalAlpha = 1;
+  rr(-90, -110, 180, 220, 4, col, INK, 4);
+  text(t1, 0, -50, t1.length > 8 ? 26 : 34, '#fff', 'center', 900); text(t2, 0, 0, 22, '#fff', 'center', 800);
+  circ(-60, 60, 18, '#fff7'); circ(50, 70, 28, '#fff5'); circ(0, -98, 7, '#e33');
+  g.restore();
+}
+function doorSide(x, label, col, open = 0, inside = null) {
+  rect(x - 16, 392, 232, 440, '#7a5a3a'); rect(x, 410, 200, 420, '#2a2033');
+  if (open > 0) { g.save(); g.beginPath(); g.rect(x, 410, 200, 420); g.clip(); glow(x + 100, 620, 300, 'rgba(255,230,160,.6)'); if (inside) inside(); g.restore(); }
+  const w = 200 * (1 - open * .82);
+  rr(x, 410, w, 420, 4, col, INK, 4);
+  if (w > 60) { rr(x + w * .2, 450, w * .6, 120, 4, '#bfe6ff', INK, 3); circ(x + w - 24, 640, 10, '#e8d27a'); }
+  rr(x + 20, 350, 160, 42, 6, '#fff', INK, 3); text(label, x + 100, 371, label.length > 8 ? 20 : 26, INK, 'center', 900);
+}
+function corridorSide(o = {}) {
+  const x0 = -400, x1 = 4800;
+  rect(x0, 0, x1 - x0, 840, '#f4dfa0');
+  rect(x0, 0, x1 - x0, 80, '#d8c07a'); rect(x0, 80, x1 - x0, 8, '#bca460');
+  rect(x0, 590, x1 - x0, 250, '#7cc4a4'); rect(x0, 584, x1 - x0, 10, '#5aa588');
+  rect(x0, 830, x1 - x0, 250, '#cdb994');
+  for (let x = Math.floor(x0 / 120) * 120; x < x1; x += 120) { rect(x, 830, 60, 125, 'rgba(255,255,255,.1)'); rect(x + 60, 955, 60, 125, 'rgba(255,255,255,.1)'); }
+  line(x0, 832, x1, 832, '#9c8a68', 6);
+  for (let x = 0; x < x1; x += 520) { rr(x - 90, 88, 180, 20, 8, '#fffbe6', INK, 3); glow(x, 120, 260, 'rgba(255,250,210,.35)'); }
+  let k = 0;
+  for (const [a, b] of CORR.lockers) for (let x = a; x < b; x += 76) locker(x, 450, 76, 380, ['#3d7fd9', '#e0544e', '#3d7fd9', '#f1b53b'][(k++) % 4], 0);
+  poster(1150, 360, 'SKOLDISCO', 'FREDAG 18', .16, '#ff5f9e');
+  poster(2120, 360, 'TVÄTTA', 'HÄNDERNA', 0, '#3aa0f0');
+  poster(3640, 330, 'TYST', 'LÄSNING', -.04, '#9d64e8');
+  for (const d of CORR.doors) doorSide(d[0], d[1], d[2], (o.open && o.open[d[1]]) || 0, o.inside && o.inside[d[1]]);
+  for (const rx of [1080, 2560, 3340]) { rr(rx - 30, 700, 60, 110, 6, '#e8e8e8', INK, 3); for (let i = 0; i < 4; i++) rect(rx - 22 + i * 13, 708, 6, 94, '#cfcfcf'); }
+}
+
+// ---------- klassrum, sidovy ----------
+const CL = { raken: 1050, wille: 1380, froken: 560 };
+function deskSide(x, y, s = 1) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  rr(-130, -10, 260, 24, 6, '#d9a46a', INK, 4); rect(-120, 14, 240, 90, '#b9824a'); g.beginPath(); g.rect(-120, 14, 240, 90); inkS(4);
+  line(-110, 104, -110, 150, INK, 10); line(110, 104, 110, 150, INK, 10);
+  g.restore();
+}
+function classroom(o = {}) {
+  rect(0, 0, W, 840, '#bfe3f2'); rect(0, 0, W, 60, '#a4cfe3'); rect(0, 600, W, 240, '#9fcfe5');
+  rect(0, 830, W, 250, '#c99a6a'); for (let y = 840; y < H; y += 40) line(0, y, W, y, '#b88957', 3);
+  // dörr vänster
+  rect(10, 400, 190, 432, '#7a5a3a'); rect(24, 414, 162, 418, '#2a2033');
+  const dw = 162 * (1 - (o.door || 0) * .8); rr(24, 414, dw, 418, 4, '#c0763a', INK, 4); if (dw > 60) rr(24 + dw * .2, 450, dw * .6, 110, 4, '#bfe6ff', INK, 3);
+  // tavla
+  rr(230, 170, 660, 360, 10, '#fdfdfd', INK, 8); rect(230, 524, 660, 14, '#9aa');
+  text('SISTA UPPGIFTEN', 560, 225, 40, '#2a4fa0', 'center', 900);
+  text('7 × 8 + 9 = ?', 560, 320, 64, '#d0343a', 'center', 900);
+  text('Visa uträkning!', 560, 410, 34, '#2a7a4a', 'center', 700);
+  g.save(); g.translate(800, 470); g.rotate(-.2); text(':-)', 0, 0, 34, '#2a4fa0'); g.restore();
+  // klocka
+  clockFace(1470, 220, 78, clockSecs(T));
+  rr(1420, 312, 100, 34, 6, '#ffe36b', INK, 3); text('RAST 10:00', 1470, 329, 17, INK, 'center', 900);
+  // högtalare
+  speakerBox(1195, 150, .45);
+  // fönster
+  rr(1640, 160, 250, 360, 8, '#8fd3ff', INK, 6); circ(1820, 230, 36, '#ffe26b'); ell(1720, 470, 70, 50, '#5cc067'); rect(1716, 470, 10, 50, '#7a5a3a');
+  line(1765, 160, 1765, 520, INK, 6); line(1640, 340, 1890, 340, INK, 6);
+  // frökens kateder
+  if (!o.noFrokenDesk) { rr(180, 720, 300, 24, 6, '#a86f3a', INK, 4); rect(195, 744, 270, 90, '#8a5a2e'); g.beginPath(); g.rect(195, 744, 270, 90); inkS(4); rr(220, 690, 90, 30, 4, '#f4f4f4', INK, 3); circ(420, 700, 18, '#e2304d'); line(420, 682, 426, 668, '#3a8a3a', 5); }
+}
+// bakre rad elever (sitter)
+function backRow(o = {}) {
+  const kids = [['k1', 960], ['k2', 1260], ['k3', 1580]];
+  for (const [k, x] of kids) {
+    const look = o.look ?? -1;
+    const extra = {};
+    if (k === 'k3' && o.throwA !== undefined) { extra.aR = o.throwA; extra.eR = .3; }
+    person({ who: k, x, y: 815, s: .78, face: look, noLegs: true, eyes: o.eyes || 'n', mouth: o.mouth || 'flat', lx: o.lx, ly: o.ly, ...extra });
+    deskSide(x, 760, .78);
+  }
+}
+function seatedKid(who, x, opt) {
+  person({ who, x, y: 985, s: 1, noLegs: true, ...opt });
+}
+function frontDesk(x) { deskSide(x, 905, 1.02); }
+
+// ---------- korridor top-down (loopen) ----------
+function corridorTop(o = {}) {
+  rect(0, 0, W, H, '#2c2540');
+  // vägg-band
+  rect(0, 210, W, 90, '#f4dfa0'); rect(0, 780, W, 90, '#f4dfa0');
+  line(0, 300, W, 300, INK, 5); line(0, 780, W, 780, INK, 5);
+  // golv
+  for (let x = 120; x < 1800; x += 60) for (let y = 300; y < 780; y += 60) rect(x, y, 60, 60, ((x + y) / 60) % 2 ? '#eadcbf' : '#dfcfae');
+  // skåp längs väggarna
+  for (let x = 200; x < 1760; x += 70) { if (Math.abs(x - 960) < 90) continue; rr(x, 262, 64, 38, 3, ['#3d7fd9', '#e0544e', '#f1b53b'][(x / 70 | 0) % 3], INK, 3); rr(x, 780, 64, 38, 3, ['#f1b53b', '#3d7fd9', '#e0544e'][(x / 70 | 0) % 3], INK, 3); }
+  // ändväggar med dörrar
+  rect(0, 210, 120, 660, '#f4dfa0'); rect(1800, 210, 120, 660, '#f4dfa0');
+  line(120, 300, 120, 780, INK, 5); line(1800, 300, 1800, 780, INK, 5);
+  for (const [dx, lab] of [[60, '5B'], [1860, '5B']]) { rr(dx - 26, 430, 52, 220, 4, '#c0763a', INK, 4); g.save(); g.translate(dx, 540); g.rotate(dx < 900 ? -Math.PI / 2 : Math.PI / 2); text(lab, 0, 0, 34, '#fff', 'center', 900); g.restore(); }
+  // taklampor-skuggor
+  for (let x = 300; x < 1800; x += 400) glow(x, 540, 200, 'rgba(255,250,220,.3)');
+}
+
+// ---------- jakt-korridor top-down (lång värld 0..6200) ----------
+const CH_PATH = [[146.3, 260, 540], [147.6, 900, 540], [148.6, 1200, 560], [149.3, 1420, 560], [150.0, 1900, 540], [150.5, 2280, 500], [150.9, 2400, 260], [151.2, 2520, 60], [151.9, 3200, 60], [152.2, 3340, 250], [152.6, 3460, 520], [153.05, 3780, 540], [158.6, 3800, 540], [159.6, 4900, 540], [160.5, 5560, 540], [162, 5600, 540]];
+const LOCK_IN = [650, 1050, 1650, 2050, 3600, 4100, 4600, 5100];
+function passTime(x) { for (let i = 0; i < CH_PATH.length - 1; i++) { const a = CH_PATH[i], b = CH_PATH[i + 1]; if (b[1] >= x && a[1] <= x && b[1] !== a[1]) return a[0] + (x - a[1]) / (b[1] - a[1]) * (b[0] - a[0]); } return 999; }
+const LOCK_T = LOCK_IN.map(passTime);
+function chaseWorld(t, o = {}) {
+  rect(-400, -700, 7200, 2200, '#2c2540');
+  // klassrummet ovanför
+  rect(2280, -260, 1180, 470, '#bfe3f2'); for (let x = 2300; x < 3440; x += 70) for (let y = -240; y < 200; y += 70) rect(x, y, 70, 70, ((x + y) / 70 | 0) % 2 ? '#c9a06f' : '#bf955f');
+  g.beginPath(); g.rect(2280, -260, 1180, 470); inkS(8);
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) { const dx = 2420 + i * 250, dy = -170 + j * 150; rr(dx, dy, 150, 60, 6, '#d9a46a', INK, 4); }
+  rr(2330, -240, 400, 30, 4, '#fdfdfd', INK, 4);
+  // korridor
+  rect(-400, 210, 7200, 90, '#f4dfa0'); rect(-400, 780, 7200, 90, '#f4dfa0');
+  for (let x = -400; x < 6800; x += 60) for (let y = 300; y < 780; y += 60) rect(x, y, 60, 60, ((x + y) / 60 | 0) % 2 ? '#eadcbf' : '#dfcfae');
+  // städskrubb
+  rect(1340, 40, 170, 180, '#5d6b7a'); g.beginPath(); g.rect(1340, 40, 170, 180); inkS(5); rect(1350, 200, 150, 110, '#9aa6b8'); text('STÄD', 1425, 70, 26, '#fff', 'center', 900);
+  // dörrar till klassrummet (öppningar i övre väggen)
+  rect(2340, 200, 140, 110, '#c9a06f'); rect(3280, 200, 140, 110, '#c9a06f');
+  line(-400, 300, 2340, 300, INK, 5); line(2480, 300, 3280, 300, INK, 5); line(3420, 300, 6800, 300, INK, 5); line(-400, 780, 6800, 780, INK, 5);
+  // skåp längs väggar
+  for (let x = -300; x < 5800; x += 70) {
+    if (x > 2300 && x < 3440) continue;
+    rr(x, 262, 64, 38, 3, ['#3d7fd9', '#e0544e', '#f1b53b'][((x + 300) / 70 | 0) % 3], INK, 3);
+    rr(x, 780, 64, 38, 3, ['#f1b53b', '#3d7fd9', '#e0544e'][((x + 300) / 70 | 0) % 3], INK, 3);
+  }
+  // återvändsgränd
+  rect(5800, 200, 1000, 680, '#f4dfa0'); line(5800, 300, 5800, 780, INK, 6);
+  // spärrvägg av skåp
+  const bl = o.restore ? 1 - ss(prog(t, 252.9, 254.4)) : ss(prog(t, 144.2, 145.6));
+  if (bl > 0) { g.globalAlpha = ss(bl * 1.6); for (let i = 0; i < 7; i++) { const yy = 300 + i * 69; const off = (1 - bl) * (i < 3.5 ? -300 : 300); rr(2640, yy + off, 70, 66, 4, ['#e0544e', '#3d7fd9', '#f1b53b'][i % 3], INK, 4); } g.globalAlpha = 1; }
+  // inglidande skåp bakom
+  for (let i = 0; i < LOCK_IN.length; i++) {
+    const x = LOCK_IN[i];
+    let p = ss(prog(t, LOCK_T[i] + .25, LOCK_T[i] + .85));
+    if (t > 143.6 && t < 147 && i < 2) p = Math.max(p, ss(prog(t, 144.4 + i * .5, 145.4 + i * .5)) * .45);
+    if (o.restore) p = 1 - ss(prog(t, 253.0 + i * .12, 253.8 + i * .12));
+    if (p <= 0) continue;
+    g.globalAlpha = ss(p * 3); rr(x, 300 + p * 170 - 40, 66, 110, 4, '#3d7fd9', INK, 4); rr(x, 780 - p * 170 - 70, 66, 110, 4, '#e0544e', INK, 4); g.globalAlpha = 1;
+    if (p > .05 && p < .95) { g.globalAlpha = .4; line(x + 33, 300, x + 33, 300 + p * 170 - 40, '#fff', 4); g.globalAlpha = 1; }
+  }
+  // städvagnen
+  const cy = o.restore ? kf(t, [[253, 690], [254.8, 150]]) : kf(t, [[147.8, 150], [150.0, 690]], lin);
+  cartTop(1420, cy, 1.1);
+  // kontorsstolen
+  if (t < 153.05 || o.restore) { g.save(); g.translate(3830, 560); circ(0, 0, 40, INK); circ(0, 0, 34, '#2d2d3a'); for (let i = 0; i < 5; i++) { const a = i / 5 * TAU; line(0, 0, Math.cos(a) * 52, Math.sin(a) * 52, '#555', 8); } g.restore(); }
+  // bromsspår
+  if (t > 159.6 && !o.restore) { g.globalAlpha = .5 * (1 - prog(t, 175, 176)); for (const dy of [-20, 20]) line(4900, 540 + dy, Math.min(5560, lerp(4900, 5560, prog(t, 159.6, 160.5))), 540 + dy, '#3a2a20', 10); g.globalAlpha = 1; }
+}
+
+// ---------- matsal, sidovy ----------
+function matsalSide(o = {}) {
+  rect(0, 0, W, 840, '#c9ecd6');
+  for (let x = 0; x < W; x += 60) line(x, 330, x, 840, '#b2dcc1', 3);
+  for (let y = 330; y < 840; y += 60) line(0, y, W, y, '#b2dcc1', 3);
+  rect(0, 0, W, 320, '#e9f6c9'); rect(0, 316, W, 14, '#8cc49f');
+  rect(0, 830, W, 250, '#e3cfa8'); for (let x = 0; x < W; x += 90) rect(x, 830, 45, 250, 'rgba(0,0,0,.04)');
+  // dörr
+  rect(40, 400, 220, 432, '#7a5a3a'); rect(56, 414, 188, 418, '#2a2033');
+  const dw = 188 * (1 - (o.door || 0) * .8); rr(56, 414, dw, 418, 4, '#c0763a', INK, 4); if (dw > 60) rr(56 + dw * .2, 450, dw * .6, 110, 4, '#bfe6ff', INK, 3);
+  // matsedel
+  rr(360, 90, 420, 210, 8, '#2f3d36', '#7a5a3a', 12);
+  text('MATSEDEL', 570, 130, 32, '#fff', 'center', 900); text('TISDAG:', 570, 185, 28, '#ffe36b', 'center', 800); text('Fiskpinnar', 570, 235, 36, '#fff', 'center', 700);
+  // fönster
+  for (const wx of [900, 1200, 1500]) { rr(wx, 90, 230, 190, 8, '#9fdcff', INK, 6); line(wx + 115, 90, wx + 115, 280, INK, 5); }
+  // serveringsdisk
+  rr(1700, 560, 260, 280, 6, '#c7ccd6', INK, 5); rect(1700, 540, 260, 24, '#9aa3b4');
+  for (let i = 0; i < 3; i++) { g.globalAlpha = .35; g.beginPath(); g.moveTo(1740 + i * 70, 530); g.bezierCurveTo(1720 + i * 70, 490 - Math.sin(T * 2 + i) * 8, 1760 + i * 70, 460, 1740 + i * 70, 420); g.strokeStyle = '#fff'; g.lineWidth = 8; g.stroke(); g.globalAlpha = 1; }
+  // bakre bord
+  rr(380, 640, 1240, 22, 6, '#e8a65a', INK, 4); line(420, 662, 420, 770, INK, 9); line(1580, 662, 1580, 770, INK, 9);
+}
+function longTable(x0 = 420, x1 = 1640, y = 760) {
+  rr(x0, y, x1 - x0, 30, 6, '#f0b064', INK, 5); rect(x0 + 10, y + 30, x1 - x0 - 20, 16, '#c88a44');
+  line(x0 + 40, y + 46, x0 + 40, 900, INK, 12); line(x1 - 40, y + 46, x1 - 40, 900, INK, 12);
+}
+// potatisar som ligger på bordet i sidovy
+function tablePotatoes(x0, x1, y, count, eaten, seed = 1) {
+  for (let i = 0; i < count; i++) {
+    if (i < eaten) continue;
+    const px = x0 + R(i * 1.3 + seed) * (x1 - x0), py = y - 12 - R(i * 2.1 + seed) * 22;
+    potato(px, py, 13 + R(i) * 6, R(i * 5) * 3, i + seed);
+  }
+}
+// matsal top-down
+const TP_TABLES = [[260, 330], [260, 600], [260, 870]];
+function potatoesTop(n) { // deterministiska platser
+  const arr = [];
+  for (let i = 0; i < n; i++) { const tb = TP_TABLES[i % 3]; arr.push([tb[0] + 30 + R(i * 1.11) * 1340, tb[1] - 60 + R(i * 2.37) * 120, 12 + R(i * 3.3) * 6, R(i) * 6]); }
+  return arr;
+}
+const POTS = potatoesTop(330);
+function matsalTop() {
+  rect(0, 0, W, H, '#e3cfa8'); for (let x = 0; x < W; x += 80) for (let y = 0; y < H; y += 80) if (((x + y) / 80) % 2) rect(x, y, 80, 80, 'rgba(0,0,0,.04)');
+  for (const [x, y] of TP_TABLES) { g.globalAlpha = .2; rr(x + 10, y - 70, 1400, 160, 10, '#000'); g.globalAlpha = 1; rr(x, y - 80, 1400, 160, 10, '#f0b064', INK, 5); }
+  rect(0, 0, W, 40, '#c9ecd6'); line(0, 40, W, 40, INK, 5);
+}
+
+// ---------- bibliotek ----------
+const LIB_SHELVES = [[520, 140, 60, 380], [820, 140, 60, 380], [1120, 140, 60, 380], [520, 640, 60, 340], [820, 640, 60, 340], [1120, 640, 60, 340], [1420, 640, 60, 340]];
+function libraryTop(t, shift = 0) {
+  rect(0, 0, W, H, '#6e3444');
+  for (let x = 0; x < W; x += 90) for (let y = 0; y < H; y += 90) { if (((x + y) / 90) % 2) rect(x, y, 90, 90, 'rgba(255,255,255,.04)'); circ(x + 45, y + 45, 6, 'rgba(255,220,150,.08)'); }
+  rect(0, 0, W, 50, '#4a2a22'); line(0, 50, W, 50, INK, 5);
+  LIB_SHELVES.forEach((s, i) => {
+    const dx = shift * Math.sin(i * 1.9 + t * 3) * 220, dy = shift * Math.cos(i * 1.3 + t * 2.4) * 80;
+    const x = s[0] + dx, y = s[1] + dy;
+    g.globalAlpha = .25; rr(x + 8, y + 10, s[2], s[3], 6, '#000'); g.globalAlpha = 1;
+    rr(x, y, s[2], s[3], 6, '#7a4a2a', INK, 5);
+    for (let k = 0; k < s[3] / 22 - 1; k++) rect(x + 8, y + 10 + k * 22, s[2] - 16, 16, ['#e0544e', '#3d7fd9', '#f1b53b', '#58b84a', '#9d64e8'][(k + i) % 5]);
+  });
+  // bord med brickan
+  rr(1500, 170, 300, 170, 10, '#c88a44', INK, 5); circ(1540, 380, 26, '#a46a34'); circ(1760, 380, 26, '#a46a34');
+  // entré
+  rect(160, 1030, 220, 50, '#e8d9b0'); text('ENTRÉ', 270, 1055, 26, INK, 'center', 900);
+  rr(420, 940, 70, 90, 6, '#f5ecd0', INK, 4); text('TYST', 455, 985, 18, '#c0303a', 'center', 900);
+  // lampor
+  for (const [x, y] of [[300, 300], [1000, 560], [1650, 600]]) glow(x, y, 260, 'rgba(255,220,140,.35)');
+}
+function librarySide(o = {}) {
+  rect(0, 0, W, 860, '#5b3a2e'); rect(0, 0, W, 50, '#3e271f');
+  for (let s = 0; s < 6; s++) {
+    const x = 40 + s * 320, w = 290;
+    rr(x, 90, w, 720, 6, '#7a4a2a', INK, 6);
+    for (let r = 0; r < 5; r++) {
+      const y = 110 + r * 140;
+      rect(x + 10, y + 120, w - 20, 14, '#5a3420');
+      let bx = x + 14, k = 0;
+      while (bx < x + w - 26) { const bw = 18 + R(s * 50 + r * 9 + k) * 18, bh = 80 + R(s * 31 + r * 7 + k) * 36; if (!(o.gap && s === o.gap[0] && r === o.gap[1] && k === 4)) rr(bx, y + 120 - bh, bw, bh, 3, ['#e0544e', '#3d7fd9', '#f1b53b', '#58b84a', '#9d64e8', '#ff7aa8'][(s + r * 2 + k) % 6], INK, 2.5); bx += bw + 2; k++; }
+    }
+  }
+  rect(0, 850, W, 230, '#7c2f3d'); for (let x = 0; x < W; x += 100) circ(x + 50, 960, 10, 'rgba(255,220,150,.12)');
+  line(0, 852, W, 852, INK, 6);
+  glow(960, 300, 700, 'rgba(255,220,150,.25)');
+}
+function readingTable(x0, x1, y) {
+  rr(x0, y, x1 - x0, 28, 6, '#b5793e', INK, 5); line(x0 + 30, y + 28, x0 + 30, 860, INK, 12); line(x1 - 30, y + 28, x1 - 30, 860, INK, 12);
+  g.save(); g.translate(x0 + 120, y); line(0, 0, 0, -70, '#c9a227', 8); g.beginPath(); g.moveTo(-50, -60); g.lineTo(50, -60); g.lineTo(34, -100); g.lineTo(-34, -100); g.closePath(); g.fillStyle = '#2f7a4a'; g.fill(); inkS(4); glow(0, -40, 120, 'rgba(255,230,150,.5)'); g.restore();
+}
+function libSign(x, y, s = 1) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  rr(-420, -220, 840, 440, 18, '#f5ecd0', INK, 10); rr(-400, -200, 800, 400, 12, null, '#c9a26a', 6);
+  text('BIBLIOTEKET', 0, -130, 52, '#7a4a2a', 'center', 900);
+  text('MINSTA LJUD', 0, -20, 86, '#c0303a', 'center', 900);
+  text('STARTAR OM RUMMET', 0, 80, 62, '#c0303a', 'center', 900);
+  circ(-330, 150, 30, '#7a4a2a'); line(-330, 120, -330, 180, '#f5ecd0', 6);
+  text('Tack för att du är tyst.', 30, 158, 30, '#7a4a2a', 'center', 600);
+  g.restore();
+}
+
+// ---------- klockrummet ----------
+let GEAR_ROT = 0;
+function gearAngle(t) {
+  // integrerad vinkel för stora kugghjul (positiv = rätt håll)
+  let a = 0;
+  const seg = (t0, t1, v) => { a += clamp(t - t0, 0, t1 - t0) * v; };
+  seg(175, 225.5, -.12);            // fastnad: kryper baklänges
+  seg(225.5, 228, -.9);             // knappen: fel håll
+  seg(228, 246.2, -2.6);            // snurrar vilt fel håll
+  a += -ss(prog(t, 246.2, 247.6)) * 1.2; // bromsar in
+  if (t >= 249.5) a += eout(prog(t, 249.5, 249.75)) * (TAU / 24); // ett enda tick framåt
+  a += clamp(t - 250, 0, 20) * .08;
+  return a;
+}
+function clockRoom(t, o = {}) {
+  rect(0, 0, W, H, '#231c33');
+  glow(960, 400, 1100, 'rgba(255,170,80,.22)');
+  const a = gearAngle(t);
+  gear(300, 260, 300, 24, a, '#b98a3a', '#7a5a26');
+  gear(760, 140, 190, 16, -a * 300 / 190 + .1, '#c9a24a', '#8a6a2a');
+  gear(1200, 330, 360, 28, a * .8, '#a87a34', '#6d4e20');
+  gear(1640, 160, 220, 18, -a * 1.3, '#c9a24a', '#8a6a2a');
+  gear(1780, 520, 160, 14, a * 1.8, '#b98a3a', '#7a5a26');
+  gear(80, 640, 170, 14, -a * 1.7, '#a87a34', '#6d4e20');
+  // jätteklocka i mitten
+  clockFace(1200, 330, 170, clockSecs(t), { rim: '#c9a24a' });
+  // rör
+  for (const [x, w] of [[480, 26], [520, 18], [1460, 30]]) rect(x, 0, w, 880, '#6d5a7a');
+  g.globalAlpha = .3; rect(0, 0, W, H, '#1a1028'); g.globalAlpha = 1;
+  // golv
+  rect(0, 880, W, 200, '#3a3248'); for (let x = 0; x < W; x += 60) line(x, 880, x - 40, H, '#2a2438', 4); line(0, 882, W, 882, INK, 6);
+  // spakpanel
+  rr(230, 600, 170, 230, 10, '#5c6478', INK, 5); rr(250, 620, 130, 40, 6, '#f5f0d8', INK, 3); text('NORMAL', 315, 632, 20, INK, 'center', 900); text('TISDAG', 315, 650, 20, INK, 'center', 900);
+  const lv = o.lever || 0; g.save(); g.translate(315, 740); rr(-12, -40, 24, 100, 6, '#2a2a33'); g.rotate(-.7 + lv * 1.4); line(0, 0, 0, -80, '#ccc', 12); circ(0, -86, 16, '#e2304d'); g.restore();
+  line(400, 760, 560, 880, '#2a2438', 10);
+  // pedestal med fack
+  rr(560, 700, 260, 180, 10, '#6c7486', INK, 5); rr(540, 680, 300, 30, 8, '#848da2', INK, 4);
+  for (const [i, sx] of [[0, 630], [1, 750]]) { circ(sx, 760, 42, INK); circ(sx, 760, 36, '#1b1426'); if ((o.slots || 0) > i) { token(sx, 760, 34, .3 + .2 * Math.sin(t * 3 + i)); } }
+  // huvudknappen
+  g.save(); g.translate(1500, 880);
+  rr(-80, -90, 160, 90, 10, '#2a2a33', INK, 5); for (let i = 0; i < 6; i++) { g.save(); g.beginPath(); g.rect(-80, -90, 160, 26); g.clip(); line(-80 + i * 36, -64, -54 + i * 36, -90, '#f1c40f', 14); g.restore(); }
+  const pr = o.press || 0; ell(0, -94, 64, 16, '#7a1010'); g.beginPath(); g.ellipse(0, -94 + pr * 12, 56, 30 - pr * 12, 0, Math.PI, 0); g.closePath(); g.fillStyle = '#e23b3b'; g.fill(); inkS(5); ell(-20, -112 + pr * 20, 16, 6, 'rgba(255,255,255,.5)');
+  g.restore();
+  // skärm
+  screenPanel(1650, 330, .5, o.screen || 'idle', t);
+}
+function screenPanel(x, y, s, mode, t) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  rr(-300, -200, 600, 400, 30, '#7d8496', INK, 8); rr(-260, -165, 520, 330, 20, '#0d2a1a');
+  g.beginPath(); rrect(-260, -165, 520, 330, 20); g.save(); g.clip();
+  for (let yy = -165; yy < 165; yy += 8) rect(-260, yy, 520, 3, 'rgba(0,0,0,.25)');
+  const gc = '#6dff9a';
+  if (mode === 'idle' || mode === 'talk') {
+    for (let i = 0; i < 26; i++) { const hh = mode === 'talk' ? (10 + Math.abs(Math.sin(t * 9 + i * .7)) * 90 * (isTalking('Systemet') ? 1 : .1)) : 6; rect(-230 + i * 18, -hh / 2, 10, hh, gc); }
+  } else if (mode === 'confirm' || mode === 'sure') {
+    text(mode === 'confirm' ? 'AVSLUTA LEKTION?' : 'ÄR NI SÄKRA?', 0, -70, 44, gc, 'center', 900);
+    rr(-200, 20, 170, 80, 10, gc); text('JA', -115, 60, 44, '#0d2a1a', 'center', 900);
+    rr(30, 20, 170, 80, 10, null, gc, 5); text('NEJ', 115, 60, 44, gc, 'center', 900);
+  } else if (mode === 'survey') {
+    text('BETYGSÄTT', 0, -100, 40, gc, 'center', 900); text('ER UPPLEVELSE', 0, -55, 40, gc, 'center', 900);
+    for (let i = 0; i < 5; i++) { const sx = -200 + i * 100; circ(sx, 60, 36, 'rgba(109,255,154,.15)'); g.beginPath(); for (let k = 0; k < 10; k++) { const rad = k % 2 ? 14 : 32, an = -Math.PI / 2 + k * TAU / 10; g.lineTo(sx + Math.cos(an) * rad, 60 + Math.sin(an) * rad); } g.closePath(); g.fillStyle = gc; g.fill(); }
+  } else if (mode === 'off') { rect(-260, -165, 520, 330, '#081a10'); }
+  else if (mode === 'ok') { text('NORMAL TISDAG', 0, -10, 46, gc, 'center', 900); text('ÅTERSTÄLLD', 0, 50, 40, gc, 'center', 900); }
+  g.restore(); g.restore();
+}
+
+// ---------- skolgård / exteriör ----------
+function yardTop(t) {
+  rect(-2000, -2000, 6000, 5000, '#7cbf5a');
+  for (let i = 0; i < 60; i++) { const x = -1800 + R(i * 4.1) * 5600, y = -1800 + R(i * 2.7) * 4600; if (x > -300 && x < 2300 && y > -200 && y < 1300) continue; tree(x, y, 50 + R(i) * 40); }
+  rect(-1600, 1300, 5200, 160, '#5d5d68'); for (let x = -1600; x < 3600; x += 160) rect(x, 1375, 80, 10, '#e8e8e8');
+  rect(2350, -1800, 160, 3300, '#5d5d68');
+  for (let i = 0; i < 8; i++) { const hx = -1400 + i * 380; house(hx, 1600, i); house(hx + 100, -900 + (i % 2) * 120, i + 3); }
+  // skolgård
+  rr(-260, -160, 2420, 1360, 20, '#9a9aa8', INK, 6);
+  // skolbyggnad
+  rr(-200, -140, 2300, 380, 10, '#c8553d', INK, 8); for (let i = 0; i < 9; i++) rect(-160 + i * 255, -110, 190, 300, '#b84a34'); rect(-200, 180, 2300, 60, '#8f3a2a');
+  text('SKOLAN', 950, 40, 90, '#ffe9d6', 'center', 900);
+  // fotbollsplan
+  rr(1300, 380, 760, 760, 10, '#58a83a', '#fff', 8); line(1300, 760, 2060, 760, '#fff', 6); g.beginPath(); g.arc(1680, 760, 90, 0, TAU); g.strokeStyle = '#fff'; g.lineWidth = 6; g.stroke();
+  // hage
+  for (let i = 0; i < 6; i++) rr(240 + (i % 2) * 70, 700 - i * 70, 70, 70, 2, null, '#ffe36b', 6);
+  text('1', 275, 735, 30, '#ffe36b'); text('5', 345, 455, 30, '#ffe36b');
+  for (const [x, y] of [[700, 950], [950, 520], [-100, 900]]) tree(x, y, 80);
+  rr(560, 1080, 220, 50, 8, '#a8743a', INK, 4); rr(860, 1080, 220, 50, 8, '#a8743a', INK, 4);
+}
+function tree(x, y, r) { g.globalAlpha = .2; circ(x + r * .2, y + r * .25, r, '#000'); g.globalAlpha = 1; circ(x, y, r + 5, INK); circ(x, y, r, '#3f9a45'); circ(x - r * .3, y - r * .3, r * .45, '#5cbf5a'); }
+function house(x, y, i) { rr(x, y, 220, 180, 8, ['#e8d8b0', '#c9e2f2', '#f2c9c9', '#d8f2c9'][i % 4], INK, 5); g.beginPath(); g.moveTo(x - 10, y + 90); g.lineTo(x + 110, y - 20); g.lineTo(x + 230, y + 90); g.closePath(); g.fillStyle = '#a3423a'; g.globalAlpha = .9; g.fill(); g.globalAlpha = 1; inkS(4); }
+function brickWall(x0, x1, y0, y1, col = '#c8553d') {
+  rect(x0, y0, x1 - x0, y1 - y0, col);
+  for (let y = y0, r = 0; y < y1; y += 40, r++) { line(x0, y, x1, y, 'rgba(80,30,20,.35)', 3); for (let x = x0 + (r % 2) * 50; x < x1; x += 100) line(x, y, x, y + 40, 'rgba(80,30,20,.35)', 3); }
+}
+function yardSide() {
+  const sky = g.createLinearGradient(0, 0, 0, 700); sky.addColorStop(0, '#6cc6ff'); sky.addColorStop(1, '#c6ecff'); g.fillStyle = sky; g.fillRect(-400, 0, W + 800, 760);
+  circ(1650, 160, 70, '#ffe26b'); glow(1650, 160, 260, 'rgba(255,240,150,.5)');
+  for (let i = 0; i < 4; i++) { const cx = ((i * 520 + T * 18) % 2600) - 300; ell(cx, 140 + i * 30, 110, 36, '#fff'); ell(cx + 60, 120 + i * 30, 70, 40, '#fff'); }
+  rect(-400, 620, W + 800, 140, '#7cbf5a');
+  for (let x = -400; x < W + 400; x += 60) { line(x, 560, x, 760, '#e8e8e8', 6); } line(-400, 590, W + 400, 590, '#e8e8e8', 6); line(-400, 650, W + 400, 650, '#e8e8e8', 6);
+  tree(250, 500, 130); line(250, 560, 250, 760, '#7a5a3a', 30); tree(250, 470, 120);
+  rect(-400, 760, W + 800, 320, '#9a9aa8'); for (let i = 0; i < 6; i++) rr(500 + i * 90, 900, 80, 60, 2, null, '#ffe36b', 5);
+}
+function benchSide(x, y) { rr(x - 220, y - 70, 440, 26, 6, '#a8743a', INK, 5); rr(x - 220, y - 150, 440, 22, 6, '#a8743a', INK, 5); line(x - 180, y - 44, x - 180, y, INK, 12); line(x + 180, y - 44, x + 180, y, INK, 12); line(x - 190, y - 128, x - 190, y - 70, INK, 10); line(x + 190, y - 128, x + 190, y - 70, INK, 10); }
+// ===================== KLIPP / SCENER =====================
+const SHOTS = [];
+function S(a, b, fn, fx = {}) { SHOTS.push({ a, b, fn, ...fx }); }
+function scr() { g.setTransform(SC, 0, 0, SC, 0, 0); }
+// rörlig position: värde + om figuren rör sig
+function mv(t, K, ease = ss) { const v = kf(t, K, ease), d = kf(t + .03, K, ease) - kf(t - .03, K, ease); return { v, m: Math.abs(d) > .8, dir: Math.sign(d) }; }
+function walker(who, x, y, t, K, o = {}) {
+  const p = mv(t, K, o.ease || lin);
+  const run = o.run ?? true;
+  const face = p.m ? p.dir : (o.face ?? 1);
+  person({ who, x: p.v, y, face, ph: t * (run ? 17 : 9), amp: p.m ? (run ? 1 : .55) : 0, lean: p.m && run ? .1 * face : 0, ...o, ...(p.m ? {} : (o.still || {})), x: p.v });
+  return p;
+}
+function vignette(a, col = '0,0,0') {
+  scr(); const gr = g.createRadialGradient(W / 2, H / 2, H * .35, W / 2, H / 2, H * 1.05);
+  gr.addColorStop(0, `rgba(${col},0)`); gr.addColorStop(1, `rgba(${col},${a})`); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+}
+function bgGrad(c1, c2) { scr(); const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, c1); gr.addColorStop(1, c2); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+function glassesItem(hx, hy) { g.save(); g.translate(hx, hy - 18); g.beginPath(); g.arc(-16, 0, 14, 0, TAU); g.moveTo(30, 0); g.arc(16, 0, 14, 0, TAU); g.strokeStyle = '#2a1b3a'; g.lineWidth = 5; g.stroke(); g.restore(); }
+function pencilItem(hx, hy) { line(hx - 4, hy + 6, hx + 30, hy - 40, '#f2c94c', 9); line(hx + 30, hy - 40, hx + 36, hy - 50, '#e88', 9); }
+function tokenItem(hx, hy) { token(hx, hy - 30, 30, .4); }
+function deviceItem(s = .42, lit = 0) { return (hx, hy) => device(hx, hy - 26, s, 'FÖRLÄNG RESTEN', 0, lit); }
+function clipboardItem(hx, hy) { g.save(); g.translate(hx + 10, hy - 70); g.rotate(-.1); rr(-60, -80, 120, 160, 8, '#a8743a', INK, 4); rr(-50, -66, 100, 138, 4, '#fff'); rr(-20, -88, 40, 18, 4, '#bbb', INK, 3); circ(-20, -30, 14, '#f2b21e'); circ(20, -30, 14, '#f2b21e'); line(-40, 20, 40, 20, '#999', 4); line(-40, 40, 30, 40, '#999', 4); g.restore(); }
+function bookItem(hx, hy) { book(hx + 10, hy - 20, 44, 64, '#3d7fd9', .2); }
+function trayItem(hx, hy) { rr(hx - 70, hy - 14, 140, 20, 6, '#9aa6b8', INK, 4); }
+function markerItem(hx, hy) { marker(hx, hy, .9, .5); }
+function sitLegs(x, y, who, sw = 0) {
+  const c = CH[who];
+  for (const dx of [-c.tw * .18, c.tw * .18]) { const a = Math.sin(T * 3 + dx) * sw; const ex = x + dx + Math.sin(a) * 50, ey = y + Math.cos(a) * 50; limb(x + dx, y, ex, ey, 22, c.pants); ell(ex + 6, ey, 20, 11, c.shoe); g.beginPath(); g.ellipse(ex + 6, ey, 20, 11, 0, 0, TAU); inkS(4); }
+}
+function kingTalk() { return isTalking('Potatisen') ? .25 + .6 * Math.abs(Math.sin(T * 11)) : 0; }
+function kingTop(x, y, s = 1) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  g.globalAlpha = .25; ell(10, 14, 130, 100, '#000'); g.globalAlpha = 1;
+  ell(0, 0, 140, 100, '#b3243b'); potato(0, 0, 80, 0, 40);
+  g.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 30 : 48, a = i / 10 * TAU; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fillStyle = '#f4c430'; g.fill(); inkS(4); circ(0, 0, 12, '#e2304d');
+  g.restore();
+}
+function hand(x, y, s = 1, rot = 0, col = '#f3c8a2', sleeve = '#8c4de4') {
+  g.save(); g.translate(x, y); g.rotate(rot); g.scale(s, s);
+  rr(-60, 60, 120, 400, 30, sleeve, INK, 6);
+  rr(-70, -40, 140, 120, 50, col, INK, 6);
+  for (let i = 0; i < 4; i++) { rr(-66 + i * 34, -80, 30, 70, 15, col, INK, 5); }
+  g.restore();
+}
+function frozenAmt(t) { return ss(prog(t, 28.6, 30)) * (1 - ss(prog(t, 249.5, 256))); }
+
+// ---------------- 00:00–00:30  DEN SISTA MINUTEN ----------------
+S(0, 6, (l, t) => {
+  const cx = kf(l, [[0, 640], [4.4, 2700]], eio), z = kf(l, [[0, 1], [4.4, 1.02], [6, 2.7]], ein), cy = kf(l, [[0, 540], [4.4, 545], [6, 505]]);
+  cam(cx, cy, z); corridorSide();
+  // en liten papperslapp blåser förbi
+  g.save(); g.translate(900 + l * 260, 900 - Math.abs(Math.sin(l * 3)) * 40); g.rotate(l * 2); rr(-20, -14, 40, 28, 3, '#fff', INK, 3); g.restore();
+  scr();
+  const a = ss(prog(l, .5, 1.3)) * (1 - ss(prog(l, 4.4, 5.2)));
+  if (a > 0) {
+    g.globalAlpha = a;
+    const gr = g.createLinearGradient(0, 300, 0, 780); gr.addColorStop(0, 'rgba(20,10,40,0)'); gr.addColorStop(.5, 'rgba(20,10,40,.55)'); gr.addColorStop(1, 'rgba(20,10,40,0)'); g.fillStyle = gr; g.fillRect(0, 300, W, 480);
+    textO('WILLE', W / 2, 450 - (1 - a) * 20, 150, '#ffe066', '#3b1a6e', 22);
+    textO('RASTEN SOM FÖRSVANN', W / 2, 600, 88, '#fff', '#3b1a6e', 18);
+    g.globalAlpha = 1;
+  }
+}, { fi: 1 });
+
+function classBase(t, o = {}) {
+  classroom(o);
+  const fz = t > 28.6 && t < 249.5;
+  backRow({ look: o.backLook ?? -1, throwA: t > 27.8 && t < 255.5 ? 2.0 : undefined, eyes: o.backEyes, lx: o.backLx, ly: o.backLy });
+  if (o.plane !== false) {
+    let px, py, pr = -.15;
+    if (t < 28.6) { px = kf(t, [[27.85, 1560], [28.6, 1150]], eout); py = kf(t, [[27.85, 560], [28.6, 430]], eout); }
+    else if (t < 255.6) { px = 1150; py = 430 + Math.sin(T * 2) * 3; }
+    else { const p = prog(t, 255.6, 257.2); px = lerp(1150, 340, eio(p)); py = lerp(430, 690, ein(p)) - Math.sin(p * Math.PI) * 120; pr = lerp(-.15, .2, p); }
+    if (t > 27.85) plane(px, py, 1, pr + (fz ? Math.sin(T * 1.3) * .03 : 0));
+    if (fz) { g.globalAlpha = .35 + .15 * Math.sin(T * 3); g.strokeStyle = '#c9a6ff'; g.lineWidth = 4; g.beginPath(); g.arc(px, py, 80, 0, TAU); g.stroke(); g.globalAlpha = 1; }
+  }
+}
+// Raken stirrar på klockan
+S(6, 8.5, (l, t) => {
+  cam(1050, kf(l, [[0, 745], [2.5, 735]]), kf(l, [[0, 2.5], [2.5, 2.85]]));
+  classBase(t, { plane: false });
+  seatedKid('wille', CL.wille, { face: -.6, eyes: 'h', mouth: 'flat' });
+  seatedKid('raken', CL.raken, { face: .45, lx: .9, ly: -.9, eyes: 'h', mouth: 'flat', brow: -.2, aR: .22, eR: .9 + Math.sin(T * 14) * .16, itemR: pencilItem });
+  frontDesk(CL.raken); frontDesk(CL.wille);
+});
+// klockan: en minut kvar
+S(8.5, 10.5, (l, t) => {
+  bgGrad('#bfe3f2', '#9fcfe5');
+  cam(960, 520, kf(l, [[0, 1], [2, 1.12]]));
+  clockFace(960, 520, 380, clockSecs(t));
+  g.save(); g.translate(1330, 830); g.rotate(-.08); rr(-150, -60, 300, 120, 8, '#ffe36b', INK, 5); text('RAST 10:00', 0, 0, 44, INK, 'center', 900); g.restore();
+});
+// fröken: bara sista uppgiften
+S(10.5, 14, (l, t) => {
+  cam(kf(l, [[0, 935], [3.5, 985]]), 540, 1.02);
+  classBase(t, { plane: false });
+  person({ who: 'froken', x: CL.froken, y: 905, face: .75, aL: kf(l, [[0, .3], [.4, 2.3]]), eL: .3, aR: .2, eR: .4, mouth: 'smile' });
+  seatedKid('raken', CL.raken, { face: .4, lx: .9, ly: -.8, eyes: 'h', mouth: 'flat' });
+  seatedKid('wille', CL.wille, { face: kf(l, [[0, -.7], [2.5, -.7], [3, .8]]), eyes: 'n', mouth: 'smirk' });
+  frontDesk(CL.raken); frontDesk(CL.wille);
+  backpackSide(1505, 893, .5);
+});
+// Wille drar fram knappen
+S(14, 18.5, (l, t) => {
+  cam(kf(l, [[0, 1290], [4.5, 1230]]), 780, kf(l, [[0, 1.9], [4.5, 2.05]]));
+  classBase(t, { plane: false });
+  const p = ss(prog(l, 1.0, 1.7));
+  const rf = kf(l, [[0, -.6], [1.4, -.6], [1.8, .9]]);
+  seatedKid('raken', CL.raken, { face: rf, eyes: l > 1.6 ? 'n' : 'h', lx: rf > 0 ? .7 : .8, ly: rf > 0 ? 0 : -.8, mouth: 'flat', raise: l > 1.6, brow: l > 1.6 ? -.3 : 0 });
+  const dig = p < .01 ? Math.sin(l * 9) * .12 : 0;
+  seatedKid('wille', CL.wille, { face: kf(l, [[0, .9], [1.6, .9], [2.0, -.5]]), eyes: l > 1.7 ? 'sly' : 'n', ly: p < .5 ? .6 : 0, mouth: l > 1.7 ? 'smirk' : 'o', bag: false, aR: lerp(1.25 + dig, .35, p), eR: lerp(.55, 2.0, p), itemR: p > .3 ? deviceItem(.42) : null });
+  frontDesk(CL.raken); frontDesk(CL.wille);
+  backpackSide(1505, 893, .5, 1 - p * .5);
+});
+// "Varför har du så många frågor?"
+S(18.5, 21, (l, t) => {
+  cam(1385, 745, kf(l, [[0, 2.75], [2.5, 2.9]]));
+  classBase(t, { plane: false });
+  seatedKid('wille', CL.wille, { face: -.55, eyes: 'sly', raise: true, mouth: 'smirk', bag: false, aR: .35, eR: 2.0, itemR: deviceItem(.42) });
+  frontDesk(CL.wille);
+});
+// Närbild: knappen
+S(21, 23.5, (l, t) => {
+  bgGrad('#2b1747', '#140b24');
+  glow(960, 560, 700, 'rgba(160,90,255,.35)');
+  cam(960, kf(l, [[0, 560], [2.5, 610]]), kf(l, [[0, 1], [2.5, 1.45]]));
+  hand(960, 900, 1.6, 0);
+  device(960, 560, 4.4, 'FÖRLÄNG RESTEN', 0, .25 + .15 * Math.sin(T * 2));
+  for (let i = 0; i < 4; i++) { rr(700 + i * 120, 714, 95, 140, 40, '#f3c8a2', INK, 6); }
+  // glans som sveper över etiketten
+  const sx = lerp(600, 1320, prog(l, .6, 1.6));
+  g.save(); g.beginPath(); g.rect(680, 586, 560, 120); g.clip(); g.globalAlpha = .55; g.fillStyle = '#fff'; g.beginPath(); g.moveTo(sx, 586); g.lineTo(sx + 50, 586); g.lineTo(sx - 10, 706); g.lineTo(sx - 60, 706); g.closePath(); g.fill(); g.restore(); g.globalAlpha = 1;
+});
+// "Förläng rasten? Äntligen vettig teknik."
+S(23.5, 27, (l, t) => {
+  cam(1385, 745, kf(l, [[0, 2.9], [3.5, 3.2]]));
+  classBase(t, { plane: false });
+  seatedKid('wille', CL.wille, { face: -.2, eyes: 'w', ly: -.2, mouth: 'grin', bUp: 1, bag: false, aR: .35, eR: 2.0, itemR: deviceItem(.42, .2) });
+  frontDesk(CL.wille);
+  for (let i = 0; i < 3; i++) { const a = T * 2 + i * 2.1; g.save(); g.translate(1385 + Math.cos(a) * 110, 690 + Math.sin(a) * 40); g.rotate(a); g.fillStyle = '#ffe066'; g.beginPath(); for (let k = 0; k < 8; k++) { const r = k % 2 ? 4 : 13, an = k * TAU / 8; g.lineTo(Math.cos(an) * r, Math.sin(an) * r); } g.fill(); g.restore(); }
+});
+// Tummen trycker
+S(27, 28, (l, t) => {
+  bgGrad('#2b1747', '#140b24');
+  cam(960, 600, 1 + l * .08);
+  const pr = ss(prog(l, .35, .48));
+  device(960, 640, 5, 'FÖRLÄNG RESTEN', pr, .3 + pr * .7);
+  g.save(); g.translate(960, kf(l, [[0, 120], [.35, 300], [.48, 340], [1, 335]], eio)); rr(-90, -400, 180, 330, 70, '#f3c8a2', INK, 7); rr(-60, -360, 120, 90, 30, '#fbe2c8'); g.restore();
+  if (l > .45) { const k = prog(l, .45, 1); g.globalAlpha = 1 - k; g.strokeStyle = '#d9b8ff'; g.lineWidth = 16; g.beginPath(); g.arc(960, 430, 120 + k * 900, 0, TAU); g.stroke(); g.globalAlpha = 1; }
+});
+// Pappersflygplanet stannar
+S(28, 30, (l, t) => {
+  cam(1100, 560, kf(l, [[0, 1.05], [2, 1.18]]));
+  classBase(t, { backEyes: 'w', backLook: .3 });
+  person({ who: 'froken', x: CL.froken, y: 905, face: -.8, aL: 2.4, eL: .2, aR: .2, mouth: 'flat' });
+  seatedKid('raken', CL.raken, { face: .2, lx: .4, ly: -.9, eyes: 'w', mouth: 'o' });
+  seatedKid('wille', CL.wille, { face: -.6, lx: -.8, ly: -.8, eyes: 'w', mouth: 'grin', bag: false, aR: .35, eR: 2.0, itemR: deviceItem(.42, .5) });
+  frontDesk(CL.raken); frontDesk(CL.wille);
+  const k = prog(l, 0, 1.6); g.globalAlpha = (1 - k) * .8; g.strokeStyle = '#c9a6ff'; g.lineWidth = 14; g.beginPath(); g.arc(1420, 700, 80 + k * 1500, 0, TAU); g.stroke(); g.globalAlpha = 1;
+});
+
+// ---------------- 00:30–01:00  TISDAGEN HAR FASTNAT ----------------
+S(30, 33, (l, t) => {
+  bgGrad('#a9c9e8', '#7a8fc0');
+  cam(960, 540, kf(l, [[0, 1.05], [3, 1.25]]), kf(l, [[0, 0], [3, .08]]));
+  clockFace(960, 540, 380, clockSecs(t));
+  // spöksekundvisare som drar baklänges
+  for (let i = 1; i <= 3; i++) { const sa = (clockSecs(t) + i * .6) % 60 / 60 * TAU; g.globalAlpha = .25 / i; line(960, 540, 960 + Math.sin(sa) * 310, 540 - Math.cos(sa) * 310, '#e2304d', 8); }
+  g.globalAlpha = 1;
+  g.save(); g.translate(1330, 850); g.rotate(-.08); rr(-150, -60, 300, 120, 8, '#ffe36b', INK, 5); text('RAST 10:00', 0, 0, 44, INK, 'center', 900); g.restore();
+});
+S(33, 38, (l, t) => {
+  bgGrad('#bfe3f2', '#8fb5d6');
+  cam(960, 520, kf(l, [[0, 1], [5, 1.14]]));
+  rect(0, 0, W, 80, '#a4cfe3');
+  speakerBox(960, 500, 2.4, isTalking('Högtalaren') ? 1 : 0);
+});
+// Fröken tar av sig glasögonen
+S(38, 43.8, (l, t) => {
+  cam(570, kf(l, [[0, 650], [5.8, 630]]), kf(l, [[0, 2.3], [5.8, 2.6]]));
+  classBase(t, { plane: false, backEyes: 'w' });
+  const p1 = ss(prog(l, .3, 1.6)), p2 = ss(prog(l, 1.9, 2.6));
+  const off = p1 > .85;
+  person({ who: 'froken', x: CL.froken, y: 905, face: .15, eyes: off ? 'h' : 'n', lx: 0, ly: off ? .2 : 0, mouth: 'flat', glasses: !off, aR: lerp(.15, .32, p1), eR: lerp(lerp(.15, 2.8, p1), 1.7, p2), itemR: off ? glassesItem : null, aL: .15, eL: .2 });
+});
+// Raken och Wille springer ut
+S(43.8, 46, (l, t) => {
+  cam(860, 560, 1.05);
+  classBase(t, { plane: true, backLook: -1, backEyes: 'w' });
+  const rx = kf(t, [[44.15, CL.raken], [45.6, -160]], lin), wx = kf(t, [[44.35, CL.wille], [45.9, -150]], lin);
+  person({ who: 'froken', x: CL.froken, y: 905, face: kf(t, [[44.3, 1], [45.1, -1]]), glasses: false, eyes: 'h', lx: -.5, mouth: 'flat', aR: .3, eR: 1.6, itemR: glassesItem });
+  frontDesk(CL.raken); frontDesk(CL.wille);
+  if (t < 44.15) seatedKid('raken', CL.raken, { face: -1, eyes: 'w', mouth: 'o' }); else person({ who: 'raken', x: rx, y: 945, face: -1, ph: t * 17, amp: 1, lean: -.12, eyes: 'w', mouth: 'open' });
+  if (t < 44.35) seatedKid('wille', CL.wille, { face: -1, eyes: 'w', mouth: 'grin', bag: false }); else person({ who: 'wille', x: wx, y: 955, face: -1, ph: t * 17 + 1, amp: 1, lean: -.12, eyes: 'w', mouth: 'grin' });
+});
+// Korridoren viker sig: top-down loop
+const LOOP_B = [880, 1010, 1130];
+function loopPos(t, who) {
+  const n = Math.min(2, Math.floor((t - 46) / 2.2)), lt = t - 46 - n * 2.2;
+  let x;
+  if (n < 2) x = lerp(130, 1790, lt / 2.2);
+  else x = kf(lt, [[0, 130], [1.7, 1250], [2.3, 1330]], (p) => p < 1 ? p : 1);
+  if (n === 2) x = lt < 1.7 ? lerp(130, 1250, lt / 1.7) : lerp(1250, 1330, eout((lt - 1.7) / .6));
+  const bx = LOOP_B[n], near = Math.exp(-Math.pow((x - bx) / 170, 2));
+  const y = who === 'raken' ? 490 - near * 70 : 600 + near * 80;
+  return { x: x - (who === 'wille' ? 60 : 0), y, n, moving: !(n === 2 && lt > 2.25) };
+}
+S(46, 53, (l, t) => {
+  cam(960, 540, 1); corridorTop();
+  const n = Math.min(2, Math.floor((t - 46) / 2.2));
+  bucketTop(LOOP_B[n], 545 + n * 8, n * .7, 1.5);
+  for (const who of ['wille', 'raken']) { const p = loopPos(t, who); topP(who, p.x, p.y, p.moving ? 0 : Math.PI * 1.0, t * 16, p.moving ? 1 : 0, 2.1); }
+  // fällning vid dörrarna
+  const amp = 46 * bump(t, 47.85, 48.6) + 46 * bump(t, 50.05, 50.8) + 7;
+  warpFX(amp);
+  scr();
+  const fl = bump(t, 48.0, 48.45) + bump(t, 50.2, 50.65); if (fl > 0) { g.globalAlpha = fl * .25; rect(0, 0, W, H, '#c9a6ff'); g.globalAlpha = 1; }
+});
+let BUF = null;
+function warpFX(amp) {
+  if (!BUF) BUF = document.createElement('canvas');
+  if (BUF.width !== cv.width || BUF.height !== cv.height) { BUF.width = cv.width; BUF.height = cv.height; }
+  const b = BUF.getContext('2d'); b.setTransform(1, 0, 0, 1, 0, 0); b.drawImage(cv, 0, 0);
+  g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#2c2540'; g.fillRect(0, 0, cv.width, cv.height);
+  const step = Math.max(8, Math.round(cv.width / 64));
+  for (let x = 0; x < cv.width; x += step) {
+    const u = x / cv.width, dy = Math.sin(u * TAU * 1.5 + T * 3) * amp * SC, sy = 1 - Math.abs(Math.sin(u * Math.PI)) * amp * .0016;
+    g.drawImage(BUF, x, 0, step, cv.height, x, dy + cv.height * (1 - sy) / 2, step, cv.height * sy);
+  }
+}
+// Hinken
+S(53, 56.4, (l, t) => {
+  cam(1420, 650, kf(l, [[0, 1.55], [3.4, 1.7]]));
+  corridorSide();
+  bucket(1220, 925, 1, bump(l, 2.5, 3.0));
+  const pant = Math.abs(Math.sin(T * 6)) * 5;
+  person({ who: 'raken', x: 1470, y: 935, face: -1, jump: pant, eyes: 'n', lx: -.9, mouth: 'open', aL: .4, eL: 1.4, aR: .4, eR: 1.4, brow: -.4 });
+  person({ who: 'wille', x: 1620, y: 945, face: -1, jump: pant * .8, eyes: 'w', lx: -.9, mouth: 'o', aL: kf(l, [[0, .2], [.6, 1.55]]), eL: .05, brow: -.6 });
+});
+// Vaktmästaren öppnar dörren
+S(56.4, 60, (l, t) => {
+  cam(1660, 620, 1.35);
+  const op = ss(prog(l, .05, .25));
+  corridorSide({ open: { 'VAKTMÄSTARE': op }, inside: { 'VAKTMÄSTARE': () => { rect(1700, 410, 200, 420, '#3b3346'); for (let i = 0; i < 4; i++) line(1720 + i * 45, 440, 1720 + i * 45, 820, '#55506a', 10); } } });
+  bucket(1220, 925, 1);
+  if (op > .3) person({ who: 'vakt', x: 1810, y: 915, s: .95, face: -.8, eyes: 'h', lx: -.6, mouth: 'flat', aL: .5, eL: 2.3, aR: .5, eR: 2.3 });
+  const j = 70 * bump(l, .08, .5), fc = kf(l, [[.1, -1], [.35, 1]]);
+  person({ who: 'raken', x: 1470, y: 935, face: fc, jump: j, eyes: 'w', mouth: l < 1 ? 'o' : 'flat', aL: 2.4 * bump(l, .05, .7), aR: 2.4 * bump(l, .05, .7) });
+  person({ who: 'wille', x: 1620, y: 945, face: fc, jump: j * 1.2, eyes: 'w', mouth: l < 1 ? 'shout' : 'wavy', aL: 2.6 * bump(l, .05, .8), aR: 2.6 * bump(l, .05, .8) });
+});
+
+// ---------------- 01:00–01:40  POTATISENS KRAV ----------------
+S(60, 63.6, (l, t) => {
+  cam(1720, 640, kf(l, [[0, 1.9], [3.6, 2.1]]));
+  corridorSide({ open: { 'VAKTMÄSTARE': 1 }, inside: { 'VAKTMÄSTARE': () => rect(1700, 410, 200, 420, '#3b3346') } });
+  person({ who: 'raken', x: 1500, y: 935, face: 1, eyes: 'n', mouth: 'flat', lx: .8 });
+  person({ who: 'vakt', x: 1810, y: 915, s: .95, face: -.6, eyes: 'h', mouth: 'flat', aL: .7, eL: 1.7, itemL: clipboardItem, aR: kf(l, [[0, .3], [1.5, .3], [2, 1.3], [3.6, 1.3]]), eR: kf(l, [[1.5, .3], [2, 1.9]]) });
+});
+S(63.6, 67, (l, t) => {
+  bgGrad('#3b3346', '#241f30');
+  cam(960, 540, kf(l, [[0, 1], [3.4, 1.12]]));
+  g.save(); g.rotate(-.04);
+  rr(560, 60, 800, 1000, 30, '#a8743a', INK, 8); rr(600, 120, 720, 900, 8, '#fffdf2', INK, 4); rr(840, 30, 240, 80, 14, '#bbb', INK, 6);
+  text('RASTBRICKOR: 2 ST', 960, 200, 52, '#2a4fa0', 'center', 900);
+  token(800, 340, 70); token(1120, 340, 70);
+  text('1', 800, 460, 40, '#c0303a'); text('2', 1120, 460, 40, '#c0303a');
+  rr(660, 540, 600, 400, 6, null, '#2a4fa0', 5);
+  rr(690, 580, 250, 140, 6, '#ffe9b0', INK, 4); text('MATSAL', 815, 650, 40, INK, 'center', 900);
+  rr(980, 760, 250, 140, 6, '#e6d6ff', INK, 4); text('BIBLIOTEK', 1105, 830, 34, INK, 'center', 900);
+  g.setLineDash([16, 14]); g.beginPath(); g.moveTo(940, 650); g.quadraticCurveTo(1050, 660, 1100, 760); g.strokeStyle = '#c0303a'; g.lineWidth = 6; g.stroke(); g.setLineDash([]);
+  text('?', 1200, 600, 70, '#c0303a');
+  g.restore();
+  hand(kf(l, [[0, 1500], [.5, 900]], eout), kf(l, [[0, 1100], [.5, 740], [.7, 760], [.9, 740], [1.1, 760]]), 1.1, -.5, '#d7a587', '#4a6890');
+});
+// Matsalen
+S(67, 71, (l, t) => {
+  cam(kf(l, [[0, 960], [4, 1080]]), kf(l, [[0, 540], [4, 560]]), kf(l, [[0, 1], [4, 1.18]]));
+  const door = ss(prog(l, .1, .5)) * (1 - ss(prog(l, 3.3, 3.55)));
+  matsalSide({ door });
+  tablePotatoes(420, 1600, 640, 70, 0, 3);
+  longTable();
+  tablePotatoes(470, 1220, 760, 46, 0, 9);
+  king(1380, 760, { s: .78, eyes: l < 3.55 ? 'c' : 'w', mouth: 0 });
+  const fl = 40 * bump(l, 3.5, 3.9);
+  walker('raken', 0, 935, t, [[67.4, 150], [69.3, 320]], { run: false, still: { face: 1, eyes: 'w', lx: 1, mouth: 'o', jump: fl } });
+  walker('wille', 0, 945, t, [[67.6, 100], [69.6, 470]], { run: false, still: { face: 1, eyes: 'n', lx: 1, mouth: 'smile', jump: fl } });
+}, { fi: .3 });
+// Potatiskungen talar (grodperspektiv)
+S(71, 75.5, (l, t) => {
+  bgGrad('#2a1a3a', '#4a2a2a');
+  rays(960, 400, 18, '#ffd36b', .16, .15);
+  cam(1380, kf(l, [[0, 600], [4.5, 570]]), kf(l, [[0, 1.75], [4.5, 1.95]]));
+  g.save(); g.translate(1380, 760); g.transform(1, 0, 0, 1.12, 0, 0); g.translate(-1380, -760);
+  longTable();
+  tablePotatoes(1150, 1290, 760, 6, 0, 2);
+  king(1380, 760, { s: .78, eyes: 'n', angry: true, mouth: kingTalk(), ly: .4 });
+  g.restore();
+  glow(1380, 520, 400, 'rgba(255,220,120,.3)');
+});
+// Hundratals potatisar
+S(75.5, 77.6, (l, t) => {
+  cam(kf(l, [[0, 700], [2.1, 960]]), kf(l, [[0, 600], [2.1, 560]]), kf(l, [[0, 1.8], [2.1, 1.02]], eout));
+  matsalTop();
+  for (let i = 0; i < POTS.length; i++) { const p = POTS[i]; potato(p[0], p[1], p[2], p[3], i); }
+  kingTop(1720, 600, 1.1);
+  topP('raken', 150, 990, -Math.PI / 2, 0, 0, 1.4); topP('wille', 250, 1000, -Math.PI / 2, 0, 0, 1.4);
+});
+S(77.6, 79.2, (l, t) => {
+  cam(320, 700, kf(l, [[0, 2.7], [1.6, 3.0]]));
+  matsalSide(); longTable(); tablePotatoes(470, 1220, 760, 46, 0, 9);
+  person({ who: 'raken', x: 320, y: 935, face: .5, eyes: 'w', lx: .9, mouth: 'o', aL: .35, eL: 2.6, aR: .35, eR: 2.6, jump: Math.sin(T * 40) * 1.5, brow: -.8 });
+});
+S(79.2, 82.6, (l, t) => {
+  cam(470, 720, kf(l, [[0, 2.8], [3.4, 3.0]]));
+  matsalSide(); longTable(); tablePotatoes(470, 1220, 760, 46, 0, 9);
+  person({ who: 'raken', x: 320, y: 935, face: .7, eyes: 'n', lx: .9, mouth: 'flat' });
+  person({ who: 'wille', x: 470, y: 945, face: -.35, eyes: 'sly', raise: true, mouth: 'smirk', aR: .5, eR: 2.4 });
+});
+// Wille rullar den första potatisen
+S(82.6, 85.6, (l, t) => {
+  cam(kf(l, [[0, 900], [3, 1080]]), 640, 1.2);
+  matsalSide(); tablePotatoes(420, 1600, 640, 70, 0, 3); longTable();
+  tablePotatoes(560, 1220, 760, 40, 0, 9);
+  const px = kf(t, [[83.1, 520], [84.6, 1290]], (p) => p), rot = (px - 520) / 16;
+  const chomp = bump(t, 84.4, 84.9);
+  king(1380, 760, { s: .78, eyes: t > 84.9 ? 'c' : 'w', mouth: chomp, ly: .5, lx: -.5 });
+  if (t < 84.65) potato(px, 744, 16, rot, 77);
+  person({ who: 'raken', x: 320, y: 935, face: 1, eyes: 'w', lx: 1, mouth: t > 84.9 ? 'o' : 'flat' });
+  person({ who: 'wille', x: 470, y: 945, face: 1, eyes: 'n', lx: 1, mouth: 'grin', aR: kf(t, [[82.6, .3], [83, 1.4], [83.2, 1.6]]), eR: .2, lean: .1 * bump(t, 82.8, 83.4) });
+});
+// MONTAGE
+S(85.6, 87.2, (l, t) => {
+  bgGrad('#1a0d26', '#3b1a1a');
+  rays(960, 540, 24, '#ffb84a', .14, .4);
+  speedLines(30, '#ffd6a0', .25, 2);
+  cam(960, 540, kf(l, [[0, 1], [1.6, 1.35]], eout), kf(l, [[0, -.05], [1.6, .05]]));
+  glow(960, 540, 500, 'rgba(255,190,90,.5)');
+  potato(960, 540, 190, l * .6, 7, .7);
+  for (let i = 0; i < 12; i++) { const a = i / 12 * TAU + T; circ(960 + Math.cos(a) * (330 + l * 60), 540 + Math.sin(a) * 260, 6, '#fff3c4'); }
+});
+S(87.2, 89.2, (l, t) => {
+  cam(1000, 640, 1.08);
+  matsalSide(); longTable(); tablePotatoes(420, 1600, 640, 70, Math.floor(l * 25), 3);
+  for (let k = 0; k < 7; k++) { const x = 520 + ((l * 1100 + k * 130) % 780); potato(x, 744, 15, x / 15, k + 50); }
+  king(1380, 760, { s: .78 * (1 + l * .04), eyes: 'c', mouth: Math.abs(Math.sin(l * 9)), bulge: 1.08 + l * .04 });
+  person({ who: 'raken', x: 330, y: 935, face: 1, eyes: 'n', mouth: 'grin', aR: 1.3 + Math.sin(T * 9) * .3, eR: .2, aL: 1.0 + Math.sin(T * 9) * .3, eL: .3, itemR: trayItem, lean: .08 });
+  person({ who: 'wille', x: 470, y: 945, face: 1, eyes: 'hap', mouth: 'grin', aR: 1.4 + Math.sin(T * 11) * .4, eR: .1, aL: 1.4 - Math.sin(T * 11) * .4, eL: .1 });
+});
+S(89.2, 90.6, (l, t) => {
+  cam(1340, 660, 2.3, Math.sin(T * 3) * .03);
+  matsalSide(); longTable();
+  for (let k = 0; k < 5; k++) { const x = 1000 + ((l * 1500 + k * 110) % 330); potato(x, 744, 15, x / 12, k + 60); }
+  king(1380, 760, { s: .78, eyes: 'c', mouth: Math.abs(Math.sin(l * 12)), bulge: 1.2 });
+  for (let i = 0; i < 14; i++) { const k = (l * 2 + R(i)) % 1; circ(1340 + (R(i * 3) - .5) * 260 * k, 690 - 120 * k + 200 * k * k, 6, '#e8c27a'); }
+});
+S(90.6, 92.2, (l, t) => {
+  bgGrad('#26163a', '#3a2020');
+  cam(960, 540, kf(l, [[0, 1.1], [1.6, 1.2]]), .14);
+  g.globalAlpha = .45; matsalSide(); g.globalAlpha = 1;
+  person({ who: 'wille', x: 620, y: 1000, s: 1.4, face: 1, eyes: 'w', mouth: 'shout', aR: 2.4, eR: .2, aL: .9, eL: .5, lean: .15 });
+  const px = lerp(980, 1080, l / 1.6), py = 430 - Math.sin(l * 2) * 20;
+  glow(px, py, 220, 'rgba(255,230,150,.7)');
+  potato(px, py, 70, l * .8, 33, .4);
+  for (let i = 0; i < 6; i++) { const a = T * 1.5 + i; g.save(); g.translate(px + Math.cos(a) * 140, py + Math.sin(a) * 110); g.rotate(a); g.fillStyle = '#fff6c9'; g.beginPath(); for (let k = 0; k < 8; k++) { const r = k % 2 ? 5 : 16, an = k * TAU / 8; g.lineTo(Math.cos(an) * r, Math.sin(an) * r); } g.fill(); g.restore(); }
+});
+S(92.2, 95.4, (l, t) => {
+  cam(1100, 590, kf(l, [[0, 1.0], [3.2, 1.15]]));
+  matsalTop();
+  const KX = 1720, KY = 600;
+  for (let i = 0; i < POTS.length; i++) {
+    const p = POTS[i], st = 92.25 + (i / POTS.length) * 2.3, k = prog(t, st, st + .7);
+    if (k >= 1) continue;
+    const e = ein(k), a = e * 2.5, x = lerp(p[0], KX, e) + Math.sin(a + i) * 60 * (1 - e) * e * 4, y = lerp(p[1], KY, e) + Math.cos(a + i) * 50 * (1 - e) * e * 4;
+    potato(x, y, p[2] * (1 - e * .5), p[3] + k * 8, i);
+  }
+  kingTop(KX, KY, 1.1 + l * .12 + Math.sin(T * 20) * .02);
+  speedLines(18, '#fff', .12, 5);
+});
+// RAP!
+S(95.4, 97.3, (l, t) => {
+  cam(860, 640, 1.15);
+  matsalSide(); longTable();
+  const burp = bump(t, 95.95, 96.6);
+  king(1380, 760, { s: .78, bulge: lerp(1.45, 1.15, ss(prog(t, 96, 96.6))), wob: t < 96 ? .05 : .02, eyes: t < 96 ? 'w' : 'c', mouth: Math.max(burp, t < 96 ? .1 : 0) });
+  if (burp > .1) { for (let i = 0; i < 6; i++) { g.globalAlpha = burp * .6; g.beginPath(); g.arc(1300, 690, 120 + i * 60 + burp * 80, Math.PI * .8, Math.PI * 1.2); g.strokeStyle = '#d9f0c9'; g.lineWidth = 10; g.stroke(); } g.globalAlpha = 1; }
+  const tp = prog(t, 96.05, 96.85);
+  const caught = t > 96.85;
+  if (t > 96.05 && !caught) token(lerp(1310, 360, tp), lerp(690, 720, tp) - Math.sin(tp * Math.PI) * 260, 30, .5, tp * 12);
+  person({ who: 'raken', x: 320, y: 935, face: 1, eyes: 'w', lx: 1, ly: -.5, mouth: 'o', aR: caught ? 2.0 : 1.2, eR: .4, aL: caught ? 2.0 : 1.2, eL: .4, itemR: caught ? tokenItem : null, jump: caught ? 0 : 10 * bump(t, 96.5, 96.85) });
+  person({ who: 'wille', x: 470, y: 945, face: 1, eyes: burp > .2 ? 'c' : 'w', mouth: 'grin', lean: -.15 * burp, aL: .8 * burp + .2, aR: .8 * burp + .2 });
+});
+S(97.3, 100, (l, t) => {
+  cam(330, 690, kf(l, [[0, 2.3], [2.7, 2.5]]));
+  matsalSide(); longTable();
+  person({ who: 'raken', x: 330, y: 935, face: .1, lx: 0, ly: 0, eyes: 'h', mouth: 'flat', aR: .35, eR: 2.2, itemR: tokenItem });
+}, { fo: .45 });
+
+// ---------------- 01:40–02:20  DET TYSTA BIBLIOTEKET ----------------
+const LIB_R = [[100, 270, 1080], [100.5, 270, 1080], [102, 270, 930], [104.6, 270, 930], [106.2, 290, 600], [107.6, 690, 590], [109.0, 1290, 590], [110.0, 1420, 470]];
+const LIB_W = LIB_R.map((k, i) => [k[0] + .25, k[1] - (i < 4 ? -90 : 90), k[2] + (i < 4 ? 10 : 30)]);
+S(100, 102.2, (l, t) => {
+  cam(960, 560, kf(l, [[0, 1], [2.2, 1.05]]));
+  libraryTop(t);
+  token(1650, 255, 34, .5 + .2 * Math.sin(T * 2));
+  for (const [who, K] of [['raken', LIB_R], ['wille', LIB_W]]) { const p = path(t, K); topP(who, p.x, p.y, p.ang, t * 7, p.v > 5 ? .5 : 0, 1.9); }
+}, { fi: .5 });
+S(102.2, 104.6, (l, t) => {
+  bgGrad('#5b3a2e', '#3e271f');
+  cam(960, 540, kf(l, [[0, .98], [2.4, 1.1]]));
+  libSign(960, 540, 1.6);
+});
+S(104.6, 110, (l, t) => {
+  const pr = path(t, LIB_R);
+  cam(clamp(pr.x + 120, 700, 1220), clamp(pr.y - 60, 420, 660), 1.35);
+  libraryTop(t);
+  token(1650, 255, 34, .5 + .2 * Math.sin(T * 2));
+  for (const [who, K] of [['wille', LIB_W], ['raken', LIB_R]]) { const p = path(t, K); topP(who, p.x, p.y, p.ang, t * 6, p.v > 5 ? .45 : 0, 1.9); }
+});
+// PRRRT
+S(110, 111.5, (l, t) => {
+  cam(850, 790, 2.4, Math.sin(T * 30) * .006 * (l > .1 ? 1 : 0));
+  librarySide();
+  person({ who: 'raken', x: 1180, y: 930, face: kf(l, [[.25, 1], [.6, -1]]), eyes: 'w', mouth: 'o', amp: 0 });
+  g.save(); if (l > .1 && l < .9) g.translate(Math.sin(T * 70) * 3, 0);
+  person({ who: 'wille', x: 900, y: 940, face: 1, eyes: l > .15 ? 'w' : 'n', mouth: l > .15 ? 'wavy' : 'flat', legA: .5, ph: 1, amp: .3, aL: .9, eL: .5, aR: .9, eR: .5 });
+  g.restore();
+  if (l > .1 && l < 1.1) {
+    const a = 1 - prog(l, .8, 1.1);
+    g.globalAlpha = a; g.save(); g.translate(720, 690); g.rotate(-.2 + Math.sin(T * 30) * .05);
+    textO('PRRT!', 0, 0, 64 + Math.sin(T * 25) * 3, '#ffe066', INK, 12); g.restore();
+    for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(800, 820, 40 + i * 30 + l * 40, Math.PI * .7, Math.PI * 1.3); g.strokeStyle = '#ffe066'; g.lineWidth = 6; g.stroke(); }
+    g.globalAlpha = 1;
+  }
+});
+// Rummet startar om
+S(111.5, 114.2, (l, t) => {
+  cam(960, 560, 1.0 + .03 * bump(l, 2.3, 2.7));
+  const shift = bump(l, 0, 2.5);
+  libraryTop(t, shift);
+  token(1650, 255, 34, .6);
+  const tt = 110 - ein(prog(l, .2, 2.3)) * 7.9;
+  for (const [who, K] of [['wille', LIB_W], ['raken', LIB_R]]) {
+    for (let gh = 3; gh >= 0; gh--) { const p = path(tt + gh * .25 * (l < 2.3 ? 1 : 0), K); g.globalAlpha = gh ? .18 : 1; topP(who, p.x, p.y, p.ang, 0, 0, 1.9); }
+    g.globalAlpha = 1;
+  }
+  scr();
+  g.globalAlpha = .1; for (let y = 0; y < H; y += 6) rect(0, y, W, 2, '#fff'); g.globalAlpha = 1;
+  if (l < 2.3) { g.globalAlpha = .8; g.fillStyle = '#fff'; for (const ox of [0, 44]) { g.beginPath(); g.moveTo(140 + ox, 80); g.lineTo(100 + ox, 110); g.lineTo(140 + ox, 140); g.closePath(); g.fill(); } g.globalAlpha = 1; }
+});
+// Blicken
+S(114.2, 116.6, (l, t) => {
+  cam(820, 705, kf(l, [[0, 2.6], [2.4, 3.0]]));
+  librarySide();
+  person({ who: 'raken', x: 820, y: 930, face: -.5, eyes: 'h', lx: -.9, mouth: 'flat', brow: .7 });
+});
+S(116.6, 119, (l, t) => {
+  cam(640, 725, 2.9);
+  librarySide();
+  person({ who: 'wille', x: 640, y: 940, face: .45, eyes: 'n', lx: -.8, ly: .5, mouth: 'wavy', brow: -.7, aR: .5, eR: 2.6 });
+});
+S(119, 121.6, (l, t) => {
+  cam(820, 705, kf(l, [[0, 2.9], [2.6, 3.1]]));
+  librarySide();
+  person({ who: 'raken', x: 820, y: 930, face: -.45, eyes: 'h', lx: -.9, mouth: 'flat', raise: true, brow: .4, aL: .3, eL: 1.5, aR: .3, eR: 1.5 });
+});
+// Wille stänger av ljudet
+S(121.6, 124.2, (l, t) => {
+  const z = kf(l, [[0, 1.8], [1.1, 1.8], [1.6, 3.6]], eio);
+  cam(kf(l, [[1.1, 660], [1.6, 660]]), kf(l, [[1.1, 760], [1.6, 832]], eio), z);
+  librarySide();
+  const p = ss(prog(l, .1, .8));
+  person({ who: 'wille', x: 640, y: 940, face: .2, eyes: 'n', ly: .8, lx: .2, mouth: l > 1.9 ? 'smile' : 'flat', bag: false, aL: lerp(.2, .5, p), eL: lerp(.2, 1.4, p), aR: lerp(.2, .5, p), eR: lerp(.2, 1.4, p) });
+  if (p > 0) {
+    g.save(); g.globalAlpha = p;
+    backpackSide(660, 900, .7);
+    rr(620, 812, 80, 40, 8, '#2a2a33', INK, 3);
+    const on = l < 1.75; rr(on ? 628 : 662, 818, 30, 28, 6, on ? '#3fdc6c' : '#e23b3b');
+    text(on ? 'LJUD: PÅ' : 'LJUD: AV', 660, 868, 14, '#fff', 'center', 900);
+    if (l > 1.75 && l < 2.0) circ(660, 832, 30, 'rgba(255,255,255,.3)');
+    g.restore();
+  }
+  if (p > 0) { circ(612, 835, 16, CH.wille.skin); }
+});
+// Samarbete: boken
+S(124.2, 127.6, (l, t) => {
+  cam(880, 620, 1.12);
+  librarySide({ gap: t > 124.8 ? [2, 0] : null });
+  const dv = prog(t, 125.2, 125.85), caught = t > 125.85;
+  const bk = caught ? null : [lerp(820, 860, prog(t, 124.8, 125.9)), kf(t, [[124.8, 200], [125.9, 830]], ein), (t - 124.8) * 6];
+  person({ who: 'raken', x: 1250, y: 930, face: -1, eyes: 'w', lx: -.9, ly: -.4, mouth: caught ? 'smile' : 'o', aL: .3, eL: 2.6, aR: .3, eR: 2.6 });
+  if (t < 125.2) person({ who: 'wille', x: 560, y: 940, face: 1, eyes: 'w', ly: -.6, lx: .8, mouth: 'o', aL: 1.6, aR: 1.6 });
+  else {
+    const rot = lerp(0, 1.45, eout(dv)), x = lerp(560, 600, dv), y = lerp(940, 905, dv);
+    person({ who: 'wille', x, y, face: 1, rot, eyes: caught ? 'c' : 'w', mouth: caught ? 'smile' : 'o', aL: 2.9, eL: 0, aR: 2.9, eR: 0, noShadow: true, itemR: caught ? bookItem : null });
+  }
+  if (bk) book(bk[0], bk[1], 44, 64, '#3d7fd9', bk[2]);
+});
+// Samarbete: under bordet
+S(127.6, 131, (l, t) => {
+  cam(1080, 640, 1.12);
+  librarySide();
+  readingTable(820, 1340, 700);
+  rr(1370, 790, 90, 20, 6, '#a46a34', INK, 4); line(1390, 810, 1390, 860, INK, 8); line(1440, 810, 1440, 860, INK, 8);
+  const got = t > 129.5;
+  if (!got) token(1415, 760, 30, .6 + .2 * Math.sin(T * 3));
+  person({ who: 'wille', x: 620, y: 940, face: 1, eyes: 'n', mouth: 'smile', itemR: bookItem, aR: .6, eR: 1.6, aL: got ? 2.6 : .2 });
+  const sp = prog(t, 128.0, 129.4);
+  const rot = t < 128 ? lerp(0, 1.5, prog(t, 127.7, 128)) : t < 129.6 ? 1.5 : lerp(1.5, 0, ss(prog(t, 129.8, 130.4)));
+  const x = t < 128 ? 560 + 40 * prog(t, 127.7, 128) : lerp(600, 1080, eout(sp));
+  person({ who: 'raken', x, y: rot > .5 ? 905 : 930, face: 1, rot, eyes: 'n', lx: 1, mouth: got ? 'grin' : 'flat', aL: rot > .5 ? 2.9 : (got ? 2.6 : .2), eL: 0, aR: rot > .5 ? 2.9 : 2.4, eR: 0, itemR: got ? tokenItem : null, noShadow: rot > .5 });
+  // bordsskivan framför
+  rr(820, 700, 520, 28, 6, '#b5793e', INK, 5);
+});
+// Tyst firande
+S(131, 135.2, (l, t) => {
+  cam(940, 650, 1.45);
+  librarySide();
+  const ph = l;
+  let rO = {}, wO = {};
+  if (ph < 1.1) { const pump = Math.abs(Math.sin(l * 7)); rO = { aL: 2.2 + pump * .5, eL: .2, aR: 2.2 + pump * .5, eR: .2, mouth: 'shout', eyes: 'hap', jump: pump * 30 }; wO = { aL: 2.5 - pump * .5, eL: .2, aR: 2.5 - pump * .5, eR: .2, mouth: 'shout', eyes: 'hap', jump: (1 - pump) * 30 }; }
+  else if (ph < 2.3) { const k = Math.sin(l * 10); rO = { aR: 2.8, eR: 0, aL: .3, eL: .5 + k * .2, mouth: 'open', eyes: 'c', rot: k * .06 }; wO = { aL: 1.4, eL: 1.2, aR: .8 + k * .3, eR: 1.4, mouth: 'shout', eyes: 'c', rot: .08 + k * .1 }; }
+  else if (ph < 3.7) { const k = ss(prog(l, 2.3, 2.9)), touch = ss(prog(l, 3.3, 3.6)); rO = { face: 1, aR: lerp(.2, 2.1, k), eR: .1, eyes: l > 2.9 && l < 3.3 ? 'w' : 'n', lx: l > 2.9 && l < 3.3 ? 0 : 1, mouth: l > 2.9 && l < 3.3 ? 'o' : 'smile' }; wO = { face: -1, aL: lerp(.2, 2.1, k), eL: .1, eyes: l > 2.9 && l < 3.3 ? 'w' : 'n', lx: l > 2.9 && l < 3.3 ? 0 : -1, mouth: l > 2.9 && l < 3.3 ? 'o' : 'smile' }; rO.x = 820 + touch * 8; wO.x = 1060 - touch * 8; }
+  else { rO = { eyes: 'hap', mouth: 'grin', aR: .3, eR: 2.4, itemR: tokenItem }; wO = { eyes: 'hap', mouth: 'grin', itemL: bookItem, aL: .3, eL: 2.2 }; }
+  person({ who: 'raken', x: 820, y: 930, face: .6, ...rO });
+  person({ who: 'wille', x: 1060, y: 940, face: -.6, ...wO });
+});
+// Utanför biblioteket
+S(135.2, 140, (l, t) => {
+  cam(3330, 640, kf(l, [[0, 1.45], [4.8, 1.65]]));
+  const op = ss(prog(l, .1, .5)) * (1 - ss(prog(l, .9, 1.4)));
+  corridorSide({ open: { 'BIBLIOTEK': op }, inside: { 'BIBLIOTEK': () => rect(3400, 410, 200, 420, '#5b3a2e') } });
+  walker('raken', 0, 935, t, [[135.3, 3500], [136.0, 3260]], { run: false, still: { face: .5, eyes: 'n', mouth: 'smile', aR: .3, eR: 2.3, itemR: tokenItem, squash: Math.sin(Math.max(0, t - 138.6) * 8) * 4 * (t > 138.6 && t < 139.6 ? 1 : 0) } });
+  walker('wille', 0, 945, t, [[135.5, 3500], [136.1, 3400]], { run: false, still: { face: -.6, eyes: 'n', lx: -.8, mouth: 'flat', lean: -.08, aR: .7, eR: 2.4, aL: .2 } });
+}, { fo: .5 });
+
+// ---------------- 02:20–03:00  SKOLAN JAGAR DEM ----------------
+S(140, 143.6, (l, t) => {
+  bgGrad('#f4dfa0', '#c9a96a');
+  const red = .5 + .5 * Math.sin(t * TAU * .7);
+  g.globalAlpha = .25 * red; scr(); rect(0, 0, W, H, '#ff3030'); g.globalAlpha = 1;
+  cam(960, 520, kf(l, [[0, 1.05], [3.6, 1.2]]));
+  speakerBox(960, 500, 2.4, isTalking('Högtalaren') ? 1 : 0, red);
+}, { fi: .3 });
+function chaseKids(t, o = {}) {
+  const pr = path(t, CH_PATH), pw = path(t - .14, CH_PATH);
+  const under = bump(t, 149.0, 149.6);
+  const s = 1.75 * (1 - under * .25);
+  if (t < 146.3) { const a = Math.sin((t - 143.6) * 2.6) * 1.4; topP('raken', 260, 490, a, 0, 0, 1.75); topP('wille', 240, 610, -a + .3, 0, 0, 1.75); return; }
+  topP('wille', pw.x - 20, pw.y + 60, pw.ang, t * 18, 1, s);
+  topP('raken', pr.x, pr.y - 30, pr.ang, t * 18 + 1, 1, s);
+  if (under > .05) cartTop(1420, kf(t, [[147.8, 150], [150.0, 690]], lin), 1.1);
+}
+S(143.6, 147, (l, t) => {
+  cam(kf(l, [[0, 620], [3.4, 760]]), 540, 1.0);
+  chaseWorld(t);
+  chaseKids(t);
+});
+S(147, 153.1, (l, t) => {
+  const pc = path(t - .12, CH_PATH);
+  cam(pc.x + 180, clamp(pc.y, 300, 560), .9);
+  chaseWorld(t);
+  chaseKids(t);
+  speedLines(10, '#fff', .12, 3);
+});
+// Kontorsstolen
+function chairRide(t, cx, opt = {}) {
+  chairSide(cx, 935, 1, t);
+  sitLegs(cx + 20, 800, 'wille', .4);
+  person({ who: 'wille', x: cx + 10, y: 866, face: 1, noLegs: true, noShadow: true, eyes: 'w', mouth: 'grin', aL: 1.4 + Math.sin(T * 8) * .25, eL: .3, aR: 1.4 - Math.sin(T * 8) * .25, eR: .3, ...opt.w });
+  person({ who: 'raken', x: cx - 120, y: 912, face: 1, noShadow: true, eyes: 'w', mouth: 'o', lean: .18, aR: 1.5, eR: .3, aL: 1.2, eL: .5, ...opt.r });
+}
+S(153.1, 156.1, (l, t) => {
+  const cx = 600 + l * 1500;
+  cam(cx, 640, 1.25, Math.sin(T * 20) * .01);
+  corridorSide();
+  chairRide(t, cx);
+  scr(); speedLines(26, '#fff', .3, 4);
+});
+S(156.1, 158.6, (l, t) => {
+  const cx = 1800 + l * 1500, sh = shake(4);
+  cam(cx - 120 + sh[0], 690 + sh[1], 2.6);
+  corridorSide();
+  chairRide(t, cx, { r: { mouth: 'shout', eyes: 'w', brow: .5 } });
+  scr(); speedLines(30, '#fff', .35, 6);
+});
+S(158.6, 162, (l, t) => {
+  const p = path(t, CH_PATH), stop = t > 160.5, sh = stop ? shake(6 * (1 - prog(t, 160.5, 161.3))) : [0, 0];
+  cam(clamp(p.x - 100, 0, 5300) + sh[0], 540 + sh[1], 1.1);
+  chaseWorld(t);
+  g.save(); g.translate(p.x, p.y); g.rotate(stop ? .3 : Math.sin(T * 8) * .1);
+  for (let i = 0; i < 5; i++) { const a = i / 5 * TAU; line(0, 0, Math.cos(a) * 56, Math.sin(a) * 56, '#555', 9); }
+  circ(0, 0, 44, INK); circ(0, 0, 38, '#2d2d3a'); g.restore();
+  topP('wille', p.x + 4, p.y, 0, 0, 0, 1.75);
+  topP('raken', p.x - 60, p.y, 0, t * 6, .3, 1.75);
+  if (t > 159.6 && t < 160.6) for (let i = 0; i < 6; i++) { g.globalAlpha = .5; circ(p.x - 60 - i * 40 + R(i) * 20, p.y + (R(i * 3) - .5) * 80, 20 + i * 4, '#e6dcc8'); g.globalAlpha = 1; }
+});
+// Återvändsgränd och ritad dörr
+function deadEnd(o = {}) {
+  rect(-400, 0, W + 800, 840, '#f4dfa0'); rect(-400, 0, W + 800, 80, '#d8c07a'); rect(-400, 590, W + 800, 250, '#7cc4a4'); rect(-400, 584, W + 800, 10, '#5aa588');
+  rect(-400, 830, W + 800, 250, '#cdb994'); line(-400, 832, W + 400, 832, '#9c8a68', 6);
+  for (let x = -400; x < W + 400; x += 120) rect(x, 830, 60, 125, 'rgba(255,255,255,.1)');
+  rr(300, 300, 150, 90, 6, '#3fa45f', INK, 4); text('UTGÅNG', 375, 345, 26, '#fff', 'center', 900); line(310, 310, 440, 380, '#e2304d', 10); line(440, 310, 310, 380, '#e2304d', 10);
+  rr(1500, 650, 60, 110, 6, '#e8e8e8', INK, 3);
+}
+const DOOR = [780, 400, 240, 432];
+function drawnDoor(p, open = 0, alpha = 1) {
+  const [x, y, w, h] = DOOR;
+  g.save(); g.globalAlpha = alpha;
+  if (open > 0) {
+    g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip();
+    rect(x, y, w, h, '#fff8ec'); for (let i = 0; i < 8; i++) circ(x + R(i) * w, y + R(i * 2) * h, 20 + R(i * 3) * 30, ['#ff6f91', '#7bd88f', '#ffd84a', '#5ab0ff'][i % 4]);
+    rr(x + 150, y + 140, 70, 110, 4, '#fff', INK, 3); line(x + 160, y + 250, x + 140, y + 330, '#a8743a', 6); line(x + 210, y + 250, x + 230, y + 330, '#a8743a', 6);
+    if (o_frokenInDoor) o_frokenInDoor();
+    g.restore();
+  }
+  const per = 2 * (w + h), L = p * per;
+  const pts = [[x, y + h], [x, y], [x + w, y], [x + w, y + h]];
+  g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
+  let acc = 0, tip = pts[0];
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i], d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (acc + d <= L) { g.lineTo(b[0], b[1]); acc += d; tip = b; }
+    else { const k = (L - acc) / d; tip = [lerp(a[0], b[0], k), lerp(a[1], b[1], k)]; g.lineTo(tip[0], tip[1]); acc = L; break; }
+  }
+  g.strokeStyle = '#1a1a1a'; g.lineWidth = 10; g.lineCap = 'round'; g.lineJoin = 'round'; g.stroke();
+  if (p > .95) { const ow = w * (1 - open * .85); g.beginPath(); g.rect(x, y, ow, h); g.fillStyle = open > 0 ? '#fffdf6' : 'rgba(0,0,0,0)'; g.fill(); g.stroke(); g.beginPath(); g.arc(x + ow - 30, y + h * .55, 12, 0, TAU); g.stroke(); }
+  if (p > 0 && p < 1) marker(tip[0] + 20, tip[1] - 30, .7, .6);
+  g.restore();
+}
+let o_frokenInDoor = null;
+S(162, 164.6, (l, t) => {
+  cam(1000, 620, 1.2);
+  deadEnd();
+  drawnDoor(eio(prog(t, 162.9, 164.3)));
+  const sk = eout(prog(t, 162, 162.6));
+  person({ who: 'raken', x: lerp(1650, 1180, sk), y: 935, face: -1, lean: sk < 1 ? .2 : 0, eyes: 'w', lx: -1, mouth: t > 162.9 ? 'o' : 'shout', legA: -.3 * (1 - sk) });
+  person({ who: 'wille', x: lerp(1820, 1340, sk), y: 945, face: -1, lean: sk < 1 ? .25 : 0, eyes: 'w', lx: -1, mouth: t > 162.9 ? 'o' : 'grin', legA: -.3 * (1 - sk) });
+  if (sk < 1) for (let i = 0; i < 4; i++) { g.globalAlpha = .5 * (1 - sk); circ(lerp(1650, 1180, sk) + 60 + i * 40, 930 - i * 8, 18 + i * 5, '#e6dcc8'); g.globalAlpha = 1; }
+});
+S(164.6, 167.9, (l, t) => {
+  cam(1000, 620, kf(l, [[0, 1.2], [3.3, 1.3]]));
+  deadEnd();
+  const op = ss(prog(l, .1, .7));
+  o_frokenInDoor = () => person({ who: 'froken', x: 900, y: 905, face: .6, eyes: 'n', mouth: 'smile', aR: .8, eR: 1.6, itemR: markerItem, aL: .2 });
+  drawnDoor(1, op);
+  o_frokenInDoor = null;
+  person({ who: 'raken', x: 1180, y: 935, face: -1, eyes: 'w', lx: -1, mouth: 'o' });
+  person({ who: 'wille', x: 1340, y: 945, face: -1, eyes: 'w', lx: -1, mouth: 'o' });
+});
+S(167.9, 171, (l, t) => {
+  cam(1260, 720, 2.0);
+  deadEnd();
+  const rf = kf(l, [[.6, -1], [.9, .7], [1.8, .7], [2.1, 0]]), wf = kf(l, [[.65, -1], [.95, -.7], [1.8, -.7], [2.1, 0]]);
+  person({ who: 'raken', x: 1180, y: 935, face: rf, lx: rf, eyes: 'n', mouth: 'flat' });
+  person({ who: 'wille', x: 1340, y: 945, face: wf, lx: wf, eyes: 'n', mouth: 'flat' });
+});
+S(171, 175, (l, t) => {
+  cam(1000, 620, 1.2);
+  deadEnd();
+  const op = 1 - ss(prog(l, 2.3, 2.7));
+  const fa = Math.max(0, 1 - prog(l, 2.9, 3.8));
+  o_frokenInDoor = () => person({ who: 'froken', x: 830, y: 905, face: .6, eyes: 'hap', mouth: 'smile', aR: 2.4 + Math.sin(T * 8) * .3, eR: .3, itemL: markerItem, aL: .3, eL: .8 });
+  if (fa > 0) drawnDoor(1, op, fa);
+  o_frokenInDoor = null;
+  if (t < 172.6) {
+    walker('raken', 0, 935, t, [[171.2, 1180], [172.2, 880]], { still: { face: -1 }, mouth: 'grin', eyes: 'n' });
+    walker('wille', 0, 945, t, [[171.4, 1340], [172.5, 900]], { still: { face: -1 }, mouth: 'grin', eyes: 'hap' });
+  }
+});
+// Trappan ner
+S(175, 180, (l, t) => {
+  rect(0, 0, W, H, '#191426');
+  cam(kf(l, [[0, 700], [5, 1250]]), kf(l, [[0, 400], [5, 820]]), 1.1);
+  glow(1600, 1400, 900, 'rgba(255,150,60,.55)');
+  for (let i = 0; i < 14; i++) { const x = 300 + i * 110, y = 300 + i * 72; rect(x, y, 140, 600, '#3a3248'); rect(x, y, 140, 16, '#5a4c6a'); line(x, y, x + 110, y, INK, 4); }
+  for (let i = 0; i < 14; i++) line(300 + i * 110, 120 + i * 72, 300 + i * 110, 300 + i * 72, '#6d5a7a', 6);
+  line(300, 120, 1830, 1128, '#8a7898', 10);
+  rr(1300, 520, 300, 80, 8, '#f5ecd0', INK, 4); text('KLOCKRUMMET ↓', 1450, 560, 34, INK, 'center', 900);
+  for (const [who, d] of [['raken', 0], ['wille', .5]]) {
+    const k = prog(t, 175.2 + d, 179.6 + d), st = k * 12;
+    const x = 360 + st * 110 + 40, y = 300 + Math.floor(st) * 72 + 4 - Math.sin((st % 1) * Math.PI) * 20;
+    if (k > 0 && k < 1) person({ who, x, y, face: 1, ph: t * 15, amp: .9, eyes: 'w', mouth: 'o', s: .95 });
+  }
+}, { fo: .6 });
+
+// ---------------- 03:00–03:45  DET RIKTIGA PROBLEMET ----------------
+const KX = { raken: 880, wille: 1000, vakt: 470 };
+function clockWorld(t, o = {}) { clockRoom(t, o); }
+S(180, 185, (l, t) => {
+  cam(kf(l, [[0, 1200], [5, 960]]), kf(l, [[0, 260], [5, 560]]), kf(l, [[0, 1.6], [5, 1.0]]));
+  clockWorld(t, { slots: 0 });
+  walker('vakt', 0, 915, t, [[180.4, -100], [183.2, KX.vakt]], { run: false, still: { face: 1, eyes: 'n', ly: -.8, mouth: 'flat' } });
+  walker('raken', 0, 935, t, [[180.6, -160], [183.8, KX.raken]], { run: false, still: { face: .3, eyes: 'w', ly: -1, mouth: 'o' } });
+  walker('wille', 0, 945, t, [[180.9, -120], [184.2, KX.wille]], { run: false, still: { face: -.2, eyes: 'w', ly: -1, mouth: 'o' } });
+}, { fi: .6 });
+S(185, 189, (l, t) => {
+  cam(690, 720, 2.5);
+  const slots = t > 186.5 ? (t > 188 ? 2 : 1) : 0;
+  clockWorld(t, { slots });
+  for (const [st, sx] of [[185.4, 630], [186.9, 750]]) {
+    const k = prog(t, st, st + 1.1); if (k <= 0 || k >= 1) continue;
+    const y = lerp(560, 760, eio(k));
+    token(sx, y, 34, .3);
+    hand(sx + 6, y - 64, .38, Math.PI, '#d7a587', '#4a6890');
+  }
+  if (t > 186.5 && t < 187) { g.globalAlpha = 1 - prog(t, 186.5, 187); circ(630, 760, 60, 'rgba(255,220,120,.6)'); g.globalAlpha = 1; }
+  if (t > 188 && t < 188.5) { g.globalAlpha = 1 - prog(t, 188, 188.5); circ(750, 760, 60, 'rgba(255,220,120,.6)'); g.globalAlpha = 1; }
+});
+S(189, 193.5, (l, t) => {
+  bgGrad('#231c33', '#140f1f');
+  cam(960, 540, kf(l, [[0, 1], [4.5, 1.08]]));
+  screenPanel(960, 540, 2.3, 'talk', t);
+});
+function clockKids(t, o = {}) {
+  person({ who: 'vakt', x: KX.vakt, y: 915, face: .6, eyes: 'n', lx: 1, mouth: 'flat', ...o.v });
+  person({ who: 'raken', x: KX.raken, y: 935, face: .5, eyes: 'n', lx: 1, mouth: 'flat', ...o.r });
+  person({ who: 'wille', x: KX.wille, y: 945, face: .1, eyes: 'n', ly: .6, lx: 0, mouth: 'flat', ...o.w });
+}
+S(193.5, 197, (l, t) => {
+  cam(kf(l, [[0, 900], [3.5, 980]]), 700, kf(l, [[0, 1.6], [3.5, 2.1]], lin));
+  clockWorld(t, { slots: 2 });
+  clockKids(t, { r: { face: .6, lx: 1 }, w: { face: 0, lx: 0, ly: .7, eyes: 'n' } });
+});
+S(197, 201, (l, t) => {
+  cam(1005, 725, kf(l, [[0, 2.9], [4, 3.1]]));
+  clockWorld(t, { slots: 2 });
+  clockKids(t, { w: { face: -.3, eyes: 'sad', lx: -.3, ly: .4, brow: -.8 } });
+});
+S(201, 204.5, (l, t) => {
+  cam(885, 705, kf(l, [[0, 2.9], [3.5, 3.05]]));
+  clockWorld(t, { slots: 2 });
+  clockKids(t, { r: { face: .45, eyes: 'h', lx: .8, mouth: 'smirk', raise: true } });
+});
+S(204.5, 208, (l, t) => {
+  cam(1005, 725, 3.0);
+  clockWorld(t, { slots: 2 });
+  const laugh = l < 1.8;
+  clockKids(t, { w: laugh ? { face: -.3, eyes: 'hap', mouth: 'grin', jump: Math.abs(Math.sin(T * 13)) * 5 * (1 - prog(l, 1.2, 1.8)), blush: true } : { face: -.2, eyes: 'sad', ly: .7, lx: 0, mouth: 'flat', brow: -.7 } });
+});
+S(208, 211.5, (l, t) => {
+  cam(990, 735, 3.25);
+  clockWorld(t, { slots: 2 });
+  clockKids(t, { w: { face: -.4, eyes: 'sad', lx: -.7, ly: -.3, brow: -.9 } });
+});
+S(211.5, 215, (l, t) => {
+  cam(940, 720, kf(l, [[0, 2.0], [3.5, 2.15]]));
+  clockWorld(t, { slots: 2 });
+  const p = ss(prog(l, .2, .9));
+  clockKids(t, { r: { face: .7, eyes: 'n', lx: .8, mouth: 'smile', aR: lerp(.15, 1.25, p), eR: lerp(.2, .35, p) }, w: { face: -.5, eyes: l > 2.6 ? 'n' : 'sad', lx: -.8, ly: -.2, mouth: l > 2.8 ? 'smile' : 'flat', squash: l > 2.8 ? Math.sin((l - 2.8) * 12) * 5 : 0 } });
+});
+// De går fram till huvudknappen
+S(215, 225, (l, t) => {
+  cam(kf(l, [[0, 960], [10, 1250]]), kf(l, [[0, 620], [10, 640]]), kf(l, [[0, 1.2], [10, 1.4]]));
+  clockWorld(t, { slots: 2 });
+  person({ who: 'vakt', x: KX.vakt, y: 915, face: .6, eyes: 'n', lx: 1, mouth: 'smile' });
+  walker('raken', 0, 935, t, [[215.8, KX.raken], [223.2, 1290]], { run: false, still: { face: .5, lx: 1 }, eyes: 'n', mouth: 'flat', brow: .3 });
+  walker('wille', 0, 945, t, [[215.6, KX.wille], [223.6, 1400]], { run: false, still: { face: .4, lx: 1, ly: -.3 }, eyes: 'n', mouth: 'flat', brow: .4 });
+});
+
+// ---------------- 03:45–04:20  ÅTERSTARTEN ----------------
+const PB = 1500;
+function clockFinal(t, o = {}) {
+  clockWorld(t, { slots: 2, press: o.press ?? 1, screen: o.screen, lever: o.lever ?? 0 });
+  person({ who: 'vakt', x: o.vx ?? KX.vakt, y: 915, face: o.vf ?? .6, eyes: 'h', lx: o.vf < 0 ? -1 : 1, mouth: 'flat', ...o.v });
+  const rk = () => person({ who: 'raken', x: 1290, y: 935, face: .5, eyes: 'w', lx: .8, ly: -.6, mouth: 'o', ...o.r });
+  const wl = () => person({ who: 'wille', x: 1400, y: 945, face: .4, eyes: 'w', lx: .8, ly: -.6, mouth: 'o', aR: 1.9, eR: .4, ...o.w });
+  if (o.rakenFront) { wl(); rk(); } else { rk(); wl(); }
+}
+// knappen på x=PB i klockrummet
+S(225, 228, (l, t) => {
+  cam(1460, 730, kf(l, [[0, 2.6], [3, 2.4]]));
+  const pr = ss(prog(l, .3, .6));
+  clockFinal(t, { press: pr, w: { aR: 2.05 - pr * .2, eR: .4, eyes: l > .6 ? 'w' : 'n', ly: .4, mouth: l > .6 ? 'o' : 'flat', brow: .6 }, r: { eyes: 'n', ly: .4 } });
+});
+S(228, 232.3, (l, t) => {
+  const sh = shake(5);
+  cam(960 + sh[0], 540 + sh[1], 1.0);
+  clockFinal(t, { screen: 'confirm', r: { ly: -1 }, w: { ly: -1, aR: .3, eR: .3 } });
+  for (let i = 0; i < 8; i++) { const k = (T * 1.5 + R(i)) % 1; g.globalAlpha = 1 - k; circ(1200 + (R(i * 2) - .5) * 600, 330 + k * 400, 5, '#ffcf6b'); }
+  g.globalAlpha = 1;
+});
+S(232.3, 233.9, (l, t) => {
+  const sh = shake(3);
+  cam(1400 + sh[0], 735 + sh[1], 3.1);
+  clockFinal(t, { screen: 'confirm', w: { face: .5, eyes: 'w', lx: .6, ly: -.6, brow: .8, aR: .3, eR: .3 } });
+});
+S(233.9, 235.6, (l, t) => {
+  bgGrad('#231c33', '#140f1f'); cam(960, 540, 1 + l * .04); screenPanel(960, 540, 2.3, 'sure', t);
+});
+S(235.6, 237.1, (l, t) => {
+  const sh = shake(3);
+  cam(1290 + sh[0], 715 + sh[1], 3.1);
+  clockFinal(t, { screen: 'sure', rakenFront: true, r: { face: .5, eyes: 'w', lx: .6, ly: -.6, brow: .8 } });
+});
+S(237.1, 240.6, (l, t) => {
+  bgGrad('#231c33', '#140f1f'); cam(960, 540, 1 + l * .03); screenPanel(960, 540, 2.3, 'survey', t);
+  const cx = kf(l, [[0, 700], [1.5, 1050], [3.5, 1150]]), cy = kf(l, [[0, 900], [1.5, 700], [3.5, 690]]);
+  g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx, cy + 60); g.lineTo(cx + 16, cy + 46); g.lineTo(cx + 30, cy + 72); g.lineTo(cx + 40, cy + 66); g.lineTo(cx + 28, cy + 42); g.lineTo(cx + 48, cy + 40); g.closePath(); g.fillStyle = '#fff'; g.fill(); inkS(4);
+});
+// Stirrar in i kameran
+S(240.6, 244, (l, t) => {
+  cam(1345, 715, 2.2);
+  clockFinal(t, { screen: 'survey', r: { face: 0, lx: 0, ly: 0, eyes: 'h', mouth: 'flat' }, w: { face: 0, lx: 0, ly: 0, eyes: 'h', mouth: 'flat', aR: .15, eR: .15 } });
+});
+// NORMAL TISDAG
+S(244, 247.5, (l, t) => {
+  cam(360, 690, 2.2);
+  const lv = ss(prog(l, 1.5, 2.2));
+  clockFinal(t, { screen: 'survey', lever: lv, vx: 440, vf: -.6, v: { eyes: 'h', mouth: 'flat', aL: .1, eL: .1, aR: .5, eR: 2.2 } });
+  const rot = -.7 + lv * 1.4, kx = 315 + Math.sin(rot) * 86, ky = 740 - Math.cos(rot) * 86;
+  limb(440 - 53, 699, kx + 10, ky + 6, 24, CH.vakt.sw); circ(kx + 4, ky, 16, INK); circ(kx + 4, ky, 13, CH.vakt.skin);
+});
+// Tystnad. Ett tick.
+S(247.5, 250, (l, t) => {
+  const tick = t > 249.5 ? Math.sin(prog(t, 249.5, 249.8) * Math.PI) * .015 : 0;
+  cam(960, 540, 1.0 + tick);
+  clockFinal(t, { screen: t > 249.5 ? 'ok' : 'off', lever: 1, vx: 440, vf: -.6, r: { eyes: 'w', ly: -1, mouth: 'flat', face: .3 }, w: { eyes: 'w', ly: -1, mouth: 'flat', aR: .2, eR: .2, face: .3 } });
+  if (t < 249.5) { g.globalAlpha = .25; scr(); rect(0, 0, W, H, '#000'); g.globalAlpha = 1; }
+});
+// Montage: allt återgår
+S(250, 252.7, (l, t) => {
+  cam(960, 540, 1); corridorTop();
+  bucketTop(kf(l, [[0, 1130], [2, 1700]]), kf(l, [[0, 561], [2, 700]]), 1.4 - l * .7, 1.5);
+  const amp = 40 * (1 - ss(prog(l, 0, 2)));
+  if (amp > .5) warpFX(amp);
+  scr(); for (let i = 0; i < 20; i++) { const x = (R(i) * W + l * 600) % W, y = R(i * 7) * H; g.globalAlpha = .6 * (1 - prog(l, 1.5, 2.7)); circ(x, y, 5, '#fff7c4'); } g.globalAlpha = 1;
+}, { fi: .2 });
+S(252.7, 255.3, (l, t) => {
+  cam(kf(l, [[0, 1500], [2.6, 2100]]), 420, .62);
+  chaseWorld(t, { restore: true });
+});
+S(255.3, 258, (l, t) => {
+  cam(kf(l, [[0, 960], [2.7, 760]]), 560, kf(l, [[0, 1.02], [2.7, 1.12]]));
+  classBase(t, { backEyes: 'n', backLook: t > 256.5 ? -1 : .3 });
+  person({ who: 'froken', x: CL.froken, y: 905, face: kf(t, [[255.6, -.8], [256.3, .6]]), aL: kf(t, [[255.6, 2.4], [256.2, .3]]), eL: .2, eyes: 'n', lx: -1, ly: .5, mouth: t > 257.3 ? 'smile' : 'o' });
+  frontDesk(CL.raken); frontDesk(CL.wille);
+});
+S(258, 260, (l, t) => {
+  bgGrad('#f4dfa0', '#d8c07a');
+  const sh = shake(t > 258.1 ? 3 : 0, 40);
+  cam(960 + sh[0], 560 + sh[1], 1.05 + l * .03);
+  schoolBell(960, 560, 2.3, t > 258.1 ? 1 : 0);
+  if (t > 258.1) for (let i = 0; i < 3; i++) { const k = ((T * 1.2) + i / 3) % 1; g.globalAlpha = (1 - k) * .6; g.strokeStyle = '#fff'; g.lineWidth = 10; g.beginPath(); g.arc(960, 560, 360 + k * 300, -.6, .6); g.stroke(); g.beginPath(); g.arc(960, 560, 360 + k * 300, Math.PI - .6, Math.PI + .6); g.stroke(); }
+  g.globalAlpha = 1;
+});
+
+// ---------------- 04:20–04:50  FEM MINUTER EXTRA ----------------
+const YARD_KIDS = Array.from({ length: 34 }, (_, i) => ({ who: ['k1', 'k2', 'k3', 'k4'][i % 4], x0: 200 + R(i * 3.3) * 1500, a: .4 + R(i * 1.7) * 2.3, sp: 250 + R(i * 9.1) * 250, d: R(i * 4.4) * 1.6 }));
+function yardKids(t, t0) {
+  for (let i = 0; i < YARD_KIDS.length; i++) {
+    const k = YARD_KIDS[i], lt = t - t0 - k.d; if (lt < 0) continue;
+    const dist = Math.min(lt * k.sp, 300 + R(i) * 500);
+    const wig = Math.sin(lt * 2 + i) * .6;
+    const x = k.x0 + Math.cos(k.a + wig * .3) * dist, y = 280 + Math.sin(k.a) * dist;
+    topP(k.who, x, y, k.a + wig, t * 14, 1, 1.1);
+  }
+}
+S(260, 265, (l, t) => {
+  cam(950, kf(l, [[0, 480], [5, 560]]), kf(l, [[0, 1.05], [5, .95]]));
+  yardTop(t);
+  yardKids(t, 260.2);
+  const a = (t - 260.4) * 1.6;
+  if (t > 260.4) { topP('raken', 900 + Math.cos(a) * 220, 560 + Math.sin(a) * 160, a + Math.PI / 2, t * 15, 1, 1.45); topP('wille', 900 + Math.cos(a - .5) * 220, 560 + Math.sin(a - .5) * 160, a - .5 + Math.PI / 2, t * 15, 1, 1.45); }
+}, { fi: .2 });
+S(265, 269.5, (l, t) => {
+  cam(920, 600, kf(l, [[0, 1.4], [4.5, 1.55]]));
+  const sky = g.createLinearGradient(0, 0, 0, 300); sky.addColorStop(0, '#6cc6ff'); sky.addColorStop(1, '#c6ecff'); g.fillStyle = sky; g.fillRect(-400, -200, W + 800, 500);
+  brickWall(-400, W + 400, 120, 840);
+  for (const wx of [200, 1400]) { rr(wx, 260, 260, 220, 8, '#9fdcff', INK, 6); line(wx + 130, 260, wx + 130, 480, INK, 5); }
+  rect(720, 380, 360, 460, '#3a2a20'); rr(730, 390, 340, 450, 4, '#fff5d0'); rect(-400, 830, W + 800, 250, '#9a9aa8');
+  rr(740, 320, 320, 50, 6, '#f5ecd0', INK, 4); text('SKOLAN', 900, 345, 30, INK, 'center', 900);
+  person({ who: 'froken', x: 900, y: 905, face: .5, eyes: 'n', lx: .7, mouth: 'smile', aR: .7, eR: 1.9, itemR: (hx, hy) => device(hx, hy - 24, .45, 'FÖRLÄNG RESTEN'), aL: .2 });
+  person({ who: 'raken', x: 1250, y: 960, s: 1.1, face: -.8, eyes: 'n', lx: -1, mouth: 'smile' });
+  person({ who: 'wille', x: 1420, y: 975, s: 1.1, face: -.8, eyes: 'n', lx: -1, mouth: l > 2.5 ? 'wavy' : 'grin', brow: l > 2.5 ? -.6 : 0 });
+});
+function benchScene(t, o = {}) {
+  yardSide();
+  benchSide(960, 935);
+  sitLegs(885, 875, 'raken', .2); sitLegs(1045, 875, 'wille', .35);
+  person({ who: 'raken', x: 880, y: 960, face: .55, noLegs: true, noShadow: true, eyes: 'n', lx: .8, mouth: 'smile', ...o.r });
+  person({ who: 'wille', x: 1050, y: 950, face: -.55, noLegs: true, noShadow: true, eyes: 'n', lx: -.8, mouth: 'smile', lean: -.06, ...o.w });
+  rr(740, 865, 440, 26, 6, '#a8743a', INK, 5);
+}
+S(269.5, 273, (l, t) => {
+  cam(960, 720, kf(l, [[0, 1.6], [3.5, 1.75]]));
+  benchScene(t, { w: { lean: -.14, eyes: 'sly', mouth: 'smirk', aR: .4, eR: 2.4 }, r: { eyes: 'h', mouth: 'flat' } });
+});
+S(273, 277, (l, t) => {
+  cam(930, 740, kf(l, [[0, 2.1], [4, 2.25]]));
+  benchScene(t, { r: { eyes: 'n', raise: true, mouth: 'smirk', aR: .6, eR: 1.4 }, w: { lean: -.1, eyes: 'n', mouth: 'grin' } });
+});
+S(277, 280, (l, t) => {
+  cam(960, kf(l, [[0, 720], [3, 660]]), kf(l, [[0, 1.9], [3, 1.4]]));
+  const b = Math.abs(Math.sin(T * 9)) * 6, b2 = Math.abs(Math.sin(T * 9 + 1)) * 6;
+  benchScene(t, { r: { eyes: 'hap', mouth: 'grin', jump: b, blush: true, rot: -.04 }, w: { eyes: 'hap', mouth: 'grin', jump: b2, blush: true, lean: .05, aL: .5, eL: 2.2 } });
+});
+S(280, 285, (l, t) => {
+  cam(960, 520, kf(l, [[0, 1.0], [5, 1.4]]));
+  brickWall(-400, W + 400, -200, 1300, '#b94c37');
+  rr(520, 160, 880, 680, 10, '#e8e2d0', INK, 10);
+  g.save(); g.beginPath(); g.rect(560, 200, 800, 600); g.clip();
+  rect(560, 200, 800, 600, '#c9ecd6'); for (let x = 560; x < 1360; x += 60) line(x, 200, x, 800, '#b2dcc1', 3);
+  rr(600, 700, 720, 30, 6, '#f0b064', INK, 5);
+  const sip = bump(t, 282.4, 283.5) > .5;
+  king(1150, 700, { s: .85, eyes: sip ? 'c' : 'n', mouth: kingTalk(), cup: true, smile: true });
+  glow(1150, 450, 400, 'rgba(255,255,220,.3)');
+  g.restore();
+  line(800, 200, 800, 330, '#e8e2d0', 14); line(1120, 200, 1120, 330, '#e8e2d0', 14); line(560, 330, 1360, 330, '#e8e2d0', 14);
+  g.globalAlpha = .25; g.fillStyle = '#fff'; g.beginPath(); g.moveTo(600, 220); g.lineTo(760, 220); g.lineTo(620, 480); g.lineTo(580, 480); g.closePath(); g.fill(); g.globalAlpha = 1;
+  rr(500, 830, 920, 40, 6, '#d8d2c0', INK, 6);
+});
+S(285, 290, (l, t) => {
+  const z = kf(l, [[0, 1.4], [5, .34]], eio);
+  cam(950, kf(l, [[0, 600], [5, 450]]), z);
+  yardTop(t);
+  yardKids(t, 280);
+  const a = (t - 260.4) * 1.6;
+  topP('raken', 700 + Math.cos(a) * 160, 900 + Math.sin(a) * 100, a + Math.PI / 2, t * 15, 1, 1.45); topP('wille', 700 + Math.cos(a - .6) * 160, 900 + Math.sin(a - .6) * 100, a - .6 + Math.PI / 2, t * 15, 1, 1.45);
+  scr();
+  for (let i = 0; i < 5; i++) { const cx = ((i * 500 + l * 160) % 2600) - 300, cy = 120 + i * 190; g.globalAlpha = .55 * ss(prog(l, 1.5, 4)); ell(cx, cy, 220, 70, '#fff'); ell(cx + 90, cy - 30, 140, 70, '#fff'); }
+  g.globalAlpha = 1;
+}, { fo: .6 });
+
+// ---------------- 04:50–05:00  SISTA KNAPPEN ----------------
+S(290, 294, (l, t) => {
+  scr(); rect(0, 0, W, H, '#0e0b16');
+  glow(960, 420, 800, 'rgba(120,60,220,.35)');
+  const a = ss(prog(l, .1, .6));
+  g.globalAlpha = a;
+  textO('WILLE', W / 2, 330, 150, '#ffe066', '#3b1a6e', 22);
+  textO('RASTEN SOM FÖRSVANN', W / 2, 470, 80, '#fff', '#3b1a6e', 16);
+  g.globalAlpha = 1;
+  const cr = [['RAKEN', 'Raken'], ['WILLE', 'Wille'], ['FRÖKEN', 'Fröken'], ['VAKTMÄSTAREN', 'Vaktmästaren'], ['POTATISEN', 'sig själv'], ['HINKEN', 'okänd']];
+  cr.forEach((c, i) => { const k = ss(prog(l, .7 + i * .25, 1.0 + i * .25)); g.globalAlpha = k; text(c[0], W / 2 - 20, 600 + i * 52, 34, '#a49cbc', 'right', 800); text(c[1], W / 2 + 20, 600 + i * 52, 34, '#fff', 'left', 700); });
+  g.globalAlpha = ss(prog(l, 2.6, 3.0)); text('Ingen tisdag skadades under inspelningen.', W / 2, 960, 30, '#1fd3c4', 'center', 700); g.globalAlpha = 1;
+}, { fo: .25 });
+S(294, 296.5, (l, t) => {
+  cam(960, kf(l, [[0, 620], [2.5, 600]]), kf(l, [[0, 1.0], [2.5, 1.2]]));
+  yardSide();
+  rr(560, 930, 800, 40, 8, '#a8743a', INK, 6);
+  backpackSide(960, 935, 2.4, .8);
+  const pul = .5 + .3 * Math.sin(T * 2.4);
+  g.save(); g.beginPath(); g.rect(700, 150, 520, 450); g.clip();
+  device(960, 480, 2.4, 'HOPPA ÖVER LÄXAN', 0, pul, '#3fdc6c');
+  g.restore();
+  glow(960, 420, 300, 'rgba(110,255,150,.35)', pul);
+}, { fi: .25 });
+// Raken står utanför bild; Wille sitter kvar med den nya knappen
+S(296.5, 300, (l, t) => {
+  cam(1050, 750, kf(l, [[0, 2.7], [3.5, 3.0]]));
+  yardSide();
+  benchSide(960, 935);
+  const nej = t > 298.3, sad = t > 298.9;
+  sitLegs(1045, 875, 'wille', nej ? 0 : .35);
+  person({ who: 'wille', x: 1050, y: 950, face: -.5, noLegs: true, noShadow: true, eyes: nej ? (sad ? 'h' : 'w') : 'n', lx: -.9, ly: -.7, mouth: nej ? (sad ? 'wavy' : 'o') : 'grin', bUp: nej ? 0 : .6, brow: sad ? -.6 : 0, squash: sad ? 6 : 0, aR: .4, eR: 2.0, itemR: (hx, hy) => device(hx, hy - 24, .42, 'HOPPA ÖVER LÄXAN', 0, .4, '#3fdc6c') });
+  rr(740, 865, 440, 26, 6, '#a8743a', INK, 5);
+});
+// ===================== UNDERTEXTER =====================
+SUBS = [
+  [10.8, 13.8, 'Fröken', 'Bara sista uppgiften.'],
+  [15.8, 18.4, 'Raken', 'Varför har du en knapp?'],
+  [18.7, 21.0, 'Wille', 'Varför har du så många frågor?'],
+  [23.7, 26.9, 'Wille', 'Förläng rasten? Äntligen vettig teknik.'],
+  [33.4, 37.9, 'Högtalaren', 'Rasten är inställd. Lektionen fortsätter i niohundra år.'],
+  [40.4, 43.7, 'Fröken', 'Jag har inte planerat så mycket material.'],
+  [53.4, 56.3, 'Wille', 'Den där hinken följer efter oss.'],
+  [57.0, 59.9, 'Vaktmästaren', 'Nej. Ni går i cirklar.'],
+  [60.3, 63.8, 'Vaktmästaren', 'Ni behöver två rastbrickor för att återställa klockan.'],
+  [64.0, 66.9, 'Vaktmästaren', 'Den första finns i matsalen.'],
+  [71.4, 75.4, 'Potatisen', 'Ingen lämnar matsalen innan allt är uppätet.'],
+  [79.4, 82.5, 'Wille', 'Du sa aldrig vem som måste äta.'],
+  [97.4, 100.0, 'Raken', 'Det här nämndes inte på matsedeln.'],
+  [116.7, 119.0, 'Wille', 'Det var väskan.'],
+  [119.1, 121.6, 'Raken', 'Och vem packade väskan?'],
+  [136.2, 139.7, 'Wille', '(viskar) Jag har aldrig varit så högljutt tyst.'],
+  [140.3, 143.4, 'Högtalaren', 'Otillåten rast upptäckt.'],
+  [153.3, 156.0, 'Wille', 'Jag har körkort för den här!'],
+  [156.2, 158.5, 'Raken', 'Det är en stol!'],
+  [164.9, 167.8, 'Fröken', 'Ni missade bildlektionen.'],
+  [189.3, 193.5, 'Systemet', 'Den som startade förlängningen måste avsluta den.'],
+  [197.3, 201.0, 'Wille', 'Jag ville bara att något kul skulle hända.'],
+  [201.3, 204.4, 'Raken', 'Det blev en potatis som åt potatis.'],
+  [208.3, 211.4, 'Wille', 'Förlåt. Jag borde ha lyssnat.'],
+  [211.8, 214.9, 'Raken', 'Hjälp mig fixa det nu.'],
+  [228.2, 232.3, 'Systemet', 'Bekräfta att ni vill avsluta den pågående lektionen.'],
+  [232.4, 233.9, 'Wille', 'JA!'],
+  [233.95, 235.6, 'Systemet', 'Är ni säkra?'],
+  [235.7, 237.1, 'Raken', 'JA!'],
+  [237.2, 240.6, 'Systemet', 'Hur nöjda är ni med er upplevelse?'],
+  [265.2, 269.5, 'Fröken', 'Fem minuter extra rast. Sedan pratar vi om knappen.'],
+  [269.8, 272.8, 'Wille', 'Min plan fungerade ändå.'],
+  [273.0, 277.0, 'Raken', 'Du var en centimeter från niohundra års matte.'],
+  [281.4, 284.6, 'Potatisen', 'Äntligen lunchrast.'],
+  [296.6, 298.2, 'Wille', 'Raken...?'],
+  [298.3, 299.95, 'Raken', '(utanför bild) NEJ.', true],
+];
+const SPK_COL = { 'Raken': '#3ff0e2', 'Wille': '#c9a2ff', 'Fröken': '#ff9a9a', 'Vaktmästaren': '#ffcb6b', 'Högtalaren': '#e8e8e8', 'Potatisen': '#f0c983', 'Systemet': '#7dff9a' };
+function wrapLines(str, maxW) {
+  const words = str.split(' '), out = []; let cur = '';
+  for (const w of words) { const test = cur ? cur + ' ' + w : w; if (g.measureText(test).width > maxW && cur) { out.push(cur); cur = w; } else cur = test; }
+  if (cur) out.push(cur); return out;
+}
+function drawSubs() {
+  for (const s of SUBS) {
+    if (T < s[0] || T >= s[1]) continue;
+    const a = Math.min(1, (T - s[0]) / .12, (s[1] - T) / .12);
+    scr(); g.globalAlpha = a;
+    g.font = `650 50px ${FONT}`;
+    const lines = wrapLines(s[3], 1500);
+    let w = 0; for (const ln of lines) w = Math.max(w, g.measureText(ln).width);
+    g.font = `900 30px ${FONT}`; const nw = g.measureText(s[2].toUpperCase()).width;
+    w = Math.max(w, nw) + 70;
+    const hgt = 46 + lines.length * 62 + 22, x = W / 2 - w / 2, y = H - 34 - hgt;
+    rr(x, y, w, hgt, 18, 'rgba(10,7,18,.84)');
+    text(s[2].toUpperCase(), W / 2, y + 34, 30, SPK_COL[s[2]] || '#fff', 'center', 900);
+    lines.forEach((ln, i) => { g.font = `650 50px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fff'; g.fillText(ln, W / 2, y + 88 + i * 62); });
+    g.globalAlpha = 1;
+  }
+}
+
+// ===================== LJUD (Web Audio) =====================
+let AC = null, MASTER = null, BUS = null, MUS = null, SFXG = null, NOISE = null, muted = false;
+const mf = m => 440 * Math.pow(2, (m - 69) / 12);
+function initAudio() {
+  if (AC) return;
+  const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
+  AC = new C();
+  MASTER = AC.createGain(); MASTER.gain.value = muted ? 0 : .9;
+  const comp = AC.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
+  MASTER.connect(comp); comp.connect(AC.destination);
+  NOISE = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate);
+  const d = NOISE.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  newBus();
+}
+// ny buss vid sökning: gamla schemalagda ljud kopplas bort direkt
+function newBus() {
+  if (!AC) return;
+  if (BUS) { try { BUS.disconnect(); } catch (e) { /* redan frånkopplad */ } }
+  BUS = AC.createGain(); BUS.connect(MASTER);
+  MUS = AC.createGain(); MUS.gain.value = .4; MUS.connect(BUS);
+  SFXG = AC.createGain(); SFXG.gain.value = .95; SFXG.connect(BUS);
+}
+function tone(type, f, t0, dur, vol, dest, o = {}) {
+  const os = AC.createOscillator(), gn = AC.createGain();
+  os.type = type; os.frequency.setValueAtTime(f, t0);
+  if (o.f2) os.frequency.exponentialRampToValueAtTime(Math.max(20, o.f2), t0 + (o.glide ?? dur));
+  if (o.det) os.detune.value = o.det;
+  const at = o.attack ?? .008;
+  gn.gain.setValueAtTime(0.0001, t0); gn.gain.exponentialRampToValueAtTime(vol, t0 + at);
+  gn.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  let node = os;
+  if (o.lp) { const fl = AC.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = o.lp; node.connect(fl); node = fl; }
+  if (o.lfo) { const l = AC.createOscillator(), lg = AC.createGain(); l.frequency.value = o.lfo; lg.gain.value = o.lfoAmt ?? f * .1; l.connect(lg); lg.connect(os.frequency); l.start(t0); l.stop(t0 + dur + .05); }
+  if (o.trem) { const l = AC.createOscillator(), lg = AC.createGain(), tg = AC.createGain(); l.type = 'square'; l.frequency.value = o.trem; lg.gain.value = .5; tg.gain.value = .5; l.connect(lg); lg.connect(tg.gain); node.connect(tg); node = tg; l.start(t0); l.stop(t0 + dur + .05); }
+  node.connect(gn); gn.connect(dest || SFXG);
+  os.start(t0); os.stop(t0 + dur + .05);
+}
+function nz(t0, dur, vol, o = {}) {
+  const src = AC.createBufferSource(); src.buffer = NOISE; src.loop = true;
+  const fl = AC.createBiquadFilter(); fl.type = o.type || 'bandpass'; fl.frequency.setValueAtTime(o.f || 1000, t0); fl.Q.value = o.q ?? 1;
+  if (o.f2) fl.frequency.exponentialRampToValueAtTime(o.f2, t0 + (o.glide ?? dur));
+  const gn = AC.createGain(); const at = o.attack ?? .005;
+  gn.gain.setValueAtTime(0.0001, t0); gn.gain.exponentialRampToValueAtTime(vol, t0 + at); gn.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  let node = gn;
+  if (o.trem) { const l = AC.createOscillator(), lg = AC.createGain(), tg = AC.createGain(); l.frequency.value = o.trem; lg.gain.value = .5; tg.gain.value = .5; l.connect(lg); lg.connect(tg.gain); gn.connect(tg); node = tg; l.start(t0); l.stop(t0 + dur + .05); }
+  src.connect(fl); fl.connect(gn); node.connect(o.dest || SFXG);
+  src.start(t0, Math.random()); src.stop(t0 + dur + .05);
+}
+const kick = (t, v) => tone('sine', 140, t, .28, v, MUS, { f2: 45, glide: .2 });
+const snare = (t, v) => { nz(t, .16, v, { f: 1800, q: .7, dest: MUS }); tone('triangle', 200, t, .08, v * .5, MUS); };
+const hat = (t, v) => nz(t, .04, v, { type: 'highpass', f: 7000, dest: MUS });
+
+const SFX = {
+  title: t => { [60, 64, 67, 72, 76, 79].forEach((m, i) => tone('square', mf(m + 2), t + i * .08, .25, .06, SFXG, { lp: 3000 })); tone('triangle', mf(86), t + .5, .8, .08); },
+  tick: t => { tone('square', 2600, t, .025, .05, SFXG, { lp: 5000 }); nz(t, .02, .05, { type: 'highpass', f: 5000 }); },
+  tock: t => { tone('square', 1300, t, .05, .06, SFXG, { f2: 500, lp: 3000 }); },
+  pop: t => tone('sine', 300, t, .14, .2, SFXG, { f2: 900, glide: .1 }),
+  sparkle: t => { [84, 88, 91, 96].forEach((m, i) => tone('sine', mf(m), t + i * .06, .4, .06)); },
+  boop: t => { tone('sine', 520, t, .3, .3, SFXG, { f2: 1040, glide: .12 }); tone('triangle', 260, t, .2, .15); },
+  freeze: t => { nz(t, 1.4, .18, { f: 4000, f2: 250, q: 2, attack: .05 }); tone('sine', 1400, t, 1.6, .08, SFXG, { f2: 300, lfo: 7, lfoAmt: 40, attack: .1 }); tone('sine', 60, t, 1.2, .2, SFXG, { f2: 35 }); },
+  chime: t => { tone('sine', mf(76), t, 1.0, .18, SFXG, { attack: .01 }); tone('sine', mf(72), t + .5, 1.2, .18); tone('sine', mf(88), t, .5, .03); },
+  swish: t => nz(t, .25, .12, { f: 1500, f2: 4000, q: 1.5 }),
+  scrape: t => { nz(t, .35, .2, { type: 'lowpass', f: 500 }); tone('sawtooth', 90, t, .3, .05, SFXG, { f2: 70, lp: 400 }); },
+  whoosh: t => nz(t, .55, .22, { f: 300, f2: 2500, q: 1.2, glide: .5, attack: .15 }),
+  door: t => { tone('sine', 110, t, .3, .35, SFXG, { f2: 50 }); nz(t, .12, .15, { type: 'lowpass', f: 600 }); },
+  slam: t => { tone('sine', 90, t, .45, .5, SFXG, { f2: 40 }); nz(t, .2, .35, { type: 'lowpass', f: 1200 }); },
+  bang: t => { tone('sine', 120, t, .4, .5, SFXG, { f2: 45 }); nz(t, .25, .4, { type: 'lowpass', f: 2000 }); },
+  boing: t => tone('sine', 220, t, .5, .22, SFXG, { f2: 700, glide: .25, lfo: 14, lfoAmt: 40 }),
+  tap: t => tone('triangle', 900, t, .05, .1),
+  fanfare: t => { [[67, 71, 74], [72, 76, 79]].forEach((ch, i) => ch.forEach(m => tone('sawtooth', mf(m - 12), t + i * .35, .7, .05, SFXG, { lp: 1800, attack: .03 }))); kick(t, .3); kick(t + .35, .3); },
+  sting: t => { tone('sawtooth', 98, t, 1.0, .1, SFXG, { lp: 900, attack: .02 }); tone('sawtooth', 147, t, 1.0, .07, SFXG, { lp: 900 }); tone('sine', 49, t, 1.0, .25); },
+  roll: t => nz(t, 1.4, .14, { type: 'lowpass', f: 380, trem: 16, attack: .1 }),
+  chomp: t => { nz(t, .07, .3, { f: 900, q: 2 }); tone('sine', 170, t, .12, .25, SFXG, { f2: 60 }); },
+  gulp: t => tone('sine', 320, t, .22, .3, SFXG, { f2: 110 }),
+  hit: t => { tone('sine', 85, t, 1.2, .55, SFXG, { f2: 35 }); nz(t, .6, .25, { type: 'lowpass', f: 1500 }); tone('sawtooth', 55, t, 1.0, .08, SFXG, { lp: 400 }); },
+  burp: t => { tone('sawtooth', 95, t, 1.0, .4, SFXG, { lp: 650, lfo: 17, lfoAmt: 25, f2: 70, attack: .03 }); tone('square', 60, t, .9, .12, SFXG, { lp: 300, f2: 48 }); },
+  catch: t => { tone('sine', mf(88), t, .5, .12); tone('sine', mf(93), t + .07, .6, .1); },
+  fart: t => { tone('sawtooth', 75, t, .55, .5, SFXG, { lp: 520, lfo: 31, lfoAmt: 20, f2: 52, attack: .01 }); nz(t, .5, .12, { type: 'lowpass', f: 400, trem: 30 }); },
+  rewind: t => { tone('square', 180, t, 2.3, .05, SFXG, { f2: 2200, glide: 2.2, lp: 2500, trem: 22 }); nz(t, 2.2, .07, { f: 600, f2: 4000, q: 2, glide: 2.2 }); },
+  thump: t => tone('sine', 75, t, .3, .45, SFXG, { f2: 40 }),
+  click: t => { tone('square', 3200, t, .025, .12, SFXG, { lp: 6000 }); tone('square', 1800, t + .03, .02, .08); },
+  alarm: t => { tone('square', 660, t, .5, .07, SFXG, { lp: 2000, attack: .03 }); tone('square', 520, t + .55, .5, .07, SFXG, { lp: 2000, attack: .03 }); },
+  slide: t => { nz(t, .6, .2, { type: 'lowpass', f: 900, f2: 300 }); tone('sawtooth', 62, t, .55, .06, SFXG, { lp: 300 }); tone('sine', 90, t + .55, .2, .3, SFXG, { f2: 45 }); },
+  rattle: t => nz(t, .9, .12, { f: 2600, q: 3, trem: 24, attack: .05 }),
+  skid: t => { nz(t, .9, .2, { f: 3200, f2: 1300, q: 4 }); tone('sawtooth', 900, t, .5, .03, SFXG, { f2: 600, lp: 2000 }); },
+  squeak: t => tone('sine', 2100, t, .26, .06, SFXG, { lfo: 30, lfoAmt: 120, f2: 2400 }),
+  creak: t => tone('sawtooth', 140, t, .7, .06, SFXG, { f2: 240, lp: 900, lfo: 9, lfoAmt: 20, attack: .05 }),
+  cricket: t => { for (let i = 0; i < 3; i++) tone('sine', 4300, t + i * .07, .05, .05); },
+  clunk: t => { tone('sine', 120, t, .3, .45, SFXG, { f2: 60 }); nz(t, .15, .2, { type: 'lowpass', f: 900 }); tone('sine', 920, t + .02, .5, .06); tone('sine', mf(79), t + .1, .8, .06); },
+  beep: t => { tone('square', 880, t, .12, .06, SFXG, { lp: 3000 }); tone('square', 1320, t + .14, .12, .06, SFXG, { lp: 3000 }); },
+  press: t => { tone('sine', 70, t, .6, .6, SFXG, { f2: 35 }); nz(t, .3, .3, { type: 'lowpass', f: 700 }); },
+  spin: t => { tone('sawtooth', 50, t, 2.4, .1, SFXG, { f2: 260, glide: 2.2, lp: 900, attack: .2 }); nz(t, 2.4, .08, { f: 400, f2: 1600, q: 2, glide: 2.2, attack: .3 }); },
+  winddown: t => { tone('sawtooth', 260, t, 1.5, .1, SFXG, { f2: 35, glide: 1.4, lp: 900 }); nz(t, 1.3, .07, { f: 1500, f2: 200, q: 2 }); },
+  bigtick: t => { tone('square', 1900, t, .05, .25, SFXG, { lp: 6000 }); tone('sine', 950, t, .5, .15); tone('sine', 60, t, .3, .2); },
+  land: t => nz(t, .08, .1, { f: 2500, q: 1 }),
+  bell: t => { tone('square', 1250, t, 1.9, .07, SFXG, { trem: 26, lp: 4000, attack: .01 }); tone('sine', 2500, t, 1.9, .04, SFXG, { trem: 26 }); },
+  cheer: t => { nz(t, 2.4, .12, { f: 1300, q: .6, attack: .4 }); for (let i = 0; i < 10; i++) tone('triangle', 500 + R(i) * 600, t + i * .2, .15, .03, SFXG, { f2: 800 + R(i * 2) * 600 }); },
+  laugh: t => { for (let i = 0; i < 4; i++) { tone('triangle', 330 - i * 15, t + i * .14, .1, .08, SFXG, { f2: 260 }); tone('triangle', 420 - i * 15, t + i * .14 + .02, .1, .05, SFXG, { f2: 340 }); } },
+  sip: t => { nz(t, .12, .06, { f: 3500, q: 3 }); nz(t + .18, .12, .06, { f: 3500, q: 3 }); tone('sine', 300, t + .45, .4, .05, SFXG, { f2: 220 }); },
+  glow: t => { tone('sine', 660, t, 1.6, .06, SFXG, { attack: .5 }); tone('sine', 990, t, 1.6, .04, SFXG, { attack: .6 }); },
+  nej: t => { tone('sine', 110, t, .6, .45, SFXG, { f2: 50 }); tone('sawtooth', 98, t, .5, .07, SFXG, { lp: 600 }); },
+  ripple: t => tone('sine', 400, t, .9, .1, SFXG, { f2: 1600, glide: .8, attack: .2 }),
+};
+const EVENTS = [
+  [.2, 'title'], [15.25, 'pop'], [21.6, 'sparkle'], [24.6, 'sparkle'], [27.45, 'boop'], [27.5, 'ripple'], [28.55, 'freeze'],
+  [30.4, 'tock'], [31.0, 'tock'], [31.6, 'tock'], [32.2, 'tock'], [32.8, 'tock'], [33.0, 'chime'], [38.6, 'swish'], [39.5, 'swish'],
+  [43.95, 'scrape'], [44.25, 'scrape'], [44.6, 'door'], [46.1, 'whoosh'], [47.95, 'whoosh'], [48.15, 'door'], [50.15, 'whoosh'], [50.35, 'door'], [52.2, 'skid'],
+  [56.45, 'bang'], [56.5, 'boing'], [64.25, 'tap'], [64.65, 'tap'], [67.45, 'door'], [70.55, 'slam'], [71.05, 'fanfare'], [75.5, 'sting'], [77.6, 'boing'],
+  [83.1, 'roll'], [84.65, 'chomp'], [85.0, 'gulp'], [85.6, 'hit'], [90.6, 'whoosh'], [92.25, 'spin'], [95.95, 'burp'], [96.85, 'catch'],
+  [110.12, 'fart'], [111.6, 'rewind'], [113.9, 'thump'], [123.35, 'click'], [135.4, 'creak'],
+  [140.05, 'alarm'], [141.4, 'alarm'], [144.4, 'slide'], [144.9, 'slide'], [145.4, 'slide'], [145.9, 'slide'], [147.9, 'slide'], [148.3, 'rattle'], [148.9, 'slide'], [149.2, 'whoosh'],
+  [150.5, 'slide'], [150.8, 'door'], [151.9, 'slide'], [152.2, 'door'], [153.1, 'whoosh'], [156.1, 'whoosh'], [159.6, 'skid'], [160.5, 'thump'], [162.05, 'skid'],
+  [162.95, 'squeak'], [163.3, 'squeak'], [163.7, 'squeak'], [164.05, 'squeak'], [164.7, 'creak'], [168.6, 'cricket'], [169.6, 'cricket'], [171.3, 'whoosh'], [173.3, 'creak'],
+  [186.5, 'clunk'], [188.0, 'clunk'], [189.1, 'beep'], [225.6, 'press'], [225.7, 'spin'], [228.1, 'beep'], [233.95, 'beep'], [237.15, 'beep'],
+  [246.0, 'click'], [246.15, 'winddown'], [249.5, 'bigtick'], [250.1, 'sparkle'], [252.75, 'sparkle'], [255.35, 'sparkle'], [257.2, 'land'], [258.1, 'bell'],
+  [260.3, 'cheer'], [277.2, 'laugh'], [277.9, 'laugh'], [278.6, 'laugh'], [282.45, 'sip'], [290.1, 'title'], [294.2, 'glow'], [298.3, 'nej'],
+];
+for (let s = 7; s <= 27; s++) EVENTS.push([s, 'tick']);
+for (let i = 0; i < 4; i++) EVENTS.push([87.6 + i * .38, 'chomp']);
+for (let i = 0; i < 6; i++) EVENTS.push([89.3 + i * .22, 'chomp']);
+EVENTS.sort((a, b) => a[0] - b[0]);
+// fotsteg och mullrande stol som tidsintervall
+const STEPS = [[43.9, 45.9, .14, 'run'], [46.05, 52.5, .13, 'run'], [67.4, 69.6, .32, 'walk'], [104.6, 110, .4, 'tip'], [135.3, 136.1, .38, 'tip'], [146.3, 153.05, .12, 'run'], [153.05, 160.5, .09, 'rumble'], [162, 162.5, .1, 'run'], [171.2, 172.5, .13, 'run'], [175.2, 180, .17, 'run'], [180.4, 184.2, .34, 'walk'], [215.6, 223.6, .48, 'walk'], [260.3, 266, .09, 'run']];
+function stepSound(kind, t) {
+  if (kind === 'run') nz(t, .05, .09, { type: 'lowpass', f: 900 });
+  else if (kind === 'walk') nz(t, .07, .07, { type: 'lowpass', f: 600 });
+  else if (kind === 'tip') nz(t, .03, .015, { f: 2400, q: 2 });
+  else if (kind === 'rumble') nz(t, .12, .07, { type: 'lowpass', f: 220 });
+}
+
+// ---------- procedurell musik ----------
+const MAJ = [0, 2, 4, 5, 7, 9, 11], MIN = [0, 2, 3, 5, 7, 8, 10], WT = [0, 2, 4, 6, 8, 10];
+const STY = {
+  title: { bpm: 128, key: 62, sc: MAJ, prog: [0, 5, 3, 4], bass: [0, 6, 8, 14], arp: 2, lead: 'x.x.x.xxx.x.x...', lt: 'square', drums: { k: [0, 8], s: [4, 12], h: 2 }, v: .9 },
+  calm: { bpm: 92, key: 60, sc: MAJ, prog: [0, 5, 3, 4], bass: [0, 8], arp: 4, arpT: 'triangle', v: .6 },
+  weird: { bpm: 66, key: 58, sc: WT, prog: [0, 1, 0, -1], bass: [0], arp: 4, arpT: 'sine', det: 14, v: .7 },
+  run: { bpm: 168, key: 57, sc: MIN, prog: [0, 0, 5, 4], bass: [0, 2, 4, 6, 8, 10, 12, 14], arp: 2, lead: 'x.xxx.x.x.xxx.x.', lt: 'square', drums: { k: [0, 8], s: [4, 12], h: 2 }, v: .8 },
+  mystery: { bpm: 84, key: 55, sc: MIN, prog: [0, 5, 3, 4], bass: [0, 6, 8], arp: 4, arpT: 'triangle', v: .6 },
+  royal: { bpm: 92, key: 55, sc: MAJ, prog: [0, 3, 4, 0], pad: 'sawtooth', bass: [0, 8], drums: { k: [0], s: [8], h: 0 }, lead: 'x...x.x.x...x...', lt: 'sawtooth', v: .75 },
+  epic: { bpm: 144, key: 52, sc: MIN, prog: [0, 5, 3, 4], pad: 'sawtooth', bass: [0, 2, 4, 6, 8, 10, 12, 14], drums: { k: [0, 6, 8, 14], s: [4, 12], h: 1 }, lead: 'x.x.x.xxx.x.x.xx', lt: 'sawtooth', v: .85 },
+  sneak: { bpm: 104, key: 57, sc: MIN, prog: [0, 0, 5, 4], bass: [0, 6], pizz: true, lead: 'x...x...x.x.....', lt: 'triangle', v: .45 },
+  hush: { bpm: 104, key: 57, sc: MIN, prog: [0, 5], pizz: true, v: .22 },
+  chase: { bpm: 176, key: 50, sc: MIN, prog: [0, 0, 6, 5], bass: [0, 2, 4, 6, 8, 10, 12, 14], arp: 2, lead: 'x.xx.xx.x.xx.x.x', lt: 'square', drums: { k: [0, 4, 8, 12], s: [4, 12], h: 1 }, v: .85 },
+  clock: { bpm: 60, key: 50, sc: MIN, prog: [0, 5, 3, 4], pad: 'sine', bass: [0], tick: true, v: .6 },
+  tender: { bpm: 70, key: 60, sc: MAJ, prog: [0, 4, 5, 3], pad: 'sine', arp: 4, arpT: 'sine', v: .55 },
+  chaos: { bpm: 150, key: 54, sc: WT, prog: [0, 1, 2, 1], bass: [0, 3, 6, 9, 12], arp: 1, arpT: 'square', drums: { k: [0, 8], s: [4, 12], h: 2 }, v: .6 },
+  triumph: { bpm: 120, key: 60, sc: MAJ, prog: [0, 4, 5, 3], pad: 'sawtooth', bass: [0, 4, 8, 12], arp: 2, lead: 'x.x.x.x.xxx.x...', lt: 'square', drums: { k: [0, 8], s: [4, 12], h: 2 }, v: .85 },
+  happy: { bpm: 126, key: 62, sc: MAJ, prog: [0, 5, 3, 4], bass: [0, 6, 8, 14], arp: 4, lead: 'x..x..x.x.x..x..', lt: 'square', drums: { k: [0, 8], s: [4, 12], h: 2 }, v: .7 },
+};
+const SEC = [[0, 6, 'title'], [6, 27.4, 'calm'], [28.8, 33, 'weird'], [38, 46, 'weird'], [46, 53, 'run'], [53, 56.4, 'weird'], [57, 71, 'mystery'], [71.2, 85.6, 'royal'], [85.6, 95.9, 'epic'], [97.3, 100, 'royal'],
+  [100, 110, 'sneak'], [114.2, 124.2, 'hush'], [124.2, 135.2, 'hush'], [135.2, 140, 'sneak'], [143.6, 162, 'chase'], [167.9, 175, 'mystery'], [175, 193.5, 'clock'], [193.5, 225, 'tender'],
+  [225.6, 244, 'chaos'], [250, 260, 'triumph'], [260, 290, 'happy'], [290, 294, 'title']];
+function musicStep(st, n, when) {
+  const spb = 60 / st.bpm / 4, bar = Math.floor(n / 16), s = n % 16, deg = st.prog[bar % st.prog.length], L = st.sc.length, v = st.v;
+  const note = (d, oct = 0) => st.key + st.sc[((d % L) + L) % L] + 12 * (Math.floor(d / L) + oct);
+  if (st.bass && st.bass.includes(s)) tone('triangle', mf(note(deg, -2)), when, spb * 1.8, .2 * v, MUS, { lp: 700 });
+  if (st.pad && s === 0) for (const k of [0, 2, 4]) tone(st.pad, mf(note(deg + k, 0)), when, spb * 16, .03 * v, MUS, { attack: .2, lp: 1300 });
+  if (st.arp && s % st.arp === 0) { const k = [0, 2, 4, 7][(n / st.arp | 0) % 4]; tone(st.arpT || 'triangle', mf(note(deg + k, 1)), when, spb * st.arp * .9, .045 * v, MUS, { det: st.det || 0, lp: 3500 }); if (st.det) tone('sine', mf(note(deg + k, 1)), when, spb * st.arp, .03 * v, MUS, { det: -st.det }); }
+  if (st.lead && st.lead[s] === 'x') { const d = deg + [0, 2, 4, 2, 1, 4, 3, 5][Math.floor(R(bar * 16 + s) * 8)]; tone(st.lt, mf(note(d, 1)), when, spb * 1.6, .035 * v, MUS, { lp: 2600 }); }
+  if (st.drums) { if (st.drums.k.includes(s)) kick(when, .5 * v); if (st.drums.s.includes(s)) snare(when, .16 * v); if (st.drums.h && s % st.drums.h === 0) hat(when, .035 * v); }
+  if (st.tick && s % 4 === 0) { hat(when, .06 * v); if (s % 8 === 0) tone('square', 1800, when, .02, .02 * v, MUS); }
+  if (st.pizz && (s === 0 || s === 8 || s === 11)) tone('triangle', mf(note(deg + (s === 11 ? 4 : 0), -1)), when, .12, .14 * v, MUS);
+}
+let secIdx = -1, lastStep = -1, lastFoot = {}, duck = -1;
+function resetAudioState() { secIdx = -1; lastStep = -1; lastFoot = {}; duck = -1; newBus(); }
+function audioTick(t0, t1) {
+  if (!AC || AC.state !== 'running') return;
+  const now = AC.currentTime + .02;
+  if (t1 - t0 > .5) return;
+  for (const e of EVENTS) { if (e[0] > t0 && e[0] <= t1) SFX[e[1]](now); }
+  for (let i = 0; i < STEPS.length; i++) {
+    const [a, b, iv, kind] = STEPS[i];
+    if (t1 < a || t1 > b) continue;
+    const k = Math.floor((t1 - a) / iv);
+    if (lastFoot[i] !== k) { if (lastFoot[i] !== undefined || t1 - a < iv) stepSound(kind, now); lastFoot[i] = k; }
+  }
+  let idx = -1; for (let i = 0; i < SEC.length; i++) if (t1 >= SEC[i][0] && t1 < SEC[i][1]) { idx = i; break; }
+  if (idx !== secIdx) { secIdx = idx; lastStep = -1; }
+  if (idx >= 0) {
+    const st = STY[SEC[idx][2]], n = Math.floor((t1 - SEC[idx][0]) * st.bpm / 60 * 4);
+    if (n !== lastStep) { if (lastStep < 0 || n - lastStep > 3) musicStep(st, n, now); else for (let k = lastStep + 1; k <= n; k++) musicStep(st, k, now); lastStep = n; }
+  }
+  const talking = SUBS.some(s => t1 >= s[0] && t1 < s[1]) ? 1 : 0;
+  if (talking !== duck) { duck = talking; MUS.gain.setTargetAtTime(talking ? .24 : .4, AC.currentTime, .15); }
+}
+
+// ===================== RENDERING =====================
+function findShot(t) { for (const s of SHOTS) if (t >= s.a && t < s.b) return s; return null; }
+function resize() {
+  const r = cv.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  let w = Math.round(r.width * dpr); w = clamp(w, 320, 1920);
+  const h = Math.round(w * 9 / 16);
+  if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+  SC = cv.width / W;
+}
+function frozenFX(t) {
+  const fz = frozenAmt(t); if (fz <= 0 || t > 289) return;
+  scr();
+  const gr = g.createRadialGradient(W / 2, H / 2, H * .3, W / 2, H / 2, H * 1.0);
+  gr.addColorStop(0, 'rgba(120,60,220,0)'); gr.addColorStop(1, `rgba(110,50,210,${.32 * fz})`); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 16; i++) {
+    const x = (R(i * 2.3) * W + Math.sin(T * .3 + i) * 60), y = ((R(i * 5.1) * H - T * (12 + R(i) * 18)) % H + H) % H;
+    g.globalAlpha = .28 * fz; g.save(); g.translate(x, y); g.rotate(-T * (.5 + R(i))); g.strokeStyle = '#e3d0ff'; g.lineWidth = 3;
+    g.beginPath(); g.arc(0, 0, 9 + R(i * 3) * 8, 0, TAU); g.moveTo(0, 0); g.lineTo(0, -8); g.stroke(); g.restore();
+  }
+  g.globalAlpha = 1;
+}
+function render() {
+  resize();
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.fillStyle = '#000'; g.fillRect(0, 0, cv.width, cv.height);
+  if (T >= DUR) return;
+  const sh = findShot(T);
+  if (!sh) return;
+  g.save(); scr(); sh.fn(T - sh.a, T); g.restore();
+  g.globalAlpha = 1;
+  frozenFX(T);
+  scr();
+  let fade = 0;
+  if (sh.fi) fade = Math.max(fade, 1 - prog(T, sh.a, sh.a + sh.fi));
+  if (sh.fo) fade = Math.max(fade, prog(T, sh.b - sh.fo, sh.b));
+  if (fade > 0) { g.globalAlpha = fade; rect(0, 0, W, H, '#000'); g.globalAlpha = 1; }
+  drawSubs();
+}
+
+// ===================== SPELARE =====================
+const $ = id => document.getElementById(id);
+const ov = $('ov'), big = $('big'), bigtxt = $('bigtxt'), ovtext = $('ovtext');
+const bPlay = $('bPlay'), bRe = $('bRe'), bMute = $('bMute'), bFs = $('bFs'), seek = $('seek'), timeEl = $('time'), iPlay = $('iPlay'), iMute = $('iMute'), app = $('app');
+const P_PLAY = 'M7 4.5v15l13-7.5z', P_PAUSE = 'M6 4h4.5v16H6zM13.5 4H18v16h-4.5z';
+const P_SOUND = 'M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z';
+const P_MUTED = 'M4 9v6h4l5 4V5L8 9H4zm15.4 3 2.3-2.3-1.1-1.1-2.3 2.3-2.3-2.3-1.1 1.1 2.3 2.3-2.3 2.3 1.1 1.1 2.3-2.3 2.3 2.3 1.1-1.1z';
+let playing = false, dragging = false, lastNow = performance.now(), lastT = 0;
+function fmt(s) { s = Math.floor(s); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+function play() {
+  initAudio();
+  if (AC && AC.state === 'suspended') AC.resume();
+  if (T >= DUR) { T = 0; resetAudioState(); }
+  playing = true; ov.hidden = true; lastNow = performance.now(); lastT = T;
+}
+function pause() { playing = false; if (AC && AC.state === 'running') AC.suspend(); }
+function toggle() { if (playing) pause(); else play(); }
+function seekTo(v) { T = clamp(v, 0, DUR); lastT = T; resetAudioState(); if (T < DUR && !ov.hidden && bigtxt.textContent === 'Spela igen') { bigtxt.textContent = 'Fortsätt'; } }
+function setMute(m) { muted = m; if (MASTER) MASTER.gain.setTargetAtTime(m ? 0 : .9, AC.currentTime, .02); }
+function onEnd() { playing = false; if (AC && AC.state === 'running') AC.suspend(); bigtxt.textContent = 'Spela igen'; ovtext.textContent = 'Slut. Tack för att du tittade!'; ov.hidden = false; }
+big.addEventListener('click', () => { if (T >= DUR) { T = 0; resetAudioState(); } play(); });
+bPlay.addEventListener('click', toggle);
+bRe.addEventListener('click', () => { T = 0; lastT = 0; resetAudioState(); play(); });
+bMute.addEventListener('click', () => setMute(!muted));
+bFs.addEventListener('click', () => {
+  const fe = document.fullscreenElement || document.webkitFullscreenElement;
+  if (fe) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+  const req = app.requestFullscreen || app.webkitRequestFullscreen;
+  if (req) { const p = req.call(app); if (p && p.then) p.then(() => { try { window.screen.orientation && window.screen.orientation.lock && window.screen.orientation.lock('landscape').catch(() => {}); } catch (e) { /* orientering stöds inte */ } }).catch(() => {}); }
+});
+seek.addEventListener('pointerdown', () => { dragging = true; });
+seek.addEventListener('pointerup', () => { dragging = false; });
+seek.addEventListener('change', () => { dragging = false; });
+seek.addEventListener('input', () => seekTo(parseFloat(seek.value)));
+cv.addEventListener('click', () => { if (ov.hidden) toggle(); });
+document.addEventListener('keydown', e => {
+  if (e.target && e.target.tagName === 'INPUT' && e.key !== ' ') return;
+  if (e.key === ' ' || e.key === 'k') { e.preventDefault(); if (!ov.hidden && T >= DUR) { T = 0; resetAudioState(); } toggle(); }
+  else if (e.key === 'ArrowRight') seekTo(T + 5);
+  else if (e.key === 'ArrowLeft') seekTo(T - 5);
+  else if (e.key === 'm') setMute(!muted);
+  else if (e.key === 'f') bFs.click();
+});
+document.addEventListener('visibilitychange', () => { if (document.hidden && playing) pause(); });
+let lastUI = '';
+function updateUI() {
+  const st = (playing ? 1 : 0) + '|' + (muted ? 1 : 0) + '|' + Math.floor(T * 10);
+  if (st === lastUI) return; lastUI = st;
+  timeEl.textContent = fmt(T) + ' / 5:00';
+  if (!dragging) seek.value = T.toFixed(1);
+  iPlay.setAttribute('d', playing ? P_PAUSE : P_PLAY); bPlay.setAttribute('aria-label', playing ? 'Pausa' : 'Spela');
+  iMute.setAttribute('d', muted ? P_MUTED : P_SOUND); bMute.setAttribute('aria-label', muted ? 'Slå på ljud' : 'Stäng av ljud');
+}
+function frame(now) {
+  const dt = Math.min(.1, Math.max(0, (now - lastNow) / 1000)); lastNow = now;
+  if (playing) {
+    T += dt;
+    if (T >= DUR) { audioTick(lastT, DUR); T = DUR; onEnd(); }
+    else audioTick(lastT, T);
+  }
+  lastT = T;
+  render();
+  updateUI();
+  requestAnimationFrame(frame);
+}
+// för test/automation: rendera valfri tidpunkt
+window.__film = { seek: v => { seekTo(v); render(); }, get t() { return T; }, shots: () => SHOTS.length };
+requestAnimationFrame(frame);
+</script>
+</html>
