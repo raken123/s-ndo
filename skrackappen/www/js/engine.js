@@ -27,7 +27,7 @@
       for (let x = 0; x < this.w; x++) {
         let c = m[y][x];
         const px = x * TS + 8, py = y * TS + 11;
-        if (c === 'P') { this.player = { x: px, y: py, dir: 'u', ph: 0, stam: 100, bat: def.battery != null ? def.battery : 100, light: !!def.dark, hidden: null, tired: false, stepT: 0, noise: 0 }; c = '.'; }
+        if (c === 'P') { this.player = { x: px, y: py, dir: 'd', ph: 0, stam: 100, bat: def.battery != null ? def.battery : 100, light: !!def.dark, hidden: null, tired: false, stepT: 0, noise: 0 }; c = '.'; }
         else if (c === 'R' || c === 'T' || c === 'S' || c === 'X') { spawns.push([c, px, py]); c = '.'; }
         else if (c === '*') { this.items.push({ x: px, y: py, got: false, kind: def.itemKinds ? def.itemKinds[kindIdx++ % def.itemKinds.length] : def.itemName }); c = '.'; }
         else if (c === 'b') { this.bats.push({ x: px, y: py, got: false }); c = '.'; }

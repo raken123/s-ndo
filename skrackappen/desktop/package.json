@@ -1,6 +1,6 @@
 {
   "name": "skrackappen",
-  "productName": "Skräckappen",
+  "productName": "Skrackappen",
   "version": "1.0.0",
   "description": "Ett skräckspel om Kasper, Panterappen och tystnaden.",
   "author": { "name": "Skräckappen", "email": "skrackappen@users.noreply.github.com" },
@@ -21,11 +21,11 @@
   },
   "build": {
     "appId": "se.skrackappen.spel",
-    "productName": "Skräckappen",
+    "productName": "Skrackappen",
     "copyright": "Skräckappen",
     "files": ["main.js", "www/**/*"],
     "directories": { "output": "release", "buildResources": "build" },
-    "electronLanguages": ["sv", "en-US"],
+    "electronLanguages": ["en-US"],
     "mac": {
       "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
       "category": "public.app-category.games",
@@ -37,7 +37,7 @@
     "dmg": {
       "format": "UDZO",
       "sign": false,
-      "title": "Skräckappen",
+      "title": "Skrackappen",
       "artifactName": "Skrackappen-${version}-mac-${arch}.${ext}"
     },
     "win": {

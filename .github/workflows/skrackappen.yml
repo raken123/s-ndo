@@ -71,8 +71,13 @@ jobs:
               SKRACK_SMOKE=1 SKRACK_SMOKE_OUT="$PWD/smoke.log" \
                 perl -e 'alarm 120; exec { $ARGV[0] } @ARGV or die "exec failed: $!"' "$app/Contents/MacOS/"* 2>&1 | tail -20 || code=$?
               echo "app exit: $code"
+              if ! grep -q SMOKE_OK smoke.log 2>/dev/null; then
+                echo "== senaste kraschrapporten"
+                r=$(ls -t ~/Library/Logs/DiagnosticReports/* 2>/dev/null | head -1)
+                [ -n "$r" ] && head -c 6000 "$r"
+                exit 1
+              fi
               cat smoke.log
-              grep -q SMOKE_OK smoke.log
             fi
             hdiutil detach "$mnt"
           done

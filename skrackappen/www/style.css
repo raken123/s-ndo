@@ -26,7 +26,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 #stage {
   position: absolute; left: 0; top: 0; width: 960px; height: 540px;
-  overflow: hidden; background: #000; font-size: calc(var(--u) * 1.9);
+  overflow: hidden; background: #000; font-size: max(12.5px, calc(var(--u) * 1.9));
 }
 #view {
   position: absolute; inset: 0; width: 100%; height: 100%;

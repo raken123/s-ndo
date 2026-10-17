@@ -72,7 +72,7 @@
 
   const I = (SK.input = {
     keys, stick, virt,
-    touchMode: false,
+    touchMode: (function () { try { return matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window; } catch (e) { return false; } })(),
     is(name) {
       if (virt[name]) return true;
       const list = KEYMAP[name];

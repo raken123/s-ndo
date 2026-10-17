@@ -44,13 +44,13 @@ på **Mer information** och sedan **Kör ändå**.
 
 ### macOS
 
-Öppna DMG-filen och dra **Skräckappen** till **Program**. Appen är inte
+Öppna DMG-filen och dra **Skrackappen** till **Program**. Appen är inte
 granskad av Apple, så första gången säger macOS att den inte kan öppnas. Gå då
 till **Systeminställningar → Integritet och säkerhet**, scrolla ner och klicka
 **Öppna ändå**. Det går också med Terminalen:
 
 ```sh
-xattr -dr com.apple.quarantine /Applications/Skräckappen.app
+xattr -dr com.apple.quarantine /Applications/Skrackappen.app
 ```
 
 ### Android

@@ -17,7 +17,7 @@ Prolog, åtta kapitel och en epilog · sex banor · sex minispel · tre slut · 
 ### Installera
 
 - **Windows:** Om SmartScreen säger "Windows skyddade datorn", klicka **Mer information → Kör ändå**. Spelet är inte signerat med ett certifikat.
-- **Mac:** Öppna DMG-filen och dra Skräckappen till Program. Första gången: **Systeminställningar → Integritet och säkerhet → Öppna ändå**.
+- **Mac:** Öppna DMG-filen och dra Skrackappen till Program. Första gången: **Systeminställningar → Integritet och säkerhet → Öppna ändå**.
 - **Android:** Öppna APK-filen på mobilen och tillåt installation från den källan när Android frågar.
 
 Blir du mobbad? Berätta för en vuxen du litar på, eller ring BRIS: 116 111.
