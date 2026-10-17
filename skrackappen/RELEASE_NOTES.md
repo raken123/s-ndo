@@ -12,6 +12,7 @@ Prolog, åtta kapitel och en epilog · sex banor · sex minispel · tre slut · 
 | `Skrackappen-1.0.0-mac-x64.dmg` | Mac med Intel-processor |
 | `Skrackappen-1.0.0.apk` | **Android** 7.0 eller nyare |
 | `skrackappen_1.0.0_amd64.deb` | Linux (Debian/Ubuntu) |
+| `Skrackappen-1.0.0.html` | Vilken webbläsare som helst – hela spelet i en fil |
 
 ### Installera
 

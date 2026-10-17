@@ -155,6 +155,9 @@ jobs:
           path: out
           merge-multiple: true
 
+      - name: Add the single-file browser version
+        run: python3 skrackappen/tools/build_single_html.py out/Skrackappen-1.0.0.html
+
       - name: Publish the Skräckappen release
         run: |
           ls -l out

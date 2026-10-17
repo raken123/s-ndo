@@ -628,7 +628,7 @@
     { wait: 1.4 },
     ['R', 'Jag heter Ruben. Jag är den som har jagat honom. Hemma är det jag som blir jagad. Där. Nu vet ni.'],
     { label: 'fin_alla' },
-    { mini: 'rosterna', retry: 'Mörket var starkare den här gången. Men tystnaden är inte bestämd för alltid. Försök igen.', opts: (s) => ({
+    { mini: 'rosterna', retry: 'Mörkret var starkare den här gången. Men tystnaden är inte bestämd för alltid. Försök igen.', opts: (s) => ({
       allies: vanner(s),
       time: 40,
       lines: [

@@ -32,8 +32,9 @@ Alla filer finns under releasen
 | `Skrackappen-1.0.0-mac-x64.dmg` | Mac med Intel-processor |
 | `Skrackappen-1.0.0.apk` | Android 7.0 eller nyare |
 | `skrackappen_1.0.0_amd64.deb` | Linux (Debian/Ubuntu) |
+| `Skrackappen-1.0.0.html` | vilken webbläsare som helst – hela spelet i en enda fil |
 
-Du kan också spela direkt i webbläsaren: öppna `www/index.html`.
+Du kan också spela direkt från projektet: öppna `www/index.html` i webbläsaren.
 
 ### Windows
 
@@ -98,7 +99,7 @@ skrackappen/
   desktop/      Electron-skal för Windows (.exe), macOS (.dmg) och Linux (.deb)
   android/      Android-app (WebView) som bygger en .apk
   test/         Playwright-tester
-  tools/        make_icons.py ritar alla ikoner
+  tools/        make_icons.py ritar alla ikoner, build_single_html.py gör spelet till en fil
 ```
 
 **Dator:**

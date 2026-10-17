@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Ett skräckspel om Kasper, Panterappen och tystnaden.",
   "author": { "name": "Skräckappen", "email": "skrackappen@users.noreply.github.com" },
+  "homepage": "https://github.com/raken123/s-ndo/tree/main/skrackappen",
   "license": "UNLICENSED",
   "private": true,
   "main": "main.js",
@@ -21,7 +22,6 @@
   "build": {
     "appId": "se.skrackappen.spel",
     "productName": "Skräckappen",
-    "executableName": "Skrackappen",
     "copyright": "Skräckappen",
     "files": ["main.js", "www/**/*"],
     "directories": { "output": "release", "buildResources": "build" },
