@@ -1,0 +1,2331 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wille – Lotteri på Chromebooken</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one 16:9 film stage with a slim control bar under it, centred in a dark screening room. */
+:root{
+  --room:#0e0b16; --bar:#191427; --barline:#2c2440; --fg:#f3efff; --muted:#a49cbc;
+  --tq:#1fd3c4; --lila:#a46bff; --focus:#ffe066;
+  --ui:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--room);color:var(--fg);font-family:var(--ui);overflow-x:hidden}
+#app{box-sizing:border-box;min-height:100%;display:flex;align-items:center;justify-content:center;
+  padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:var(--room)}
+#player{width:min(100%, calc((100vh - 96px) * 16 / 9));min-width:0;display:flex;flex-direction:column;gap:8px}
+@supports (height:100dvh){#player{width:min(100%, calc((100dvh - 96px) * 16 / 9))}}
+#stage{position:relative;width:100%;max-width:100%;aspect-ratio:16/9;background:#000;border-radius:6px;overflow:hidden;
+  box-shadow:0 18px 60px rgba(0,0,0,.55)}
+#c{display:block;width:100%;height:100%}
+#ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.2%;
+  background:radial-gradient(ellipse at 50% 40%,rgba(60,30,110,.55),rgba(5,3,10,.88));text-align:center;padding:4%}
+#ov h1{margin:0;font-size:clamp(20px,5.2vw,64px);line-height:1.02;letter-spacing:.02em;font-weight:900;text-wrap:balance;
+  color:#fff;text-shadow:0 .06em 0 #5b2bb0,0 .12em .3em rgba(0,0,0,.6)}
+#ov h1 span{display:block;font-size:.42em;letter-spacing:.32em;color:var(--tq);text-shadow:none;margin-bottom:.4em}
+#ov p{margin:0;color:var(--muted);font-size:clamp(11px,1.5vw,17px);max-width:46ch}
+#big{font:800 clamp(14px,2.2vw,24px) var(--ui);color:#170f26;background:var(--focus);border:0;border-radius:999px;
+  padding:.7em 1.6em;cursor:pointer;display:flex;align-items:center;gap:.5em;box-shadow:0 6px 0 #b38f12}
+#big:hover{filter:brightness(1.06)}
+#big:active{transform:translateY(3px);box-shadow:0 3px 0 #b38f12}
+#bar{display:flex;align-items:center;gap:6px;background:var(--bar);border:1px solid var(--barline);border-radius:10px;padding:5px 8px;min-width:0}
+#bar button{flex:none;width:38px;height:38px;border:0;border-radius:8px;background:transparent;color:var(--fg);cursor:pointer;display:grid;place-items:center;padding:0}
+#bar button:hover{background:#2a2240}
+#bar svg{width:22px;height:22px;fill:currentColor}
+button:focus-visible,input:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+#time{flex:none;font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted);min-width:84px;text-align:center}
+#seek{flex:1;min-width:40px;accent-color:var(--tq);height:24px;cursor:pointer}
+#app:fullscreen{padding:0}
+#app:fullscreen #player{width:min(100vw, calc((100vh - 54px) * 16 / 9));gap:4px}
+#app:fullscreen #stage{border-radius:0}
+#app:-webkit-full-screen{padding:0}
+@media (max-width:520px){#bar{gap:2px;padding:4px}#bar button{width:34px;height:34px}#time{min-width:70px;font-size:12px}}
+@media (prefers-reduced-motion:reduce){#big{transition:none}}
+</style>
+<div id="app">
+  <div id="player">
+    <div id="stage">
+      <canvas id="c" width="1920" height="1080" aria-label="Animerad film: Wille, avsnitt 2 – Lotteri på Chromebooken"></canvas>
+      <div id="ov">
+        <h1><span>WILLE · AVSNITT 2</span>LOTTERI PÅ<br>CHROMEBOOKEN</h1>
+        <p id="ovtext">5 minuter · svenska undertexter · ljud skapas i webbläsaren</p>
+        <button id="big" type="button"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg><span id="bigtxt">Spela filmen</span></button>
+      </div>
+    </div>
+    <div id="bar">
+      <button id="bPlay" type="button" aria-label="Spela"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="iPlay" d="M7 4.5v15l13-7.5z"/></svg></button>
+      <button id="bRe" type="button" aria-label="Spela om från början"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg></button>
+      <span id="time">0:00 / 5:00</span>
+      <input id="seek" type="range" min="0" max="300" step="0.1" value="0" aria-label="Tidslinje">
+      <button id="bMute" type="button" aria-label="Stäng av ljud"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="iMute" d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg></button>
+      <button id="bFs" type="button" aria-label="Helskärm"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5v2H6v3H4zm10-5h6v5h-2V6h-4V4zM6 15v3h3v2H4v-5h2zm12 0h2v5h-5v-2h3v-3z"/></svg></button>
+    </div>
+  </div>
+</div>
+<script>
+"use strict";
+// ===================== KÄRNA =====================
+const W = 1920, H = 1080, DUR = 300, TAU = Math.PI * 2;
+const cv = document.getElementById('c');
+const g = cv.getContext('2d');
+let T = 0;            // filmens gemensamma klocka i sekunder
+let SC = 1;           // skalning från 1920-koordinater till canvas-pixlar
+const FONT = 'system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif';
+const INK = '#241a33';
+
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const ss = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+const eio = t => { t = clamp(t, 0, 1); return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+const eout = t => { t = clamp(t, 0, 1); return 1 - Math.pow(1 - t, 3); };
+const ein = t => { t = clamp(t, 0, 1); return t * t * t; };
+const lin = t => clamp(t, 0, 1);
+const prog = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+const bump = (t, a, b) => Math.sin(prog(t, a, b) * Math.PI);
+const R = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
+// keyframes: [[t, v], ...]  v kan vara tal eller array
+function kf(t, K, ease = ss) {
+  if (t <= K[0][0]) return K[0][1];
+  for (let i = 0; i < K.length - 1; i++) {
+    const [a, va] = K[i], [b, vb] = K[i + 1];
+    if (t <= b) {
+      const p = ease((t - a) / (b - a || 1));
+      return Array.isArray(va) ? va.map((v, j) => lerp(v, vb[j], p)) : lerp(va, vb, p);
+    }
+  }
+  return K[K.length - 1][1];
+}
+// rörelsebana: [[t, x, y], ...]
+function path(t, K, ease = lin) {
+  const segA = i => { for (let j = i; j >= 0 && j < K.length - 1; j--) { const dx = K[j + 1][1] - K[j][1], dy = K[j + 1][2] - K[j][2]; if (Math.hypot(dx, dy) > 1) return Math.atan2(dy, dx); } for (let j = i; j < K.length - 1; j++) { const dx = K[j + 1][1] - K[j][1], dy = K[j + 1][2] - K[j][2]; if (Math.hypot(dx, dy) > 1) return Math.atan2(dy, dx); } return 0; };
+  if (t <= K[0][0]) return { x: K[0][1], y: K[0][2], ang: segA(0), v: 0 };
+  for (let i = 0; i < K.length - 1; i++) {
+    const a = K[i], b = K[i + 1];
+    if (t <= b[0]) {
+      const p = ease((t - a[0]) / (b[0] - a[0]));
+      const dx = b[1] - a[1], dy = b[2] - a[2], d = Math.hypot(dx, dy);
+      return { x: a[1] + dx * p, y: a[2] + dy * p, ang: d > 1 ? Math.atan2(dy, dx) : segA(i), v: d / (b[0] - a[0]) };
+    }
+  }
+  const L = K[K.length - 1];
+  return { x: L[1], y: L[2], ang: segA(K.length - 2), v: 0 };
+}
+
+// ---------- ritprimitiver ----------
+function rect(x, y, w, h, c) { g.fillStyle = c; g.fillRect(x, y, w, h); }
+function circ(x, y, r, c) { g.beginPath(); g.arc(x, y, Math.max(0, r), 0, TAU); g.fillStyle = c; g.fill(); }
+function ell(x, y, rx, ry, c, rot = 0) { g.beginPath(); g.ellipse(x, y, Math.abs(rx), Math.abs(ry), rot, 0, TAU); g.fillStyle = c; g.fill(); }
+function rrect(x, y, w, h, r) {
+  r = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
+  g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+function rr(x, y, w, h, r, c, stroke, lw) { rrect(x, y, w, h, r); if (c) { g.fillStyle = c; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 4; g.stroke(); } }
+function line(x1, y1, x2, y2, c, w) { g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.strokeStyle = c; g.lineWidth = w; g.lineCap = 'round'; g.stroke(); }
+function inkS(w = 5) { g.strokeStyle = INK; g.lineWidth = w; g.lineJoin = 'round'; g.stroke(); }
+function text(s, x, y, size, c, align = 'center', weight = 800) {
+  g.font = `${weight} ${size}px ${FONT}`; g.textAlign = align; g.textBaseline = 'middle'; g.fillStyle = c; g.fillText(s, x, y);
+}
+function textO(s, x, y, size, c, oc, ow, align = 'center', weight = 900) {
+  g.font = `${weight} ${size}px ${FONT}`; g.textAlign = align; g.textBaseline = 'middle';
+  g.lineJoin = 'round'; g.strokeStyle = oc; g.lineWidth = ow; g.strokeText(s, x, y); g.fillStyle = c; g.fillText(s, x, y);
+}
+function limb(x1, y1, x2, y2, w, col) { line(x1, y1, x2, y2, INK, w + 9); line(x1, y1, x2, y2, col, w); }
+function glow(x, y, r, col, a = 1) {
+  const gr = g.createRadialGradient(x, y, 0, x, y, r);
+  gr.addColorStop(0, col); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  const ga = g.globalAlpha; g.globalAlpha = a * ga; g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); g.globalAlpha = ga;
+}
+function cam(cx, cy, z = 1, rot = 0) {
+  g.translate(W / 2, H / 2); if (rot) g.rotate(rot); g.scale(z, z); g.translate(-cx, -cy);
+}
+function shake(a, f = 23) { return [Math.sin(T * f) * a + Math.sin(T * f * 1.7) * a * .5, Math.cos(T * f * 1.3) * a]; }
+function speedLines(n, col, a, seed = 1, horiz = true) {
+  g.globalAlpha = a;
+  for (let i = 0; i < n; i++) {
+    const y = R(i * 3.1 + seed) * H, len = 200 + R(i * 7.3) * 500;
+    const x = ((R(i * 1.7) * W * 2 - T * 2600 * (0.6 + R(i))) % (W + len) + W + len) % (W + len) - len;
+    if (horiz) line(x, y, x + len, y, col, 3 + R(i) * 5); else line(y * 16 / 9, x * 9 / 16, y * 16 / 9, x * 9 / 16 + len * .6, col, 4);
+  }
+  g.globalAlpha = 1;
+}
+function rays(x, y, n, col, a, spin, r = 1600) {
+  g.save(); g.translate(x, y); g.rotate(T * spin); g.globalAlpha = a; g.fillStyle = col;
+  for (let i = 0; i < n; i++) { g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, r, i / n * TAU, (i + .5) / n * TAU); g.closePath(); g.fill(); }
+  g.restore(); g.globalAlpha = 1;
+}
+
+// ===================== FIGURER =====================
+const CH = {
+  raken: { name: 'Raken', sw: '#17c3b6', swD: '#0d958b', pants: '#33456a', skin: '#d39b74', skinD: '#b07a55', hair: '#2f1d10', shoe: '#f2f2f2', leg: 82, tor: 104, tw: 84, hr: 56, arm: 86, hs: 'curly', blink: 0.3 },
+  wille: { name: 'Wille', sw: '#8c4de4', swD: '#6532b2', pants: '#2b2f40', skin: '#f3c8a2', skinD: '#d6a07a', hair: '#f4c443', shoe: '#e2423a', leg: 66, tor: 96, tw: 100, hr: 61, arm: 78, hs: 'spiky', bag: true, freckles: true, blink: 1.9 },
+  froken: { name: 'Fröken', sw: '#df4f5b', swD: '#ad3742', pants: '#3a2c4a', skin: '#e8b995', skinD: '#c99472', hair: '#7d4f33', shoe: '#5a2a2a', leg: 120, tor: 142, tw: 96, hr: 52, arm: 112, hs: 'bun', glasses: true, skirt: '#6b3f8f', blink: 1.1 },
+  vakt: { name: 'Vaktmästaren', sw: '#4a6890', swD: '#34507a', pants: '#4a6890', skin: '#d7a587', skinD: '#b5836a', hair: '#9b9b9b', shoe: '#3b2a20', leg: 104, tor: 134, tw: 126, hr: 55, arm: 106, hs: 'cap', mustache: true, overall: true, blink: 2.6 },
+  k1: { name: '', sw: '#f2a23a', swD: '#c47c1f', pants: '#3d4a5c', skin: '#8d5a3b', skinD: '#6e4229', hair: '#1b1210', shoe: '#444', leg: 72, tor: 96, tw: 88, hr: 54, arm: 78, hs: 'round', blink: .7 },
+  k2: { name: '', sw: '#58b84a', swD: '#3d8a32', pants: '#5c3d3d', skin: '#f0c7a8', skinD: '#d19f7e', hair: '#b4462b', shoe: '#333', leg: 72, tor: 96, tw: 86, hr: 54, arm: 78, hs: 'pony', blink: 2.2 },
+  k3: { name: '', sw: '#ff7aa8', swD: '#d65383', pants: '#2f3c55', skin: '#c88b62', skinD: '#a56d47', hair: '#3a2416', shoe: '#555', leg: 72, tor: 96, tw: 86, hr: 54, arm: 78, hs: 'round', blink: 3.1 },
+  k4: { name: '', sw: '#3f8ef0', swD: '#2a68bd', pants: '#3b3b3b', skin: '#f5d0b0', skinD: '#d8a988', hair: '#e8d9a0', shoe: '#222', leg: 72, tor: 96, tw: 86, hr: 54, arm: 78, hs: 'pony', blink: 1.4 },
+};
+
+// vem pratar just nu (styr munrörelser från undertexterna)
+let SUBS = [];
+function isTalking(who) {
+  const n = CH[who] ? CH[who].name : who;
+  for (const s of SUBS) if (T >= s[0] && T < s[1] - 0.15 && (s[2] === n || s[2].split(' & ').includes(n)) && !s[4]) return true;
+  return false;
+}
+
+function person(o) {
+  const c = CH[o.who], s = o.s ?? 1;
+  const f = clamp(o.face ?? 1, -1, 1), fs = f >= 0 ? 1 : -1, af = Math.abs(f);
+  const ph = o.ph ?? 0, amp = o.amp ?? 0;
+  const bob = Math.abs(Math.sin(ph)) * 8 * amp;
+  g.save(); g.translate(o.x, o.y); g.scale(s, s);
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  const ga = g.globalAlpha;
+  if (!o.noShadow) { g.globalAlpha = .2 * ga; ell(0, 2, c.tw * .75, 13, '#000'); g.globalAlpha = ga; }
+  g.translate(0, -(o.jump || 0) - bob);
+  if (o.rot) g.rotate(o.rot);
+  if (o.lean) { g.translate(0, -c.leg); g.rotate(o.lean); g.translate(0, c.leg); }
+  const hipY = -c.leg, topY = hipY - c.tor, shY = topY + 22, headY = topY - c.hr * .72 + (o.squash || 0);
+  // ben
+  if (!o.noLegs) {
+    const sw = Math.sin(ph) * .8 * amp;
+    for (const [lx, a] of [[-c.tw * .18, -sw], [c.tw * .18, sw]]) {
+      const la = a * (af > .2 ? 1 : .5) + (o.legA || 0) * fs;
+      const ex = lx + Math.sin(la) * c.leg, ey = hipY + Math.cos(la) * c.leg;
+      limb(lx, hipY, ex, ey, c.tw * .27, c.pants);
+      ell(ex + fs * 9 * af, ey - 3, 22, 12, c.shoe); g.beginPath(); g.ellipse(ex + fs * 9 * af, ey - 3, 22, 12, 0, 0, TAU); inkS(4);
+    }
+  }
+  // väska bakom
+  const showBag = c.bag && o.bag !== false;
+  if (showBag && af > .25) {
+    const bx = -fs * c.tw * .5;
+    rr(bx - 34, shY - 12, 68, c.tor - 6, 20, '#3da35e', INK, 5);
+    rr(bx - 24 - fs * 6, shY + 34, 40, 34, 10, '#f39a33', INK, 4);
+  }
+  // kjol
+  if (c.skirt) {
+    g.beginPath(); g.moveTo(-c.tw * .5, hipY - 16); g.lineTo(c.tw * .5, hipY - 16); g.lineTo(c.tw * .72, hipY + 58); g.lineTo(-c.tw * .72, hipY + 58); g.closePath();
+    g.fillStyle = c.skirt; g.fill(); inkS(5);
+  }
+  // kropp
+  rr(-c.tw / 2, topY, c.tw, c.tor + 8, 34, c.sw, INK, 5);
+  if (o.who === 'raken') { g.save(); rrect(-c.tw / 2, topY, c.tw, c.tor + 8, 34); g.clip(); rect(-c.tw / 2, shY + 26, c.tw, 13, '#e9fffb'); rect(-c.tw / 2, hipY - 8, c.tw, 16, c.swD); g.restore(); }
+  if (o.who === 'wille') { g.save(); g.translate(f * 12, shY + 40); g.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 9 : 20, a = -Math.PI / 2 + i * TAU / 10; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fillStyle = '#ffd84a'; g.fill(); inkS(3); g.restore(); rect(-c.tw / 2 + 4, hipY - 6, c.tw - 8, 12, c.swD); }
+  if (o.who === 'froken') { line(f * 6, topY + 10, f * 6, hipY - 18, '#ad3742', 4); for (let i = 0; i < 3; i++) circ(f * 6 + 10, topY + 40 + i * 28, 5, '#ffd27a'); }
+  if (c.overall) { rr(-c.tw * .3 + f * 6, topY + 24, c.tw * .6, 64, 10, '#5f80aa', INK, 4); line(-c.tw * .3 + f * 6 + 6, topY + 24, -c.tw * .42, topY + 4, '#5f80aa', 9); line(c.tw * .3 + f * 6 - 6, topY + 24, c.tw * .42, topY + 4, '#5f80aa', 9); rect(c.tw * .1 + f * 6, topY + 34, 8, 26, '#e33'); rect(-c.tw / 2 + 3, hipY - 14, c.tw - 6, 12, '#2c3b55'); circ(c.tw * .36, hipY - 2, 10, '#d8b13a'); circ(c.tw * .4, hipY + 14, 7, '#bbb'); }
+  // hals/krage
+  ell(f * 6, topY + 4, c.tw * .22, 12, c.skinD);
+  if (showBag && af <= .25) { line(-c.tw * .28, topY + 6, -c.tw * .3, hipY - 20, '#2d7a45', 10); line(c.tw * .28, topY + 6, c.tw * .3, hipY - 20, '#2d7a45', 10); }
+  // armar
+  const swA = Math.sin(ph) * .9 * amp;
+  const arms = [
+    { side: -1, a: o.aL ?? (.14 + swA * (fs > 0 ? 1 : -1) * .7 + amp * .2), e: o.eL ?? (.15 + amp * .8), item: o.itemL },
+    { side: 1, a: o.aR ?? (.14 - swA * (fs > 0 ? 1 : -1) * .7 + amp * .2), e: o.eR ?? (.15 + amp * .8), item: o.itemR },
+  ];
+  const hands = {};
+  for (const A of arms) {
+    const sx = A.side * (c.tw / 2 - 10), sy = shY;
+    const u = c.arm * .52, l = c.arm * .5;
+    const ex = sx + A.side * Math.sin(A.a) * u, ey = sy + Math.cos(A.a) * u;
+    const hx = ex + A.side * Math.sin(A.a + A.e) * l, hy = ey + Math.cos(A.a + A.e) * l;
+    limb(sx, sy, ex, ey, c.tw * .24, c.sw); limb(ex, ey, hx, hy, c.tw * .22, c.sw);
+    if (A.item) A.item(hx, hy, A.side);
+    circ(hx, hy, c.hr * .24 + 3, INK); circ(hx, hy, c.hr * .24, c.skin);
+    hands[A.side] = [hx, hy];
+  }
+  // huvud
+  const hx = f * c.hr * .12, hy = headY;
+  if (af < .85) { circ(hx - c.hr * .96, hy + 6, c.hr * .22 + 3, INK); circ(hx - c.hr * .96, hy + 6, c.hr * .22, c.skin); circ(hx + c.hr * .96, hy + 6, c.hr * .22 + 3, INK); circ(hx + c.hr * .96, hy + 6, c.hr * .22, c.skin); }
+  else { circ(hx - fs * c.hr * .88, hy + 6, c.hr * .22 + 3, INK); circ(hx - fs * c.hr * .88, hy + 6, c.hr * .22, c.skin); }
+  hairBack(c, hx, hy, fs, f);
+  circ(hx, hy, c.hr + 3, INK); circ(hx, hy, c.hr, c.skin);
+  face(o, c, hx, hy, f, fs, af);
+  hairFront(c, hx, hy, fs, f, o);
+  if (o.extra) o.extra(hx, hy, hands);
+  g.restore();
+}
+
+function hairBack(c, hx, hy, fs, f) {
+  const r = c.hr;
+  if (c.hs === 'bun') { circ(hx - fs * r * .25, hy - r * 1.02, r * .48 + 4, INK); circ(hx - fs * r * .25, hy - r * 1.02, r * .48, c.hair); line(hx - fs * r * .25 - 30, hy - r * 1.3, hx - fs * r * .25 + 26, hy - r * .8, '#f2c94c', 7); }
+  if (c.hs === 'pony') { ell(hx - fs * r * 1.05, hy + r * .1, r * .3 + 4, r * .55 + 4, INK, fs * .4); ell(hx - fs * r * 1.05, hy + r * .1, r * .3, r * .55, c.hair, fs * .4); }
+}
+function hairFront(c, hx, hy, fs, f, o) {
+  const r = c.hr;
+  g.save();
+  if (c.hs === 'curly') {
+    const pts = [];
+    for (let i = 0; i <= 7; i++) { const a = Math.PI * 1.04 + i / 7 * Math.PI * .92; pts.push([hx + Math.cos(a) * r * .86 - f * 4, hy + Math.sin(a) * r * .86, r * .36]); }
+    pts.push([hx - f * 6, hy - r * 1.12, r * .44], [hx - r * .45 - f * 6, hy - r * 1.02, r * .38], [hx + r * .45 - f * 6, hy - r * 1.02, r * .38], [hx + f * r * .45, hy - r * .62, r * .3]);
+    for (const p of pts) circ(p[0], p[1], p[2] + 4, INK);
+    for (const p of pts) circ(p[0], p[1], p[2], c.hair);
+    circ(hx - r * .2, hy - r * 1.18, r * .12, '#5a3a22');
+  } else if (c.hs === 'spiky') {
+    g.beginPath();
+    const n = 9;
+    for (let i = 0; i <= n * 2; i++) {
+      const a = Math.PI * 1.02 + i / (n * 2) * Math.PI * .96;
+      const rad = i % 2 ? r * 1.42 + (i % 4 === 1 ? r * .12 : 0) : r * .92;
+      g.lineTo(hx + Math.cos(a) * rad - f * 3, hy + Math.sin(a) * rad + 4);
+    }
+    g.lineTo(hx + r * .9, hy - r * .1); g.quadraticCurveTo(hx + f * r * .3, hy - r * 1.0, hx - r * .9, hy - r * .1); g.closePath();
+    g.fillStyle = c.hair; g.fill(); inkS(5);
+    g.beginPath(); g.moveTo(hx + f * r * .1 - 20, hy - r * .55); g.quadraticCurveTo(hx + f * r * .55, hy - r * .55, hx + f * r * .62, hy - r * .2); g.quadraticCurveTo(hx + f * r * .3, hy - r * .42, hx + f * r * .1 - 20, hy - r * .55); g.fillStyle = c.hair; g.fill(); inkS(4);
+  } else if (c.hs === 'bun' || c.hs === 'round' || c.hs === 'pony') {
+    g.beginPath(); g.arc(hx, hy, r + 2, Math.PI * 1.02, Math.PI * 1.98); g.quadraticCurveTo(hx + f * r * .4, hy - r * .35, hx - r * .98, hy - r * .1); g.closePath();
+    g.fillStyle = c.hair; g.fill(); inkS(4);
+  } else if (c.hs === 'cap') {
+    ell(hx - fs * r * .7, hy + r * .1, r * .35, r * .5, c.hair);
+    g.beginPath(); g.arc(hx, hy - r * .2, r * 1.02, Math.PI, 0); g.closePath(); g.fillStyle = '#e8892b'; g.fill(); inkS(5);
+    g.beginPath(); g.ellipse(hx + fs * r * .7 * Math.max(.35, Math.abs(f)), hy - r * .2, r * .75, r * .16, 0, 0, TAU); g.fillStyle = '#c96d17'; g.fill(); inkS(4);
+    circ(hx, hy - r * 1.2, 7, '#c96d17');
+  }
+  g.restore();
+}
+
+function face(o, c, hx, hy, f, fs, af) {
+  const r = c.hr, fx = hx + f * r * .3, ey = hy - r * .04;
+  const eyeMode = o.eyes || 'n';
+  const blinking = eyeMode === 'n' && ((T + c.blink * 1.7) % 4.1) < .11;
+  const lx = o.lx ?? f * .5, ly = o.ly ?? 0;
+  const sp = r * .34;
+  const wide = eyeMode === 'w' ? 1.3 : 1;
+  const ex = [fx - sp * (1 - .2 * af) - (f > 0 ? 0 : 0), fx + sp * (1 - .2 * af)];
+  for (let i = 0; i < 2; i++) {
+    const far = (f > .3 && i === 0) || (f < -.3 && i === 1);
+    const k = far ? .82 : 1, X = ex[i], rx = r * .17 * wide * k, ry = r * .22 * wide * k;
+    if (blinking || eyeMode === 'c') { g.beginPath(); g.moveTo(X - rx, ey); g.quadraticCurveTo(X, ey + ry * .7, X + rx, ey); inkS(5); continue; }
+    if (eyeMode === 'hap') { g.beginPath(); g.moveTo(X - rx, ey + 4); g.quadraticCurveTo(X, ey - ry * 1.1, X + rx, ey + 4); inkS(6); continue; }
+    ell(X, ey, rx + 2.5, ry + 2.5, INK); ell(X, ey, rx, ry, '#fff');
+    const pr = r * .1 * (eyeMode === 'w' ? .75 : 1) * k;
+    circ(X + lx * rx * .5, ey + ly * ry * .5, pr, INK);
+    circ(X + lx * rx * .5 - pr * .35, ey + ly * ry * .5 - pr * .35, pr * .3, '#fff');
+    if (eyeMode === 'h' || eyeMode === 'sly' || eyeMode === 'sad') {
+      g.save(); g.beginPath(); g.ellipse(X, ey, rx + 3, ry + 3, 0, 0, TAU); g.clip();
+      const lid = eyeMode === 'sad' ? .15 : .05;
+      rect(X - rx - 4, ey - ry - 4, rx * 2 + 8, ry + 4 + ry * lid * 2, c.skin);
+      g.restore(); line(X - rx, ey + ry * lid * 2 - 1, X + rx, ey + ry * lid * 2 - 1 + (eyeMode === 'sad' ? (i ? 5 : -5) : 0), INK, 5);
+    }
+  }
+  // ögonbryn
+  const brow = o.brow ?? 0, up = (o.bUp ?? 0) * r * .12 + (eyeMode === 'w' ? r * .1 : 0);
+  for (let i = 0; i < 2; i++) {
+    const X = ex[i], dir = i ? -1 : 1, by = ey - r * .34 - up - (o.raise && i === 1 ? r * .14 : 0);
+    const inner = by + brow * r * .1, outer = by - brow * r * .04;
+    line(X - dir * r * .17, outer, X + dir * r * .12, inner, c.hs === 'cap' ? '#777' : c.hair, 6.5);
+  }
+  if (c.freckles) { for (let i = 0; i < 3; i++) { circ(ex[0] - 6 + i * 7, ey + r * .32 + (i % 2) * 5, 2.6, '#c98a5a'); circ(ex[1] - 6 + i * 7, ey + r * .32 + (i % 2) * 5, 2.6, '#c98a5a'); } }
+  if (o.blush) { const ga = g.globalAlpha; g.globalAlpha = .35 * ga; ell(ex[0] - 4, ey + r * .36, 13, 7, '#ff5a6a'); ell(ex[1] + 4, ey + r * .36, 13, 7, '#ff5a6a'); g.globalAlpha = ga; }
+  // näsa
+  ell(fx + f * r * .14, hy + r * .17, r * .1 + f * f * 3, r * .08, c.skinD);
+  if (c.mustache) { ell(fx - r * .14 + f * 6, hy + r * .34, r * .2, r * .09, '#8d8d8d', -.2); ell(fx + r * .14 + f * 6, hy + r * .34, r * .2, r * .09, '#8d8d8d', .2); }
+  // mun
+  const mx = fx + f * r * .05, my = hy + r * .48 + (c.mustache ? 6 : 0), w = r * .42;
+  let m = o.mouth || 'smile';
+  let open = 0;
+  if ((o.talk ?? isTalking(o.who)) && !o.mouthLock) { open = .25 + .75 * Math.abs(Math.sin(T * 12.5 + c.blink)) * (.6 + .4 * Math.sin(T * 3.1)); m = 'talk'; }
+  g.lineCap = 'round';
+  if (m === 'smile') { g.beginPath(); g.moveTo(mx - w * .8, my - 3); g.quadraticCurveTo(mx, my + r * .2, mx + w * .8, my - 3); inkS(5.5); }
+  else if (m === 'flat') { line(mx - w * .6, my, mx + w * .6, my, INK, 5.5); }
+  else if (m === 'frown') { g.beginPath(); g.moveTo(mx - w * .65, my + 7); g.quadraticCurveTo(mx, my - r * .14, mx + w * .65, my + 7); inkS(5.5); }
+  else if (m === 'wavy') { g.beginPath(); for (let i = 0; i <= 8; i++) g.lineTo(mx - w * .7 + i * w * .175, my + Math.sin(i * 1.6) * 4); inkS(5); }
+  else if (m === 'o') { ell(mx, my + 4, r * .11 + 2, r * .14 + 2, INK); ell(mx, my + 4, r * .1, r * .13, '#5a1f2a'); }
+  else if (m === 'smirk') { g.beginPath(); g.moveTo(mx - w * .6, my + 2); g.quadraticCurveTo(mx + w * .1, my + r * .12, mx + w * .8 * fs, my - 9); inkS(5.5); }
+  else if (m === 'grin' || m === 'open' || m === 'shout' || m === 'talk') {
+    const hh = m === 'talk' ? r * (.06 + .24 * open) : m === 'grin' ? r * .26 : m === 'shout' ? r * .46 : r * .32;
+    const ww = m === 'shout' ? w * .85 : m === 'talk' ? w * .7 : w * .95;
+    g.beginPath();
+    if (m === 'grin') { g.moveTo(mx - ww, my - 4); g.lineTo(mx + ww, my - 4); g.quadraticCurveTo(mx + ww * .9, my + hh * 1.5, mx, my + hh * 1.4); g.quadraticCurveTo(mx - ww * .9, my + hh * 1.5, mx - ww, my - 4); }
+    else g.ellipse(mx, my + hh * .5, ww, hh, 0, 0, TAU);
+    g.fillStyle = '#5a1f2a'; g.fill(); inkS(5);
+    g.save(); g.clip();
+    if (m !== 'talk' || open > .5) rect(mx - ww, my - 6, ww * 2, m === 'grin' ? 13 : 8, '#fff');
+    ell(mx, my + hh * 1.25, ww * .6, hh * .5, '#e5677a');
+    g.restore();
+  }
+  // glasögon
+  if (c.glasses && o.glasses !== false) {
+    g.beginPath(); g.arc(ex[0], ey, r * .27, 0, TAU); g.moveTo(ex[1] + r * .27, ey); g.arc(ex[1], ey, r * .27, 0, TAU);
+    g.moveTo(ex[0] + r * .27, ey); g.lineTo(ex[1] - r * .27, ey); g.strokeStyle = '#2a1b3a'; g.lineWidth = 5; g.stroke();
+  }
+}
+
+// ---------- top-down-figur ----------
+function topP(who, x, y, ang, ph, amp, s = 1, o = {}) {
+  const c = CH[who];
+  g.save(); g.translate(x, y); g.scale(s, s);
+  const ga = g.globalAlpha; g.globalAlpha = .22 * ga; ell(6, 9, 32, 28, '#000'); g.globalAlpha = ga;
+  g.rotate(ang);
+  if (o.lie) g.scale(1.25, .9);
+  const k = Math.sin(ph) * 15 * amp;
+  for (const [fx, fy] of [[k + 4, -11], [-k + 4, 11]]) { ell(fx, fy, 12, 7.5, INK); ell(fx, fy, 10, 6, c.shoe); }
+  for (const [ax, ay] of [[-k * .9 + 2, -27], [k * .9 + 2, 27]]) { circ(ax, ay, 10, INK); circ(ax, ay, 8, c.sw); circ(ax + 7, ay, 5.5, c.skin); }
+  if (c.bag) { rr(-31, -17, 20, 34, 7, '#3da35e', INK, 3); }
+  ell(0, 0, 18, 27, INK); ell(0, 0, 15.5, 24.5, c.sw);
+  circ(3, 0, 18.5, INK); circ(3, 0, 16, c.skin);
+  if (c.hs === 'curly') { for (let i = 0; i < 7; i++) { const a = Math.PI * .45 + i / 6 * Math.PI * 1.1; circ(3 + Math.cos(a) * 9, Math.sin(a) * 9, 8.5, c.hair); } circ(-2, 0, 10, c.hair); }
+  else if (c.hs === 'spiky') { g.beginPath(); for (let i = 0; i < 14; i++) { const a = Math.PI * .4 + i / 13 * Math.PI * 1.2, rr2 = i % 2 ? 22 : 13; g.lineTo(2 + Math.cos(a) * rr2, Math.sin(a) * rr2); } g.lineTo(6, 0); g.closePath(); g.fillStyle = c.hair; g.fill(); inkS(2.5); }
+  else if (c.hs === 'cap') { circ(1, 0, 15, '#e8892b'); ell(13, 0, 8, 13, '#c96d17'); }
+  else { g.beginPath(); g.arc(3, 0, 16, Math.PI * .5, Math.PI * 1.5); g.closePath(); g.fillStyle = c.hair; g.fill(); if (c.hs === 'bun' || c.hs === 'pony') circ(-12, 0, 8, c.hair); }
+  g.restore();
+}
+
+// ===================== REKVISITA =====================
+function potato(x, y, r, rot = 0, seed = 1, shine = 0) {
+  g.save(); g.translate(x, y); g.rotate(rot);
+  g.beginPath();
+  for (let i = 0; i <= 16; i++) { const a = i / 16 * TAU, w = 1 + (R(seed + i % 16) - .5) * .16; g.lineTo(Math.cos(a) * r * 1.25 * w, Math.sin(a) * r * w); }
+  g.closePath(); g.fillStyle = '#c99a58'; g.fill(); g.strokeStyle = '#6d4a24'; g.lineWidth = Math.max(1.5, r * .09); g.stroke();
+  ell(-r * .35, -r * .35, r * .45, r * .22, 'rgba(255,240,200,.45)', -.3);
+  for (let i = 0; i < 3; i++) circ((R(seed * 3 + i) - .5) * r * 1.6, (R(seed * 5 + i) - .5) * r * 1.1, r * .07, '#8a6232');
+  if (shine) glow(-r * .3, -r * .4, r * 1.2, 'rgba(255,240,180,.9)', shine);
+  g.restore();
+}
+// Potatiskungen. o: {s, mouth(0-1), bulge, eyes:'n'|'w'|'c'|'sly', cup, crumbs}
+function king(x, y, o = {}) {
+  const s = o.s ?? 1, b = o.bulge ?? 1, m = o.mouth ?? 0;
+  g.save(); g.translate(x, y); g.scale(s, s);
+  // bricka (tronen)
+  rr(-230, -10, 460, 40, 12, '#9aa6b8', INK, 6); rr(-210, -4, 140, 24, 6, '#b8c3d3'); rr(-60, -4, 120, 24, 6, '#b8c3d3'); rr(70, -4, 140, 24, 6, '#b8c3d3');
+  // mantel
+  g.beginPath(); g.moveTo(-150 * b, -40); g.quadraticCurveTo(-210 * b, -230 * b, -60, -300 * b); g.lineTo(60, -300 * b); g.quadraticCurveTo(210 * b, -230 * b, 150 * b, -40); g.closePath();
+  g.fillStyle = '#b3243b'; g.fill(); inkS(6);
+  for (let i = -3; i <= 3; i++) { circ(i * 44 * b, -38, 13, '#fff'); circ(i * 44 * b, -38, 4, INK); }
+  g.save(); g.translate(0, -150 * b); if (o.wob) g.rotate(Math.sin(T * 9) * o.wob);
+  // kropp
+  g.beginPath(); for (let i = 0; i <= 24; i++) { const a = i / 24 * TAU, w = 1 + (R(40 + i % 24) - .5) * .08; g.lineTo(Math.cos(a) * 150 * b * w, Math.sin(a) * 125 * b * w); }
+  g.closePath(); g.fillStyle = '#cf9f5c'; g.fill(); g.strokeStyle = INK; g.lineWidth = 7; g.stroke();
+  ell(-60 * b, -55 * b, 55 * b, 25 * b, 'rgba(255,240,200,.4)', -.4);
+  for (let i = 0; i < 6; i++) circ((R(90 + i) - .5) * 220 * b, (R(70 + i) - .3) * 150 * b, 6, '#8a6232');
+  // ögon
+  const em = o.eyes || 'n';
+  for (const sx of [-1, 1]) {
+    const X = sx * 50 * b, Y = -30 * b;
+    if (em === 'c') { g.beginPath(); g.moveTo(X - 24, Y); g.quadraticCurveTo(X, Y + 16, X + 24, Y); inkS(7); continue; }
+    ell(X, Y, 28, 32 * (em === 'w' ? 1.2 : 1), INK); ell(X, Y, 24, 28 * (em === 'w' ? 1.2 : 1), '#fff');
+    circ(X + (o.lx || 0) * 8, Y + 4 + (o.ly || 0) * 8, 12, INK); circ(X - 4, Y - 2, 4, '#fff');
+    if (em === 'sly' || em === 'h') { g.save(); g.beginPath(); g.ellipse(X, Y, 27, 31, 0, 0, TAU); g.clip(); rect(X - 30, Y - 34, 60, 30, '#cf9f5c'); g.restore(); line(X - 25, Y - 4, X + 25, Y - 4, INK, 6); }
+    line(X - sx * 30, Y - 50 - (o.browUp || 0), X + sx * 22, Y - 38 + (o.angry ? 10 : 0) - (o.browUp || 0), INK, 9);
+  }
+  // mun
+  if (m > .05) { ell(0, 55 * b, 70 * (.6 + m * .4), 60 * m, INK); ell(0, 55 * b, 62 * (.6 + m * .4), 52 * m, '#5a1f2a'); ell(0, 55 * b + 30 * m, 40 * m, 18 * m, '#e5677a'); rect(-40 * m, 55 * b - 52 * m, 80 * m, 12 * m, '#fff'); }
+  else { g.beginPath(); g.moveTo(-50, 50 * b); g.quadraticCurveTo(0, (o.smile ? 80 : 62) * b, 50, 50 * b); inkS(7); }
+  // krona
+  g.save(); g.translate(0, -120 * b);
+  g.beginPath(); g.moveTo(-80, 10); g.lineTo(-90, -70); g.lineTo(-45, -25); g.lineTo(0, -90); g.lineTo(45, -25); g.lineTo(90, -70); g.lineTo(80, 10); g.closePath();
+  g.fillStyle = '#f4c430'; g.fill(); inkS(6);
+  circ(0, -10, 13, '#e2304d'); circ(-50, -5, 9, '#2f7de1'); circ(50, -5, 9, '#2fbf6a'); circ(0, -90, 9, '#fff3b0'); circ(-90, -70, 8, '#fff3b0'); circ(90, -70, 8, '#fff3b0');
+  g.restore();
+  // små armar + gaffel som spira
+  limb(135 * b, 10, 200 * b, -40, 10, '#cf9f5c');
+  if (!o.cup) { line(205 * b, -40, 205 * b, -190, '#d0d6e0', 9); for (let i = -1; i <= 1; i++) line(205 * b + i * 14, -190, 205 * b + i * 14, -235, '#d0d6e0', 6); line(191 * b, -190, 219 * b, -190, '#d0d6e0', 8); }
+  limb(-135 * b, 10, -195 * b, -20, 10, '#cf9f5c');
+  if (o.cup) { g.save(); g.translate(195 * b, -55); rr(-18, -26, 36, 34, 6, '#fff', INK, 4); g.beginPath(); g.arc(20, -10, 10, -1.2, 1.2); inkS(4); ell(0, -26, 16, 5, '#6b3d1e'); for (let i = 0; i < 2; i++) { g.globalAlpha = .5; g.beginPath(); g.moveTo(-6 + i * 12, -36); g.bezierCurveTo(-14 + i * 12, -50 - Math.sin(T * 3 + i) * 6, 4 + i * 12, -60, -4 + i * 12, -78); g.strokeStyle = '#fff'; g.lineWidth = 4; g.stroke(); g.globalAlpha = 1; } g.restore(); }
+  g.restore(); g.restore();
+}
+function token(x, y, r, glw = 0, rot = 0) {
+  if (glw) glow(x, y, r * 3, 'rgba(255,214,90,.9)', glw);
+  g.save(); g.translate(x, y); g.rotate(rot);
+  circ(0, 0, r + 4, INK); circ(0, 0, r, '#f2b21e'); circ(0, 0, r * .8, '#ffd34d');
+  g.beginPath(); g.arc(0, -r * .1, r * .32, Math.PI, 0); g.lineTo(r * .4, r * .28); g.lineTo(-r * .4, r * .28); g.closePath(); g.fillStyle = '#c47d00'; g.fill();
+  circ(0, r * .36, r * .1, '#c47d00');
+  if (r > 18) text('RAST', 0, r * .6, r * .26, '#8a5200');
+  ell(-r * .35, -r * .45, r * .25, r * .1, 'rgba(255,255,255,.6)', -.5);
+  g.restore();
+}
+function bucket(x, y, s = 1, eyes = 0) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  g.globalAlpha = .2; ell(0, 2, 80, 12, '#000'); g.globalAlpha = 1;
+  line(30, -60, 80, -230, '#b07b45', 12); ell(84, -238, 10, 6, '#7a522a');
+  g.beginPath(); g.moveTo(-60, -110); g.lineTo(60, -110); g.lineTo(48, 0); g.lineTo(-48, 0); g.closePath(); g.fillStyle = '#ffcf33'; g.fill(); inkS(5);
+  rr(-66, -122, 132, 18, 6, '#f2b400', INK, 4); rect(-50, -80, 100, 10, '#e0a800');
+  circ(-45, 6, 9, INK); circ(45, 6, 9, INK);
+  ell(25, -112, 40, 10, '#d9e6ee');
+  if (eyes) { g.globalAlpha = eyes; ell(-18, -55, 9, 12, '#fff'); ell(14, -55, 9, 12, '#fff'); circ(-15, -53, 4, INK); circ(17, -53, 4, INK); g.globalAlpha = 1; }
+  g.restore();
+}
+function bucketTop(x, y, rot = 0, s = 1) {
+  g.save(); g.translate(x, y); g.rotate(rot); g.scale(s, s);
+  g.globalAlpha = .2; circ(6, 8, 48, '#000'); g.globalAlpha = 1;
+  circ(0, 0, 46, INK); circ(0, 0, 42, '#ffcf33'); circ(0, 0, 32, '#9fd0e8'); circ(-8, -8, 8, 'rgba(255,255,255,.6)');
+  line(10, 0, 70, -10, '#b07b45', 9);
+  g.restore();
+}
+function plane(x, y, s = 1, rot = 0) {
+  g.save(); g.translate(x, y); g.rotate(rot); g.scale(s, s);
+  g.beginPath(); g.moveTo(60, 0); g.lineTo(-50, -34); g.lineTo(-30, 0); g.lineTo(-50, 26); g.closePath(); g.fillStyle = '#fff'; g.fill(); inkS(4);
+  g.beginPath(); g.moveTo(60, 0); g.lineTo(-30, 0); g.lineTo(-40, 12); g.closePath(); g.fillStyle = '#dfe6f2'; g.fill(); inkS(3);
+  g.restore();
+}
+function gear(cx, cy, r, teeth, ang, col, dark) {
+  g.save(); g.translate(cx, cy); g.rotate(ang);
+  g.beginPath();
+  const tw = TAU / teeth;
+  for (let i = 0; i < teeth; i++) {
+    const a = i * tw;
+    g.lineTo(Math.cos(a) * r * .86, Math.sin(a) * r * .86);
+    g.lineTo(Math.cos(a + tw * .12) * r, Math.sin(a + tw * .12) * r);
+    g.lineTo(Math.cos(a + tw * .45) * r, Math.sin(a + tw * .45) * r);
+    g.lineTo(Math.cos(a + tw * .57) * r * .86, Math.sin(a + tw * .57) * r * .86);
+  }
+  g.closePath(); g.fillStyle = col; g.fill(); inkS(Math.max(3, r * .025));
+  circ(0, 0, r * .62, dark);
+  for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; circ(Math.cos(a) * r * .42, Math.sin(a) * r * .42, r * .1, '#1b1426'); }
+  circ(0, 0, r * .18, col); circ(0, 0, r * .07, INK);
+  g.restore();
+}
+function book(x, y, w, h, col, rot = 0) {
+  g.save(); g.translate(x, y); g.rotate(rot);
+  rr(-w / 2, -h / 2, w, h, 4, col, INK, 4); rect(-w / 2 + 6, -h / 2 + 10, w - 12, 6, 'rgba(255,255,255,.5)'); rect(-w / 2 + 6, h / 2 - 16, w - 12, 6, 'rgba(255,255,255,.5)');
+  g.restore();
+}
+function marker(x, y, s = 1, rot = 0) {
+  g.save(); g.translate(x, y); g.rotate(rot); g.scale(s, s);
+  rr(-16, -110, 32, 150, 10, '#2b2b2b', INK, 4); rr(-16, -110, 32, 40, 10, '#1e6fe0', INK, 4); g.beginPath(); g.moveTo(-10, 40); g.lineTo(10, 40); g.lineTo(0, 64); g.closePath(); g.fillStyle = '#1e6fe0'; g.fill();
+  g.restore();
+}
+function device(x, y, s = 1, label = 'FÖRLÄNG RESTEN', pressed = 0, lit = 0, col = '#e23b3b') {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  rr(-70, -40, 140, 80, 16, '#6c7486', INK, 5); rr(-62, -32, 124, 64, 12, '#848da2');
+  if (lit) glow(0, -40, 90, 'rgba(255,90,90,.8)', lit);
+  ell(0, -36 + pressed * 10, 40, 14, '#9c1f1f'); g.beginPath(); g.ellipse(0, -44 + pressed * 12, 38, 26 - pressed * 10, 0, Math.PI, 0); g.closePath(); g.fillStyle = col; g.fill(); inkS(4);
+  ell(-12, -56 + pressed * 12, 12, 5, 'rgba(255,255,255,.6)');
+  g.save(); g.rotate(-.03); rr(-64, 6, 128, 26, 3, '#f5f0d8', INK, 2.5);
+  g.font = `900 13px ${FONT}`; const lw = g.measureText(label).width;
+  text(label, 0, 19.5, Math.min(13, 13 * 116 / lw), '#2a2a2a', 'center', 900); g.restore();
+  g.restore();
+}
+function backpackSide(x, y, s = 1, open = 0) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  rr(-80, -150, 160, 150, 40, '#3da35e', INK, 6); rr(-55, -80, 110, 60, 16, '#f39a33', INK, 5); line(-50, -50, 50, -50, '#c46f12', 4);
+  g.beginPath(); g.arc(0, -150, 46, Math.PI, 0); inkS(10); g.strokeStyle = '#2d7a45'; g.lineWidth = 6; g.stroke();
+  if (open) { ell(0, -146, 70 * open, 14 * open, '#1a2b20'); }
+  g.restore();
+}
+function chairSide(x, y, s = 1, spin = 0) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  for (const wx of [-70, 0, 70]) { circ(wx, -12, 14, INK); circ(wx, -12, 9, '#555'); line(wx, -12, wx + Math.cos(spin * 20 + wx) * 8, -12 + Math.sin(spin * 20 + wx) * 8, '#999', 3); }
+  line(-70, -26, 70, -26, '#333', 10); line(0, -26, 0, -110, '#777', 12);
+  rr(-80, -140, 160, 34, 14, '#2d2d3a', INK, 5);
+  rr(-96, -300, 34, 180, 14, '#2d2d3a', INK, 5); line(-62, -150, -79, -130, '#333', 10);
+  g.restore();
+}
+function cartTop(x, y, s = 1) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  g.globalAlpha = .2; rr(-90, -55, 190, 120, 10, '#000'); g.globalAlpha = 1;
+  rr(-95, -60, 190, 120, 12, '#2f6fd1', INK, 5); circ(-45, 0, 34, '#ffcf33'); circ(-45, 0, 25, '#9fd0e8'); rr(10, -45, 70, 90, 8, '#d8dde6', INK, 3);
+  for (let i = 0; i < 3; i++) rr(18, -38 + i * 28, 54, 20, 4, ['#ff6f91', '#7bd88f', '#ffd84a'][i]);
+  line(-95, -60, -120, -75, '#888', 8);
+  g.restore();
+}
+function cartSide(x, y, s = 1) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  circ(-90, -15, 16, INK); circ(90, -15, 16, INK);
+  rr(-130, -170, 260, 140, 12, '#2f6fd1', INK, 5); rect(-120, -160, 240, 8, '#5a8fe6');
+  bucket(-60, -30, .6); rr(30, -230, 80, 70, 8, '#d8dde6', INK, 3);
+  line(-130, -170, -170, -230, '#888', 9);
+  g.restore();
+}
+function speakerBox(x, y, s = 1, talk = 0, red = 0) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  rr(-120, -90, 240, 180, 26, '#4b4f5e', INK, 6); rr(-104, -74, 208, 148, 18, '#363a47');
+  for (let i = 0; i < 7; i++) for (let j = 0; j < 5; j++) circ(-78 + i * 26, -52 + j * 26, 7, '#1d2029');
+  circ(92, 66, 7, red > 0 ? `rgba(255,${60 + 60 * (1 - red)},60,1)` : '#3fdc6c');
+  if (red) glow(92, 66, 60, 'rgba(255,40,40,.9)', red);
+  g.restore();
+  if (talk > 0) {
+    for (let i = 0; i < 3; i++) {
+      const k = ((T * 1.6 + i / 3) % 1), rad = (150 + k * 220) * s;
+      g.globalAlpha = (1 - k) * .7 * talk; g.strokeStyle = '#fff'; g.lineWidth = 9 * s;
+      g.beginPath(); g.arc(x, y, rad, -.5, .5); g.stroke(); g.beginPath(); g.arc(x, y, rad, Math.PI - .5, Math.PI + .5); g.stroke();
+    }
+    g.globalAlpha = 1;
+  }
+}
+function clockFace(cx, cy, r, secs, opt = {}) {
+  // secs = sekunder efter 09:00:00
+  const s = secs % 60, mins = secs / 60, hrs = 9 + mins / 60;
+  g.save();
+  g.globalAlpha = .25; circ(cx + r * .06, cy + r * .08, r * 1.08, '#000'); g.globalAlpha = 1;
+  circ(cx, cy, r * 1.1, INK); circ(cx, cy, r * 1.04, opt.rim || '#e9484f'); circ(cx, cy, r * .95, '#fffdf4');
+  for (let i = 0; i < 60; i++) { const a = i / 60 * TAU, big = i % 5 === 0; line(cx + Math.sin(a) * r * (big ? .78 : .86), cy - Math.cos(a) * r * (big ? .78 : .86), cx + Math.sin(a) * r * .9, cy - Math.cos(a) * r * .9, INK, big ? r * .04 : r * .015); }
+  if (r > 120) for (let i = 1; i <= 12; i++) { const a = i / 12 * TAU; text(String(i), cx + Math.sin(a) * r * .64, cy - Math.cos(a) * r * .64, r * .15, INK); }
+  const ha = (hrs % 12) / 12 * TAU, ma = (mins % 60) / 60 * TAU, sa = s / 60 * TAU;
+  line(cx, cy, cx + Math.sin(ha) * r * .45, cy - Math.cos(ha) * r * .45, INK, r * .07);
+  line(cx, cy, cx + Math.sin(ma) * r * .7, cy - Math.cos(ma) * r * .7, INK, r * .05);
+  line(cx - Math.sin(sa) * r * .15, cy + Math.cos(sa) * r * .15, cx + Math.sin(sa) * r * .82, cy - Math.cos(sa) * r * .82, '#e2304d', r * .022);
+  circ(cx, cy, r * .05, '#e2304d');
+  g.restore();
+}
+// klockans tid som funktion av filmtiden (sekunder efter 09:00)
+function clockSecs(t) {
+  const base = 59 * 60;
+  if (t < 27.45) return base + clamp(t - 6, 0, 40);
+  if (t < 249.5) return base + 21.45 - (t - 27.45) * 1.4;
+  return base + 52 + clamp(t - 250, 0, 8);
+}
+function schoolBell(x, y, s, ring) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  rr(-30, -150, 60, 40, 8, '#666', INK, 4);
+  const sh = ring ? Math.sin(T * 60) * 4 * ring : 0;
+  g.translate(sh, 0);
+  g.beginPath(); g.arc(0, 0, 120, Math.PI, 0); g.lineTo(130, 20); g.lineTo(-130, 20); g.closePath(); g.fillStyle = '#e9b52c'; g.fill(); inkS(6);
+  ell(-40, -60, 30, 14, 'rgba(255,255,255,.5)', -.5);
+  line(0, -110, 0, -120, INK, 8);
+  const ha = ring ? Math.sin(T * 50) * .5 * ring : 0;
+  g.save(); g.translate(0, 70); g.rotate(ha); line(0, -60, 0, 40, '#555', 10); circ(0, 46, 20, '#555'); g.restore();
+  g.restore();
+}
+// ===================== MILJÖER =====================
+// ---------- korridor, sidovy (världsbredd ca 4600) ----------
+const CORR = {
+  doors: [[1350, 'SLÖJD', '#c0763a'], [1700, 'VAKTMÄSTARE', '#6f7f8f'], [2600, '5B', '#c0763a'], [3400, 'BIBLIOTEK', '#8a5a9a']],
+  lockers: [[150, 1000], [2250, 2530], [2900, 3330], [3700, 4500]],
+};
+function locker(x, y, w, h, col, open = 0) {
+  rr(x, y, w - 4, h, 4, col, INK, 4);
+  for (let i = 0; i < 4; i++) rect(x + 14, y + 22 + i * 12, w - 32, 5, 'rgba(0,0,0,.25)');
+  rr(x + w - 22, y + h * .45, 8, 34, 3, '#e6e6e6');
+  if (open) { rr(x - 2, y, (w - 4) * (1 - open * .8), h, 4, col, INK, 4); }
+}
+function poster(x, y, t1, t2, rot, col) {
+  g.save(); g.translate(x, y); g.rotate(rot);
+  g.globalAlpha = .25; rect(-86, -106, 180, 220, '#000'); g.globalAlpha = 1;
+  rr(-90, -110, 180, 220, 4, col, INK, 4);
+  text(t1, 0, -50, t1.length > 8 ? 26 : 34, '#fff', 'center', 900); text(t2, 0, 0, 22, '#fff', 'center', 800);
+  circ(-60, 60, 18, '#fff7'); circ(50, 70, 28, '#fff5'); circ(0, -98, 7, '#e33');
+  g.restore();
+}
+function doorSide(x, label, col, open = 0, inside = null) {
+  rect(x - 16, 392, 232, 440, '#7a5a3a'); rect(x, 410, 200, 420, '#2a2033');
+  if (open > 0) { g.save(); g.beginPath(); g.rect(x, 410, 200, 420); g.clip(); glow(x + 100, 620, 300, 'rgba(255,230,160,.6)'); if (inside) inside(); g.restore(); }
+  const w = 200 * (1 - open * .82);
+  rr(x, 410, w, 420, 4, col, INK, 4);
+  if (w > 60) { rr(x + w * .2, 450, w * .6, 120, 4, '#bfe6ff', INK, 3); circ(x + w - 24, 640, 10, '#e8d27a'); }
+  rr(x + 20, 350, 160, 42, 6, '#fff', INK, 3); text(label, x + 100, 371, label.length > 8 ? 20 : 26, INK, 'center', 900);
+}
+function corridorSide(o = {}) {
+  const x0 = -400, x1 = 4800;
+  rect(x0, 0, x1 - x0, 840, '#f4dfa0');
+  rect(x0, 0, x1 - x0, 80, '#d8c07a'); rect(x0, 80, x1 - x0, 8, '#bca460');
+  rect(x0, 590, x1 - x0, 250, '#7cc4a4'); rect(x0, 584, x1 - x0, 10, '#5aa588');
+  rect(x0, 830, x1 - x0, 250, '#cdb994');
+  for (let x = Math.floor(x0 / 120) * 120; x < x1; x += 120) { rect(x, 830, 60, 125, 'rgba(255,255,255,.1)'); rect(x + 60, 955, 60, 125, 'rgba(255,255,255,.1)'); }
+  line(x0, 832, x1, 832, '#9c8a68', 6);
+  for (let x = 0; x < x1; x += 520) { rr(x - 90, 88, 180, 20, 8, '#fffbe6', INK, 3); glow(x, 120, 260, 'rgba(255,250,210,.35)'); }
+  let k = 0;
+  for (const [a, b] of CORR.lockers) for (let x = a; x < b; x += 76) locker(x, 450, 76, 380, ['#3d7fd9', '#e0544e', '#3d7fd9', '#f1b53b'][(k++) % 4], 0);
+  poster(1150, 360, 'SKOLDISCO', 'FREDAG 18', .16, '#ff5f9e');
+  poster(2120, 360, 'TVÄTTA', 'HÄNDERNA', 0, '#3aa0f0');
+  poster(3640, 330, 'TYST', 'LÄSNING', -.04, '#9d64e8');
+  for (const d of CORR.doors) doorSide(d[0], d[1], d[2], (o.open && o.open[d[1]]) || 0, o.inside && o.inside[d[1]]);
+  for (const rx of [1080, 2560, 3340]) { rr(rx - 30, 700, 60, 110, 6, '#e8e8e8', INK, 3); for (let i = 0; i < 4; i++) rect(rx - 22 + i * 13, 708, 6, 94, '#cfcfcf'); }
+}
+
+// ---------- klassrum, sidovy ----------
+const CL = { raken: 1050, wille: 1380, froken: 560 };
+function deskSide(x, y, s = 1) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  rr(-130, -10, 260, 24, 6, '#d9a46a', INK, 4); rect(-120, 14, 240, 90, '#b9824a'); g.beginPath(); g.rect(-120, 14, 240, 90); inkS(4);
+  line(-110, 104, -110, 150, INK, 10); line(110, 104, 110, 150, INK, 10);
+  g.restore();
+}
+function classroom(o = {}) {
+  rect(0, 0, W, 840, '#bfe3f2'); rect(0, 0, W, 60, '#a4cfe3'); rect(0, 600, W, 240, '#9fcfe5');
+  rect(0, 830, W, 250, '#c99a6a'); for (let y = 840; y < H; y += 40) line(0, y, W, y, '#b88957', 3);
+  // dörr vänster
+  rect(10, 400, 190, 432, '#7a5a3a'); rect(24, 414, 162, 418, '#2a2033');
+  const dw = 162 * (1 - (o.door || 0) * .8); rr(24, 414, dw, 418, 4, '#c0763a', INK, 4); if (dw > 60) rr(24 + dw * .2, 450, dw * .6, 110, 4, '#bfe6ff', INK, 3);
+  // tavla
+  rr(230, 170, 660, 360, 10, '#fdfdfd', INK, 8); rect(230, 524, 660, 14, '#9aa');
+  text('SISTA UPPGIFTEN', 560, 225, 40, '#2a4fa0', 'center', 900);
+  text('7 × 8 + 9 = ?', 560, 320, 64, '#d0343a', 'center', 900);
+  text('Visa uträkning!', 560, 410, 34, '#2a7a4a', 'center', 700);
+  g.save(); g.translate(800, 470); g.rotate(-.2); text(':-)', 0, 0, 34, '#2a4fa0'); g.restore();
+  // klocka
+  clockFace(1470, 220, 78, (typeof CLOCK_FN === 'function' ? CLOCK_FN : clockSecs)(T));
+  rr(1420, 312, 100, 34, 6, '#ffe36b', INK, 3); text('RAST 10:00', 1470, 329, 17, INK, 'center', 900);
+  // högtalare
+  speakerBox(1195, 150, .45);
+  // fönster
+  rr(1640, 160, 250, 360, 8, '#8fd3ff', INK, 6); circ(1820, 230, 36, '#ffe26b'); ell(1720, 470, 70, 50, '#5cc067'); rect(1716, 470, 10, 50, '#7a5a3a');
+  line(1765, 160, 1765, 520, INK, 6); line(1640, 340, 1890, 340, INK, 6);
+  // frökens kateder
+  if (!o.noFrokenDesk) { rr(180, 720, 300, 24, 6, '#a86f3a', INK, 4); rect(195, 744, 270, 90, '#8a5a2e'); g.beginPath(); g.rect(195, 744, 270, 90); inkS(4); rr(220, 690, 90, 30, 4, '#f4f4f4', INK, 3); circ(420, 700, 18, '#e2304d'); line(420, 682, 426, 668, '#3a8a3a', 5); }
+}
+// bakre rad elever (sitter)
+function backRow(o = {}) {
+  const kids = [['k1', 960], ['k2', 1260], ['k3', 1580]];
+  for (const [k, x] of kids) {
+    const look = o.look ?? -1;
+    const extra = {};
+    if (k === 'k3' && o.throwA !== undefined) { extra.aR = o.throwA; extra.eR = .3; }
+    person({ who: k, x, y: 815, s: .78, face: look, noLegs: true, eyes: o.eyes || 'n', mouth: o.mouth || 'flat', lx: o.lx, ly: o.ly, ...extra });
+    deskSide(x, 760, .78);
+  }
+}
+function seatedKid(who, x, opt) {
+  person({ who, x, y: 985, s: 1, noLegs: true, ...opt });
+}
+function frontDesk(x) { deskSide(x, 905, 1.02); }
+
+// ---------- korridor top-down (loopen) ----------
+function corridorTop(o = {}) {
+  rect(0, 0, W, H, '#2c2540');
+  // vägg-band
+  rect(0, 210, W, 90, '#f4dfa0'); rect(0, 780, W, 90, '#f4dfa0');
+  line(0, 300, W, 300, INK, 5); line(0, 780, W, 780, INK, 5);
+  // golv
+  for (let x = 120; x < 1800; x += 60) for (let y = 300; y < 780; y += 60) rect(x, y, 60, 60, ((x + y) / 60) % 2 ? '#eadcbf' : '#dfcfae');
+  // skåp längs väggarna
+  for (let x = 200; x < 1760; x += 70) { if (Math.abs(x - 960) < 90) continue; rr(x, 262, 64, 38, 3, ['#3d7fd9', '#e0544e', '#f1b53b'][(x / 70 | 0) % 3], INK, 3); rr(x, 780, 64, 38, 3, ['#f1b53b', '#3d7fd9', '#e0544e'][(x / 70 | 0) % 3], INK, 3); }
+  // ändväggar med dörrar
+  rect(0, 210, 120, 660, '#f4dfa0'); rect(1800, 210, 120, 660, '#f4dfa0');
+  line(120, 300, 120, 780, INK, 5); line(1800, 300, 1800, 780, INK, 5);
+  for (const [dx, lab] of [[60, '5B'], [1860, '5B']]) { rr(dx - 26, 430, 52, 220, 4, '#c0763a', INK, 4); g.save(); g.translate(dx, 540); g.rotate(dx < 900 ? -Math.PI / 2 : Math.PI / 2); text(lab, 0, 0, 34, '#fff', 'center', 900); g.restore(); }
+  // taklampor-skuggor
+  for (let x = 300; x < 1800; x += 400) glow(x, 540, 200, 'rgba(255,250,220,.3)');
+}
+
+// ---------- jakt-korridor top-down (lång värld 0..6200) ----------
+const CH_PATH = [[146.3, 260, 540], [147.6, 900, 540], [148.6, 1200, 560], [149.3, 1420, 560], [150.0, 1900, 540], [150.5, 2280, 500], [150.9, 2400, 260], [151.2, 2520, 60], [151.9, 3200, 60], [152.2, 3340, 250], [152.6, 3460, 520], [153.05, 3780, 540], [158.6, 3800, 540], [159.6, 4900, 540], [160.5, 5560, 540], [162, 5600, 540]];
+const LOCK_IN = [650, 1050, 1650, 2050, 3600, 4100, 4600, 5100];
+function passTime(x) { for (let i = 0; i < CH_PATH.length - 1; i++) { const a = CH_PATH[i], b = CH_PATH[i + 1]; if (b[1] >= x && a[1] <= x && b[1] !== a[1]) return a[0] + (x - a[1]) / (b[1] - a[1]) * (b[0] - a[0]); } return 999; }
+const LOCK_T = LOCK_IN.map(passTime);
+function chaseWorld(t, o = {}) {
+  rect(-400, -700, 7200, 2200, '#2c2540');
+  // klassrummet ovanför
+  rect(2280, -260, 1180, 470, '#bfe3f2'); for (let x = 2300; x < 3440; x += 70) for (let y = -240; y < 200; y += 70) rect(x, y, 70, 70, ((x + y) / 70 | 0) % 2 ? '#c9a06f' : '#bf955f');
+  g.beginPath(); g.rect(2280, -260, 1180, 470); inkS(8);
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) { const dx = 2420 + i * 250, dy = -170 + j * 150; rr(dx, dy, 150, 60, 6, '#d9a46a', INK, 4); }
+  rr(2330, -240, 400, 30, 4, '#fdfdfd', INK, 4);
+  // korridor
+  rect(-400, 210, 7200, 90, '#f4dfa0'); rect(-400, 780, 7200, 90, '#f4dfa0');
+  for (let x = -400; x < 6800; x += 60) for (let y = 300; y < 780; y += 60) rect(x, y, 60, 60, ((x + y) / 60 | 0) % 2 ? '#eadcbf' : '#dfcfae');
+  // städskrubb
+  rect(1340, 40, 170, 180, '#5d6b7a'); g.beginPath(); g.rect(1340, 40, 170, 180); inkS(5); rect(1350, 200, 150, 110, '#9aa6b8'); text('STÄD', 1425, 70, 26, '#fff', 'center', 900);
+  // dörrar till klassrummet (öppningar i övre väggen)
+  rect(2340, 200, 140, 110, '#c9a06f'); rect(3280, 200, 140, 110, '#c9a06f');
+  line(-400, 300, 2340, 300, INK, 5); line(2480, 300, 3280, 300, INK, 5); line(3420, 300, 6800, 300, INK, 5); line(-400, 780, 6800, 780, INK, 5);
+  // skåp längs väggar
+  for (let x = -300; x < 5800; x += 70) {
+    if (x > 2300 && x < 3440) continue;
+    rr(x, 262, 64, 38, 3, ['#3d7fd9', '#e0544e', '#f1b53b'][((x + 300) / 70 | 0) % 3], INK, 3);
+    rr(x, 780, 64, 38, 3, ['#f1b53b', '#3d7fd9', '#e0544e'][((x + 300) / 70 | 0) % 3], INK, 3);
+  }
+  // återvändsgränd
+  rect(5800, 200, 1000, 680, '#f4dfa0'); line(5800, 300, 5800, 780, INK, 6);
+  // spärrvägg av skåp
+  const bl = o.restore ? 1 - ss(prog(t, 252.9, 254.4)) : ss(prog(t, 144.2, 145.6));
+  if (bl > 0) { g.globalAlpha = ss(bl * 1.6); for (let i = 0; i < 7; i++) { const yy = 300 + i * 69; const off = (1 - bl) * (i < 3.5 ? -300 : 300); rr(2640, yy + off, 70, 66, 4, ['#e0544e', '#3d7fd9', '#f1b53b'][i % 3], INK, 4); } g.globalAlpha = 1; }
+  // inglidande skåp bakom
+  for (let i = 0; i < LOCK_IN.length; i++) {
+    const x = LOCK_IN[i];
+    let p = ss(prog(t, LOCK_T[i] + .25, LOCK_T[i] + .85));
+    if (t > 143.6 && t < 147 && i < 2) p = Math.max(p, ss(prog(t, 144.4 + i * .5, 145.4 + i * .5)) * .45);
+    if (o.restore) p = 1 - ss(prog(t, 253.0 + i * .12, 253.8 + i * .12));
+    if (p <= 0) continue;
+    g.globalAlpha = ss(p * 3); rr(x, 300 + p * 170 - 40, 66, 110, 4, '#3d7fd9', INK, 4); rr(x, 780 - p * 170 - 70, 66, 110, 4, '#e0544e', INK, 4); g.globalAlpha = 1;
+    if (p > .05 && p < .95) { g.globalAlpha = .4; line(x + 33, 300, x + 33, 300 + p * 170 - 40, '#fff', 4); g.globalAlpha = 1; }
+  }
+  // städvagnen
+  const cy = o.restore ? kf(t, [[253, 690], [254.8, 150]]) : kf(t, [[147.8, 150], [150.0, 690]], lin);
+  cartTop(1420, cy, 1.1);
+  // kontorsstolen
+  if (t < 153.05 || o.restore) { g.save(); g.translate(3830, 560); circ(0, 0, 40, INK); circ(0, 0, 34, '#2d2d3a'); for (let i = 0; i < 5; i++) { const a = i / 5 * TAU; line(0, 0, Math.cos(a) * 52, Math.sin(a) * 52, '#555', 8); } g.restore(); }
+  // bromsspår
+  if (t > 159.6 && !o.restore) { g.globalAlpha = .5 * (1 - prog(t, 175, 176)); for (const dy of [-20, 20]) line(4900, 540 + dy, Math.min(5560, lerp(4900, 5560, prog(t, 159.6, 160.5))), 540 + dy, '#3a2a20', 10); g.globalAlpha = 1; }
+}
+
+// ---------- matsal, sidovy ----------
+function matsalSide(o = {}) {
+  rect(0, 0, W, 840, '#c9ecd6');
+  for (let x = 0; x < W; x += 60) line(x, 330, x, 840, '#b2dcc1', 3);
+  for (let y = 330; y < 840; y += 60) line(0, y, W, y, '#b2dcc1', 3);
+  rect(0, 0, W, 320, '#e9f6c9'); rect(0, 316, W, 14, '#8cc49f');
+  rect(0, 830, W, 250, '#e3cfa8'); for (let x = 0; x < W; x += 90) rect(x, 830, 45, 250, 'rgba(0,0,0,.04)');
+  // dörr
+  rect(40, 400, 220, 432, '#7a5a3a'); rect(56, 414, 188, 418, '#2a2033');
+  const dw = 188 * (1 - (o.door || 0) * .8); rr(56, 414, dw, 418, 4, '#c0763a', INK, 4); if (dw > 60) rr(56 + dw * .2, 450, dw * .6, 110, 4, '#bfe6ff', INK, 3);
+  // matsedel
+  rr(360, 90, 420, 210, 8, '#2f3d36', '#7a5a3a', 12);
+  text('MATSEDEL', 570, 130, 32, '#fff', 'center', 900); text('TISDAG:', 570, 185, 28, '#ffe36b', 'center', 800); text('Fiskpinnar', 570, 235, 36, '#fff', 'center', 700);
+  // fönster
+  for (const wx of [900, 1200, 1500]) { rr(wx, 90, 230, 190, 8, '#9fdcff', INK, 6); line(wx + 115, 90, wx + 115, 280, INK, 5); }
+  // serveringsdisk
+  rr(1700, 560, 260, 280, 6, '#c7ccd6', INK, 5); rect(1700, 540, 260, 24, '#9aa3b4');
+  for (let i = 0; i < 3; i++) { g.globalAlpha = .35; g.beginPath(); g.moveTo(1740 + i * 70, 530); g.bezierCurveTo(1720 + i * 70, 490 - Math.sin(T * 2 + i) * 8, 1760 + i * 70, 460, 1740 + i * 70, 420); g.strokeStyle = '#fff'; g.lineWidth = 8; g.stroke(); g.globalAlpha = 1; }
+  // bakre bord
+  rr(380, 640, 1240, 22, 6, '#e8a65a', INK, 4); line(420, 662, 420, 770, INK, 9); line(1580, 662, 1580, 770, INK, 9);
+}
+function longTable(x0 = 420, x1 = 1640, y = 760) {
+  rr(x0, y, x1 - x0, 30, 6, '#f0b064', INK, 5); rect(x0 + 10, y + 30, x1 - x0 - 20, 16, '#c88a44');
+  line(x0 + 40, y + 46, x0 + 40, 900, INK, 12); line(x1 - 40, y + 46, x1 - 40, 900, INK, 12);
+}
+// potatisar som ligger på bordet i sidovy
+function tablePotatoes(x0, x1, y, count, eaten, seed = 1) {
+  for (let i = 0; i < count; i++) {
+    if (i < eaten) continue;
+    const px = x0 + R(i * 1.3 + seed) * (x1 - x0), py = y - 12 - R(i * 2.1 + seed) * 22;
+    potato(px, py, 13 + R(i) * 6, R(i * 5) * 3, i + seed);
+  }
+}
+// matsal top-down
+const TP_TABLES = [[260, 330], [260, 600], [260, 870]];
+function potatoesTop(n) { // deterministiska platser
+  const arr = [];
+  for (let i = 0; i < n; i++) { const tb = TP_TABLES[i % 3]; arr.push([tb[0] + 30 + R(i * 1.11) * 1340, tb[1] - 60 + R(i * 2.37) * 120, 12 + R(i * 3.3) * 6, R(i) * 6]); }
+  return arr;
+}
+const POTS = potatoesTop(330);
+function matsalTop() {
+  rect(0, 0, W, H, '#e3cfa8'); for (let x = 0; x < W; x += 80) for (let y = 0; y < H; y += 80) if (((x + y) / 80) % 2) rect(x, y, 80, 80, 'rgba(0,0,0,.04)');
+  for (const [x, y] of TP_TABLES) { g.globalAlpha = .2; rr(x + 10, y - 70, 1400, 160, 10, '#000'); g.globalAlpha = 1; rr(x, y - 80, 1400, 160, 10, '#f0b064', INK, 5); }
+  rect(0, 0, W, 40, '#c9ecd6'); line(0, 40, W, 40, INK, 5);
+}
+
+// ---------- bibliotek ----------
+const LIB_SHELVES = [[520, 140, 60, 380], [820, 140, 60, 380], [1120, 140, 60, 380], [520, 640, 60, 340], [820, 640, 60, 340], [1120, 640, 60, 340], [1420, 640, 60, 340]];
+function libraryTop(t, shift = 0) {
+  rect(0, 0, W, H, '#6e3444');
+  for (let x = 0; x < W; x += 90) for (let y = 0; y < H; y += 90) { if (((x + y) / 90) % 2) rect(x, y, 90, 90, 'rgba(255,255,255,.04)'); circ(x + 45, y + 45, 6, 'rgba(255,220,150,.08)'); }
+  rect(0, 0, W, 50, '#4a2a22'); line(0, 50, W, 50, INK, 5);
+  LIB_SHELVES.forEach((s, i) => {
+    const dx = shift * Math.sin(i * 1.9 + t * 3) * 220, dy = shift * Math.cos(i * 1.3 + t * 2.4) * 80;
+    const x = s[0] + dx, y = s[1] + dy;
+    g.globalAlpha = .25; rr(x + 8, y + 10, s[2], s[3], 6, '#000'); g.globalAlpha = 1;
+    rr(x, y, s[2], s[3], 6, '#7a4a2a', INK, 5);
+    for (let k = 0; k < s[3] / 22 - 1; k++) rect(x + 8, y + 10 + k * 22, s[2] - 16, 16, ['#e0544e', '#3d7fd9', '#f1b53b', '#58b84a', '#9d64e8'][(k + i) % 5]);
+  });
+  // bord med brickan
+  rr(1500, 170, 300, 170, 10, '#c88a44', INK, 5); circ(1540, 380, 26, '#a46a34'); circ(1760, 380, 26, '#a46a34');
+  // entré
+  rect(160, 1030, 220, 50, '#e8d9b0'); text('ENTRÉ', 270, 1055, 26, INK, 'center', 900);
+  rr(420, 940, 70, 90, 6, '#f5ecd0', INK, 4); text('TYST', 455, 985, 18, '#c0303a', 'center', 900);
+  // lampor
+  for (const [x, y] of [[300, 300], [1000, 560], [1650, 600]]) glow(x, y, 260, 'rgba(255,220,140,.35)');
+}
+function librarySide(o = {}) {
+  rect(0, 0, W, 860, '#5b3a2e'); rect(0, 0, W, 50, '#3e271f');
+  for (let s = 0; s < 6; s++) {
+    const x = 40 + s * 320, w = 290;
+    rr(x, 90, w, 720, 6, '#7a4a2a', INK, 6);
+    for (let r = 0; r < 5; r++) {
+      const y = 110 + r * 140;
+      rect(x + 10, y + 120, w - 20, 14, '#5a3420');
+      let bx = x + 14, k = 0;
+      while (bx < x + w - 26) { const bw = 18 + R(s * 50 + r * 9 + k) * 18, bh = 80 + R(s * 31 + r * 7 + k) * 36; if (!(o.gap && s === o.gap[0] && r === o.gap[1] && k === 4)) rr(bx, y + 120 - bh, bw, bh, 3, ['#e0544e', '#3d7fd9', '#f1b53b', '#58b84a', '#9d64e8', '#ff7aa8'][(s + r * 2 + k) % 6], INK, 2.5); bx += bw + 2; k++; }
+    }
+  }
+  rect(0, 850, W, 230, '#7c2f3d'); for (let x = 0; x < W; x += 100) circ(x + 50, 960, 10, 'rgba(255,220,150,.12)');
+  line(0, 852, W, 852, INK, 6);
+  glow(960, 300, 700, 'rgba(255,220,150,.25)');
+}
+function readingTable(x0, x1, y) {
+  rr(x0, y, x1 - x0, 28, 6, '#b5793e', INK, 5); line(x0 + 30, y + 28, x0 + 30, 860, INK, 12); line(x1 - 30, y + 28, x1 - 30, 860, INK, 12);
+  g.save(); g.translate(x0 + 120, y); line(0, 0, 0, -70, '#c9a227', 8); g.beginPath(); g.moveTo(-50, -60); g.lineTo(50, -60); g.lineTo(34, -100); g.lineTo(-34, -100); g.closePath(); g.fillStyle = '#2f7a4a'; g.fill(); inkS(4); glow(0, -40, 120, 'rgba(255,230,150,.5)'); g.restore();
+}
+function libSign(x, y, s = 1) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  rr(-420, -220, 840, 440, 18, '#f5ecd0', INK, 10); rr(-400, -200, 800, 400, 12, null, '#c9a26a', 6);
+  text('BIBLIOTEKET', 0, -130, 52, '#7a4a2a', 'center', 900);
+  text('MINSTA LJUD', 0, -20, 86, '#c0303a', 'center', 900);
+  text('STARTAR OM RUMMET', 0, 80, 62, '#c0303a', 'center', 900);
+  circ(-330, 150, 30, '#7a4a2a'); line(-330, 120, -330, 180, '#f5ecd0', 6);
+  text('Tack för att du är tyst.', 30, 158, 30, '#7a4a2a', 'center', 600);
+  g.restore();
+}
+
+// ---------- klockrummet ----------
+let GEAR_ROT = 0;
+function gearAngle(t) {
+  // integrerad vinkel för stora kugghjul (positiv = rätt håll)
+  let a = 0;
+  const seg = (t0, t1, v) => { a += clamp(t - t0, 0, t1 - t0) * v; };
+  seg(175, 225.5, -.12);            // fastnad: kryper baklänges
+  seg(225.5, 228, -.9);             // knappen: fel håll
+  seg(228, 246.2, -2.6);            // snurrar vilt fel håll
+  a += -ss(prog(t, 246.2, 247.6)) * 1.2; // bromsar in
+  if (t >= 249.5) a += eout(prog(t, 249.5, 249.75)) * (TAU / 24); // ett enda tick framåt
+  a += clamp(t - 250, 0, 20) * .08;
+  return a;
+}
+function clockRoom(t, o = {}) {
+  rect(0, 0, W, H, '#231c33');
+  glow(960, 400, 1100, 'rgba(255,170,80,.22)');
+  const a = gearAngle(t);
+  gear(300, 260, 300, 24, a, '#b98a3a', '#7a5a26');
+  gear(760, 140, 190, 16, -a * 300 / 190 + .1, '#c9a24a', '#8a6a2a');
+  gear(1200, 330, 360, 28, a * .8, '#a87a34', '#6d4e20');
+  gear(1640, 160, 220, 18, -a * 1.3, '#c9a24a', '#8a6a2a');
+  gear(1780, 520, 160, 14, a * 1.8, '#b98a3a', '#7a5a26');
+  gear(80, 640, 170, 14, -a * 1.7, '#a87a34', '#6d4e20');
+  // jätteklocka i mitten
+  clockFace(1200, 330, 170, clockSecs(t), { rim: '#c9a24a' });
+  // rör
+  for (const [x, w] of [[480, 26], [520, 18], [1460, 30]]) rect(x, 0, w, 880, '#6d5a7a');
+  g.globalAlpha = .3; rect(0, 0, W, H, '#1a1028'); g.globalAlpha = 1;
+  // golv
+  rect(0, 880, W, 200, '#3a3248'); for (let x = 0; x < W; x += 60) line(x, 880, x - 40, H, '#2a2438', 4); line(0, 882, W, 882, INK, 6);
+  // spakpanel
+  rr(230, 600, 170, 230, 10, '#5c6478', INK, 5); rr(250, 620, 130, 40, 6, '#f5f0d8', INK, 3); text('NORMAL', 315, 632, 20, INK, 'center', 900); text('TISDAG', 315, 650, 20, INK, 'center', 900);
+  const lv = o.lever || 0; g.save(); g.translate(315, 740); rr(-12, -40, 24, 100, 6, '#2a2a33'); g.rotate(-.7 + lv * 1.4); line(0, 0, 0, -80, '#ccc', 12); circ(0, -86, 16, '#e2304d'); g.restore();
+  line(400, 760, 560, 880, '#2a2438', 10);
+  // pedestal med fack
+  rr(560, 700, 260, 180, 10, '#6c7486', INK, 5); rr(540, 680, 300, 30, 8, '#848da2', INK, 4);
+  for (const [i, sx] of [[0, 630], [1, 750]]) { circ(sx, 760, 42, INK); circ(sx, 760, 36, '#1b1426'); if ((o.slots || 0) > i) { token(sx, 760, 34, .3 + .2 * Math.sin(t * 3 + i)); } }
+  // huvudknappen
+  g.save(); g.translate(1500, 880);
+  rr(-80, -90, 160, 90, 10, '#2a2a33', INK, 5); for (let i = 0; i < 6; i++) { g.save(); g.beginPath(); g.rect(-80, -90, 160, 26); g.clip(); line(-80 + i * 36, -64, -54 + i * 36, -90, '#f1c40f', 14); g.restore(); }
+  const pr = o.press || 0; ell(0, -94, 64, 16, '#7a1010'); g.beginPath(); g.ellipse(0, -94 + pr * 12, 56, 30 - pr * 12, 0, Math.PI, 0); g.closePath(); g.fillStyle = '#e23b3b'; g.fill(); inkS(5); ell(-20, -112 + pr * 20, 16, 6, 'rgba(255,255,255,.5)');
+  g.restore();
+  // skärm
+  screenPanel(1650, 330, .5, o.screen || 'idle', t);
+}
+function screenPanel(x, y, s, mode, t) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  rr(-300, -200, 600, 400, 30, '#7d8496', INK, 8); rr(-260, -165, 520, 330, 20, '#0d2a1a');
+  g.beginPath(); rrect(-260, -165, 520, 330, 20); g.save(); g.clip();
+  for (let yy = -165; yy < 165; yy += 8) rect(-260, yy, 520, 3, 'rgba(0,0,0,.25)');
+  const gc = '#6dff9a';
+  if (mode === 'idle' || mode === 'talk') {
+    for (let i = 0; i < 26; i++) { const hh = mode === 'talk' ? (10 + Math.abs(Math.sin(t * 9 + i * .7)) * 90 * (isTalking('Systemet') ? 1 : .1)) : 6; rect(-230 + i * 18, -hh / 2, 10, hh, gc); }
+  } else if (mode === 'confirm' || mode === 'sure') {
+    text(mode === 'confirm' ? 'AVSLUTA LEKTION?' : 'ÄR NI SÄKRA?', 0, -70, 44, gc, 'center', 900);
+    rr(-200, 20, 170, 80, 10, gc); text('JA', -115, 60, 44, '#0d2a1a', 'center', 900);
+    rr(30, 20, 170, 80, 10, null, gc, 5); text('NEJ', 115, 60, 44, gc, 'center', 900);
+  } else if (mode === 'survey') {
+    text('BETYGSÄTT', 0, -100, 40, gc, 'center', 900); text('ER UPPLEVELSE', 0, -55, 40, gc, 'center', 900);
+    for (let i = 0; i < 5; i++) { const sx = -200 + i * 100; circ(sx, 60, 36, 'rgba(109,255,154,.15)'); g.beginPath(); for (let k = 0; k < 10; k++) { const rad = k % 2 ? 14 : 32, an = -Math.PI / 2 + k * TAU / 10; g.lineTo(sx + Math.cos(an) * rad, 60 + Math.sin(an) * rad); } g.closePath(); g.fillStyle = gc; g.fill(); }
+  } else if (mode === 'off') { rect(-260, -165, 520, 330, '#081a10'); }
+  else if (mode === 'ok') { text('NORMAL TISDAG', 0, -10, 46, gc, 'center', 900); text('ÅTERSTÄLLD', 0, 50, 40, gc, 'center', 900); }
+  g.restore(); g.restore();
+}
+
+// ---------- skolgård / exteriör ----------
+function yardTop(t) {
+  rect(-2000, -2000, 6000, 5000, '#7cbf5a');
+  for (let i = 0; i < 60; i++) { const x = -1800 + R(i * 4.1) * 5600, y = -1800 + R(i * 2.7) * 4600; if (x > -300 && x < 2300 && y > -200 && y < 1300) continue; tree(x, y, 50 + R(i) * 40); }
+  rect(-1600, 1300, 5200, 160, '#5d5d68'); for (let x = -1600; x < 3600; x += 160) rect(x, 1375, 80, 10, '#e8e8e8');
+  rect(2350, -1800, 160, 3300, '#5d5d68');
+  for (let i = 0; i < 8; i++) { const hx = -1400 + i * 380; house(hx, 1600, i); house(hx + 100, -900 + (i % 2) * 120, i + 3); }
+  // skolgård
+  rr(-260, -160, 2420, 1360, 20, '#9a9aa8', INK, 6);
+  // skolbyggnad
+  rr(-200, -140, 2300, 380, 10, '#c8553d', INK, 8); for (let i = 0; i < 9; i++) rect(-160 + i * 255, -110, 190, 300, '#b84a34'); rect(-200, 180, 2300, 60, '#8f3a2a');
+  text('SKOLAN', 950, 40, 90, '#ffe9d6', 'center', 900);
+  // fotbollsplan
+  rr(1300, 380, 760, 760, 10, '#58a83a', '#fff', 8); line(1300, 760, 2060, 760, '#fff', 6); g.beginPath(); g.arc(1680, 760, 90, 0, TAU); g.strokeStyle = '#fff'; g.lineWidth = 6; g.stroke();
+  // hage
+  for (let i = 0; i < 6; i++) rr(240 + (i % 2) * 70, 700 - i * 70, 70, 70, 2, null, '#ffe36b', 6);
+  text('1', 275, 735, 30, '#ffe36b'); text('5', 345, 455, 30, '#ffe36b');
+  for (const [x, y] of [[700, 950], [950, 520], [-100, 900]]) tree(x, y, 80);
+  rr(560, 1080, 220, 50, 8, '#a8743a', INK, 4); rr(860, 1080, 220, 50, 8, '#a8743a', INK, 4);
+}
+function tree(x, y, r) { g.globalAlpha = .2; circ(x + r * .2, y + r * .25, r, '#000'); g.globalAlpha = 1; circ(x, y, r + 5, INK); circ(x, y, r, '#3f9a45'); circ(x - r * .3, y - r * .3, r * .45, '#5cbf5a'); }
+function house(x, y, i) { rr(x, y, 220, 180, 8, ['#e8d8b0', '#c9e2f2', '#f2c9c9', '#d8f2c9'][i % 4], INK, 5); g.beginPath(); g.moveTo(x - 10, y + 90); g.lineTo(x + 110, y - 20); g.lineTo(x + 230, y + 90); g.closePath(); g.fillStyle = '#a3423a'; g.globalAlpha = .9; g.fill(); g.globalAlpha = 1; inkS(4); }
+function brickWall(x0, x1, y0, y1, col = '#c8553d') {
+  rect(x0, y0, x1 - x0, y1 - y0, col);
+  for (let y = y0, r = 0; y < y1; y += 40, r++) { line(x0, y, x1, y, 'rgba(80,30,20,.35)', 3); for (let x = x0 + (r % 2) * 50; x < x1; x += 100) line(x, y, x, y + 40, 'rgba(80,30,20,.35)', 3); }
+}
+function yardSide() {
+  const sky = g.createLinearGradient(0, 0, 0, 700); sky.addColorStop(0, '#6cc6ff'); sky.addColorStop(1, '#c6ecff'); g.fillStyle = sky; g.fillRect(-400, 0, W + 800, 760);
+  circ(1650, 160, 70, '#ffe26b'); glow(1650, 160, 260, 'rgba(255,240,150,.5)');
+  for (let i = 0; i < 4; i++) { const cx = ((i * 520 + T * 18) % 2600) - 300; ell(cx, 140 + i * 30, 110, 36, '#fff'); ell(cx + 60, 120 + i * 30, 70, 40, '#fff'); }
+  rect(-400, 620, W + 800, 140, '#7cbf5a');
+  for (let x = -400; x < W + 400; x += 60) { line(x, 560, x, 760, '#e8e8e8', 6); } line(-400, 590, W + 400, 590, '#e8e8e8', 6); line(-400, 650, W + 400, 650, '#e8e8e8', 6);
+  tree(250, 500, 130); line(250, 560, 250, 760, '#7a5a3a', 30); tree(250, 470, 120);
+  rect(-400, 760, W + 800, 320, '#9a9aa8'); for (let i = 0; i < 6; i++) rr(500 + i * 90, 900, 80, 60, 2, null, '#ffe36b', 5);
+}
+function benchSide(x, y) { rr(x - 220, y - 70, 440, 26, 6, '#a8743a', INK, 5); rr(x - 220, y - 150, 440, 22, 6, '#a8743a', INK, 5); line(x - 180, y - 44, x - 180, y, INK, 12); line(x + 180, y - 44, x + 180, y, INK, 12); line(x - 190, y - 128, x - 190, y - 70, INK, 10); line(x + 190, y - 128, x + 190, y - 70, INK, 10); }
+// ===================== AVSNITT 2: REKVISITA OCH MILJÖER =====================
+const CLOCK_FN = t => 80 * 60 + t;   // 10:20 och framåt
+// ---------- laptop ----------
+// sedd bakifrån på bänken (locket mot kameran)
+function laptopBack(x, y, s = 1, o = {}) {
+  const lid = o.lid ?? 1;
+  g.save(); g.translate(x, y); g.scale(s, s);
+  if (lid > .02 && o.glow) glow(0, -60 * lid, 150, o.glow, .5 * lid);
+  rr(-86, -8, 172, 12, 4, '#9aa3b4', INK, 4);
+  const h = 70 * lid;
+  if (h > 2) {
+    rr(-80, -8 - h, 160, h, 9, '#b8bfcc', INK, 5);
+    if (lid > .6) { rr(-24, -8 - h * .66, 48, 20, 5, o.stickerCol || '#ffd84a'); text(o.sticker || '5B', 0, -8 - h * .66 + 10, o.sticker && o.sticker.length > 3 ? 8 : 12, INK, 'center', 900); }
+  }
+  g.restore();
+}
+// sedd framifrån (närbilder). draw(t) ritar skärmen i koordinater -500..500 x -315..315
+function laptopFront(cx, cy, s, draw, o = {}) {
+  const lid = o.lid ?? 1;
+  g.save(); g.translate(cx, cy); g.scale(s, s);
+  g.beginPath(); g.moveTo(-560, 330); g.lineTo(560, 330); g.lineTo(660, 440); g.lineTo(-660, 440); g.closePath(); g.fillStyle = '#9aa3b4'; g.fill(); inkS(7);
+  for (let r = 0; r < 3; r++) for (let k = 0; k < 14; k++) { const w = 60 + r * 4, x = -470 - r * 20 + k * (w + 6); rr(x, 342 + r * 22, w, 16, 3, '#3a3f4c'); }
+  rr(-120, 410, 240, 26, 6, '#b8bfcc', INK, 3);
+  g.save(); g.translate(0, 330); g.scale(1, Math.max(.001, lid)); g.translate(0, -330);
+  rr(-545, -380, 1090, 712, 32, '#2a2d36', INK, 8);
+  g.save(); rrect(-500, -335, 1000, 630, 8); g.clip(); if (lid > .05) draw(o.t ?? T); else rect(-500, -335, 1000, 630, '#05060a'); g.restore();
+  if (lid > .05) { g.globalAlpha = .07; g.fillStyle = '#fff'; g.beginPath(); g.moveTo(-500, -335); g.lineTo(-180, -335); g.lineTo(-420, 295); g.lineTo(-500, 295); g.closePath(); g.fill(); g.globalAlpha = 1; }
+  circ(0, -358, 6, '#111');
+  if (o.sticker) { g.save(); g.translate(330, 312); g.rotate(-.05); rr(-150, -20, 300, 40, 6, '#ff5f5f', INK, 4); text('INGA LOTTERIER', 0, 1, 24, '#fff', 'center', 900); g.restore(); }
+  g.restore(); g.restore();
+}
+// ---------- skärminnehåll ----------
+function mathApp(t) {
+  rect(-500, -335, 1000, 630, '#f4f8ff'); rect(-500, -335, 1000, 70, '#2f6fd1');
+  text('MATTEAPPEN', -330, -300, 34, '#fff', 'center', 900); circ(440, -300, 20, '#ffd84a');
+  const tasks = ['12 + 7 =', '9 × 3 =', '45 − 18 =', '64 ÷ 8 ='];
+  tasks.forEach((q, i) => { text(q, -200, -170 + i * 110, 54, '#22304a', 'right', 800); rr(-170, -205 + i * 110, 170, 70, 10, '#fff', '#9fb6dd', 4); if (i === 0) text('19', -85, -170, 50, '#2a7a4a', 'center', 900); });
+  text('Uppgift 1 av 40', 300, 250, 30, '#7a86a0', 'center', 700);
+}
+const CONF_COLS = ['#ff5f9e', '#ffd84a', '#3fdc6c', '#5ab0ff', '#c58bff'];
+function confetti(t, n = 60, area = [1000, 630], speed = 160) {
+  for (let i = 0; i < n; i++) {
+    const x = -area[0] / 2 + R(i * 3.7) * area[0] + Math.sin(t * 2 + i) * 20;
+    const y = ((R(i * 5.3) * area[1] + t * speed * (.6 + R(i))) % area[1]) - area[1] / 2;
+    g.save(); g.translate(x, y); g.rotate(t * 3 + i); rect(-7, -4, 14, 8, CONF_COLS[i % 5]); g.restore();
+  }
+}
+function popupWin(x, y, w, h, title, body, o = {}) {
+  g.save(); g.translate(x, y);
+  g.globalAlpha = .3; rr(-w / 2 + 12, -h / 2 + 14, w, h, 18, '#000'); g.globalAlpha = 1;
+  rr(-w / 2, -h / 2, w, h, 18, o.bg || '#fff6d6', INK, 6);
+  rr(-w / 2, -h / 2, w, 46, 18, o.bar || '#ff5f9e'); rect(-w / 2, -h / 2 + 28, w, 18, o.bar || '#ff5f9e'); line(-w / 2, -h / 2 + 46, w / 2, -h / 2 + 46, INK, 5);
+  rr(w / 2 - 40, -h / 2 + 9, 28, 28, 6, '#fff', INK, 3); line(w / 2 - 32, -h / 2 + 17, w / 2 - 20, -h / 2 + 29, INK, 4); line(w / 2 - 20, -h / 2 + 17, w / 2 - 32, -h / 2 + 29, INK, 4);
+  text(title, 0, -h / 2 + (body ? 92 : h / 2 + 24), Math.min(o.ts || 46, (w - 40) / Math.max(4, title.length) * 1.65), o.tc || '#d6246e', 'center', 900);
+  if (body) text(body, 0, -h / 2 + (o.by || 150), Math.min(o.bs || 26, (w - 40) / Math.max(6, body.length) * 1.9), '#3a2a4a', 'center', 700);
+  if (o.btn) { const k = 1 + .05 * Math.sin(T * 6); g.save(); g.translate(0, h / 2 - 50); g.scale(k, k); rr(-120, -28, 240, 56, 28, '#3fdc6c', INK, 5); text(o.btn, 0, 1, 26, '#0d3a1a', 'center', 900); g.restore(); }
+  g.restore();
+}
+function popupUI(t, title = 'GRATTIS!', body = 'Du har vunnit en chans i SKOLLOTTERIET!', btn = 'SNURRA NU') {
+  mathApp(t);
+  g.globalAlpha = .55; rect(-500, -335, 1000, 630, '#1a0d2a'); g.globalAlpha = 1;
+  confetti(t, 50);
+  popupWin(0, 10, 760, 460, title, body, { btn, ts: 84, bs: 34, by: 210 });
+  text('*villkor gäller. typ alltid.', 0, 265, 18, '#d8c8ff', 'center', 600);
+}
+const WHEEL_LAB = ['GULDPENNA', 'NITLOTT', 'TRON', 'NITLOTT', 'EGEN SKOLA', 'NITLOTT', 'STJÄRNA', 'NITLOTT'];
+const WHEEL_COL = ['#ffd84a', '#5a4a7a', '#3fdc6c', '#5a4a7a', '#ff5f9e', '#5a4a7a', '#5ab0ff', '#5a4a7a'];
+const SEG = TAU / 8;
+// hjulsnurr: [start, slut, varv, målsegment]
+const SPINS = [[26.8, 30.6, 5, 0], [49.5, 50.7, 2, 2], [74.8, 78.2, 7, 4]];
+function wheelAt(t) {
+  let ang = -Math.PI / 2 - .5 * SEG;
+  for (const [a, b, turns, k] of SPINS) { if (t < a) break; const target = -Math.PI / 2 - (k + .5) * SEG; ang = target - TAU * turns * (1 - eout(prog(t, a, b))); }
+  return ang;
+}
+function segUnder(ang) { return Math.floor(((((-Math.PI / 2 - ang) % TAU) + TAU) % TAU) / SEG); }
+function lotteryWheel(cx, cy, r, ang, hi = -1) {
+  g.save(); g.translate(cx, cy);
+  circ(0, 0, r + 22, INK); circ(0, 0, r + 16, '#f4c430');
+  for (let i = 0; i < 24; i++) { const a = i / 24 * TAU; circ(Math.cos(a) * (r + 8), Math.sin(a) * (r + 8), 5, (Math.floor(T * 4) + i) % 2 ? '#fff6b0' : '#c47d00'); }
+  for (let i = 0; i < 8; i++) {
+    g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, r, ang + i * SEG, ang + (i + 1) * SEG); g.closePath();
+    g.fillStyle = WHEEL_COL[i]; g.fill(); g.strokeStyle = INK; g.lineWidth = 4; g.stroke();
+    if (i === hi) { g.globalAlpha = .35 + .25 * Math.sin(T * 8); g.fillStyle = '#fff'; g.fill(); g.globalAlpha = 1; }
+    g.save(); g.rotate(ang + (i + .5) * SEG); text(WHEEL_LAB[i], r * .6, 0, r * .1, WHEEL_COL[i] === '#5a4a7a' ? '#cfc4e8' : INK, 'center', 900); g.restore();
+  }
+  circ(0, 0, r * .16, INK); circ(0, 0, r * .13, '#f4c430'); circ(-r * .04, -r * .04, r * .04, '#fff6b0');
+  g.restore();
+  g.beginPath(); g.moveTo(cx - 26, cy - r - 40); g.lineTo(cx + 26, cy - r - 40); g.lineTo(cx, cy - r + 14); g.closePath(); g.fillStyle = '#e2304d'; g.fill(); inkS(5);
+}
+function wheelUI(t, o = {}) {
+  const gr = g.createRadialGradient(0, 0, 50, 0, 0, 600); gr.addColorStop(0, '#5b2a9a'); gr.addColorStop(1, '#1a0d2a'); g.fillStyle = gr; g.fillRect(-500, -335, 1000, 630);
+  rays(0, 20, 16, '#ffd84a', .08, .3, 700);
+  const ang = wheelAt(t), done = SPINS.some(s => t >= s[1] && t < s[1] + 6);
+  lotteryWheel(0, 20, 255, ang, done ? segUnder(ang) : -1);
+  if (o.banner && done) { const k = eout(prog(t, o.bt, o.bt + .3)); g.save(); g.translate(0, 230); g.scale(k, k); rr(-330, -44, 660, 88, 20, '#ffd84a', INK, 6); text(o.banner, 0, 2, 46, '#7a2a00', 'center', 900); g.restore(); confetti(t, 40); }
+}
+function payUI(t, item, t0) {
+  rect(-500, -335, 1000, 630, '#141a2e');
+  text('SKOLLOTTERIET', 0, -260, 32, '#ffd84a', 'center', 900);
+  rr(-360, -190, 720, 380, 20, '#1f2846', '#3a4a7a', 5);
+  text('BETALNING MOTTAGEN', 0, -130, 44, '#7dff9a', 'center', 900);
+  text(item, 0, -30, item.length > 14 ? 50 : 62, '#fff', 'center', 900);
+  const p = eout(prog(t, t0, t0 + 1.4));
+  rr(-280, 60, 560, 30, 15, '#0d1222'); rr(-280, 60, 560 * p, 30, 15, '#7dff9a');
+  text(p < 1 ? 'Bearbetar…' : 'Tack för ditt köp! :)', 0, 130, 30, '#b8c4e8', 'center', 700);
+}
+function insideUI(t) {
+  const gr = g.createLinearGradient(0, -335, 0, 295); gr.addColorStop(0, '#120a2a'); gr.addColorStop(1, '#3a1460'); g.fillStyle = gr; g.fillRect(-500, -335, 1000, 630);
+  g.globalAlpha = .5; for (let i = -6; i <= 6; i++) line(i * 80, 120, i * 260, 300, '#ff5fd2', 3); for (let k = 0; k < 5; k++) line(-500, 130 + k * k * 9, 500, 130 + k * k * 9, '#5ff2ff', 3); g.globalAlpha = 1;
+  const knock = Math.max(0, Math.sin(t * 9)) * (t % 2 < 1 ? 1 : 0);
+  person({ who: 'wille', x: 0, y: 260, s: .9, face: 0, eyes: 'w', mouth: 'open', aR: 2.3 + knock * .3, eR: 1.2 - knock * .5, aL: 2.6 + Math.sin(t * 7) * .3, eL: .3 });
+  g.save(); g.translate(240, -170); rr(-120, -50, 240, 100, 30, '#fff', INK, 5); g.beginPath(); g.moveTo(-60, 40); g.lineTo(-90, 90); g.lineTo(-20, 48); g.closePath(); g.fillStyle = '#fff'; g.fill(); text('HALLÅ?!', 0, 0, 40, INK, 'center', 900); g.restore();
+}
+function ep3UI(t) {
+  mathApp(t); g.globalAlpha = .6; rect(-500, -335, 1000, 630, '#0d0620'); g.globalAlpha = 1;
+  confetti(t, 40);
+  popupWin(0, 0, 780, 470, 'AVSNITT 3 ÄR UPPLÅST!', 'Klicka här för att se vad som händer sen', { bar: '#9d64e8', tc: '#6a2bd0', btn: 'KLICKA HÄR', ts: 70, bs: 34, by: 210 });
+}
+
+// ---------- vinster ----------
+function goldPencil(x, y, s = 1, rot = 0, spark = 1) {
+  g.save(); g.translate(x, y); g.rotate(rot); g.scale(s, s);
+  if (spark) glow(0, 0, 120, 'rgba(255,220,90,.7)', .6 * spark);
+  rr(-80, -14, 140, 28, 6, '#f4c430', INK, 4); rect(-60, -14, 6, 28, '#c48f00'); rect(20, -14, 6, 28, '#c48f00');
+  g.beginPath(); g.moveTo(60, -14); g.lineTo(96, 0); g.lineTo(60, 14); g.closePath(); g.fillStyle = '#f2d39a'; g.fill(); inkS(4);
+  g.beginPath(); g.moveTo(84, -5); g.lineTo(96, 0); g.lineTo(84, 5); g.closePath(); g.fillStyle = INK; g.fill();
+  rr(-96, -14, 20, 28, 4, '#ff9db5', INK, 4);
+  ell(-30, -6, 30, 4, 'rgba(255,255,255,.6)');
+  g.restore();
+}
+function eraser(x, y, s = 1, rot = 0) {
+  g.save(); g.translate(x, y); g.rotate(rot); g.scale(s, s);
+  rr(-34, -16, 68, 32, 8, '#ff8fb0', INK, 4); rect(-6, -16, 26, 32, '#5ab0ff'); g.beginPath(); g.rect(-6, -16, 26, 32); inkS(3);
+  g.restore();
+}
+function throne(x, y, s = 1, a = 1) {
+  if (a <= 0) return;
+  g.save(); g.translate(x, y); g.scale(s * a, s * a); g.globalAlpha = Math.min(1, a * 1.2);
+  rr(-120, -330, 240, 260, 40, '#f4c430', INK, 7); rr(-90, -300, 180, 200, 30, '#b3243b');
+  g.beginPath(); g.moveTo(-90, -330); g.lineTo(-100, -390); g.lineTo(-45, -350); g.lineTo(0, -410); g.lineTo(45, -350); g.lineTo(100, -390); g.lineTo(90, -330); g.closePath(); g.fillStyle = '#f4c430'; g.fill(); inkS(6);
+  circ(0, -360, 12, '#e2304d'); circ(-60, -260, 10, '#5ab0ff'); circ(60, -260, 10, '#3fdc6c');
+  rr(-150, -130, 50, 30, 10, '#f4c430', INK, 5); rr(100, -130, 50, 30, 10, '#f4c430', INK, 5);
+  rr(-130, -100, 260, 50, 16, '#b3243b', INK, 6);
+  line(0, -50, 0, -10, '#c48f00', 16); for (const k of [-1, 1]) { line(0, -10, k * 90, 6, '#c48f00', 12); circ(k * 90, 10, 13, INK); }
+  g.restore(); g.globalAlpha = 1;
+}
+function miniSchool(x, y, s = 1) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  rr(-110, -90, 220, 90, 6, '#c8553d', INK, 5); g.beginPath(); g.moveTo(-125, -88); g.lineTo(0, -150); g.lineTo(125, -88); g.closePath(); g.fillStyle = '#8f3a2a'; g.fill(); inkS(5);
+  for (let i = 0; i < 4; i++) rr(-90 + i * 48, -70, 30, 30, 3, '#9fdcff', INK, 2); rr(-16, -36, 32, 36, 3, '#5a3420', INK, 2);
+  g.restore();
+}
+function windowFrame(x, y, s = 1, rot = 0) {
+  g.save(); g.translate(x, y); g.rotate(rot); g.scale(s, s);
+  rr(-70, -100, 140, 200, 8, '#8fd3ff', INK, 6); line(0, -100, 0, 100, INK, 6); line(-70, 0, 70, 0, INK, 6); circ(40, -60, 14, '#ffe26b');
+  g.restore();
+}
+function trophy(x, y, s = 1) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  g.beginPath(); g.moveTo(-40, -110); g.lineTo(40, -110); g.quadraticCurveTo(40, -40, 0, -36); g.quadraticCurveTo(-40, -40, -40, -110); g.fillStyle = '#f4c430'; g.fill(); inkS(5);
+  line(0, -36, 0, -12, '#c48f00', 12); rr(-34, -14, 68, 16, 4, '#c48f00', INK, 4);
+  g.beginPath(); g.arc(-44, -84, 16, Math.PI * .5, Math.PI * 1.5); inkS(6); g.beginPath(); g.arc(44, -84, 16, -Math.PI * .5, Math.PI * .5); inkS(6);
+  g.restore();
+}
+function giftBox(x, y, s, col) { g.save(); g.translate(x, y); g.scale(s, s); rr(-40, -70, 80, 70, 6, col, INK, 5); rect(-8, -70, 16, 70, '#fff'); rect(-40, -42, 80, 14, '#fff'); g.beginPath(); g.ellipse(-14, -78, 16, 9, -.4, 0, TAU); g.ellipse(14, -78, 16, 9, .4, 0, TAU); inkS(5); g.restore(); }
+function tag(x, y, txt, rot = 0, s = 1) {
+  g.save(); g.translate(x, y); g.rotate(rot); g.scale(s, s);
+  line(0, -40, 0, -10, '#ddd', 3);
+  g.font = `900 18px ${FONT}`; const w = g.measureText(txt).width + 30;
+  rr(-w / 2, -10, w, 36, 6, '#fff', INK, 3); circ(-w / 2 + 10, 8, 4, INK); text(txt, 6, 8, 18, '#c0303a', 'center', 900);
+  g.restore();
+}
+// vinsthögen (sidovy). out = 0..1 hur mycket som flugit iväg
+function prizePile(x, y, s = 1, out = 0) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  const k = 1 - out;
+  g.beginPath(); g.moveTo(-430, 0); g.quadraticCurveTo(-300, -220 * k - 40, -80, -330 * k - 30); g.lineTo(80, -330 * k - 30); g.quadraticCurveTo(300, -220 * k - 40, 430, 0); g.closePath();
+  g.fillStyle = '#3a1f5e'; g.fill(); inkS(6);
+  const items = [[-300, -40, 'gift', '#ff5f9e'], [-200, -70, 'pencil'], [260, -50, 'gift', '#5ab0ff'], [180, -110, 'window'], [-120, -150, 'trophy'], [80, -170, 'school'], [-220, -150, 'eraser'], [300, -120, 'pencil2'], [-40, -230, 'gift', '#3fdc6c'], [140, -250, 'trophy'], [-150, -250, 'pencil3']];
+  items.forEach((it, i) => {
+    const fly = ss(prog(out, i / items.length * .6, i / items.length * .6 + .4));
+    const ix = it[0] + fly * (it[0] > 0 ? 600 : -600), iy = it[1] * k - fly * 900 - (1 - k) * 20;
+    g.save(); g.globalAlpha = 1 - fly;
+    if (it[2] === 'gift') giftBox(ix, iy, 1, it[3]);
+    else if (it[2].startsWith('pencil')) goldPencil(ix, iy, .9, -.4 + i, 0);
+    else if (it[2] === 'window') windowFrame(ix, iy - 60, .8, .2);
+    else if (it[2] === 'trophy') trophy(ix, iy, .9);
+    else if (it[2] === 'school') miniSchool(ix, iy, .8);
+    else if (it[2] === 'eraser') eraser(ix, iy, 1.2, .3);
+    g.restore();
+  });
+  g.restore();
+}
+// ---------- Lotto-Lasse ----------
+function lasse(x, y, s = 1, o = {}) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  if (o.rot) g.rotate(o.rot);
+  rr(-60, 380, 120, 30, 10, '#2a2d36', INK, 5); line(0, 200, 0, 385, '#888', 18);
+  // armar
+  const aL = o.aL ?? .4 + Math.sin(T * 3) * .15, aR = o.aR ?? -.4 - Math.sin(T * 3 + 1) * .15;
+  for (const [side, a] of [[-1, aL], [1, aR]]) {
+    const sx = side * 200, ex = sx + side * Math.cos(a) * 120, ey = -Math.sin(a) * 120;
+    g.beginPath(); g.moveTo(sx, 0); g.quadraticCurveTo(sx + side * 60, ey * .2 + 40, ex, ey); inkS(10);
+    circ(ex, ey, 34, INK); circ(ex, ey, 29, '#fff'); for (let f = 0; f < 3; f++) circ(ex + side * 18 + f * side * 4, ey - 22 + f * 16, 11, '#fff');
+    line(ex - side * 20, ey + 26, ex - side * 30, ey + 40, '#fff', 12);
+  }
+  lotteryWheel(0, 0, 200, o.spin ?? T * .6);
+  // ansiktsplatta
+  circ(0, 0, 100, INK); circ(0, 0, 94, '#fff7e6');
+  const em = o.eyes || 'n';
+  for (const sx of [-1, 1]) {
+    const X = sx * 36, Y = -22;
+    if (em === 'c') { g.beginPath(); g.moveTo(X - 18, Y); g.quadraticCurveTo(X, Y - 14, X + 18, Y); inkS(6); continue; }
+    ell(X, Y, 20, 24 * (em === 'w' ? 1.25 : 1), INK); ell(X, Y, 16, 20 * (em === 'w' ? 1.25 : 1), '#fff');
+    circ(X + (o.lx || 0) * 6, Y + 3 + (o.ly || 0) * 6, 8, INK); circ(X - 3, Y - 2, 3, '#fff');
+    line(X - sx * 22, Y - 34 - (o.bUp || 0), X + sx * 14, Y - 30 + (o.angry ? 8 : 0) - (o.bUp || 0), INK, 7);
+  }
+  const m = o.mouth ?? (isTalking('Lotto-Lasse') ? .25 + .6 * Math.abs(Math.sin(T * 12)) : 0);
+  if (m > .05) { ell(0, 40, 46, 36 * m + 6, INK); ell(0, 40, 40, 30 * m + 3, '#5a1f2a'); rect(-30, 40 - 30 * m - 2, 60, 8 * m + 2, '#fff'); }
+  else { g.beginPath(); g.moveTo(-44, 32); g.quadraticCurveTo(0, 74, 44, 32); inkS(7); rect(-30, 34, 60, 8, '#fff'); }
+  // fluga
+  g.beginPath(); g.moveTo(0, 104); g.lineTo(-44, 84); g.lineTo(-44, 124); g.closePath(); g.moveTo(0, 104); g.lineTo(44, 84); g.lineTo(44, 124); g.closePath(); g.fillStyle = '#e2304d'; g.fill(); inkS(5); circ(0, 104, 10, '#b3243b');
+  // hög hatt
+  g.save(); g.translate(0, -214); g.rotate(-.12); rr(-70, -20, 140, 22, 8, '#1a1a22', INK, 4); rr(-50, -130, 100, 114, 6, '#1a1a22', INK, 5); rect(-50, -40, 100, 16, '#ff5f9e'); g.restore();
+  g.restore();
+}
+
+// ---------- digitala världen ----------
+const BG_POPS = [['GRATTIS!', -300, 220], ['VINN NU!', 380, 160], ['KLICKA!', 820, 110], ['DU ÄR UTVALD!', 1700, 140], ['1 000 000?', 2950, 260], ['GRATIS!', 3350, 160]];
+function digiSky(x0 = -800, x1 = 3400) {
+  const gr = g.createLinearGradient(0, -400, 0, 640); gr.addColorStop(0, '#0b0620'); gr.addColorStop(.7, '#2a0f52'); gr.addColorStop(1, '#5a1a7a'); g.fillStyle = gr; g.fillRect(x0, -600, x1 - x0, 1300);
+  for (let i = 0; i < 70; i++) { const x = x0 + R(i * 2.2) * (x1 - x0), y = -500 + R(i * 4.4) * 1000; g.globalAlpha = .4 + .4 * Math.sin(T * 1.5 + i); rect(x, y, 6, 6, i % 3 ? '#9fe8ff' : '#ff9fe0'); }
+  g.globalAlpha = 1;
+}
+function digiFloor(x0 = -800, x1 = 3400, hy = 640) {
+  rect(x0, hy, x1 - x0, 900, '#16082e');
+  g.globalAlpha = .75;
+  for (let k = 0; k < 12; k++) { const y = hy + k * k * 4.6 + k * 6; line(x0, y, x1, y, '#5ff2ff', 3); }
+  for (let i = -30; i <= 30; i++) { const bx = 960 + i * 120; line(960 + i * 30, hy, bx + i * 220, hy + 900, '#ff5fd2', 3); }
+  g.globalAlpha = 1;
+  line(x0, hy, x1, hy, '#ff9fe0', 5);
+}
+function digiWorld(o = {}) {
+  digiSky(o.x0, o.x1);
+  for (const [txt, x, y] of BG_POPS) { g.globalAlpha = .35; popupWin(x + Math.sin(T * .4 + x) * 30, y + Math.cos(T * .5 + x) * 20, 300, 170, txt, '', { bar: '#9d64e8', tc: '#6a2bd0' }); g.globalAlpha = 1; }
+  digiFloor(o.x0, o.x1);
+}
+// top-down variant
+function digiTop(x0 = -400, x1 = 4600) {
+  rect(x0, -600, x1 - x0, 2400, '#120a26');
+  g.globalAlpha = .5;
+  for (let x = Math.floor(x0 / 100) * 100; x < x1; x += 100) line(x, -600, x, 1800, '#5ff2ff', 2);
+  for (let y = -600; y < 1800; y += 100) line(x0, y, x1, y, '#ff5fd2', 2);
+  g.globalAlpha = 1;
+  g.save(); g.shadowColor = '#5ff2ff'; g.shadowBlur = 0; rr(80, 60, 4100, 960, 30, null, '#9fe8ff', 8); g.restore();
+  rect(80, 60, 4100, 50, '#2a1a4a'); text('skollotteriet.flik', 400, 85, 26, '#9fe8ff', 'center', 800);
+}
+// pixlar som flyger från en kropp till en punkt (p 0..1)
+function pixelSwarm(cx, cy, w, h, cols, p, tx, ty, seed = 1, n = 70) {
+  if (p <= 0 || p >= 1) return;
+  for (let i = 0; i < n; i++) {
+    const st = R(seed + i * 1.3) * .35, e = eio(prog(p, st, st + .65));
+    const sx = cx + (R(seed + i * 2.1) - .5) * w, sy = cy + (R(seed + i * 3.7) - .5) * h;
+    const sw = Math.sin(e * Math.PI) * (60 + R(i) * 80);
+    const x = lerp(sx, tx, e) + Math.cos(i + e * 6) * sw, y = lerp(sy, ty, e) + Math.sin(i + e * 6) * sw;
+    const sz = lerp(16, 3, e);
+    rect(x - sz / 2, y - sz / 2, sz, sz, cols[i % cols.length]);
+  }
+}
+// ---------- klassrummet i avsnitt 2 ----------
+function windowGone(t) { if (t >= 236.2) return 0; return ss(prog(t, 52.6, 53.2)); }
+function windowHole(t, p) {
+  g.save(); g.globalAlpha = p;
+  const gr = g.createLinearGradient(0, 150, 0, 530); gr.addColorStop(0, '#5ec2ff'); gr.addColorStop(1, '#bfe9ff'); g.fillStyle = gr; g.fillRect(1630, 150, 270, 380);
+  for (let i = 0; i < 3; i++) { const cx = 1640 + ((i * 140 + t * 60) % 400) - 60; ell(cx, 220 + i * 90, 50, 18, '#fff'); }
+  for (let i = 0; i < 40; i++) { const side = i % 4, k = R(i * 1.7); let x, y; if (side === 0) { x = 1630 + k * 270; y = 150; } else if (side === 1) { x = 1630 + k * 270; y = 518; } else if (side === 2) { x = 1630; y = 150 + k * 380; } else { x = 1888; y = 150 + k * 380; } rect(x - 6, y - 6, 12 + R(i) * 10, 12 + R(i * 2) * 10, '#bfe3f2'); }
+  g.restore();
+}
+function papers(t, k) {
+  if (k <= 0) return;
+  for (let i = 0; i < 9; i++) {
+    const sp = 500 + R(i * 3) * 400, x = 1800 - ((t * sp + R(i) * 2400) % 2400), y = 200 + R(i * 7) * 600 + Math.sin(t * 3 + i) * 50;
+    g.save(); g.globalAlpha = k; g.translate(x, y); g.rotate(t * 4 + i); rr(-28, -20, 56, 40, 3, '#fff', INK, 3); line(-18, -8, 18, -8, '#9ab', 3); line(-18, 4, 12, 4, '#9ab', 3); g.restore();
+  }
+  g.globalAlpha = k * .5; for (let i = 0; i < 10; i++) { const x = 1700 - ((t * 900 + i * 260) % 1900), y = 160 + R(i * 5) * 700; line(x, y, x + 140, y, '#fff', 4); } g.globalAlpha = 1;
+}
+function classTop(t) {
+  rect(0, 0, W, H, '#2c2540');
+  for (let x = 120; x < 1800; x += 80) for (let y = 160; y < 1040; y += 40) rect(x, y, 80, 40, ((x / 80 + y / 40) | 0) % 2 ? '#c99a6a' : '#bf8f5e');
+  rect(100, 100, 1720, 60, '#bfe3f2'); line(100, 160, 1820, 160, INK, 5);
+  rr(400, 112, 700, 30, 6, '#fdfdfd', INK, 4);
+  rect(100, 100, 20, 940, '#bfe3f2'); rect(1800, 100, 20, 940, '#bfe3f2');
+  rr(260, 220, 260, 110, 8, '#a86f3a', INK, 4); rr(300, 240, 90, 60, 6, '#b8bfcc', INK, 3);
+}
+const DESKS_TOP = [];
+for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) DESKS_TOP.push([620 + c * 300, 470 + r * 200, ['k1', 'raken', 'wille', 'k2', 'k3', 'k4', 'k1', 'k2', 'k3', 'k4', 'k2', 'k1'][r * 4 + c]]);
+function deskTop(x, y, kid, t, glowCol) {
+  g.globalAlpha = .25; rr(x - 100, y - 40, 210, 90, 8, '#000'); g.globalAlpha = 1;
+  rr(x - 110, y - 50, 220, 90, 8, '#d9a46a', INK, 4);
+  rr(x - 50, y - 44, 100, 56, 6, '#b8bfcc', INK, 3); rr(x - 44, y - 40, 88, 24, 4, glowCol || '#7fd0ff');
+  glow(x, y - 20, 90, glowCol === '#ffd84a' ? 'rgba(255,216,74,.55)' : 'rgba(127,208,255,.4)');
+  topP(kid, x, y + 70, -Math.PI / 2, 0, 0, 1.6);
+}
+// ===================== KLIPP / SCENER =====================
+const SHOTS = [];
+function S(a, b, fn, fx = {}) { SHOTS.push({ a, b, fn, ...fx }); }
+function scr() { g.setTransform(SC, 0, 0, SC, 0, 0); }
+// rörlig position: värde + om figuren rör sig
+function mv(t, K, ease = ss) { const v = kf(t, K, ease), d = kf(t + .03, K, ease) - kf(t - .03, K, ease); return { v, m: Math.abs(d) > .8, dir: Math.sign(d) }; }
+function walker(who, x, y, t, K, o = {}) {
+  const p = mv(t, K, o.ease || lin);
+  const run = o.run ?? true;
+  const face = p.m ? p.dir : (o.face ?? 1);
+  person({ who, x: p.v, y, face, ph: t * (run ? 17 : 9), amp: p.m ? (run ? 1 : .55) : 0, lean: p.m && run ? .1 * face : 0, ...o, ...(p.m ? {} : (o.still || {})), x: p.v });
+  return p;
+}
+function vignette(a, col = '0,0,0') {
+  scr(); const gr = g.createRadialGradient(W / 2, H / 2, H * .35, W / 2, H / 2, H * 1.05);
+  gr.addColorStop(0, `rgba(${col},0)`); gr.addColorStop(1, `rgba(${col},${a})`); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+}
+function bgGrad(c1, c2) { scr(); const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, c1); gr.addColorStop(1, c2); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+function glassesItem(hx, hy) { g.save(); g.translate(hx, hy - 18); g.beginPath(); g.arc(-16, 0, 14, 0, TAU); g.moveTo(30, 0); g.arc(16, 0, 14, 0, TAU); g.strokeStyle = '#2a1b3a'; g.lineWidth = 5; g.stroke(); g.restore(); }
+function pencilItem(hx, hy) { line(hx - 4, hy + 6, hx + 30, hy - 40, '#f2c94c', 9); line(hx + 30, hy - 40, hx + 36, hy - 50, '#e88', 9); }
+function tokenItem(hx, hy) { token(hx, hy - 30, 30, .4); }
+function deviceItem(s = .42, lit = 0) { return (hx, hy) => device(hx, hy - 26, s, 'FÖRLÄNG RESTEN', 0, lit); }
+function clipboardItem(hx, hy) { g.save(); g.translate(hx + 10, hy - 70); g.rotate(-.1); rr(-60, -80, 120, 160, 8, '#a8743a', INK, 4); rr(-50, -66, 100, 138, 4, '#fff'); rr(-20, -88, 40, 18, 4, '#bbb', INK, 3); circ(-20, -30, 14, '#f2b21e'); circ(20, -30, 14, '#f2b21e'); line(-40, 20, 40, 20, '#999', 4); line(-40, 40, 30, 40, '#999', 4); g.restore(); }
+function bookItem(hx, hy) { book(hx + 10, hy - 20, 44, 64, '#3d7fd9', .2); }
+function trayItem(hx, hy) { rr(hx - 70, hy - 14, 140, 20, 6, '#9aa6b8', INK, 4); }
+function markerItem(hx, hy) { marker(hx, hy, .9, .5); }
+function sitLegs(x, y, who, sw = 0) {
+  const c = CH[who];
+  for (const dx of [-c.tw * .18, c.tw * .18]) { const a = Math.sin(T * 3 + dx) * sw; const ex = x + dx + Math.sin(a) * 50, ey = y + Math.cos(a) * 50; limb(x + dx, y, ex, ey, 22, c.pants); ell(ex + 6, ey, 20, 11, c.shoe); g.beginPath(); g.ellipse(ex + 6, ey, 20, 11, 0, 0, TAU); inkS(4); }
+}
+function kingTalk() { return isTalking('Potatisen') ? .25 + .6 * Math.abs(Math.sin(T * 11)) : 0; }
+function kingTop(x, y, s = 1) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  g.globalAlpha = .25; ell(10, 14, 130, 100, '#000'); g.globalAlpha = 1;
+  ell(0, 0, 140, 100, '#b3243b'); potato(0, 0, 80, 0, 40);
+  g.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 30 : 48, a = i / 10 * TAU; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fillStyle = '#f4c430'; g.fill(); inkS(4); circ(0, 0, 12, '#e2304d');
+  g.restore();
+}
+function hand(x, y, s = 1, rot = 0, col = '#f3c8a2', sleeve = '#8c4de4') {
+  g.save(); g.translate(x, y); g.rotate(rot); g.scale(s, s);
+  rr(-60, 60, 120, 400, 30, sleeve, INK, 6);
+  rr(-70, -40, 140, 120, 50, col, INK, 6);
+  for (let i = 0; i < 4; i++) { rr(-66 + i * 34, -80, 30, 70, 15, col, INK, 5); }
+  g.restore();
+}
+
+let BUF = null;
+function warpFX(amp) {
+  if (!BUF) BUF = document.createElement('canvas');
+  if (BUF.width !== cv.width || BUF.height !== cv.height) { BUF.width = cv.width; BUF.height = cv.height; }
+  const b = BUF.getContext('2d'); b.setTransform(1, 0, 0, 1, 0, 0); b.drawImage(cv, 0, 0);
+  g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#2c2540'; g.fillRect(0, 0, cv.width, cv.height);
+  const step = Math.max(8, Math.round(cv.width / 64));
+  for (let x = 0; x < cv.width; x += step) {
+    const u = x / cv.width, dy = Math.sin(u * TAU * 1.5 + T * 3) * amp * SC, sy = 1 - Math.abs(Math.sin(u * Math.PI)) * amp * .0016;
+    g.drawImage(BUF, x, 0, step, cv.height, x, dy + cv.height * (1 - sy) / 2, step, cv.height * sy);
+  }
+}
+// ===================== AVSNITT 2: KLIPP =====================
+const popE = p => { p = clamp(p, 0, 1); const c = 1.7; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };
+const GLOW_C = 'rgba(127,208,255,.7)', GLOW_G = 'rgba(255,216,74,.85)';
+function throneAmt(t) { if (t < 50.8 || t > 86.2) return 0; return popE(prog(t, 50.8, 51.3)) * (1 - ss(prog(t, 85.2, 86.2))); }
+function eraserOn(t) { return t < 39.9 || t >= 236.8; }
+function willeGlow(t) { return (t > 14.6 && t < 86.6) || (t > 291) ? GLOW_G : GLOW_C; }
+function hasPencil(t) { return t > 32.05 && t < 85.4; }
+function pencilItemG(hx, hy) { goldPencil(hx + 6, hy - 30, .5, -1.2, .6); }
+function mugItem(hx, hy) { rr(hx - 16, hy - 46, 32, 38, 6, '#fff', INK, 4); g.beginPath(); g.arc(hx + 18, hy - 28, 10, -1.2, 1.2); inkS(4); text('IT', hx, hy - 27, 14, '#2f6fd1', 'center', 900); }
+function laptopHeld(hx, hy) { laptopFront(hx + 10, hy - 56, .1, insideUI); }
+function sticker2(t, at) { return t >= at ? { sticker: 'INGA LOTT.', stickerCol: '#ff8a8a' } : {}; }
+function class2(t, o = {}) {
+  classroom({ noFrokenDesk: o.noFrokenDesk });
+  rr(230, 170, 660, 360, 10, '#fdfdfd', INK, 8); rect(230, 524, 660, 14, '#9aa');
+  text('IDAG: MATTEAPPEN', 560, 240, 44, '#2a4fa0', 'center', 900); text('Logga in!', 560, 330, 66, '#d0343a', 'center', 900); text('Inga andra flikar.', 560, 420, 36, '#2a7a4a', 'center', 700);
+  const wg = windowGone(t); if (wg > 0) windowHole(t, wg);
+  for (const [k, x] of [['k1', 960], ['k2', 1260], ['k3', 1580]]) {
+    person({ who: k, x, y: 815, s: .78, face: o.backFace ?? 0, noLegs: true, eyes: o.backEyes || 'h', mouth: o.backMouth || 'flat', ly: o.backLy ?? .6, lx: 0 });
+    deskSide(x, 760, .78); laptopBack(x, 752, .62, { glow: GLOW_C });
+  }
+}
+function frontKids(t, o = {}) {
+  const ta = throneAmt(t);
+  if (ta > 0 && !o.noWille) throne(CL.wille, 985, 1, ta);
+  const typing = k => .25 + Math.sin(T * 22 + k) * .06;
+  if (!o.noRaken) seatedKid('raken', CL.raken, { face: -.1, eyes: 'n', ly: .7, lx: 0, mouth: 'flat', aL: .25, eL: typing(0) * 5, aR: .25, eR: typing(1) * 5, ...o.raken });
+  if (!o.noWille) seatedKid('wille', CL.wille, { face: .1, eyes: 'h', ly: .7, lx: 0, mouth: 'flat', bag: false, aL: .25, eL: 1.2, aR: .25, eR: 1.2, itemR: hasPencil(t) && !(o.wille && 'itemR' in o.wille) ? pencilItemG : undefined, ...o.wille });
+  frontDesk(CL.raken); frontDesk(CL.wille);
+  if (eraserOn(t)) eraser(CL.raken + 112, 884, .8);
+  laptopBack(CL.raken, 895, 1, { glow: GLOW_C, ...sticker2(t, 265.4), ...(o.rLap || {}) });
+  if (!o.noWilleLap) laptopBack(CL.wille, 895, 1, { glow: willeGlow(t), ...sticker2(t, 266.4), ...(o.wLap || {}) });
+  papers(t, windowGone(t) * (1 - prog(t, 236.2, 237)));
+}
+function froken2(t, o = {}) {
+  const wr = Math.sin(T * 6) * .12;
+  person({ who: 'froken', x: CL.froken, y: 905, face: -.85, aL: 2.2 + wr, eL: .3, aR: .2, eR: .4, eyes: 'n', lx: -1, mouth: 'flat', ...o });
+}
+
+// ---------------- 00:00–00:35  MATTEAPPEN ----------------
+S(0, 6, (l, t) => {
+  const cx = kf(l, [[0, 640], [4.4, 2700]], eio), z = kf(l, [[0, 1], [4.4, 1.02], [6, 2.7]], ein), cy = kf(l, [[0, 540], [4.4, 545], [6, 505]]);
+  cam(cx, cy, z); corridorSide();
+  scr();
+  const a = ss(prog(l, .5, 1.3)) * (1 - ss(prog(l, 4.4, 5.2)));
+  if (a > 0) {
+    g.globalAlpha = a;
+    const gr = g.createLinearGradient(0, 300, 0, 800); gr.addColorStop(0, 'rgba(20,10,40,0)'); gr.addColorStop(.5, 'rgba(20,10,40,.6)'); gr.addColorStop(1, 'rgba(20,10,40,0)'); g.fillStyle = gr; g.fillRect(0, 300, W, 500);
+    textO('WILLE', W / 2, 420 - (1 - a) * 20, 140, '#ffe066', '#3b1a6e', 22);
+    textO('AVSNITT 2', W / 2, 535, 44, '#3ff0e2', '#3b1a6e', 10);
+    textO('LOTTERI PÅ CHROMEBOOKEN', W / 2, 630, 82, '#fff', '#3b1a6e', 18);
+    g.globalAlpha = 1;
+  }
+}, { fi: 1 });
+// top-down: klassrummet med datorer
+S(6, 10.4, (l, t) => {
+  cam(kf(l, [[0, 960], [4.4, 1020]]), kf(l, [[0, 560], [4.4, 600]]), kf(l, [[0, 1], [4.4, 1.22]]));
+  classTop(t);
+  for (const [x, y, k] of DESKS_TOP) deskTop(x, y, k, t);
+  const fp = path(t, [[6, 330, 280], [8.2, 900, 300], [8.6, 900, 300], [10.4, 1400, 290]]);
+  topP('froken', fp.x, fp.y, fp.v > 5 ? fp.ang : Math.PI / 2, t * 9, fp.v > 5 ? .6 : 0, 1.9);
+});
+S(10.4, 13, (l, t) => {
+  cam(1050, 750, kf(l, [[0, 2.6], [2.6, 2.8]]));
+  class2(t); froken2(t);
+  frontKids(t, { raken: { face: 0, ly: .8, brow: .3 }, wille: { face: .1 } });
+});
+S(13, 16, (l, t) => {
+  cam(1385, 770, kf(l, [[0, 2.7], [3, 2.85]]));
+  class2(t);
+  const pop = t > 14.6;
+  frontKids(t, { wille: pop ? { face: 0, eyes: 'w', bUp: 1, ly: .7, mouth: 'o', jump: 10 * bump(t, 14.6, 14.95), aR: .25, eR: 1.2 } : { face: .2, eyes: 'h', ly: .5, mouth: 'flat', aR: .35, eR: 2.65, squash: 4 } });
+});
+S(16, 20.2, (l, t) => {
+  bgGrad('#1a1030', '#0b0718');
+  cam(960, 540, kf(l, [[0, 1], [4.2, 1.1]]));
+  laptopFront(960, 500, .95, tt => popupUI(tt));
+});
+S(20.2, 25.3, (l, t) => {
+  cam(1215, 778, 1.95);
+  class2(t);
+  const rf = kf(t, [[20.2, -.1], [20.5, .85]]);
+  frontKids(t, { raken: { face: rf, eyes: 'h', lx: .8, ly: .1, brow: .4, mouth: 'flat', aR: .5, eR: .5 }, wille: { face: -.5, eyes: 'sly', lx: t > 22.6 ? -.8 : .2, ly: t > 22.6 ? 0 : .7, mouth: 'smirk', raise: true, aR: .3, eR: 1.4 } });
+});
+S(25.3, 26.6, (l, t) => {
+  bgGrad('#1a1030', '#0b0718');
+  laptopFront(960, 160, 1.45, tt => popupUI(tt));
+  const fy = kf(t, [[25.3, 1300], [25.8, 790], [25.9, 805], [26.1, 790]]);
+  g.save(); g.translate(1020, fy); g.rotate(-.15); rr(-40, -10, 80, 340, 36, '#f3c8a2', INK, 6); rr(-80, 200, 200, 400, 40, '#8c4de4', INK, 6); g.restore();
+  if (t > 25.9) { const k = prog(t, 25.9, 26.5); g.globalAlpha = 1 - k; g.strokeStyle = '#fff'; g.lineWidth = 8; g.beginPath(); g.arc(1010, 790, 30 + k * 140, 0, TAU); g.stroke(); g.globalAlpha = 1; }
+});
+S(26.6, 31.6, (l, t) => {
+  bgGrad('#1a1030', '#0b0718');
+  cam(960, 520, kf(l, [[0, 1], [5, 1.15]]));
+  laptopFront(960, 500, .95, tt => wheelUI(tt, { banner: 'VINST: GULDPENNA!', bt: 30.6 }));
+});
+// guldpennan hoppar ut
+S(31.6, 35.2, (l, t) => {
+  cam(1290, 770, 1.75);
+  class2(t);
+  const fp = prog(t, 31.75, 32.05);
+  const held = t >= 32.05;
+  frontKids(t, { raken: { face: .7, eyes: 'h', lx: .8, ly: -.2, mouth: 'flat' }, wille: { face: -.1, eyes: held ? 'hap' : 'w', ly: -.6, mouth: 'grin', aR: held ? 2.5 : .4, eR: held ? .1 : 1.0, aL: held ? 2.2 : .3, eL: .2, itemR: held ? (hx, hy) => goldPencil(hx, hy - 34, .6, -1.3, 1) : null } });
+  if (t > 31.75 && !held) goldPencil(1380 + fp * 60, 820 - Math.sin(fp * Math.PI) * 220 - fp * 60, .6, fp * 8, 1);
+  if (t > 31.75 && t < 32.6) for (let i = 0; i < 10; i++) { const k = prog(t, 31.75, 32.6), a = i / 10 * TAU; circ(1380 + Math.cos(a) * k * 200, 820 + Math.sin(a) * k * 140, 7 * (1 - k), '#ffe066'); }
+});
+S(35.2, 39.2, (l, t) => {
+  bgGrad('#141a2e', '#0b0e1a');
+  cam(960, 520, kf(l, [[0, 1], [4, 1.08]]));
+  laptopFront(960, 500, .95, tt => payUI(tt, 'RAKENS SUDDGUMMI', 35.4));
+});
+// suddgummit försvinner
+S(39.2, 42.2, (l, t) => {
+  cam(1150, 860, 3.3);
+  class2(t);
+  frontKids(t, { raken: { face: .3, eyes: 'n', ly: .9, lx: .5, aR: .6, eR: .9 } });
+  const p = prog(t, 39.9, 41.4);
+  if (t >= 39.9 && t < 40.2) { g.globalAlpha = 1 - prog(t, 39.9, 40.2); eraser(CL.raken + 112, 884, .8); g.globalAlpha = 1; }
+  pixelSwarm(CL.raken + 112, 884, 60, 30, ['#ff8fb0', '#5ab0ff', '#ffc0d4'], p, 1500, 760, 3, 40);
+});
+S(42.2, 45, (l, t) => {
+  cam(1050, 755, 2.8);
+  class2(t);
+  frontKids(t, { raken: { face: .3, eyes: 'w', lx: .2, ly: .5, brow: -.6, aL: 2.1, eL: .3, aR: 2.1, eR: .3, jump: 6 * bump(l, 0, .3) } });
+});
+S(45, 49.4, (l, t) => {
+  cam(1385, 770, kf(l, [[0, 2.8], [4.4, 3.0]]));
+  class2(t);
+  frontKids(t, { wille: { face: -.3, eyes: 'w', lx: -.2, ly: .6, mouth: 'grin', bUp: .8, aR: .35, eR: 2.0 } });
+  for (let i = 0; i < 4; i++) { const a = T * 2.4 + i * 1.6; g.save(); g.translate(1385 + Math.cos(a) * 120, 700 + Math.sin(a) * 50); g.rotate(a); g.fillStyle = '#ffe066'; g.beginPath(); for (let k = 0; k < 8; k++) { const r = k % 2 ? 4 : 13, an = k * TAU / 8; g.lineTo(Math.cos(an) * r, Math.sin(an) * r); } g.fill(); g.restore(); }
+});
+// tronen och fönstret
+S(49.4, 54.2, (l, t) => {
+  cam(1080, 590, 1.15);
+  class2(t, { backEyes: t > 52.7 ? 'w' : 'h', backLy: t > 52.7 ? -.6 : .6 });
+  froken2(t);
+  frontKids(t, { raken: { face: .6, eyes: t > 50.9 ? 'w' : 'h', lx: .8, mouth: t > 50.9 ? 'o' : 'flat' }, wille: { face: .2, eyes: t > 50.9 ? 'hap' : 'n', ly: .4, mouth: 'grin', jump: 30 * bump(t, 51.0, 51.5) } });
+  const p = prog(t, 52.6, 54.0);
+  pixelSwarm(1765, 340, 250, 360, ['#8fd3ff', '#ffe26b', '#5cc067', '#241a33'], p, 1380, 830, 7, 90);
+});
+S(54.2, 57.6, (l, t) => {
+  bgGrad('#141a2e', '#0b0e1a');
+  cam(960, 520, kf(l, [[0, 1], [3.4, 1.08]]));
+  laptopFront(960, 500, .95, tt => payUI(tt, 'ETT FÖNSTER', 54.4));
+});
+S(57.6, 61.2, (l, t) => {
+  cam(620, 640, 2.0);
+  class2(t);
+  froken2(t, { mouth: 'flat' });
+  papers(t, 1);
+});
+S(61.2, 66, (l, t) => {
+  cam(1080, 760, kf(l, [[0, 2.5], [4.8, 2.7]]));
+  class2(t);
+  frontKids(t, { raken: { face: .6, eyes: 'n', lx: .9, brow: .4, mouth: 'flat' }, wille: { face: .1, eyes: 'hap', mouth: 'grin' } });
+});
+S(66, 70.2, (l, t) => {
+  cam(1385, 760, kf(l, [[0, 2.6], [4.2, 2.8]]));
+  class2(t);
+  frontKids(t, { wille: { face: -.4, eyes: 'sly', lx: -.8, raise: true, mouth: 'smirk', aR: .4, eR: 2.2 } });
+});
+S(70.2, 74.6, (l, t) => {
+  cam(1050, 750, kf(l, [[0, 2.7], [4.4, 3.0]]));
+  class2(t);
+  frontKids(t, { raken: { face: .55, eyes: 'h', lx: .9, raise: true, brow: .2, mouth: 'flat' } });
+});
+
+// ---------------- 01:15–01:40  STORVINSTEN ----------------
+S(74.6, 80.2, (l, t) => {
+  bgGrad('#1a1030', '#0b0718');
+  const sh = shake(t > 75 && t < 78.2 ? 4 : 0);
+  cam(960 + sh[0], 520 + sh[1], kf(l, [[0, 1], [5.6, 1.2]]));
+  laptopFront(960, 500, .95, tt => wheelUI(tt, { banner: 'STORVINST: EN EGEN SKOLA!', bt: 78.2 }));
+});
+S(80.2, 82.85, (l, t) => {
+  bgGrad('#2e1414', '#120808');
+  cam(960, 520, 1 + l * .05);
+  laptopFront(960, 500, .95, tt => payUI(tt, 'WILLE', 80.3));
+});
+S(82.85, 84.8, (l, t) => {
+  cam(1385, 765, 3.0);
+  class2(t);
+  frontKids(t, { wille: { face: 0, eyes: 'w', lx: 0, ly: .7, bUp: 1, brow: -.6, aR: .4, eR: 1.6 } });
+});
+// Wille sugs in i datorn
+S(84.8, 89.4, (l, t) => {
+  cam(1250, 760, 1.6);
+  class2(t);
+  const p = prog(t, 85.2, 86.8), fade = 1 - ss(prog(t, 85.2, 85.9));
+  const lid = 1 - .3 * bump(t, 86.7, 87.0) - .15 * bump(t, 87.0, 87.25);
+  const ta = throneAmt(t); if (ta > 0) throne(CL.wille, 985, 1, ta);
+  if (fade > 0) { g.globalAlpha = fade; seatedKid('wille', CL.wille, { face: 0, eyes: 'w', mouth: 'shout', bag: false, noShadow: true, aL: 2.6, aR: 2.6, eL: .2, eR: .2 }); g.globalAlpha = 1; }
+  const lun = ss(prog(t, 86.1, 86.6));
+  if (t < 86.1) seatedKid('raken', CL.raken, { face: .8, eyes: 'w', lx: .9, mouth: 'o', aR: .5, eR: .6 });
+  frontKids(t, { noRaken: true, noWille: true, wLap: { lid } });
+  if (t >= 86.1) person({ who: 'raken', x: CL.raken + lun * 160, y: 960, face: .9, eyes: 'w', mouth: t > 87.2 ? 'frown' : 'shout', lean: .3 * lun, aR: 1.6, eR: 0, aL: 1.2, eL: .2 });
+  pixelSwarm(1385, 760, 140, 280, ['#8c4de4', '#f4c443', '#f3c8a2', '#2b2f40', '#f4c430'], p, 1380, 840, 11, 110);
+  if (t > 85.2 && t < 87) { g.save(); g.translate(1380, 840); g.rotate(-T * 6); g.globalAlpha = .5 * bump(t, 85.2, 87); for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(0, 0, 60 + i * 50, i, i + 4); g.strokeStyle = '#ffd84a'; g.lineWidth = 8; g.stroke(); } g.restore(); g.globalAlpha = 1; }
+});
+S(89.4, 93.2, (l, t) => {
+  bgGrad('#1a1030', '#0b0718');
+  cam(960, 520, kf(l, [[0, 1], [3.8, 1.18]]));
+  laptopFront(960, 500, .95, insideUI);
+});
+S(93.2, 96.1, (l, t) => {
+  cam(860, 630, 1.3);
+  class2(t);
+  froken2(t);
+  frontKids(t, { noRaken: true, noWille: true, noWilleLap: true });
+  person({ who: 'raken', x: 1040, y: 950, face: -.75, eyes: 'w', lx: -1, mouth: 'flat', brow: -.5, aR: 1.3, eR: .8, itemR: laptopHeld });
+});
+S(96.1, 100, (l, t) => {
+  cam(640, 640, 2.0);
+  class2(t);
+  froken2(t, { eyes: 'h', mouth: 'smile' });
+  papers(t, 1);
+}, { fo: .3 });
+// Raken springer med datorn
+S(100, 104.2, (l, t) => {
+  cam(960, 540, 1); corridorTop();
+  const p = path(t, [[100.2, 130, 540], [103.8, 1790, 540]]);
+  topP('raken', p.x, p.y, 0, t * 17, p.v > 5 ? 1 : 0, 2.1);
+  g.save(); g.translate(p.x + 40, p.y); rr(-14, -26, 28, 52, 4, '#b8bfcc', INK, 3); g.restore();
+}, { fi: .3 });
+function vaktDoor() {
+  corridorSide({ open: { 'VAKTMÄSTARE': 1 }, inside: { 'VAKTMÄSTARE': () => { rect(1700, 410, 200, 420, '#2f2a3c'); for (let i = 0; i < 3; i++) rr(1712, 470 + i * 110, 176, 14, 3, '#55506a'); for (let i = 0; i < 6; i++) circ(1730 + i * 28, 455, 10, ['#e0544e', '#3fdc6c', '#5ab0ff'][i % 3]); } } });
+  g.save(); g.translate(1800, 452); g.rotate(-.06); rr(-80, -40, 160, 80, 4, '#fffbe6', INK, 3); text('IT-SUPPORT', 0, -10, 24, '#2f6fd1', 'center', 900); text('(typ)', 0, 18, 18, '#555', 'center', 700); g.restore();
+}
+S(104.2, 110, (l, t) => {
+  cam(1680, 640, 1.55);
+  vaktDoor();
+  person({ who: 'vakt', x: 1810, y: 915, s: .95, face: -.6, eyes: 'h', lx: -.7, mouth: 'flat', aL: .5, eL: 1.9, itemL: mugItem, aR: .3, eR: .4 });
+  person({ who: 'raken', x: 1520, y: 935, face: .8, eyes: 'w', lx: .8, mouth: 'flat', aR: 1.5, eR: .3, itemR: laptopHeld });
+});
+S(110, 113, (l, t) => {
+  cam(1540, 720, 2.6);
+  vaktDoor();
+  person({ who: 'raken', x: 1520, y: 935, face: .6, eyes: 'w', lx: .8, brow: -.6, mouth: 'flat', aR: 1.7, eR: .3, itemR: laptopHeld, jump: 6 * bump(l, 0, .3) });
+});
+S(113, 120.7, (l, t) => {
+  cam(1790, 645, kf(l, [[0, 2.1], [7.7, 2.3]]));
+  vaktDoor();
+  const up = t > 117;
+  person({ who: 'vakt', x: 1810, y: 915, s: .95, face: -.5, eyes: 'h', lx: -.7, mouth: 'flat', aL: .5, eL: 1.9, itemL: mugItem, aR: up ? 2.5 : .3, eR: up ? .2 : .4 });
+});
+S(120.7, 122.7, (l, t) => {
+  cam(1530, 715, 2.7);
+  vaktDoor();
+  person({ who: 'raken', x: 1520, y: 935, face: .55, eyes: 'n', lx: .8, raise: true, mouth: 'flat', aR: 1.0, eR: .9, itemR: laptopHeld });
+});
+// Raken går in i datorn
+S(122.7, 126.2, (l, t) => {
+  cam(1660, 700, 1.6);
+  vaktDoor();
+  rr(1610, 840, 110, 20, 6, '#a46a34', INK, 4); line(1630, 860, 1630, 930, INK, 8); line(1700, 860, 1700, 930, INK, 8);
+  person({ who: 'vakt', x: 1840, y: 915, s: .95, face: -.6, eyes: 'h', lx: -1, ly: .5, mouth: 'flat', aL: t > 123.2 && t < 123.8 ? 1.0 : .5, eL: t > 123.2 && t < 123.8 ? .6 : 1.9, itemL: mugItem, aR: .3 });
+  laptopFront(1665, 790, .1, insideUI);
+  const p = prog(t, 123.7, 125.3), fade = 1 - ss(prog(t, 123.7, 124.3));
+  if (fade > 0) { g.globalAlpha = fade; person({ who: 'raken', x: 1480, y: 935, noShadow: true, face: .7, eyes: 'w', lx: .6, ly: .5, mouth: 'o', aL: 2.4, aR: 2.4, eL: .2, eR: .2 }); g.globalAlpha = 1; }
+  pixelSwarm(1480, 790, 130, 290, ['#17c3b6', '#2f1d10', '#d39b74', '#33456a', '#e9fffb'], p, 1665, 780, 21, 100);
+});
+// in genom skärmen
+S(126.2, 132.2, (l, t) => {
+  if (t < 129.6) {
+    scr(); rect(0, 0, W, H, '#07040f');
+    for (let i = 0; i < 14; i++) { const k = ((t - 126.2) * .9 + i / 14) % 1, r = Math.pow(k, 2.2) * 1400; g.globalAlpha = k; g.strokeStyle = i % 2 ? '#ff5fd2' : '#5ff2ff'; g.lineWidth = 6 + k * 20; rrect(W / 2 - r * 1.6, H / 2 - r, r * 3.2, r * 2, 20 + r * .1); g.stroke(); }
+    g.globalAlpha = 1;
+    for (let i = 0; i < 60; i++) { const k = ((t - 126.2) * 1.4 + R(i)) % 1, a = R(i * 3) * TAU, d = Math.pow(k, 2) * 1300; rect(W / 2 + Math.cos(a) * d, H / 2 + Math.sin(a) * d, 4 + k * 14, 4 + k * 14, i % 2 ? '#fff' : '#9fe8ff'); }
+    person({ who: 'raken', x: W / 2, y: H / 2 + 140, s: .5 + prog(t, 126.2, 129.6) * .8, face: 0, eyes: 'w', mouth: 'shout', aL: 2.7, aR: 2.7, eL: .1, eR: .1, rot: Math.sin(T * 3) * .3, noShadow: true });
+    return;
+  }
+  cam(800, 560, 1);
+  digiWorld();
+  const fy = kf(t, [[129.6, -300], [130.5, 900]], ein), land = t > 130.5;
+  person({ who: 'raken', x: 600, y: fy, face: land ? Math.sin((t - 130.8) * 2.5) * .9 : 0, eyes: 'w', lx: land ? Math.sin((t - 130.8) * 2.5) : 0, mouth: land ? 'o' : 'shout', squash: land ? 14 * bump(t, 130.5, 130.8) : 0, aL: land ? .3 : 2.6, aR: land ? .3 : 2.6, eL: .2, eR: .2 });
+  if (land && t < 131.4) for (let i = 0; i < 12; i++) { const k = prog(t, 130.5, 131.4); rect(600 + (i - 6) * 25 * k * 3, 900 - Math.sin(i) * 30 * k - 40 * k, 10, 10, i % 2 ? '#5ff2ff' : '#ff5fd2'); }
+});
+// Lotto-Lasse
+const LA = { x: 1250, y: 900 - 410 * .9 };
+S(132.2, 138, (l, t) => {
+  cam(940, 560, 1.05);
+  digiWorld();
+  const s = .9 * popE(prog(t, 132.3, 132.8));
+  if (s > .01) lasse(LA.x, LA.y + (1 - s / .9) * 300, s, { aL: .9 + Math.sin(T * 4) * .3, aR: 1.0 + Math.sin(T * 4 + 1) * .3 });
+  person({ who: 'raken', x: 600, y: 900, face: .8, eyes: 'w', lx: 1, ly: -.4, mouth: 'o', jump: 20 * bump(t, 132.3, 132.7) });
+  if (t > 132.3 && t < 134.5) { g.save(); g.translate(LA.x, 500); confetti(t, 50, [900, 700], 260); g.restore(); }
+});
+S(138, 140.1, (l, t) => {
+  cam(600, 700, 2.6);
+  digiWorld();
+  person({ who: 'raken', x: 600, y: 900, face: .6, eyes: 'n', lx: .9, brow: .5, mouth: 'flat' });
+});
+S(140.1, 143.2, (l, t) => {
+  cam(1250, 520, 1.8);
+  digiWorld();
+  lasse(LA.x, LA.y, .9, { aR: .1, aL: 1.3 + Math.sin(T * 5) * .3, lx: 1 });
+});
+// vinsthögen
+const PILE = { x: 2350, y: 900 };
+function pileScene(t, o = {}) {
+  prizePile(PILE.x, PILE.y, 1, o.out || 0);
+  if (o.noWille) return;
+  throne(PILE.x, 600, .75, 1);
+  person({ who: 'wille', x: PILE.x, y: 590, s: .9, face: o.wf ?? 0, noLegs: true, noShadow: true, eyes: 'w', mouth: 'grin', aR: .9, eR: 1.4, itemR: (hx, hy) => lotteryWheel(hx + 10, hy - 50, 46, T * 9), ...o.w });
+  if (!o.noCounter) { g.save(); g.translate(PILE.x + 300, 260); popupWin(0, 0, 300, 150, 'VINSTER: 72', '', { bar: '#ffd84a', tc: '#7a2a00', ts: 44 }); g.restore(); }
+}
+S(143.2, 150.1, (l, t) => {
+  cam(kf(l, [[0, 1250], [2.2, 2250]], eio), kf(l, [[0, 560], [2.2, 470]], eio), kf(l, [[0, 1.0], [2.2, 1.15], [6.9, 1.25]]));
+  digiWorld({ x1: 3600 });
+  lasse(LA.x, LA.y, .9, { aR: .1, lx: 1 });
+  pileScene(t, { w: { aL: t > 144.5 && t < 148.3 ? 2.5 + Math.sin(T * 9) * .3 : .3, eL: .2 } });
+});
+S(150.1, 154.6, (l, t) => {
+  cam(1950, 640, 1.45);
+  digiWorld({ x1: 3600 });
+  pileScene(t, { noCounter: true });
+  person({ who: 'raken', x: 1820, y: 900, face: .7, eyes: 'n', lx: .9, ly: -.8, brow: .4, mouth: 'flat', aL: .3, eL: 1.4, aR: .3, eR: 1.4 });
+});
+S(154.6, 159, (l, t) => {
+  cam(2350, 690, 2.2);
+  digiWorld({ x1: 3600 });
+  pileScene(t, { noCounter: true, w: { ly: .8, lx: -.3, eyes: 'n', mouth: 'flat' } });
+  tag(2150, 870, 'KOSTADE: RAKENS SUDDGUMMI', .1); tag(2540, 820, 'KOSTADE: ETT FÖNSTER', -.12); tag(2330, 760, 'KOSTADE: SKOLANS TAK', .05);
+  tag(2420, 660, 'KOSTADE: DIG', -.06, 1.3);
+  const gx = kf(t, [[155.4, 2700], [156.2, 2200], [158.6, 2190]]), gy = kf(t, [[155.4, 1100], [156.2, 930]]);
+  g.save(); g.translate(gx, gy); g.rotate(-.6); circ(0, 0, 60, INK); circ(0, 0, 54, '#fff'); for (let f = 0; f < 4; f++) circ(-36 + f * 24, -50, 20, '#fff'); line(30, 50, 120, 140, INK, 18); g.restore();
+});
+S(159, 163, (l, t) => {
+  cam(1550, 480, .8);
+  digiWorld({ x1: 3600 });
+  pileScene(t, { noCounter: true });
+  lasse(LA.x, LA.y, .9, { lx: .6 });
+  const xs = popE(prog(t, 159.2, 159.6));
+  g.save(); g.translate(2950, 60); g.scale(xs, xs); glow(0, 0, 260, 'rgba(255,80,80,.6)', .8); rr(-110, -110, 220, 220, 30, '#e2304d', INK, 8); line(-55, -55, 55, 55, '#fff', 28); line(55, -55, -55, 55, '#fff', 28); g.restore();
+  person({ who: 'raken', x: 1820, y: 900, face: .7, eyes: 'w', lx: .9, ly: -1, mouth: 'flat', aR: 2.3, eR: 0 });
+});
+// top-down jakt mot krysset
+const DROPS = [[164.0, 1100, 540, 'ÄR DU SÄKER?'], [165.9, 1600, 560, 'DU MISSAR DIN VINST!'], [167.6, 2000, 470, 'VÄNTA!'], [168.8, 2350, 640, '50% RABATT PÅ TUR'], [177.6, 3000, 600, 'GRATIS SNURR!'], [179.0, 3350, 300, 'KLICKA HÄR'], [180.6, 3600, 720, 'SISTA CHANSEN!']];
+const RK2 = [[163.2, 300, 540], [164.5, 900, 540], [165.2, 1050, 360], [166.4, 1500, 330], [167.2, 1900, 290], [168.4, 2200, 290], [169.2, 2400, 420], [170, 2550, 420], [176.8, 2700, 420], [178.2, 3200, 420], [179.5, 3500, 560], [181, 3750, 560], [182.6, 3880, 560], [183.4, 3880, 560], [184.2, 3900, 320], [186, 3720, 230]];
+function xPos(t) {
+  if (t >= 218) return [4040 + Math.sin(T * 30) * 6, 170];
+  if (t >= 189) { const a = (t - 189) * 2.2; return [3700 + Math.cos(a) * 260, 560 + Math.sin(a) * 260]; }
+  if (t < 183) return [3960, 540];
+  if (t < 184.5) return [3960, kf(t, [[183, 540], [183.4, 240]], eout)];
+  return [kf(t, [[184.5, 3960], [184.9, 3650]], eout), kf(t, [[184.5, 240], [184.9, 190]], eout)];
+}
+function xButtonTop(x, y, s = 1) { g.save(); g.translate(x, y); g.scale(s, s); glow(0, 0, 200, 'rgba(255,80,80,.5)', .7); rr(-75, -75, 150, 150, 22, '#e2304d', INK, 7); line(-38, -38, 38, 38, '#fff', 20); line(38, -38, -38, 38, '#fff', 20); g.restore(); }
+function digiChase(t, o = {}) {
+  digiTop();
+  for (const [d, x, y, lab] of DROPS) {
+    if (t < d - .6) continue;
+    if (t < d) { const k = prog(t, d - .6, d); g.globalAlpha = .45 * k; rr(x - 180 * k, y - 110 * k, 360 * k, 220 * k, 18, '#000'); g.globalAlpha = 1; continue; }
+    const sq = 1 + .15 * (1 - eout(prog(t, d, d + .15)));
+    g.save(); g.translate(x, y); g.scale(sq, sq); popupWin(0, 0, 360, 220, lab, '', { bar: '#9d64e8', tc: '#6a2bd0' }); g.restore();
+  }
+  const [xx, xy] = xPos(t); xButtonTop(xx, xy, 1);
+}
+S(163, 170, (l, t) => {
+  const r = path(t, RK2);
+  cam(clamp(r.x + 160, 900, 3500), 560, .95);
+  digiChase(t);
+  topP('raken', r.x, r.y, r.ang, t * 18, 1, 1.8);
+});
+// hopp mellan popup-fönster (sidovy)
+const PLAT = [[500, 760, 'ÄR DU SÄKER?'], [950, 640, 'DU MISSAR DIN VINST!'], [1400, 720, 'VÄNTA!'], [1850, 590, '50% RABATT PÅ TUR']];
+S(170, 174, (l, t) => {
+  const seg = clamp(Math.floor((t - 170.2) / 1.1), 0, 3), k = clamp((t - 170.2 - seg * 1.1) / 1.1, 0, 1);
+  const a = PLAT[seg], b = PLAT[Math.min(3, seg + 1)];
+  const jumping = seg < 3 && k > .25;
+  const jk = jumping ? (k - .25) / .75 : 0;
+  const rx = seg < 3 ? lerp(a[0], b[0], ss(jk)) : a[0], ry = (seg < 3 ? lerp(a[1], b[1], jk) : a[1]) - 75 - Math.sin(jk * Math.PI) * 200;
+  scr(); const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#0b0620'); gr.addColorStop(1, '#3a1460'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  cam(rx + 150, 520, 1.05);
+  digiSky(-600, 3000);
+  g.save(); g.globalAlpha = .5; lasse(rx + 650, 300, .55, { aL: 1.6 + Math.sin(T * 8) * .4, aR: 1.6 - Math.sin(T * 8) * .4, angry: true }); g.restore();
+  PLAT.forEach(([x, y, lab], i) => popupWin(x, y + Math.sin(T * 2 + i) * 6, 320, 150, lab, '', { bar: '#9d64e8', tc: '#6a2bd0' }));
+  person({ who: 'raken', x: rx, y: ry, face: 1, ph: t * 14, amp: jumping ? .2 : .8, eyes: 'w', mouth: 'flat', brow: .4, aL: jumping ? 2.4 : .4, aR: jumping ? 2.4 : .4, eL: .3, eR: .3, noShadow: true, legA: jumping ? .4 : 0 });
+});
+S(174, 176.8, (l, t) => {
+  scr(); rect(0, 0, W, H, '#1a0b36');
+  speedLines(30, '#ff9fe0', .35, 8);
+  cam(960, 560, 2.2, Math.sin(T * 2) * .05);
+  digiSky(0, 1920);
+  person({ who: 'raken', x: 960, y: 760, face: .6, eyes: 'w', lx: .6, brow: .8, mouth: 'flat', aL: 2.5, aR: 1.6, eL: .3, eR: .2, legA: .5, noShadow: true });
+});
+S(176.8, 186, (l, t) => {
+  const r = path(t, RK2);
+  cam(clamp(r.x + 120, 900, 3700), 520, .95);
+  digiChase(t);
+  topP('raken', r.x, r.y, r.ang, t * 18, r.v > 5 ? 1 : 0, 1.8);
+  if (t > 183 && t < 185.2) { g.globalAlpha = .6; for (let i = 0; i < 4; i++) line(xPos(t)[0] - 140 - i * 20, xPos(t)[1] + (i - 1.5) * 26, xPos(t)[0] - 90, xPos(t)[1] + (i - 1.5) * 26, '#fff', 6); g.globalAlpha = 1; }
+});
+function xBox(x, y, s = 1) { g.save(); g.translate(x, y); g.scale(s, s); glow(0, -120, 220, 'rgba(255,80,80,.5)', .7); rr(-110, -240, 220, 230, 26, '#e2304d', INK, 8); line(-55, -180, 55, -70, '#fff', 26); line(55, -180, -55, -70, '#fff', 26); rect(-110, -16, 220, 16, '#9b1c2c'); g.restore(); }
+S(186, 189, (l, t) => {
+  cam(1350, 640, 1.3);
+  digiWorld();
+  const bx = kf(t, [[186.5, 1250], [186.9, 1750]], eout);
+  xBox(bx, 900, 1);
+  const st = bump(t, 186.6, 187.4);
+  person({ who: 'raken', x: kf(t, [[186, 950], [186.6, 1100]]), y: 900, face: 1, eyes: 'w', lx: 1, brow: -.5, mouth: 'flat', lean: .35 * st, aR: 1.6, eR: 0, aL: 1.3, eL: .3, ph: t * 12, amp: t < 186.6 ? 1 : 0 });
+});
+S(189, 195, (l, t) => {
+  const [xx, xy] = xPos(t), a = (t - 189) * 2.2 - .75;
+  cam(3700, 560, 1.1);
+  digiChase(t);
+  const rx = 3700 + Math.cos(a) * 260, ry = 560 + Math.sin(a) * 260;
+  topP('raken', rx, ry, a + Math.PI / 2, t * 18, 1, 1.8);
+  for (let i = 0; i < 3; i++) { const sa = T * 5 + i * 2.1; circ(rx + Math.cos(sa) * 50, ry + Math.sin(sa) * 30 - 10, 7, '#ffe066'); }
+});
+
+// ---------------- 03:15–03:45  VALET ----------------
+function ticket(x, y, s = 1, ripped = 0) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  glow(0, 0, 160, 'rgba(255,216,74,.7)', .8 * (1 - ripped));
+  for (const side of [-1, 1]) {
+    g.save(); if (ripped) { g.translate(side * ripped * 160, ripped * 220); g.rotate(side * ripped * 2); }
+    g.beginPath(); g.rect(side < 0 ? -120 : 0, -50, 120, 100); g.clip();
+    rr(-120, -50, 240, 100, 12, '#ffd84a', INK, 5); text('GRATIS', 0, -16, 30, '#7a2a00', 'center', 900); text('SNURR', 0, 20, 30, '#7a2a00', 'center', 900);
+    g.restore();
+  }
+  g.restore();
+}
+const LA2 = { x: 1930, y: 900 - 410 * .8 };
+S(195, 200, (l, t) => {
+  cam(2200, 500, 1.55);
+  digiWorld({ x1: 3600 });
+  pileScene(t, { noCounter: true, w: { face: -.4, eyes: 'n', lx: -.8, ly: .3, mouth: 'flat', aR: .3, eR: .4, itemR: null } });
+  lasse(LA2.x, LA2.y, .8, { aR: .6, lx: 1, ly: -.5 });
+  ticket(2170, 480 + Math.sin(T * 2) * 8, .9);
+});
+S(200, 205.2, (l, t) => {
+  cam(PILE.x - 30, 445, kf(l, [[0, 2.8], [5.2, 3.2]], lin));
+  digiWorld({ x1: 3600 });
+  pileScene(t, { noCounter: true, w: { face: kf(t, [[202.4, -.4], [203.2, .6]]), eyes: 'n', lx: kf(t, [[202.4, -.8], [203.2, 1]]), ly: kf(t, [[202.4, .4], [203.2, .2]]), mouth: 'flat', brow: -.4, aR: .3, eR: .4, itemR: null } });
+  ticket(2170, 480 + Math.sin(T * 2) * 8, .9);
+});
+S(205.2, 209, (l, t) => {
+  cam(PILE.x - 20, 440, 3.0);
+  digiWorld({ x1: 3600 });
+  pileScene(t, { noCounter: true, w: { face: -.45, eyes: 'n', lx: -.9, mouth: 'flat', brow: .5, aR: .3, eR: .4, itemR: null } });
+  ticket(2170, 480, .9);
+});
+S(209, 213.4, (l, t) => {
+  cam(2170, 490, 1.6);
+  digiWorld({ x1: 3600 });
+  const rip = eout(prog(t, 210.1, 211.0));
+  pileScene(t, { noCounter: true, w: { face: -.4, eyes: t > 210.1 ? 'n' : 'n', brow: .6, lx: -.8, mouth: t > 210.1 ? 'smirk' : 'flat', aL: t < 210.1 ? 1.7 : 2.3, eL: .3, aR: t < 210.1 ? 1.2 : 2.0, eR: .5, itemR: null } });
+  lasse(LA2.x, LA2.y, .8, { eyes: t > 210.1 ? 'w' : 'n', bUp: t > 210.1 ? 10 : 0, aL: t > 210.1 ? 2.2 : .5, aR: t > 210.1 ? 2.2 : .6, lx: 1 });
+  ticket(2170, 480, .9, rip);
+});
+S(213.4, 218, (l, t) => {
+  cam(kf(l, [[0, 2150], [4.6, 1850]]), 560, kf(l, [[0, 1.0], [4.6, .9]]));
+  digiWorld({ x1: 3600 });
+  const out = prog(t, 213.6, 217.2);
+  pileScene(t, { out, noWille: true });
+  lasse(LA2.x - 300, LA2.y, .8, { eyes: 'w', bUp: 10, aL: 2.4 + Math.sin(T * 9) * .3, aR: 2.4 - Math.sin(T * 9) * .3, rot: Math.sin(T * 7) * .05 });
+  const sl = prog(t, 213.6, 214.6);
+  if (t < 214.6) person({ who: 'wille', x: lerp(PILE.x, 2050, sl), y: lerp(590, 900, ss(sl)), s: lerp(.9, 1, sl), face: -1, rot: -.5, eyes: 'hap', mouth: 'grin', aL: 2.6, aR: 2.6, noShadow: true });
+  else walker('wille', 0, 900, t, [[214.9, 2050], [218, 1250]], { still: { face: -1 }, eyes: 'n', mouth: 'grin', brow: .5 });
+});
+S(218, 220, (l, t) => {
+  cam(3870, 300, 1.1);
+  digiChase(t);
+  const r = path(t, [[218, 3620, 170], [219.6, 3920, 170]]), w = path(t, [[218, 4040, 600], [219.6, 4040, 290]]);
+  topP('raken', r.x, r.y, 0, t * 18, r.v > 5 ? 1 : 0, 1.8); topP('wille', w.x, w.y, -Math.PI / 2, t * 18, w.v > 5 ? 1 : 0, 1.8);
+});
+S(220, 223.7, (l, t) => {
+  cam(1250, 500, 1.9, Math.sin(T * 9) * .02);
+  digiWorld();
+  lasse(LA.x, LA.y, .9, { eyes: 'w', bUp: 12, aL: 2.5 + Math.sin(T * 10) * .4, aR: 2.5 - Math.sin(T * 10) * .4 });
+});
+S(223.7, 225.6, (l, t) => {
+  cam(1320, 700, 1.7);
+  digiWorld();
+  xBox(1320, 900, 1);
+  person({ who: 'raken', x: 1120, y: 900, face: .5, eyes: 'w', lx: .2, brow: .8, mouth: 'flat', aR: 1.8, eR: .2 });
+  person({ who: 'wille', x: 1520, y: 905, face: -.5, eyes: 'w', lx: -.2, brow: .8, mouth: 'flat', aL: 1.8, eL: .2 });
+});
+S(225.6, 227, (l, t) => {
+  scr(); rect(0, 0, W, H, '#1a0b36');
+  cam(960, 540, 1 + l * .05);
+  const pr = ss(prog(t, 226.0, 226.2));
+  g.save(); g.translate(960, 520 + pr * 30); glow(0, 0, 500, 'rgba(255,80,80,.5)', .8); rr(-300, -300, 600, 600, 70, '#e2304d', INK, 12); line(-150, -150, 150, 150, '#fff', 70); line(150, -150, -150, 150, '#fff', 70); g.restore();
+  const hy = kf(t, [[225.6, 1300], [226.0, 760], [226.2, 790]]);
+  hand(780, hy, .9, -.3, '#d39b74', '#17c3b6'); hand(1140, hy + 10, .85, .3, '#f3c8a2', '#8c4de4');
+  if (t > 226.2) { const k = prog(t, 226.2, 227); g.globalAlpha = 1 - k; g.strokeStyle = '#fff'; g.lineWidth = 16; g.beginPath(); g.arc(960, 540, 300 + k * 700, 0, TAU); g.stroke(); g.globalAlpha = 1; }
+});
+// världen kollapsar
+S(227, 232, (l, t) => {
+  cam(960, 540, 1 - l * .08, l * .05);
+  digiSky(-400, 2400);
+  const k = ss(prog(t, 227.4, 231.2));
+  for (let i = 0; i < 10; i++) { const a = i / 10 * TAU + l * 2, d = (1 - k) * (500 + i * 30); g.save(); g.translate(960 + Math.cos(a) * d, 540 + Math.sin(a) * d * .6); g.rotate(l * 3 + i); g.scale(1 - k, 1 - k); popupWin(0, 0, 300, 160, ['GRATTIS!', 'VÄNTA!', 'KLICKA!', 'ÄR DU SÄKER?', 'GRATIS!'][i % 5], '', { bar: '#9d64e8', tc: '#6a2bd0' }); g.restore(); }
+  digiFloor(-400, 2400, 640 + k * 500);
+  if (t < 231.1) lasse(960, 360, .9 * (1 - k * .95), { rot: T * (2 + k * 10), eyes: 'w', bUp: 10, aL: 2.4, aR: 2.4 });
+  for (let i = 0; i < 80; i++) { const a = R(i) * TAU + l * (2 + R(i * 2) * 3), d = (1 - k) * (200 + R(i * 3) * 900); rect(960 + Math.cos(a) * d, 540 + Math.sin(a) * d * .7, 10, 10, i % 2 ? '#5ff2ff' : '#ff5fd2'); }
+  glow(960, 540, 120 + k * 300, 'rgba(255,255,255,.9)', k * .8);
+});
+
+// ---------------- 03:52–04:20  TILLBAKA ----------------
+S(232, 240, (l, t) => {
+  cam(1030, 590, 1.12);
+  class2(t, { backEyes: t > 233.4 ? 'w' : 'h', backLy: -.3 });
+  froken2(t);
+  const rp = prog(t, 233.0, 234.4), wp = prog(t, 233.4, 234.8);
+  person({ who: 'vakt', x: 1660, y: 945, s: .95, face: -.7, eyes: 'h', lx: -1, mouth: 'flat', aL: .5, eL: 1.9, itemL: mugItem });
+  frontKids(t, {
+    raken: rp >= 1 ? { face: .2, eyes: 'w', lx: .5, mouth: 'o', squash: 8 * bump(t, 234.4, 234.7) } : null,
+    wille: wp >= 1 ? { face: -.2, eyes: 'w', lx: -.3, mouth: 'grin', squash: 8 * bump(t, 234.8, 235.1) } : null,
+    noRaken: rp < 1, noWille: wp < 1,
+  });
+  pixelSwarm(1380, 840, 40, 20, ['#17c3b6', '#2f1d10', '#d39b74', '#33456a'], rp, 1050, 790, 31, 90);
+  pixelSwarm(1380, 840, 40, 20, ['#8c4de4', '#f4c443', '#f3c8a2', '#2b2f40'], wp, 1385, 800, 41, 90);
+  if (t > 236.2 && t < 237) { const k = prog(t, 236.2, 237); g.globalAlpha = 1 - k; for (let i = 0; i < 20; i++) rect(1765 + Math.cos(i) * k * 200, 340 + Math.sin(i * 1.3) * k * 200, 14, 14, '#8fd3ff'); g.globalAlpha = 1; }
+  if (t > 236.4 && t < 236.8) eraser(CL.raken + 112, kf(t, [[236.4, 600], [236.8, 884]], ein), .8, (236.8 - t) * 8);
+});
+S(240, 245.4, (l, t) => {
+  cam(620, 640, 1.9);
+  class2(t);
+  froken2(t, { face: kf(t, [[240.2, -.85], [240.8, .7]]), aL: kf(t, [[240.2, 2.2], [240.8, .3]]), lx: kf(t, [[240.2, -1], [240.8, .8]]), mouth: 'smile' });
+});
+S(245.4, 249.6, (l, t) => {
+  cam(1215, 778, 1.95);
+  class2(t);
+  const nod = t > 245.5 && t < 246.6 ? Math.abs(Math.sin((t - 245.5) * 14)) * 10 : 0;
+  frontKids(t, { raken: { face: -.3, eyes: 'w', lx: -.8, mouth: 'flat', squash: nod }, wille: { face: -.3, eyes: 'w', lx: -.8, mouth: 'grin', squash: nod } });
+});
+S(249.6, 251.2, (l, t) => {
+  bgGrad('#1a1030', '#0b0718');
+  cam(960, 520, 1 + l * .05);
+  laptopFront(960, 500, .95, tt => popupUI(tt, 'GRATTIS, FRÖKEN!', 'Du har vunnit en lärarstol med massage!', 'HÄMTA VINST'));
+});
+function frokenDesk(t, o = {}) {
+  person({ who: 'froken', x: 330, y: 905, face: .1, eyes: 'n', ly: .7, mouth: 'smile', aR: .4, eR: 1.2, aL: .4, eL: 1.2, ...o });
+  rr(180, 720, 300, 24, 6, '#a86f3a', INK, 4); rect(195, 744, 270, 90, '#8a5a2e'); g.beginPath(); g.rect(195, 744, 270, 90); inkS(4);
+  laptopBack(330, 712, .7, { glow: o.glowC || GLOW_G });
+}
+S(251.2, 254.3, (l, t) => {
+  cam(460, 600, 2.1);
+  class2(t, { noFrokenDesk: true });
+  frokenDesk(t, { eyes: 'w', ly: .6, mouth: 'grin', bUp: .8, aR: kf(t, [[252.6, .4], [253.4, 1.3]]), eR: .4 });
+});
+S(254.3, 257, (l, t) => {
+  cam(930, 560, 1.05);
+  class2(t, { noFrokenDesk: true, backEyes: 'w', backLy: 0 });
+  frokenDesk(t, { eyes: 'w', lx: 1, mouth: 'o', aR: 1.3, eR: .4 });
+  const j = 90 * bump(t, 254.4, 255.2);
+  frontKids(t, { noRaken: true, noWille: true });
+  person({ who: 'raken', x: CL.raken - 40 * prog(t, 254.4, 255), y: 960, face: -1, eyes: 'w', mouth: 'shout', jump: j, aL: 1.7, eL: 0, aR: 2.4, eR: .2, lean: -.15 });
+  person({ who: 'wille', x: CL.wille - 60 * prog(t, 254.4, 255), y: 965, face: -1, eyes: 'w', mouth: 'shout', jump: j * 1.1, aL: 1.7, eL: 0, aR: 2.5, eR: .2, lean: -.18 });
+});
+S(257, 258.5, (l, t) => {
+  bgGrad('#1a1030', '#0b0718');
+  laptopFront(960, 160, 1.45, tt => popupUI(tt, 'GRATTIS, FRÖKEN!', 'Du har vunnit en lärarstol med massage!', 'HÄMTA VINST'));
+  g.save(); g.translate(1010 + Math.sin(T * 40) * 3, 690); g.rotate(-.15); rr(-40, -10, 80, 340, 36, '#e8b995', INK, 6); rr(-80, 200, 200, 400, 40, '#df4f5b', INK, 6); g.restore();
+});
+S(258.5, 262.6, (l, t) => {
+  cam(460, 600, 2.1);
+  class2(t, { noFrokenDesk: true });
+  const closed = t > 258.9;
+  frokenDesk(t, { eyes: closed ? 'n' : 'w', ly: .6, mouth: closed ? 'smile' : 'flat', glowC: closed ? GLOW_C : GLOW_G, aR: closed ? .4 : 1.0, eR: closed ? 1.2 : .9 });
+});
+// vaktmästaren och klistermärkena
+S(262.6, 270, (l, t) => {
+  cam(1050, 610, 1.05);
+  class2(t);
+  froken2(t, { face: .6, aL: .3, lx: 1, mouth: 'smile' });
+  const vk = walker('vakt', 0, 900, t, [[262.7, -60], [264.8, 900], [265.2, 960], [266.0, 1250], [266.3, 1290], [267.4, 1560]], { run: false, s: .9, still: { face: -.6 }, eyes: 'h', mouth: 'flat', itemL: (hx, hy) => { circ(hx, hy - 10, 22, INK); circ(hx, hy - 10, 18, '#ff8a8a'); circ(hx, hy - 10, 7, '#fff'); } });
+  frontKids(t, { raken: { face: .3, eyes: 'n', lx: .5, mouth: 'smile' }, wille: { face: -.3, eyes: 'n', lx: -.5, mouth: 'smile' } });
+  for (const [st, x] of [[265.4, CL.raken], [266.4, CL.wille]]) if (t > st && t < st + .4) { const k = prog(t, st, st + .4); g.globalAlpha = 1 - k; g.strokeStyle = '#fff'; g.lineWidth = 6; g.beginPath(); g.arc(x, 850, 30 + k * 60, 0, TAU); g.stroke(); g.globalAlpha = 1; }
+});
+S(270, 274.7, (l, t) => {
+  cam(1215, 778, 1.95);
+  class2(t);
+  frontKids(t, { raken: { face: .7, eyes: 'n', lx: .8, mouth: 'flat', raise: t > 273 }, wille: { face: -.5, eyes: 'n', lx: -.8, mouth: 'smile' } });
+});
+S(274.7, 278.8, (l, t) => {
+  cam(1385, 765, kf(l, [[0, 2.8], [4.1, 3.0]]));
+  class2(t);
+  frontKids(t, { wille: { face: -.4, eyes: 'n', lx: -.8, mouth: 'smile', blush: true } });
+});
+S(278.8, 282.4, (l, t) => {
+  cam(1215, kf(l, [[0, 770], [3.6, 720]]), kf(l, [[0, 1.9], [3.6, 1.6]]));
+  class2(t);
+  const k = ss(prog(t, 279.6, 280.4)), b = Math.abs(Math.sin(T * 9)) * 5 * (t > 280.6 ? 1 : 0);
+  frontKids(t, { raken: { face: .6, eyes: t > 280.6 ? 'hap' : 'n', lx: .8, mouth: 'grin', lean: .3 * k, aR: lerp(.25, 1.57, k), eR: lerp(1.2, 0, k), jump: b }, wille: { face: -.6, eyes: t > 280.6 ? 'hap' : 'n', lx: -.8, mouth: 'grin', lean: -.3 * k, aL: lerp(.25, 1.57, k), eL: lerp(1.2, 0, k), itemR: null, jump: b } });
+  if (t > 280.4 && t < 281) { const q = prog(t, 280.4, 281); for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; line(1216 + Math.cos(a) * 30 * (1 + q * 2), 815 + Math.sin(a) * 30 * (1 + q * 2), 1216 + Math.cos(a) * 50 * (1 + q * 2), 815 + Math.sin(a) * 50 * (1 + q * 2), '#ffe066', 6 * (1 - q)); } }
+});
+// potatisen
+S(282.4, 287, (l, t) => {
+  cam(960, 520, kf(l, [[0, 1.0], [4.6, 1.3]]));
+  brickWall(-400, W + 400, -200, 1300, '#b94c37');
+  rr(520, 160, 880, 680, 10, '#e8e2d0', INK, 10);
+  g.save(); g.beginPath(); g.rect(560, 200, 800, 600); g.clip();
+  rect(560, 200, 800, 600, '#c9ecd6'); for (let x = 560; x < 1360; x += 60) line(x, 200, x, 800, '#b2dcc1', 3);
+  rr(600, 700, 720, 30, 6, '#f0b064', INK, 5);
+  king(1150, 700, { s: .85, eyes: t > 285.2 ? 'h' : 'n', ly: .5, mouth: kingTalk(), smile: t < 284.8 });
+  g.save(); g.translate(1325, 520); g.rotate(-.2); rr(-26, -44, 52, 88, 8, '#2a2d36', INK, 4); rr(-20, -36, 40, 64, 4, '#ffd84a'); text('!', 0, -4, 30, '#d6246e', 'center', 900); g.restore();
+  glow(1325, 520, 120, 'rgba(255,216,74,.6)');
+  g.restore();
+  line(800, 200, 800, 330, '#e8e2d0', 14); line(1120, 200, 1120, 330, '#e8e2d0', 14); line(560, 330, 1360, 330, '#e8e2d0', 14);
+  rr(500, 830, 920, 40, 6, '#d8d2c0', INK, 6);
+});
+// ---------------- 04:47–05:00  EFTERTEXT OCH SISTA POPUPEN ----------------
+S(287, 291, (l, t) => {
+  scr(); rect(0, 0, W, H, '#0e0b16');
+  glow(960, 400, 800, 'rgba(255,95,158,.25)');
+  const a = ss(prog(l, .1, .6));
+  g.globalAlpha = a;
+  textO('WILLE', W / 2, 270, 130, '#ffe066', '#3b1a6e', 20);
+  textO('LOTTERI PÅ CHROMEBOOKEN', W / 2, 400, 74, '#fff', '#3b1a6e', 16);
+  g.globalAlpha = 1;
+  const cr = [['RAKEN', 'Raken'], ['WILLE', 'Wille'], ['FRÖKEN', 'Fröken'], ['VAKTMÄSTAREN', 'IT-support (typ)'], ['LOTTO-LASSE', 'sig själv'], ['POTATISEN', 'gästroll']];
+  cr.forEach((c, i) => { const k = ss(prog(l, .6 + i * .25, .9 + i * .25)); g.globalAlpha = k; text(c[0], W / 2 - 20, 540 + i * 52, 34, '#a49cbc', 'right', 800); text(c[1], W / 2 + 20, 540 + i * 52, 34, '#fff', 'left', 700); });
+  g.globalAlpha = ss(prog(l, 2.6, 3.0)); text('Inga riktiga lotter såldes under inspelningen.', W / 2, 920, 30, '#1fd3c4', 'center', 700); g.globalAlpha = 1;
+}, { fo: .25 });
+S(291, 295, (l, t) => {
+  bgGrad('#1a1030', '#0b0718');
+  cam(960, 520, kf(l, [[0, 1], [4, 1.12]]));
+  laptopFront(960, 500, .95, ep3UI, { sticker: true });
+  const cx = kf(t, [[291.6, 1400], [294.6, 1010]]), cy = kf(t, [[291.6, 820], [294.6, 690]]);
+  g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx, cy + 60); g.lineTo(cx + 16, cy + 46); g.lineTo(cx + 30, cy + 72); g.lineTo(cx + 40, cy + 66); g.lineTo(cx + 28, cy + 42); g.lineTo(cx + 48, cy + 40); g.closePath(); g.fillStyle = '#fff'; g.fill(); inkS(4);
+}, { fi: .25 });
+S(295, 297.7, (l, t) => {
+  cam(1385, 760, kf(l, [[0, 2.8], [2.7, 3.05]]));
+  class2(t);
+  frontKids(t, { wille: { face: -.35, eyes: 'n', lx: -.9, ly: -.5, mouth: 'grin', bUp: .6, aR: .25, eR: 1.2 }, wLap: { sticker: 'INGA LOTT.', stickerCol: '#ff8a8a', glow: GLOW_G } });
+});
+S(297.7, 300, (l, t) => {
+  bgGrad('#1a1030', '#0b0718');
+  const lid = 1 - eio(prog(t, 298.6, 299.45));
+  const sh = t > 299.45 ? shake(6 * (1 - prog(t, 299.45, 299.9)), 40) : [0, 0];
+  cam(960 + sh[0], 540 + sh[1], 1);
+  laptopFront(960, 500, .95, ep3UI, { sticker: true, lid });
+  const top = 500 + (330 - 710 * lid) * .95;
+  hand(980, Math.min(kf(t, [[297.8, -500], [298.5, 120]]), top - 30), .9, Math.PI, '#d39b74', '#17c3b6');
+});
+// ===================== AVSNITT 2: UNDERTEXTER, LJUDHÄNDELSER, MUSIK =====================
+SUBS = [
+  [6.6, 10.2, 'Fröken', 'Logga in på matteappen. Inga andra flikar.'],
+  [20.3, 22.6, 'Raken', 'Klicka inte på det.'],
+  [22.8, 25.2, 'Wille', 'Jag klickar bara lite.'],
+  [31.8, 34.6, 'Wille', 'Jag har vunnit!'],
+  [35.4, 39.0, 'Lotteriet', 'Betalning mottagen: ett suddgummi.'],
+  [42.3, 44.8, 'Raken', 'Mitt suddgummi!'],
+  [45.2, 49.3, 'Wille', 'En gång till. Jag känner på mig att det blir bättre.'],
+  [54.3, 57.4, 'Lotteriet', 'Betalning mottagen: ett fönster.'],
+  [57.8, 60.9, 'Fröken', 'Vem har öppnat fönstret?'],
+  [61.4, 65.8, 'Raken', 'Wille, lotteriet tar saker. Det ger inte bort dem.'],
+  [66.2, 69.9, 'Wille', 'Ett snurr till. Nästa är storvinsten.'],
+  [70.3, 74.4, 'Raken', 'Det är exakt så den vill att du ska tänka.'],
+  [76.0, 79.9, 'Lotteriet', 'Grattis! Du har vunnit en egen skola!'],
+  [80.3, 82.8, 'Lotteriet', 'Betalning: Wille.'],
+  [82.95, 84.7, 'Wille', 'Vänta, va?'],
+  [93.3, 96.0, 'Raken', 'Fröken! Wille sitter i datorn.'],
+  [96.2, 99.8, 'Fröken', 'Bra. Då jobbar han äntligen digitalt.'],
+  [104.4, 108.5, 'Vaktmästaren', 'Har du provat att stänga av och sätta på den igen?'],
+  [110.2, 112.9, 'Raken', 'Han är INNE i datorn!'],
+  [113.1, 116.7, 'Vaktmästaren', 'Då ska man absolut inte stänga av den.'],
+  [117.0, 120.6, 'Vaktmästaren', 'Du måste in och stänga fliken. Inifrån.'],
+  [120.8, 122.6, 'Raken', 'Hur kommer man in?'],
+  [132.5, 137.8, 'Lotto-Lasse', 'Välkommen till Skollotteriet! Här vinner alla. Nästan. Ibland.'],
+  [138.2, 140.0, 'Raken', 'Var är Wille?'],
+  [140.2, 143.0, 'Lotto-Lasse', 'Han vinner! Hela tiden!'],
+  [144.5, 148.4, 'Wille', 'Raken! Jag har vunnit sjuttiotvå saker!'],
+  [150.2, 154.5, 'Raken', 'Och förlorat ett fönster, ett suddgummi och dig själv.'],
+  [155.4, 158.8, 'Lotto-Lasse', 'Läs inte det finstilta! Snurra igen!'],
+  [159.1, 162.6, 'Raken', 'Krysset! Vi måste stänga fliken!'],
+  [170.1, 173.7, 'Lotto-Lasse', 'Vänta! Ett gratis snurr! Helt gratis!'],
+  [174.1, 176.7, 'Raken', 'Ingenting här är gratis!'],
+  [186.1, 188.9, 'Raken', 'Wille! Krysset flyttar sig!'],
+  [195.5, 199.9, 'Lotto-Lasse', 'Sista chansen, Wille. Nästa snurr vinner du allt.'],
+  [205.3, 208.9, 'Wille', 'Det har du sagt sjuttiotvå gånger.'],
+  [210.5, 213.3, 'Lotto-Lasse', 'Det där är... inte tillåtet?'],
+  [213.5, 215.9, 'Wille', 'Raken, jag kommer!'],
+  [220.1, 223.6, 'Lotto-Lasse', 'Är ni säkra? Är ni HELT säkra?'],
+  [223.8, 225.5, 'Raken & Wille', 'JA!'],
+  [227.1, 231.0, 'Lotto-Lasse', 'Tack för att du spelade. Kom tillbaka sn—'],
+  [240.5, 244.6, 'Fröken', 'Så. Har alla loggat in på matteappen?'],
+  [245.8, 248.9, 'Wille', 'Mer inloggad än någonsin.'],
+  [250.0, 253.4, 'Fröken', 'Oj! Jag har vunnit något!'],
+  [254.4, 256.9, 'Raken & Wille', 'KLICKA INTE!'],
+  [258.7, 262.5, 'Fröken', 'Tack. Det där såg lite misstänkt ut.'],
+  [263.2, 268.9, 'Vaktmästaren', 'Om något säger att ni har vunnit, så har ni oftast inte det.'],
+  [270.3, 273.0, 'Wille', 'Jag vann ändå en sak.'],
+  [273.2, 274.6, 'Raken', 'Vad då?'],
+  [274.8, 278.7, 'Wille', 'Att jag lyssnade på dig. Den här gången.'],
+  [282.8, 286.9, 'Potatisen', '”Grattis, du har vunnit en potatis.” Igen?'],
+  [295.1, 297.0, 'Wille', 'Raken...?'],
+  [297.9, 299.8, 'Raken', '(utanför bild) NEJ.', true],
+];
+const EVENTS = [
+  [.2, 'title'], [14.6, 'ding'], [16.2, 'sparkle'], [25.9, 'click'], [30.6, 'win'], [31.8, 'pop'], [32.05, 'catch'],
+  [35.3, 'beep'], [39.9, 'zap'], [42.3, 'boing'], [49.5, 'click'], [50.7, 'win'], [50.8, 'pop'], [52.6, 'zap'], [52.8, 'whoosh'], [54.3, 'beep'],
+  [74.7, 'click'], [78.2, 'jackpot'], [80.3, 'beep'], [82.9, 'sting'], [85.2, 'suck'], [86.2, 'whoosh'], [86.7, 'boing'], [90.2, 'knock'], [90.5, 'knock'], [91.4, 'knock'], [91.7, 'knock'],
+  [103.9, 'door'], [109.2, 'sip'], [123.4, 'click'], [123.7, 'zap'], [123.8, 'suck'], [126.3, 'whoosh'], [129.6, 'whoosh'], [130.5, 'thump'],
+  [132.3, 'pop'], [132.4, 'fanfare'], [143.3, 'sparkle'], [155.5, 'whoosh'], [159.2, 'ding'], [159.25, 'sting'],
+  [170.4, 'boing'], [171.5, 'boing'], [172.6, 'boing'], [174.0, 'whoosh'], [183.0, 'whoosh'], [184.5, 'whoosh'], [186.5, 'whoosh'], [189.2, 'whoosh'], [191.9, 'whoosh'],
+  [195.6, 'glow'], [203.0, 'sparkle'], [210.1, 'rip'], [210.4, 'boing'], [213.6, 'whoosh'], [214.6, 'thump'], [215.0, 'sparkle'], [216.0, 'sparkle'],
+  [223.9, 'boing'], [226.2, 'bigclick'], [227.3, 'winddown'], [231.0, 'blip'], [233.0, 'zap'], [233.4, 'zap'], [234.4, 'thump'], [234.8, 'thump'],
+  [236.2, 'pop'], [236.8, 'land'], [249.9, 'ding'], [254.4, 'boing'], [258.9, 'click'], [262.7, 'door'], [265.4, 'tap'], [265.5, 'tap'], [266.4, 'tap'], [266.5, 'tap'],
+  [279.0, 'laugh'], [279.8, 'laugh'], [280.4, 'pop'], [283.0, 'ding'], [287.1, 'title'], [291.2, 'ding'], [291.5, 'glow'], [297.9, 'nej'], [299.45, 'slam'],
+];
+// tick från lotterihjulet, i takt med hjulets vinkel
+for (const [a, b] of SPINS) { let last = segUnder(wheelAt(a - .001)), lt = -1; for (let t = a; t <= b; t += .004) { const s = segUnder(wheelAt(t)); if (s !== last) { last = s; if (t - lt > .045) { EVENTS.push([t, 'wtick']); lt = t; } } } }
+for (const [st] of DROPS) EVENTS.push([st, 'thud']);
+EVENTS.sort((a, b) => a[0] - b[0]);
+const STEPS = [[10.4, 13, .09, 'type'], [100.2, 103.8, .12, 'run'], [143.4, 150.1, .12, 'wtick'], [163.2, 170, .12, 'run'], [176.8, 186, .12, 'run'], [189, 195, .12, 'run'], [215, 218, .13, 'run'], [218, 219.6, .12, 'run'], [262.7, 267.4, .36, 'walk'],
+  [52.8, 74.6, .45, 'wind'], [84.8, 100, .45, 'wind'], [232, 236.2, .45, 'wind']];
+const SEC = [[0, 6, 'title'], [6, 14.6, 'calm'], [14.6, 20.2, 'casino'], [26.6, 35.2, 'casino'], [35.2, 45, 'mystery'], [45, 54.2, 'casino'], [54.2, 74.6, 'mystery'], [74.6, 84.8, 'casino'],
+  [84.8, 93.2, 'weird'], [93.2, 100, 'mystery'], [100, 104.2, 'run'], [104.2, 122.7, 'mystery'], [126.2, 150.1, 'digital'], [150.1, 163, 'mystery'], [163, 195, 'chase'], [195, 200, 'casino'],
+  [200, 213.4, 'tender'], [213.4, 225.6, 'run'], [232, 240, 'triumph'], [240, 262.6, 'calm'], [262.6, 282.4, 'happy'], [282.4, 287, 'royal'], [287, 291, 'title']];
+// digitala världen: svaga scanlines och neonkant
+function POSTFX(t) {
+  if (t < 126.2 || t >= 232 || (t >= 225.6 && t < 227)) return;
+  scr();
+  g.globalAlpha = .06; for (let y = 0; y < H; y += 6) rect(0, y, W, 2, '#000'); g.globalAlpha = 1;
+  const gr = g.createRadialGradient(W / 2, H / 2, H * .35, W / 2, H / 2, H * 1.0);
+  gr.addColorStop(0, 'rgba(255,95,210,0)'); gr.addColorStop(1, 'rgba(120,40,200,.35)'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+}
+// ===================== UNDERTEXTER =====================
+const SPK_COL = { 'Raken': '#3ff0e2', 'Wille': '#c9a2ff', 'Fröken': '#ff9a9a', 'Vaktmästaren': '#ffcb6b', 'Högtalaren': '#e8e8e8', 'Potatisen': '#f0c983', 'Systemet': '#7dff9a', 'Lotteriet': '#ffd84a', 'Lotto-Lasse': '#ff8fd0', 'Raken & Wille': '#9fe8ff' };
+function wrapLines(str, maxW) {
+  const words = str.split(' '), out = []; let cur = '';
+  for (const w of words) { const test = cur ? cur + ' ' + w : w; if (g.measureText(test).width > maxW && cur) { out.push(cur); cur = w; } else cur = test; }
+  if (cur) out.push(cur); return out;
+}
+function drawSubs() {
+  for (const s of SUBS) {
+    if (T < s[0] || T >= s[1]) continue;
+    const a = Math.min(1, (T - s[0]) / .12, (s[1] - T) / .12);
+    scr(); g.globalAlpha = a;
+    g.font = `650 50px ${FONT}`;
+    const lines = wrapLines(s[3], 1500);
+    let w = 0; for (const ln of lines) w = Math.max(w, g.measureText(ln).width);
+    g.font = `900 30px ${FONT}`; const nw = g.measureText(s[2].toUpperCase()).width;
+    w = Math.max(w, nw) + 70;
+    const hgt = 46 + lines.length * 62 + 22, x = W / 2 - w / 2, y = H - 34 - hgt;
+    rr(x, y, w, hgt, 18, 'rgba(10,7,18,.84)');
+    text(s[2].toUpperCase(), W / 2, y + 34, 30, SPK_COL[s[2]] || '#fff', 'center', 900);
+    lines.forEach((ln, i) => { g.font = `650 50px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fff'; g.fillText(ln, W / 2, y + 88 + i * 62); });
+    g.globalAlpha = 1;
+  }
+}
+
+// ===================== LJUD (Web Audio) =====================
+let AC = null, MASTER = null, BUS = null, MUS = null, SFXG = null, NOISE = null, muted = false;
+const mf = m => 440 * Math.pow(2, (m - 69) / 12);
+function initAudio() {
+  if (AC) return;
+  const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
+  AC = new C();
+  MASTER = AC.createGain(); MASTER.gain.value = muted ? 0 : .9;
+  const comp = AC.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
+  MASTER.connect(comp); comp.connect(AC.destination);
+  NOISE = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate);
+  const d = NOISE.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  newBus();
+}
+// ny buss vid sökning: gamla schemalagda ljud kopplas bort direkt
+function newBus() {
+  if (!AC) return;
+  if (BUS) { try { BUS.disconnect(); } catch (e) { /* redan frånkopplad */ } }
+  BUS = AC.createGain(); BUS.connect(MASTER);
+  MUS = AC.createGain(); MUS.gain.value = .4; MUS.connect(BUS);
+  SFXG = AC.createGain(); SFXG.gain.value = .95; SFXG.connect(BUS);
+}
+function tone(type, f, t0, dur, vol, dest, o = {}) {
+  const os = AC.createOscillator(), gn = AC.createGain();
+  os.type = type; os.frequency.setValueAtTime(f, t0);
+  if (o.f2) os.frequency.exponentialRampToValueAtTime(Math.max(20, o.f2), t0 + (o.glide ?? dur));
+  if (o.det) os.detune.value = o.det;
+  const at = o.attack ?? .008;
+  gn.gain.setValueAtTime(0.0001, t0); gn.gain.exponentialRampToValueAtTime(vol, t0 + at);
+  gn.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  let node = os;
+  if (o.lp) { const fl = AC.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = o.lp; node.connect(fl); node = fl; }
+  if (o.lfo) { const l = AC.createOscillator(), lg = AC.createGain(); l.frequency.value = o.lfo; lg.gain.value = o.lfoAmt ?? f * .1; l.connect(lg); lg.connect(os.frequency); l.start(t0); l.stop(t0 + dur + .05); }
+  if (o.trem) { const l = AC.createOscillator(), lg = AC.createGain(), tg = AC.createGain(); l.type = 'square'; l.frequency.value = o.trem; lg.gain.value = .5; tg.gain.value = .5; l.connect(lg); lg.connect(tg.gain); node.connect(tg); node = tg; l.start(t0); l.stop(t0 + dur + .05); }
+  node.connect(gn); gn.connect(dest || SFXG);
+  os.start(t0); os.stop(t0 + dur + .05);
+}
+function nz(t0, dur, vol, o = {}) {
+  const src = AC.createBufferSource(); src.buffer = NOISE; src.loop = true;
+  const fl = AC.createBiquadFilter(); fl.type = o.type || 'bandpass'; fl.frequency.setValueAtTime(o.f || 1000, t0); fl.Q.value = o.q ?? 1;
+  if (o.f2) fl.frequency.exponentialRampToValueAtTime(o.f2, t0 + (o.glide ?? dur));
+  const gn = AC.createGain(); const at = o.attack ?? .005;
+  gn.gain.setValueAtTime(0.0001, t0); gn.gain.exponentialRampToValueAtTime(vol, t0 + at); gn.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  let node = gn;
+  if (o.trem) { const l = AC.createOscillator(), lg = AC.createGain(), tg = AC.createGain(); l.frequency.value = o.trem; lg.gain.value = .5; tg.gain.value = .5; l.connect(lg); lg.connect(tg.gain); gn.connect(tg); node = tg; l.start(t0); l.stop(t0 + dur + .05); }
+  src.connect(fl); fl.connect(gn); node.connect(o.dest || SFXG);
+  src.start(t0, Math.random()); src.stop(t0 + dur + .05);
+}
+const kick = (t, v) => tone('sine', 140, t, .28, v, MUS, { f2: 45, glide: .2 });
+const snare = (t, v) => { nz(t, .16, v, { f: 1800, q: .7, dest: MUS }); tone('triangle', 200, t, .08, v * .5, MUS); };
+const hat = (t, v) => nz(t, .04, v, { type: 'highpass', f: 7000, dest: MUS });
+
+const SFX = {
+  title: t => { [60, 64, 67, 72, 76, 79].forEach((m, i) => tone('square', mf(m + 2), t + i * .08, .25, .06, SFXG, { lp: 3000 })); tone('triangle', mf(86), t + .5, .8, .08); },
+  tick: t => { tone('square', 2600, t, .025, .05, SFXG, { lp: 5000 }); nz(t, .02, .05, { type: 'highpass', f: 5000 }); },
+  tock: t => { tone('square', 1300, t, .05, .06, SFXG, { f2: 500, lp: 3000 }); },
+  pop: t => tone('sine', 300, t, .14, .2, SFXG, { f2: 900, glide: .1 }),
+  sparkle: t => { [84, 88, 91, 96].forEach((m, i) => tone('sine', mf(m), t + i * .06, .4, .06)); },
+  boop: t => { tone('sine', 520, t, .3, .3, SFXG, { f2: 1040, glide: .12 }); tone('triangle', 260, t, .2, .15); },
+  freeze: t => { nz(t, 1.4, .18, { f: 4000, f2: 250, q: 2, attack: .05 }); tone('sine', 1400, t, 1.6, .08, SFXG, { f2: 300, lfo: 7, lfoAmt: 40, attack: .1 }); tone('sine', 60, t, 1.2, .2, SFXG, { f2: 35 }); },
+  chime: t => { tone('sine', mf(76), t, 1.0, .18, SFXG, { attack: .01 }); tone('sine', mf(72), t + .5, 1.2, .18); tone('sine', mf(88), t, .5, .03); },
+  swish: t => nz(t, .25, .12, { f: 1500, f2: 4000, q: 1.5 }),
+  scrape: t => { nz(t, .35, .2, { type: 'lowpass', f: 500 }); tone('sawtooth', 90, t, .3, .05, SFXG, { f2: 70, lp: 400 }); },
+  whoosh: t => nz(t, .55, .22, { f: 300, f2: 2500, q: 1.2, glide: .5, attack: .15 }),
+  door: t => { tone('sine', 110, t, .3, .35, SFXG, { f2: 50 }); nz(t, .12, .15, { type: 'lowpass', f: 600 }); },
+  slam: t => { tone('sine', 90, t, .45, .5, SFXG, { f2: 40 }); nz(t, .2, .35, { type: 'lowpass', f: 1200 }); },
+  bang: t => { tone('sine', 120, t, .4, .5, SFXG, { f2: 45 }); nz(t, .25, .4, { type: 'lowpass', f: 2000 }); },
+  boing: t => tone('sine', 220, t, .5, .22, SFXG, { f2: 700, glide: .25, lfo: 14, lfoAmt: 40 }),
+  tap: t => tone('triangle', 900, t, .05, .1),
+  fanfare: t => { [[67, 71, 74], [72, 76, 79]].forEach((ch, i) => ch.forEach(m => tone('sawtooth', mf(m - 12), t + i * .35, .7, .05, SFXG, { lp: 1800, attack: .03 }))); kick(t, .3); kick(t + .35, .3); },
+  sting: t => { tone('sawtooth', 98, t, 1.0, .1, SFXG, { lp: 900, attack: .02 }); tone('sawtooth', 147, t, 1.0, .07, SFXG, { lp: 900 }); tone('sine', 49, t, 1.0, .25); },
+  roll: t => nz(t, 1.4, .14, { type: 'lowpass', f: 380, trem: 16, attack: .1 }),
+  chomp: t => { nz(t, .07, .3, { f: 900, q: 2 }); tone('sine', 170, t, .12, .25, SFXG, { f2: 60 }); },
+  gulp: t => tone('sine', 320, t, .22, .3, SFXG, { f2: 110 }),
+  hit: t => { tone('sine', 85, t, 1.2, .55, SFXG, { f2: 35 }); nz(t, .6, .25, { type: 'lowpass', f: 1500 }); tone('sawtooth', 55, t, 1.0, .08, SFXG, { lp: 400 }); },
+  burp: t => { tone('sawtooth', 95, t, 1.0, .4, SFXG, { lp: 650, lfo: 17, lfoAmt: 25, f2: 70, attack: .03 }); tone('square', 60, t, .9, .12, SFXG, { lp: 300, f2: 48 }); },
+  catch: t => { tone('sine', mf(88), t, .5, .12); tone('sine', mf(93), t + .07, .6, .1); },
+  fart: t => { tone('sawtooth', 75, t, .55, .5, SFXG, { lp: 520, lfo: 31, lfoAmt: 20, f2: 52, attack: .01 }); nz(t, .5, .12, { type: 'lowpass', f: 400, trem: 30 }); },
+  rewind: t => { tone('square', 180, t, 2.3, .05, SFXG, { f2: 2200, glide: 2.2, lp: 2500, trem: 22 }); nz(t, 2.2, .07, { f: 600, f2: 4000, q: 2, glide: 2.2 }); },
+  thump: t => tone('sine', 75, t, .3, .45, SFXG, { f2: 40 }),
+  click: t => { tone('square', 3200, t, .025, .12, SFXG, { lp: 6000 }); tone('square', 1800, t + .03, .02, .08); },
+  alarm: t => { tone('square', 660, t, .5, .07, SFXG, { lp: 2000, attack: .03 }); tone('square', 520, t + .55, .5, .07, SFXG, { lp: 2000, attack: .03 }); },
+  slide: t => { nz(t, .6, .2, { type: 'lowpass', f: 900, f2: 300 }); tone('sawtooth', 62, t, .55, .06, SFXG, { lp: 300 }); tone('sine', 90, t + .55, .2, .3, SFXG, { f2: 45 }); },
+  rattle: t => nz(t, .9, .12, { f: 2600, q: 3, trem: 24, attack: .05 }),
+  skid: t => { nz(t, .9, .2, { f: 3200, f2: 1300, q: 4 }); tone('sawtooth', 900, t, .5, .03, SFXG, { f2: 600, lp: 2000 }); },
+  squeak: t => tone('sine', 2100, t, .26, .06, SFXG, { lfo: 30, lfoAmt: 120, f2: 2400 }),
+  creak: t => tone('sawtooth', 140, t, .7, .06, SFXG, { f2: 240, lp: 900, lfo: 9, lfoAmt: 20, attack: .05 }),
+  cricket: t => { for (let i = 0; i < 3; i++) tone('sine', 4300, t + i * .07, .05, .05); },
+  clunk: t => { tone('sine', 120, t, .3, .45, SFXG, { f2: 60 }); nz(t, .15, .2, { type: 'lowpass', f: 900 }); tone('sine', 920, t + .02, .5, .06); tone('sine', mf(79), t + .1, .8, .06); },
+  beep: t => { tone('square', 880, t, .12, .06, SFXG, { lp: 3000 }); tone('square', 1320, t + .14, .12, .06, SFXG, { lp: 3000 }); },
+  press: t => { tone('sine', 70, t, .6, .6, SFXG, { f2: 35 }); nz(t, .3, .3, { type: 'lowpass', f: 700 }); },
+  spin: t => { tone('sawtooth', 50, t, 2.4, .1, SFXG, { f2: 260, glide: 2.2, lp: 900, attack: .2 }); nz(t, 2.4, .08, { f: 400, f2: 1600, q: 2, glide: 2.2, attack: .3 }); },
+  winddown: t => { tone('sawtooth', 260, t, 1.5, .1, SFXG, { f2: 35, glide: 1.4, lp: 900 }); nz(t, 1.3, .07, { f: 1500, f2: 200, q: 2 }); },
+  bigtick: t => { tone('square', 1900, t, .05, .25, SFXG, { lp: 6000 }); tone('sine', 950, t, .5, .15); tone('sine', 60, t, .3, .2); },
+  land: t => nz(t, .08, .1, { f: 2500, q: 1 }),
+  bell: t => { tone('square', 1250, t, 1.9, .07, SFXG, { trem: 26, lp: 4000, attack: .01 }); tone('sine', 2500, t, 1.9, .04, SFXG, { trem: 26 }); },
+  cheer: t => { nz(t, 2.4, .12, { f: 1300, q: .6, attack: .4 }); for (let i = 0; i < 10; i++) tone('triangle', 500 + R(i) * 600, t + i * .2, .15, .03, SFXG, { f2: 800 + R(i * 2) * 600 }); },
+  laugh: t => { for (let i = 0; i < 4; i++) { tone('triangle', 330 - i * 15, t + i * .14, .1, .08, SFXG, { f2: 260 }); tone('triangle', 420 - i * 15, t + i * .14 + .02, .1, .05, SFXG, { f2: 340 }); } },
+  sip: t => { nz(t, .12, .06, { f: 3500, q: 3 }); nz(t + .18, .12, .06, { f: 3500, q: 3 }); tone('sine', 300, t + .45, .4, .05, SFXG, { f2: 220 }); },
+  glow: t => { tone('sine', 660, t, 1.6, .06, SFXG, { attack: .5 }); tone('sine', 990, t, 1.6, .04, SFXG, { attack: .6 }); },
+  nej: t => { tone('sine', 110, t, .6, .45, SFXG, { f2: 50 }); tone('sawtooth', 98, t, .5, .07, SFXG, { lp: 600 }); },
+  ripple: t => tone('sine', 400, t, .9, .1, SFXG, { f2: 1600, glide: .8, attack: .2 }),
+  ding: t => { tone('sine', mf(88), t, .5, .14); tone('sine', mf(93), t + .09, .7, .12); },
+  wtick: t => { tone('square', 1500, t, .018, .05, SFXG, { lp: 4000 }); nz(t, .015, .05, { type: 'highpass', f: 4000 }); },
+  win: t => { [72, 76, 79, 84].forEach((m, i) => tone('square', mf(m), t + i * .07, .22, .05, SFXG, { lp: 3500 })); tone('triangle', mf(88), t + .3, .5, .07); },
+  jackpot: t => { for (let k = 0; k < 3; k++) [72, 76, 79, 84].forEach((m, i) => tone('square', mf(m + k * 2), t + k * .28 + i * .06, .2, .05, SFXG, { lp: 3500 })); tone('sawtooth', mf(60), t, 1.1, .06, SFXG, { lp: 1200 }); kick(t, .4); },
+  zap: t => { tone('square', 1800, t, .35, .07, SFXG, { f2: 120, lp: 5000 }); nz(t, .3, .1, { f: 3000, f2: 400, q: 3 }); },
+  suck: t => { tone('sawtooth', 700, t, 1.2, .1, SFXG, { f2: 50, glide: 1.1, lp: 1500 }); nz(t, 1.2, .16, { f: 3000, f2: 150, q: 1.5, glide: 1.1 }); },
+  knock: t => { tone('sine', 420, t, .08, .2, SFXG, { f2: 300 }); nz(t, .04, .12, { f: 1500, q: 2 }); },
+  rip: t => { nz(t, .35, .25, { f: 2500, q: .8, trem: 60 }); },
+  bigclick: t => { tone('square', 2400, t, .04, .25, SFXG, { lp: 6000 }); tone('sine', 120, t, .4, .45, SFXG, { f2: 50 }); nz(t, .2, .2, { type: 'lowpass', f: 1500 }); },
+  blip: t => tone('square', 990, t, .07, .08, SFXG, { lp: 3000 }),
+  thud: t => { tone('sine', 95, t, .25, .35, SFXG, { f2: 45 }); nz(t, .1, .15, { type: 'lowpass', f: 800 }); },
+};
+function stepSound(kind, t) {
+  if (kind === 'run') nz(t, .05, .09, { type: 'lowpass', f: 900 });
+  else if (kind === 'walk') nz(t, .07, .07, { type: 'lowpass', f: 600 });
+  else if (kind === 'tip') nz(t, .03, .015, { f: 2400, q: 2 });
+  else if (kind === 'rumble') nz(t, .12, .07, { type: 'lowpass', f: 220 });
+  else if (kind === 'type') { if (Math.random() < .8) tone('square', 1800 + Math.random() * 900, t, .015, .025, SFXG, { lp: 5000 }); }
+  else if (kind === 'wtick') SFX.wtick(t);
+  else if (kind === 'wind') nz(t, .9, .05, { type: 'lowpass', f: 500 + Math.random() * 300, attack: .3 });
+}
+
+// ---------- procedurell musik ----------
+const MAJ = [0, 2, 4, 5, 7, 9, 11], MIN = [0, 2, 3, 5, 7, 8, 10], WT = [0, 2, 4, 6, 8, 10];
+const STY = {
+  title: { bpm: 128, key: 62, sc: MAJ, prog: [0, 5, 3, 4], bass: [0, 6, 8, 14], arp: 2, lead: 'x.x.x.xxx.x.x...', lt: 'square', drums: { k: [0, 8], s: [4, 12], h: 2 }, v: .9 },
+  calm: { bpm: 92, key: 60, sc: MAJ, prog: [0, 5, 3, 4], bass: [0, 8], arp: 4, arpT: 'triangle', v: .6 },
+  weird: { bpm: 66, key: 58, sc: WT, prog: [0, 1, 0, -1], bass: [0], arp: 4, arpT: 'sine', det: 14, v: .7 },
+  run: { bpm: 168, key: 57, sc: MIN, prog: [0, 0, 5, 4], bass: [0, 2, 4, 6, 8, 10, 12, 14], arp: 2, lead: 'x.xxx.x.x.xxx.x.', lt: 'square', drums: { k: [0, 8], s: [4, 12], h: 2 }, v: .8 },
+  mystery: { bpm: 84, key: 55, sc: MIN, prog: [0, 5, 3, 4], bass: [0, 6, 8], arp: 4, arpT: 'triangle', v: .6 },
+  royal: { bpm: 92, key: 55, sc: MAJ, prog: [0, 3, 4, 0], pad: 'sawtooth', bass: [0, 8], drums: { k: [0], s: [8], h: 0 }, lead: 'x...x.x.x...x...', lt: 'sawtooth', v: .75 },
+  epic: { bpm: 144, key: 52, sc: MIN, prog: [0, 5, 3, 4], pad: 'sawtooth', bass: [0, 2, 4, 6, 8, 10, 12, 14], drums: { k: [0, 6, 8, 14], s: [4, 12], h: 1 }, lead: 'x.x.x.xxx.x.x.xx', lt: 'sawtooth', v: .85 },
+  sneak: { bpm: 104, key: 57, sc: MIN, prog: [0, 0, 5, 4], bass: [0, 6], pizz: true, lead: 'x...x...x.x.....', lt: 'triangle', v: .45 },
+  hush: { bpm: 104, key: 57, sc: MIN, prog: [0, 5], pizz: true, v: .22 },
+  chase: { bpm: 176, key: 50, sc: MIN, prog: [0, 0, 6, 5], bass: [0, 2, 4, 6, 8, 10, 12, 14], arp: 2, lead: 'x.xx.xx.x.xx.x.x', lt: 'square', drums: { k: [0, 4, 8, 12], s: [4, 12], h: 1 }, v: .85 },
+  clock: { bpm: 60, key: 50, sc: MIN, prog: [0, 5, 3, 4], pad: 'sine', bass: [0], tick: true, v: .6 },
+  tender: { bpm: 70, key: 60, sc: MAJ, prog: [0, 4, 5, 3], pad: 'sine', arp: 4, arpT: 'sine', v: .55 },
+  chaos: { bpm: 150, key: 54, sc: WT, prog: [0, 1, 2, 1], bass: [0, 3, 6, 9, 12], arp: 1, arpT: 'square', drums: { k: [0, 8], s: [4, 12], h: 2 }, v: .6 },
+  triumph: { bpm: 120, key: 60, sc: MAJ, prog: [0, 4, 5, 3], pad: 'sawtooth', bass: [0, 4, 8, 12], arp: 2, lead: 'x.x.x.x.xxx.x...', lt: 'square', drums: { k: [0, 8], s: [4, 12], h: 2 }, v: .85 },
+  casino: { bpm: 132, key: 64, sc: MAJ, prog: [0, 3, 4, 0], bass: [0, 6, 8, 14], arp: 2, arpT: 'square', lead: 'x.x.xx.x..x.x.x.', lt: 'square', drums: { k: [0, 8], s: [4, 12], h: 2 }, v: .6 },
+  digital: { bpm: 112, key: 57, sc: MIN, prog: [0, 5, 2, 6], bass: [0, 3, 6, 8, 11, 14], arp: 1, arpT: 'square', drums: { k: [0, 6, 8], s: [4, 12], h: 2 }, v: .55 },
+  happy: { bpm: 126, key: 62, sc: MAJ, prog: [0, 5, 3, 4], bass: [0, 6, 8, 14], arp: 4, lead: 'x..x..x.x.x..x..', lt: 'square', drums: { k: [0, 8], s: [4, 12], h: 2 }, v: .7 },
+};
+function musicStep(st, n, when) {
+  const spb = 60 / st.bpm / 4, bar = Math.floor(n / 16), s = n % 16, deg = st.prog[bar % st.prog.length], L = st.sc.length, v = st.v;
+  const note = (d, oct = 0) => st.key + st.sc[((d % L) + L) % L] + 12 * (Math.floor(d / L) + oct);
+  if (st.bass && st.bass.includes(s)) tone('triangle', mf(note(deg, -2)), when, spb * 1.8, .2 * v, MUS, { lp: 700 });
+  if (st.pad && s === 0) for (const k of [0, 2, 4]) tone(st.pad, mf(note(deg + k, 0)), when, spb * 16, .03 * v, MUS, { attack: .2, lp: 1300 });
+  if (st.arp && s % st.arp === 0) { const k = [0, 2, 4, 7][(n / st.arp | 0) % 4]; tone(st.arpT || 'triangle', mf(note(deg + k, 1)), when, spb * st.arp * .9, .045 * v, MUS, { det: st.det || 0, lp: 3500 }); if (st.det) tone('sine', mf(note(deg + k, 1)), when, spb * st.arp, .03 * v, MUS, { det: -st.det }); }
+  if (st.lead && st.lead[s] === 'x') { const d = deg + [0, 2, 4, 2, 1, 4, 3, 5][Math.floor(R(bar * 16 + s) * 8)]; tone(st.lt, mf(note(d, 1)), when, spb * 1.6, .035 * v, MUS, { lp: 2600 }); }
+  if (st.drums) { if (st.drums.k.includes(s)) kick(when, .5 * v); if (st.drums.s.includes(s)) snare(when, .16 * v); if (st.drums.h && s % st.drums.h === 0) hat(when, .035 * v); }
+  if (st.tick && s % 4 === 0) { hat(when, .06 * v); if (s % 8 === 0) tone('square', 1800, when, .02, .02 * v, MUS); }
+  if (st.pizz && (s === 0 || s === 8 || s === 11)) tone('triangle', mf(note(deg + (s === 11 ? 4 : 0), -1)), when, .12, .14 * v, MUS);
+}
+let secIdx = -1, lastStep = -1, lastFoot = {}, duck = -1;
+function resetAudioState() { secIdx = -1; lastStep = -1; lastFoot = {}; duck = -1; newBus(); }
+function audioTick(t0, t1) {
+  if (!AC || AC.state !== 'running') return;
+  const now = AC.currentTime + .02;
+  if (t1 - t0 > .5) return;
+  for (const e of EVENTS) { if (e[0] > t0 && e[0] <= t1) SFX[e[1]](now); }
+  for (let i = 0; i < STEPS.length; i++) {
+    const [a, b, iv, kind] = STEPS[i];
+    if (t1 < a || t1 > b) continue;
+    const k = Math.floor((t1 - a) / iv);
+    if (lastFoot[i] !== k) { if (lastFoot[i] !== undefined || t1 - a < iv) stepSound(kind, now); lastFoot[i] = k; }
+  }
+  let idx = -1; for (let i = 0; i < SEC.length; i++) if (t1 >= SEC[i][0] && t1 < SEC[i][1]) { idx = i; break; }
+  if (idx !== secIdx) { secIdx = idx; lastStep = -1; }
+  if (idx >= 0) {
+    const st = STY[SEC[idx][2]], n = Math.floor((t1 - SEC[idx][0]) * st.bpm / 60 * 4);
+    if (n !== lastStep) { if (lastStep < 0 || n - lastStep > 3) musicStep(st, n, now); else for (let k = lastStep + 1; k <= n; k++) musicStep(st, k, now); lastStep = n; }
+  }
+  const talking = SUBS.some(s => t1 >= s[0] && t1 < s[1]) ? 1 : 0;
+  if (talking !== duck) { duck = talking; MUS.gain.setTargetAtTime(talking ? .24 : .4, AC.currentTime, .15); }
+}
+
+// ===================== RENDERING =====================
+function findShot(t) { for (const s of SHOTS) if (t >= s.a && t < s.b) return s; return null; }
+function resize() {
+  const r = cv.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  let w = Math.round(r.width * dpr); w = clamp(w, 320, 1920);
+  const h = Math.round(w * 9 / 16);
+  if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+  SC = cv.width / W;
+}
+function render() {
+  resize();
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.fillStyle = '#000'; g.fillRect(0, 0, cv.width, cv.height);
+  if (T >= DUR) return;
+  const sh = findShot(T);
+  if (!sh) return;
+  g.save(); scr(); sh.fn(T - sh.a, T); g.restore();
+  g.globalAlpha = 1;
+  if (typeof POSTFX === 'function') POSTFX(T);
+  scr();
+  let fade = 0;
+  if (sh.fi) fade = Math.max(fade, 1 - prog(T, sh.a, sh.a + sh.fi));
+  if (sh.fo) fade = Math.max(fade, prog(T, sh.b - sh.fo, sh.b));
+  if (fade > 0) { g.globalAlpha = fade; rect(0, 0, W, H, '#000'); g.globalAlpha = 1; }
+  drawSubs();
+}
+
+// ===================== SPELARE =====================
+const $ = id => document.getElementById(id);
+const ov = $('ov'), big = $('big'), bigtxt = $('bigtxt'), ovtext = $('ovtext');
+const bPlay = $('bPlay'), bRe = $('bRe'), bMute = $('bMute'), bFs = $('bFs'), seek = $('seek'), timeEl = $('time'), iPlay = $('iPlay'), iMute = $('iMute'), app = $('app');
+const P_PLAY = 'M7 4.5v15l13-7.5z', P_PAUSE = 'M6 4h4.5v16H6zM13.5 4H18v16h-4.5z';
+const P_SOUND = 'M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z';
+const P_MUTED = 'M4 9v6h4l5 4V5L8 9H4zm15.4 3 2.3-2.3-1.1-1.1-2.3 2.3-2.3-2.3-1.1 1.1 2.3 2.3-2.3 2.3 1.1 1.1 2.3-2.3 2.3 2.3 1.1-1.1z';
+let playing = false, dragging = false, lastNow = performance.now(), lastT = 0;
+function fmt(s) { s = Math.floor(s); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+function play() {
+  initAudio();
+  if (AC && AC.state === 'suspended') AC.resume();
+  if (T >= DUR) { T = 0; resetAudioState(); }
+  playing = true; ov.hidden = true; lastNow = performance.now(); lastT = T;
+}
+function pause() { playing = false; if (AC && AC.state === 'running') AC.suspend(); }
+function toggle() { if (playing) pause(); else play(); }
+function seekTo(v) { T = clamp(v, 0, DUR); lastT = T; resetAudioState(); if (T < DUR && !ov.hidden && bigtxt.textContent === 'Spela igen') { bigtxt.textContent = 'Fortsätt'; } }
+function setMute(m) { muted = m; if (MASTER) MASTER.gain.setTargetAtTime(m ? 0 : .9, AC.currentTime, .02); }
+function onEnd() { playing = false; if (AC && AC.state === 'running') AC.suspend(); bigtxt.textContent = 'Spela igen'; ovtext.textContent = 'Slut. Tack för att du tittade!'; ov.hidden = false; }
+big.addEventListener('click', () => { if (T >= DUR) { T = 0; resetAudioState(); } play(); });
+bPlay.addEventListener('click', toggle);
+bRe.addEventListener('click', () => { T = 0; lastT = 0; resetAudioState(); play(); });
+bMute.addEventListener('click', () => setMute(!muted));
+bFs.addEventListener('click', () => {
+  const fe = document.fullscreenElement || document.webkitFullscreenElement;
+  if (fe) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+  const req = app.requestFullscreen || app.webkitRequestFullscreen;
+  if (req) { const p = req.call(app); if (p && p.then) p.then(() => { try { window.screen.orientation && window.screen.orientation.lock && window.screen.orientation.lock('landscape').catch(() => {}); } catch (e) { /* orientering stöds inte */ } }).catch(() => {}); }
+});
+seek.addEventListener('pointerdown', () => { dragging = true; });
+seek.addEventListener('pointerup', () => { dragging = false; });
+seek.addEventListener('change', () => { dragging = false; });
+seek.addEventListener('input', () => seekTo(parseFloat(seek.value)));
+cv.addEventListener('click', () => { if (ov.hidden) toggle(); });
+document.addEventListener('keydown', e => {
+  if (e.target && e.target.tagName === 'INPUT' && e.key !== ' ') return;
+  if (e.key === ' ' || e.key === 'k') { e.preventDefault(); if (!ov.hidden && T >= DUR) { T = 0; resetAudioState(); } toggle(); }
+  else if (e.key === 'ArrowRight') seekTo(T + 5);
+  else if (e.key === 'ArrowLeft') seekTo(T - 5);
+  else if (e.key === 'm') setMute(!muted);
+  else if (e.key === 'f') bFs.click();
+});
+document.addEventListener('visibilitychange', () => { if (document.hidden && playing) pause(); });
+let lastUI = '';
+function updateUI() {
+  const st = (playing ? 1 : 0) + '|' + (muted ? 1 : 0) + '|' + Math.floor(T * 10);
+  if (st === lastUI) return; lastUI = st;
+  timeEl.textContent = fmt(T) + ' / 5:00';
+  if (!dragging) seek.value = T.toFixed(1);
+  iPlay.setAttribute('d', playing ? P_PAUSE : P_PLAY); bPlay.setAttribute('aria-label', playing ? 'Pausa' : 'Spela');
+  iMute.setAttribute('d', muted ? P_MUTED : P_SOUND); bMute.setAttribute('aria-label', muted ? 'Slå på ljud' : 'Stäng av ljud');
+}
+function frame(now) {
+  const dt = Math.min(.1, Math.max(0, (now - lastNow) / 1000)); lastNow = now;
+  if (playing) {
+    T += dt;
+    if (T >= DUR) { audioTick(lastT, DUR); T = DUR; onEnd(); }
+    else audioTick(lastT, T);
+  }
+  lastT = T;
+  render();
+  updateUI();
+  requestAnimationFrame(frame);
+}
+// för test/automation: rendera valfri tidpunkt
+window.__film = { seek: v => { seekTo(v); render(); }, get t() { return T; }, shots: () => SHOTS.length };
+requestAnimationFrame(frame);
+</script>
+</html>
