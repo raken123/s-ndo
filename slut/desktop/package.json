@@ -1,0 +1,73 @@
+{
+  "name": "slut",
+  "productName": "Slut",
+  "version": "1.0.0",
+  "description": "Ett spel om Elsa, Johan och meddelanden som någon annan läser.",
+  "author": { "name": "Slut", "email": "slut-spelet@users.noreply.github.com" },
+  "homepage": "https://github.com/raken123/s-ndo/tree/main/slut",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "sync": "node scripts/sync-www.js",
+    "start": "npm run sync && electron .",
+    "dist:mac": "npm run sync && electron-builder --mac --publish never",
+    "dist:win": "npm run sync && electron-builder --win --publish never",
+    "dist:linux": "npm run sync && electron-builder --linux --publish never"
+  },
+  "devDependencies": {
+    "electron": "43.2.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "se.slutspelet.spel",
+    "productName": "Slut",
+    "copyright": "Slut",
+    "files": ["main.js", "www/**/*"],
+    "directories": { "output": "release", "buildResources": "build" },
+    "electronLanguages": ["en-US"],
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
+      "category": "public.app-category.games",
+      "icon": "build/icon.png",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "format": "UDZO",
+      "sign": false,
+      "title": "Slut",
+      "artifactName": "Slut-${version}-mac-${arch}.${ext}"
+    },
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Slut",
+      "artifactName": "Slut-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "Slut-${version}-portable.${ext}"
+    },
+    "linux": {
+      "target": [{ "target": "deb", "arch": ["x64"] }],
+      "icon": "build/icon.png",
+      "category": "Game",
+      "executableName": "slut",
+      "maintainer": "Slut <slut-spelet@users.noreply.github.com>",
+      "synopsis": "Ett spel om Elsa och meddelanden som någon läser"
+    },
+    "deb": {
+      "artifactName": "slut_${version}_amd64.${ext}"
+    }
+  }
+}
