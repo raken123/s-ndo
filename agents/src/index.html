@@ -46,7 +46,9 @@ body.collapsed #sidebar { margin-left:-260px; }
 header.top { height:56px; display:flex; align-items:center; gap:4px; padding:0 8px; flex-shrink:0; }
 #openSidebar { display:none; }
 body.collapsed #openSidebar { display:grid; }
-.model-btn { display:flex; align-items:center; gap:6px; padding:6px 12px; border-radius:10px; font-size:18px; font-weight:500; color:var(--ink); }
+.model-btn { display:flex; align-items:center; gap:6px; padding:6px 12px; border-radius:10px; font-size:18px; font-weight:500; color:var(--ink); min-width:0; white-space:nowrap; }
+.model-btn #modelTitle { overflow:hidden; text-overflow:ellipsis; min-width:0; }
+.model-btn .sub { flex-shrink:0; }
 .model-btn:hover { background:var(--hover); }
 .model-btn .sub { color:var(--muted); font-weight:400; }
 .top .spacer { flex:1; }
@@ -222,6 +224,7 @@ body.pc-open #computer { display:flex; }
   .thread { padding:12px 16px 32px; }
   .msg.user .bubble { max-width:88%; }
   .model-btn { font-size:16px; }
+  .model-btn.group .sub { display:none; }
   #empty h1 { font-size:24px; }
   .pill-btn .lbl { display:none; }
 }
@@ -699,10 +702,13 @@ function renderSidebar() {
 let sbFilter = "";
 function renderHeader() {
   const chat = curChat(), ag = chatAgents(chat);
-  if (chat && ag.length > 1) {
-    $("#modelTitle").textContent = chat.title || "Group chat";
-    $("#modelSub").textContent = `${ag.length} agents · ${chat.mode === "roundtable" ? "round-table" : "parallel"}`;
+  if (ag.length > 1) {
+    const mode = chat ? chat.mode : S.settings.groupMode;
+    $("#modelTitle").textContent = chat ? chat.title || "Group chat" : "New group chat";
+    $("#modelSub").textContent = `${ag.length} agents · ${mode === "roundtable" ? "round-table" : "parallel"}`;
+    $("#modelBtn").classList.add("group");
   } else {
+    $("#modelBtn").classList.remove("group");
     const a = ag[0];
     $("#modelTitle").textContent = a ? a.name : "ChatGPT Agents";
     $("#modelSub").textContent = a ? modelLabel(modelOf(a, chat)) : "";
