@@ -14,6 +14,7 @@
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 }
 * { box-sizing:border-box; }
+[hidden] { display:none !important; }
 html, body { margin:0; height:100%; background:var(--main); color:var(--ink); font-family:var(--font); font-size:16px; -webkit-font-smoothing:antialiased; }
 body { display:flex; overflow:hidden; height:100dvh; padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 button { font:inherit; color:inherit; background:none; border:0; cursor:pointer; }
@@ -211,6 +212,47 @@ body.pc-open #computer { display:flex; }
 .term-in input { flex:1; background:none; border:0; outline:none; padding:8px; font-family:var(--mono); font-size:12px; }
 .viewer { font-family:var(--mono); font-size:12px; white-space:pre-wrap; padding:10px 12px; max-height:220px; overflow:auto; color:#ccc; }
 
+/* ---------- plans ---------- */
+.btn:disabled { opacity:.55; cursor:default; }
+.plans { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.plan { border:1px solid #444; border-radius:18px; padding:20px; display:flex; flex-direction:column; gap:12px; background:#262626; }
+.plan.cur { border-color:#10a37f; }
+.plan.hot { border-color:#7c6cf0; background:linear-gradient(180deg,rgba(124,108,240,.14),#262626 45%); }
+.plan h3 { margin:0; font-size:22px; display:flex; align-items:center; gap:8px; }
+.plan .tag { font-size:11px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; background:#7c6cf0; color:#fff; padding:3px 8px; border-radius:999px; }
+.plan .price { font-size:36px; font-weight:600; letter-spacing:-.5px; } .plan .price small { font-size:13px; color:var(--faint); font-weight:400; margin-left:6px; letter-spacing:0; }
+.plan .tl { color:var(--muted); font-size:14px; margin-top:-6px; }
+.plan ul { list-style:none; margin:4px 0 0; padding:0; display:grid; gap:10px; font-size:14px; }
+.plan li { display:flex; gap:9px; align-items:flex-start; line-height:1.4; }
+.plan li svg { color:#10a37f; margin-top:1px; }
+.plan .btn { width:100%; padding:11px; }
+.test-banner { display:flex; gap:10px; align-items:center; background:rgba(234,179,8,.1); border:1px solid rgba(234,179,8,.35); color:#fde68a; border-radius:12px; padding:10px 14px; font-size:13px; margin-bottom:16px; }
+.test-banner b { white-space:nowrap; }
+.summary { background:#262626; border:1px solid #3a3a3a; border-radius:16px; padding:14px 16px; margin-bottom:16px; }
+.summary .ln { display:flex; justify-content:space-between; gap:12px; font-size:14px; padding:5px 0; }
+.summary .ln.tot { border-top:1px solid #3a3a3a; margin-top:6px; padding-top:12px; font-weight:600; font-size:16px; }
+#gpayBox { min-height:48px; display:flex; align-items:center; } #gpayBox > div, #gpayBox > button { width:100%; }
+.plan-card { display:flex; align-items:center; gap:10px; background:#212121; border:1px solid #444; border-radius:14px; padding:12px 14px; }
+.badge { display:inline-block; font-size:11px; font-weight:700; padding:2px 7px; border-radius:6px; background:#3d3d3d; color:#ddd; letter-spacing:.3px; margin-left:6px; vertical-align:1px; }
+.badge.test { background:rgba(234,179,8,.18); color:#fde68a; }
+/* ---------- intelligent UI (interactive messages) ---------- */
+.ui-card { background:#2a2a2a; border:1px solid #3a3a3a; border-radius:16px; padding:14px 16px; margin:0 0 14px; }
+.ui-q { font-weight:600; margin-bottom:10px; }
+.ui-opts { display:flex; flex-wrap:wrap; gap:8px; }
+.ui-opt { border:1px solid #555; border-radius:999px; padding:7px 14px; font-size:14px; }
+.ui-opt:hover:not(:disabled) { background:#3a3a3a; }
+.ui-opt.on { background:#fff; color:#000; border-color:#fff; }
+.ui-opt:disabled:not(.on) { opacity:.45; cursor:default; }
+.ui-check { display:flex; gap:10px; align-items:center; padding:5px 0; font-size:15px; cursor:pointer; }
+.ui-check input { width:18px; height:18px; accent-color:#10a37f; flex-shrink:0; }
+.ui-check input:checked + span { text-decoration:line-through; color:var(--faint); }
+.ui-prog { font-size:12px; color:var(--faint); margin-top:6px; }
+.ui-field { margin-bottom:10px; } .ui-field label { display:block; font-size:13px; color:var(--muted); margin-bottom:4px; }
+.ui-field input { width:100%; background:#212121; border:1px solid #444; border-radius:10px; padding:8px 10px; outline:none; font-size:14px; }
+.ui-card input[type=range] { width:100%; accent-color:#10a37f; }
+.gen-img { display:block; width:min(100%, 420px); border-radius:14px; margin:4px 0 14px; background:#2a2a2a; min-height:120px; }
+@media (max-width: 768px) { .plans { grid-template-columns:1fr; } }
+
 /* ---------- responsive ---------- */
 @media (max-width: 1100px) {
   #computer { position:fixed; right:0; top:0; bottom:0; width:min(440px, 100%); z-index:50; box-shadow:-10px 0 40px rgba(0,0,0,.5); }
@@ -248,6 +290,7 @@ body.pc-open #computer { display:flex; }
     <div id="sbChatList"></div>
   </div>
   <div class="sb-bottom">
+    <button class="sb-item" id="sbUpgrade"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z"/><path d="M19 15l.8 2.2 2.2.8-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg><span class="grow">Upgrade plan<div style="font-size:12px;color:var(--faint)">More models, credits and images</div></span></button>
     <button class="user-row" id="sbSettings"><span class="avatar">You</span><span class="grow" style="flex:1;text-align:left">Settings<div style="font-size:12px;color:var(--faint)" id="keyState">No API key</div></span></button>
   </div>
 </nav>
@@ -342,6 +385,24 @@ function agentIcon(shape, color, size = 28) {
 }
 const iconFor = (a, size) => a ? agentIcon(a.shape, a.color, size) : agentIcon("blob", "#555", size);
 
+/* ---------- plans ---------- */
+// One agent reply costs 1 credit (a reply from 4 agents in a group chat costs 4).
+const FREE_MODELS = ["gpt-5-nano", "gpt-4o-mini"];
+const IMAGE_MODEL = { id: "gpt-image-2.5-sunburst", label: "GPT Image 2.5 Sunburst" };
+const PLANS = {
+  free: { name: "Free", price: 0, tagline: "Try agents every day", models: FREE_MODELS, dailyCredits: 60, imagesPerDay: 0,
+    features: ["GPT-5 nano and smaller models", "60 credits every day you log in", "Unlimited agents and group chats", "Every agent gets its own computer"] },
+  plus: { name: "Plus", price: 35, tagline: "More power for everyday work", models: "all", monthlyCredits: 1500, intelligentUI: true, imagesPerDay: 3,
+    features: ["Every model, up to GPT-6 Astra", "1,500 credits per month", "Intelligent UI: interactive messages", `3 images a day with ${IMAGE_MODEL.label}`, "Everything in Free"] },
+  ultra: { name: "Ultra", price: 795, tagline: "Unlimited everything", models: "all", unlimited: true, intelligentUI: true, imagesPerDay: Infinity, localMode: true,
+    features: ["Unlimited access to everything", "Unlimited credits and images", "Local Mode: the AI runs on your computer", "Everything in Plus"] },
+};
+// Google Pay. TEST returns dummy tokens and never charges a card. To go live: set
+// environment to "PRODUCTION", add your merchantId from the Google Pay & Wallet Console,
+// your real gateway, and a serverUrl that charges the token and keeps the subscription.
+const PAY = { environment: "TEST", merchantName: "ChatGPT Agents", merchantId: "", currency: "USD", country: "US", serverUrl: "",
+  gateway: { gateway: "example", gatewayMerchantId: "exampleGatewayMerchantId" } };
+
 /* ---------- state ---------- */
 const STORE = "chatgpt-agents:v1";
 const DEFAULT_AGENTS = () => [
@@ -357,7 +418,10 @@ function load() {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(STORE) || "null"); } catch (e) {}
   s = s || {};
-  s.settings = Object.assign({ apiKey: "", baseUrl: "https://api.openai.com/v1", defaultModel: "gpt-4o-mini", groupMode: "parallel", tools: true, extraModels: [] }, s.settings || {});
+  s.settings = Object.assign({ apiKey: "", baseUrl: "https://api.openai.com/v1", defaultModel: "gpt-4o-mini", groupMode: "parallel", tools: true, extraModels: [],
+    intelligentUI: true, imageModel: IMAGE_MODEL.id, local: { on: false, url: "http://localhost:11434/v1", model: "llama3.2" } }, s.settings || {});
+  s.billing = Object.assign({ plan: "free", credits: 0, day: "", renewsAt: 0, images: { day: "", used: 0 }, history: [] }, s.billing || {});
+  s.ui = s.ui || {};
   s.agents = s.agents && s.agents.length ? s.agents : DEFAULT_AGENTS();
   s.chats = s.chats || [];
   s.computers = s.computers || {};
@@ -375,18 +439,65 @@ function save(now) {
 const agentById = id => S.agents.find(a => a.id === id);
 const curChat = () => S.chats.find(c => c.id === S.current) || null;
 const chatAgents = c => (c ? c.agentIds : S.homeSel).map(agentById).filter(Boolean);
-const modelOf = (agent, chat) => (chat && chat.model) || agent.model || S.settings.defaultModel;
+const modelOf = (agent, chat) => localOn() ? S.settings.local.model : (chat && chat.model) || agent.model || S.settings.defaultModel;
 function computer(agentId) {
   if (!S.computers[agentId]) S.computers[agentId] = { files: {}, log: [], screen: null };
   return S.computers[agentId];
 }
 
+/* ---------- billing ---------- */
+const billing = () => S.billing;
+const curPlan = () => PLANS[S.billing.plan] || PLANS.free;
+function today() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
+function addMonth(ts) { const d = new Date(ts); d.setMonth(d.getMonth() + 1); return d.getTime(); }
+const fmtDate = ts => new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+// Free: a fresh 60 credits on the first open of each day (unused ones don't carry over).
+// Plus: 1,500 each billing month. In TEST the renewal is simulated here; live, your
+// server would confirm each renewal charge before the credits refill.
+function refreshCredits() {
+  const b = billing(), p = curPlan();
+  if (p.dailyCredits && b.day !== today()) { b.credits = p.dailyCredits; b.day = today(); }
+  if (b.plan !== "free" && Date.now() >= (b.renewsAt || 0)) {
+    do b.renewsAt = addMonth(b.renewsAt || Date.now()); while (Date.now() >= b.renewsAt);
+    if (p.monthlyCredits) b.credits = p.monthlyCredits;
+  }
+  if (b.images.day !== today()) b.images = { day: today(), used: 0 };
+}
+const hasCredits = (n = 1) => curPlan().unlimited || billing().credits >= n;
+function spend(n) { if (curPlan().unlimited) return true; refreshCredits(); if (billing().credits < n) return false; billing().credits -= n; save(); return true; }
+function refund(n) { if (!curPlan().unlimited) { billing().credits += n; save(); } }
+const canUseModel = id => localOn() || curPlan().models === "all" || curPlan().models.includes(id);
+const imagesLeft = () => curPlan().imagesPerDay === Infinity ? Infinity : Math.max(0, curPlan().imagesPerDay - billing().images.used);
+function creditsText() { const p = curPlan(); return p.unlimited ? "Unlimited" : `${billing().credits.toLocaleString("en-US")} credits${p.dailyCredits ? " today" : ""}`; }
+function creditsHint() { const p = curPlan(); return p.dailyCredits ? `You get ${p.dailyCredits} new credits tomorrow, or upgrade for more.` : p.monthlyCredits ? `Your credits refill on ${fmtDate(billing().renewsAt)}, or go Ultra for unlimited.` : ""; }
+// Local Mode (Ultra): talk to an OpenAI-compatible server on this computer (Ollama, LM Studio).
+function localOn() { return !!(curPlan().localMode && S.settings.local && S.settings.local.on); }
+const apiBase = () => (localOn() ? S.settings.local.url : S.settings.baseUrl).replace(/\/+$/, "");
+const apiHeaders = () => Object.assign({ "Content-Type": "application/json" }, localOn() ? {} : { Authorization: "Bearer " + S.settings.apiKey });
+
+/* ---------- generated images: kept in IndexedDB, too big for localStorage ---------- */
+const imgCache = new Map();
+const idb = (() => {
+  let dbp = null;
+  const open = () => dbp || (dbp = new Promise((res, rej) => { const r = indexedDB.open("chatgpt-agents", 1); r.onupgradeneeded = () => r.result.createObjectStore("images"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }));
+  const run = (mode, f) => open().then(db => new Promise((res, rej) => { const t = db.transaction("images", mode), q = f(t.objectStore("images")); t.oncomplete = () => res(q.result); t.onerror = () => rej(t.error); }));
+  return { put: (k, v) => run("readwrite", st => st.put(v, k)), get: k => run("readonly", st => st.get(k)) };
+})();
+function hydrateImages(root) {
+  root.querySelectorAll("img[data-img]:not([src])").forEach(img => {
+    const id = img.dataset.img, set = src => { if (!src) { img.alt = "Image not found on this device"; return; } img.src = src; img.closest("a")?.setAttribute("href", src); };
+    if (imgCache.has(id)) set(imgCache.get(id)); else idb.get(id).then(src => { if (src) imgCache.set(id, src); set(src); }).catch(() => set(null));
+  });
+}
+
 /* ---------- markdown ---------- */
-function renderMarkdown(src) {
+function renderMarkdown(src, msgId, done) {
   src = String(src || "");
   const blocks = [];
-  // fenced code first
-  src = src.replace(/```([\w+#.-]*)[^\n]*\n([\s\S]*?)(?:```|$)/g, (_, lang, code) => {
+  let ui = 0;
+  // fenced code first; ```ui blocks become interactive widgets (Intelligent UI)
+  src = src.replace(/```([\w+#.-]*)[^\n]*\n([\s\S]*?)(```|$)/g, (_, lang, code, close) => {
+    if (lang === "ui" && msgId) { blocks.push(uiWidget(code, !!close || done, msgId + ":" + ui++)); return `\u0000B${blocks.length - 1}\u0000`; }
     blocks.push(`<div class="codeblock"><div class="bar"><span>${esc(lang || "code")}</span><button data-copy><svg class="icon" style="width:14px;height:14px" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>Copy</button></div><pre><code>${esc(code.replace(/\n$/, ""))}</code></pre></div>`);
     return `\u0000B${blocks.length - 1}\u0000`;
   });
@@ -506,9 +617,32 @@ const TOOLS = [
   fn("show_on_screen", "Show an HTML file from your computer on your screen, so the user can see and use it live.", { path: str("Path of an .html file") }),
   fn("fetch_url", "Fetch a web page or API over HTTPS and return its text (first 20,000 characters). Some sites block this.", { url: str("Absolute https URL") }),
 ];
-async function execTool(agentId, name, args) {
+const IMAGE_TOOL = fn("generate_image", `Create an image with ${IMAGE_MODEL.label} from a detailed prompt. The image appears in the chat for the user.`,
+  { prompt: str("Detailed description of the image"), size: { type: "string", enum: ["1024x1024", "1536x1024", "1024x1536"], description: "Square, landscape or portrait" } }, ["prompt"]);
+const toolsFor = () => curPlan().imagesPerDay ? [...TOOLS, IMAGE_TOOL] : TOOLS;
+async function execTool(agentId, name, args, msg) {
   const pc = computer(agentId);
   switch (name) {
+    case "generate_image": {
+      const p = curPlan();
+      if (!p.imagesPerDay) return "Error: images are part of Plus and Ultra.";
+      refreshCredits();
+      if (imagesLeft() <= 0) return `Error: daily image limit reached (${p.imagesPerDay} a day on ${p.name}). Tell the user it resets tomorrow.`;
+      pcLog(agentId, "d", `image: ${args.prompt}`);
+      try {
+        const r = await fetch(apiBase() + "/images/generations", { method: "POST", headers: apiHeaders(),
+          body: JSON.stringify({ model: S.settings.imageModel || IMAGE_MODEL.id, prompt: String(args.prompt || ""), size: args.size || "1024x1024", n: 1 }) });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) return `Error: image generation failed (${(j.error && j.error.message) || "HTTP " + r.status}). If this image model isn't available for the API key, the user can pick another in Settings.`;
+        const d = (j.data || [])[0] || {}, src = d.b64_json ? "data:image/png;base64," + d.b64_json : d.url;
+        if (!src) return "Error: the API returned no image.";
+        const id = uid(); imgCache.set(id, src); idb.put(id, src).catch(() => {});
+        billing().images.used++; save();
+        if (msg) msg.images = [...(msg.images || []), id];
+        const left = imagesLeft();
+        return `Image created and shown to the user in the chat${left === Infinity ? "" : ` (${left} left today)`}.`;
+      } catch (e) { return "Error: couldn't reach the image API (" + e.message + ")"; }
+    }
     case "run_javascript": {
       pcLog(agentId, "p", args.code);
       const r = await runOnComputer(agentId, String(args.code || ""));
@@ -539,9 +673,9 @@ async function execTool(agentId, name, args) {
 async function streamCompletion({ model, messages, tools, signal, onText }) {
   const body = { model, messages, stream: true };
   if (tools) body.tools = tools;
-  const res = await fetch(S.settings.baseUrl.replace(/\/+$/, "") + "/chat/completions", {
+  const res = await fetch(apiBase() + "/chat/completions", {
     method: "POST", signal,
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + S.settings.apiKey },
+    headers: apiHeaders(),
     body: JSON.stringify(body),
   });
   if (!res.ok) {
@@ -582,10 +716,20 @@ function systemPrompt(agent, chat) {
   let s = `You are "${agent.name}", an AI agent in the ChatGPT Agents app.\n${agent.instructions || ""}\n`;
   if (others.length) s += `\nThis is a group chat. The other agents here are: ${others.join(", ")}. Their messages appear as "[Name]: ...". Add your own perspective, build on what others said rather than repeating it, and keep it concise. Address the user directly.`;
   if (useTools(agent)) s += `\n\nYou have your own private computer with a file system and a JavaScript runtime. Use the tools to run code, check calculations, and save files when that helps. To show the user a web page or app you built, write it to an .html file and call show_on_screen.`;
+  if (useTools(agent) && curPlan().imagesPerDay) s += `\nYou can create images with the generate_image tool (${imagesLeft() === Infinity ? "unlimited" : imagesLeft() + " left today"}).`;
+  if (curPlan().intelligentUI && S.settings.intelligentUI !== false) s += UI_PROMPT;
   s += `\nFormat answers in Markdown. Today is ${new Date().toDateString()}.`;
   return s;
 }
 const useTools = agent => S.settings.tools && agent.tools !== false;
+const UI_PROMPT = `
+
+Intelligent UI is on: you can make a message interactive with a fenced code block whose language is "ui" holding one JSON object. Types:
+- {"type":"choices","question":"...","options":["...","..."]} shows buttons; the user's tap comes back to you as their reply.
+- {"type":"checklist","title":"...","items":["...","..."]} shows a list the user can tick off.
+- {"type":"form","title":"...","fields":[{"label":"...","placeholder":"..."}],"submit":"..."} shows inputs; the answers come back to you.
+- {"type":"slider","label":"...","min":0,"max":10,"value":5,"submit":"..."} lets the user pick a number.
+Use one when it makes the answer easier to act on (picking an option, a to-do list, collecting details). Keep the rest of the message in Markdown.`;
 function historyFor(agent, chat, uptoIndex) {
   const msgs = [{ role: "system", content: systemPrompt(agent, chat) }];
   const hist = chat.messages.slice(0, uptoIndex).filter(m => !m.error && (m.content || "").trim()).slice(-40);
@@ -602,9 +746,12 @@ async function runAgentTurn(chat, msg, signal) {
   if (!agent) { msg.error = "This agent was deleted."; msg.pending = false; return; }
   const model = modelOf(agent, chat);
   msg.model = model;
+  if (!canUseModel(model)) { msg.error = `${modelLabel(model)} is part of Plus and Ultra. Pick ${modelLabel(FREE_MODELS[0])} for ${agent.name}, or upgrade.`; msg.upsell = true; msg.pending = false; paintMsg(msg); return; }
+  if (!spend(1)) { msg.error = "You're out of credits. " + creditsHint(); msg.upsell = true; msg.pending = false; paintMsg(msg); renderSidebar(); return; }
+  renderSidebar();
   const idx = chat.messages.indexOf(msg);
   const messages = historyFor(agent, chat, idx);
-  let tools = useTools(agent) ? TOOLS : null;
+  let tools = useTools(agent) ? toolsFor() : null;
   setBusy(agent.id, 1);
   try {
     for (let step = 0; step < 12; step++) {
@@ -623,18 +770,19 @@ async function runAgentTurn(chat, msg, signal) {
         try { args = JSON.parse(c.function.arguments || "{}"); } catch (e) {}
         const st = { tool: c.function.name, args, result: null };
         msg.steps.push(st); msg.content = ""; paintMsg(msg);
-        st.result = await execTool(agent.id, c.function.name, args);
+        st.result = await execTool(agent.id, c.function.name, args, msg);
         messages.push({ role: "tool", tool_call_id: c.id, content: String(st.result) });
         paintMsg(msg);
       }
     }
   } catch (e) {
     if (e.name === "AbortError") { if (!msg.content) msg.content = ""; msg.stopped = true; }
-    else msg.error = friendlyError(e, model);
+    else { msg.error = friendlyError(e, model); refund(1); } // a failed reply doesn't cost a credit
   } finally {
     msg.pending = false; setBusy(agent.id, -1); paintMsg(msg); save();
   }
 }
+function sendText(t) { $("#input").value = t; autosize(); send(); }
 function friendlyError(e, model) {
   if (e.status === 401) return "Your API key was rejected (401). Check it in Settings.";
   if (e.status === 404 || /model/i.test(e.message) && /exist|not found|access/i.test(e.message)) return `The model “${modelLabel(model)}” (${model}) isn't available for your API key: ${e.message}`;
@@ -648,7 +796,9 @@ let controller = null;
 async function send() {
   const input = $("#input"), text = input.value.trim();
   if (!text || controller) return;
-  if (!S.settings.apiKey) { openSettings(); return; }
+  if (!S.settings.apiKey && !localOn()) { openSettings(); return; }
+  refreshCredits();
+  if (!hasCredits()) { openPlans("credits"); return; }
   let chat = curChat();
   if (!chat) {
     chat = { id: uid(), title: text.slice(0, 48), agentIds: [...S.homeSel], messages: [], mode: S.settings.groupMode, model: "", createdAt: Date.now() };
@@ -679,7 +829,7 @@ function stop() { if (controller) controller.abort(); }
 async function regenerate(msgId) {
   const chat = curChat(); if (!chat || controller) return;
   const m = chat.messages.find(x => x.id === msgId); if (!m) return;
-  Object.assign(m, { content: "", steps: [], error: null, pending: true, stopped: false });
+  Object.assign(m, { content: "", steps: [], images: [], error: null, upsell: false, pending: true, stopped: false });
   controller = new AbortController(); render();
   try { await runAgentTurn(chat, m, controller.signal); } finally { controller = null; save(true); render(); }
 }
@@ -689,7 +839,8 @@ function render() {
   renderSidebar(); renderHeader(); renderThread(); renderComposer(); renderComputerTabs();
 }
 function renderSidebar() {
-  $("#keyState").textContent = S.settings.apiKey ? "API key saved · " + modelLabel(S.settings.defaultModel) : "No API key — add one";
+  $("#keyState").textContent = `${curPlan().name} · ${creditsText()}${S.settings.apiKey || localOn() ? "" : " · add API key"}`;
+  $("#sbUpgrade").hidden = billing().plan === "ultra";
   $("#sbAgentList").innerHTML = S.agents.map(a => `<button class="sb-item" data-agent="${a.id}">${iconFor(a, 22)}<span class="grow">${esc(a.name)}</span><span class="more" data-edit-agent="${a.id}" title="Edit"><svg class="icon" style="width:16px;height:16px" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg></span></button>`).join("")
     + `<button class="sb-item" id="sbNewAgent"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span class="grow">Create agent</span></button>`;
   const q = (sbFilter || "").toLowerCase();
@@ -711,7 +862,7 @@ function renderHeader() {
     $("#modelBtn").classList.remove("group");
     const a = ag[0];
     $("#modelTitle").textContent = a ? a.name : "ChatGPT Agents";
-    $("#modelSub").textContent = a ? modelLabel(modelOf(a, chat)) : "";
+    $("#modelSub").textContent = a ? (localOn() ? "Local · " : "") + modelLabel(modelOf(a, chat)) : "";
   }
   $("#pcBtn").classList.toggle("on", document.body.classList.contains("pc-open"));
 }
@@ -726,6 +877,7 @@ function renderThread() {
   if (!has) { renderChooser(); return; }
   const area = $("#chatArea"), atBottom = area.scrollHeight - area.scrollTop - area.clientHeight < 120;
   $("#thread").innerHTML = chat.messages.map(msgHtml).join("");
+  hydrateImages($("#thread"));
   if (atBottom || controller) area.scrollTop = area.scrollHeight;
 }
 function msgHtml(m) {
@@ -746,14 +898,15 @@ function botInner(m) {
     }
     h += `</details>`;
   }
-  if (m.content) h += `<div class="md ${m.pending ? "cursor-host" : ""}">${renderMarkdown(m.content)}</div>`;
+  if (m.content) h += `<div class="md ${m.pending ? "cursor-host" : ""}">${renderMarkdown(m.content, m.id, !m.pending)}</div>`;
   else if (m.pending && !(m.steps && m.steps.some(s => s.result === null))) h += `<div class="thinking"><span class="shimmer">${group ? "Thinking…" : "Thinking…"}</span></div>`;
+  for (const id of m.images || []) h += `<a download="image-${id}.png" target="_blank"><img class="gen-img" data-img="${id}" alt="Generated image"></a>`;
   if (m.stopped && !m.content) h += `<div style="color:var(--faint);font-size:14px">Stopped.</div>`;
-  if (m.error) h += `<div class="err">${esc(m.error)}</div>`;
+  if (m.error) h += `<div class="err">${esc(m.error)}${m.upsell ? ` <button class="btn small primary" style="margin-left:8px" data-upgrade>See plans</button>` : ""}</div>`;
   if (!m.pending) h += `<div class="actions"><button class="ibtn" data-copy-msg="${m.id}" title="Copy"><svg class="icon" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button><button class="ibtn" data-regen="${m.id}" title="Regenerate"><svg class="icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></button>${m.steps && m.steps.length ? `<button class="ibtn" data-open-pc="${m.agentId}" title="Open this agent's computer"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></button>` : ""}</div>`;
   return h + `</div>`;
 }
-const stepLabel = t => ({ run_javascript: "Ran code", write_file: "Wrote a file", read_file: "Read a file", list_files: "Listed files", delete_file: "Deleted a file", show_on_screen: "Showed on screen", fetch_url: "Fetched a URL" }[t] || t);
+const stepLabel = t => ({ generate_image: "Created an image", run_javascript: "Ran code", write_file: "Wrote a file", read_file: "Read a file", list_files: "Listed files", delete_file: "Deleted a file", show_on_screen: "Showed on screen", fetch_url: "Fetched a URL" }[t] || t);
 let paintQueued = new Set(), paintRaf = 0;
 function paintMsg(m) {
   paintQueued.add(m);
@@ -766,6 +919,7 @@ function paintMsg(m) {
       if (el) {
         const openStates = [...el.querySelectorAll("details")].map(d => d.open);
         el.innerHTML = botInner(msg);
+        hydrateImages(el);
         const md = el.querySelector(".md"); if (md && msg.pending) { const last = md.lastElementChild || md; last.classList.add("cursor"); }
         if (!msg.pending || !msg.steps?.some(s => s.result === null)) el.querySelectorAll("details").forEach((d, i) => { if (openStates[i] !== undefined) d.open = openStates[i]; });
       }
@@ -789,7 +943,7 @@ function renderComposer() {
   $("#toolsPill").classList.toggle("on", !!S.settings.tools);
   const chat = curChat(), ag = chatAgents(chat);
   $("#input").placeholder = ag.length > 1 ? `Message ${ag.length} agents — use @name to ask one` : `Ask ${ag[0] ? ag[0].name : "anything"}`;
-  $("#keyBanner").innerHTML = S.settings.apiKey ? "" : `<div class="banner"><span>Add your OpenAI API key to start chatting. It stays on this device.</span><button id="bannerKey">Add key</button></div>`;
+  $("#keyBanner").innerHTML = S.settings.apiKey || localOn() ? "" : `<div class="banner"><span>Add your OpenAI API key to start chatting. It stays on this device.</span><button id="bannerKey">Add key</button></div>`;
 }
 function autosize() { const t = $("#input"); t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 220) + "px"; renderComposer(); }
 
@@ -874,15 +1028,19 @@ function modelOptions(selected, includeDefault) {
   for (const id of S.settings.extraModels || []) if (!all.some(m => m.id === id)) all.push({ id, label: id, note: "From your account" });
   if (selected && !all.some(m => m.id === selected)) all.push({ id: selected, label: selected });
   return (includeDefault ? `<option value="" ${!selected ? "selected" : ""}>Default (${esc(modelLabel(S.settings.defaultModel))})</option>` : "") +
-    all.map(m => `<option value="${esc(m.id)}" ${m.id === selected ? "selected" : ""}>${esc(m.label)}${m.label !== m.id ? " — " + esc(m.id) : ""}</option>`).join("") +
+    all.map(m => `<option value="${esc(m.id)}" ${m.id === selected ? "selected" : ""}>${esc(m.label)}${m.label !== m.id ? " — " + esc(m.id) : ""}${canUseModel(m.id) ? "" : " · Plus"}</option>`).join("") +
     `<option value="__custom">Custom model ID…</option>`;
 }
 function bindCustomModel(sel) {
+  let prev = sel.value;
   sel.addEventListener("change", () => {
-    if (sel.value !== "__custom") return;
-    const id = prompt("Model ID (as used by the API):", "");
-    if (id && id.trim()) { const o = document.createElement("option"); o.value = o.textContent = id.trim(); sel.insertBefore(o, sel.lastElementChild); sel.value = id.trim(); }
-    else sel.selectedIndex = 0;
+    if (sel.value === "__custom") {
+      const id = prompt("Model ID (as used by the API):", "");
+      if (id && id.trim()) { const o = document.createElement("option"); o.value = o.textContent = id.trim(); sel.insertBefore(o, sel.lastElementChild); sel.value = id.trim(); }
+      else { sel.value = prev; return; }
+    }
+    if (sel.value && !canUseModel(sel.value)) { toast(`${modelLabel(sel.value)} needs Plus`); sel.value = prev; openPlans("model"); return; }
+    prev = sel.value;
   });
 }
 
@@ -972,13 +1130,23 @@ function openGroupCreator(chat) {
 }
 
 function openSettings() {
-  const st = S.settings;
+  const st = S.settings, b = billing(), p = curPlan(), last = b.history[0];
+  const lock = need => `<span class="badge">${need}</span>`;
   const bg = modal("Settings", `
+    <div class="field"><label>Plan</label><div class="plan-card"><div style="flex:1;min-width:0"><div style="font-weight:600">${p.name}${b.plan !== "free" && last && last.env === "TEST" ? '<span class="badge test">TEST</span>' : ""}</div>
+      <div style="font-size:13px;color:var(--faint)">${creditsText()}${p.monthlyCredits || p.unlimited ? ` · renews ${fmtDate(b.renewsAt)}` : ""}${b.plan !== "free" && last && last.card ? ` · ${esc(last.card)}` : ""}</div></div>
+      <button class="btn small" id="sPlans">${b.plan === "ultra" ? "Change plan" : "Upgrade"}</button>${b.plan !== "free" ? '<button class="btn small danger" id="sCancel">Cancel plan</button>' : ""}</div></div>
     <div class="field"><label>OpenAI API key</label><input type="password" id="sKey" value="${esc(st.apiKey)}" placeholder="sk-..." autocomplete="off" spellcheck="false">
       <div class="note">Stored only on this device (local storage) and sent only to the API base URL below. Never share a key publicly — if one leaks, revoke it at platform.openai.com.</div></div>
     <div class="field"><label>Default model</label><select id="sModel">${modelOptions(st.defaultModel, false)}</select>
       <div class="note" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn small" id="sLoad">Load my models</button><span id="sLoadMsg">Adds every model your key can use to the pickers.</span></div></div>
     <div class="field"><label>API base URL</label><input type="url" id="sBase" value="${esc(st.baseUrl)}"><div class="note">Any OpenAI-compatible endpoint works.</div></div>
+    <div class="field"><label>Intelligent UI${p.intelligentUI ? "" : lock("Plus")}</label><label class="pick" style="padding-left:0;display:flex"><input type="checkbox" id="sUI" ${st.intelligentUI !== false ? "checked" : ""} ${p.intelligentUI ? "" : "disabled"}> Agents can reply with interactive messages: buttons, checklists, forms and sliders</label></div>
+    <div class="field"><label>Image model${p.imagesPerDay ? "" : lock("Plus")}</label><input type="text" id="sImg" value="${esc(st.imageModel)}" spellcheck="false" ${p.imagesPerDay ? "" : "disabled"}>
+      <div class="note">${p.imagesPerDay === Infinity ? "Unlimited images." : p.imagesPerDay ? `${imagesLeft()} of ${p.imagesPerDay} images left today.` : "Images come with Plus (3 a day) and Ultra (unlimited)."} ${esc(IMAGE_MODEL.label)} (${esc(IMAGE_MODEL.id)}) only works if your API key has access to it; you can enter another image model ID here.</div></div>
+    <div class="field"><label>Local Mode${p.localMode ? "" : lock("Ultra")}</label><label class="pick" style="padding-left:0;display:flex"><input type="checkbox" id="sLocal" ${localOn() ? "checked" : ""} ${p.localMode ? "" : "disabled"}> Run agents on this computer instead of the cloud</label>
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-top:8px"><input type="url" id="sLocalUrl" value="${esc(st.local.url)}" ${p.localMode ? "" : "disabled"} aria-label="Local server URL"><input type="text" id="sLocalModel" value="${esc(st.local.model)}" ${p.localMode ? "" : "disabled"} aria-label="Local model"></div>
+      <div class="note">Works with Ollama, LM Studio or any OpenAI-compatible server on your computer. No API key is needed and chats never leave the machine. For Ollama, start it with <code>OLLAMA_ORIGINS=*</code> so the app is allowed to connect.</div></div>
     <div class="field"><label>Default group mode</label><div class="seg" id="sMode"><button data-m="parallel">Parallel</button><button data-m="roundtable">Round-table</button></div></div>
     <div class="field"><label>Your data</label><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" id="sExport">Export all</button><button class="btn small" id="sImport">Import</button><button class="btn small danger" id="sWipe">Delete all chats</button></div></div>
     <div class="note" style="font-size:12px;color:var(--faint)">ChatGPT Agents 1.0 · Independent app, not affiliated with OpenAI. Uses the OpenAI API with your own key.</div>`,
@@ -1003,8 +1171,14 @@ function openSettings() {
   $("#sSave", bg).onclick = () => {
     st.apiKey = $("#sKey", bg).value.trim(); st.baseUrl = $("#sBase", bg).value.trim() || "https://api.openai.com/v1";
     const m = $("#sModel", bg).value; if (m && m !== "__custom") st.defaultModel = m;
-    st.groupMode = mode; save(true); bg.close(); render(); toast("Settings saved");
+    st.groupMode = mode;
+    if (curPlan().intelligentUI) st.intelligentUI = $("#sUI", bg).checked;
+    if (curPlan().imagesPerDay) st.imageModel = $("#sImg", bg).value.trim() || IMAGE_MODEL.id;
+    if (curPlan().localMode) st.local = { on: $("#sLocal", bg).checked, url: $("#sLocalUrl", bg).value.trim() || "http://localhost:11434/v1", model: $("#sLocalModel", bg).value.trim() || "llama3.2" };
+    save(true); bg.close(); render(); toast("Settings saved");
   };
+  $("#sPlans", bg).onclick = () => { bg.close(); openPlans(); };
+  if ($("#sCancel", bg)) $("#sCancel", bg).onclick = () => { if (confirm(`Cancel ${p.name}? You'll go back to Free right away.`)) { cancelPlan(); bg.close(); } };
   $("#sExport", bg).onclick = () => {
     const data = JSON.stringify({ ...S, settings: { ...S.settings, apiKey: "" } }, null, 2);
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: "application/json" })); a.download = "chatgpt-agents-backup.json"; a.click();
@@ -1019,6 +1193,123 @@ function openSettings() {
   };
   $("#sWipe", bg).onclick = () => { if (confirm("Delete every chat? Agents and their computers are kept.")) { S.chats = []; S.current = null; save(true); bg.close(); render(); } };
   setTimeout(() => { if (!st.apiKey) $("#sKey", bg).focus(); }, 30);
+}
+
+/* ---------- plans screen + Google Pay checkout ---------- */
+const CHECK = '<svg class="icon" style="width:17px;height:17px;flex-shrink:0" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg>';
+const money = n => "$" + n.toLocaleString("en-US");
+const testBanner = () => PAY.environment === "TEST" ? '<div class="test-banner"><b>TEST MODE</b><span>Google Pay test environment: you\'ll see test cards and no real money is charged.</span></div>' : "";
+function openPlans(reason) {
+  const cur = billing().plan;
+  const why = { credits: "You've used all your credits. " + creditsHint(), model: "That model is part of Plus and Ultra." }[reason] || "";
+  const bg = modal("Upgrade your plan", `${testBanner()}${why ? `<p style="margin:0 0 14px;color:var(--muted)">${esc(why)}</p>` : ""}
+    <div class="plans">${Object.entries(PLANS).map(([k, p]) => `<div class="plan ${k === cur ? "cur" : ""} ${k === "plus" ? "hot" : ""}" data-plan="${k}">
+      <h3>${p.name}${k === "plus" ? '<span class="tag">Popular</span>' : ""}</h3>
+      <div class="price">${money(p.price)}<small>USD / month</small></div>
+      <div class="tl">${esc(p.tagline)}</div>
+      ${k === cur ? '<button class="btn" disabled>Your current plan</button>' : k === "free" ? '<button class="btn" data-downgrade>Switch to Free</button>' : `<button class="btn primary" data-buy="${k}">Get ${p.name}</button>`}
+      <ul>${p.features.map(f => `<li>${CHECK}<span>${esc(f)}</span></li>`).join("")}</ul></div>`).join("")}</div>
+    <p class="note" style="margin:14px 0 0;font-size:12px;color:var(--faint)">One agent reply costs 1 credit, so a reply from 4 agents in a group chat costs 4. Prices in USD, billed monthly. Cancel any time in Settings.</p>`, "", { wide: true });
+  bg.addEventListener("click", e => {
+    const b = e.target.closest("[data-buy]");
+    if (b) { bg.close(); openCheckout(b.dataset.buy); }
+    if (e.target.closest("[data-downgrade]") && confirm("Switch to Free? Paid features stop right away.")) { cancelPlan(); bg.close(); }
+  });
+}
+let gpClient = null;
+function googlePay() {
+  if (gpClient) return Promise.resolve(gpClient);
+  return new Promise((res, rej) => {
+    const go = () => { try { gpClient = new google.payments.api.PaymentsClient({ environment: PAY.environment }); res(gpClient); } catch (e) { rej(e); } };
+    if (window.google && google.payments) return go();
+    const sc = document.createElement("script"); sc.src = "https://pay.google.com/gp/p/js/pay.js"; sc.async = true;
+    sc.onload = go; sc.onerror = () => rej(new Error("pay.google.com couldn't be reached"));
+    document.head.appendChild(sc);
+  });
+}
+function cardMethod(withToken) {
+  const m = { type: "CARD", parameters: { allowedAuthMethods: ["PAN_ONLY", "CRYPTOGRAM_3DS"], allowedCardNetworks: ["AMEX", "DISCOVER", "MASTERCARD", "VISA"] } };
+  if (withToken) m.tokenizationSpecification = { type: "PAYMENT_GATEWAY", parameters: PAY.gateway };
+  return m;
+}
+function openCheckout(key) {
+  const p = PLANS[key];
+  const bg = modal(`ChatGPT Agents ${p.name}`, `${testBanner()}
+    <div class="summary"><div class="ln"><span>${p.name} plan, monthly</span><span>${money(p.price)}.00</span></div>
+      <div class="ln" style="color:var(--faint)"><span>Renews ${fmtDate(addMonth(Date.now()))}. Cancel any time.</span></div>
+      <div class="ln tot"><span>Due today</span><span>${money(p.price)}.00 USD</span></div></div>
+    <ul style="margin:0 0 16px 20px;font-size:14px;line-height:1.8;color:var(--muted)">${p.features.map(f => `<li>${esc(f)}</li>`).join("")}</ul>
+    <div id="gpayBox"><span class="shimmer" style="margin:auto">Loading Google Pay…</span></div>
+    <div class="note" id="payMsg" style="font-size:13px;margin-top:12px;text-align:center;color:var(--faint)"></div>`);
+  googlePay().then(async client => {
+    const ready = await client.isReadyToPay({ apiVersion: 2, apiVersionMinor: 0, allowedPaymentMethods: [cardMethod(false)] });
+    const box = $("#gpayBox", bg); if (!box) return;
+    if (!ready.result) { box.innerHTML = '<div class="err" style="width:100%">Google Pay isn\'t available here. Open the app in Chrome, signed in to a Google account.</div>'; return; }
+    box.innerHTML = "";
+    box.appendChild(client.createButton({ buttonType: "subscribe", buttonColor: "white", buttonSizeMode: "fill", onClick: () => pay(client, key, bg) }));
+  }).catch(e => { const box = $("#gpayBox", bg); if (box) box.innerHTML = `<div class="err" style="width:100%">Couldn't load Google Pay: ${esc(e.message)}. Check your internet connection.</div>`; });
+}
+async function pay(client, key, bg) {
+  const p = PLANS[key], price = p.price.toFixed(2);
+  try {
+    const data = await client.loadPaymentData({
+      apiVersion: 2, apiVersionMinor: 0,
+      allowedPaymentMethods: [cardMethod(true)],
+      merchantInfo: Object.assign({ merchantName: PAY.merchantName }, PAY.merchantId ? { merchantId: PAY.merchantId } : {}),
+      transactionInfo: { totalPriceStatus: "FINAL", totalPriceLabel: "Due today", totalPrice: price, currencyCode: PAY.currency, countryCode: PAY.country,
+        displayItems: [{ label: `ChatGPT Agents ${p.name}, 1 month`, type: "LINE_ITEM", price }] },
+    });
+    await confirmPayment(key, data);
+    activatePlan(key, data);
+    bg.close(); welcome(key);
+  } catch (e) {
+    if (e && e.statusCode === "CANCELED") return;
+    const msg = $("#payMsg", bg); if (msg) msg.textContent = "Payment didn't go through: " + ((e && (e.statusMessage || e.message)) || e);
+  }
+}
+// TEST tokens are dummies, so the plan switches on right here. Live, the token goes to your
+// server, which charges it through the gateway and creates the subscription.
+async function confirmPayment(key, data) {
+  if (PAY.environment === "TEST") return;
+  if (!PAY.serverUrl) throw new Error("live payments need a server to charge the token");
+  const r = await fetch(PAY.serverUrl, { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ plan: key, token: data.paymentMethodData.tokenizationData.token }) });
+  if (!r.ok) throw new Error("the payment server answered HTTP " + r.status);
+}
+function activatePlan(key, data) {
+  const b = billing(), p = PLANS[key], pm = (data && data.paymentMethodData) || {};
+  Object.assign(b, { plan: key, since: Date.now(), renewsAt: addMonth(Date.now()), credits: p.monthlyCredits || 0 });
+  b.history.unshift({ at: Date.now(), plan: key, amount: p.price, currency: PAY.currency, env: PAY.environment,
+    card: pm.description || (pm.info ? `${pm.info.cardNetwork} •••• ${pm.info.cardDetails}` : "") });
+  b.history = b.history.slice(0, 20);
+  save(true); render();
+}
+function cancelPlan() { const b = billing(); b.plan = "free"; b.renewsAt = 0; b.day = ""; refreshCredits(); save(true); render(); toast("You're on Free now"); }
+function welcome(key) {
+  const p = PLANS[key], last = billing().history[0] || {};
+  const bg = modal(`Welcome to ${p.name}`, `${testBanner()}<p style="margin:0 0 12px">${PAY.environment === "TEST" ? "Test payment approved" : "Payment approved"}${last.card ? ` with ${esc(last.card)}` : ""}. Your plan renews on ${fmtDate(billing().renewsAt)}.</p>
+    <ul style="margin:0 0 0 20px;line-height:1.8">${p.features.map(f => `<li>${esc(f)}</li>`).join("")}</ul>`, '<button class="btn primary" data-go-chat>Start chatting</button>');
+  bg.querySelector("[data-go-chat]").onclick = bg.close;
+}
+
+/* ---------- Intelligent UI widgets ---------- */
+const uiState = key => S.ui[key] || (S.ui[key] = {});
+function uiWidget(code, closed, key) {
+  const raw = () => `<div class="codeblock"><div class="bar"><span>ui</span></div><pre><code>${esc(code)}</code></pre></div>`;
+  if (!closed) return '<div class="ui-card"><span class="shimmer">Building an interactive message…</span></div>';
+  let w; try { w = JSON.parse(code); } catch (e) { return raw(); }
+  const st = uiState(key), title = w.question || w.title || w.label || "";
+  const head = title ? `<div class="ui-q">${esc(title)}</div>` : "", dis = st.done ? "disabled" : "";
+  const submit = `<button class="btn small primary" style="margin-top:4px" data-ui-form="${key}" ${dis}>${esc(st.done ? "Sent" : w.submit || "Send")}</button>`;
+  switch (w.type) {
+    case "choices": return `<div class="ui-card">${head}<div class="ui-opts">${(w.options || []).map(o => `<button class="ui-opt ${st.done === String(o) ? "on" : ""}" data-ui-key="${key}" data-ui-send="${esc(o)}" ${dis}>${esc(o)}</button>`).join("")}</div></div>`;
+    case "checklist": { const items = w.items || [], ch = st.checked || [], n = items.filter((_, i) => ch[i]).length;
+      return `<div class="ui-card">${head}${items.map((it, i) => `<label class="ui-check"><input type="checkbox" data-ui-check="${key}|${i}" ${ch[i] ? "checked" : ""}><span>${esc(it)}</span></label>`).join("")}<div class="ui-prog" data-ui-prog="${items.length}">${n} of ${items.length} done</div></div>`; }
+    case "form": return `<div class="ui-card" data-ui-title="${esc(title)}">${head}${(w.fields || []).map(f => `<div class="ui-field"><label>${esc(f.label || "")}</label><input data-ui-field="${esc(f.label || "")}" placeholder="${esc(f.placeholder || "")}" value="${esc((st.values || {})[f.label] || "")}" ${dis}></div>`).join("")}${submit}</div>`;
+    case "slider": { const v = st.value ?? w.value ?? w.min ?? 0;
+      return `<div class="ui-card" data-ui-title="${esc(title)}">${head}<input type="range" data-ui-range min="${+w.min || 0}" max="${w.max == null ? 10 : +w.max}" step="${+w.step || 1}" value="${v}" ${dis}><div class="ui-prog">Value: <b data-ui-val>${v}</b></div>${submit}</div>`; }
+  }
+  return raw();
 }
 
 const PLAN_SRC = "../plan/plan.png";
@@ -1043,10 +1334,12 @@ function headerMenu(anchor) {
   const items = [{ header: group ? "Model for every agent in this chat" : chat ? "Model for this chat" : `Model for ${ag[0] ? ag[0].name : "agent"}` }];
   if (chat || group) items.push({ label: "Each agent's own model", checked: !cur, action: () => { if (chat) chat.model = ""; save(); render(); } });
   const all = [...MODELS, ...(S.settings.extraModels || []).filter(id => !MODELS.some(m => m.id === id)).map(id => ({ id, label: id }))];
-  for (const m of all) items.push({ label: m.label, sub: m.note || m.id, checked: chat ? chat.model === m.id : (ag[0] && modelOf(ag[0], null) === m.id), action: () => {
+  if (localOn()) items.splice(1, 0, { header: `Local Mode is on: every agent uses ${S.settings.local.model}` });
+  for (const m of all) { const ok = canUseModel(m.id); items.push({ label: m.label + (ok ? "" : "  🔒"), sub: ok ? m.note || m.id : "Plus and Ultra", checked: chat ? chat.model === m.id : (ag[0] && modelOf(ag[0], null) === m.id), action: () => {
+    if (!ok) return openPlans("model");
     if (chat) chat.model = m.id; else if (ag[0]) ag[0].model = m.id; save(); render();
-  } });
-  items.push("-", { label: "Custom model ID…", action: () => { const id = prompt("Model ID:"); if (!id) return; if (chat) chat.model = id.trim(); else if (ag[0]) ag[0].model = id.trim(); save(); render(); } });
+  } }); }
+  items.push("-", { label: "Custom model ID…", action: () => { const id = prompt("Model ID:"); if (!id) return; if (!canUseModel(id.trim())) return openPlans("model"); if (chat) chat.model = id.trim(); else if (ag[0]) ag[0].model = id.trim(); save(); render(); } });
   menu(anchor, items);
 }
 
@@ -1118,6 +1411,22 @@ document.addEventListener("click", e => {
     return;
   }
   if (q("[data-reset-pc]")) { if (confirm("Reset this computer? All its files and terminal history are erased.")) { const id = pcState.agent; workers[id]?.terminate(); delete workers[id]; S.computers[id] = { files: {}, log: [], screen: null }; pcState.view = null; save(); renderComputerBody(); } return; }
+  if (q("[data-upgrade]")) { openPlans(); return; }
+  if ((el = q("[data-ui-send]"))) {
+    if (controller) { toast("Wait for the agents to finish"); return; }
+    const st = uiState(el.dataset.uiKey); if (st.done) return;
+    st.done = el.dataset.uiSend; save(); sendText(el.dataset.uiSend); return;
+  }
+  if ((el = q("[data-ui-form]"))) {
+    if (controller) { toast("Wait for the agents to finish"); return; }
+    const st = uiState(el.dataset.uiForm), card = el.closest(".ui-card"); if (st.done) return;
+    const range = card.querySelector("[data-ui-range]"), lines = [];
+    st.values = {};
+    card.querySelectorAll("[data-ui-field]").forEach(i => { st.values[i.dataset.uiField] = i.value.trim(); lines.push(`${i.dataset.uiField}: ${i.value.trim() || "(blank)"}`); });
+    if (range) { st.value = +range.value; lines.push(String(range.value)); }
+    st.done = true; save();
+    sendText([card.dataset.uiTitle, ...lines].filter(Boolean).join("\n")); return;
+  }
   if (t.id === "bannerKey") { openSettings(); return; }
   if (t.id === "chipNewAgent" || q("#chipNewAgent") || q("#sbNewAgent")) { openAgentEditor(); return; }
 });
@@ -1153,6 +1462,15 @@ $("#sbGroup").onclick = () => { closeMobileSidebar(); openGroupCreator(); };
 $("#sbAgents").onclick = () => { closeMobileSidebar(); openAgentsManager(); };
 $("#sbPlan").onclick = () => { closeMobileSidebar(); openPlan(); };
 $("#sbSettings").onclick = () => { closeMobileSidebar(); openSettings(); };
+$("#sbUpgrade").onclick = () => { closeMobileSidebar(); openPlans(); };
+document.addEventListener("change", e => {
+  const c = e.target.closest("[data-ui-check]"); if (!c) return;
+  const [key, i] = c.dataset.uiCheck.split("|"), st = uiState(key);
+  (st.checked = st.checked || [])[+i] = c.checked; save();
+  const card = c.closest(".ui-card"), prog = card.querySelector("[data-ui-prog]");
+  prog.textContent = `${card.querySelectorAll("[data-ui-check]:checked").length} of ${prog.dataset.uiProg} done`;
+});
+document.addEventListener("input", e => { if (e.target.matches("[data-ui-range]")) e.target.closest(".ui-card").querySelector("[data-ui-val]").textContent = e.target.value; });
 document.addEventListener("keydown", async e => {
   if (e.target.id === "termInput" && e.key === "Enter" && e.target.value.trim()) {
     const id = pcState.agent, code = e.target.value; e.target.value = "";
@@ -1167,6 +1485,7 @@ document.addEventListener("keydown", async e => {
 window.addEventListener("storage", e => { if (e.key === STORE && !controller) { S = load(); render(); } });
 
 if (innerWidth <= 768) document.body.classList.add("collapsed-mobile");
+refreshCredits(); save(true); // a daily login tops up Free credits
 render();
 autosize();
 </script>

@@ -12,6 +12,8 @@ function create() {
   win.loadFile(path.join(__dirname, "app.html"));
   // links from chats open in the real browser, not inside the app
   win.webContents.setWindowOpenHandler(({ url }) => {
+    // Google Pay's payment sheet opens as a popup; keep it inside the app so it can report back
+    if (/^https:\/\/(pay|accounts)\.google\.com\//.test(url)) return { action: "allow" };
     if (/^https?:/.test(url)) shell.openExternal(url);
     return { action: "deny" };
   });

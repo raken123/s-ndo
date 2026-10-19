@@ -41,6 +41,68 @@ your own key.
 - **Privacy**: the API key, chats, agents and files live in the device's local
   storage. *Export all* writes a JSON backup without the key.
 
+## Plans (Google Pay, TEST environment)
+
+| | Free | Plus | Ultra |
+|---|---|---|---|
+| Price | $0 | $35 / month | $795 / month |
+| Models | GPT-5 nano and GPT-4o mini | All, up to GPT-6 Astra | All |
+| Credits | 60 every day you open the app | 1,500 per month | Unlimited |
+| Intelligent UI | – | Yes | Yes |
+| Images (GPT Image 2.5 Sunburst) | – | 3 a day | Unlimited |
+| Local Mode | – | – | Yes |
+
+- **Credits:** one agent reply costs 1 credit, so a reply from 4 agents in a group chat
+  costs 4. A reply that fails with an error is refunded. Free credits don't carry over:
+  you get a fresh 60 on the first open of each day.
+- **Intelligent UI:** agents can put buttons, checklists, forms and sliders into a reply
+  (a fenced `ui` block of JSON). Tapping a button or sending a form goes back to the agent
+  as your reply.
+- **Images:** the `generate_image` tool calls `/v1/images/generations` with the model ID
+  `gpt-image-2.5-sunburst`. That only works if your API key has access to a model with
+  that ID, the same as GPT-6 Astra. You can enter another image model ID in Settings.
+  Images are stored in the device's IndexedDB.
+- **Local Mode:** agents talk to an OpenAI-compatible server on your computer (Ollama at
+  `http://localhost:11434/v1` by default, or LM Studio), with no API key. Start Ollama with
+  `OLLAMA_ORIGINS=*` so the app is allowed to connect.
+
+### Checkout
+
+*Upgrade plan* (in the sidebar or Settings) opens the plans screen. *Get Plus* or *Get
+Ultra* shows the order and a Google Pay **Subscribe** button. The Google Pay client
+runs with `environment: "TEST"`, so Google shows test cards, returns a dummy token and
+never charges anything. The app then switches the plan on locally. Settings shows the plan,
+the renewal date and the test card, and lets you cancel.
+
+To try it, open the app over **https or localhost** in Chrome, signed in to a Google
+account (for example `npx serve dist` and then `http://localhost:3000/chatgpt-agents`).
+Google Pay may refuse pages opened straight from a `file://` path. Inside the desktop
+and phone apps it hasn't been tried yet; the desktop app lets Google's payment window
+open, but Android's WebView may need extra setup for Google Pay.
+
+### Going live
+
+These settings live in `PAY` at the top of the plans code in `src/index.html`.
+
+1. Sign up in the Google Pay & Wallet Console, get your `merchantId`, and pass Google's
+   integration review.
+2. Pick a payment gateway that supports Google Pay and recurring billing (Stripe,
+   Adyen, Braintree…). Put its name and your gateway merchant ID in `PAY.gateway`.
+3. Run a small server at `PAY.serverUrl`. It takes the token, charges it through the
+   gateway, creates the monthly subscription, and tells the app which plan is active.
+4. Set `environment: "PRODUCTION"`.
+
+Two more things matter before real money is involved:
+
+- **Plans can't be enforced inside the app.** Plans and credits are checked in the app,
+  and its data sits in the user's own browser storage, so a technical user can edit it.
+  As long as people chat using their own API key, that is the most the app can do. To
+  really enforce plans, model calls have to go through your server with your key, and
+  the server keeps the credit count.
+- **Play Store policy.** If you publish the Android app on Google Play, Google requires
+  Google Play Billing for digital subscriptions instead of Google Pay. Google Pay is
+  fine for the web version and for builds distributed outside the Play Store.
+
 ## API key
 
 The key is **not** built into any of the apps or into this repository. If it
@@ -79,9 +141,24 @@ agents/
   electron/           desktop shell + electron-builder config
   mobile/             Capacitor config for Android / iOS
   test/verify.js      browser test against a mocked OpenAI API
+  test/plans.js       plans + Google Pay (TEST) checkout test
 ```
 
 ## Testing
+
+`node test/plans.js` checks the plans and the checkout (44 checks). Google's `pay.js` is
+replaced by a stand-in with the same API as the TEST environment. It covers:
+
+- credits and daily or monthly top-ups
+- model locks
+- the plans screen
+- the Plus and Ultra checkouts, and the exact payment request sent to Google Pay
+- a closed payment sheet
+- Intelligent UI buttons
+- the image limit
+- Local Mode
+- cancelling a plan
+- phone layout
 
 `node test/verify.js` drives the built HTML in headless Chromium against a
 mocked OpenAI API. It runs 26 checks, covering:
