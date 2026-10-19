@@ -110,6 +110,20 @@ const ok = (name, cond, extra) => { checks.push([name, !!cond]); console.log((co
   await page.waitForFunction(() => document.querySelector("#pcBody .term").textContent.includes("→ 1"));
   ok("terminal runs code on agent's computer", true);
 
+  // downloads: a single file as itself, several as a real .zip (not a JSON bundle)
+  await page.fill("#termInput", "fs.write('notes/plan.md', '# Plan\\nhéllo ✓'); fs.list().length");
+  await page.press("#termInput", "Enter");
+  await page.waitForFunction(() => document.querySelector("#pcBody .term").textContent.includes("→ 2"));
+  let [dl] = await Promise.all([page.waitForEvent("download"), page.click("[data-dl-file='a.txt']")]);
+  ok("one file downloads as itself", dl.suggestedFilename() === "a.txt" && require("fs").readFileSync(await dl.path(), "utf8") === "hi");
+  ok("…without opening the viewer", await page.locator("[data-close-view]").count() === 0);
+  [dl] = await Promise.all([page.waitForEvent("download"), page.click("[data-dl-files]")]);
+  const zipPath = await dl.path();
+  let zip = null;
+  try { zip = JSON.parse(require("child_process").execFileSync("python3", ["-c", "import zipfile,sys,json;z=zipfile.ZipFile(sys.argv[1]);bad=z.testzip();print(json.dumps({'bad':bad,'files':{n:z.read(n).decode() for n in z.namelist()}}))", zipPath]).toString()); } catch (e) { console.log(e.message); }
+  ok("all files download as a valid .zip", dl.suggestedFilename() === "Designer-files.zip" && zip && zip.bad === null, dl.suggestedFilename());
+  ok("zip keeps folders and UTF-8 text", zip && zip.files["a.txt"] === "hi" && zip.files["notes/plan.md"] === "# Plan\nhéllo ✓", zip && JSON.stringify(Object.keys(zip.files)));
+
   // @mention only one agent
   const before = seen.length;
   await page.fill("#input", "@Researcher what do you think?");

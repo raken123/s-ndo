@@ -205,6 +205,8 @@ body.pc-open #computer { display:flex; }
 .file { display:flex; align-items:center; gap:8px; padding:7px 12px; font-size:13px; font-family:var(--mono); cursor:pointer; }
 .file:hover { background:#2a2a2a; }
 .file .sz { margin-left:auto; color:var(--faint); font-size:11px; }
+.file .dl { width:26px; height:26px; display:grid; place-items:center; border-radius:6px; color:var(--faint); margin-left:6px; }
+.file .dl:hover { color:var(--ink); background:#333; }
 .term { font-family:var(--mono); font-size:12px; line-height:1.55; padding:10px 12px; max-height:260px; overflow:auto; white-space:pre-wrap; word-break:break-word; color:#c9c9c9; }
 .term .p { color:#22c55e; } .term .e { color:#f87171; } .term .d { color:#777; }
 .term-in { display:flex; border-top:1px solid #2e2e2e; }
@@ -976,9 +978,9 @@ function renderComputerBody() {
   $("#pcBody").innerHTML = `
     <div class="pc-sec"><div class="sh"><span>Screen${scr ? " · " + esc(scr) : ""}</span>${scr ? `<button data-screen-off>Clear</button>` : ""}</div>
       <div class="screen" id="screenBox">${scr ? "" : `<div class="idle">${agentIcon(a.shape, a.color, 46)}<span>${esc(a.name)}'s screen is idle</span></div>`}</div></div>
-    <div class="pc-sec"><div class="sh"><span>Files · ${files.length}</span><span style="display:flex;gap:12px"><button data-new-file>New</button>${files.length ? `<button data-dl-files>Download</button>` : ""}</span></div>
-      <div class="files">${files.length ? files.map(f => `<div class="file" data-view="${esc(f)}"><svg class="icon" style="width:15px;height:15px" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>${esc(f)}<span class="sz">${fmtSize(pc.files[f].length)}</span></div>`).join("") : `<div class="file" style="cursor:default;color:var(--faint)">No files yet</div>`}</div>
-      ${view ? `<div class="sh" style="border-top:1px solid #2e2e2e"><span>${esc(view)}</span><span style="display:flex;gap:12px">${/\.html?$/i.test(view) ? `<button data-show="${esc(view)}">Show on screen</button>` : ""}<button data-del-file="${esc(view)}">Delete</button><button data-close-view>Close</button></span></div><div class="viewer">${esc(pc.files[view].slice(0, 20000))}</div>` : ""}</div>
+    <div class="pc-sec"><div class="sh"><span>Files · ${files.length}</span><span style="display:flex;gap:12px"><button data-new-file>New</button>${files.length ? `<button data-dl-files>${files.length > 1 ? "Download all (.zip)" : "Download"}</button>` : ""}</span></div>
+      <div class="files">${files.length ? files.map(f => `<div class="file" data-view="${esc(f)}"><svg class="icon" style="width:15px;height:15px" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>${esc(f)}<span class="sz">${fmtSize(pc.files[f].length)}</span><button class="dl" data-dl-file="${esc(f)}" title="Download ${esc(f)}"><svg class="icon" style="width:15px;height:15px" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/></svg></button></div>`).join("") : `<div class="file" style="cursor:default;color:var(--faint)">No files yet</div>`}</div>
+      ${view ? `<div class="sh" style="border-top:1px solid #2e2e2e"><span>${esc(view)}</span><span style="display:flex;gap:12px">${/\.html?$/i.test(view) ? `<button data-show="${esc(view)}">Show on screen</button>` : ""}<button data-dl-file="${esc(view)}">Download</button><button data-del-file="${esc(view)}">Delete</button><button data-close-view>Close</button></span></div><div class="viewer">${esc(pc.files[view].slice(0, 20000))}</div>` : ""}</div>
     <div class="pc-sec"><div class="sh"><span>Terminal</span><button data-reset-pc>Reset computer</button></div>
       <div class="term">${pc.log.length ? pc.log.slice(-120).map(l => l.k === "p" ? `<span class="p">$ </span>${esc(l.t)}` : `<span class="${l.k}">${esc(l.t)}</span>`).join("\n") : `<span class="d">${esc(a.name)}'s computer is ready. Files and code runs appear here.</span>`}</div>
       <div class="term-in"><span>$</span><input id="termInput" placeholder="Run JavaScript on ${esc(a.name)}'s computer" autocomplete="off" spellcheck="false"></div></div>`;
@@ -989,6 +991,41 @@ function renderComputerBody() {
   }
   const t = $("#pcBody .term"); if (t && !termScrolled) t.scrollTop = t.scrollHeight;
   if (inputVal) $("#termInput").value = inputVal;
+}
+/* ---------- downloads: real files, and a .zip for several ---------- */
+function saveBlob(blob, name) {
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+const MIME = { html: "text/html", htm: "text/html", css: "text/css", js: "text/javascript", mjs: "text/javascript", json: "application/json", svg: "image/svg+xml", md: "text/markdown", csv: "text/csv", xml: "application/xml", txt: "text/plain" };
+function downloadFile(path, text) {
+  const ext = (path.match(/\.(\w+)$/) || [])[1] || "";
+  saveBlob(new Blob([text], { type: (MIME[ext.toLowerCase()] || "text/plain") + ";charset=utf-8" }), path.split("/").pop() || "file.txt");
+}
+const CRC_TABLE = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(bytes) { let c = 0xffffffff; for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+// A plain (stored, uncompressed) ZIP: every OS can open it, and folders in paths are kept.
+function zipFiles(files) {
+  const enc = new TextEncoder(), parts = [], central = [], d = new Date();
+  const time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+  const date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  let offset = 0;
+  for (const [path, text] of Object.entries(files)) {
+    const name = enc.encode(path.replace(/^\/+/, "")), data = enc.encode(String(text)), crc = crc32(data);
+    const loc = new DataView(new ArrayBuffer(30)), cen = new DataView(new ArrayBuffer(46));
+    loc.setUint32(0, 0x04034b50, true); cen.setUint32(0, 0x02014b50, true); cen.setUint16(4, 20, true);
+    for (const [v, o] of [[loc, 4], [cen, 6]]) {
+      v.setUint16(o, 20, true); v.setUint16(o + 2, 0x0800, true); v.setUint16(o + 4, 0, true); // version, UTF-8 names, stored
+      v.setUint16(o + 6, time, true); v.setUint16(o + 8, date, true); v.setUint32(o + 10, crc, true);
+      v.setUint32(o + 14, data.length, true); v.setUint32(o + 18, data.length, true); v.setUint16(o + 22, name.length, true);
+    }
+    cen.setUint32(42, offset, true);
+    parts.push(loc, name, data); central.push(cen, name);
+    offset += 30 + name.length + data.length;
+  }
+  const size = central.reduce((n, p) => n + p.byteLength, 0), end = new DataView(new ArrayBuffer(22)), count = Object.keys(files).length;
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, count, true); end.setUint16(10, count, true); end.setUint32(12, size, true); end.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, end], { type: "application/zip" });
 }
 const fmtSize = n => n < 1024 ? n + " B" : (n / 1024).toFixed(1) + " KB";
 
@@ -1398,6 +1435,7 @@ document.addEventListener("click", e => {
     inp.value = before + inp.value.slice(pos); inp.focus(); inp.selectionStart = inp.selectionEnd = before.length; hideMention(); autosize(); return;
   }
   if ((el = q("[data-pc]"))) { pcState.agent = el.dataset.pc; pcState.view = null; renderComputerTabs(); return; }
+  if ((el = q("[data-dl-file]"))) { downloadFile(el.dataset.dlFile, computer(pcState.agent).files[el.dataset.dlFile] ?? ""); return; }
   if ((el = q("[data-view]"))) { pcState.view = el.dataset.view; renderComputerBody(); return; }
   if (q("[data-close-view]")) { pcState.view = null; renderComputerBody(); return; }
   if ((el = q("[data-show]"))) { computer(pcState.agent).screen = el.dataset.show; save(); renderComputerBody(); return; }
@@ -1406,8 +1444,8 @@ document.addEventListener("click", e => {
   if (q("[data-new-file]")) { const p = prompt("File name:", "notes.txt"); if (p) { computer(pcState.agent).files[p] = ""; pcState.view = p; save(); renderComputerBody(); } return; }
   if (q("[data-dl-files]")) {
     const pc = computer(pcState.agent), names = Object.keys(pc.files);
-    if (names.length === 1) { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([pc.files[names[0]]])); a.download = names[0].split("/").pop(); a.click(); }
-    else { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(pc.files, null, 2)], { type: "application/json" })); a.download = (agentById(pcState.agent).name + "-files.json"); a.click(); }
+    if (names.length === 1) downloadFile(names[0], pc.files[names[0]]);
+    else saveBlob(zipFiles(pc.files), `${agentById(pcState.agent).name.replace(/[^\w -]+/g, "") || "agent"}-files.zip`);
     return;
   }
   if (q("[data-reset-pc]")) { if (confirm("Reset this computer? All its files and terminal history are erased.")) { const id = pcState.agent; workers[id]?.terminate(); delete workers[id]; S.computers[id] = { files: {}, log: [], screen: null }; pcState.view = null; save(); renderComputerBody(); } return; }
