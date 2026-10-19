@@ -1,0 +1,8 @@
+{
+  "appId": "app.chatgptagents.mobile",
+  "appName": "ChatGPT Agents",
+  "webDir": "www",
+  "backgroundColor": "#212121",
+  "android": { "backgroundColor": "#212121" },
+  "ios": { "backgroundColor": "#212121", "contentInset": "never" }
+}

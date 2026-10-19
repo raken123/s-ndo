@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ChatGPT Agents — Build Plan</title>
+<style>
+  :root { --bg:#212121; --panel:#2f2f2f; --ink:#ececec; --muted:#a3a3a3; --line:#3d3d3d; --ok:#10a37f; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--ink); font:15px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; width:1200px; padding:44px 52px; }
+  header { display:flex; align-items:center; gap:18px; margin-bottom:28px; }
+  h1 { font-size:30px; letter-spacing:-.5px; }
+  header p { color:var(--muted); }
+  .grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px 20px; }
+  .card h2 { font-size:15px; display:flex; gap:10px; align-items:center; margin-bottom:10px; }
+  .n { width:24px; height:24px; border-radius:50%; background:var(--ok); color:#fff; font-size:12px; font-weight:700; display:grid; place-items:center; flex-shrink:0; }
+  li { margin:0 0 6px 18px; color:#d4d4d4; font-size:13.5px; }
+  .wide { grid-column: span 3; }
+  .builds { display:flex; gap:12px; margin-top:6px; }
+  .b { flex:1; border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:#262626; }
+  .b b { display:block; font-size:16px; }
+  .b span { color:var(--muted); font-size:12.5px; }
+  footer { margin-top:22px; color:var(--muted); font-size:12.5px; }
+</style>
+</head>
+<body>
+<header>
+  <svg width="64" height="64" viewBox="0 0 100 100"><path fill="#10a37f" d="M50 6c18 0 30 8 37 20s7 30 0 44-20 24-37 24-30-10-37-24-7-32 0-44S32 6 50 6z"/><ellipse cx="37" cy="46" rx="8" ry="11" fill="#fff"/><ellipse cx="63" cy="46" rx="8" ry="11" fill="#fff"/></svg>
+  <div><h1>ChatGPT Agents — Build Plan</h1><p>A ChatGPT-style chat app where you talk to agents, not just a single assistant.</p></div>
+</header>
+<div class="grid">
+  <div class="card"><h2><span class="n">1</span>ChatGPT-style interface</h2><ul>
+    <li>Dark sidebar: New chat, search, chat history</li>
+    <li>Centered “What can I help with?” start screen</li>
+    <li>Rounded composer with model picker up top</li>
+    <li>Streaming replies, Markdown + code blocks</li>
+    <li>Works on desktop and phone widths</li></ul></div>
+  <div class="card"><h2><span class="n">2</span>Agents</h2><ul>
+    <li>Create as many agents as you like</li>
+    <li>Each has a name, instructions, model, color</li>
+    <li>Icon = a shape (blob, square, star, hex…) with 2 white eyes</li>
+    <li>Edit, duplicate or delete any agent</li></ul></div>
+  <div class="card"><h2><span class="n">3</span>Group chats</h2><ul>
+    <li>Put several agents in one chat</li>
+    <li>Parallel mode: all agents answer at once (fast)</li>
+    <li>Round-table mode: each sees the others’ replies</li>
+    <li>@mention to talk to one agent</li></ul></div>
+  <div class="card"><h2><span class="n">4</span>A computer per agent</h2><ul>
+    <li>Own sandboxed JavaScript runtime (Web Worker)</li>
+    <li>Own file system, saved on the device</li>
+    <li>Tools: run code, read / write / list / delete files</li>
+    <li>“Screen” previews HTML files the agent builds</li>
+    <li>Computers run side by side = faster work</li></ul></div>
+  <div class="card"><h2><span class="n">5</span>Models</h2><ul>
+    <li>OpenAI API, streaming + tool calling</li>
+    <li>Built-in list from GPT-4o up to “GPT-6 Astra”</li>
+    <li>“Load my models” pulls the live list for your key</li>
+    <li>Any custom model ID can be typed in</li></ul></div>
+  <div class="card"><h2><span class="n">6</span>Keys &amp; privacy</h2><ul>
+    <li>API key entered in Settings, kept on the device only</li>
+    <li>Never baked into the app or the repository</li>
+    <li>Chats, agents and files stored locally</li>
+    <li>Export / import everything as JSON</li></ul></div>
+  <div class="card wide"><h2><span class="n">7</span>Five builds from one codebase</h2>
+    <div class="builds">
+      <div class="b"><b>HTML</b><span>single file, any browser</span></div>
+      <div class="b"><b>APK</b><span>Android, via Capacitor</span></div>
+      <div class="b"><b>EXE</b><span>Windows installer, Electron</span></div>
+      <div class="b"><b>DMG</b><span>macOS, Electron</span></div>
+      <div class="b"><b>IPA</b><span>iOS, Capacitor (unsigned)</span></div>
+    </div></div>
+</div>
+<footer>This plan is built into the app: open the sidebar and choose “Build plan”.</footer>
+</body>
+</html>

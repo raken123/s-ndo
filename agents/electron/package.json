@@ -1,0 +1,37 @@
+{
+  "name": "chatgpt-agents",
+  "productName": "ChatGPT Agents",
+  "version": "1.0.0",
+  "description": "Chat with AI agents, each with its own computer, alone or in group chats.",
+  "author": "ChatGPT Agents",
+  "license": "UNLICENSED",
+  "main": "main.js",
+  "scripts": {
+    "prepare-app": "node -e \"const fs=require('fs');fs.copyFileSync('../dist/chatgpt-agents.html','app.html');fs.mkdirSync('build',{recursive:true});for(const f of ['icon.png','icon.ico'])fs.copyFileSync('../assets/'+f,'build/'+f)\"",
+    "start": "npm run prepare-app && electron ."
+  },
+  "devDependencies": {
+    "electron": "43.2.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "app.chatgptagents.desktop",
+    "productName": "ChatGPT Agents",
+    "files": ["main.js", "app.html", "package.json"],
+    "directories": { "output": "out", "buildResources": "build" },
+    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }], "icon": "build/icon.ico" },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "ChatGPT Agents",
+      "artifactName": "ChatGPT-Agents-Setup-${version}.exe"
+    },
+    "mac": {
+      "target": "dir",
+      "icon": "build/icon.png",
+      "category": "public.app-category.productivity",
+      "identity": null
+    }
+  }
+}
