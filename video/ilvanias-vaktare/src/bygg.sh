@@ -33,5 +33,5 @@ ffmpeg -v error -y -i $B/master.mp4 $V -pass 1 -an -f null /dev/null
 ffmpeg -v error -y -i $B/master.mp4 -i $B/mix.wav -i ../undertext.srt -map 0:v -map 1:a -map 2:s \
   $V -pass 2 -af "loudnorm=I=-16:TP=-1.5:LRA=11:$M:linear=true" -c:a aac -b:a 112k -ar 48000 \
   -c:s mov_text -metadata:s:s:0 language=swe -metadata:s:a:0 language=swe \
-  -metadata title="Ilvanias väktare – Sommarens bästa dag" -movflags +faststart -shortest ../ilvanias-vaktare.mp4
+  -metadata title="Ilvanias väktare – Sommarens bästa dag" -movflags +faststart -t "$DUR" ../ilvanias-vaktare.mp4
 echo "klart: ../ilvanias-vaktare.mp4"
