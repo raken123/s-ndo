@@ -1,0 +1,166 @@
+# Ilvanias väktare – Sommarens bästa dag
+#
+# Manus för filmen. Rader som börjar med "##" startar en ny scen (bild).
+# Övriga rader är "Talare: text". Tom rad = lite längre paus.
+# Talare: Berättare, Alba, Haji, Ninja King, Vida
+
+## titel
+
+## hav
+Berättare: Hösten hade kommit tidigt till Ilvania. Märkligt tidigt.
+Berättare: Temperaturen hade sjunkit kraftigt redan efter sommarens första dagar. Kylan kom från havet och blåste in över land.
+Berättare: Havet var vildare än vanligt. Vågorna kunde vara lika höga som mitt i den blåsigaste vintern, och flera båtar hade förlist och försvunnit i sommar.
+
+## hamn
+Berättare: Havet är hungrigt i år, sa fiskarna. Någonting var fel. Det förstod alla.
+Berättare: Men många försökte att inte oroa sig, utan intalade sig att allt hade en naturlig förklaring. Som att vintern hade varit varm, och därför lett till en kall sommar.
+Berättare: Det var också året efter blodmånen. Kanske kunde det spela roll.
+Berättare: Vissa pratade om stormen som väntades nästa år. Ibland, när stormvindarna var på väg, kom kylan först för att varna.
+
+Berättare: Bara de gamla gick så långt som att viska om undergången. Att Ilvanias väktare kunde vara i fara.
+
+## rummet
+Berättare: Alba vaknade tidigt. Hon satte sig upp på madrassen och kände det kalla golvet under fotsulorna.
+Berättare: Den mystiska kylan hade nått ända till Ninjali, trots att det låg långt från kusten och det kalla havet.
+Berättare: Men Alba tänkte på helt andra saker. Hon hade längtat ihjäl sig efter den här dagen. Äntligen skulle hon få träffa de andra väktarna igen. Sina allra bästa vänner: Stella, Gero och Adrian.
+Berättare: Den här morgonen kände hon inte den minsta trötthet. Hon stack fötterna i tofflorna och skyndade sig upp.
+
+## festival
+Berättare: Det var fredag, och hon skulle åka till hamnstaden Kingeri, där de skulle ses på den årliga sommarfestivalen som öppnade i dag.
+Berättare: Det var en av årets höjdpunkter i Ilvania. Folk från alla riken brukade resa dit för att fira sommarens varmaste dagar.
+Berättare: Trots att löven redan sprakade i rött och guld på träden, och luften var kylig och frisk, skulle allt gå av stapeln precis som vanligt. Vissa skojade om att festivalen kanske kunde locka tillbaka sommarvärmen.
+
+## parken
+Berättare: Lönnen utanför Albas fönster lyste klarröd. Hela den sagolika parken i Ninjali glödde i höstens alla färger.
+Berättare: Eo, som var Albas kompis bland ninjorna, hade beskrivit parken för henne. Alba önskade att hon hade kunnat se allt med egna ögon. Men det gick inte längre.
+Berättare: Hon var nästan helt blind. Hon kunde uppfatta ljus och mörker, skilja dag från natt, men förutom det såg hon ingenting. Och hade inte gjort det på ett år.
+
+## dalen
+Berättare: Inte sedan striden i Döda dalen, då hon ensam mötte ondskans härskare, Master, i kryptan.
+Berättare: Som genom ett mirakel hade hon överlevt. Men synen var borta.
+
+## vanner
+Berättare: Alba, Stella, Gero och Adrian hade bestämt att de skulle ses i dag, för att fira att de hade varit vänner i över ett år.
+Berättare: Kanske också för att komma över det som hände i våras, då de faktiskt hade blivit osams. Stella hade råkat såra Gero, som i sin tur snäste åt Stella. Sedan drogs de andra in i tjafset, och dagen hade slutat med att ingen var riktigt glad.
+Berättare: Alba hade haft magknip och ältat exakt vad som sagts, om och om igen. Femtusen gånger.
+Berättare: I dag fick det inte bli så, tänkte hon. Den här dagen skulle bli perfekt. Deras vänskap betydde alldeles för mycket för att slarvas bort. För Alba betydde den allt. Väktarna hade blivit som syskon för henne.
+
+## vaktare
+Berättare: Det var förra sommaren som allt hände, som förde dem samman. Det var då de fick veta att de var Ilvanias väktare, som tillsammans måste bekämpa ondskan som spridit sig i landet.
+Berättare: Det hade känts som ett omöjligt uppdrag. Men de hade gjort allt de kunde, och till och med riskerat sina liv, för kampen och för varandra.
+Berättare: De hade slagits mot svartalfer och demoner, överlevt Glömskans gift, och till sist besegrat Master och hans gigantiska flugmonster.
+Berättare: Mot alla odds hade de lyckats. Tack vare sin vänskap och väktarnas kraft.
+
+## gong
+Berättare: Gongen ljöd, och Alba skyndade sig att klä på sig sin vita ninjadräkt. Det var snart dags att morgonträna med Ninja King, innan hon skulle ta tåget till Kingeri.
+Berättare: Varje morgon kom Eo och hämtade henne, för att följa henne till träningen i Tysta salen. Snart skulle Eos steg höras utanför rummet, och rispappersdörren skjutas upp.
+Berättare: Om Alba skyndade sig att stiga upp, borsta tänderna och klä sig, utan att få för sig att göra något annat emellan, brukade hon hinna precis.
+
+## spangen
+Berättare: I dag blev hon klar innan Eo kom, och öppnade själv dörren. Fåglarna kvittrade, och det susade i bambun som växte utmed spången utanför hennes rum.
+Berättare: Ingen Eo. Det gick någon minut. Det gick flera.
+Berättare: Nu borde Eo ha varit här. Alba började bli otålig. Eo brukade aldrig komma för sent. Det måste ha hänt något, tänkte hon.
+Berättare: Hon tog tag i repet som löpte längs spången, och gick själv mot Tysta salen.
+
+## salen
+Berättare: Men när hon klev in var ingen där heller. Ninja King, hennes ninjamästare, kunde visserligen vara extremt tyst. Men Alba kände att hon var ensam.
+
+## kansla
+Berättare: Det var Ninja King som hade lärt henne förmågan att se genom att känna. Hans tanke var att utveckla hennes förmågor så mycket att hon skulle kunna känna vad som hände runt omkring, trots att hon inte kunde se det med blotta ögat.
+Berättare: Träningen hade de påbörjat redan för ett år sedan, när hon fortfarande kunde se. Men nu hade förmågan såklart blivit ännu viktigare att träna upp.
+Berättare: Ninja King påstod att med tillräckligt mycket frid i sinnet, tystnad och koncentration, kunde Alba göra sig nästan seende.
+Ninja King: Du har förmågan, Vita ninjan. Du kan se genom att känna. Ha tillit. Tro på din kraft, så blir den ännu starkare.
+Berättare: Med de orden avslutade Ninja King varje lektion.
+Berättare: Alba förstod aldrig riktigt hur hon skulle öva på att tro mer på sig själv. Men hon tog varje tillfälle i akt att öva på själva färdigheten: att se genom att känna. Varje gång hon lyckades ökade säkert självförtroendet också, tänkte hon.
+
+## ensam
+Berättare: Nu behövde hon det där självförtroendet. För vad skulle hon ta sig till? Både Eo och Ninja King var borta. Hur skulle hon kunna resa till Kingeri utan att Eo följde med henne till tåget?
+Berättare: Och till tåget skulle hon. Det fanns inte en chans i hela världen att hon tänkte missa den här dagen, när väktarna äntligen skulle träffas igen.
+
+## haji
+Haji: God morgon, Vita ninjan!
+Berättare: hördes en röst bakom henne. Alba hörde direkt att det var Haji, en av kockarna från köket, och vände sig om.
+Berättare: I Ninjali kallade alla henne Vita ninjan. I början hade det känts ovant, men hon tyckte om det. Vita ninjan var vad man hade kallat hennes mamma när hon levde, och nu hade Alba fått ärva namnet.
+Alba: God morgon, Haji. Och tack.
+Berättare: sa Alba, och tog skålen med soppa som hon kände att han sträckte fram mot henne.
+Haji: Oj!
+Berättare: Haji tittade storögt på henne. Han visste att hon var blind. Ändå tog hon skålen ur hans utsträckta hand helt utan tvekan, som om hon kunde se den.
+Haji: Vita ninjan har förmågan.
+Berättare: sa han och bugade.
+Alba: Tack, Haji.
+Berättare: Alba log och smakade på soppan. Haji var en fantastisk kock. Om hon någon gång flyttade från Ninjali, skulle Haji nog vara den hon skulle sakna mest. Förutom Eo, Ninja King, och parken med den vita jasminbusken, där mammas grav fanns.
+
+## koket
+Haji: Kom, sitt och ät.
+Berättare: sa Haji, och Alba följde honom in i köket.
+Alba: Vet du var Eo är?
+Berättare: frågade hon när hon satt vid köksbänken.
+Haji: Eo har åkt med Ninja King till rådet.
+Alba: Har Äldsterådet möte igen?
+Berättare: utbrast Alba. Hon hade märkt att Äldsterådet sågs allt oftare, men hon hade inte tänkt så mycket mer på det. Fast innerst inne förstod hon att det borde oroa henne.
+
+## radet
+Berättare: Äldsterådet var de som bestämde över Ilvania, och bestod av de klokaste och mest respekterade personerna från landets fyra största riken.
+Berättare: Vida Nyckelbäraren var den enda som inte tillhörde något rike. Hon var den sjunde rådsmedlemmen, och rådets ordförande.
+Haji: Ett plötsligt och mycket viktigt möte.
+
+## koket2
+Haji: De är borta hela dagen.
+Berättare: svarade Haji, och tillade:
+Haji: Vita ninjan får stanna med mig.
+Alba: Va?
+Berättare: Alba kände gråten komma. Stanna i Ninjali? Nej! Hon hade ju längtat mer efter den här dagen än efter någon annan dag på hela sommaren.
+Alba: Jag kan åka själv till Kingeri.
+Berättare: sa hon, och försökte låta bestämd. Hon fick inte missa den här resan.
+Alba: Snälla Haji. Om du bara lämnar mig vid tåget, så går det bra.
+Haji: Men... ska jag lämna Vita ninjan vid tåget?
+Berättare: sa Haji osäkert. Det var uppenbarligen inte vad han hade kommit överens om med Ninja King.
+Alba: Ja, tack, Haji! Vita ninjan klarar sig. Det vet du.
+Berättare: sa Alba självsäkert, och log med hela ansiktet. Hon sörplade i sig det sista av soppan genom att dricka direkt ur skålen.
+Alba: Din soppa är verkligen den godaste.
+Berättare: tillade hon.
+
+Berättare: Visst var det något oroväckande med Äldsterådets plötsliga möten. Det var det. Något var inte bra.
+Berättare: Samtidigt gjorde det Alba lite glad, just nu, att hon på grund av det skulle få resa själv hela vägen till Kingeri. Planen var annars att Eo skulle ta henne till tåget, och att Vida Nyckelbäraren sedan skulle följa med henne på resan. Nu fick hon verkligen en chans att träna på sina färdigheter.
+Alba: Jag kommer snart, Haji, så åker vi till tåget sen. Okej?
+Berättare: sa hon och gav honom skålen. Haji nickade förvirrat, och Alba skyndade tillbaka till sitt rum innan han hann ändra sig.
+
+## redo
+Berättare: Hon fäste sin magiska spegelstav i remmarna på ryggen. Något sa henne att hon borde vara försiktig ändå, och beredd på att vad som helst kunde hända. Det var vad Ninja King brukade säga åt henne:
+Ninja King: Vita ninjan ska alltid vara redo.
+Berättare: Hon drog på sig jeansen och den gamla stickade tröjan som hon hade kvar sedan förra sommaren. Det var ju kallt, och hon ville inte dra uppmärksamhet till sig med den vita ninjadräkten i stan.
+
+## vida
+Berättare: Vida Nyckelbärarens varnande ord ringde i öronen:
+Vida: Berätta aldrig i onödan för någon att du är Ilvanias ljusbärare. Man kan inte vara nog försiktig.
+Berättare: Varför sa egentligen Vida det så ofta, tänkte Alba. Och hade hon inte börjat säga det ännu oftare på senaste tiden?
+Berättare: Alba hade faktiskt vågat sig på en fråga senast det hände. Men då hade Vida bara klappat henne på kinden och sagt:
+Vida: Vi har alla våra öden. Du bär på en ljuskraft som är bland de starkaste. Och även om det är något som mest kommer att mötas med kärlek från andra, kan det också väcka illvilja och avund. Till och med hämndbegär, om ondskan skulle återvända.
+Vida: Ha alltid med dig din ljussten, Alba. Lova mig. Den hjälper till att skydda dig.
+Berättare: Alba hade velat fråga om Vida trodde att det skulle hända något. Om hon på riktigt var rädd för det. Eller om det bara var för säkerhets skull. Men hon sa inget. Hon nickade bara, och lovade att ja, självklart skulle hon vara försiktig och ha med sig ljusstenen överallt.
+
+Berättare: Ändå glömde hon.
+
+## station
+Berättare: När hon vinkade av Haji, och tåget skramlade ut från stationen, slog det henne.
+Alba: Åh nej... Har jag glömt ljusstenen?
+
+## ljussten
+Berättare: Nu när hon bodde i Ninjali brukade hon låta ljusstenen flyga fritt i parken, i stället för att ha den i sitt halsband. Det hände att hon glömde att kalla hem den på kvällen. Oftast kom den av sig själv, men inte alltid.
+Berättare: Alba insåg att i går var en sådan kväll, när hon hade glömt.
+
+## taget
+Berättare: Hon svor åt sig själv när hon stack ner huvudet under tröjan, för att kolla om den ändå var med.
+Alba: Är du där?
+Berättare: viskade hon, beredd på det värsta.
+Berättare: Ögonblicket senare kände hon värmen i ansiktet från de små gnistorna som slog ut från stenen, och det fladdrade till under tröjan.
+Berättare: Alba andades ut och skrattade åt sig själv. Hon fick sluta noja så mycket.
+Alba: Bra. Du kan krypa in igen.
+Berättare: viskade hon, och släppte ner tröjan.
+
+## resan
+Berättare: Från den stickade ullen steg en doft av skog. Alba förstod inte hur den fortfarande kunde lukta så mycket barr och mossa, fast hon inte hade använt tröjan på ett helt år.
+Berättare: Hon tryckte näsan mot den och drog in doften. Vad hon längtade efter de andra!
+Berättare: Äntligen var hon på väg. Snart skulle de ses. I dag skulle bli sommarens bästa dag.
+
+## slut

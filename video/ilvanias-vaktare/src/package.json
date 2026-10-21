@@ -1,0 +1,11 @@
+{
+  "name": "ilvanias-vaktare-film",
+  "private": true,
+  "type": "module",
+  "description": "Renderar filmen Ilvanias väktare – Sommarens bästa dag",
+  "dependencies": {
+    "@fontsource/cinzel": "^5.2.5",
+    "@fontsource/cormorant-garamond": "^5.2.5",
+    "@napi-rs/canvas": "^0.1.80"
+  }
+}
