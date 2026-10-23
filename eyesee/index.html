@@ -1,0 +1,2383 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Raken EyeSee</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="EyeSee OS: operativsystemet för de smarta glasögonen Raken EyeSee, i en enda HTML-fil.">
+<meta name="theme-color" content="#06080b">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;500&family=Barlow+Semi+Condensed:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the world fills the screen; the HUD floats in a centred display box sized like a
+   waveguide's 30° field of view; the glasses' temple (touchpad, camera button, privacy LED)
+   docks along the bottom edge. The display is additive light, so it is screen-blended. */
+:root{
+  color-scheme:dark;
+  --hud:#7dffaa; --hud-rgb:125,255,170;
+  --hud-2:rgba(var(--hud-rgb),.66);
+  --hud-3:rgba(var(--hud-rgb),.38);
+  --hud-4:rgba(var(--hud-rgb),.13);
+  --world:#06080b;
+  --temple:#121417; --temple-2:#1c1f23; --temple-line:#2d3239; --temple-ink:#d6dbe1; --temple-muted:#8c949e;
+  --f-hud:"Barlow Semi Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
+  --f-big:"Barlow Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
+  --f-data:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --dock-h:66px;
+  --glow:0 0 4px rgba(var(--hud-rgb),.6),0 0 14px rgba(var(--hud-rgb),.22);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--world);color:var(--hud);font:16px/1.35 var(--f-hud);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;overscroll-behavior:none}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;margin:0}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- world ---------- */
+#stage{position:fixed;inset:0;overflow:hidden;touch-action:none}
+#world{position:absolute;inset:0;overflow:hidden}
+#scene,#cam,#photo{position:absolute;inset:0;width:100%;height:100%;display:block}
+#cam,#photo{object-fit:cover;transform:translateX(var(--px,0px)) scale(1.05)}
+#tint{position:absolute;inset:0;background:#000;opacity:.25;transition:opacity .5s ease}
+#lens{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 78% 74% at 50% 46%,rgba(0,0,0,0) 60%,rgba(0,0,0,.5) 100%)}
+
+/* ---------- HUD ---------- */
+#hud{position:absolute;top:0;left:0;right:0;bottom:calc(var(--dock-h) + env(safe-area-inset-bottom,0px));display:flex;align-items:center;justify-content:center;padding-block:max(14px,env(safe-area-inset-top,0px)) 14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+#dwrap{position:relative;width:min(760px,100%);height:min(480px,100%)}
+#dwrap::before{content:"";position:absolute;inset:-12% -7%;pointer-events:none;opacity:1;transition:opacity .45s ease;
+  background:radial-gradient(closest-side,rgba(0,0,0,var(--veil,.6)) 0%,rgba(0,0,0,calc(var(--veil,.6) * .82)) 58%,rgba(0,0,0,0) 100%)}
+body.sleeping #dwrap::before{opacity:0}
+#display{position:relative;width:100%;height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:.7em;padding:.9em 1.1em;mix-blend-mode:screen;opacity:var(--bright,1);transition:opacity .45s ease;text-shadow:var(--glow);font-size:16px}
+body.big #display{font-size:18.5px}
+body.mono #hud{justify-content:flex-end}
+body.mono #dwrap{width:min(440px,100%)}
+#display.off{opacity:0;pointer-events:none}
+#display::before{content:"";position:absolute;inset:0;pointer-events:none;--c:var(--hud-4);--l:16px;
+  background:linear-gradient(var(--c),var(--c)) 0 0/var(--l) 1px,linear-gradient(var(--c),var(--c)) 0 0/1px var(--l),
+  linear-gradient(var(--c),var(--c)) 100% 0/var(--l) 1px,linear-gradient(var(--c),var(--c)) 100% 0/1px var(--l),
+  linear-gradient(var(--c),var(--c)) 0 100%/var(--l) 1px,linear-gradient(var(--c),var(--c)) 0 100%/1px var(--l),
+  linear-gradient(var(--c),var(--c)) 100% 100%/var(--l) 1px,linear-gradient(var(--c),var(--c)) 100% 100%/1px var(--l);background-repeat:no-repeat}
+#display.cover>#status,#display.cover>#views,#display.cover>#hint,#display.cover>#toast{visibility:hidden}
+svg.i{width:1.15em;height:1.15em;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+#status{display:flex;align-items:center;gap:.9em;font:500 .74em/1 var(--f-data);letter-spacing:.05em;color:var(--hud-2);min-height:1.3em;white-space:nowrap;overflow:hidden}
+#status .sp{flex:1}
+.ind{display:inline-flex;align-items:center;gap:.35em}
+.ind b{font-weight:500}
+#views{position:relative;min-height:0}
+.view{position:absolute;inset:0;display:flex;flex-direction:column;gap:.7em;min-height:0}
+#hint{font:400 .7em/1.2 var(--f-data);letter-spacing:.04em;color:var(--hud-3);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v-title{display:flex;align-items:baseline;justify-content:space-between;gap:1em;font:500 .74em/1 var(--f-data);letter-spacing:.16em;text-transform:uppercase;color:var(--hud-2);padding-bottom:.65em;border-bottom:1px solid var(--hud-4);flex:none}
+.tag{letter-spacing:.04em;text-transform:none;color:var(--hud-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+
+.b{appearance:none;-webkit-appearance:none;background:transparent;border:1px solid var(--hud-3);border-radius:2px;padding:.45em .85em;cursor:pointer;text-shadow:inherit;display:inline-flex;align-items:center;gap:.45em;line-height:1.2;text-align:left}
+.fx{position:relative;outline:none}
+.fx.on{border-color:var(--hud);background:var(--hud-4)}
+.fx.on::after{content:"";position:absolute;inset:-5px;pointer-events:none;--c:var(--hud);--l:8px;--w:2px;
+  background:linear-gradient(var(--c),var(--c)) 0 0/var(--l) var(--w),linear-gradient(var(--c),var(--c)) 0 0/var(--w) var(--l),
+  linear-gradient(var(--c),var(--c)) 100% 0/var(--l) var(--w),linear-gradient(var(--c),var(--c)) 100% 0/var(--w) var(--l),
+  linear-gradient(var(--c),var(--c)) 0 100%/var(--l) var(--w),linear-gradient(var(--c),var(--c)) 0 100%/var(--w) var(--l),
+  linear-gradient(var(--c),var(--c)) 100% 100%/var(--l) var(--w),linear-gradient(var(--c),var(--c)) 100% 100%/var(--w) var(--l);background-repeat:no-repeat}
+.row{display:flex;flex-wrap:wrap;gap:.55em;flex:none}
+.row.c{justify-content:center}
+.note{margin:0;font-size:.82em;color:var(--hud-2)}
+.note.c{text-align:center}
+.scroll{overflow:auto;min-height:0;flex:1;scrollbar-width:none;padding:6px;margin:-6px}
+.scroll::-webkit-scrollbar{display:none}
+.list{display:flex;flex-direction:column;gap:.45em}
+.li{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.15em 1em;padding:.5em .8em;flex:none}
+.li b{font-weight:600;font-size:1.02em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li span{grid-column:1/-1;color:var(--hud-2);font-size:.86em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li time,.li em{grid-row:1;grid-column:2;font:400 .72em var(--f-data);font-style:normal;color:var(--hud-2);align-self:center;white-space:nowrap}
+.unread b::before{content:"";display:inline-block;width:.45em;height:.45em;border-radius:50%;background:var(--hud);margin-right:.45em;vertical-align:.12em}
+.hin{flex:1;min-width:0;appearance:none;-webkit-appearance:none;background:transparent;border:1px solid var(--hud-3);border-radius:2px;color:var(--hud);font:inherit;padding:.45em .7em;caret-color:var(--hud);text-shadow:var(--glow);-webkit-user-select:text;user-select:text;outline:none}
+.hin::placeholder{color:var(--hud-3)}
+.hin:focus{border-color:var(--hud)}
+.form{display:flex;gap:.55em;flex:none}
+.thinking::after{content:"";display:inline-block;width:.45em;height:1em;margin-left:.2em;vertical-align:-.12em;background:var(--hud);animation:blink 1s steps(2) infinite}
+kbd{font:500 .72em var(--f-data);border:1px solid var(--hud-3);border-radius:2px;padding:.1em .4em;color:var(--hud-2);white-space:nowrap}
+
+/* home */
+.home{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.15em;padding-top:.2em;flex:none}
+.h-time{font:300 5em/.95 var(--f-big);letter-spacing:.01em;font-variant-numeric:tabular-nums}
+.h-date{font-size:1.02em;color:var(--hud-2)}
+.h-w{display:flex;flex-wrap:wrap;justify-content:center;gap:.3em 1.3em;margin-top:.55em;font:400 .76em var(--f-data);color:var(--hud-2)}
+.h-w span{display:inline-flex;align-items:center;gap:.45em}
+.car-wrap{position:relative;overflow:hidden;margin-top:auto;height:5.2em;flex:none;-webkit-mask-image:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent);mask-image:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent)}
+.car{position:absolute;left:0;top:.75em;display:flex;gap:1em;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.app{width:3.5em;height:3.5em;border-radius:50%;display:grid;place-items:center;padding:0;border-color:var(--hud-4);transition:opacity .3s,transform .3s;flex:none}
+.app svg.i{width:1.6em;height:1.6em}
+.app.on{transform:scale(1.14)}
+.badge{position:absolute;top:-.15em;right:-.15em;min-width:1.4em;height:1.4em;padding:0 .3em;border-radius:.7em;background:var(--hud);color:#000;font:600 .62em/1.4em var(--f-data);font-style:normal;text-shadow:none;text-align:center}
+.car-label{text-align:center;flex:none}
+.car-label b{display:block;font-weight:600;font-size:1.15em;letter-spacing:.02em}
+.car-label small{display:block;font:400 .72em var(--f-data);color:var(--hud-2);margin-top:.25em}
+
+/* ai */
+.ai-body{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:.5em;overflow:hidden}
+.ai-q{font:400 .8em var(--f-data);color:var(--hud-2);min-height:1.2em}
+.ai-a{font-size:1.28em;line-height:1.3;font-weight:500;overflow:auto;scrollbar-width:none;white-space:pre-wrap;min-height:0}
+.ai-a.dim{color:var(--hud-2)}
+
+/* nav */
+.nav-run{display:flex;flex-direction:column;gap:.7em;flex:1;min-height:0}
+#compass{width:100%;height:34px;display:block;flex:none}
+.nav-main{flex:1;min-height:0;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:1.1em}
+#nav-arrow{width:4.6em;height:4.6em;fill:none;stroke:var(--hud);stroke-width:6;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+#nav-arw{transition:transform .5s ease}
+.nav-dist{font:300 2.6em/1 var(--f-big);font-variant-numeric:tabular-nums}
+.nav-instr{font-size:1.12em;font-weight:500;margin-top:.15em}
+.nav-on{font:400 .76em var(--f-data);color:var(--hud-2);margin-top:.35em}
+#nav-map{width:6.4em;height:6.4em;border:1px solid var(--hud-4);fill:none}
+#nav-route{stroke:var(--hud-3);stroke-width:2}
+#nav-done{stroke:var(--hud);stroke-width:2.6}
+#nav-me{fill:var(--hud);stroke:none}
+.nav-foot{font:400 .8em var(--f-data);color:var(--hud-2);text-align:center;flex:none}
+
+/* camera + gallery */
+.vf{flex:1;min-height:0;display:grid;place-items:center}
+.vf-f{position:relative;height:100%;max-width:100%;aspect-ratio:4/3;--c:var(--hud-2);--l:20px;--w:2px;
+  background:linear-gradient(var(--c),var(--c)) 0 0/var(--l) var(--w),linear-gradient(var(--c),var(--c)) 0 0/var(--w) var(--l),
+  linear-gradient(var(--c),var(--c)) 100% 0/var(--l) var(--w),linear-gradient(var(--c),var(--c)) 100% 0/var(--w) var(--l),
+  linear-gradient(var(--c),var(--c)) 0 100%/var(--l) var(--w),linear-gradient(var(--c),var(--c)) 0 100%/var(--w) var(--l),
+  linear-gradient(var(--c),var(--c)) 100% 100%/var(--l) var(--w),linear-gradient(var(--c),var(--c)) 100% 100%/var(--w) var(--l);background-repeat:no-repeat}
+.vf-g{position:absolute;inset:0;background:
+  linear-gradient(90deg,transparent calc(33.33% - .5px),var(--hud-4) 0,var(--hud-4) calc(33.33% + .5px),transparent 0,transparent calc(66.66% - .5px),var(--hud-4) 0,var(--hud-4) calc(66.66% + .5px),transparent 0),
+  linear-gradient(transparent calc(33.33% - .5px),var(--hud-4) 0,var(--hud-4) calc(33.33% + .5px),transparent 0,transparent calc(66.66% - .5px),var(--hud-4) 0,var(--hud-4) calc(66.66% + .5px),transparent 0)}
+.vf-x{position:absolute;left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;background:linear-gradient(var(--hud-2),var(--hud-2)) center/100% 1px no-repeat,linear-gradient(var(--hud-2),var(--hud-2)) center/1px 100% no-repeat}
+.vf-flash{position:absolute;inset:0;background:var(--hud);opacity:0;pointer-events:none}
+.vf-flash.go{animation:flash .45s ease-out}
+.gal{flex:1;min-height:0;position:relative;display:grid;place-items:center;padding:0;border-color:var(--hud-4);cursor:pointer}
+#gal-cv{position:absolute;inset:6px;width:calc(100% - 12px);height:calc(100% - 12px);object-fit:contain}
+.gal .note{padding:1em;text-align:center;max-width:24em}
+.gal-meta{font:400 .74em var(--f-data);color:var(--hud-2);text-align:center;min-height:1.2em;flex:none}
+
+/* messages */
+.msg-open{display:flex;flex-direction:column;gap:.6em;flex:1;min-height:0}
+.msg-from{display:flex;justify-content:space-between;align-items:baseline;gap:1em;font-weight:600;font-size:1.1em}
+.msg-from time{font:400 .66em var(--f-data);color:var(--hud-2)}
+.msg-text{font-size:1.2em;line-height:1.35;flex:1;min-height:0;overflow:auto;scrollbar-width:none}
+.msg-sent{font:400 .76em var(--f-data);color:var(--hud-2);min-height:1.1em}
+
+/* captions */
+.cap{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:.35em;overflow:hidden}
+.cap p{margin:0;font-size:1.3em;line-height:1.25;font-weight:500}
+.cap p i{font:400 .56em var(--f-data);font-style:normal;color:var(--hud-2);margin-right:.6em;letter-spacing:.08em;text-transform:uppercase}
+.cap p.old{opacity:.5}
+.cap p.interim{color:var(--hud-2)}
+.cap-tr{border-top:1px dashed var(--hud-3);padding-top:.5em;font-size:.95em;color:var(--hud-2);white-space:pre-wrap;max-height:38%;overflow:auto;scrollbar-width:none;flex:none}
+
+/* music */
+.mu-title{font:500 1.7em/1.05 var(--f-big)}
+.mu-sub{font:400 .74em var(--f-data);color:var(--hud-2);margin-top:.3em}
+#mu-viz{width:100%;flex:1;min-height:36px;display:block}
+.mu-bar{height:2px;background:var(--hud-4);position:relative}
+.mu-bar i{position:absolute;left:0;top:-1px;bottom:-1px;background:var(--hud);width:0}
+.mu-time{display:flex;justify-content:space-between;gap:1em;margin-top:.45em;font:400 .72em var(--f-data);color:var(--hud-2);font-variant-numeric:tabular-nums}
+.mu-time b{font-weight:500;color:var(--hud)}
+
+/* timer */
+.tm-big{font:300 5.4em/1 var(--f-big);text-align:center;font-variant-numeric:tabular-nums;margin-top:auto}
+.tm-laps{font:400 .76em var(--f-data);color:var(--hud-2);text-align:center;min-height:1.2em;margin-bottom:auto;white-space:pre}
+
+/* health + about */
+.he{flex:1;min-height:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:1.6em;align-items:center}
+.ring{position:relative;width:8.4em;height:8.4em}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:3}
+.ring .trk{stroke:var(--hud-4)}
+.ring .arc{stroke:var(--hud);stroke-linecap:round;transition:stroke-dashoffset .6s}
+.ring div{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ring b{font:300 2em/1 var(--f-big)}
+.ring small{font:400 .64em var(--f-data);color:var(--hud-2);margin-top:.3em}
+.kv{margin:0;display:grid;gap:.55em}
+.kv div{display:flex;justify-content:space-between;align-items:baseline;gap:1em;border-bottom:1px solid var(--hud-4);padding:.15em .3em .4em}
+.kv dt{color:var(--hud-2);font-size:.9em}
+.kv dd{margin:0;font:500 .86em var(--f-data);text-align:right}
+
+/* overlays */
+.ov{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:.6em;padding:1em}
+.ov .big{font:300 4.6em/1 var(--f-big);font-variant-numeric:tabular-nums}
+.ov-t{font:500 1.4em var(--f-big);letter-spacing:.08em;text-transform:uppercase}
+.ov-s{font-size:.9em;color:var(--hud-2);max-width:26em}
+#alarm{animation:alarm 1s steps(2) infinite}
+.b-eye{width:7.5em;height:3.75em;fill:none;stroke:var(--hud);stroke-width:1.6}
+.b-eye path{stroke-dasharray:300;stroke-dashoffset:300;animation:draw 1.1s ease forwards}
+.b-eye circle{opacity:0;animation:fadein .5s .7s forwards}
+.b-word{font:500 1.9em/1 var(--f-big);letter-spacing:.55em;margin-right:-.55em;animation:track 1.4s cubic-bezier(.2,.8,.2,1) both}
+.b-sub{font-size:1em;letter-spacing:.3em;margin-right:-.3em;color:var(--hud-2)}
+.b-bar{width:9em;height:1px;background:var(--hud-4);margin-top:.6em;position:relative;overflow:hidden}
+.b-bar i{position:absolute;inset:0;background:var(--hud);transform-origin:left;transform:scaleX(0);animation:load 1.9s .2s ease-in-out forwards}
+.b-ver{font:400 .7em var(--f-data);color:var(--hud-3);letter-spacing:.08em}
+.g-title{font:500 1.5em var(--f-big);letter-spacing:.06em}
+.g-list{margin:.2em 0;display:grid;gap:.45em;width:min(27em,100%)}
+.g-list div{display:grid;grid-template-columns:8.5em minmax(0,1fr) auto;gap:1em;align-items:baseline;text-align:left;border-bottom:1px solid var(--hud-4);padding-bottom:.35em}
+.g-list dt{font-weight:600}
+.g-list dd{margin:0;color:var(--hud-2)}
+.g-foot{margin:0;font-size:.8em;color:var(--hud-2);max-width:28em}
+.g-go{font:500 .78em var(--f-data);letter-spacing:.14em;text-transform:uppercase;animation:pulse 1.8s ease-in-out infinite}
+#toast{position:absolute;top:2.4em;left:50%;transform:translateX(-50%);z-index:4;width:max-content;max-width:calc(100% - 2em);display:flex;align-items:baseline;gap:.6em;padding:.5em .85em;border:1px solid var(--hud-2);background:rgba(var(--hud-rgb),.07);cursor:pointer}
+#toast b{font-weight:600;white-space:nowrap}
+#toast span{color:var(--hud-2);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+#toast.in{animation:tin .28s cubic-bezier(.2,.8,.2,1)}
+
+/* ---------- temple (device controls, not part of the display) ---------- */
+#dock{position:fixed;left:0;right:0;bottom:0;z-index:20;height:calc(var(--dock-h) + env(safe-area-inset-bottom,0px));padding:0 max(16px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,var(--temple-2),var(--temple) 60%);border-top:1px solid var(--temple-line);color:var(--temple-ink);font:14px/1.2 var(--f-hud);text-shadow:none}
+.capw{display:flex;align-items:center;gap:8px;flex:none}
+#capBtn{width:42px;height:42px;border-radius:50%;border:1px solid #3c434c;background:radial-gradient(circle at 38% 32%,#31373e,#101215 70%);box-shadow:0 2px 4px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.07);cursor:pointer;padding:0}
+#capBtn:active{transform:scale(.94)}
+#led{width:7px;height:7px;border-radius:50%;background:#262a2f;box-shadow:inset 0 0 2px #000;transition:background .15s,box-shadow .15s}
+#led.on{background:#fff;box-shadow:0 0 6px 2px rgba(255,255,255,.85),0 0 16px 6px rgba(255,255,255,.3)}
+#pad{flex:1;min-width:0;height:44px;border-radius:22px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:10px;background:repeating-linear-gradient(90deg,#24282d 0 1px,#16191c 1px 5px);box-shadow:inset 0 2px 6px rgba(0,0,0,.65),0 1px 0 rgba(255,255,255,.05);color:var(--temple-muted);font:500 10.5px/1 var(--f-data);letter-spacing:.14em;text-transform:uppercase;cursor:grab;touch-action:none}
+#pad .tdot{position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.3),rgba(255,255,255,0) 70%);pointer-events:none;animation:tdot .6s ease-out forwards}
+.tb{height:36px;padding:0 12px;border-radius:18px;border:1px solid var(--temple-line);background:#17191d;color:var(--temple-ink);font:500 13px var(--f-hud);cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex:none}
+.tb svg.i{width:16px;height:16px}
+.tb[aria-pressed="true"],.tb[aria-expanded="true"]{background:#272c33;border-color:#56606d}
+#dock button:focus-visible,#sim button:focus-visible{outline:2px solid #a3b9d8;outline-offset:2px}
+#sim{position:fixed;z-index:30;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(var(--dock-h) + env(safe-area-inset-bottom,0px) + 10px);width:min(350px,calc(100vw - 32px));max-height:calc(100% - var(--dock-h) - 40px);overflow:auto;background:#111316;border:1px solid var(--temple-line);border-radius:12px;padding:14px 16px 16px;color:var(--temple-ink);font:14px/1.45 var(--f-hud);text-shadow:none;box-shadow:0 18px 50px rgba(0,0,0,.55);touch-action:pan-y}
+#sim header{display:flex;justify-content:space-between;align-items:center;gap:10px}
+#sim h2{margin:0;font:600 16px var(--f-hud)}
+#sim p{margin:4px 0 0;color:var(--temple-muted);font-size:13px}
+#sim h3{margin:14px 0 7px;font:500 10.5px/1 var(--f-data);letter-spacing:.14em;text-transform:uppercase;color:var(--temple-muted)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg .tb{height:32px;font-size:12.5px}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:13px;align-items:center}
+#sim kbd{color:var(--temple-ink);border-color:var(--temple-line);background:#1a1d21;font-size:11.5px;justify-self:start}
+
+@keyframes blink{50%{opacity:0}}
+@keyframes flash{0%{opacity:.55}100%{opacity:0}}
+@keyframes alarm{50%{opacity:.35}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes fadein{to{opacity:1}}
+@keyframes track{from{letter-spacing:1.1em;margin-right:-1.1em;opacity:0}}
+@keyframes load{to{transform:scaleX(1)}}
+@keyframes pulse{50%{opacity:.4}}
+@keyframes tin{from{opacity:0;transform:translate(-50%,-.6em)}}
+@keyframes tdot{from{opacity:1;transform:scale(.6)}to{opacity:0;transform:scale(1.8)}}
+
+@media (max-width:560px){
+  .nav-main{grid-template-columns:auto minmax(0,1fr)}
+  #nav-map{display:none}
+  .he{grid-template-columns:1fr;justify-items:center;gap:.8em}
+  .ring{width:6.4em;height:6.4em}
+  .kv{width:100%}
+  .g-list div{grid-template-columns:7em minmax(0,1fr)}
+  .g-list .k{display:none}
+  .h-time{font-size:4.2em}
+}
+@media (max-width:440px){
+  #pad .pl,.tb .tl{display:none}
+  #display{font-size:15px;padding:.7em .8em}
+}
+@media (max-height:520px){
+  #display{font-size:14px}
+  .h-time{font-size:3.6em}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="world">
+    <canvas id="scene" aria-hidden="true"></canvas>
+    <video id="cam" playsinline muted hidden></video>
+    <img id="photo" alt="" hidden>
+    <div id="tint"></div>
+    <div id="lens"></div>
+  </div>
+  <div id="hud">
+   <div id="dwrap">
+    <div id="display" class="cover">
+      <header id="status">
+        <span id="st-time">--:--</span>
+        <span class="sp"></span>
+        <span class="ind" id="st-nav" data-i="arrow" hidden><b></b></span>
+        <span class="ind" id="st-timer" data-i="timer" hidden><b></b></span>
+        <span class="ind" id="st-music" data-i="music" hidden></span>
+        <span class="ind" id="st-cc" data-i="cc" hidden></span>
+        <span class="ind" id="st-msg" data-i="msgs" hidden><b></b></span>
+        <span class="ind" id="st-bat"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="7.5" width="17" height="9" rx="1.5"/><path d="M21.5 10.5v3"/><rect id="st-batfill" x="4.25" y="9.25" width="11.8" height="5.5" rx=".6" fill="currentColor" stroke="none"/></svg><b>84 %</b></span>
+      </header>
+
+      <main id="views">
+        <section class="view" data-view="home">
+          <div class="home">
+            <div class="h-time" id="h-time">--:--</div>
+            <div class="h-date" id="h-date"></div>
+            <div class="h-w" id="h-w"></div>
+          </div>
+          <div class="car-wrap"><div class="car" id="car"></div></div>
+          <div class="car-label"><b id="car-name"></b><small id="car-sub"></small></div>
+        </section>
+
+        <section class="view" data-view="ai" hidden>
+          <div class="v-title"><span>Raken AI</span><span class="tag" id="ai-mode">Ansluter …</span></div>
+          <div class="ai-body">
+            <div class="ai-q" id="ai-q"></div>
+            <div class="ai-a dim" id="ai-a" aria-live="polite">Fråga om det du ser, eller be mig göra något. Till exempel ”timer 5 minuter” eller ”navigera hem”.</div>
+          </div>
+          <div class="row">
+            <button class="b fx" type="button" data-ask="look">Vad ser jag?</button>
+            <button class="b fx" type="button" data-ask="read">Läs skyltarna</button>
+            <button class="b fx" type="button" data-ask="msgs">Mina meddelanden</button>
+            <button class="b fx" type="button" id="ai-mic" data-i="mic" hidden>Tala</button>
+            <button class="b fx" type="button" id="ai-stop" hidden>Avbryt</button>
+          </div>
+          <form class="form" id="ai-form" autocomplete="off">
+            <input class="hin fx" id="ai-in" type="text" maxlength="300" placeholder="Skriv en fråga …" enterkeyhint="send" aria-label="Fråga Raken">
+            <button class="b fx" type="submit">Skicka</button>
+          </form>
+        </section>
+
+        <section class="view" data-view="nav" hidden>
+          <div class="v-title"><span>Navigera</span><span class="tag" id="nav-tag">Till fots · 1,4 m/s</span></div>
+          <div class="scroll list" id="nav-pick"></div>
+          <div class="nav-run" id="nav-run" hidden>
+            <canvas id="compass" aria-hidden="true"></canvas>
+            <div class="nav-main">
+              <svg id="nav-arrow" viewBox="-50 -50 100 100" aria-hidden="true"><g id="nav-arw"><path d="M0 36V-18M-22 2 0-26 22 2"/></g><g id="nav-pin" hidden><path d="M0 34S-20 12-20-6a20 20 0 0 1 40 0C20 12 0 34 0 34z"/><circle cx="0" cy="-6" r="6.5"/></g></svg>
+              <div><div class="nav-dist" id="nav-dist"></div><div class="nav-instr" id="nav-instr"></div><div class="nav-on" id="nav-on"></div></div>
+              <svg id="nav-map" viewBox="0 0 100 100" aria-hidden="true"><path id="nav-route"/><path id="nav-done"/><circle id="nav-me" r="3.2" cx="0" cy="0"/></svg>
+            </div>
+            <div class="nav-foot" id="nav-foot"></div>
+            <div class="row c">
+              <button class="b fx" type="button" id="nav-walk">Pausa</button>
+              <button class="b fx" type="button" id="nav-ff">Snabbspola 5×</button>
+              <button class="b fx" type="button" id="nav-end">Avsluta</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" data-view="cam" hidden>
+          <div class="v-title"><span>Kamera</span><span class="tag">12 MP · 4:3</span></div>
+          <div class="vf"><div class="vf-f"><i class="vf-g"></i><i class="vf-x"></i><div class="vf-flash" id="vf-flash"></div></div></div>
+          <div class="row c">
+            <button class="b fx" type="button" id="cam-shot" data-i="cam">Ta foto</button>
+            <button class="b fx" type="button" id="cam-gal" data-i="gallery">Galleri · <span id="cam-n">0</span></button>
+          </div>
+          <p class="note c" id="cam-last">Kameralampan på bågen lyser när du fotar, så att andra ser det.</p>
+        </section>
+
+        <section class="view" data-view="gallery" hidden>
+          <div class="v-title"><span>Galleri</span><span class="tag" id="gal-count"></span></div>
+          <div class="b fx gal" id="gal-stage"><canvas id="gal-cv" width="4" height="3"></canvas><p class="note" id="gal-empty">Inga foton än. Tryck på kameraknappen på bågen för att fota.</p></div>
+          <div class="gal-meta" id="gal-meta"></div>
+          <div class="row c" id="gal-acts">
+            <button class="b fx" type="button" id="gal-ask" data-i="ai">Fråga Raken</button>
+            <button class="b fx" type="button" id="gal-save">Spara</button>
+            <button class="b fx" type="button" id="gal-del">Radera</button>
+          </div>
+        </section>
+
+        <section class="view" data-view="msgs" hidden>
+          <div class="v-title"><span>Meddelanden</span><span class="tag">Exempeldata</span></div>
+          <div class="scroll list" id="msg-list"></div>
+          <div class="msg-open" id="msg-open" hidden>
+            <div class="msg-from" id="msg-from"></div>
+            <div class="msg-text" id="msg-text"></div>
+            <div class="msg-sent" id="msg-sent"></div>
+            <div class="row" id="msg-quick">
+              <button class="b fx" type="button" data-re="På väg!">På väg!</button>
+              <button class="b fx" type="button" data-re="Ringer dig snart.">Ringer dig snart</button>
+              <button class="b fx" type="button" data-re="Okej, tack!">Okej, tack!</button>
+              <button class="b fx" type="button" id="msg-dict" data-i="mic" hidden>Diktera</button>
+            </div>
+            <form class="form" id="msg-form" autocomplete="off">
+              <input class="hin fx" id="msg-in" type="text" maxlength="200" placeholder="Skriv ett svar …" enterkeyhint="send" aria-label="Svar">
+              <button class="b fx" type="submit">Svara</button>
+            </form>
+          </div>
+        </section>
+
+        <section class="view" data-view="captions" hidden>
+          <div class="v-title"><span>Undertexter</span><span class="tag" id="cap-state">Av</span></div>
+          <div class="cap" id="cap-lines"></div>
+          <div class="cap-tr" id="cap-tr" dir="auto" hidden></div>
+          <div class="row c">
+            <button class="b fx" type="button" id="cap-live" data-i="mic" hidden>Lyssna</button>
+            <button class="b fx" type="button" id="cap-demo">Spela exempel</button>
+            <button class="b fx" type="button" id="cap-trans">Översätt</button>
+            <button class="b fx" type="button" id="cap-lang">Språk: engelska</button>
+            <button class="b fx" type="button" id="cap-clear">Rensa</button>
+          </div>
+        </section>
+
+        <section class="view" data-view="music" hidden>
+          <div class="v-title"><span>Musik</span><span class="tag">Bågarnas högtalare · genereras live</span></div>
+          <div><div class="mu-title" id="mu-title"></div><div class="mu-sub" id="mu-sub"></div></div>
+          <canvas id="mu-viz" aria-hidden="true"></canvas>
+          <div><div class="mu-bar"><i id="mu-prog"></i></div><div class="mu-time"><span id="mu-pos">0:00</span><span>Volym <b id="mu-vol">60 %</b></span><span id="mu-len">2:30</span></div></div>
+          <div class="row c">
+            <button class="b fx" type="button" id="mu-prev" data-i="prev" aria-label="Föregående låt"></button>
+            <button class="b fx" type="button" id="mu-play"></button>
+            <button class="b fx" type="button" id="mu-next" data-i="next" aria-label="Nästa låt"></button>
+            <button class="b fx" type="button" id="mu-vdn">Volym −</button>
+            <button class="b fx" type="button" id="mu-vup">Volym +</button>
+          </div>
+        </section>
+
+        <section class="view" data-view="timer" hidden>
+          <div class="v-title"><span id="tm-name">Timer</span><span class="tag" id="tm-tag"></span></div>
+          <div class="tm-big" id="tm-big">05:00</div>
+          <div class="tm-laps" id="tm-laps"></div>
+          <div class="row c" id="tm-presets">
+            <button class="b fx" type="button" data-min="1">1 min</button>
+            <button class="b fx" type="button" data-min="3">3 min</button>
+            <button class="b fx" type="button" data-min="5">5 min</button>
+            <button class="b fx" type="button" data-min="10">10 min</button>
+            <button class="b fx" type="button" data-min="25">25 min</button>
+          </div>
+          <div class="row c">
+            <button class="b fx" type="button" id="tm-go">Starta</button>
+            <button class="b fx" type="button" id="tm-lap" hidden>Varv</button>
+            <button class="b fx" type="button" id="tm-reset">Nollställ</button>
+            <button class="b fx" type="button" id="tm-mode">Byt till stoppur</button>
+          </div>
+        </section>
+
+        <section class="view" data-view="health" hidden>
+          <div class="v-title"><span>Hälsa</span><span class="tag">I dag</span></div>
+          <div class="he">
+            <div class="ring"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="trk" cx="50" cy="50" r="44"/><circle class="arc" id="he-arc" cx="50" cy="50" r="44" stroke-dasharray="276.5" stroke-dashoffset="276.5"/></svg><div><b id="he-steps">0</b><small>av 8 000 steg</small></div></div>
+            <dl class="kv">
+              <div><dt>Sträcka</dt><dd id="he-dist">0,00 km</dd></div>
+              <div><dt>Skärmtid</dt><dd id="he-screen">0 s</dd></div>
+              <div><dt>Nästa ögonvila</dt><dd id="he-rest">om 20 min</dd></div>
+              <div><dt>Steg räknas från</dt><dd id="he-src">Navigera</dd></div>
+            </dl>
+          </div>
+          <p class="note">20-20-20: var 20:e minut, titta på något 6 meter bort i 20 sekunder.</p>
+          <div class="row"><button class="b fx" type="button" id="he-rest-now">Ta ögonvila nu</button></div>
+        </section>
+
+        <section class="view" data-view="settings" hidden>
+          <div class="v-title"><span>Inställningar</span><span class="tag">Sparas på den här enheten</span></div>
+          <div class="scroll list" id="set-list"></div>
+        </section>
+
+        <section class="view" data-view="about" hidden>
+          <div class="v-title"><span>Om EyeSee</span><span class="tag">Konceptspecifikation</span></div>
+          <div class="scroll"><dl class="kv" id="about-kv"></dl><p class="note" style="margin-top:.8em">Raken EyeSee är ett koncept. I simulatorn är batteriet, meddelandena och gången påhittade.</p></div>
+        </section>
+      </main>
+
+      <footer id="hint"></footer>
+      <div id="toast" role="status" hidden><b></b><span></span></div>
+
+      <div id="boot" class="ov">
+        <svg class="b-eye" viewBox="0 0 120 60" aria-hidden="true"><path d="M6 30C30 4 90 4 114 30 90 56 30 56 6 30z"/><circle cx="60" cy="30" r="12"/><circle cx="60" cy="30" r="3.5"/></svg>
+        <div class="b-word">RAKEN</div>
+        <div class="b-sub">EyeSee</div>
+        <div class="b-bar"><i></i></div>
+        <div class="b-ver">EyeSee OS 1.0 · startar</div>
+      </div>
+      <div id="guide" class="ov" hidden>
+        <div class="g-title">Så styr du EyeSee</div>
+        <dl class="g-list">
+          <div><dt>Svep ← →</dt><dd>Flytta markören</dd><dd class="k"><kbd>← →</kbd></dd></div>
+          <div><dt>Tryck</dt><dd>Välj</dd><dd class="k"><kbd>Enter</kbd></dd></div>
+          <div><dt>Svep nedåt</dt><dd>Tillbaka</dd><dd class="k"><kbd>Esc</kbd></dd></div>
+          <div><dt>Håll inne</dt><dd>Raken AI</dd><dd class="k"><kbd>A</kbd></dd></div>
+          <div><dt>Kameraknappen</dt><dd>Fota direkt</dd><dd class="k"><kbd>C</kbd></dd></div>
+        </dl>
+        <p class="g-foot">Pekytan och kameraknappen sitter på bågen längst ned. Du kan också klicka direkt i bilden.</p>
+        <div class="g-go">Tryck för att börja</div>
+      </div>
+      <div id="alarm" class="ov" hidden><div class="big">00:00</div><div class="ov-t">Tiden är ute</div><div class="ov-s" id="alarm-sub"></div></div>
+      <div id="rest" class="ov" hidden><div class="ov-t">Ögonvila</div><div class="big" id="rest-n">20</div><div class="ov-s">Titta på något minst 6 meter bort tills nedräkningen är klar.</div></div>
+    </div>
+   </div>
+  </div>
+</div>
+
+<div id="dock">
+  <div class="capw"><button id="capBtn" type="button" aria-label="Kameraknapp: ta ett foto"></button><span id="led" title="Kameralampa"></span></div>
+  <div id="pad" role="application" aria-label="Pekyta på bågen. Svep åt sidan för att flytta, tryck för att välja, svep nedåt för att gå tillbaka, håll inne för Raken AI."><span id="pad-l">Pekyta</span><span class="pl">svep · tryck · håll</span></div>
+  <button class="tb" id="simBtn" type="button" aria-expanded="false" aria-controls="sim" data-i="sliders"><span class="tl">Simulator</span></button>
+</div>
+
+<div id="sim" role="dialog" aria-label="Simulator" hidden>
+  <header><h2>Simulator</h2><button class="tb" type="button" id="sim-close">Stäng</button></header>
+  <p>Styr vad glasögonen ser och testa händelser. Det här finns bara i simulatorn.</p>
+  <h3>Världsvy</h3>
+  <div class="seg" id="sim-world">
+    <button class="tb" type="button" data-w="city" aria-pressed="true">Gågata</button>
+    <button class="tb" type="button" data-w="camera" aria-pressed="false">Kamera</button>
+    <button class="tb" type="button" data-w="photo" aria-pressed="false">Eget foto</button>
+  </div>
+  <input type="file" id="photo-in" accept="image/*" hidden>
+  <h3>Tid på dygnet för gågatan</h3>
+  <div class="seg" id="sim-tod">
+    <button class="tb" type="button" data-t="" aria-pressed="true">Nu</button>
+    <button class="tb" type="button" data-t="day" aria-pressed="false">Dag</button>
+    <button class="tb" type="button" data-t="dusk" aria-pressed="false">Skymning</button>
+    <button class="tb" type="button" data-t="night" aria-pressed="false">Natt</button>
+  </div>
+  <h3>Händelser</h3>
+  <div class="seg">
+    <button class="tb" type="button" id="sim-msg">Nytt meddelande</button>
+    <button class="tb" type="button" id="sim-sleep">Skärm av/på</button>
+    <button class="tb" type="button" id="sim-rest">Ögonvila</button>
+    <button class="tb" type="button" id="sim-guide">Gestguiden</button>
+  </div>
+  <h3>Tangentbord</h3>
+  <div class="keys">
+    <kbd>← →</kbd><span>Svep: flytta markören</span>
+    <kbd>Enter</kbd><span>Tryck: välj</span>
+    <kbd>Esc</kbd><span>Svep nedåt: tillbaka</span>
+    <kbd>A</kbd><span>Håll inne: Raken AI</span>
+    <kbd>C</kbd><span>Kameraknappen</span>
+    <kbd>H</kbd><span>Hem</span>
+    <kbd>S</kbd><span>Släck skärmen</span>
+  </div>
+</div>
+
+<div id="sr" class="vh" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+document.documentElement.lang = 'sv';
+
+/* ================= utilities ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+const pad2 = n => String(n).padStart(2, '0');
+const nf = n => Math.round(n).toLocaleString('sv-SE');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const DAYS = ['söndag', 'måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag'];
+const MONTHS = ['januari', 'februari', 'mars', 'april', 'maj', 'juni', 'juli', 'augusti', 'september', 'oktober', 'november', 'december'];
+const hhmm = d => pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+function isoWeek(d) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return Math.ceil(((t - y) / 864e5 + 1) / 7);
+}
+function fmtDist(m) {
+  m = Math.max(0, m);
+  if (m >= 1000) return (m / 1000).toFixed(1).replace('.', ',') + ' km';
+  if (m >= 100) return Math.round(m / 10) * 10 + ' m';
+  return Math.round(m / 5) * 5 + ' m';
+}
+function mmss(s) {
+  s = Math.max(0, Math.ceil(s));
+  const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), r = s % 60;
+  return (h ? h + ':' + pad2(m) : pad2(m)) + ':' + pad2(r);
+}
+function fmtSpan(sec) {
+  sec = Math.round(sec);
+  if (sec < 60) return sec + ' s';
+  const m = Math.round(sec / 60);
+  if (m < 60) return m + ' min';
+  const h = Math.floor(m / 60), r = m % 60;
+  return h + ' h' + (r ? ' ' + r + ' min' : '');
+}
+function fmtSw(ms) { const t = Math.floor(ms / 100); return pad2(Math.floor(t / 600)) + ':' + pad2(Math.floor(t / 10) % 60) + ',' + (t % 10); }
+function ago(t) {
+  const s = (Date.now() - t) / 1000, d = new Date(t);
+  if (s < 60) return 'nu';
+  if (s < 3600) return Math.floor(s / 60) + ' min';
+  if (s < 86400 && d.getDate() === new Date().getDate()) return hhmm(d);
+  return d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0, 3);
+}
+const hexRgb = h => { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+function dataBlob(url) {
+  const [head, b64] = url.split(',');
+  const mime = (head.match(/:(.*?);/) || [0, 'image/jpeg'])[1];
+  const bin = atob(b64), u = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return new Blob([u], { type: mime });
+}
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('eyesee:v1:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('eyesee:v1:' + k, JSON.stringify(v)); return true; } catch { return false; } },
+  del(k) { try { localStorage.removeItem('eyesee:v1:' + k); } catch {} },
+};
+
+/* ================= data ================= */
+const ICON = {
+  ai: '<path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.8"/><path d="M19.5 2.5v3M18 4h3"/>',
+  nav: '<path d="M12 2.8 19 20.5l-7-3.6-7 3.6z"/>',
+  cam: '<path d="M3.5 8.5h3l1.6-2.5h7.8l1.6 2.5h3v10.5h-17z"/><circle cx="12" cy="13.5" r="3.4"/>',
+  gallery: '<rect x="3.5" y="4.5" width="17" height="15" rx="1.5"/><path d="m3.5 16 5-4.5 4 3.5 3-2.5 5 4"/><circle cx="15.5" cy="9" r="1.4"/>',
+  msgs: '<path d="M4 5h16v11H10l-4.5 3.5V16H4z"/>',
+  cc: '<rect x="3" y="5.5" width="18" height="13" rx="1.5"/><path d="M10.5 10.2a2.4 2.4 0 1 0 0 3.6M17 10.2a2.4 2.4 0 1 0 0 3.6"/>',
+  music: '<path d="M9 17.5V5.5l10.5-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="17" cy="15.5" r="2.5"/>',
+  timer: '<circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.6 1.8M9.5 2.8h5"/>',
+  health: '<path d="M2.5 12.5h4l2-5 4 10 2.5-6.5 1.5 1.5h5"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+  glasses: '<circle cx="6.5" cy="14" r="3.5"/><circle cx="17.5" cy="14" r="3.5"/><path d="M10 14c1.2-1 2.8-1 4 0M3 14 4.5 7.5H7M21 14l-1.5-6.5H17"/>',
+  arrow: '<path d="M12 20V4M5 11l7-7 7 7"/>',
+  mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>',
+  play: '<path d="M8 5.5v13l10.5-6.5z"/>',
+  pause: '<path d="M8.5 5.5v13M15.5 5.5v13"/>',
+  prev: '<path d="M17.5 6v12L9 12zM6.5 6v12"/>',
+  next: '<path d="M6.5 6v12L15 12zM17.5 6v12"/>',
+  sliders: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
+};
+const svg = k => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${ICON[k]}</svg>`;
+
+const APPS = [
+  { id: 'ai', name: 'Raken AI', icon: 'ai', alias: ['raken', 'assistent'] },
+  { id: 'nav', name: 'Navigera', icon: 'nav', alias: ['karta', 'navigering', 'vägbeskrivning'] },
+  { id: 'cam', name: 'Kamera', icon: 'cam', alias: ['kameran'] },
+  { id: 'gallery', name: 'Galleri', icon: 'gallery', alias: ['bilder', 'foton', 'galleriet'] },
+  { id: 'msgs', name: 'Meddelanden', icon: 'msgs', alias: ['sms', 'meddelande', 'notiser'] },
+  { id: 'captions', name: 'Undertexter', icon: 'cc', alias: ['textning', 'undertext'] },
+  { id: 'music', name: 'Musik', icon: 'music', alias: ['musiken', 'spelaren'] },
+  { id: 'timer', name: 'Timer', icon: 'timer', alias: ['stoppur', 'stoppuret'] },
+  { id: 'health', name: 'Hälsa', icon: 'health', alias: ['steg', 'aktivitet'] },
+  { id: 'settings', name: 'Inställningar', icon: 'settings', alias: ['inställning'] },
+  { id: 'about', name: 'Om EyeSee', icon: 'glasses', alias: ['om'] },
+];
+const appName = id => id === 'home' ? 'Hem' : (APPS.find(a => a.id === id) || { name: id }).name;
+
+const COLORS = [
+  { id: 'green', name: 'Grön', nm: '525 nm', hex: '#7dffaa' },
+  { id: 'cyan', name: 'Cyan', nm: '495 nm', hex: '#78e9ff' },
+  { id: 'amber', name: 'Bärnsten', nm: '590 nm', hex: '#ffc66e' },
+  { id: 'red', name: 'Röd', nm: '630 nm', hex: '#ff7f6e' },
+  { id: 'white', name: 'Vit', nm: 'RGB', hex: '#eef3ff' },
+];
+const ONOFF = [{ v: true, label: 'På' }, { v: false, label: 'Av' }];
+const SETTINGS = [
+  { k: 'color', label: 'HUD-färg', opts: COLORS.map(c => ({ v: c.id, label: c.name + ' · ' + c.nm })) },
+  { k: 'bright', label: 'Ljusstyrka', opts: [{ v: 'auto', label: 'Auto' }, { v: 1500, label: '1 500 nits' }, { v: 3000, label: '3 000 nits' }, { v: 5000, label: '5 000 nits' }] },
+  { k: 'tint', label: 'Linsdimning', opts: [0, 25, 50, 70].map(v => ({ v, label: v ? v + ' %' : 'Av' })) },
+  { k: 'text', label: 'Textstorlek', opts: [{ v: 'normal', label: 'Normal' }, { v: 'big', label: 'Stor' }] },
+  { k: 'pos', label: 'HUD-placering', opts: [{ v: 'center', label: 'Båda ögonen' }, { v: 'right', label: 'Höger öga' }] },
+  { k: 'voice', label: 'Läs upp svar', opts: ONOFF },
+  { k: 'sounds', label: 'Systemljud', opts: ONOFF },
+  { k: 'demo', label: 'Exempelnotiser', opts: ONOFF },
+  { k: 'sleep', label: 'Skärmvila', opts: [{ v: 15, label: 'Efter 15 s' }, { v: 60, label: 'Efter 1 min' }, { v: 300, label: 'Efter 5 min' }, { v: 0, label: 'Aldrig' }] },
+  { k: 'world', label: 'Världsvy', opts: [{ v: 'city', label: 'Gågata (simulerad)' }, { v: 'photo', label: 'Eget foto' }, { v: 'camera', label: 'Kamera' }] },
+];
+const DEFAULTS = { color: 'green', bright: 'auto', tint: 50, text: 'normal', pos: 'center', voice: true, sounds: true, demo: true, sleep: 60, world: 'city' };
+
+const PLACES = [
+  { id: 'hem', key: 'hem', name: 'Hem', addr: 'Björkvägen 12', head: 20, segs: [['Storgatan', 210, 'left'], ['Parkgatan', 360, 'right'], ['Björkvägen', 170, 'arrive']] },
+  { id: 'skolan', key: 'skola', name: 'Skolan', addr: 'Skolvägen 4', head: 95, segs: [['Storgatan', 260, 'right'], ['Skolvägen', 420, 'slight-left'], ['Idrottsvägen', 150, 'arrive']] },
+  { id: 'stationen', key: 'station', name: 'Stationen', addr: 'Stationsplan 1', head: 200, segs: [['Storgatan', 180, 'left'], ['Järnvägsgatan', 640, 'right'], ['Stationsplan', 90, 'arrive']] },
+  { id: 'gymmet', key: 'gym', name: 'Gymmet', addr: 'Sjöpromenaden 3', head: 310, segs: [['Kyrkogatan', 120, 'right'], ['Ågatan', 300, 'left'], ['Hamngatan', 240, 'slight-right'], ['Sjöpromenaden', 160, 'arrive']] },
+];
+PLACES.forEach(p => { p.total = p.segs.reduce((a, s) => a + s[1], 0); });
+const TURN = { left: -90, right: 90, 'slight-left': -40, 'slight-right': 40 };
+const TURN_TXT = { left: 'Sväng vänster', right: 'Sväng höger', 'slight-left': 'Håll vänster', 'slight-right': 'Håll höger' };
+const CARD = ['N', 'NO', 'O', 'SO', 'S', 'SV', 'V', 'NV'];
+const cardinal = h => CARD[Math.round(((h % 360) + 360) % 360 / 45) % 8];
+
+const TRACKS = [
+  { title: 'Söder i dimma', bpm: 78, chords: [[57, 60, 64, 67], [53, 57, 60, 64], [48, 55, 60, 64], [55, 59, 62, 67]], wave: 'triangle', arp: 2, drums: false },
+  { title: 'Tunnelbana 04:12', bpm: 116, chords: [[50, 57, 62, 65], [46, 53, 58, 62], [53, 57, 60, 65], [48, 55, 60, 64]], wave: 'sawtooth', arp: 1, drums: true },
+  { title: 'Norrsken över Abisko', bpm: 66, chords: [[52, 59, 62, 66], [48, 55, 59, 64], [55, 59, 62, 67], [50, 57, 62, 66]], wave: 'sine', arp: 4, drums: false },
+  { title: 'Ljusgården', bpm: 98, chords: [[53, 57, 60, 64], [55, 59, 62, 65], [52, 55, 59, 64], [57, 60, 64, 67]], wave: 'triangle', arp: 2, drums: true },
+];
+const TRACK_LEN = 150;
+
+const DEMO_TALK = [
+  ['Barista', 'Hej! Vad får det lov att vara?'],
+  ['Du', 'En kaffe latte, tack. Med havremjölk.'],
+  ['Barista', 'Absolut. Vill du ha något att äta till?'],
+  ['Du', 'En kanelbulle låter bra.'],
+  ['Barista', 'Då blir det sjuttiofem kronor. Kort eller Swish?'],
+  ['Du', 'Kort, tack.'],
+  ['Barista', 'Varsågod, du kan blippa här. Ha en fin dag!'],
+];
+const LANGS = ['engelska', 'arabiska', 'spanska', 'finska', 'ukrainska'];
+const DEMO_POOL = [
+  ['Elin', 'Jag beställde en kanelbulle åt dig också.'],
+  ['Trafikinfo', 'Buss 4: hållplatsen vid Storgatan är flyttad 50 meter under vägarbetet.'],
+  ['Pappa', 'Middag 18:30. Det blir tacos!'],
+  ['Kalender', 'Om 15 minuter: träning på Gymmet.'],
+  ['Elias', 'Har du läxan i matte? Sidan 112 till 114.'],
+  ['Väder', 'Regn väntas från klockan 19. Ta med paraply.'],
+];
+function seedMsgs() {
+  const n = Date.now();
+  return [
+    { id: 's1', from: 'Elin', text: 'Är du på väg? Vi sitter längst in på kaféet.', t: n - 4 * 6e4, read: false, re: [] },
+    { id: 's2', from: 'Trafikinfo', text: 'Tunnelbanans röda linje: cirka 6 minuters försening på grund av signalfel.', t: n - 19 * 6e4, read: false, re: [] },
+    { id: 's3', from: 'Mamma', text: 'Glöm inte att köpa mjölk på vägen hem. Puss!', t: n - 52 * 6e4, read: true, re: [] },
+    { id: 's4', from: 'Klassen', text: 'Påminnelse: utflykten i morgon, samling 08:15 vid busshållplatsen.', t: n - 3 * 36e5, read: true, re: [] },
+  ];
+}
+
+/* ================= state ================= */
+let S = Object.assign({}, DEFAULTS, store.get('settings', {}), { world: 'city' });
+let cur = 'home', booting = true, guideOpen = false, sleeping = false, alarmOn = false, restOn = false;
+let lastInput = Date.now(), userActive = false, hudHex = '#7dffaa', worldLum = 0.4, brightNits = 2500;
+let restAcc = 0, nextDemo = Date.now() + 40000, demoI = 0, motionSeen = false;
+let aiModeText = 'Ansluter …', worldPick = 'city';
+const disp = $('#display'), camVideo = $('#cam'), photoImg = $('#photo');
+const V = {};
+
+function saveS() { store.set('settings', Object.assign({}, S, { world: 'city' })); }
+function applySettings() {
+  const c = COLORS.find(x => x.id === S.color) || COLORS[0];
+  hudHex = c.hex;
+  const root = document.documentElement.style;
+  root.setProperty('--hud', c.hex);
+  root.setProperty('--hud-rgb', hexRgb(c.hex).join(','));
+  // Electrochromic lenses: a light global tint, plus zonal dimming behind the display area.
+  const tint = clamp(Number(S.tint) || 0, 0, 100) / 100;
+  $('#tint').style.opacity = (tint * 0.5).toFixed(2);
+  root.setProperty('--veil', tint ? (0.3 + tint * 0.6).toFixed(2) : '0');
+  document.body.classList.toggle('big', S.text === 'big');
+  document.body.classList.toggle('mono', S.pos === 'right');
+  updateBrightness();
+  if (cur === 'gallery') renderGal();
+  if (cur === 'home') requestAnimationFrame(() => setFocus(V.home.focus));
+}
+function updateBrightness() {
+  brightNits = S.bright === 'auto' ? Math.round((700 + worldLum * 4300) / 100) * 100 : S.bright;
+  disp.style.setProperty('--bright', (0.45 + 0.55 * brightNits / 5000).toFixed(2));
+}
+
+/* ================= sound + speech ================= */
+const AC = {
+  ctx: null, master: null,
+  get() {
+    if (!this.ctx) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      try { this.ctx = new C(); } catch { return null; }
+      this.master = this.ctx.createGain(); this.master.gain.value = 0.9; this.master.connect(this.ctx.destination);
+    }
+    if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+    return this.ctx;
+  },
+};
+function sfx(kind) {
+  if (!S.sounds || !userActive) return;
+  const ac = AC.get(); if (!ac) return;
+  const t = ac.currentTime;
+  const tone = (f, dur, vol, type = 'sine', at = 0) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t + at); g.gain.exponentialRampToValueAtTime(vol, t + at + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + at + dur);
+    o.connect(g); g.connect(AC.master); o.start(t + at); o.stop(t + at + dur + 0.03);
+  };
+  switch (kind) {
+    case 'move': tone(2100, 0.035, 0.018); break;
+    case 'edge': tone(420, 0.05, 0.02); break;
+    case 'select': tone(1320, 0.06, 0.04); tone(1980, 0.07, 0.03, 'sine', 0.045); break;
+    case 'back': tone(990, 0.05, 0.035); tone(660, 0.08, 0.03, 'sine', 0.04); break;
+    case 'notify': tone(1046, 0.12, 0.05); tone(1568, 0.16, 0.045, 'sine', 0.11); break;
+    case 'alert': tone(880, 0.12, 0.07, 'triangle'); tone(880, 0.12, 0.07, 'triangle', 0.2); tone(1175, 0.18, 0.07, 'triangle', 0.4); break;
+    case 'shutter': {
+      const b = ac.createBuffer(1, Math.floor(ac.sampleRate * 0.07), ac.sampleRate), d = b.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
+      const src = ac.createBufferSource(), g = ac.createGain(); src.buffer = b; g.gain.value = 0.14;
+      src.connect(g); g.connect(AC.master); src.start(t); break;
+    }
+  }
+}
+function speak(text) {
+  if (!S.voice || !userActive || !('speechSynthesis' in window)) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'sv-SE'; u.rate = 1.05;
+    const v = speechSynthesis.getVoices().find(x => /^sv/i.test(x.lang));
+    if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  } catch {}
+}
+const SRC = window.SpeechRecognition || window.webkitSpeechRecognition;
+let micOK = !!SRC;
+function micUI() { $('#ai-mic').hidden = !micOK; $('#cap-live').hidden = !micOK; $('#msg-dict').hidden = !micOK; }
+function recognize({ continuous = false, onText, onEnd }) {
+  if (!micOK) return null;
+  let r;
+  try { r = new SRC(); } catch { micOK = false; micUI(); return null; }
+  r.lang = 'sv-SE'; r.interimResults = true; r.continuous = continuous;
+  r.onresult = e => {
+    let fin = '', tmp = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) fin += t; else tmp += t;
+    }
+    onText(fin, tmp);
+  };
+  r.onerror = e => {
+    if (/not-allowed|service-not-allowed|audio-capture/.test(e.error)) {
+      micOK = false; micUI(); refocus();
+      toast('Mikrofon', 'Mikrofonen går inte att använda här. Skriv i stället.');
+    }
+  };
+  r.onend = () => onEnd && onEnd();
+  try { r.start(); } catch { return null; }
+  return r;
+}
+
+/* ================= the world: a procedural pedestrian street ================= */
+const Scene = (() => {
+  const cv = $('#scene'), g = cv.getContext('2d', { alpha: false });
+  let W = 1, H = 1, f = 1, hy = 0;
+  let camZ = 0, speed = 0, yaw = 0, look = 0, lookT = 0, bob = 0, ph = 0, turnA = null, seed = 1, tod = '';
+  let cy = 1, sy = 0, day = 0.5, night = 0.5, L = 1, P = null, fogC = [180, 190, 200];
+  let dayCache = { t: 0, v: 0.5 };
+  const camX = 0.6, camY = 1.62, NEAR = 0.3;
+  const sides = { '-1': [], '1': [] }, end = { '-1': -10, '1': -10 }, cnt = { '-1': 0, '1': 0 };
+  const SIGNS = ['BAGERI', 'APOTEK', 'KAFÉ', 'BOKHANDEL', 'PIZZERIA', 'FRISÖR', 'BLOMMOR', 'OPTIKER', 'SUSHI', 'KIOSK', 'HOTELL', 'CYKEL', 'GULDSMED', 'TEHUS', 'SKOMAKARE', 'LEKSAKER', 'KONDITORI', 'ANTIKVARIAT'];
+  const SIGN_COL = [[255, 212, 140], [140, 222, 255], [255, 150, 172], [196, 255, 170]];
+  const PCOL = [[38, 42, 52], [70, 46, 40], [28, 32, 38], [92, 82, 70], [46, 58, 82], [110, 40, 46], [60, 64, 58]];
+  const PAL = {
+    night: { top: [4, 7, 16], mid: [12, 18, 36], hor: [30, 36, 60] },
+    dusk: { top: [28, 36, 92], mid: [118, 82, 132], hor: [238, 148, 100] },
+    day: { top: [62, 118, 200], mid: [134, 180, 228], hor: [214, 230, 242] },
+  };
+  const stars = Array.from({ length: 90 }, () => [Math.random(), Math.random() * 0.9, Math.random() * 6.28, 0.5 + Math.random()]);
+  const skyline = Array.from({ length: 48 }, () => [0.6 + Math.random() * 1.4, 0.25 + Math.random() * 0.75]);
+  let people = [];
+
+  const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+  const mul = (a, k) => [a[0] * k, a[1] * k, a[2] * k];
+  const css = (c, a) => a == null ? `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})` : `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+  function hsl(h, s, l) {
+    s /= 100; l /= 100;
+    const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+    const fn = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return [fn(0) * 255, fn(8) * 255, fn(4) * 255];
+  }
+  function rnd(a) { const x = Math.sin(a * 12.9898 + seed * 78.233) * 43758.5453; return x - Math.floor(x); }
+
+  // Daylight follows Stockholm (59.3° N): sunrise and sunset move with the date.
+  function sunTimes(d) {
+    const doy = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5);
+    const len = 12.35 + 6.25 * Math.sin(2 * Math.PI * (doy - 80) / 365);
+    const dst = (new Date(d.getFullYear(), 0, 1).getTimezoneOffset() - d.getTimezoneOffset()) / 60;
+    const noon = 12.15 + dst;
+    return [noon - len / 2, noon + len / 2];
+  }
+  function dayLevel() {
+    if (tod === 'day') return 1;
+    if (tod === 'dusk') return 0.3;
+    if (tod === 'night') return 0;
+    const now = Date.now();
+    if (now - dayCache.t < 20000) return dayCache.v;
+    const d = new Date(), hr = d.getHours() + d.getMinutes() / 60, [rise, set] = sunTimes(d);
+    const v = clamp(Math.min(smooth((hr - rise + 0.9) / 1.8), 1 - smooth((hr - set + 0.9) / 1.8)), 0, 1);
+    dayCache = { t: now, v };
+    return v;
+  }
+  function palette(d) {
+    const [a, b, t] = d < 0.35 ? [PAL.night, PAL.dusk, d / 0.35] : [PAL.dusk, PAL.day, (d - 0.35) / 0.65];
+    const s = smooth(t);
+    return { top: mix(a.top, b.top, s), mid: mix(a.mid, b.mid, s), hor: mix(a.hor, b.hor, s) };
+  }
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    W = innerWidth; H = innerHeight;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    f = Math.max(W, H) * 0.72; hy = H * 0.47;
+  }
+  const cam = (x, y, z) => { const dx = x - camX, dz = z - camZ; return [dx * cy - dz * sy, y - camY - bob, dx * sy + dz * cy]; };
+  function clipNear(ps) {
+    const out = [];
+    for (let i = 0; i < ps.length; i++) {
+      const a = ps[i], b = ps[(i + 1) % ps.length], ai = a[2] >= NEAR, bi = b[2] >= NEAR;
+      if (ai) out.push(a);
+      if (ai !== bi) { const t = (NEAR - a[2]) / (b[2] - a[2]); out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, NEAR]); }
+    }
+    return out;
+  }
+  function poly(pts, col) {
+    const c = clipNear(pts.map(p => cam(p[0], p[1], p[2])));
+    if (c.length < 3) return;
+    g.beginPath();
+    for (let i = 0; i < c.length; i++) {
+      const X = W / 2 + c[i][0] * f / c[i][2], Y = hy - c[i][1] * f / c[i][2];
+      if (i) g.lineTo(X, Y); else g.moveTo(X, Y);
+    }
+    g.closePath(); g.fillStyle = col; g.fill();
+  }
+  function proj(x, y, z) { const p = cam(x, y, z); return p[2] < NEAR ? null : [W / 2 + p[0] * f / p[2], hy - p[1] * f / p[2], p[2]]; }
+  function fog(c, dist, k = 1) { const t = smooth(clamp((dist - 6) / 150, 0, 1)) * 0.9 * k; return css(mix(c, fogC, t)); }
+
+  function addB(s) {
+    const i = cnt[s]++, r = k => rnd(i * 37.1 + k * 3.7 + s * 501.3);
+    let z1 = end[s], gap = false;
+    if (i > 0 && r(1) < 0.15) { z1 += 3 + r(2) * 3.5; gap = true; }
+    const len = 8 + r(3) * 13, floors = 3 + Math.floor(r(4) * 5), h = floors * 3.2 + 1.4;
+    const warm = r(5) < 0.62, base = hsl(warm ? 16 + r(6) * 30 : 196 + r(6) * 30, 10 + r(7) * 24, 36 + r(8) * 26);
+    const cols = Math.max(2, Math.round(len / 3.2)), cw = len / cols, wins = [];
+    for (let y = 0; y < floors - 1; y++) for (let c = 0; c < cols; c++) wins.push([z1 + cw * c + cw * 0.27, cw * 0.46, 4.1 + y * 3.2, r(40 + y * 11 + c * 2.3)]);
+    const b = { s, z1, z2: z1 + len, h, base, wins, gap, shop: r(9) < 0.85, shopLit: r(12), sign: null };
+    if (r(10) < 0.72) b.sign = { t: SIGNS[Math.floor(r(11) * SIGNS.length)], z: z1 + 1.5 + r(13) * (len - 3), c: SIGN_COL[Math.floor(r(14) * SIGN_COL.length)] };
+    sides[s].push(b); end[s] = b.z2;
+  }
+  function extend() {
+    for (const s of [-1, 1]) {
+      const a = sides[s];
+      while (a.length && a[0].z2 < camZ - 2) a.shift();
+      while (end[s] < camZ + 180) addB(s);
+    }
+  }
+  function spawnP(p, far) {
+    const side = Math.random() < 0.5 ? -1 : 1;
+    p.x = side * (1.5 + Math.random() * 3.7);
+    p.v = (Math.random() < 0.5 ? -1 : 1) * (0.8 + Math.random() * 0.7);
+    p.z = camZ + (far ? 60 + Math.random() * 80 : 5 + Math.random() * 110);
+    p.h = 1.55 + Math.random() * 0.35; p.c = PCOL[(Math.random() * PCOL.length) | 0]; p.ph = Math.random() * 6;
+  }
+  function reseed() {
+    seed++;
+    for (const s of [-1, 1]) { sides[s] = []; end[s] = camZ - 10; cnt[s] = 0; }
+    people.forEach(p => spawnP(p, false));
+  }
+  people = Array.from({ length: 16 }, () => { const p = {}; spawnP(p, false); return p; });
+
+  function drawB(b) {
+    const dz1 = b.z1 - camZ;
+    if (dz1 > 175 || b.z2 < camZ) return;
+    const s = b.s, x = s * 7, xi = s * 6.97, dmid = Math.max(1, (Math.max(b.z1, camZ) + b.z2) / 2 - camZ);
+    const wall = mul(b.base, L);
+    if (b.gap && dz1 > NEAR) poly([[x, 0, b.z1], [x + s * 12, 0, b.z1], [x + s * 12, b.h, b.z1], [x, b.h, b.z1]], fog(mul(wall, 0.7), dz1));
+    poly([[x, 0, b.z1], [x, b.h, b.z1], [x, b.h, b.z2], [x, 0, b.z2]], fog(wall, dmid));
+    poly([[xi, b.h - 0.55, b.z1], [xi, b.h, b.z1], [xi, b.h, b.z2], [xi, b.h - 0.55, b.z2]], fog(mul(wall, 0.72), dmid));
+    if (dz1 > 120) return;
+    const litP = 0.05 + 0.5 * night, glass = mix(mul(P.mid, 0.55), [16, 18, 24], 0.35 + night * 0.6);
+    for (const w of b.wins) {
+      const dz = w[0] - camZ;
+      if (dz + w[1] < NEAR || dz > 120) continue;
+      const lit = w[3] < litP;
+      const col = lit ? mix([255, 186, 108], [255, 236, 196], w[3] / litP) : glass;
+      poly([[xi, w[2], w[0]], [xi, w[2] + 1.7, w[0]], [xi, w[2] + 1.7, w[0] + w[1]], [xi, w[2], w[0] + w[1]]], fog(col, dz, lit ? 0.55 : 1));
+    }
+    if (b.shop) {
+      const z1 = b.z1 + 0.7, z2 = b.z2 - 0.7;
+      if (z2 > camZ + NEAR) {
+        const lit = b.shopLit < 0.2 + 0.6 * night;
+        const col = lit ? mul(mix([255, 206, 140], [255, 228, 190], b.shopLit), 0.5 + 0.2 * night) : mix(glass, [70, 80, 90], 0.3);
+        poly([[xi, 0.3, z1], [xi, 2.85, z1], [xi, 2.85, z2], [xi, 0.3, z2]], fog(col, dmid, lit ? 0.5 : 1));
+        poly([[xi, 3.0, z1], [xi, 3.15, z1], [xi, 3.15, z2], [xi, 3.0, z2]], fog(mul(wall, 0.55), dmid));
+      }
+    }
+  }
+  function drawLamp(s, z, glows) {
+    const x = s * 5.7, hx = x - s * 0.75, dz = z - camZ;
+    const pole = fog(mul([34, 36, 40], 0.5 + 0.5 * L), dz);
+    poly([[x - 0.06, 0, z], [x + 0.06, 0, z], [x + 0.06, 4.95, z], [x - 0.06, 4.95, z]], pole);
+    poly([[x, 4.82, z], [hx, 4.82, z], [hx, 4.92, z], [x, 4.92, z]], pole);
+    const on = night > 0.25;
+    poly([[hx - 0.2, 4.62, z], [hx + 0.2, 4.62, z], [hx + 0.2, 4.84, z], [hx - 0.2, 4.84, z]], on ? css([255, 232, 180]) : fog([70, 72, 76], dz));
+    if (on) {
+      const c = proj(hx, 4.6, z), gnd = proj(hx, 0, z), a = clamp((night - 0.25) * 1.4, 0, 1);
+      if (c) glows.push({ x: c[0], y: c[1], r: 2.4 * f / c[2], a: 0.42 * a, c: '255,214,150' });
+      if (gnd) glows.push({ x: gnd[0], y: gnd[1], r: 5 * f / gnd[2], a: 0.2 * a, c: '255,200,140', flat: true });
+    }
+  }
+  function drawSign(b, glows) {
+    const sg = b.sign, s = b.s, z = sg.z, x0 = s * 6.95, x1 = s * 5.55, dz = z - camZ;
+    poly([[x0, 3.98, z], [x1 + s * 0.05, 3.98, z], [x1 + s * 0.05, 4.04, z], [x0, 4.04, z]], fog(mul([40, 40, 44], 0.5 + 0.5 * L), dz));
+    const a = proj(x0, 3.92, z), c = proj(x1, 3.25, z);
+    if (!a || !c) return;
+    const lx = Math.min(a[0], c[0]), rx = Math.max(a[0], c[0]), ty = Math.min(a[1], c[1]), by = Math.max(a[1], c[1]);
+    const w = rx - lx, h = by - ty;
+    if (w < 2 || rx < 0 || lx > W) return;
+    const lit = night > 0.3;
+    g.fillStyle = fog(mul([26, 28, 32], lit ? 1 : 0.6 + 0.6 * L), dz); g.fillRect(lx, ty, w, h);
+    g.strokeStyle = fog(lit ? mul(sg.c, 0.9) : mul(sg.c, 0.2 + 0.5 * L), dz, lit ? 0.5 : 1);
+    g.lineWidth = Math.max(0.6, h * 0.04); g.strokeRect(lx + h * 0.08, ty + h * 0.08, w - h * 0.16, h - h * 0.16);
+    if (h > 6) {
+      g.fillStyle = fog(lit ? sg.c : mul(mix(sg.c, [240, 236, 226], 0.55), 0.5 + 0.5 * L), dz, lit ? 0.4 : 1);
+      g.font = `600 ${Math.round(h * 0.46)}px "Barlow Semi Condensed","Arial Narrow",sans-serif`;
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(sg.t, lx + w / 2, ty + h * 0.53, w * 0.84);
+    }
+    if (lit) glows.push({ x: lx + w / 2, y: ty + h / 2, r: Math.max(w, h) * 0.9, a: 0.18 * clamp((night - 0.3) * 2, 0, 1), c: sg.c.join(',') });
+  }
+  function rr(x, y, w, h, r) {
+    g.beginPath(); g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+  }
+  function drawPerson(p) {
+    const ft = proj(p.x, 0, p.z), hd = proj(p.x, p.h, p.z);
+    if (!ft || !hd) return;
+    const hp = ft[1] - hd[1];
+    if (hp < 1.5) return;
+    const wp = hp * 0.25, X = ft[0];
+    if (X < -wp * 2 || X > W + wp * 2) return;
+    const col = fog(mul(p.c, 0.35 + 0.65 * L), p.z - camZ);
+    g.fillStyle = col; g.strokeStyle = col; g.lineCap = 'round';
+    const hip = ft[1] - hp * 0.47, sw = Math.sin(p.ph) * wp * 0.32;
+    g.lineWidth = wp * 0.34;
+    g.beginPath(); g.moveTo(X - wp * 0.18, hip); g.lineTo(X - wp * 0.18 + sw, ft[1]); g.moveTo(X + wp * 0.18, hip); g.lineTo(X + wp * 0.18 - sw, ft[1]); g.stroke();
+    const top = hd[1] + hp * 0.15;
+    rr(X - wp / 2, top, wp, hip - top + wp * 0.1, wp * 0.3); g.fill();
+    g.beginPath(); g.arc(X, hd[1] + hp * 0.075, hp * 0.075, 0, 6.283); g.fill();
+  }
+
+  function frame(dt) {
+    day = dayLevel(); night = 1 - day; L = 0.16 + 0.84 * day; P = palette(day); fogC = mix(P.hor, P.mid, 0.25);
+    camZ += speed * dt;
+    if (speed > 0) { ph += dt * speed * 4.4; bob = Math.sin(ph) * 0.028; } else bob *= 0.9;
+    look += (lookT - look) * Math.min(1, dt * 3);
+    let ty = 0;
+    if (turnA) {
+      turnA.t += dt / 1.0;
+      const t = turnA.t;
+      if (t >= 0.5 && !turnA.sw) { turnA.sw = true; reseed(); }
+      ty = t < 0.5 ? turnA.d * 0.9 * smooth(t / 0.5) : -turnA.d * 0.9 * (1 - smooth((t - 0.5) / 0.5));
+      if (t >= 1) { turnA = null; ty = 0; }
+    }
+    yaw = look + ty; cy = Math.cos(yaw); sy = Math.sin(yaw);
+    extend();
+    for (const p of people) {
+      p.z += p.v * dt; p.ph += dt * Math.abs(p.v) * 5.2;
+      if (p.z < camZ + 1.2 || p.z > camZ + 150) spawnP(p, true);
+    }
+
+    // sky, stars, far skyline
+    const sg = g.createLinearGradient(0, 0, 0, hy + 2);
+    sg.addColorStop(0, css(P.top)); sg.addColorStop(0.6, css(P.mid)); sg.addColorStop(1, css(P.hor));
+    g.fillStyle = sg; g.fillRect(0, 0, W, hy + 2);
+    const shift = -Math.tan(clamp(yaw, -1.2, 1.2)) * f;
+    if (night > 0.45) {
+      g.fillStyle = '#fff';
+      const now = performance.now() / 1000, span = W * 1.6;
+      for (const s of stars) {
+        g.globalAlpha = clamp((night - 0.45) * 1.6 * (0.55 + 0.45 * Math.sin(now * s[3] + s[2])), 0, 1);
+        const X = ((s[0] * span + shift) % span + span) % span - W * 0.3;
+        g.fillRect(X, s[1] * hy * 0.85, 1.4, 1.4);
+      }
+      g.globalAlpha = 1;
+    }
+    const unit = H * 0.05;
+    let total = 0;
+    for (const b of skyline) total += b[0] * unit;
+    let x0 = ((shift % total) + total) % total - total;
+    g.fillStyle = css(mix(P.hor, [8, 10, 16], 0.5));
+    while (x0 < W) {
+      for (const b of skyline) { const w = b[0] * unit, h = b[1] * unit * 1.6; g.fillRect(x0, hy - h, w + 0.5, h + 1); x0 += w; if (x0 > W) break; }
+    }
+
+    // cobbled ground, paving joints, gutters
+    const gg = g.createLinearGradient(0, hy, 0, H);
+    gg.addColorStop(0, css(fogC)); gg.addColorStop(0.25, css(mix(mul([84, 78, 72], L), fogC, 0.35))); gg.addColorStop(1, css(mul([62, 58, 54], L)));
+    g.fillStyle = gg; g.fillRect(0, hy, W, H - hy);
+    g.lineWidth = 1;
+    const pc = mul([38, 35, 32], L);
+    for (let z = Math.ceil((camZ + 1.5) / 2.4) * 2.4; z < camZ + 70; z += 2.4) {
+      const a = proj(-7, 0, z), b = proj(7, 0, z);
+      if (!a || !b) continue;
+      g.strokeStyle = css(pc, (clamp(1 - (z - camZ) / 70, 0, 1) * 0.55).toFixed(3));
+      g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
+    }
+    for (const gx of [-4.3, 4.05]) poly([[gx, 0, camZ + 0.5], [gx + 0.25, 0, camZ + 0.5], [gx + 0.25, 0, camZ + 160], [gx, 0, camZ + 160]], css(mul([40, 38, 36], L), 0.7));
+
+    // facades far to near, then street furniture and people far to near
+    const all = sides['-1'].concat(sides['1']).sort((a, b) => b.z1 - a.z1);
+    for (const b of all) drawB(b);
+    const items = [];
+    for (const s of [-1, 1]) {
+      const off = s < 0 ? 3 : 12;
+      for (let k = Math.floor((camZ - 10) / 18); k * 18 + off < camZ + 120; k++) { const z = k * 18 + off; if (z > camZ + NEAR) items.push([z, 0, s]); }
+    }
+    for (const b of all) if (b.sign && b.sign.z > camZ + 0.8 && b.sign.z < camZ + 90) items.push([b.sign.z, 1, b]);
+    for (const p of people) items.push([p.z, 2, p]);
+    items.sort((a, b) => b[0] - a[0]);
+    const glows = [];
+    for (const it of items) {
+      if (it[1] === 0) drawLamp(it[2], it[0], glows);
+      else if (it[1] === 1) drawSign(it[2], glows);
+      else drawPerson(it[2]);
+    }
+    if (glows.length) {
+      g.globalCompositeOperation = 'lighter';
+      for (const gl of glows) {
+        g.save(); g.translate(gl.x, gl.y);
+        if (gl.flat) g.scale(1, 0.28);
+        const gr = g.createRadialGradient(0, 0, 0, 0, 0, gl.r);
+        gr.addColorStop(0, `rgba(${gl.c},${gl.a.toFixed(3)})`); gr.addColorStop(1, `rgba(${gl.c},0)`);
+        g.fillStyle = gr; g.fillRect(-gl.r, -gl.r, gl.r * 2, gl.r * 2);
+        g.restore();
+      }
+      g.globalCompositeOperation = 'source-over';
+    }
+    if (turnA) { const k = 1 - Math.abs(turnA.t - 0.5) * 2; g.fillStyle = `rgba(0,0,0,${(k * k * 0.45).toFixed(3)})`; g.fillRect(0, 0, W, H); }
+  }
+
+  return {
+    canvas: cv, resize, frame, reseed,
+    turn(d) { if (RM) reseed(); else turnA = { d, t: 0, sw: false }; },
+    look(v) { lookT = v; },
+    setSpeed(v) { speed = v; },
+    setTod(t) { tod = t; dayCache.t = 0; },
+    lum() { return 0.08 + 0.8 * dayLevel(); },
+  };
+})();
+
+/* ================= world sources ================= */
+const World = {
+  src: 'city', stream: null,
+  async set(src) {
+    worldPick = src;
+    if (src === 'camera') {
+      try { await this.startCam(); } catch { toast('Kamera', 'Kameran går inte att nå här. Gågatan visas i stället.'); src = 'city'; }
+    } else if (src === 'photo' && !photoImg.getAttribute('src')) {
+      $('#photo-in').click();
+      return;
+    }
+    if (src !== 'camera') this.stopCam();
+    this.src = src; S.world = src;
+    Scene.canvas.hidden = src !== 'city'; camVideo.hidden = src !== 'camera'; photoImg.hidden = src !== 'photo';
+    $$('#sim-world .tb').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.w === src)));
+    worldLum = measureLum(); updateBrightness();
+    if (cur === 'settings') renderSettings();
+  },
+  async startCam() {
+    if (this.stream) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('no camera');
+    const st = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+    this.stream = st; camVideo.srcObject = st;
+    await camVideo.play().catch(() => {});
+  },
+  stopCam() {
+    if (!this.stream) return;
+    this.stream.getTracks().forEach(t => t.stop());
+    this.stream = null; camVideo.srcObject = null;
+  },
+};
+function worldSource() {
+  if (World.src === 'camera' && camVideo.videoWidth) return [camVideo, camVideo.videoWidth, camVideo.videoHeight];
+  if (World.src === 'photo' && photoImg.naturalWidth) return [photoImg, photoImg.naturalWidth, photoImg.naturalHeight];
+  return [Scene.canvas, Scene.canvas.width, Scene.canvas.height];
+}
+function worldCanvas(w, h) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const x = c.getContext('2d'), [src, sw, sh] = worldSource(), k = Math.max(w / sw, h / sh);
+  x.drawImage(src, (w - sw * k) / 2, (h - sh * k) / 2, sw * k, sh * k);
+  return c;
+}
+const worldBlob = () => new Promise(res => { try { worldCanvas(1024, 768).toBlob(b => res(b), 'image/jpeg', 0.85); } catch { res(null); } });
+function measureLum() {
+  if (World.src === 'city') return Scene.lum();
+  try {
+    const d = worldCanvas(16, 9).getContext('2d').getImageData(0, 0, 16, 9).data;
+    let s = 0;
+    for (let i = 0; i < d.length; i += 4) s += (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255;
+    return s / (d.length / 4);
+  } catch { return 0.5; }
+}
+const HUE_NAMES = ['röda', 'orange', 'gula', 'gröna', 'turkosa', 'blå', 'lila', 'rosa'];
+const hueBin = h => h < 15 || h >= 345 ? 0 : h < 40 ? 1 : h < 70 ? 2 : h < 160 ? 3 : h < 195 ? 4 : h < 255 ? 5 : h < 295 ? 6 : 7;
+async function analyzeWorld(blob) {
+  const c = document.createElement('canvas'); c.width = 32; c.height = 24;
+  const x = c.getContext('2d');
+  let d;
+  try {
+    if (blob && window.createImageBitmap) x.drawImage(await createImageBitmap(blob), 0, 0, 32, 24);
+    else x.drawImage(worldCanvas(64, 48), 0, 0, 32, 24);
+    d = x.getImageData(0, 0, 32, 24).data;
+  } catch { return 'bilden gick inte att läsa'; }
+  let lum = 0, sat = 0;
+  const bins = new Array(8).fill(0), n = d.length / 4;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i] / 255, gg = d[i + 1] / 255, b = d[i + 2] / 255, mx = Math.max(r, gg, b), mn = Math.min(r, gg, b), dd = mx - mn;
+    lum += 0.2126 * r + 0.7152 * gg + 0.0722 * b;
+    const s = mx ? dd / mx : 0; sat += s;
+    if (s > 0.25 && mx > 0.15) {
+      let h = mx === r ? ((gg - b) / dd) % 6 : mx === gg ? (b - r) / dd + 2 : (r - gg) / dd + 4;
+      h = (h * 60 + 360) % 360; bins[hueBin(h)] += s;
+    }
+  }
+  lum /= n; sat /= n;
+  const light = lum < 0.18 ? 'det är mörkt' : lum < 0.4 ? 'ljuset är dämpat' : lum < 0.65 ? 'det är ganska ljust' : 'det är mycket ljust';
+  const top = Math.max(...bins);
+  return light + ', med ' + (sat < 0.12 || top < n * 0.02 ? 'mest gråa toner' : 'mest ' + HUE_NAMES[bins.indexOf(top)] + ' toner');
+}
+
+/* ================= device data ================= */
+const Photos = {
+  list: (() => { const l = store.get('photos', []); return Array.isArray(l) ? l : []; })(),
+  save() { let l = this.list.slice(); while (l.length) { if (store.set('photos', l)) return; l = l.slice(0, -1); } store.set('photos', []); },
+  add(p) { this.list.unshift(p); if (this.list.length > 24) this.list.length = 24; this.save(); },
+  del(i) { this.list.splice(i, 1); this.save(); },
+};
+const Msgs = {
+  list: (() => { const l = store.get('msgs', null); return Array.isArray(l) ? l : seedMsgs(); })(),
+  save() { store.set('msgs', this.list.slice(0, 30)); },
+  unread() { return this.list.filter(m => !m.read); },
+  add(from, text) {
+    const m = { id: 'm' + Date.now().toString(36), from, text, t: Date.now(), read: false, re: [] };
+    this.list.unshift(m); this.list = this.list.slice(0, 30); this.save();
+    return m;
+  },
+};
+const Health = {
+  d: store.get('day', null),
+  today() { const k = new Date().toDateString(); if (!this.d || this.d.k !== k) this.d = { k, steps: 0, dist: 0, screen: 0 }; return this.d; },
+  addDist(m) { const d = this.today(); d.dist += m; d.steps += m / 0.72; },
+  addStep() { const d = this.today(); d.steps += 1; d.dist += 0.72; },
+  get steps() { return Math.floor(this.today().steps); },
+  save() { store.set('day', this.d); },
+};
+const Bat = {
+  level: 84, frac: 0,
+  drain(dt, on) { this.frac += dt / (on ? 250 : 900); if (this.frac >= 1) { this.frac -= 1; this.level = Math.max(5, this.level - 1); } },
+  secondsLeft() { return this.level * 4.2 * 60; },
+};
+
+/* ================= timer ================= */
+const Timer = {
+  mode: 'timer', dur: 300, left: 300, end: 0, run: false,
+  sw: { run: false, start: 0, acc: 0, laps: [] },
+  remaining() { return this.run ? Math.max(0, (this.end - Date.now()) / 1000) : this.left; },
+  start(sec) {
+    if (sec) { this.dur = sec; this.left = sec; }
+    if (this.left <= 0) this.left = this.dur;
+    this.mode = 'timer'; this.end = Date.now() + this.left * 1000; this.run = true; this.ui();
+  },
+  pause() { if (!this.run) return; this.left = this.remaining(); this.run = false; this.ui(); },
+  reset() { this.run = false; this.left = this.dur; this.ui(); },
+  check() { if (this.run && Date.now() >= this.end) { this.run = false; this.left = 0; this.ui(); alarm(); } },
+  swTime() { return this.sw.acc + (this.sw.run ? Date.now() - this.sw.start : 0); },
+  swToggle() { const s = this.sw; if (s.run) { s.acc += Date.now() - s.start; s.run = false; } else { s.start = Date.now(); s.run = true; } this.ui(); },
+  swLap() { if (!this.sw.run) return; this.sw.laps.unshift(this.swTime()); this.sw.laps.length = Math.min(this.sw.laps.length, 20); this.ui(); },
+  swReset() { this.sw = { run: false, start: 0, acc: 0, laps: [] }; this.ui(); },
+  ui() { if (cur === 'timer') renderTimer(); updateStatus(); },
+};
+
+/* ================= music: synthesised live ================= */
+const Music = {
+  i: 0, playing: false, vol: (v => Number.isFinite(v) ? clamp(v, 0, 1) : 0.6)(Number(store.get('vol', 0.6))), pos: 0, startAt: 0, nextT: 0, stepI: 0, iv: 0,
+  bus: null, pad: null, an: null, fx: null, noise: null, data: null,
+  track() { return TRACKS[this.i]; },
+  sd() { return 60 / this.track().bpm / 4; },
+  init() {
+    const ac = AC.get();
+    if (!ac) return null;
+    if (!this.bus) {
+      this.bus = ac.createGain(); this.bus.gain.value = this.vol * 0.7;
+      this.an = ac.createAnalyser(); this.an.fftSize = 64; this.an.smoothingTimeConstant = 0.8;
+      this.bus.connect(this.an); this.an.connect(AC.master);
+      this.pad = ac.createBiquadFilter(); this.pad.type = 'lowpass'; this.pad.frequency.value = 1500; this.pad.connect(this.bus);
+      this.fx = ac.createGain(); this.fx.gain.value = 0.3;
+      const dl = ac.createDelay(1), fb = ac.createGain(), lp = ac.createBiquadFilter();
+      dl.delayTime.value = 0.31; fb.gain.value = 0.32; lp.frequency.value = 2400;
+      this.fx.connect(dl); dl.connect(lp); lp.connect(fb); fb.connect(dl); lp.connect(this.bus);
+      const n = ac.createBuffer(1, Math.floor(ac.sampleRate * 0.1), ac.sampleRate), d = n.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      this.noise = n; this.data = new Uint8Array(this.an.frequencyBinCount);
+    }
+    return ac;
+  },
+  play() {
+    const ac = this.init();
+    if (!ac) { toast('Musik', 'Den här webbläsaren kan inte spela ljud.'); return; }
+    if (this.playing) return;
+    this.playing = true;
+    const sd = this.sd();
+    this.stepI = Math.ceil(this.pos / sd); this.nextT = ac.currentTime + 0.06; this.startAt = this.nextT - this.stepI * sd;
+    clearInterval(this.iv); this.iv = setInterval(() => this.sched(), 40); this.sched(); this.ui();
+  },
+  pause() { if (!this.playing) return; this.pos = this.now(); this.playing = false; clearInterval(this.iv); this.ui(); },
+  toggle() { if (this.playing) this.pause(); else this.play(); },
+  now() { return this.playing && AC.ctx ? clamp(AC.ctx.currentTime - this.startAt, 0, TRACK_LEN) : this.pos; },
+  skip(d) { const was = this.playing; if (was) this.pause(); this.i = (this.i + d + TRACKS.length) % TRACKS.length; this.pos = 0; if (was) this.play(); this.ui(); },
+  setVol(v) { this.vol = clamp(Math.round(v * 10) / 10, 0, 1); store.set('vol', this.vol); if (this.bus) this.bus.gain.setTargetAtTime(this.vol * 0.7, AC.ctx.currentTime, 0.05); this.ui(); },
+  sched() {
+    const ac = AC.ctx, sd = this.sd();
+    while (this.nextT < ac.currentTime + 0.14) {
+      if (this.nextT - this.startAt >= TRACK_LEN) { this.pause(); this.pos = 0; this.skip(1); this.play(); return; }
+      this.note(this.stepI, this.nextT, sd); this.stepI++; this.nextT += sd;
+    }
+  },
+  note(s, t, sd) {
+    const ac = AC.ctx, tr = this.track(), st = s % 16, ch = tr.chords[Math.floor(s / 16) % tr.chords.length];
+    const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+    const voice = (m, type, dur, peak, att, to, fx) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = hz(m);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + att); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(to); if (fx) g.connect(this.fx);
+      o.start(t); o.stop(t + dur + 0.05);
+    };
+    if (st === 0) for (const m of ch) voice(m, tr.wave, sd * 16 * 1.05, 0.035, 0.5, this.pad, true);
+    if (st % tr.arp === 0) voice(ch[Math.floor(s / tr.arp) % ch.length] + 12, 'triangle', 0.28, 0.05, 0.005, this.bus, true);
+    if (st === 0 || st === 8 || (tr.drums && st === 14)) voice(ch[0] - 12, 'sine', sd * 4, 0.16, 0.01, this.bus, false);
+    if (!tr.drums) return;
+    if (st % 4 === 0) {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.14);
+      g.gain.setValueAtTime(0.3, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+      o.connect(g); g.connect(this.bus); o.start(t); o.stop(t + 0.25);
+    }
+    if (st % 4 === 2) {
+      const src = ac.createBufferSource(), g = ac.createGain(), hp = ac.createBiquadFilter();
+      src.buffer = this.noise; hp.type = 'highpass'; hp.frequency.value = 7000;
+      g.gain.setValueAtTime(0.06, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+      src.connect(hp); hp.connect(g); g.connect(this.bus); src.start(t); src.stop(t + 0.06);
+    }
+  },
+  ui() { if (cur === 'music') renderMusic(); updateStatus(); },
+  viz() {
+    const c = $('#mu-viz');
+    if (!c || c.offsetParent === null) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2), w = c.clientWidth, h = c.clientHeight;
+    if (!w || !h) return;
+    if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+    const x = c.getContext('2d');
+    x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, w, h);
+    const N = 28, gap = w / N;
+    x.strokeStyle = hudHex; x.lineWidth = Math.max(2, gap * 0.35); x.lineCap = 'round'; x.shadowColor = hudHex; x.shadowBlur = 6;
+    if (this.an && this.playing) this.an.getByteFrequencyData(this.data);
+    for (let i = 0; i < N; i++) {
+      const v = this.playing && this.data ? this.data[Math.min(this.data.length - 1, Math.floor(i * this.data.length / N * 0.8))] / 255 : 0;
+      const bh = Math.max(2, v * (h - 6)), X = gap * (i + 0.5);
+      x.globalAlpha = 0.35 + 0.65 * v;
+      x.beginPath(); x.moveTo(X, h / 2 - bh / 2); x.lineTo(X, h / 2 + bh / 2); x.stroke();
+    }
+    x.globalAlpha = 1;
+  },
+};
+
+/* ================= navigation ================= */
+function routePts(p) {
+  let x = 0, y = 0, h = p.head;
+  const pts = [[0, 0]];
+  for (const sg of p.segs) {
+    const r = h * Math.PI / 180;
+    x += Math.sin(r) * sg[1]; y -= Math.cos(r) * sg[1]; pts.push([x, y]);
+    if (TURN[sg[2]] != null) h += TURN[sg[2]];
+  }
+  const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+  const minx = Math.min(...xs), maxx = Math.max(...xs), miny = Math.min(...ys), maxy = Math.max(...ys);
+  const k = 76 / Math.max(maxx - minx, maxy - miny, 1), ox = 50 - (minx + maxx) / 2 * k, oy = 50 - (miny + maxy) / 2 * k;
+  return pts.map(q => [q[0] * k + ox, q[1] * k + oy]);
+}
+const Nav = {
+  st: null, hd: 0,
+  start(id) {
+    const p = PLACES.find(x => x.id === id);
+    if (!p) return;
+    this.st = { p, seg: 0, into: 0, walking: true, mult: 1, heading: p.head, walked: 0, warned: false, done: false, route: routePts(p) };
+    this.hd = p.head; Scene.reseed();
+    if (cur !== 'nav') go('nav'); else { V.nav.enter(); refocus(); }
+  },
+  end() { this.st = null; if (cur === 'nav') { V.nav.enter(); refocus(); } updateStatus(); },
+  speed() { const s = this.st; return s && s.walking && !s.done ? 1.4 * s.mult : 0; },
+  toTurn() { const s = this.st; return s ? Math.max(0, s.p.segs[s.seg][1] - s.into) : 0; },
+  left() {
+    const s = this.st;
+    if (!s) return 0;
+    let m = s.p.segs[s.seg][1] - s.into;
+    for (let i = s.seg + 1; i < s.p.segs.length; i++) m += s.p.segs[i][1];
+    return Math.max(0, m);
+  },
+  step(dt) {
+    const s = this.st;
+    if (!s || !s.walking || s.done) return;
+    const d = 1.4 * s.mult * dt;
+    s.into += d; s.walked += d; Health.addDist(d);
+    const seg = s.p.segs[s.seg], rem = seg[1] - s.into;
+    if (rem <= 30 && !s.warned) {
+      s.warned = true;
+      if (sleeping) wake();
+      sfx('notify');
+      if (cur !== 'nav') toast('Navigera', seg[2] === 'arrive' ? `Snart framme vid ${s.p.name}` : `${TURN_TXT[seg[2]]} om 30 m in på ${s.p.segs[s.seg + 1][0]}`);
+    }
+    if (rem > 0) return;
+    if (seg[2] === 'arrive') {
+      s.done = true; s.walking = false; s.into = seg[1];
+      sfx('select');
+      if (cur === 'nav') { V.nav.enter(); refocus(); } else toast('Navigera', `Du är framme vid ${s.p.name}.`, () => go('nav'));
+    } else {
+      s.heading = (s.heading + TURN[seg[2]] + 360) % 360;
+      Scene.turn(Math.sign(TURN[seg[2]]));
+      s.seg++; s.into = -rem; s.warned = false;
+    }
+  },
+  render() {
+    const s = this.st;
+    if (!s) return;
+    const seg = s.p.segs[s.seg], arw = $('#nav-arw'), pin = $('#nav-pin');
+    if (s.done) {
+      arw.toggleAttribute('hidden', true); pin.toggleAttribute('hidden', false);
+      $('#nav-dist').textContent = 'Framme';
+      $('#nav-instr').textContent = s.p.name;
+      $('#nav-on').textContent = s.p.addr;
+      $('#nav-foot').textContent = `${fmtDist(s.walked)} · ca ${Math.max(1, Math.round(s.walked / 84))} min gång · ${nf(s.walked / 0.72)} steg`;
+      $('#nav-walk').hidden = true; $('#nav-ff').hidden = true; $('#nav-end').textContent = 'Klar';
+    } else {
+      const toTurn = Math.max(0, seg[1] - s.into), next = s.p.segs[s.seg + 1], left = this.left();
+      let dir = 'straight', instr, on;
+      if (seg[2] === 'arrive') { dir = toTurn > 60 ? 'straight' : 'arrive'; instr = `Framme vid ${s.p.name}`; on = `på ${seg[0]}`; }
+      else if (toTurn > 200) { instr = `Fortsätt på ${seg[0]}`; on = `sedan ${TURN_TXT[seg[2]].toLowerCase()} in på ${next[0]}`; }
+      else { dir = seg[2]; instr = `${TURN_TXT[seg[2]]} in på ${next[0]}`; on = `på ${seg[0]}`; }
+      arw.toggleAttribute('hidden', dir === 'arrive'); pin.toggleAttribute('hidden', dir !== 'arrive');
+      arw.style.transform = `rotate(${dir === 'straight' || dir === 'arrive' ? 0 : TURN[dir]}deg)`;
+      $('#nav-dist').textContent = fmtDist(toTurn);
+      $('#nav-instr').textContent = instr;
+      $('#nav-on').textContent = `${on} · ${cardinal(this.hd)} ${Math.round(((this.hd % 360) + 360) % 360)}°`;
+      $('#nav-foot').textContent = `Framme ${hhmm(new Date(Date.now() + left / 1.4 * 1000))} · ${fmtDist(left)} · ${Math.max(1, Math.round(left / 84))} min`;
+      $('#nav-walk').hidden = false; $('#nav-ff').hidden = false;
+      $('#nav-walk').textContent = s.walking ? 'Pausa' : 'Gå vidare';
+      $('#nav-ff').textContent = s.mult > 1 ? 'Normal fart' : 'Snabbspola 5×';
+      $('#nav-end').textContent = 'Avsluta';
+    }
+    const r = s.route, a = r[s.seg], b = r[Math.min(s.seg + 1, r.length - 1)], t = s.done ? 1 : clamp(s.into / seg[1], 0, 1);
+    const me = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+    $('#nav-done').setAttribute('d', 'M' + r.slice(0, s.seg + 1).concat([me]).map(q => q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' L'));
+    $('#nav-me').setAttribute('cx', me[0].toFixed(1)); $('#nav-me').setAttribute('cy', me[1].toFixed(1));
+  },
+  drawCompass(dt) {
+    const s = this.st, c = $('#compass');
+    if (!s || c.offsetParent === null) return;
+    const diff = ((s.heading - this.hd + 540) % 360) - 180;
+    this.hd = (this.hd + diff * Math.min(1, dt * 3) + 360) % 360;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2), w = c.clientWidth, h = c.clientHeight;
+    if (!w) return;
+    if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+    const x = c.getContext('2d');
+    x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, w, h);
+    x.strokeStyle = hudHex; x.fillStyle = hudHex; x.shadowColor = hudHex; x.shadowBlur = 5;
+    x.font = '500 11px "JetBrains Mono", ui-monospace, monospace'; x.textAlign = 'center';
+    const span = 120, ppd = w / span, nums = ppd * 15 > 30;
+    for (let d = Math.ceil((this.hd - span / 2) / 5) * 5; d <= this.hd + span / 2; d += 5) {
+      const X = w / 2 + (d - this.hd) * ppd, n = ((d % 360) + 360) % 360, major = n % 45 === 0, mid = n % 15 === 0;
+      x.globalAlpha = 0.2 + 0.8 * (1 - Math.abs(X - w / 2) / (w / 2));
+      x.lineWidth = major ? 1.6 : 1;
+      x.beginPath(); x.moveTo(X, h); x.lineTo(X, h - (major ? 12 : mid ? 8 : 4)); x.stroke();
+      if (major) x.fillText(CARD[n / 45], X, h - 15);
+      else if (mid && nums) { x.globalAlpha *= 0.55; x.fillText(String(n), X, h - 15); }
+    }
+    x.globalAlpha = 1;
+    x.beginPath(); x.moveTo(w / 2 - 5, 0); x.lineTo(w / 2 + 5, 0); x.lineTo(w / 2, 7); x.closePath(); x.fill();
+  },
+};
+
+/* ================= captions ================= */
+const Cap = {
+  lines: [], interim: '', iwho: '', live: false, rec: null, demo: false, dT: 0, lang: 0, trCtl: null,
+  push(who, text) { this.lines.push({ who, text }); this.lines = this.lines.slice(-20); this.render(); },
+  render() {
+    if (cur !== 'captions') return;
+    const ls = this.lines.slice(-4);
+    let html = ls.map((l, i) => `<p class="${i < ls.length - 2 ? 'old' : ''}"><i>${esc(l.who)}</i>${esc(l.text)}</p>`).join('');
+    if (this.interim) html += `<p class="interim"><i>${esc(this.iwho)}</i>${esc(this.interim)}</p>`;
+    if (!html) html = `<p class="old">${micOK ? 'Tryck på Lyssna så visas det som sägs runt dig som text.' : 'Spela exemplet för att se hur undertexter ser ut i glasögonen.'}</p>`;
+    $('#cap-lines').innerHTML = html;
+    $('#cap-state').textContent = this.live ? 'Lyssnar · svenska' : this.demo ? 'Exempel spelas' : 'Av';
+    $('#cap-live').lastChild.textContent = this.live ? 'Sluta lyssna' : 'Lyssna';
+    $('#cap-demo').textContent = this.demo ? 'Stoppa exemplet' : 'Spela exempel';
+    $('#cap-lang').textContent = 'Språk: ' + LANGS[this.lang];
+  },
+  startDemo() {
+    this.stopLive(); this.demo = true;
+    let li = 0, wi = 0;
+    const step = () => {
+      if (!this.demo) return;
+      const [who, text] = DEMO_TALK[li], words = text.split(' ');
+      wi++; this.iwho = who; this.interim = words.slice(0, wi).join(' ');
+      if (wi < words.length) { this.render(); this.dT = setTimeout(step, 190); return; }
+      this.interim = ''; this.push(who, text); li++; wi = 0;
+      if (li >= DEMO_TALK.length) { this.demo = false; this.render(); return; }
+      this.dT = setTimeout(step, 1100);
+    };
+    this.render(); this.dT = setTimeout(step, 400);
+  },
+  stopDemo() { this.demo = false; clearTimeout(this.dT); this.interim = ''; this.render(); },
+  startLive() {
+    this.stopDemo();
+    const r = recognize({
+      continuous: true,
+      onText: (fin, tmp) => { if (fin.trim()) this.push('Hörs', fin.trim()); this.iwho = 'Hörs'; this.interim = tmp; this.render(); },
+      onEnd: () => {
+        if (this.live && micOK) { try { this.rec.start(); return; } catch {} }
+        this.live = false; this.rec = null; this.interim = ''; this.render(); updateStatus();
+      },
+    });
+    if (!r) return;
+    this.rec = r; this.live = true; this.render(); updateStatus();
+  },
+  stopLive() {
+    const r = this.rec;
+    this.live = false; this.rec = null; this.interim = '';
+    if (r) { try { r.stop(); } catch {} }
+    updateStatus();
+  },
+  async translate() {
+    const src = this.lines.slice(-6), out = $('#cap-tr');
+    out.hidden = false;
+    if (!src.length) { out.textContent = 'Inget att översätta ännu.'; return; }
+    const s = await samplerP;
+    if (!s) { out.textContent = 'Översättning kräver Raken-molnet, som inte är anslutet här.'; return; }
+    if (this.trCtl) this.trCtl.abort();
+    const ctl = this.trCtl = new AbortController();
+    out.textContent = 'Översätter …';
+    try {
+      const { text } = await s(`Översätt följande svenska repliker till ${LANGS[this.lang]}. Svara med bara översättningen, en rad per replik i samma ordning, och behåll talarens namn före kolon.\n\n` + src.map(l => l.who + ': ' + l.text).join('\n'), {
+        modelTier: 'quick', signal: ctl.signal, onText: ({ text: t }) => { if (this.trCtl === ctl) out.textContent = t; },
+      });
+      if (this.trCtl === ctl) out.textContent = text;
+    } catch (e) {
+      if (this.trCtl === ctl && !(e && e.code === 'cancelled')) out.textContent = AI_ERR[e && e.code] || AI_ERR.upstream_error;
+    }
+  },
+};
+
+/* ================= Raken AI ================= */
+const canUse = !!(window.claude && typeof window.claude.use === 'function');
+const useCap = name => { if (!canUse) return Promise.resolve(null); try { return Promise.resolve(window.claude.use(name)).catch(() => null); } catch { return Promise.resolve(null); } };
+let samplerP = useCap('sample');
+const downloadsP = useCap('downloads');
+const caps = { images: false, tools: false };
+samplerP.then(async s => {
+  if (s) { const l = await s.limits().catch(() => null); caps.images = !!(l && l.images); caps.tools = !!(l && l.tools); }
+  setAiMode();
+});
+function setAiMode() {
+  samplerP.then(s => {
+    aiModeText = s ? 'Raken-molnet' : 'Lokalt läge';
+    $('#ai-mode').textContent = aiModeText;
+    if (cur === 'about') renderAbout();
+  });
+}
+const AI_ERR = {
+  not_granted: 'Raken AI har inte tillåtelse här. Lokala kommandon fungerar ändå.',
+  sampling_disabled: 'Raken AI är inte tillgänglig för det här kontot.',
+  not_declared: 'Raken AI är avstängd i den här versionen.',
+  capability_disabled: 'Raken AI kan inte användas i den här vyn.',
+  capability_removed: 'Raken AI kan inte användas i den här vyn.',
+  rate_limited: 'För många frågor just nu. Vänta en stund och fråga igen.',
+  session_expired: 'Logga in igen för att använda Raken AI.',
+  refused: 'Det kan jag inte svara på. Fråga på ett annat sätt.',
+  image_rejected: 'Bilden gick inte att skicka. Prova en annan.',
+  images_unavailable: 'Bilder kan inte skickas härifrån. Fråga med text i stället.',
+  prompt_too_large: 'Frågan blev för lång. Korta ner den.',
+  empty_completion: 'Jag fick inget svar. Fråga på ett annat sätt.',
+  upstream_error: 'Raken-molnet svarade inte. Försök igen.',
+};
+const HIDE_CODES = ['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed'];
+const LOOK_RE = /(\bser\b|syns|tittar|titta på|framför|skylt|\bläs|vad är det här|vad är detta|den här|det här|omgivning|beskriv)/i;
+
+function aiRules(img) {
+  const d = new Date(), un = Msgs.unread();
+  return [
+    'Du är Raken, röstassistenten i de smarta glasögonen Raken EyeSee (EyeSee OS 1.0).',
+    'Svaret visas i ett litet HUD-fält i glasögonen och läses upp. Svara alltid på svenska med högst två korta meningar, under 220 tecken. Ingen markdown, inga listor och inga emoji.',
+    img ? 'Den bifogade bilden är det användaren ser genom glasögonen just nu (det kan vara en simulerad gågata i en svensk stad). Beskriv bara det som faktiskt syns, och läs text ordagrant när användaren ber om det.' : '',
+    'När användaren vill att något ska hända i glasögonen, använd verktygen om de finns och bekräfta kort vad du gjorde.',
+    `Läge: klockan ${hhmm(d)}, ${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}. Öppen app: ${appName(cur)}. Batteri ${Bat.level} %. Steg i dag: ${nf(Health.steps)}.`,
+    Nav.st && !Nav.st.done ? `Navigerar till ${Nav.st.p.name}, ${fmtDist(Nav.left())} kvar.` : '',
+    Timer.run ? `En timer går, ${mmss(Timer.remaining())} kvar.` : '',
+    Music.playing ? `Spelar ${Music.track().title}.` : '',
+    un.length ? 'Olästa meddelanden: ' + un.slice(0, 5).map(m => `${m.from}: ${m.text}`).join(' | ') : 'Inga olästa meddelanden.',
+    'Sparade mål för navigering: ' + PLACES.map(p => p.name).join(', ') + '.',
+  ].filter(Boolean).join('\n');
+}
+function msgSummary() {
+  const u = Msgs.unread();
+  if (!u.length) return 'Du har inga olästa meddelanden.';
+  return (u.length === 1 ? 'Ett oläst. ' : u.length + ' olästa. ') + u.slice(0, 3).map(m => m.from + ': ' + m.text).join(' ');
+}
+async function offlineAnswer(q, img, blob) {
+  if (/meddelande|sms|notis|inkorg/i.test(q)) return msgSummary();
+  if (img) return 'Raken-molnet är inte anslutet, så jag kan bara mäta ljuset: ' + await analyzeWorld(blob) + '.';
+  return 'Raken-molnet är inte anslutet här. Lokala kommandon fungerar, till exempel ”timer 5 minuter”, ”navigera hem”, ”ta ett foto”, ”spela musik” och ”vad är klockan”.';
+}
+function localIntent(raw) {
+  const q = raw.toLowerCase().replace(/[?!.,]/g, ' ').replace(/\s+/g, ' ').trim();
+  let m;
+  if (/(vad|hur mycket) är klockan|^klockan$|vilken tid är det/.test(q)) return () => 'Klockan är ' + hhmm(new Date()) + '.';
+  if (/vilket datum|vilken dag är det|vad är det för dag/.test(q)) return () => { const d = new Date(); return `Det är ${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}, vecka ${isoWeek(d)}.`; };
+  if ((m = q.match(/(?:timer|nedräkning|väck mig|påminn mig)\D*?(\d+(?:\.\d+)?)\s*(sek|s\b|min|m\b|tim|h\b)?/))) {
+    const n = parseFloat(m[1]), u = m[2] || 'min';
+    const sec = Math.round(u[0] === 's' ? n : (u[0] === 't' || u === 'h') ? n * 3600 : n * 60);
+    if (sec > 0 && sec <= 86400) return () => { Timer.start(sec); return `Timer på ${fmtSpan(sec)} startad. Den ringer ${hhmm(new Date(Date.now() + sec * 1000))}.`; };
+  }
+  if (/stoppur/.test(q)) return () => { Timer.mode = 'sw'; go('timer'); return 'Stoppuret är öppet.'; };
+  if (/navigera|vägbeskrivning|ta mig|hitta (till|hem)|gå till|vägen till|gå hem/.test(q)) {
+    const p = PLACES.find(x => q.includes(x.key));
+    if (p) return () => { Nav.start(p.id); return `Vägledning till ${p.name} startad: ${fmtDist(p.total)}, cirka ${Math.round(p.total / 84)} minuter till fots.`; };
+    return () => { go('nav'); return 'Vart vill du? Välj ett mål i Navigera.'; };
+  }
+  if (/(ta|knäpp) (ett |en )?(foto|bild)|^fota|fota det/.test(q)) return () => { capturePhoto(); return 'Foto taget och sparat i Galleri.'; };
+  if (/(pausa|stoppa|stäng av) (musik|musiken|låten)/.test(q)) return () => { Music.pause(); return 'Musiken är pausad.'; };
+  if (/nästa låt|byt låt/.test(q)) return () => { Music.skip(1); if (!Music.playing) Music.play(); return `Spelar ${Music.track().title}.`; };
+  if (/spela (musik|något|upp|en låt)|starta musik|^spela$/.test(q)) return () => { Music.play(); return `Spelar ${Music.track().title}.`; };
+  if (/batteri/.test(q)) return () => `Batteriet är på ${Bat.level} %, ungefär ${fmtSpan(Bat.secondsLeft())} kvar.`;
+  if (/(hur många|antal) steg/.test(q)) return () => `Du har gått ${nf(Health.steps)} steg i dag.`;
+  if (/(släck|stäng av) (skärmen|displayen)/.test(q)) return () => { setTimeout(sleep, 1500); return 'Släcker skärmen.'; };
+  if (/färg|hud/.test(q)) for (const c of COLORS) if (q.includes(c.name.toLowerCase())) return () => { S.color = c.id; saveS(); applySettings(); return `HUD-färgen är nu ${c.name.toLowerCase()}, ${c.nm}.`; };
+  if ((m = q.match(/^(öppna|starta|visa|gå till) (.+)$/))) {
+    const a = APPS.find(x => m[2].includes(x.name.toLowerCase()) || x.alias.some(al => m[2].includes(al)));
+    if (a) return () => { go(a.id); return `Öppnar ${a.name}.`; };
+  }
+  return null;
+}
+const AI_TOOLS = [
+  {
+    name: 'open_app', description: 'Öppnar en app i glasögonen. App-id: ' + APPS.map(a => `${a.id} (${a.name})`).join(', ') + ', home (hemskärmen). Returnerar "ok".',
+    inputSchema: { type: 'object', properties: { app: { type: 'string', enum: APPS.map(a => a.id).concat('home') } }, required: ['app'] },
+    execute: ({ app }) => { const id = String(app); if (!V[id]) throw new Error('Okänd app: ' + id); go(id); return 'ok'; },
+  },
+  {
+    name: 'start_timer', description: 'Startar en nedräkningstimer i glasögonen. Returnerar när den ringer.',
+    inputSchema: { type: 'object', properties: { minutes: { type: 'number' }, seconds: { type: 'number' } } },
+    execute: ({ minutes, seconds }) => {
+      const s = Math.round((Number(minutes) || 0) * 60 + (Number(seconds) || 0));
+      if (!(s > 0) || s > 86400) throw new Error('Ange en tid mellan 1 sekund och 24 timmar.');
+      Timer.start(s); return 'Timern ringer ' + hhmm(new Date(Date.now() + s * 1000));
+    },
+  },
+  {
+    name: 'navigate', description: 'Startar gångvägledning till ett sparat mål. Returnerar sträcka och ungefärlig gångtid.',
+    inputSchema: { type: 'object', properties: { place: { type: 'string', enum: PLACES.map(p => p.id) } }, required: ['place'] },
+    execute: ({ place }) => { const p = PLACES.find(x => x.id === String(place)); if (!p) throw new Error('Okänt mål'); Nav.start(p.id); return `${fmtDist(p.total)}, ca ${Math.round(p.total / 84)} min`; },
+  },
+  {
+    name: 'take_photo', description: 'Tar ett foto med glasögonens kamera och sparar det i Galleri. Returnerar antalet foton.',
+    execute: () => { capturePhoto(); return Photos.list.length + ' foton i Galleri'; },
+  },
+  {
+    name: 'music', description: 'Styr musikspelaren: play, pause eller next. Returnerar vad som spelas.',
+    inputSchema: { type: 'object', properties: { action: { type: 'string', enum: ['play', 'pause', 'next'] } }, required: ['action'] },
+    execute: ({ action }) => {
+      const a = String(action);
+      if (a === 'pause') Music.pause(); else if (a === 'next') { Music.skip(1); Music.play(); } else Music.play();
+      return Music.playing ? 'Spelar ' + Music.track().title : 'Pausad';
+    },
+  },
+  {
+    name: 'set_hud_color', description: 'Byter färg på glasögonens HUD. Returnerar "ok".',
+    inputSchema: { type: 'object', properties: { color: { type: 'string', enum: COLORS.map(c => c.id) } }, required: ['color'] },
+    execute: ({ color }) => { const c = COLORS.find(x => x.id === String(color)); if (!c) throw new Error('Okänd färg'); S.color = c.id; saveS(); applySettings(); return 'ok'; },
+  },
+];
+const Ai = {
+  hist: [], busy: false, ctl: null,
+  get qEl() { return $('#ai-q'); },
+  get aEl() { return $('#ai-a'); },
+  show(text) {
+    const a = this.aEl;
+    a.textContent = text; a.classList.remove('thinking', 'dim');
+    if (cur !== 'ai') toast('Raken', text);
+    speak(text);
+  },
+  remember(q, a) { this.hist.push({ role: 'user', content: q }, { role: 'assistant', content: a }); this.hist = this.hist.slice(-8); },
+  stop(quiet) {
+    const c = this.ctl;
+    this.ctl = null; this.busy = false; $('#ai-stop').hidden = true;
+    if (c) c.abort();
+    if (!quiet) { this.aEl.textContent = 'Avbrutet.'; this.aEl.classList.remove('thinking'); refocus(); }
+  },
+  async ask(q, o = {}) {
+    q = String(q).trim();
+    if (!q) return;
+    this.stop(true);
+    if (cur !== 'ai') go('ai');
+    this.qEl.textContent = '”' + q + '”';
+    const wantImg = !!(o.blob || o.image || LOOK_RE.test(q));
+    const local = wantImg ? null : localIntent(q);
+    if (local) {
+      let r;
+      try { r = local(); } catch { r = 'Det gick inte att göra just nu.'; }
+      this.remember(q, r); this.show(r); return;
+    }
+    this.aEl.textContent = wantImg ? 'Tittar …' : 'Tänker …';
+    this.aEl.classList.add('dim', 'thinking');
+    const s = await samplerP;
+    if (!s) { this.show(await offlineAnswer(q, wantImg, o.blob)); return; }
+    const ctl = this.ctl = new AbortController();
+    this.busy = true; $('#ai-stop').hidden = false; refocus();
+    try {
+      let images;
+      if (wantImg && caps.images) { const b = o.blob || await worldBlob(); if (b) images = [b]; }
+      const turns = [{ role: 'user', content: aiRules(!!images) }, ...this.hist, { role: 'user', content: q }];
+      const opt = { signal: ctl.signal, modelTier: 'quick', onText: ({ text }) => { if (this.ctl === ctl) { this.aEl.textContent = text; this.aEl.classList.remove('dim', 'thinking'); } } };
+      if (images) opt.images = images;
+      if (caps.tools) opt.tools = AI_TOOLS; else opt.cache = false;
+      const { text } = await s(turns, opt);
+      if (this.ctl !== ctl) return;
+      this.remember(q, text); this.show(text);
+    } catch (e) {
+      if (this.ctl !== ctl) return;
+      const code = e && e.code;
+      this.aEl.textContent = code === 'cancelled' ? 'Avbrutet.' : ((e && e.text && code !== 'refused') ? e.text + '\n' : '') + (AI_ERR[code] || AI_ERR.upstream_error);
+      this.aEl.classList.remove('dim', 'thinking');
+      if (HIDE_CODES.includes(code)) { samplerP = Promise.resolve(null); setAiMode(); }
+    } finally {
+      if (this.ctl === ctl) { this.ctl = null; this.busy = false; $('#ai-stop').hidden = true; refocus(); }
+    }
+  },
+  listen() {
+    if (!micOK) { $('#ai-in').focus(); return; }
+    let said = '';
+    this.aEl.textContent = 'Lyssnar …'; this.aEl.classList.add('dim', 'thinking');
+    const r = recognize({
+      onText: (fin, tmp) => { if (fin) said += fin; this.qEl.textContent = '”' + (said + tmp).trim() + '”'; },
+      onEnd: () => {
+        this.aEl.classList.remove('thinking');
+        if (said.trim()) this.ask(said.trim());
+        else if (!this.busy) { this.aEl.textContent = 'Jag hörde inget. Försök igen eller skriv.'; this.aEl.classList.remove('dim'); }
+      },
+    });
+    if (!r) { this.aEl.textContent = 'Mikrofonen gick inte att starta. Skriv i stället.'; this.aEl.classList.remove('dim', 'thinking'); }
+  },
+};
+
+/* ================= photos ================= */
+let ledT = 0;
+function capturePhoto() {
+  let url;
+  try { url = worldCanvas(800, 600).toDataURL('image/jpeg', 0.8); } catch { toast('Kamera', 'Fotot gick inte att ta.'); return; }
+  Photos.add({ url, t: Date.now(), src: World.src });
+  const led = $('#led');
+  led.classList.add('on'); clearTimeout(ledT); ledT = setTimeout(() => led.classList.remove('on'), 1400);
+  sfx('shutter');
+  if (cur === 'cam') {
+    const fl = $('#vf-flash'); fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go');
+    $('#cam-n').textContent = Photos.list.length;
+    $('#cam-last').textContent = `Sparat ${hhmm(new Date())} · ${Photos.list.length} foton i Galleri`;
+  } else if (!sleeping) toast('Kamera', `Foto sparat. ${Photos.list.length} i Galleri.`);
+  sr('Foto taget');
+}
+async function saveFile(name, blob) {
+  const dl = await downloadsP;
+  if (dl) {
+    try { await dl.save({ filename: name, data: blob }); toast('Galleri', 'Fotot sparades.'); }
+    catch (e) { if (!(e && e.code === 'declined')) toast('Galleri', 'Fotot kunde inte sparas här.'); }
+    return;
+  }
+  if (canUse) { toast('Galleri', 'Filer kan inte sparas i den här vyn.'); return; }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 3000);
+  toast('Galleri', 'Fotot laddas ned.');
+}
+
+/* ================= UI core ================= */
+function view(id, def) { V[id] = Object.assign({ id, el: $(`[data-view="${id}"]`), focus: 0 }, def); }
+const fxItems = () => $$('.fx', V[cur].el).filter(e => !e.closest('[hidden]') && !e.disabled);
+function hint() { const v = V[cur]; $('#hint').textContent = (v.hint && v.hint()) || v.hintText || '← → flytta · tryck väljer · svep ned tillbaka'; }
+function setFocus(i) {
+  const v = V[cur], it = fxItems();
+  if (!it.length) { v.focus = 0; hint(); return; }
+  i = clamp(i, 0, it.length - 1); v.focus = i;
+  it.forEach((e, j) => e.classList.toggle('on', j === i));
+  $$('.fx.on', v.el).forEach(e => { if (!it.includes(e)) e.classList.remove('on'); });
+  if (v.onFocus) v.onFocus(it[i], i);
+  if (it[i].closest('.scroll')) it[i].scrollIntoView({ block: 'nearest' });
+  hint();
+}
+const refocus = () => setFocus(V[cur].focus);
+function focusEl(el) { const i = fxItems().indexOf(el); if (i >= 0) setFocus(i); }
+const idxOf = el => Math.max(0, fxItems().indexOf(el));
+function go(id, arg) {
+  if (!V[id]) return;
+  if (cur !== id && V[cur].leave) V[cur].leave();
+  for (const k in V) V[k].el.hidden = k !== id;
+  cur = id;
+  if (V[id].enter) V[id].enter(arg);
+  setFocus(V[id].focus);
+  updateStatus();
+}
+function activate(el) { if (el.matches('input, textarea')) el.focus(); else el.click(); }
+function input(k) {
+  lastInput = Date.now();
+  if (booting) return;
+  if (k === 'capture') { capturePhoto(); return; }
+  if (guideOpen) { closeGuide(); return; }
+  if (alarmOn) { stopAlarm(); sfx('back'); return; }
+  if (restOn) { endRest(false); return; }
+  if (sleeping) { wake(); sfx('select'); return; }
+  if (k === 'sleep') { sfx('back'); sleep(); return; }
+  if (toastAct && k === 'select') { const a = toastAct; hideToast(); sfx('select'); a(); return; }
+  if (toastAct && k === 'back') { hideToast(); sfx('back'); return; }
+  if (k === 'home') { sfx('back'); go('home'); return; }
+  if (k === 'hold') { sfx('select'); go('ai'); if (micOK) Ai.listen(); return; }
+  const v = V[cur];
+  if (v.key && v.key(k) === true) return;
+  if (k === 'prev' || k === 'up') { if (v.focus > 0) { sfx('move'); setFocus(v.focus - 1); } else sfx('edge'); }
+  else if (k === 'next' || k === 'down') { if (v.focus < fxItems().length - 1) { sfx('move'); setFocus(v.focus + 1); } else sfx('edge'); }
+  else if (k === 'select') { const el = fxItems()[v.focus]; if (el) { sfx('select'); activate(el); } }
+  else if (k === 'back') {
+    sfx('back');
+    if (v.back && v.back() === true) return;
+    if (cur !== 'home') go('home'); else sleep();
+  }
+}
+
+let toastT = 0, toastAct = null;
+function toast(title, text, act) {
+  const el = $('#toast');
+  $('#toast b').textContent = title; $('#toast span').textContent = text;
+  el.hidden = false; el.classList.remove('in'); void el.offsetWidth; el.classList.add('in');
+  toastAct = act || null;
+  clearTimeout(toastT); toastT = setTimeout(hideToast, act ? 5000 : 4500);
+  sr(title + ': ' + text);
+}
+function hideToast() { $('#toast').hidden = true; toastAct = null; clearTimeout(toastT); }
+const sr = t => { $('#sr').textContent = t; };
+const coverUpdate = () => disp.classList.toggle('cover', booting || guideOpen || alarmOn || restOn);
+
+function sleep() {
+  if (sleeping || booting) return;
+  sleeping = true; disp.classList.add('off'); document.body.classList.add('sleeping'); hideToast();
+  $('#pad-l').textContent = 'Skärmen är av · tryck';
+  sr('Skärmen är av');
+}
+function wake() {
+  if (!sleeping) return;
+  sleeping = false; lastInput = Date.now(); disp.classList.remove('off'); document.body.classList.remove('sleeping');
+  $('#pad-l').textContent = 'Pekyta';
+}
+function shouldSleep(now) {
+  if (!S.sleep || sleeping || booting || guideOpen || alarmOn || restOn || Ai.busy) return false;
+  if (document.activeElement && document.activeElement.matches && document.activeElement.matches('input')) return false;
+  if (!$('#sim').hidden) return false;
+  if (cur === 'nav' && Nav.st && !Nav.st.done) return false;
+  if (cur === 'captions' && (Cap.live || Cap.demo)) return false;
+  if (cur === 'timer' && (Timer.run || Timer.sw.run)) return false;
+  if (cur === 'music' && Music.playing) return false;
+  return now - lastInput > S.sleep * 1000;
+}
+function openGuide() { guideOpen = true; $('#guide').hidden = false; coverUpdate(); }
+function closeGuide() { guideOpen = false; $('#guide').hidden = true; store.set('guide', true); coverUpdate(); sfx('select'); lastInput = Date.now(); }
+
+let alarmIv = 0, alarmTo = 0;
+function alarm() {
+  alarmOn = true;
+  if (sleeping) wake();
+  hideToast();
+  $('#alarm-sub').textContent = `${fmtSpan(Timer.dur)} har gått · tryck för att stänga`;
+  $('#alarm').hidden = false; coverUpdate();
+  sfx('alert'); clearInterval(alarmIv); alarmIv = setInterval(() => sfx('alert'), 1200);
+  clearTimeout(alarmTo); alarmTo = setTimeout(stopAlarm, 60000);
+  sr('Tiden är ute');
+}
+function stopAlarm() { alarmOn = false; clearInterval(alarmIv); clearTimeout(alarmTo); $('#alarm').hidden = true; coverUpdate(); lastInput = Date.now(); }
+
+let restEnd = 0, restIv = 0;
+function startRest() {
+  restOn = true; restAcc = 0; restEnd = Date.now() + 20000;
+  if (sleeping) wake();
+  hideToast(); $('#rest').hidden = false; coverUpdate(); sfx('notify');
+  const up = () => { const s = Math.ceil((restEnd - Date.now()) / 1000); $('#rest-n').textContent = Math.max(0, s); if (s <= 0) endRest(true); };
+  up(); clearInterval(restIv); restIv = setInterval(up, 250);
+}
+function endRest(done) {
+  if (!restOn) return;
+  restOn = false; clearInterval(restIv); $('#rest').hidden = true; coverUpdate();
+  restAcc = 0; lastInput = Date.now();
+  if (done) { sfx('select'); toast('Ögonvila', 'Klart. Nästa påminnelse om 20 minuter.'); }
+}
+const canInterrupt = () => !booting && !guideOpen && !alarmOn && !restOn && !Ai.busy && !(document.activeElement && document.activeElement.matches && document.activeElement.matches('input'));
+
+function setInd(sel, on, txt) { const el = $(sel); el.hidden = !on; if (on && txt != null) { const b = el.querySelector('b'); if (b) b.textContent = txt; } }
+function updateStatus() {
+  const n = Msgs.unread().length;
+  setInd('#st-msg', n > 0, n);
+  setInd('#st-nav', !!(Nav.st && !Nav.st.done) && cur !== 'nav', fmtDist(Nav.toTurn()));
+  setInd('#st-timer', (Timer.run || Timer.sw.run) && cur !== 'timer', Timer.run ? mmss(Timer.remaining()) : fmtSw(Timer.swTime()).slice(0, 5));
+  setInd('#st-music', Music.playing && cur !== 'music');
+  setInd('#st-cc', Cap.live);
+  $('#st-bat b').textContent = Bat.level + ' %';
+  $('#st-batfill').setAttribute('width', Math.max(0.6, Bat.level / 100 * 11.8).toFixed(2));
+  $('#st-time').hidden = cur === 'home';
+  const bd = $('.app[data-app="msgs"] .badge');
+  if (bd) { bd.hidden = !n; bd.textContent = n; }
+}
+
+/* ================= views ================= */
+let lastHome = '';
+function renderHome() {
+  const d = new Date();
+  $('#h-time').textContent = hhmm(d);
+  $('#h-date').textContent = `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]} · vecka ${isoWeek(d)}`;
+  const n = Msgs.unread().length, w = [svg('msgs') + (n ? n + ' olästa' : 'Inga olästa'), svg('health') + nf(Health.steps) + ' steg'];
+  if (Nav.st && !Nav.st.done) w.push(svg('nav') + esc(Nav.st.p.name) + ' · ' + fmtDist(Nav.left()));
+  if (Timer.run) w.push(svg('timer') + mmss(Timer.remaining()));
+  if (Music.playing) w.push(svg('music') + esc(Music.track().title));
+  const html = w.map(x => `<span>${x}</span>`).join('');
+  if (html !== lastHome) { $('#h-w').innerHTML = html; lastHome = html; }
+}
+function appSub(id) {
+  switch (id) {
+    case 'ai': return 'Fråga om det du ser';
+    case 'nav': return Nav.st && !Nav.st.done ? `Till ${Nav.st.p.name} · ${fmtDist(Nav.left())} kvar` : 'Gångvägledning i synfältet';
+    case 'cam': return '12 MP · kameraknappen fungerar överallt';
+    case 'gallery': return Photos.list.length ? `${Photos.list.length} foton` : 'Inga foton än';
+    case 'msgs': { const n = Msgs.unread().length; return n ? `${n} olästa` : 'Inga olästa'; }
+    case 'captions': return 'Text på det som sägs runt dig';
+    case 'music': return Music.playing ? 'Spelar ' + Music.track().title : 'Spelas i bågarnas högtalare';
+    case 'timer': return Timer.run ? mmss(Timer.remaining()) + ' kvar' : 'Timer och stoppur';
+    case 'health': return `${nf(Health.steps)} steg i dag`;
+    case 'settings': return 'Färg, ljusstyrka, linsdimning';
+    case 'about': return 'Raken EyeSee 1 · EyeSee OS 1.0';
+  }
+  return '';
+}
+function placeCarousel(el) {
+  const wrap = $('.car-wrap'), car = $('#car'), apps = $$('.app', car), i = apps.indexOf(el);
+  car.style.transform = `translateX(${(wrap.clientWidth / 2 - (el.offsetLeft + el.offsetWidth / 2)).toFixed(1)}px)`;
+  apps.forEach((a, j) => { a.style.opacity = [1, 0.7, 0.45, 0.28, 0.16][Math.min(4, Math.abs(j - i))]; });
+}
+view('home', {
+  enter() { renderHome(); },
+  tick() { renderHome(); const el = fxItems()[this.focus]; if (el) $('#car-sub').textContent = appSub(el.dataset.app); },
+  onFocus(el) { placeCarousel(el); $('#car-name').textContent = appName(el.dataset.app); $('#car-sub').textContent = appSub(el.dataset.app); },
+  hintText: '← → bläddra · tryck öppnar · håll inne för Raken AI',
+});
+view('ai', { enter() { this.focus = 0; } });
+
+function renderPlaces() {
+  $('#nav-pick').innerHTML = PLACES.map(p => `<button class="b fx li" type="button" data-place="${p.id}"><b>${esc(p.name)}</b><em>${fmtDist(p.total)} · ${Math.round(p.total / 84)} min</em><span>${esc(p.addr)} · via ${esc(p.segs[0][0])}</span></button>`).join('');
+}
+view('nav', {
+  enter() {
+    const s = Nav.st;
+    $('#nav-pick').hidden = !!s; $('#nav-run').hidden = !s;
+    $('#nav-tag').textContent = s ? `Till ${s.p.name}` : 'Till fots · 1,4 m/s';
+    this.focus = 0;
+    if (!s) { renderPlaces(); return; }
+    $('#nav-route').setAttribute('d', 'M' + s.route.map(q => q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' L'));
+    Nav.render();
+    if (s.done) this.focus = idxOf($('#nav-end'));
+  },
+  tick() { if (Nav.st) Nav.render(); },
+  hint() { return Nav.st && !Nav.st.done ? '← → flytta · tryck väljer · svep ned: vägledningen fortsätter' : ''; },
+});
+view('cam', {
+  enter() { this.focus = 0; $('#cam-n').textContent = Photos.list.length; },
+  hintText: 'Tryck för att fota · kameraknappen på bågen fungerar överallt',
+});
+
+let gi = 0, delArm = false, delT = 0;
+const SRC_NAME = { city: 'Gågatan', camera: 'Kamera', photo: 'Eget foto' };
+function renderGal() {
+  const n = Photos.list.length;
+  gi = clamp(gi, 0, Math.max(0, n - 1));
+  $('#gal-count').textContent = n ? `${gi + 1} / ${n}` : '0 foton';
+  $('#gal-empty').hidden = !!n; $('#gal-cv').hidden = !n; $('#gal-acts').hidden = !n;
+  $('#gal-del').textContent = delArm ? 'Tryck igen för att radera' : 'Radera';
+  if (!n) { $('#gal-meta').textContent = ''; return; }
+  const p = Photos.list[gi], d = new Date(p.t);
+  $('#gal-meta').textContent = `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)} ${hhmm(d)} · ${SRC_NAME[p.src] || 'Kamera'}`;
+  const img = new Image();
+  img.onload = () => {
+    if (Photos.list[gi] !== p) return;
+    // A monochrome waveguide shows a photo as luminance in the HUD colour only.
+    const c = $('#gal-cv'), x = c.getContext('2d');
+    c.width = img.naturalWidth; c.height = img.naturalHeight; x.drawImage(img, 0, 0);
+    try {
+      const id = x.getImageData(0, 0, c.width, c.height), px = id.data, [hr, hg, hb] = hexRgb(hudHex);
+      for (let i = 0; i < px.length; i += 4) {
+        const l = Math.min(1, ((0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]) / 255) * 1.1);
+        px[i] = hr * l; px[i + 1] = hg * l; px[i + 2] = hb * l;
+      }
+      x.putImageData(id, 0, 0);
+    } catch {}
+  };
+  img.src = p.url;
+}
+view('gallery', {
+  enter(arg) { if (typeof arg === 'number') gi = arg; delArm = false; this.focus = 0; renderGal(); },
+  key(k) {
+    if (this.focus !== 0 || !Photos.list.length) return false;
+    if (k === 'next' || k === 'down') { if (gi < Photos.list.length - 1) { gi++; sfx('move'); renderGal(); } else sfx('edge'); return true; }
+    if (k === 'prev' || k === 'up') { if (gi > 0) { gi--; sfx('move'); renderGal(); } else sfx('edge'); return true; }
+    if (k === 'select') { sfx('select'); setFocus(1); return true; }
+    return false;
+  },
+  back() { if (this.focus > 0 && Photos.list.length) { delArm = false; renderGal(); setFocus(0); return true; } return false; },
+  hint() { return this.focus === 0 && Photos.list.length ? '← → bläddra bland foton · tryck för åtgärder · svep ned tillbaka' : ''; },
+});
+
+let openId = null;
+function renderMsgs() {
+  const open = Msgs.list.find(m => m.id === openId);
+  $('#msg-list').hidden = !!open; $('#msg-open').hidden = !open;
+  if (!open) {
+    $('#msg-list').innerHTML = Msgs.list.length
+      ? Msgs.list.map(m => `<button class="b fx li${m.read ? '' : ' unread'}" type="button" data-id="${esc(m.id)}"><b>${esc(m.from)}</b><time>${ago(m.t)}</time><span>${esc(m.text)}</span></button>`).join('')
+      : '<p class="note">Inga meddelanden.</p>';
+  } else {
+    $('#msg-from').innerHTML = `<span>${esc(open.from)}</span><time>${ago(open.t)}</time>`;
+    $('#msg-text').textContent = open.text;
+    $('#msg-sent').textContent = open.re.length ? `Du svarade: ${open.re[open.re.length - 1]} · skickat (simulerat)` : '';
+  }
+  updateStatus();
+}
+function openMsg(id) {
+  const m = Msgs.list.find(x => x.id === id);
+  if (!m) return;
+  openId = id; m.read = true; Msgs.save();
+  if (cur !== 'msgs') { go('msgs', { open: id }); return; }
+  renderMsgs(); setFocus(0);
+}
+function reply(text) {
+  const m = Msgs.list.find(x => x.id === openId);
+  if (!m || !text.trim()) return;
+  m.re.push(text.trim()); Msgs.save(); renderMsgs(); sr('Svar skickat');
+}
+view('msgs', {
+  enter(arg) {
+    openId = arg && arg.open || null;
+    if (openId) { const m = Msgs.list.find(x => x.id === openId); if (m) { m.read = true; Msgs.save(); } }
+    this.focus = 0; renderMsgs();
+  },
+  back() {
+    if (!openId) return false;
+    const id = openId; openId = null; renderMsgs();
+    setFocus(fxItems().findIndex(e => e.dataset.id === id));
+    return true;
+  },
+});
+view('captions', {
+  enter() { this.focus = idxOf(micOK ? $('#cap-live') : $('#cap-demo')); Cap.render(); },
+  leave() { Cap.stopDemo(); Cap.stopLive(); },
+});
+
+function renderMusic() {
+  const tr = Music.track(), p = Music.now();
+  $('#mu-title').textContent = tr.title;
+  $('#mu-sub').textContent = `Raken Studio · ${tr.bpm} bpm · spår ${Music.i + 1} av ${TRACKS.length}`;
+  $('#mu-pos').textContent = mmss(p).replace(/^0/, '');
+  $('#mu-len').textContent = mmss(TRACK_LEN).replace(/^0/, '');
+  $('#mu-prog').style.width = (p / TRACK_LEN * 100).toFixed(1) + '%';
+  $('#mu-play').innerHTML = svg(Music.playing ? 'pause' : 'play') + `<span>${Music.playing ? 'Pausa' : 'Spela'}</span>`;
+  $('#mu-vol').textContent = Math.round(Music.vol * 100) + ' %';
+}
+view('music', {
+  enter() { this.focus = 1; renderMusic(); },
+  tick() { renderMusic(); },
+  key(k) {
+    if (k === 'up') { Music.setVol(Music.vol + 0.1); sfx('move'); return true; }
+    if (k === 'down') { Music.setVol(Music.vol - 0.1); sfx('move'); return true; }
+    return false;
+  },
+});
+
+function timerBig() { $('#tm-big').textContent = Timer.mode === 'sw' ? fmtSw(Timer.swTime()) : mmss(Timer.remaining()); }
+function renderTimer() {
+  const sw = Timer.mode === 'sw';
+  $('#tm-name').textContent = sw ? 'Stoppur' : 'Timer';
+  $('#tm-presets').hidden = sw; $('#tm-lap').hidden = !sw;
+  $('#tm-mode').textContent = sw ? 'Byt till timer' : 'Byt till stoppur';
+  if (sw) {
+    $('#tm-go').textContent = Timer.sw.run ? 'Stoppa' : (Timer.swTime() ? 'Fortsätt' : 'Starta');
+    $('#tm-tag').textContent = Timer.sw.laps.length ? Timer.sw.laps.length + ' varv' : 'Mät tid';
+    const L = Timer.sw.laps;
+    $('#tm-laps').textContent = L.slice(0, 3).map((t, i) => `Varv ${L.length - i}  ${fmtSw(t)}`).join('   ·   ');
+  } else {
+    $('#tm-go').textContent = Timer.run ? 'Pausa' : (Timer.left > 0 && Timer.left < Timer.dur ? 'Fortsätt' : 'Starta');
+    $('#tm-tag').textContent = Timer.run ? 'Ringer ' + hhmm(new Date(Timer.end)) : 'Inställd på ' + fmtSpan(Timer.dur);
+    $('#tm-laps').textContent = '';
+  }
+  timerBig(); refocus();
+}
+view('timer', {
+  enter() { renderTimer(); this.focus = idxOf($('#tm-go')); },
+});
+
+function renderHealth() {
+  const d = Health.today();
+  $('#he-steps').textContent = nf(d.steps);
+  $('#he-arc').setAttribute('stroke-dashoffset', (276.5 * (1 - clamp(d.steps / 8000, 0, 1))).toFixed(1));
+  $('#he-dist').textContent = (d.dist / 1000).toFixed(2).replace('.', ',') + ' km';
+  $('#he-screen').textContent = fmtSpan(d.screen);
+  $('#he-rest').textContent = 'om ' + Math.max(1, Math.ceil((1200 - restAcc) / 60)) + ' min';
+  $('#he-src').textContent = motionSeen ? 'Rörelsesensorn' : 'Simulerad gång i Navigera';
+}
+view('health', { enter() { this.focus = 0; renderHealth(); }, tick: renderHealth });
+
+let resetArm = false, resetT = 0;
+function optLabel(d, v) {
+  if (d.k === 'bright' && v === 'auto') return `Auto · ${nf(brightNits)} nits`;
+  const o = d.opts.find(x => x.v === v);
+  return o ? o.label : String(v);
+}
+function renderSettings() {
+  $('#set-list').innerHTML = SETTINGS.map(d => `<button class="b fx li" type="button" data-k="${d.k}"><b>${d.label}</b><em>${esc(optLabel(d, d.k === 'world' ? World.src : S[d.k]))}</em></button>`).join('')
+    + `<button class="b fx li" type="button" data-k="reset"><b>Återställ EyeSee</b><em>${resetArm ? 'Tryck igen för att radera allt' : 'Foton, meddelanden, inställningar'}</em></button>`;
+  refocus();
+}
+function cycleSetting(k) {
+  if (k === 'reset') {
+    clearTimeout(resetT);
+    if (!resetArm) { resetArm = true; resetT = setTimeout(() => { resetArm = false; if (cur === 'settings') renderSettings(); }, 4000); renderSettings(); return; }
+    resetArm = false; resetAll(); return;
+  }
+  const d = SETTINGS.find(x => x.k === k), now = k === 'world' ? worldPick : S[k];
+  const nv = d.opts[(d.opts.findIndex(o => o.v === now) + 1) % d.opts.length].v;
+  if (k === 'world') { World.set(nv); return; }
+  S[k] = nv; saveS(); applySettings(); renderSettings();
+}
+function resetAll() {
+  ['settings', 'photos', 'msgs', 'day', 'guide', 'vol'].forEach(k => store.del(k));
+  S = Object.assign({}, DEFAULTS); Photos.list = []; Msgs.list = seedMsgs(); Msgs.save(); Health.d = null;
+  Timer.reset(); Timer.swReset(); Nav.end(); Music.pause();
+  World.set('city'); applySettings(); renderSettings();
+  toast('Inställningar', 'EyeSee är återställt.');
+}
+view('settings', { enter() { this.focus = 0; renderSettings(); }, tick() { if (S.bright === 'auto') { const em = $('#set-list [data-k="bright"] em'); if (em) em.textContent = optLabel(SETTINGS[1], 'auto'); } } });
+
+function renderAbout() {
+  const rows = [
+    ['Modell', 'Raken EyeSee 1'], ['Programvara', 'EyeSee OS 1.0'], ['Skärm', 'Vågledare, 640 × 400 px per öga'],
+    ['Synfält', '30° diagonalt'], ['Ljusstyrka', 'Upp till 5 000 nits'], ['Kamera', '12 MP, 4:3, kameralampa utåt'],
+    ['Ljud', '2 öppna högtalare, 5 mikrofoner'], ['Batteri', `${Bat.level} %, ca ${fmtSpan(Bat.secondsLeft())} kvar`],
+    ['Vikt', '49 g'], ['Anslutning', 'Bluetooth 5.3 till telefonen'], ['Raken AI', aiModeText],
+  ];
+  $('#about-kv').innerHTML = rows.map(r => `<div class="fx"><dt>${r[0]}</dt><dd>${esc(r[1])}</dd></div>`).join('');
+  refocus();
+}
+view('about', { enter() { this.focus = 0; renderAbout(); } });
+
+/* ================= wiring ================= */
+$('#car').innerHTML = APPS.map(a => `<button class="b fx app" type="button" data-app="${a.id}" aria-label="${a.name}">${svg(a.icon)}${a.id === 'msgs' ? '<i class="badge" hidden></i>' : ''}</button>`).join('');
+$$('[data-i]').forEach(el => el.insertAdjacentHTML('afterbegin', svg(el.dataset.i)));
+$('#car').addEventListener('click', e => { const b = e.target.closest('[data-app]'); if (b) go(b.dataset.app); });
+
+$$('[data-ask]').forEach(b => b.addEventListener('click', () => {
+  const k = b.dataset.ask;
+  if (k === 'look') Ai.ask('Vad ser jag?', { image: true });
+  else if (k === 'read') Ai.ask('Läs upp texten på skyltarna jag ser.', { image: true });
+  else Ai.ask('Sammanfatta mina olästa meddelanden.');
+}));
+$('#ai-mic').addEventListener('click', () => Ai.listen());
+$('#ai-stop').addEventListener('click', () => Ai.stop());
+$('#ai-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const inp = $('#ai-in'), q = inp.value.trim();
+  if (!q) { inp.focus(); return; }
+  inp.value = ''; inp.blur(); Ai.ask(q);
+});
+
+$('#nav-pick').addEventListener('click', e => { const b = e.target.closest('[data-place]'); if (b) Nav.start(b.dataset.place); });
+$('#nav-walk').addEventListener('click', () => { if (Nav.st) { Nav.st.walking = !Nav.st.walking; Nav.render(); } });
+$('#nav-ff').addEventListener('click', () => { if (Nav.st) { Nav.st.mult = Nav.st.mult > 1 ? 1 : 5; Nav.render(); } });
+$('#nav-end').addEventListener('click', () => Nav.end());
+
+$('#cam-shot').addEventListener('click', () => capturePhoto());
+$('#cam-gal').addEventListener('click', () => go('gallery', 0));
+$('#gal-stage').addEventListener('click', () => { if (cur === 'gallery' && Photos.list.length && V.gallery.focus === 0) setFocus(1); });
+$('#gal-ask').addEventListener('click', () => { const p = Photos.list[gi]; if (p) Ai.ask('Vad syns på det här fotot?', { blob: dataBlob(p.url) }); });
+$('#gal-save').addEventListener('click', () => { const p = Photos.list[gi]; if (p) { const d = new Date(p.t); saveFile(`eyesee-${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}-${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}.jpg`, dataBlob(p.url)); } });
+$('#gal-del').addEventListener('click', () => {
+  clearTimeout(delT);
+  if (!delArm) { delArm = true; delT = setTimeout(() => { delArm = false; if (cur === 'gallery') renderGal(); }, 3500); renderGal(); return; }
+  delArm = false; Photos.del(gi); renderGal(); sfx('back');
+  if (!Photos.list.length) setFocus(0); else refocus();
+});
+
+$('#msg-list').addEventListener('click', e => { const b = e.target.closest('[data-id]'); if (b) openMsg(b.dataset.id); });
+$$('[data-re]').forEach(b => b.addEventListener('click', () => reply(b.dataset.re)));
+$('#msg-form').addEventListener('submit', e => { e.preventDefault(); const inp = $('#msg-in'); if (inp.value.trim()) { reply(inp.value); inp.value = ''; inp.blur(); } else inp.focus(); });
+$('#msg-dict').addEventListener('click', () => {
+  let said = '';
+  $('#msg-sent').textContent = 'Lyssnar …';
+  recognize({ onText: (fin, tmp) => { if (fin) said += fin; $('#msg-in').value = (said + tmp).trim(); }, onEnd: () => { $('#msg-sent').textContent = said.trim() ? 'Tryck på Svara för att skicka.' : 'Jag hörde inget.'; } });
+});
+
+$('#cap-live').addEventListener('click', () => { if (Cap.live) { Cap.stopLive(); Cap.render(); } else Cap.startLive(); });
+$('#cap-demo').addEventListener('click', () => { if (Cap.demo) Cap.stopDemo(); else Cap.startDemo(); });
+$('#cap-trans').addEventListener('click', () => Cap.translate());
+$('#cap-lang').addEventListener('click', () => { Cap.lang = (Cap.lang + 1) % LANGS.length; Cap.render(); });
+$('#cap-clear').addEventListener('click', () => { Cap.lines = []; Cap.interim = ''; $('#cap-tr').hidden = true; Cap.render(); });
+
+$('#mu-play').addEventListener('click', () => Music.toggle());
+$('#mu-prev').addEventListener('click', () => Music.skip(-1));
+$('#mu-next').addEventListener('click', () => Music.skip(1));
+$('#mu-vdn').addEventListener('click', () => Music.setVol(Music.vol - 0.1));
+$('#mu-vup').addEventListener('click', () => Music.setVol(Music.vol + 0.1));
+
+$$('#tm-presets [data-min]').forEach(b => b.addEventListener('click', () => Timer.start(Number(b.dataset.min) * 60)));
+$('#tm-go').addEventListener('click', () => { if (Timer.mode === 'sw') Timer.swToggle(); else if (Timer.run) Timer.pause(); else Timer.start(); });
+$('#tm-lap').addEventListener('click', () => Timer.swLap());
+$('#tm-reset').addEventListener('click', () => { if (Timer.mode === 'sw') Timer.swReset(); else Timer.reset(); });
+$('#tm-mode').addEventListener('click', () => { Timer.mode = Timer.mode === 'sw' ? 'timer' : 'sw'; renderTimer(); setFocus(idxOf($('#tm-go'))); });
+$('#he-rest-now').addEventListener('click', () => startRest());
+$('#set-list').addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (b) cycleSetting(b.dataset.k); });
+
+// temple and simulator
+function simToggle(open) {
+  $('#sim').hidden = !open;
+  $('#simBtn').setAttribute('aria-expanded', String(open));
+}
+$$('#dock button').forEach(b => b.addEventListener('pointerdown', e => { userActive = true; e.preventDefault(); }));
+$('#capBtn').addEventListener('click', () => input('capture'));
+$('#simBtn').addEventListener('click', () => simToggle($('#sim').hidden));
+$('#sim-close').addEventListener('click', () => simToggle(false));
+$('#sim-world').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (b) World.set(b.dataset.w); });
+$('#photo-in').addEventListener('change', e => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const old = photoImg.src;
+  photoImg.onload = () => { if (old && old.startsWith('blob:')) URL.revokeObjectURL(old); World.set('photo'); };
+  photoImg.onerror = () => toast('Världsvy', 'Bilden gick inte att öppna. Välj en annan.');
+  photoImg.src = URL.createObjectURL(file);
+  e.target.value = '';
+});
+$('#sim-tod').addEventListener('click', e => {
+  const b = e.target.closest('[data-t]');
+  if (!b) return;
+  Scene.setTod(b.dataset.t);
+  $$('#sim-tod .tb').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  if (World.src === 'city') { worldLum = Scene.lum(); updateBrightness(); }
+});
+$('#sim-msg').addEventListener('click', () => demoMsg());
+$('#sim-sleep').addEventListener('click', () => { if (sleeping) wake(); else sleep(); });
+$('#sim-rest').addEventListener('click', () => { if (!booting) startRest(); });
+$('#sim-guide').addEventListener('click', () => { if (!booting) { simToggle(false); openGuide(); } });
+
+function demoMsg() {
+  const [from, text] = DEMO_POOL[demoI++ % DEMO_POOL.length];
+  const m = Msgs.add(from, text);
+  if (sleeping) wake();
+  sfx('notify');
+  if (cur === 'msgs' && !openId) { renderMsgs(); refocus(); }
+  toast(from, text, () => openMsg(m.id));
+  updateStatus();
+}
+
+// gestures: the touchpad on the temple, and the view itself
+function bindGestures(el, opt) {
+  let s = null, holdT = 0;
+  el.addEventListener('pointerdown', e => {
+    userActive = true;
+    if (e.button > 0 || (opt.skip && opt.skip(e))) return;
+    e.preventDefault();
+    s = { x: e.clientX, y: e.clientY, t: e.target, held: false };
+    try { el.setPointerCapture(e.pointerId); } catch {}
+    if (opt.down) opt.down(e);
+    clearTimeout(holdT);
+    holdT = setTimeout(() => { if (s) { s.held = true; input('hold'); } }, 600);
+  });
+  el.addEventListener('pointermove', e => { if (s && Math.hypot(e.clientX - s.x, e.clientY - s.y) > 12) clearTimeout(holdT); });
+  const up = e => {
+    if (!s) return;
+    clearTimeout(holdT);
+    const st = s; s = null;
+    if (st.held || e.type === 'pointercancel') return;
+    const dx = e.clientX - st.x, dy = e.clientY - st.y, ad = Math.max(Math.abs(dx), Math.abs(dy));
+    if (ad < 12) { opt.tap(st.t); return; }
+    if (ad < opt.min) return;
+    if (Math.abs(dx) > Math.abs(dy)) input(dx < 0 ? 'next' : 'prev');
+    else input(dy > 0 ? 'back' : 'up');
+  };
+  el.addEventListener('pointerup', up);
+  el.addEventListener('pointercancel', up);
+}
+bindGestures($('#pad'), {
+  min: 22,
+  down(e) {
+    const pad = $('#pad'), r = pad.getBoundingClientRect(), d = document.createElement('i');
+    d.className = 'tdot'; d.style.left = (e.clientX - r.left) + 'px'; d.style.top = (e.clientY - r.top) + 'px';
+    pad.append(d); setTimeout(() => d.remove(), 700);
+  },
+  tap() { input('select'); },
+});
+bindGestures($('#stage'), {
+  min: 36,
+  down() { const a = document.activeElement; if (a && a.matches && a.matches('input')) a.blur(); },
+  skip(e) {
+    if (!$('#sim').hidden) { simToggle(false); return true; }
+    return !!e.target.closest('input, textarea, select');
+  },
+  tap(t) {
+    if (booting) return;
+    if (guideOpen || alarmOn || restOn || sleeping) { input('select'); return; }
+    if (t.closest('#toast')) { if (toastAct) input('select'); else hideToast(); return; }
+    const fx = t.closest('.fx');
+    if (fx && V[cur].el.contains(fx)) { lastInput = Date.now(); focusEl(fx); input('select'); }
+  },
+});
+addEventListener('contextmenu', e => { if (e.target.closest('#stage, #dock')) e.preventDefault(); });
+addEventListener('pointermove', e => {
+  if (e.pointerType !== 'mouse') return;
+  const v = e.clientX / innerWidth - 0.5;
+  Scene.look(v * 0.14);
+  document.documentElement.style.setProperty('--px', (-v * 24).toFixed(1) + 'px');
+});
+const KEYMAP = { ArrowLeft: 'prev', ArrowRight: 'next', ArrowUp: 'up', ArrowDown: 'down', Enter: 'select', ' ': 'select', Escape: 'back', Backspace: 'back', h: 'home', a: 'hold', c: 'capture', s: 'sleep' };
+addEventListener('keydown', e => {
+  userActive = true;
+  const t = e.target;
+  if (t && t.matches && t.matches('input, textarea, select')) { if (e.key === 'Escape') { t.blur(); e.preventDefault(); } return; }
+  if (e.metaKey || e.ctrlKey || e.altKey || e.key === 'Tab') return;
+  if (e.key === 'Escape' && !$('#sim').hidden) { simToggle(false); e.preventDefault(); return; }
+  if ((e.key === 'Enter' || e.key === ' ') && t && t.closest && t.closest('#dock, #sim')) return;
+  const k = KEYMAP[e.key] || KEYMAP[e.key.toLowerCase()];
+  if (!k) return;
+  e.preventDefault();
+  if (e.repeat && (k === 'select' || k === 'hold' || k === 'capture' || k === 'sleep')) return;
+  input(k);
+});
+let stepHigh = false, lastStep = 0;
+addEventListener('devicemotion', e => {
+  const a = e.accelerationIncludingGravity;
+  if (!a || a.x == null) return;
+  const m = Math.hypot(a.x, a.y, a.z), now = Date.now();
+  if (!stepHigh && m > 11.6 && now - lastStep > 280) { stepHigh = true; lastStep = now; motionSeen = true; Health.addStep(); }
+  else if (stepHigh && m < 10.2) stepHigh = false;
+});
+addEventListener('resize', () => { Scene.resize(); if (cur === 'home') refocus(); });
+
+/* ================= clocks ================= */
+let lastTick = Date.now(), lastLum = 0, lastSave = Date.now();
+function tick() {
+  const now = Date.now(), dt = Math.min(5, (now - lastTick) / 1000);
+  lastTick = now;
+  $('#st-time').textContent = hhmm(new Date());
+  Timer.check();
+  if (!sleeping && !booting) { Health.today().screen += dt; if (!restOn) restAcc += dt; }
+  Bat.drain(dt, !sleeping);
+  updateStatus();
+  if (V[cur].tick) V[cur].tick();
+  if (shouldSleep(now)) sleep();
+  if (restAcc >= 1200 && canInterrupt() && !(Nav.st && !Nav.st.done)) startRest();
+  if (S.demo && now >= nextDemo && canInterrupt()) { nextDemo = now + (150 + Math.random() * 150) * 1000; demoMsg(); }
+  if (now - lastLum > 2000) { lastLum = now; worldLum = measureLum(); updateBrightness(); }
+  if (now - lastSave > 10000) { lastSave = now; Health.save(); }
+}
+let lastF = performance.now(), sceneAcc = 1;
+function loop(t) {
+  const dt = Math.min(0.1, Math.max(0, (t - lastF) / 1000));
+  lastF = t;
+  Nav.step(dt);
+  Scene.setSpeed(Nav.speed());
+  sceneAcc += dt;
+  if (World.src === 'city' && !document.hidden && sceneAcc >= 1 / 32) { Scene.frame(sceneAcc); sceneAcc = 0; }
+  if (cur === 'nav' && Nav.st) Nav.drawCompass(dt);
+  if (cur === 'music') Music.viz();
+  if (cur === 'timer' && (Timer.run || Timer.sw.run)) timerBig();
+  requestAnimationFrame(loop);
+}
+addEventListener('pagehide', () => Health.save());
+
+/* ================= boot ================= */
+Scene.resize();
+applySettings();
+micUI();
+go('home');
+setFocus(0);
+hint();
+updateStatus();
+requestAnimationFrame(loop);
+setInterval(tick, 250);
+setTimeout(() => {
+  $('#boot').hidden = true; booting = false;
+  if (!store.get('guide', false)) openGuide();
+  coverUpdate(); refocus(); lastInput = Date.now();
+}, RM ? 400 : 2300);
+})();
+</script>
+</body>
+</html>
